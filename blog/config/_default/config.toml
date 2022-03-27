@@ -1,0 +1,37 @@
+# set `baseurl` to your root domain
+# if you set it to "/" share icons won't work properly on production
+baseurl = "https://leetcoach.com/"  # Include trailing slash
+title = "Leetcoach"  # Edit directly from config/_default/languages.toml # alternatively, uncomment this and remove `title` entry from the aforemention file.
+copyright = "Copyright © 2019–2022, Sriram Panyam; all rights reserved."
+# canonifyurls = true
+paginate = 10
+theme = "hugo-clarity"
+disqusShortname = ""
+
+DefaultContentLanguage = "en"
+# [languages]
+# config/_default/languages.toml
+
+# [menus]
+# config/_default/menus/menu.xx.toml
+
+[taxonomies]
+category = "categories"
+tag = "tags"
+series = "series"
+
+[outputs]
+home = ["HTML", "RSS", "JSON"]
+
+
+[Params]
+    mainSections = ["post"]
+    intro = true
+    headline = "Leetcoach"
+    description = "Leetcoach.  System Design - A quantity approach"
+    github = "https://github.com/panyam"
+    twitter = "https://twitter.com/panyam"
+    # email = "sri.panyam@example.com"
+    opengraph = true
+    shareTwitter = true
+    dateFormat = "Mon, Jan 2, 2006"
