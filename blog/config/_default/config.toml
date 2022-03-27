@@ -3,6 +3,7 @@
 baseurl = "https://leetcoach.com/"  # Include trailing slash
 title = "Leetcoach"  # Edit directly from config/_default/languages.toml # alternatively, uncomment this and remove `title` entry from the aforemention file.
 copyright = "Copyright © 2019–2022, Sriram Panyam; all rights reserved."
+publishDir = "../public"
 # canonifyurls = true
 paginate = 10
 theme = "hugo-clarity"
