@@ -1,6 +1,7 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 public
+coverage
 datadir
 *.py[cod]
 *.swp
