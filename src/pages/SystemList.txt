@@ -1,8 +1,0 @@
-
-Basic Reusable Components
--------------------------
-* ID Generator
-* TinyURL
-* Combine these to form a key-value store
-* Distributed counters (key/count pairs - uneven key distributions, high increment qps - eg 200k qps - eg like counts etc)
-  - Can be *only* counts - or events written that need to be summarized - eg as sharded counters (sharded event processors - microbatch)
