@@ -1,6 +1,7 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 public
+coverage
 datadir
 *.py[cod]
 *.swp
@@ -137,3 +138,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Local Netlify folder
+.netlify
