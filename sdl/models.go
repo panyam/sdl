@@ -74,6 +74,10 @@ This is similar to:
 [WebServer] -> [ApiServer] -> [Database]
 */
 
+type System interface {
+	Availability() Distribution[float64]
+}
+
 // A histogram distribution of what values can be expected in each bucket
 type Distribution[V any] struct {
 	Weights []int
