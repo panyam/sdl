@@ -201,7 +201,11 @@ func (f Fraction) IsGTENum(another int64) bool {
 }
 
 func (f Fraction) String() string {
-	return fmt.Sprintf("%d/%d", f.Num, f.Den)
+	if f.Den == 1 {
+		return fmt.Sprintf("%d", f.Num)
+	} else {
+		return fmt.Sprintf("%d/%d", f.Num, f.Den)
+	}
 }
 
 func FracMax(f1 Fraction, f2 Fraction) Fraction {
