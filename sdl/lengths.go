@@ -1,4 +1,4 @@
-package bitly
+package sdl
 
 // Length units
 type LengthUnit int

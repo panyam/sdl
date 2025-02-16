@@ -1,4 +1,4 @@
-package bitly
+package sdl
 
 import "fmt"
 

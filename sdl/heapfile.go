@@ -1,4 +1,4 @@
-package bitly
+package sdl
 
 type HeapFile struct {
 	// How many entries are already in this heapfile

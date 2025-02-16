@@ -1,4 +1,4 @@
-package bitly
+package sdl
 
 import (
 	"errors"
@@ -34,6 +34,10 @@ func GCD(x int64, y int64) int64 {
 func (f Fraction) Factorized() Fraction {
 	gcd := GCD(f.Num, f.Den)
 	return Fraction{f.Num / gcd, f.Den / gcd}
+}
+
+func FracN(n int64) Fraction {
+	return Fraction{n, 1}
 }
 
 func Frac(n, d int64) Fraction {
