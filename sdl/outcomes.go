@@ -19,8 +19,10 @@ func (o *Outcomes[V]) TotalWeight() (out Fraction) {
 	if o == nil {
 		return FracZero
 	}
+	out.Den = 1
 	for _, v := range o.Values {
-		out = out.Plus(v.Weight).Factorized()
+		out = out.Plus(v.Weight)
+		out = out.Factorized()
 	}
 	return
 }
@@ -61,6 +63,9 @@ func (this *Outcomes[V]) Then(that *Outcomes[any], reducer func(v V, other any) 
 func Then[V any, U any, Z any](this *Outcomes[V], that *Outcomes[U], reducer func(v V, other U) Z) (out *Outcomes[Z]) {
 	thisWeight := this.TotalWeight()
 	otherWeight := that.TotalWeight()
+	if this == nil || that == nil {
+		panic("outcomes cannot be nil")
+	}
 	for _, v := range this.Values {
 		for _, other := range that.Values {
 			result := reducer(v.Value, other.Value)
@@ -73,9 +78,9 @@ func Then[V any, U any, Z any](this *Outcomes[V], that *Outcomes[U], reducer fun
 func (o *Outcomes[V]) Partition(matcher func(v V) bool) (matched *Outcomes[V], unmatched *Outcomes[V]) {
 	for _, v := range o.Values {
 		if matcher(v.Value) {
-			matched.Add(v.Weight, v.Value)
+			matched = matched.Add(v.Weight, v.Value)
 		} else {
-			unmatched.Add(v.Weight, v.Value)
+			unmatched = unmatched.Add(v.Weight, v.Value)
 		}
 	}
 	return
@@ -94,6 +99,6 @@ func (o *Outcomes[V]) Add(weight any, value V) *Outcomes[V] {
 		// TODO - caller must check or return error
 		log.Fatalf("Invalid weight: %v.  Must be a int or a Fraction", weight)
 	}
-	o.Values = append(o.Values, WValue[V]{fracWeight, value})
+	o.Values = append(o.Values, WValue[V]{fracWeight.Factorized(), value})
 	return o
 }

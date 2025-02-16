@@ -12,7 +12,7 @@ type Fraction struct {
 	Den int64
 }
 
-var FracZero = Fraction{}
+var FracZero = Fraction{0, 1}
 var ONE = Fraction{1, 1}
 var InvalidFractionString = errors.New("invalid fraction string")
 

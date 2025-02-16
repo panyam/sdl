@@ -8,11 +8,14 @@ type HeapFile struct {
 	// Size of each page that is loaded at at iem when doing a disk io
 	PageSize int
 
+	// Number of pages in the heapfile
+	NumPages int
+
 	// How long does it take to process a record in an operation
 	RecordProcessingTime Outcomes[TimeValue]
 
 	// The disk on which the heap file exists
-	Disk *Disk
+	Disk Disk
 }
 
 type HeapFileAccessResult struct {
@@ -21,12 +24,10 @@ type HeapFileAccessResult struct {
 }
 
 func (h *HeapFile) Init() *HeapFile {
+	h.PageSize = 1024 * 1024
+	h.NumPages = 1
 	h.RecordProcessingTime.Add(100, Val(10, MilliSeconds))
 	return h
-}
-
-func (h *HeapFile) NumPages() int {
-	return max(1, h.NumEntries/h.PageSize)
 }
 
 // Now for the methods
@@ -90,11 +91,11 @@ func (h *HeapFile) Find() (out *Outcomes[HeapFileAccessResult]) {
 		return value.Success
 	})
 
-	for range h.NumPages() {
+	for range h.NumPages {
 		// Do another read and append
 		// TODO - Right now we are not taking into account the 1/NumPages chance that we can stop
 		s2, f2 := Then(successes, d1, func(this HeapFileAccessResult, that DiskAccessResult) (out HeapFileAccessResult) {
-			return
+			return HeapFileAccessResult{this.Success && that.Success, this.Latency.Add(that.Latency)}
 		}).Partition(func(value HeapFileAccessResult) bool {
 			return value.Success
 		})
@@ -137,7 +138,7 @@ func (h *HeapFile) Scan() (out *Outcomes[HeapFileAccessResult]) {
 		return value.Success
 	})
 
-	for range h.NumPages() {
+	for range h.NumPages {
 		// Do another read and append
 		// TODO - Right now we are not taking into account the 1/NumPages chance that we can stop
 		s2, f2 := Then(successes, d1, func(this HeapFileAccessResult, that DiskAccessResult) (out HeapFileAccessResult) {

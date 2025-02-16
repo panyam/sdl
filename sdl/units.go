@@ -1,6 +1,8 @@
 package sdl
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type Unit interface {
 	Type() string
@@ -42,21 +44,23 @@ func (v *Value[U]) Add(another Value[U]) (out Value[U]) {
 	out.Unit = v.Unit
 	// Convert another value to our unit
 	f2 := another.Unit.Convert(another.Fraction, v.Unit)
-	out.Fraction = v.Fraction.Plus(f2)
+	out.Fraction = v.Fraction.Plus(f2).Factorized()
 	return
 }
 
 func (v *Value[U]) TimesN(another int64) (out Value[U]) {
 	// convert another to our units
 	// Convert another value to our unit
-	out.Fraction = v.Fraction.TimesNum(another)
+	out.Unit = v.Unit
+	out.Fraction = v.Fraction.TimesNum(another).Factorized()
 	return
 }
 
 func (v *Value[U]) Times(another Fraction) (out Value[U]) {
 	// convert another to our units
 	// Convert another value to our unit
-	out.Fraction = v.Fraction.Times(another)
+	out.Unit = v.Unit
+	out.Fraction = v.Fraction.Times(another).Factorized()
 	return
 }
 
