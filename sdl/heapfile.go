@@ -30,7 +30,7 @@ func (h *HeapFile) NumPages() int {
 }
 
 // Now for the methods
-func (h *HeapFile) Insert() (out Outcomes[HeapFileAccessResult]) {
+func (h *HeapFile) Insert() (out *Outcomes[HeapFileAccessResult]) {
 	d1 := h.Disk.Read()
 	successes, failures := d1.Partition(func(value DiskAccessResult) bool {
 		return value.Success
@@ -50,7 +50,7 @@ func (h *HeapFile) Insert() (out Outcomes[HeapFileAccessResult]) {
 
 	// Apply the processing delay to
 	// Option 2 - Then is a helper method taking 2 outcomes and merging them
-	out = Then(successes, h.RecordProcessingTime, func(this DiskAccessResult, that TimeValue) (out HeapFileAccessResult) {
+	out = Then(successes, &h.RecordProcessingTime, func(this DiskAccessResult, that TimeValue) (out HeapFileAccessResult) {
 		return HeapFileAccessResult{this.Success, this.Latency.Add(that)}
 	})
 
@@ -68,7 +68,7 @@ func (h *HeapFile) Insert() (out Outcomes[HeapFileAccessResult]) {
 // Find/Searches for a record by equality
 // Similar to a scan but the allows the possibility that there is a 1 / NumPages
 // probability that an entry would be within a page
-func (h *HeapFile) Find() (out Outcomes[HeapFileAccessResult]) {
+func (h *HeapFile) Find() (out *Outcomes[HeapFileAccessResult]) {
 
 	// We can do this in a couple of ways -
 	// Option 1 - create a tree that is NPages deep - one for each call
@@ -99,24 +99,24 @@ func (h *HeapFile) Find() (out Outcomes[HeapFileAccessResult]) {
 			return value.Success
 		})
 
-		successes = Then(s2, h.RecordProcessingTime, func(this HeapFileAccessResult, that TimeValue) (out HeapFileAccessResult) {
+		successes = Then(s2, &h.RecordProcessingTime, func(this HeapFileAccessResult, that TimeValue) (out HeapFileAccessResult) {
 			return HeapFileAccessResult{this.Success, this.Latency.Add(that.TimesN(int64(h.NumEntries)))}
 		})
-		failures.Append(&f2)
+		failures.Append(f2)
 	}
 
 	// Now Add failres to the failure outcomes
-	successes.Append(&failures)
+	successes.Append(failures)
 	return successes
 }
 
-func (h *HeapFile) Delete() (out Outcomes[HeapFileAccessResult]) {
+func (h *HeapFile) Delete() (out *Outcomes[HeapFileAccessResult]) {
 	// Has the same complexity as a Find
 	return h.Find()
 }
 
 // Visits every page - for a scanning through all entries
-func (h *HeapFile) Scan() (out Outcomes[HeapFileAccessResult]) {
+func (h *HeapFile) Scan() (out *Outcomes[HeapFileAccessResult]) {
 	// We can do this in a couple of ways -
 	// Option 1 - create a tree that is NPages deep - one for each call
 	// to disk.Read()
@@ -146,13 +146,13 @@ func (h *HeapFile) Scan() (out Outcomes[HeapFileAccessResult]) {
 			return value.Success
 		})
 
-		successes = Then(s2, h.RecordProcessingTime, func(this HeapFileAccessResult, that TimeValue) (out HeapFileAccessResult) {
+		successes = Then(s2, &h.RecordProcessingTime, func(this HeapFileAccessResult, that TimeValue) (out HeapFileAccessResult) {
 			return HeapFileAccessResult{this.Success, this.Latency.Add(that.TimesN(int64(h.NumEntries)))}
 		})
-		failures.Append(&f2)
+		failures.Append(f2)
 	}
 
 	// Now Add failres to the failure outcomes
-	successes.Append(&failures)
+	successes.Append(failures)
 	return successes
 }

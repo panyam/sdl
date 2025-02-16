@@ -1,5 +1,7 @@
 package sdl
 
+import "log"
+
 // Length units
 type LengthUnit int
 
@@ -47,4 +49,12 @@ func (l LengthUnit) Type() string {
 
 func (l LengthUnit) Index() int {
 	return int(l)
+}
+
+func (u LengthUnit) Convert(value Fraction, dest Unit) Fraction {
+	factor := timeUnitConversionTable.Get(int(u), dest.Index())
+	if factor.IsZero() {
+		log.Fatalf("No conversion found between %s and %s", u.Label(), dest.Label())
+	}
+	return value.Times(factor)
 }

@@ -20,7 +20,7 @@ type Value[U Unit] struct {
 }
 
 func (v *Value[U]) Key() string {
-	return fmt.Sprintf("%f%s", v.Fraction, v.Unit.Label())
+	return fmt.Sprintf("%s%s", v.Fraction, v.Unit.Label())
 }
 
 func Val[U Unit](v int, u U) Value[U] {
@@ -65,11 +65,11 @@ type ConversionTable struct {
 	Table [][]Fraction
 }
 
-func (c ConversionTable) Init() {
+func (c *ConversionTable) Init() {
 	if c.Table == nil {
-		for i := range c.N {
+		for i := range c.N + 1 {
 			c.Table = append(c.Table, []Fraction{})
-			for range c.N {
+			for range c.N + 1 {
 				c.Table[i] = append(c.Table[i], Fraction{})
 			}
 			c.Table[i][i] = Fraction{1, 1}
@@ -77,12 +77,12 @@ func (c ConversionTable) Init() {
 	}
 }
 
-func (c ConversionTable) Set(i, j int, factor Fraction) {
+func (c *ConversionTable) Set(i, j int, factor Fraction) {
 	c.Table[i][j] = factor
 	c.Table[j][i] = factor.Inverse()
 }
 
-func (c ConversionTable) Get(i, j int) (factor Fraction) {
+func (c *ConversionTable) Get(i, j int) (factor Fraction) {
 	factor = c.Table[i][j]
 	if factor.IsZero() {
 		// TODO: evaluate it

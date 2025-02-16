@@ -32,18 +32,6 @@ func init() {
 	timeUnitConversionTable.Set(Weeks.Index(), Days.Index(), Frac(7, 1))
 }
 
-func (u TimeUnit) Convert(value Fraction, dest Unit) Fraction {
-	factor := timeUnitConversionTable.Get(int(u), dest.Index())
-	if factor.IsZero() {
-		log.Fatalf("No conversion found between %s and %s", u.Label(), dest.Label())
-	}
-	return value.Times(factor)
-}
-
-func (u TimeUnit) ConversionFactor(src, dest TimeUnit) Fraction {
-	return Fraction{}
-}
-
 func (u TimeUnit) Type() string {
 	return "Time"
 }
@@ -63,4 +51,12 @@ func (l TimeUnit) Label() string {
 
 func (t TimeUnit) Index() int {
 	return int(t)
+}
+
+func (u TimeUnit) Convert(value Fraction, dest Unit) Fraction {
+	factor := timeUnitConversionTable.Get(int(u), dest.Index())
+	if factor.IsZero() {
+		log.Fatalf("No conversion found between %s and %s", u.Label(), dest.Label())
+	}
+	return value.Times(factor)
 }

@@ -13,21 +13,20 @@ type DiskAccessResult struct {
 	Latency Value[TimeUnit]
 }
 
-func (d *Disk) Read() (out Outcomes[DiskAccessResult]) {
+func (d *Disk) Read() (out *Outcomes[DiskAccessResult]) {
 	// Option 1:
-	out.Add(900, DiskAccessResult{true, Val(1, MilliSeconds)})
-	out.Add(90, DiskAccessResult{true, Val(1, MilliSeconds)})
-	out.Add(8, DiskAccessResult{true, Val(1, MilliSeconds)})
-	out.Add(1, DiskAccessResult{false, Val(1, MilliSeconds)})
-	out.Add(1, DiskAccessResult{false, Val(1, MilliSeconds)})
-	return out
+	return out.Add(900, DiskAccessResult{true, Val(1, MilliSeconds)}).
+		Add(90, DiskAccessResult{true, Val(1, MilliSeconds)}).
+		Add(8, DiskAccessResult{true, Val(1, MilliSeconds)}).
+		Add(1, DiskAccessResult{false, Val(1, MilliSeconds)}).
+		Add(1, DiskAccessResult{false, Val(1, MilliSeconds)})
 }
 
-func (d *Disk) Write() (out Outcomes[DiskAccessResult]) {
-	out.Add(900, DiskAccessResult{true, Val(1, MilliSeconds)})
-	out.Add(90, DiskAccessResult{true, Val(10, MilliSeconds)})
-	out.Add(8, DiskAccessResult{true, Val(1000, MilliSeconds)})
-	out.Add(1, DiskAccessResult{false, Val(10, MilliSeconds)})
-	out.Add(1, DiskAccessResult{false, Val(50, MilliSeconds)})
-	return out
+func (d *Disk) Write() (out *Outcomes[DiskAccessResult]) {
+	return out.
+		Add(900, DiskAccessResult{true, Val(1, MilliSeconds)}).
+		Add(90, DiskAccessResult{true, Val(10, MilliSeconds)}).
+		Add(8, DiskAccessResult{true, Val(1000, MilliSeconds)}).
+		Add(1, DiskAccessResult{false, Val(10, MilliSeconds)}).
+		Add(1, DiskAccessResult{false, Val(50, MilliSeconds)})
 }
