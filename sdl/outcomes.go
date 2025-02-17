@@ -19,7 +19,7 @@ func (o *Outcomes[V]) TotalWeight() (out Fraction) {
 	if o == nil {
 		return FracZero
 	}
-	out.Den = 1
+	out = 0
 	for _, v := range o.Values {
 		out = out.Plus(v.Weight)
 		out = out.Factorized()
@@ -95,6 +95,8 @@ func (o *Outcomes[V]) Add(weight any, value V) *Outcomes[V] {
 		fracWeight = FracN(val)
 	} else if val, ok := weight.(int); ok {
 		fracWeight = FracN(int64(val))
+	} else if val, ok := weight.(float64); ok {
+		fracWeight = Fraction(val)
 	} else if fracWeight, ok = weight.(Fraction); !ok {
 		// TODO - caller must check or return error
 		log.Fatalf("Invalid weight: %v.  Must be a int or a Fraction", weight)

@@ -26,7 +26,7 @@ func (v *Value[U]) Key() string {
 }
 
 func Val[U Unit](v int, u U) Value[U] {
-	return Value[U]{Fraction: Fraction{int64(v), 1}, Unit: u}
+	return Value[U]{Fraction: Frac(int64(v), 1), Unit: u}
 }
 
 func Valf[U Unit](v Fraction, u U) Value[U] {
@@ -74,9 +74,9 @@ func (c *ConversionTable) Init() {
 		for i := range c.N + 1 {
 			c.Table = append(c.Table, []Fraction{})
 			for range c.N + 1 {
-				c.Table[i] = append(c.Table[i], Fraction{})
+				c.Table[i] = append(c.Table[i], 0)
 			}
-			c.Table[i][i] = Fraction{1, 1}
+			c.Table[i][i] = 1
 		}
 	}
 }
