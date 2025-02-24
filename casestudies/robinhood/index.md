@@ -5,7 +5,9 @@
 
 Robinhood is a commission-free trading platform for stocks, ETFs, options and cryptocurrencies.   Its features include real time market data and basic order management.  It is not an exchange on its own but rather a broker - it routes trades through market makers - ie exchanges and is compensated by those exchanges via a process called "payment for order flow".   Il now share some of the requirements for a V1 of the system and we can evolve it as we see fit.  How does that sound?
 
-### Requirements
+--- 
+
+## Requirements
 
 ### Functional Requirements
 
@@ -65,6 +67,8 @@ Availability and Fault Tolerance
 
 * Users can be geographically dispersed (even within US there are several regions).
 * Expect system to be fault tolerant (and avoid any single point of failures).   Availability SLO should be 5 9s (4 minutes of downtime per year)
+
+--- 
 
 ## Entities/APIs/Services
 

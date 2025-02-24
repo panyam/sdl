@@ -39,6 +39,20 @@ func (v Value[U]) Convert(toUnit U) (out Value[U]) {
 	return
 }
 
+func (v *Value[U]) LessThan(another Value[U]) bool {
+	f2 := another.Unit.Convert(another.Fraction, v.Unit)
+	return v.Fraction < f2
+}
+
+func (v *Value[U]) Minus(another Value[U]) (out Value[U]) {
+	// convert another to our units
+	out.Unit = v.Unit
+	// Convert another value to our unit
+	f2 := another.Unit.Convert(another.Fraction, v.Unit)
+	out.Fraction = v.Fraction.Minus(f2).Factorized()
+	return
+}
+
 func (v *Value[U]) Add(another Value[U]) (out Value[U]) {
 	// convert another to our units
 	out.Unit = v.Unit

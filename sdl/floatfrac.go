@@ -3,6 +3,7 @@ package sdl
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 )
@@ -137,6 +138,10 @@ func (f Fraction) IsGTNum(another int64) bool {
 
 func (f Fraction) IsGTENum(another int64) bool {
 	return f >= Fraction(another)
+}
+
+func (f Fraction) Abs() Fraction {
+	return Fraction(math.Abs(float64(f)))
 }
 
 func (f Fraction) String() string {

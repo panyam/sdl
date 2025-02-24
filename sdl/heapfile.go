@@ -1,5 +1,7 @@
 package sdl
 
+import "time"
+
 type HeapFile struct {
 	// How many entries are already in this heapfile
 	// This would determine latencies on certain operations like scan etc
@@ -12,56 +14,39 @@ type HeapFile struct {
 	NumPages int
 
 	// How long does it take to process a record in an operation
-	RecordProcessingTime Outcomes[TimeValue]
+	RecordProcessingTime Outcomes[time.Duration]
 
 	// The disk on which the heap file exists
 	Disk Disk
 }
 
-type HeapFileAccessResult struct {
-	Success bool
-	Latency TimeValue
-}
-
 func (h *HeapFile) Init() *HeapFile {
 	h.PageSize = 1024 * 1024
 	h.NumPages = 1
-	h.RecordProcessingTime.Add(100, Val(10, MilliSeconds))
+	h.RecordProcessingTime.Add(100, time.Millisecond*10)
 	return h
 }
 
 // Now for the methods
-func (h *HeapFile) Insert() (out *Outcomes[HeapFileAccessResult]) {
+func (h *HeapFile) Insert() (out *Outcomes[AccessResult]) {
 	d1 := h.Disk.Read()
-	successes, failures := d1.Partition(func(value DiskAccessResult) bool {
+	successes, failures := d1.Partition(func(value AccessResult) bool {
 		return value.Success
 	})
 
-	// We have 2 sets of outcomes - success and failures
-	// what we need to do is somehow do a cross product of the S and F lists into the "rest" of the lists
-	/* Option 1 - If Then was a member of the input Outcomes
-	out.To(func(d DiskAccessResult) HeapFileAccessResult {
-		return HeapFileAccessResult{d.Success, d.Latency}
-	})
-
-	out = out.Then(&h.RecordProcessingTime, func(this HeapFileAccessResult, that any) (out HeapFileAccessResult) {
-		return HeapFileAccessResult{this.Success, this.Latency.Add(that.(TimeValue))}
-	})
-	*/
-
 	// Apply the processing delay to
 	// Option 2 - Then is a helper method taking 2 outcomes and merging them
-	out = Then(successes, &h.RecordProcessingTime, func(this DiskAccessResult, that TimeValue) (out HeapFileAccessResult) {
-		return HeapFileAccessResult{this.Success, this.Latency.Add(that)}
+	out = Then(successes, &h.RecordProcessingTime, func(this AccessResult, that time.Duration) (out AccessResult) {
+		return AccessResult{this.Success, this.Latency + that}
 	})
 
-	out = Then(out, h.Disk.Write(), func(this HeapFileAccessResult, that DiskAccessResult) HeapFileAccessResult {
-		return HeapFileAccessResult{this.Success && that.Success, this.Latency.Add(that.Latency)}
+	out = Then(out, h.Disk.Write(), func(this AccessResult, that AccessResult) AccessResult {
+		return AccessResult{this.Success && that.Success, this.Latency + that.Latency}
 	})
 
 	// Now merge success and failues
-	for _, wv := range failures.Values {
-		out.Add(wv.Weight, HeapFileAccessResult{wv.Value.Success, wv.Value.Latency})
+	for _, wv := range failures.Buckets {
+		out.Add(wv.Weight, AccessResult{wv.Value.Success, wv.Value.Latency})
 	}
 	return out
 }
@@ -69,7 +54,7 @@ func (h *HeapFile) Insert() (out *Outcomes[HeapFileAccessResult]) {
 // Find/Searches for a record by equality
 // Similar to a scan but the allows the possibility that there is a 1 / NumPages
 // probability that an entry would be within a page
-func (h *HeapFile) Find() (out *Outcomes[HeapFileAccessResult]) {
+func (h *HeapFile) Find() (out *Outcomes[AccessResult]) {
 
 	// We can do this in a couple of ways -
 	// Option 1 - create a tree that is NPages deep - one for each call
@@ -85,23 +70,23 @@ func (h *HeapFile) Find() (out *Outcomes[HeapFileAccessResult]) {
 
 	// Get the disk read's outcomes and we can reuse them each time
 	d1 := h.Disk.Read()
-	successes, failures := Convert(d1, func(dar DiskAccessResult) HeapFileAccessResult {
-		return HeapFileAccessResult{dar.Success, dar.Latency}
-	}).Partition(func(value HeapFileAccessResult) bool {
+	successes, failures := Convert(d1, func(dar AccessResult) AccessResult {
+		return AccessResult{dar.Success, dar.Latency}
+	}).Partition(func(value AccessResult) bool {
 		return value.Success
 	})
 
 	for range h.NumPages {
 		// Do another read and append
 		// TODO - Right now we are not taking into account the 1/NumPages chance that we can stop
-		s2, f2 := Then(successes, d1, func(this HeapFileAccessResult, that DiskAccessResult) (out HeapFileAccessResult) {
-			return HeapFileAccessResult{this.Success && that.Success, this.Latency.Add(that.Latency)}
-		}).Partition(func(value HeapFileAccessResult) bool {
+		s2, f2 := Then(successes, d1, func(this AccessResult, that AccessResult) (out AccessResult) {
+			return AccessResult{this.Success && that.Success, this.Latency + that.Latency}
+		}).Partition(func(value AccessResult) bool {
 			return value.Success
 		})
 
-		successes = Then(s2, &h.RecordProcessingTime, func(this HeapFileAccessResult, that TimeValue) (out HeapFileAccessResult) {
-			return HeapFileAccessResult{this.Success, this.Latency.Add(that.TimesN(int64(h.NumEntries)))}
+		successes = Then(s2, &h.RecordProcessingTime, func(this AccessResult, that time.Duration) (out AccessResult) {
+			return AccessResult{this.Success, this.Latency + (that * time.Duration(h.NumEntries))}
 		})
 		failures.Append(f2)
 	}
@@ -111,13 +96,13 @@ func (h *HeapFile) Find() (out *Outcomes[HeapFileAccessResult]) {
 	return successes
 }
 
-func (h *HeapFile) Delete() (out *Outcomes[HeapFileAccessResult]) {
+func (h *HeapFile) Delete() (out *Outcomes[AccessResult]) {
 	// Has the same complexity as a Find
 	return h.Find()
 }
 
 // Visits every page - for a scanning through all entries
-func (h *HeapFile) Scan() (out *Outcomes[HeapFileAccessResult]) {
+func (h *HeapFile) Scan() (out *Outcomes[AccessResult]) {
 	// We can do this in a couple of ways -
 	// Option 1 - create a tree that is NPages deep - one for each call
 	// to disk.Read()
@@ -132,23 +117,23 @@ func (h *HeapFile) Scan() (out *Outcomes[HeapFileAccessResult]) {
 
 	// Get the disk read's outcomes and we can reuse them each time
 	d1 := h.Disk.Read()
-	successes, failures := Convert(d1, func(dar DiskAccessResult) HeapFileAccessResult {
-		return HeapFileAccessResult{dar.Success, dar.Latency}
-	}).Partition(func(value HeapFileAccessResult) bool {
+	successes, failures := Convert(d1, func(dar AccessResult) AccessResult {
+		return AccessResult{dar.Success, dar.Latency}
+	}).Partition(func(value AccessResult) bool {
 		return value.Success
 	})
 
 	for range h.NumPages {
 		// Do another read and append
 		// TODO - Right now we are not taking into account the 1/NumPages chance that we can stop
-		s2, f2 := Then(successes, d1, func(this HeapFileAccessResult, that DiskAccessResult) (out HeapFileAccessResult) {
+		s2, f2 := Then(successes, d1, func(this AccessResult, that AccessResult) (out AccessResult) {
 			return
-		}).Partition(func(value HeapFileAccessResult) bool {
+		}).Partition(func(value AccessResult) bool {
 			return value.Success
 		})
 
-		successes = Then(s2, &h.RecordProcessingTime, func(this HeapFileAccessResult, that TimeValue) (out HeapFileAccessResult) {
-			return HeapFileAccessResult{this.Success, this.Latency.Add(that.TimesN(int64(h.NumEntries)))}
+		successes = Then(s2, &h.RecordProcessingTime, func(this AccessResult, that time.Duration) (out AccessResult) {
+			return AccessResult{this.Success, this.Latency + (that * time.Duration(h.NumEntries))}
 		})
 		failures.Append(f2)
 	}

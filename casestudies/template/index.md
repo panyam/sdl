@@ -1,9 +1,18 @@
 
-# Design <Product Name>
+# Design ((Product Name))
 
 <span style="color: red">**Describe the problem here.  More info the better**</span>
 
 Bit.ly is a URL shortening service that converts long URLs into shorter, manageable links. It also provides analytics for the shortened URLs.
+
+---
+
+
+
+
+
+
+---
 
 ## Requirements (~5 minutes)
 
@@ -89,6 +98,14 @@ real-time prices, creating trades, and listing a user's trade history—and
 describe the core entities you'll use to model this system? Feel free to start
 with any endpoint you prefer and explain your design choices.
 ```
+
+
+
+
+---
+
+
+
 
 ## API/Interface/Entities (2-3 minutes)
 
@@ -195,7 +212,16 @@ service Bitly {
 
 Now id like to move on to the HLD that will addresses how these APIs will work along with details on correctness, freshness etc.  This will be starting point to address bottlenecks to scale etc.
 
-### High Level Design (~ 5-10 minutes)
+
+
+
+
+---
+
+
+
+
+## High Level Design (~ 5-10 minutes)
 
 Next is the high level design.   Our goal should be at this point we have "mvp" of what works.  This should have:
 
@@ -213,6 +239,13 @@ An example is below:
 In this section refer to all DBs as Stores. Eg FeedStore, IDStore, URLStore etc.  Reason
 is we want the option of bringing in what "kind" of store it is based on the access
 patterns - eg InMemStore, KVStore, RelationalStore (SQL) etc.
+
+---
+
+
+
+
+
 
 ## Deep Dives
 
