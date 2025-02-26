@@ -13,10 +13,6 @@ import (
 // manage outcome sizes and afterall we just need a distribution rather than something
 // highly accurate.  There are several strategies here.
 
-type Reducer[V any] interface {
-	Reduce(input *Outcomes[V], numBuckets int) *Outcomes[V]
-}
-
 type SignificanceFunction[V any] = func(o *Outcomes[V], index int) float64
 
 // Adaptively reduce an outcome to fit into a set number of buckets.

@@ -1,6 +1,7 @@
 package sdl
 
 import (
+	"math"
 	"time"
 )
 
@@ -31,4 +32,36 @@ func ReduceAccessResults(input *Outcomes[AccessResult], numBuckets int) (out *Ou
 	successes = AdaptiveReduce(successes, numBuckets, AccessResultSignificance)
 	failures = AdaptiveReduce(failures, numBuckets, AccessResultSignificance)
 	return out.Append(successes).Append(failures)
+}
+
+func MergeAdjacentAccessResults(input *Outcomes[AccessResult], maxError float64) (out *Outcomes[AccessResult]) {
+	L := input.Len()
+	if L <= 1 {
+		return input
+	}
+	out = out.Add(input.Buckets[0].Weight, input.Buckets[0].Value)
+	for i := 1; i < L; i++ {
+		current := input.Buckets[i]
+		previous := out.Buckets[len(out.Buckets)-1]
+		if current.Value.Success != previous.Value.Success {
+			out = out.Add(current.Weight, current.Value)
+			continue
+		}
+
+		mergedLatency := (float64(previous.Value.Latency)*previous.Weight +
+			float64(current.Value.Latency)*current.Weight) /
+			(previous.Weight + current.Weight)
+		err := math.Abs(mergedLatency-float64(previous.Value.Latency))*previous.Weight +
+			math.Abs(mergedLatency-float64(current.Value.Latency))*current.Weight
+		if err <= maxError {
+			out.Buckets[len(out.Buckets)-1].Weight = previous.Weight + current.Weight
+			out.Buckets[len(out.Buckets)-1].Value = AccessResult{
+				Success: current.Value.Success,
+				Latency: time.Duration(mergedLatency * float64(time.Second)),
+			}
+		} else {
+			out = out.Add(current.Weight, current.Value)
+		}
+	}
+	return
 }
