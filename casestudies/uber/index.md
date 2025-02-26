@@ -1,36 +1,16 @@
 
-# Design ((Product Name))
+# Design Uber
 
-<span style="color: red">**Describe the problem here.  More info the better**</span>
-
-Bit.ly is a URL shortening service that converts long URLs into shorter, manageable links. It also provides analytics for the shortened URLs.
-
----
-
-
-
-
-
-
----
-
-<D-c>
+## Requirements (~5 minutes)
 
 ### Functional Requirements (~2-3 minutes)
 
-<span style="color: red">**Describe functional requirements here.  Few things to watch for.**</span>
-
-<span style="color: red">**WARNINGS:**</span>
-
-* Dont be too narrow - It is very easy to think about exactly what the problem and nothing else for context.   Doesnt mean you have to design a v100 problem on day one but understand possible user concerns here to guide why you are building the product and then go with what you are building so requirements are clearer and tangible.
-* Dont be too generic - Very easy to build V100 of a product as you are just adding more and more requirements so you dont look dumb.  Keep it simple - just rounded.
-* Depending on interviewer for input: Unless the interview starts off with a set of requirements, they are looking you to drive it so come up with things with your understanding of why (pretty much based on experience as an authority figure)
-
 The functional requirements are:
 
-1. User should be able to do 1, 2, 3
-2. System should handle/allow 1, 2, 3
-3. Any third party constraints (eg Robinhood connecting to exchanges)
+1. Riders should be able to input a start location and a destination and get a fare estimate.
+2. Riders should be able to request a ride based on the estimated fare.
+3. Upon request, riders should be matched with a driver who is nearby and available.
+4. Drivers should be able to accept/decline a request and navigate to pickup/drop-off.
 
 Scale Requirements:
 
@@ -40,19 +20,12 @@ Scale Requirements:
 
 ### Extensions (Out of scope)
 
-<span style="color: red">**WARNINGS:**</span>
-
-At this point you may be asked for how about "X" - eg authentication, compliance, logging etc.  This is risky at senior levels as you are giving control back to the interviewer.
-
-To circumvent that we can call out some out-of-scope things/extensions (eg we want to mention for showing our expertise on what a real world "production" service looks like).  Eg with something like:
-
-
-"Before I go into NFR I want to call out some extensions that I would prefer not being in scope:"
 
 Functional:
-1) Auditability/Compliance - especially for user generated entities (trades - are they legal, posts - CSAM?, blogs - copyright etc)
-2) Analytics - For the entities a user creates what kind of analytics can be done.  Typical are - top N kind of problems.
-3) Authentication/Access Control - user management
+1) Riders should be able to rate their ride and driver post-trip.
+2) Drivers should be able to rate passengers.
+3) Riders should be able to schedule rides in advance.
+4) Riders should be able to request different categories of rides (e.g., X, XL, Comfort).
 
 Non Functional:
 1) Observability - So we can ensure reliability, uptime, attacks etc
@@ -61,10 +34,7 @@ Non Functional:
 
 Both:
 1) Tiered SLOs (usage/pricing/billing etc)
-
-If this is ok Id like to jump into the NFR and Operational requirements, especially where we deal with SLOs, Latency Targets, Availability, Scalability, Fault tolerance and others.
-
-**NOTE** - To maximize silent-ack - Important to call out "where we deal with others...." so you are preempting the interviewer from saying what you are going to and ensure being in the driver seat.
+2) Dynamic Pricing
 
 ### Non functional requirements (~2-3 minutes)
 
@@ -77,33 +47,6 @@ If this is ok Id like to jump into the NFR and Operational requirements, especia
 * Scalable - Address scalability for the scale requirement numbers and SLOs on CRUD operations (again why it affects product/platform/user experience goodness)
 * Geo capabilities - Part of scalability is address how users in various regions are affected etc.
   * Also has impact on freshness/consistency
-
-<span style="color: red">**WARNINGS:**</span>
-
-* Unless problem statement comes up with some quantitative requirement you have to provide some. This includes SLOs, QPSes, Usage numbers
-
-Consider framing/grouping like below:
-
-**Latency Targets:** What are your expectations for the response times for price updates and trade creation? How critical is near-real-time performance here?
-
-**Throughput and Scalability:** With the estimated load, what kind of throughput numbers are you targeting, and how would you design the system to scale effectively?
-
-**Availability and Fault Tolerance:** What measures would you implement to ensure the system remains highly available and can gracefully handle failures?
-
-**GOOD EXPECTED INTERVIEWER ACK**
-```
-That sounds great. Let's move on to the API and entity design. Could you walk
-me through your proposed API definitions—such as the endpoints for retrieving
-real-time prices, creating trades, and listing a user's trade history—and
-describe the core entities you'll use to model this system? Feel free to start
-with any endpoint you prefer and explain your design choices.
-```
-
-
-
-
----
-
 
 
 

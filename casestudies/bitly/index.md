@@ -58,14 +58,14 @@ service Bitly {
 ### High Level Design
 
 ![alt High Level Design](./hld.png "High Level Design")
+<a href="https://excalidraw.com/#json=sHhxf0boLbIl4vQaMOUwG,wpN0an9rUA1i9H_4Csd2CA" target="_blank">Edit</a>
+
 
 ## Deep Dives
 
 Here we will be asked what are the things to dive on and explain how our design addresses requirements.
 
 1. How do we ensure each shortened URL is short and unique
-
-3 Options:
 
 ### Option 1: Setup a global counter and increment transactionally on each call
 
