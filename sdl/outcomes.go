@@ -13,6 +13,14 @@ type Outcomes[V any] struct {
 	Buckets []Bucket[V]
 }
 
+func (o *Outcomes[V]) Copy() *Outcomes[V] {
+	out := Outcomes[V]{}
+	for _, bucket := range o.Buckets {
+		out.Buckets = append(out.Buckets, bucket)
+	}
+	return &out
+}
+
 func (o *Outcomes[V]) Len() int {
 	return len(o.Buckets)
 }
@@ -51,21 +59,9 @@ func (this *Outcomes[V]) Append(another *Outcomes[V]) *Outcomes[V] {
 	return this
 }
 
-/*
-func (this *Outcomes[V]) Then(that *Outcomes[any], reducer func(v V, other any) V) (out *Outcomes[V]) {
-	thisWeight := this.TotalWeight()
-	otherWeight := that.TotalWeight()
-	for _, v := range this.Buckets {
-		for _, other := range that.Buckets {
-			result := reducer(v.Value, other.Value)
-			out = out.Add(other.Weight/(otherWeight)*(thisWeight), result)
-		}
-	}
-	return
-}
-*/
+type CombineSequential[A any, B any, C any] = func(A, B) C
 
-func Then[V any, U any, Z any](this *Outcomes[V], that *Outcomes[U], reducer func(v V, other U) Z) (out *Outcomes[Z]) {
+func Then[V any, U any, Z any](this *Outcomes[V], that *Outcomes[U], reducer CombineSequential[V, U, Z]) (out *Outcomes[Z]) {
 	thisWeight := this.TotalWeight()
 	otherWeight := that.TotalWeight()
 	if this == nil || that == nil {
