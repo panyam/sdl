@@ -2,15 +2,14 @@ package sdl
 
 import (
 	"math"
-	"time"
 )
 
 // A result type with latency ranges instead of absolute latency
 type RangedResult struct {
 	Success     bool
-	MinLatency  time.Duration
-	ModeLatency time.Duration
-	MaxLatency  time.Duration
+	MinLatency  Duration
+	ModeLatency Duration
+	MaxLatency  Duration
 }
 
 func CombineSequentialRangedResults(a RangedResult, b RangedResult) RangedResult {
@@ -43,9 +42,9 @@ func (r *RangedResult) Overlap(r2 *RangedResult) float64 {
 
 // Distance of this range from another
 func (r *RangedResult) DistTo(another *RangedResult) float64 {
-	minDist := (r.MinLatency - another.MinLatency).Abs()
-	modeDist := (r.ModeLatency - another.ModeLatency).Abs()
-	maxDist := (r.MaxLatency - another.MaxLatency).Abs()
+	minDist := math.Abs(r.MinLatency - another.MinLatency)
+	modeDist := math.Abs(r.ModeLatency - another.ModeLatency)
+	maxDist := math.Abs(r.MaxLatency - another.MaxLatency)
 
 	// Give more weight to mode, as it's the most representative
 	return float64((minDist + 4.0*modeDist + maxDist) / 6.0)
@@ -104,7 +103,7 @@ func MergeOverlappingRangedResults(input *Outcomes[RangedResult], overlapThresho
 				// Weight the merged range by probability
 				mergedBucket.Value.MinLatency = MinDuration(mergedBucket.Value.MinLatency, next.Value.MinLatency)
 				mergedBucket.Value.MaxLatency = MaxDuration(mergedBucket.Value.MaxLatency, next.Value.MaxLatency)
-				mergedBucket.Value.ModeLatency = time.Duration((float64(mergedBucket.Value.ModeLatency)*mergedBucket.Weight + float64(next.Value.ModeLatency)*next.Weight) / totalWeight)
+				mergedBucket.Value.ModeLatency = ((mergedBucket.Value.ModeLatency)*mergedBucket.Weight + (next.Value.ModeLatency)*next.Weight) / totalWeight
 				mergedBucket.Weight = totalWeight
 				usedIndices[j] = true
 			}

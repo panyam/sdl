@@ -1,29 +1,46 @@
 package sdl
 
-import "time"
+import (
+	"sort"
+)
 
 type HeapFile struct {
 	// How many entries are already in this heapfile
 	// This would determine latencies on certain operations like scan etc
-	NumEntries int
+	NumRecords uint
 
-	// Size of each page that is loaded at at iem when doing a disk io
-	PageSize int
+	// Size of each record
+	RecordSize uint
 
-	// Number of pages in the heapfile
-	NumPages int
+	// Size of each page (in bytes) that is loaded at at iem when doing a disk io
+	PageSize uint64
 
 	// How long does it take to process a record in an operation
-	RecordProcessingTime Outcomes[time.Duration]
+	RecordProcessingTime Outcomes[Duration]
 
 	// The disk on which the heap file exists
 	Disk Disk
+
+	// Max size of our outcomes
+	MaxOutcomeLen int
+}
+
+func (h *HeapFile) RecordsPerPage() uint64 {
+	return h.PageSize / uint64(h.RecordSize)
+}
+
+func (h *HeapFile) NumPages() uint {
+	return uint(1 + uint64(h.NumRecords*h.RecordSize)/h.PageSize)
 }
 
 func (h *HeapFile) Init() *HeapFile {
+	// Say size of a page is 1MB
+	h.MaxOutcomeLen = 5
 	h.PageSize = 1024 * 1024
-	h.NumPages = 1
-	h.RecordProcessingTime.Add(100, time.Millisecond*10)
+	// Number of entries = 1M in this heapfile as a default
+	h.NumRecords = 1000000
+	h.RecordSize = 1024 // each record is 1kb by default
+	h.RecordProcessingTime.Add(100, Nanos(1000))
 	return h
 }
 
@@ -36,13 +53,11 @@ func (h *HeapFile) Insert() (out *Outcomes[AccessResult]) {
 
 	// Apply the processing delay to
 	// Option 2 - Then is a helper method taking 2 outcomes and merging them
-	out = Then(successes, &h.RecordProcessingTime, func(this AccessResult, that time.Duration) (out AccessResult) {
+	out = Then(successes, &h.RecordProcessingTime, func(this AccessResult, that Duration) (out AccessResult) {
 		return AccessResult{this.Success, this.Latency + that}
 	})
 
-	out = Then(out, h.Disk.Write(), func(this AccessResult, that AccessResult) AccessResult {
-		return AccessResult{this.Success && that.Success, this.Latency + that.Latency}
-	})
+	out = Then(out, h.Disk.Write(), CombineSequentialAccessResults)
 
 	// Now merge success and failues
 	for _, wv := range failures.Buckets {
@@ -76,7 +91,8 @@ func (h *HeapFile) Find() (out *Outcomes[AccessResult]) {
 		return value.Success
 	})
 
-	for range h.NumPages {
+	rpp := float64(h.RecordsPerPage())
+	for range h.NumPages() {
 		// Do another read and append
 		// TODO - Right now we are not taking into account the 1/NumPages chance that we can stop
 		s2, f2 := Then(successes, d1, func(this AccessResult, that AccessResult) (out AccessResult) {
@@ -85,10 +101,27 @@ func (h *HeapFile) Find() (out *Outcomes[AccessResult]) {
 			return value.Success
 		})
 
-		successes = Then(s2, &h.RecordProcessingTime, func(this AccessResult, that time.Duration) (out AccessResult) {
-			return AccessResult{this.Success, this.Latency + (that * time.Duration(h.NumEntries))}
+		successes = Then(s2, &h.RecordProcessingTime, func(this AccessResult, that Duration) (out AccessResult) {
+			return AccessResult{this.Success, this.Latency + (that * rpp)}
 		})
-		failures.Append(f2)
+		failures = failures.Append(f2)
+		// log.Println("Num S, F: ", successes.Len(), failures.Len())
+
+		// Now merge them
+		if successes.Len() > h.MaxOutcomeLen {
+			sort.Slice(successes.Buckets, func(i, j int) bool {
+				return successes.Buckets[i].Value.Latency < successes.Buckets[j].Value.Latency
+			})
+			successes = MergeAdjacentAccessResults(successes, 0.8)
+			successes = ReduceAccessResults(successes, h.MaxOutcomeLen)
+		}
+		if failures.Len() > 3 {
+			sort.Slice(failures.Buckets, func(i, j int) bool {
+				return failures.Buckets[i].Value.Latency < failures.Buckets[j].Value.Latency
+			})
+			failures = MergeAdjacentAccessResults(failures, 0.8)
+			failures = ReduceAccessResults(failures, 3)
+		}
 	}
 
 	// Now Add failres to the failure outcomes
@@ -123,7 +156,8 @@ func (h *HeapFile) Scan() (out *Outcomes[AccessResult]) {
 		return value.Success
 	})
 
-	for range h.NumPages {
+	rpp := float64(h.RecordsPerPage())
+	for range h.NumPages() {
 		// Do another read and append
 		// TODO - Right now we are not taking into account the 1/NumPages chance that we can stop
 		s2, f2 := Then(successes, d1, func(this AccessResult, that AccessResult) (out AccessResult) {
@@ -132,8 +166,8 @@ func (h *HeapFile) Scan() (out *Outcomes[AccessResult]) {
 			return value.Success
 		})
 
-		successes = Then(s2, &h.RecordProcessingTime, func(this AccessResult, that time.Duration) (out AccessResult) {
-			return AccessResult{this.Success, this.Latency + (that * time.Duration(h.NumEntries))}
+		successes = Then(s2, &h.RecordProcessingTime, func(this AccessResult, that Duration) (out AccessResult) {
+			return AccessResult{this.Success, this.Latency + (that * rpp)}
 		})
 		failures.Append(f2)
 	}

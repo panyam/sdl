@@ -2,13 +2,12 @@ package sdl
 
 import (
 	"math"
-	"time"
 )
 
 // A result with absolute latency
 type AccessResult struct {
 	Success bool
-	Latency time.Duration
+	Latency Duration
 }
 
 func CombineSequentialAccessResults(a AccessResult, b AccessResult) AccessResult {
@@ -16,8 +15,8 @@ func CombineSequentialAccessResults(a AccessResult, b AccessResult) AccessResult
 }
 
 func AccessResultSignificance(o *Outcomes[AccessResult], i int) float64 {
-	prevDelta := float64((o.Buckets[i].Value.Latency - o.Buckets[i-1].Value.Latency).Abs())
-	nextDelta := float64((o.Buckets[i].Value.Latency - o.Buckets[i+1].Value.Latency).Abs())
+	prevDelta := math.Abs(o.Buckets[i].Value.Latency - o.Buckets[i-1].Value.Latency)
+	nextDelta := math.Abs(o.Buckets[i].Value.Latency - o.Buckets[i+1].Value.Latency)
 	return max(prevDelta, nextDelta)
 }
 
@@ -51,16 +50,22 @@ func MergeAdjacentAccessResults(input *Outcomes[AccessResult], maxError float64)
 		mergedLatency := (float64(previous.Value.Latency)*previous.Weight +
 			float64(current.Value.Latency)*current.Weight) /
 			(previous.Weight + current.Weight)
-		err := math.Abs(mergedLatency-float64(previous.Value.Latency))*previous.Weight +
+		absoluteErr := math.Abs(mergedLatency-float64(previous.Value.Latency))*previous.Weight +
 			math.Abs(mergedLatency-float64(current.Value.Latency))*current.Weight
-		if err <= maxError {
+
+		// Normalizing to local range - can choose other methods too
+		bucketDistance := math.Abs(current.Value.Latency - previous.Value.Latency)
+		normalizedError := absoluteErr / float64(bucketDistance)
+
+		// Now calculate normalized error between 0 and 1
+		if absoluteErr > normalizedError {
+			out = out.Add(current.Weight, current.Value)
+		} else {
 			out.Buckets[len(out.Buckets)-1].Weight = previous.Weight + current.Weight
 			out.Buckets[len(out.Buckets)-1].Value = AccessResult{
 				Success: current.Value.Success,
-				Latency: time.Duration(mergedLatency * float64(time.Second)),
+				Latency: mergedLatency,
 			}
-		} else {
-			out = out.Add(current.Weight, current.Value)
 		}
 	}
 	return

@@ -22,7 +22,7 @@ func AdaptiveReduce[V any](o *Outcomes[V], maxBuckets int, sigFunc SignificanceF
 		Importance float64
 	}
 
-	if len(o.Buckets) <= maxBuckets {
+	if o.Len() <= maxBuckets {
 		return o
 	}
 

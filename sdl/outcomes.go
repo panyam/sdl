@@ -22,6 +22,9 @@ func (o *Outcomes[V]) Copy() *Outcomes[V] {
 }
 
 func (o *Outcomes[V]) Len() int {
+	if o == nil {
+		return 0
+	}
 	return len(o.Buckets)
 }
 
@@ -103,11 +106,13 @@ func (o *Outcomes[V]) Filter(filter func(v Bucket[V]) bool) (out *Outcomes[V], t
 
 // Partition into outcomes that match a certain cond vs those that do not
 func (o *Outcomes[V]) Partition(matcher func(v V) bool) (matched *Outcomes[V], unmatched *Outcomes[V]) {
-	for _, v := range o.Buckets {
-		if matcher(v.Value) {
-			matched = matched.Add(v.Weight, v.Value)
-		} else {
-			unmatched = unmatched.Add(v.Weight, v.Value)
+	if o != nil {
+		for _, v := range o.Buckets {
+			if matcher(v.Value) {
+				matched = matched.Add(v.Weight, v.Value)
+			} else {
+				unmatched = unmatched.Add(v.Weight, v.Value)
+			}
 		}
 	}
 	return
