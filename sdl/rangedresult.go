@@ -12,13 +12,17 @@ type RangedResult struct {
 	MaxLatency  Duration
 }
 
-func CombineSequentialRangedResults(a RangedResult, b RangedResult) RangedResult {
+func AndRangedResults(a RangedResult, b RangedResult) RangedResult {
 	return RangedResult{
 		a.Success && b.Success,
 		a.MinLatency + b.MinLatency,
 		a.ModeLatency + b.ModeLatency,
 		a.MaxLatency + b.MaxLatency,
 	}
+}
+
+func (r RangedResult) IsSuccess() bool {
+	return r.Success
 }
 
 func (r *RangedResult) Range() float64 {

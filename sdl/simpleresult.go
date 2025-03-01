@@ -10,8 +10,16 @@ type AccessResult struct {
 	Latency Duration
 }
 
-func CombineSequentialAccessResults(a AccessResult, b AccessResult) AccessResult {
+func AndAccessResults(a AccessResult, b AccessResult) AccessResult {
 	return AccessResult{a.Success && b.Success, a.Latency + b.Latency}
+}
+
+func (a AccessResult) IsSuccess() bool {
+	return a.Success
+}
+
+func (a AccessResult) AddLatency(latency Duration) AccessResult {
+	return AccessResult{a.Success, a.Latency + latency}
 }
 
 func AccessResultSignificance(o *Outcomes[AccessResult], i int) float64 {

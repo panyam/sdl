@@ -13,6 +13,8 @@ import (
 // manage outcome sizes and afterall we just need a distribution rather than something
 // highly accurate.  There are several strategies here.
 
+type ReducerFunc[A any, B any, C any] = func(A, B) C
+
 type SignificanceFunction[V any] = func(o *Outcomes[V], index int) float64
 
 // Adaptively reduce an outcome to fit into a set number of buckets.
