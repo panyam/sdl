@@ -1,8 +1,6 @@
 package sdl
 
-import (
-	"sort"
-)
+import "math"
 
 type SortedFile struct {
 	Index
@@ -26,135 +24,68 @@ func (s *SortedFile) Init() *SortedFile {
 	return s
 }
 
-// Now for the methods
-func (h *SortedFile) Insert() (out *Outcomes[AccessResult]) {
-	d1 := h.Disk.Read()
-	successes, failures := d1.Partition(func(value AccessResult) bool {
-		return value.Success
-	})
+// Visits every page - for a scanning through all entries
+func (h *SortedFile) Scan() (out *Outcomes[AccessResult]) {
+	// Get the disk read's outcomes and we can reuse them each time
+	out = h.Disk.Read()
 
-	// Apply the processing delay to
-	// Option 2 - And is a helper method taking 2 outcomes and merging them
-	out = And(successes, &h.RecordProcessingTime, func(this AccessResult, that Duration) (out AccessResult) {
-		return AccessResult{this.Success, this.Latency + that}
-	})
-
-	out = And(out, h.Disk.Write(), AndAccessResults)
-
-	// Now merge success and failues
-	for _, wv := range failures.Buckets {
-		out.Add(wv.Weight, AccessResult{wv.Value.Success, wv.Value.Latency})
+	// Read all pages
+	for range h.NumPages() {
+		// Do another read and append
+		// TODO - Right now we are not taking into account the 1/NumPages chance that we can stop
+		out = out.If(AccessResult.IsSuccess,
+			And(h.Disk.Read(), &h.RecordProcessingTime, AccessResult.AddLatency), nil,
+			AndAccessResults)
 	}
 	return out
 }
 
-// Find/Searches for a record by equality
-// Similar to a scan but the allows the possibility that there is a 1 / NumPages
-// probability that an entry would be within a page
+// Assuming the sorting is on the key being searched for
+// This means we can do a bisection to find the item
+//
+//	Find() {
+//		for i := range Log2(NumPages()) {
+//			if Read()  == "Failure" {
+//				return
+//			}
+//			rec = SearchPage()		// needs RecordProcessingTime * Log2(RecordsPerPage)
+//			if rec.Found {
+//				return
+//			}
+//		}
+//	}
 func (h *SortedFile) Find() (out *Outcomes[AccessResult]) {
+	out = h.Disk.Read()
+	pagesLeft := h.NumPages()
+	log2R := math.Log2(float64(h.RecordsPerPage()))
+	for pagesLeft > 0 {
+		pagesLeft /= 2
 
-	// We can do this in a couple of ways -
-	// Option 1 - create a tree that is NPages deep - one for each call
-	// to disk.Read()
-	// However this could "Explode" our tree - even with a distribution with 3 buckets,
-	// at NumPages = 10 (eg 1Mb page with 10Mb disk) we have a 10 level deep tree with about 60k nodes
-	// Realistically at 1Mb pages - with a 1GB disk - we are talking baout 1000 pages, 3^1000 = crazy big!!!
-	//
-	// Option 2 - Calculate disk read prob ones - and then calculate after N repetition mathematically
-	// TODO - Need to refresh math here
-	//
-	// Option 3 - Prune/Reduce after each (or few) levels into a few buckets
+		// Read the page
+		successes, failures := out.If(AccessResult.IsSuccess,
+			And(h.Disk.Read(), &h.RecordProcessingTime, func(a AccessResult, latency Duration) AccessResult {
+				return AccessResult{a.Success, a.Latency + (log2R * latency)}
+			}),
+			nil,
+			AndAccessResults).Split(AccessResult.IsSuccess)
 
-	// Get the disk read's outcomes and we can reuse them each time
-	d1 := h.Disk.Read()
-	successes, failures := Convert(d1, func(dar AccessResult) AccessResult {
-		return AccessResult{dar.Success, dar.Latency}
-	}).Partition(func(value AccessResult) bool {
-		return value.Success
-	})
-
-	rpp := float64(h.RecordsPerPage())
-	for range h.NumPages() {
-		// Do another read and append
-		// TODO - Right now we are not taking into account the 1/NumPages chance that we can stop
-		s2, f2 := And(successes, d1, func(this AccessResult, that AccessResult) (out AccessResult) {
-			return AccessResult{this.Success && that.Success, this.Latency + that.Latency}
-		}).Partition(func(value AccessResult) bool {
-			return value.Success
-		})
-
-		successes = And(s2, &h.RecordProcessingTime, func(this AccessResult, that Duration) (out AccessResult) {
-			return AccessResult{this.Success, this.Latency + (that * rpp)}
-		})
-		failures = failures.Append(f2)
-		// log.Println("Num S, F: ", successes.Len(), failures.Len())
-
-		// Now merge them
-		if successes.Len() > h.MaxOutcomeLen {
-			sort.Slice(successes.Buckets, func(i, j int) bool {
-				return successes.Buckets[i].Value.Latency < successes.Buckets[j].Value.Latency
-			})
-			successes = MergeAdjacentAccessResults(successes, 0.8)
-			successes = ReduceAccessResults(successes, h.MaxOutcomeLen)
-		}
-		if failures.Len() > 3 {
-			sort.Slice(failures.Buckets, func(i, j int) bool {
-				return failures.Buckets[i].Value.Latency < failures.Buckets[j].Value.Latency
-			})
-			failures = MergeAdjacentAccessResults(failures, 0.8)
-			failures = ReduceAccessResults(failures, 3)
-		}
+		// Trim if need be
+		successes = TrimToSize(100, h.MaxOutcomeLen)(successes)
+		failures = TrimToSize(100, h.MaxOutcomeLen)(failures)
+		out = successes.Append(failures)
 	}
-
-	// Now Add failres to the failure outcomes
-	successes.Append(failures)
-	return successes
+	return
 }
 
-func (h *SortedFile) Delete() (out *Outcomes[AccessResult]) {
-	// Has the same complexity as a Find
+// Insert an entry into a sorted file.
+// Thsi
+func (h *SortedFile) Insert() (out *Outcomes[AccessResult]) {
+	// Even though "finding" the right place can happen logarithmically
+	// after a find, all records after it have to be shifted
 	return h.Find()
 }
 
-// Visits every page - for a scanning through all entries
-func (h *SortedFile) Scan() (out *Outcomes[AccessResult]) {
-	// We can do this in a couple of ways -
-	// Option 1 - create a tree that is NPages deep - one for each call
-	// to disk.Read()
-	// However this could "Explode" our tree - even with a distribution with 3 buckets,
-	// at NumPages = 10 (eg 1Mb page with 10Mb disk) we have a 10 level deep tree with about 60k nodes
-	// Realistically at 1Mb pages - with a 1GB disk - we are talking baout 1000 pages, 3^1000 = crazy big!!!
-	//
-	// Option 2 - Calculate disk read prob ones - and then calculate after N repetition mathematically
-	// TODO - Need to refresh math here
-	//
-	// Option 3 - Prune/Reduce after each (or few) levels into a few buckets
-
-	// Get the disk read's outcomes and we can reuse them each time
-	d1 := h.Disk.Read()
-	successes, failures := Convert(d1, func(dar AccessResult) AccessResult {
-		return AccessResult{dar.Success, dar.Latency}
-	}).Partition(func(value AccessResult) bool {
-		return value.Success
-	})
-
-	rpp := float64(h.RecordsPerPage())
-	for range h.NumPages() {
-		// Do another read and append
-		// TODO - Right now we are not taking into account the 1/NumPages chance that we can stop
-		s2, f2 := And(successes, d1, func(this AccessResult, that AccessResult) (out AccessResult) {
-			return
-		}).Partition(func(value AccessResult) bool {
-			return value.Success
-		})
-
-		successes = And(s2, &h.RecordProcessingTime, func(this AccessResult, that Duration) (out AccessResult) {
-			return AccessResult{this.Success, this.Latency + (that * rpp)}
-		})
-		failures.Append(f2)
-	}
-
-	// Now Add failres to the failure outcomes
-	successes.Append(failures)
-	return successes
+func (h *SortedFile) Delete() (out *Outcomes[AccessResult]) {
+	// Same as Insert due to shifting records
+	return h.Insert()
 }

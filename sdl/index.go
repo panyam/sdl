@@ -1,5 +1,7 @@
 package sdl
 
+import "sort"
+
 // An index on a disk
 type Index struct {
 	// How many entries are already in this heapfile
@@ -22,6 +24,10 @@ type Index struct {
 	MaxOutcomeLen int
 }
 
+func (i *Index) NumPages() uint {
+	return uint(1 + uint64(i.NumRecords*i.RecordSize)/i.PageSize)
+}
+
 func (i *Index) Init() {
 	i.Disk.Init()
 	i.PageSize = 1024 * 1024
@@ -33,3 +39,16 @@ func (i *Index) Init() {
 }
 
 // func (i *Index) ReadNPages(numPages, numRecordsToProcess int) *Outcomes[V] { return nil }
+
+func TrimToSize(lenTrigger, maxLen int) (out func(*Outcomes[AccessResult]) *Outcomes[AccessResult]) {
+	return func(group *Outcomes[AccessResult]) *Outcomes[AccessResult] {
+		if group.Len() > lenTrigger {
+			sort.Slice(group.Buckets, func(i, j int) bool {
+				return group.Buckets[i].Value.Latency < group.Buckets[j].Value.Latency
+			})
+			group = MergeAdjacentAccessResults(group, 0.8)
+			group = ReduceAccessResults(group, maxLen)
+		}
+		return group
+	}
+}

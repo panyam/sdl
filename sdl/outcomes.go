@@ -4,13 +4,16 @@ import (
 	"log"
 )
 
-type Bucket[V any] struct {
+type Outcome = any
+
+type Bucket[V Outcome] struct {
 	Weight float64
 	Value  V
 }
 
-type Outcomes[V any] struct {
+type Outcomes[V Outcome] struct {
 	Buckets []Bucket[V]
+	And     func(a, b V) V
 }
 
 func (o *Outcomes[V]) Copy() *Outcomes[V] {
@@ -58,7 +61,7 @@ func (o *Outcomes[V]) Add(weight any, value V) *Outcomes[V] {
 	return o
 }
 
-func Convert[V any, U any](this *Outcomes[V], mapper func(v V) U) (out *Outcomes[U]) {
+func Convert[V Outcome, U Outcome](this *Outcomes[V], mapper func(v V) U) (out *Outcomes[U]) {
 	for _, v := range this.Buckets {
 		out = out.Add(v.Weight, mapper(v.Value))
 	}
@@ -68,8 +71,10 @@ func Convert[V any, U any](this *Outcomes[V], mapper func(v V) U) (out *Outcomes
 // Append another list of outcomes to ourselves.
 func (this *Outcomes[V]) Append(rest ...*Outcomes[V]) *Outcomes[V] {
 	for _, another := range rest {
-		for _, other := range another.Buckets {
-			this = this.Add(other.Weight, other.Value)
+		if another != nil {
+			for _, other := range another.Buckets {
+				this = this.Add(other.Weight, other.Value)
+			}
 		}
 	}
 	return this
@@ -80,7 +85,7 @@ func (this *Outcomes[V]) Append(rest ...*Outcomes[V]) *Outcomes[V] {
 // all such outcomes amount to Y then all buckets left behind are scaled without Y
 func (o *Outcomes[V]) Filter(filter func(v Bucket[V]) bool) (out *Outcomes[V], totalRemovedWeight float64) {
 	totalWeight := 0.0
-	out = &Outcomes[V]{}
+	out = &Outcomes[V]{And: o.And}
 	for _, v := range o.Buckets {
 		if filter(v) {
 			out.Buckets = append(out.Buckets, v)
@@ -130,10 +135,12 @@ func (o *Outcomes[V]) Partition(matchers ...func(v V) bool) (groups []*Outcomes[
 
 // A sequential caller of X outcomes in sequence as long as they are the same
 // type so they can use the same reducer
-func (this *Outcomes[V]) Then(reducer ReducerFunc[V, V, V], others ...*Outcomes[V]) (out *Outcomes[V]) {
+func (this *Outcomes[V]) Then(others ...*Outcomes[V]) (out *Outcomes[V]) {
+	and := this.And
 	for _, that := range others {
-		this = And(this, that, reducer)
+		this = And(this, that, and)
 	}
+	this.And = and
 	return this
 }
 
@@ -151,26 +158,51 @@ func (this *Outcomes[V]) When(cond func(V) bool, then *Outcomes[V], rest ...any)
 }
 */
 
-func (this *Outcomes[V]) If(cond func(V) bool, then *Outcomes[V], otherwise *Outcomes[V]) (out *Outcomes[V]) {
+func Map[V Outcome, U Outcome](this *Outcomes[V], mapper func(v V) U) (out *Outcomes[U]) {
+	for _, b := range this.Buckets {
+		out = out.Add(b.Weight, mapper(b.Value))
+	}
+	return
+}
+
+func (this *Outcomes[V]) If(cond func(V) bool, then *Outcomes[V], otherwise *Outcomes[V], reducer ReducerFunc[V, V, V]) (out *Outcomes[V]) {
+	// thisWeight := this.TotalWeight()
+	thenWeight := then.TotalWeight()
+	otherwiseWeight := otherwise.TotalWeight()
+	if this == nil {
+		panic("outcomes cannot be nil")
+	}
+
 	for _, bucket := range this.Buckets {
 		matches := cond(bucket.Value)
+		var other *Outcomes[V] = nil
+		otherWeight := 0.0
 		if matches && then != nil {
-			out = out.Append(then)
+			other = then
+			otherWeight = thenWeight
 		} else if !matches && otherwise != nil {
-			out = out.Append(otherwise)
-		} else {
+			other = otherwise
+			otherWeight = otherwiseWeight
+		}
+		if other == nil {
 			// bodies are nil - so just add the bucket as is
 			out = out.Add(bucket.Weight, bucket.Value)
+		} else {
+			for _, other := range other.Buckets {
+				outWeight := other.Weight / otherWeight * bucket.Weight
+				// outWeight := (other.Weight / otherWeight) * bucket.Weight / (thisWeight)
+				// log.Println("j, other: ", j, other)
+				// log.Println("newWeight: ", outWeight)
+				result := reducer(bucket.Value, other.Value)
+				out = out.Add(outWeight, result)
+			}
 		}
 	}
 	return
 }
 
-func (this *Outcomes[V]) GroupBy(cond func(V) bool, func (g *Outcomes[V]) *Outcomes[V], otherwise *Outcomes[V]) (out *Outcomes[V]) {
-}
-
 // Call two outcomes in sequence and return the outcomes of doing so
-func And[V any, U any, Z any](this *Outcomes[V], that *Outcomes[U], reducer ReducerFunc[V, U, Z]) (out *Outcomes[Z]) {
+func And[V Outcome, U Outcome, Z Outcome](this *Outcomes[V], that *Outcomes[U], reducer ReducerFunc[V, U, Z]) (out *Outcomes[Z]) {
 	thisWeight := this.TotalWeight()
 	otherWeight := that.TotalWeight()
 	if this == nil || that == nil {
@@ -181,7 +213,7 @@ func And[V any, U any, Z any](this *Outcomes[V], that *Outcomes[U], reducer Redu
 		// log.Println("I, This: ", i, v)
 		for _, other := range that.Buckets {
 			outWeight := other.Weight / otherWeight * (v.Weight / (thisWeight))
-			// log.Println("j, other: ", j, other)
+			// log.Printf("j, other: %p", reducer)
 			// log.Println("newWeight: ", outWeight)
 			result := reducer(v.Value, other.Value)
 			out = out.Add(outWeight, result)

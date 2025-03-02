@@ -32,7 +32,7 @@ func AccessResultSignificance(o *Outcomes[AccessResult], i int) float64 {
 // The idea here is that we first group access results based on success/failures
 // and then we reduce each grouping and then aggregate it back
 func ReduceAccessResults(input *Outcomes[AccessResult], numBuckets int) (out *Outcomes[AccessResult]) {
-	successes, failures := input.Partition(func(value AccessResult) bool {
+	successes, failures := input.Split(func(value AccessResult) bool {
 		return value.Success
 	})
 

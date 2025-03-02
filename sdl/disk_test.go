@@ -7,5 +7,5 @@ import (
 func TestDiskRead(t *testing.T) {
 	d := (&Disk{}).Init()
 	dr := d.Read()
-	dr.Then(AndAccessResults, dr, dr)
+	dr.Then(dr, dr)
 }

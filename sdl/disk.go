@@ -8,6 +8,8 @@ type Disk struct {
 
 // Init with defaults
 func (d *Disk) Init() *Disk {
+	d.ReadOutcomes.And = AndAccessResults
+	d.WriteOutcomes.And = AndAccessResults
 	d.ReadOutcomes.Add(.9, AccessResult{true, Millis(1)}).
 		Add(0.09, AccessResult{true, Millis(1)}).
 		Add(0.008, AccessResult{true, Millis(100)}).
@@ -34,4 +36,16 @@ func (d *Disk) Read() (out *Outcomes[AccessResult]) {
 
 func (d *Disk) Write() (out *Outcomes[AccessResult]) {
 	return &d.WriteOutcomes
+}
+
+// A common operation where a page is read, some processing is done and written back
+func (d *Disk) ReadProcessWrite(c Duration) *Outcomes[AccessResult] {
+	out := d.Read().If(AccessResult.IsSuccess, d.Write(), nil, AndAccessResults)
+	// Add the processing latency on successes
+	for _, bucket := range out.Buckets {
+		if bucket.Value.Success {
+			bucket.Value.Latency += c
+		}
+	}
+	return out
 }

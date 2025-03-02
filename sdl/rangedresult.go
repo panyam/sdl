@@ -12,6 +12,15 @@ type RangedResult struct {
 	MaxLatency  Duration
 }
 
+func (a *RangedResult) And(another Outcome) Outcome {
+	b := another.(*RangedResult)
+	if b == nil {
+		return nil
+	}
+	out := AndRangedResults(*a, *b)
+	return &out
+}
+
 func AndRangedResults(a RangedResult, b RangedResult) RangedResult {
 	return RangedResult{
 		a.Success && b.Success,
@@ -74,7 +83,7 @@ func RangedResultSignificance(o *Outcomes[RangedResult], i int) (importance floa
 // The idea here is that we first group access results based on success/failures
 // and then we reduce each grouping and then aggregate it back
 func ReduceRangedResults(input *Outcomes[RangedResult], numBuckets int) (out *Outcomes[RangedResult]) {
-	successes, failures := input.Partition(func(value RangedResult) bool {
+	successes, failures := input.Split(func(value RangedResult) bool {
 		return value.Success
 	})
 	successes = AdaptiveReduce(successes, numBuckets, RangedResultSignificance)
