@@ -1,12 +1,26 @@
 package web
 
 import (
+	"bytes"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
+	"github.com/yuin/goldmark"
+	highlighting "github.com/yuin/goldmark-highlighting/v2"
+	"github.com/yuin/goldmark/ast"
+	"github.com/yuin/goldmark/extension"
+	"github.com/yuin/goldmark/parser"
+	"github.com/yuin/goldmark/renderer/html"
+	"github.com/yuin/goldmark/text"
+	"github.com/yuin/goldmark/util"
+	"go.abhg.dev/goldmark/anchor"
 )
 
 type Drawing struct {
@@ -76,21 +90,25 @@ func (c *CaseStudy) setupRoutes() {
 	c.mux.Handle("/{invalidbits}", http.NotFoundHandler())
 }
 
-func (c *CaseStudy) ServeCaseStudy(w http.ResponseWriter, r *http.Request) {
+func (c *CaseStudy) IndexPath() string {
 	extensions := []string{"md", "mdx", "html", "htm"}
 	var indexPath string
 	var err error
 	for _, ext := range extensions {
 		indexPath, err = filepath.Abs(filepath.Join(c.RootFolder, fmt.Sprintf("index.%s", ext)))
 		if err == nil {
-			break
+			return indexPath
 		}
 		// serve this
 		log.Println("ip, err: ", indexPath, err)
 	}
+	return "" // not found
+}
 
-	if err != nil {
-		log.Println("Error with ext: ", err)
+func (c *CaseStudy) ServeCaseStudy(w http.ResponseWriter, r *http.Request) {
+	indexPath := c.IndexPath()
+
+	if indexPath == "" {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprintln(w, "Invalid Case Study")
 		return
@@ -107,7 +125,48 @@ func (c *CaseStudy) ServeCaseStudy(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *CaseStudy) ServeMDX(w http.ResponseWriter, r *http.Request, path string) {
-	fmt.Fprintf(w, "Hello world 333")
+	md := goldmark.New(
+		goldmark.WithExtensions(
+			extension.GFM,
+			extension.Typographer,
+			highlighting.NewHighlighting(
+				highlighting.WithStyle("monokai"),
+				highlighting.WithFormatOptions(
+					chromahtml.WithLineNumbers(true),
+				),
+			),
+			&anchor.Extender{},
+		),
+		goldmark.WithParserOptions(
+			parser.WithAutoHeadingID(),
+			parser.WithASTTransformers(
+				util.Prioritized(&preCodeWrapper{}, 100),
+			),
+		),
+		goldmark.WithRendererOptions(
+			html.WithHardWraps(),
+			html.WithXHTML(),
+			html.WithUnsafe(),
+		),
+	)
+
+	// TODO - embed finalmd in another template ?
+	finalmd, err := os.ReadFile(path)
+	if err != nil {
+		fmt.Fprintf(w, "Error rendering %s: %v", path, err)
+		return
+	}
+
+	var buf bytes.Buffer
+	if err := md.Convert(finalmd, &buf); err != nil {
+		slog.Error("error converting md: ", "error", err)
+		return
+	}
+
+	_, err = w.Write(buf.Bytes())
+	if err != nil {
+		log.Println("Error writing: ", err)
+	}
 }
 
 func (c *CaseStudy) PathForDrawingId(drawingId string) string {
@@ -148,4 +207,24 @@ func (c *CaseStudy) setupDrawingsMux() *http.ServeMux {
 		}
 	})
 	return mux
+}
+
+// A goldmark AST transformer that wraps the <pre> block inside a div that allows copy-pasting
+// of underlying code
+type preCodeWrapper struct {
+}
+
+func (t *preCodeWrapper) Transform(doc *ast.Document, reader text.Reader, ctx parser.Context) {
+	err := ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+		if !entering {
+			return ast.WalkContinue, nil
+		}
+
+		// log.Println("Entering: ", n)
+		return 0, nil
+	})
+
+	if err != nil {
+		log.Println("Walk Error: ", err)
+	}
 }
