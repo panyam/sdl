@@ -1,0 +1,20 @@
+
+{{ define "CommonPageHeader" }}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/htmx/1.9.10/htmx.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
+    <!--
+    <script src="https://unpkg.com/htmx.org/dist/ext/response-targets.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://unpkg.com/hyperscript.org"></script>
+    -->
+    <link rel="apple-touch-icon" href="/static/webapp/icons/apple-touch-icon.png" />
+    <link rel="shortcut icon" href="/static/webapp/icons/favicon.png" sizes="any" />
+    <link rel="stylesheet" href="/static/css/tailwind.css"/>
+{{ end }}
+
+{{ define "CommonPageFooter" }}
+    <script src="/static/js/ThemeManager.js"></script>
+    <script> new ThemeManager()</script>
+{{ end }}

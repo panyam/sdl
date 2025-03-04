@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@tailwind typography;
+
+/* Add any custom styles here */
+@layer components {
+  .lineRoot {
+    @apply text-gray-300 dark:text-gray-800 hover:text-blue-500 dark:hover:text-blue-400  text-sm font-medium;
+  }
+  .lineRootSVG {
+    @apply text-gray-300 dark:text-gray-800 hover:text-blue-500 dark:hover:text-blue-400  text-sm font-medium;
+  }
+  .beatView {
+    @apply text-gray-300 dark:text-gray-800 hover:text-blue-500 dark:hover:text-blue-400  text-sm font-medium;
+  }
+  .nav-link {
+    @apply text-gray-600 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 px-3 py-2 rounded-md text-sm font-medium;
+  }
+  .nav-link-mobile {
+    @apply block text-gray-600 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 px-3 py-2 rounded-md text-base font-medium;
+  }
+}

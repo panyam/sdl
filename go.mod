@@ -9,6 +9,7 @@ require (
 	github.com/felixge/httpsnoop v1.0.4
 	github.com/joho/godotenv v1.5.1
 	github.com/panyam/oneauth v0.0.3
+	github.com/panyam/templar v0.0.1
 	github.com/yuin/goldmark v1.7.8
 	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20230729083705-37449abec8cc
 	go.abhg.dev/goldmark/anchor v0.2.0

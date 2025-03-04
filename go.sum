@@ -36,6 +36,8 @@ github.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWE
 github.com/mattn/go-isatty v0.0.20/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D7dTCTo3Y=
 github.com/panyam/oneauth v0.0.3 h1:CnNy6hJWohcRq6yMxFMDiiDxR+o746XWFcDNl7p1iSc=
 github.com/panyam/oneauth v0.0.3/go.mod h1:HGHquQ59zt+sCC68BPtmtrcE6PPDf8fesseCRxsVv2k=
+github.com/panyam/templar v0.0.1 h1:tDJEYuwKwma6R3m3EZEccsA+qdE18/T40Sr1qrRM90w=
+github.com/panyam/templar v0.0.1/go.mod h1:tZj+kJyPnpjDafq2fIuVp4swMiLJjb46ZdGX+scRngo=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=

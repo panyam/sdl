@@ -12,6 +12,7 @@ import (
 	"time"
 
 	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
+	gotl "github.com/panyam/templar"
 	"github.com/yuin/goldmark"
 	highlighting "github.com/yuin/goldmark-highlighting/v2"
 	"github.com/yuin/goldmark/ast"
@@ -56,6 +57,8 @@ type Drawing struct {
 type CaseStudy struct {
 	// Root folder where the case study is hosted
 	RootFolder string
+
+	Templates *gotl.TemplateGroup
 
 	mux *http.ServeMux
 }
@@ -125,6 +128,8 @@ func (c *CaseStudy) ServeCaseStudy(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *CaseStudy) ServeMDX(w http.ResponseWriter, r *http.Request, path string) {
+
+	// template :=
 	md := goldmark.New(
 		goldmark.WithExtensions(
 			extension.GFM,
@@ -163,10 +168,10 @@ func (c *CaseStudy) ServeMDX(w http.ResponseWriter, r *http.Request, path string
 		return
 	}
 
-	_, err = w.Write(buf.Bytes())
-	if err != nil {
-		log.Println("Error writing: ", err)
-	}
+	c.Templates.RenderHtmlTemplate(w, "CaseStudyPage", map[string]any{
+		"CaseStudy": c,
+		"Contents":  buf.String(),
+	})
 }
 
 func (c *CaseStudy) PathForDrawingId(drawingId string) string {
@@ -215,12 +220,13 @@ type preCodeWrapper struct {
 }
 
 func (t *preCodeWrapper) Transform(doc *ast.Document, reader text.Reader, ctx parser.Context) {
+	log.Println("We are here??")
 	err := ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
 		if !entering {
 			return ast.WalkContinue, nil
 		}
 
-		// log.Println("Entering: ", n)
+		log.Println("Entering: ", n.Attributes())
 		return 0, nil
 	})
 

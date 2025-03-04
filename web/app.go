@@ -1,17 +1,27 @@
 package web
 
 import (
+	"fmt"
+	"html/template"
 	"net/http"
+	"strings"
+	"time"
+
 	// "github.com/go-session/cookie"
 
 	"github.com/alexedwards/scs/v2"
 	oa "github.com/panyam/oneauth"
 	oa2 "github.com/panyam/oneauth/oauth2"
+	gotl "github.com/panyam/templar"
 	"golang.org/x/oauth2"
 )
 
 var SUPERUSERS = map[string]bool{
 	"sri.panyam@gmail.com": true,
+}
+
+type LCContext struct {
+	Templates *gotl.TemplateGroup
 }
 
 type LCApp struct {
@@ -21,7 +31,7 @@ type LCApp struct {
 
 	mux     *http.ServeMux
 	BaseUrl string
-	// Template *template.Template
+	Context LCContext
 }
 
 func NewWebApp() (app *LCApp, err error) {
@@ -50,6 +60,57 @@ func NewWebApp() (app *LCApp, err error) {
 			n.authConfigs = DEV_CONFIGS
 		}
 	*/
+
+	templates := gotl.NewTemplateGroup()
+	templates.Loader = (&gotl.LoaderList{}).AddLoader(gotl.NewFileSystemLoader("./web/templates"))
+	templates.AddFuncs(gotl.DefaultFuncMap())
+	templates.AddFuncs(template.FuncMap{
+		"Ctx": func() *LCContext {
+			return &app.Context
+		},
+		"AsHtmlAttribs": func(m map[string]string) template.HTML {
+			return `a = 'b' c = 'd'`
+		},
+		"Ago": func(t time.Time) string {
+			diff := time.Since(t)
+
+			if years := int64(diff.Hours() / (365 * 24)); years > 0 {
+				return fmt.Sprintf("%d years ago", years)
+			}
+
+			if months := int64(diff.Hours() / (30 * 24)); months > 0 {
+				return fmt.Sprintf("%d months ago", months)
+			}
+
+			if weeks := int64(diff.Hours() / (7 * 24)); weeks > 0 {
+				return fmt.Sprintf("%d weeks ago", weeks)
+			}
+
+			if days := int64(diff.Hours() / (24)); days > 0 {
+				return fmt.Sprintf("%d days ago", days)
+			}
+
+			if hours := int64(diff.Hours()); hours > 0 {
+				return fmt.Sprintf("%d hours ago", hours)
+			}
+
+			if minutes := int64(diff.Minutes()); minutes > 0 {
+				return fmt.Sprintf("%d minutes ago", minutes)
+			}
+
+			if diff.Seconds() > 0 {
+				return fmt.Sprintf("%d seconds ago", int64(diff.Seconds()))
+			}
+			return "just now"
+		},
+		"Indented": func(nspaces int, code string) (formatted string) {
+			lines := (strings.Split(strings.TrimSpace(code), "\n"))
+			return strings.Join(lines, "<br/>")
+		},
+	})
+	app.Context = LCContext{
+		Templates: templates,
+	}
 	return
 }
 
@@ -64,10 +125,24 @@ func (n *LCApp) Handler() http.Handler {
 	// TODO - turn this into a handle that will dynamically create case studies based on path and contents
 	// n.mux.Handle("/casestudies/bitly", NewCaseStudy("../casestudies/bitly").Handler())
 	// n.mux.HandleFunc("/cases/bitly", func(w http.ResponseWriter, r *http.Request) { fmt.Fprintf(w, "Did this work?") })
-	n.mux.Handle("/cases/bitly/", http.StripPrefix("/cases/bitly", NewCaseStudy("./casestudies/bitly").Handler()))
+	n.RegisterCaseStudy("/cases/bitly", "./casestudies/bitly")
 
 	return n.mux
 	// return n.Session.LoadAndSave(n.mux)
+}
+
+func (n *LCApp) RegisterCaseStudy(path, folder string) {
+	if !strings.HasPrefix(path, "/") {
+		path = "/" + path
+	}
+	if !strings.HasSuffix(path, "/") {
+		path = path + "/"
+	}
+
+	tostrip := path[:len(path)-1]
+	cs := NewCaseStudy(folder)
+	cs.Templates = n.Context.Templates
+	n.mux.Handle(path, http.StripPrefix(tostrip, cs.Handler()))
 }
 
 type LCAuthUser struct {
