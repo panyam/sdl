@@ -1,16 +1,7 @@
 
-# Design ((Product Name))
+# Design DoorDash's Dispatch Deliver System (DDS)
 
-<span style="color: red">**Describe the problem here.  More info the better**</span>
-
-Bit.ly is a URL shortening service that converts long URLs into shorter, manageable links. It also provides analytics for the shortened URLs.
-
----
-
-
-
-
-
+A Real-Time Delivery Dispatch System ensures that orders are efficiently assigned to delivery drivers while optimizing for speed, cost, and service quality.
 
 ---
 
@@ -18,41 +9,41 @@ Bit.ly is a URL shortening service that converts long URLs into shorter, managea
 
 ### Functional Requirements (~2-3 minutes)
 
-<span style="color: red">**Describe functional requirements here.  Few things to watch for.**</span>
-
-<span style="color: red">**WARNINGS:**</span>
-
-* Dont be too narrow - It is very easy to think about exactly what the problem and nothing else for context.   Doesnt mean you have to design a v100 problem on day one but understand possible user concerns here to guide why you are building the product and then go with what you are building so requirements are clearer and tangible.
-* Dont be too generic - Very easy to build V100 of a product as you are just adding more and more requirements so you dont look dumb.  Keep it simple - just rounded.
-* Depending on interviewer for input: Unless the interview starts off with a set of requirements, they are looking you to drive it so come up with things with your understanding of why (pretty much based on experience as an authority figure)
+Here are the core functional requirements a user (customer, restaurant, Dasher, support agent) would expect:
 
 The functional requirements are:
 
-1. User should be able to do 1, 2, 3
-2. System should handle/allow 1, 2, 3
-3. Any third party constraints (eg Robinhood connecting to exchanges)
+1. Users will place orders that will be pickedup and made ready-for-pickup by merchants.
+2. Once merchants mark it is a ready for pickup, our DDS will find drivers nearby and match the order to a driver.
+4. Users can track status of Order and Dasher (location)
+5. Dashers update location regularly (say every 5-10 seconds)
+6. Dashers can mark stats - available, offline, ontrip etc
+7. Dashers can accept/reject orders.
+8. Dashers can be assigned multiple orders to pickup in order.
 
 Scale Requirements:
 
-* This is usually quantity things to be met for SLO purposes, eg
-* DAU,
-* Number of entities created, listed, updated, deleted (on a Daily, Monthly basis)
+Usage Stats: https://backlinko.com/doordash-users#doordash-usage-statistics
+
+* 3B orders a years (250M Orders a month ~ 8M orders a day)
+* 600k businesses
+* 50M MAU
+* 7M Active Dashers (may be upto 10M now)
+* On average - 500 orders per merchant per day (250M / 600k) ~ 50 per hour (assuming 10 hours of operation)
+* Peak may be 100 in an hour (note this would need a merchant to have 50 chefs - so this is extreme)
 
 ### Extensions (Out of scope)
 
-<span style="color: red">**WARNINGS:**</span>
-
-At this point you may be asked for how about "X" - eg authentication, compliance, logging etc.  This is risky at senior levels as you are giving control back to the interviewer.
-
-To circumvent that we can call out some out-of-scope things/extensions (eg we want to mention for showing our expertise on what a real world "production" service looks like).  Eg with something like:
-
-
-"Before I go into NFR I want to call out some extensions that I would prefer not being in scope:"
-
 Functional:
-1) Auditability/Compliance - especially for user generated entities (trades - are they legal, posts - CSAM?, blogs - copyright etc)
-2) Analytics - For the entities a user creates what kind of analytics can be done.  Typical are - top N kind of problems.
-3) Authentication/Access Control - user management
+
+1) Restaurant menu management/search - Assume restaurant onboarding, and menu manageemnt is taken care off.
+2) Payment Management - Assume payments, refunds are all taken care off
+3) Notification systems (tracking will be live on the page - but email/sms etc not in scope)
+4) [Order dispatch system](../delivery_dispatch_system/index.md) - we assume a dasher is assigned automatically (can be designed otherwise)
+5) Authentication - we assume a user is logged in (or in the case of guest checkout cookie/session based)
+6) Order management - Placing orders by users.
+7) Order mutability - Assume orders once created are it (or they can be cancelled in some cases - but we wont deal with
+   extra charges on this etc)
 
 Non Functional:
 1) Observability - So we can ensure reliability, uptime, attacks etc
@@ -62,232 +53,131 @@ Non Functional:
 Both:
 1) Tiered SLOs (usage/pricing/billing etc)
 
-If this is ok Id like to jump into the NFR and Operational requirements, especially where we deal with SLOs, Latency Targets, Availability, Scalability, Fault tolerance and others.
-
-**NOTE** - To maximize silent-ack - Important to call out "where we deal with others...." so you are preempting the interviewer from saying what you are going to and ensure being in the driver seat.
-
 ### Non functional requirements (~2-3 minutes)
 
-* Availability - Describe why availability is important - eg if user cannot access site they cannot warn dangers
-  * Be ready to calculate error rates
-* Consistency - eg if user bought something they want to see it in their orders otherwise it is problematic
-* Freshness - how fresh is the data user is seeing (ie if user is seeing prices from a 3P system, what SLO do we want on the freshness - would affect their purchase decisions)
-  * For both above freshness SLOs would be key.
-  * Also call out RYW guarantees for user created entities (tweets, posts, trades etc)
-* Scalable - Address scalability for the scale requirement numbers and SLOs on CRUD operations (again why it affects product/platform/user experience goodness)
-* Geo capabilities - Part of scalability is address how users in various regions are affected etc.
-  * Also has impact on freshness/consistency
-
-<span style="color: red">**WARNINGS:**</span>
-
-* Unless problem statement comes up with some quantitative requirement you have to provide some. This includes SLOs, QPSes, Usage numbers
-
-Consider framing/grouping like below:
-
-**Latency Targets:** What are your expectations for the response times for price updates and trade creation? How critical is near-real-time performance here?
-
-**Throughput and Scalability:** With the estimated load, what kind of throughput numbers are you targeting, and how would you design the system to scale effectively?
-
-**Availability and Fault Tolerance:** What measures would you implement to ensure the system remains highly available and can gracefully handle failures?
-
-**GOOD EXPECTED INTERVIEWER ACK**
-```
-That sounds great. Let's move on to the API and entity design. Could you walk
-me through your proposed API definitions—such as the endpoints for retrieving
-real-time prices, creating trades, and listing a user's trade history—and
-describe the core entities you'll use to model this system? Feel free to start
-with any endpoint you prefer and explain your design choices.
-```
-
-
-
+* Fault Tolerance, Availability and Durability:
+  - System should be available so matching wont stall.
+  - Ok for matching to take a slightly bit longer but should be durable
+  - Once matched orders cannot be lost
+  - order to dasher - 1:1 - no double matching
+* Consistency:
+  - Eventual consistency is ok for tracking location updates and dasher locations.
+* Scalable to our needs with good UX.   Order creations and updates should happen in 200ms (not including payment or external systems).
+* Update tracking should be near real-time - Want freshness to be say within 1-5s of updates.
 
 ---
-
-
-
 
 ## API/Interface/Entities (2-3 minutes)
 
 ### Entities
-
-<span style="color: red">**WARNINGS:**</span>
-* Some interviewers may ding you if you dont have a User entity - even though we are not dealing with Auth.  
-* May be just mention "we have a User entity with userId and other details which we wont show here"
-
-Next write up the Entities that address the use cases above.   Again dont go overboard but have common sense things covered, eg:
-
-1. ID for primary key - be clear if this is string or long
-2. Entities to have CreatedAt timestamp and CreatedBy (userid) fields.   
-3. UpdatedAt is useful if updates are to be tracked etc
-4. For optimistic locking think about version fields
-5. Annotate fields with whether they are primary field or not
-6. DONT GO OVERBOARD WITH INDEXES - leave it till later
-7. Having a "metadata" field can be general purpose for auditing/compliance etc
-8. Make sure to explain what you are "excluding":
-  1. User entities
-  2. Details that are beyond
-
-eg for an Entity (in Bitly):
    
 ```
-record URL {
-  Id string `primaryKey, unique`
-  LongUrl string    
-  CreatedBy string
+// User and Dasher are just general entities
+record User { id string }
+record Dasher {
+  Id string   // ID of the dasher 
+  LastLocationAt Timestamp
+  LastLocation LatLong
+  Status enum { Active, Offline, OnTrip }
+  Rating float
+  VehicleType enum {Bicycle, Car, Scooter}
+  
+  // List of orders assigned to this driver
+  // for example the driver may be asked to do another order if it is on route
+  AssignedOrders list<OrderId>
+}
+
+record Order {
+  Id string
   CreatedAt TimeStmp
-  ExpiresAt TimeStamp
+  UpdatedAt TimeStmp
+  CustomerId string
+  RestaurantId string
+  DasherId string   // Dasher assigned to this order
+  
+  Status enum { PLACED, CONFIRMED, COOKING, READY_FOR_PICKUP, DELIVERING, DELIVERED, CANCELLED }
+  
+  Priority int
+  PickupAt LatLong
+  DropoffAt LatLong
+  
+  ETA Timestamp
+  RouteInfo any     // Info about the route, start, end, other info
+  
+  // NOT REQUIRED FOR THIS PROBLEM
+  // Only keep the total price
+  // Items List<*> // list of items ordered - not important here for matching (or not?)
+  // TotalPrice double
+  // We may keep payment details here or else where depending on what is visible etc
+  // PaymentDetails any
+  
+  // version etc for OCC
+  Version int
+}
+
+record OrderItem {
+  Id string         // item id
+  StoreId string    // which store is this item from
+  Name string
+  Quantity string
+  Price string      // how much the user is paying for it
+  Customizations Json   // eg extra onions etc
+}
+
+// Dispatch is an LRO
+record Dispatch {
+  Id string
+  OrderId string
 }
 ```
-
-**POSSIBLE PUSHBACK:**
-
-* For record X - will you incorporate any details (eg for Trades order quantity, trade
-  type (buy/sell), or price limits? These details might be crucial in ensuring
-  precise trade management)
-* Any details to manage potential concurrency and consigtency issues (eg version timestamps for optimistic lockign etc?)
-* Any additional metadata be stored for auditing purposes or tracking lifecycle events (e.g., accepted, rejected, partially filled)?
-
-Best way to address this is is to prempt it with our API specs by calling them out proactively, eg
-
-1. For X we will not include fields like X, Y, Z as I am considering that to be part of the "other info" and for now I dont anticipate will affect how our API will work.  We can revisit this as we see our system evolves.
-2. For high amount of (say updates) we are for now excluding fields/primitives (such as versions for optimistic locking) and will revisit this after our high level design and a deep dive into correctness and performance.
-3. Also we could store additional metadata for auditing purposes but since we called that out as out-of-scope we are ok with excluding it here.
-
-**GOOD INTERVIEWER ACK**
-
-```
-Your entity design is a solid starting point—it’s clean and captures the core
-elements we need for V1. I appreciate how you've kept the design flexible by
-deferring some of the more detailed aspects like trade quantity and the
-specifics of optimistic locking for Symbol. 
-```
-
-Watch for "impatience", eg along with ack, interviewer may be asking you to also explain things about the system beyond just API, eg
-
-```
-Fetching Real-Time Prices:
-How would you design the API for retrieving symbol prices, considering the high
-frequency of updates? What mechanisms might you put in place to ensure
-freshness (within 1–5 seconds) while managing the cost implications of the
-websocket connections from the exchange?
-
-Trade Submission:
-What does the endpoint for creating a trade look like? Given that trades are
-accepted asynchronously by Robinhood (and later by exchanges), how do you plan
-to ensure that once a trade is accepted, it’s reliably persisted and visible to
-the user? How would you handle the potential delays or retries?
-
-Listing User Trades:
-How would you design the endpoint for retrieving a user’s current and past
-trades to ensure a fast (sub-100ms) and consistent response?
-```
-
-You might want to say when you are proposing the API that after API - HLD is about to come...
 
 ### Services/APIs (~5 minutes)
 
-"Now I will walk through the APIs/Endpoints needed 
-Next is the actual API to address the functional requirements - rememeber dont be fancy.  Most things here can be CRUD/Restful.    A good choice to avoid http brain-f@#k is to write as service descriptions along with rest bindings (very similar to grpc defs):
+Now for the APIs/Endpoints needed.
 
 ```
-service Bitly {
-  CreateShortUrl(longUrl string, expiresAt Optional[TimeStamp], alias Optional[string]) (output URL) {
-    method: POST
-    url: "/urls"
+service OrdersService {
+  GetOrder(orderId string) Order {    // Get details of an order including driver status
+    GET /orders/{orderId}
   }
-  RedirectUrl(shortUrl string) (shortUrl URL) { 
-    method: GET
-    // Note /shortUrl is simpler/better than /urls/.... as it mke
-    url: "/{shortUrl}
+}
+
+service DispatchService {
+  CreateDispatch(dispatch Dispatch) Dispatch {    // with Id, Status, CreatedAt, CreatedUser set
+    POST "/dispatch"
+    body: {dispatch}
   }
 }
 ```
 
-* One diff from GRPC is - instead of having a single "req" object and a single "response" object just make them look like function decls. 
-* Problem with GRPC style declarations is you have an explosion of Req/Resp objects and wastes time.   We can just say this is GPRC "like".
-* The advantage of this is that we are showing what we are intending and with bindings it is clear as well.
-* Try to make it RESTful - so services are still operating on entities with CRUD operations.
-* <span style="color:red">**Think of principles from AIP.dev - conventions like batch gets, operations, long running operations can be used if necessary.**</span>.
-
-Now id like to move on to the HLD that will addresses how these APIs will work along with details on correctness, freshness etc.  This will be starting point to address bottlenecks to scale etc.
-
-
-
-
-
 ---
-
-
-
 
 ## High Level Design (~ 5-10 minutes)
 
-Next is the high level design.   Our goal should be at this point we have "mvp" of what works.  This should have:
-
-1. All logical components (eg a "User" -> "API Gateway" -> "AppServer"  -> "Database" at the very minimum)
-2. Have a seperate database for each entity (this is logical for clarity)
-3. Have a spearte "AppServer" or "Operation" block for each API call - Again it can be a single service but we may have multiple "logical endpoints" for each API for clarity.
-  * **Note**: Advantage of the separate "AppServer" block for each endpoint is that we can describe what the endpoint does INSIDE this rectangle.
-
-Ofcourse now for each endpoint, annotate the arrows and blocks on what is going on, eg for "CreateShortUrl", show ApiGateway -> CreateENdpoint -> Database and so on.
-
-An example is below:
-
 ![alt High Level Design](./hld.png "High Level Design")
 
-In this section refer to all DBs as Stores. Eg FeedStore, IDStore, URLStore etc.  Reason
-is we want the option of bringing in what "kind" of store it is based on the access
-patterns - eg InMemStore, KVStore, RelationalStore (SQL) etc.
+<Drawing id="/hld" preview="./hld.png" width="800px" >High Level Design</Drawing>
+
+Key flows:
+
+1. User places an order - CreateOrder is called (assuming payment successful)
+2. Order sent to merchant for preparation - who will mark it as READY_FOR_PICKUP when done.
+3. Dispatch service kicks off here.   At this point, order can be sent off to a PQ for dispatching or Dispatch service can poll DB.
+4. Meanwhile Dashers are updating location in the [Driver Location Service](../driver_location_service/index.md).
+5. Dispatch service gets drivers in a given location so it can rank them.
+6. DDS calls routing service to get optimiatl routes, traffic conditions for each of the drivers and sorts them based on some criteria.
+7. Adds Order to Driver's list of Orders (but as need to be acked)
+8. Driver can accept/reject
+9. If Accept, order.DasherId = ... and notified user and merchant.
+
+Another Basic "series of handoffs" problem.
 
 ---
-
-
-
-
-
 
 ## Deep Dives
 
 Now time to go through the deep dive and address concerns.
 
-1. Explain functional correctness - eg how pkeys addres uniqueness, correctness etc
-2. Also explain other things like how you are choosing various things
-
-Here we will be asked what are the things to dive on and explain how our design addresses requirements.
-
-### 1. How do you ....
-
-### 2. How do you ....
-
-### 3. How do you ....
-
-
-## Advanced Strategies
-
-**Utilization with Sharding**
-
-* Limiting Shard Sizes is to only handle writes will be very wasteful - eg you will need
-disks that are 100s of MB - a huge waste.
-* ReadHeavy patterns with caching or replication strategies
-  * In-Mem caching - great for offloading read heavy accesses so as soon as you insert into a shard
-    * Tradeoff - must ensure consistency (ie what a user created must show up in the cache
-      as soon as it is inserted in the DB (or read-ahead cache pulls it from DB - may deal
-      with thundering herd).
-  * Replicas: Master-Slave for consistency - but may have replication lag.  For RYW
-    consistency must always read from master or resort to synchronous replication.
-    (or before) write to the cache too.  
-  * Same issues on multi-region - just bigger numbers and chance of failures.
-* Tiered Storage for Managing Memory
-  * Keep recent data only (say enough to fill first N pages of ListX apis) - eg past 30
-    days of trades and use secondary storage/tier for older data.  May be good for most
-    use cases
-* Consider shard manager to dynamically handle "hot" entities - especially to ensure hot
-  entities are not on the same tenant.
-* Data Archival
-  * Need a way to ARCHIVE "older" data - say older than a year out into cold(er) storage
-    so primary DB is bounded.  Even better if this is bundled as a product feature itself.
-  * Similiarly we could archive least-active users.
-* DR of databases to ensure data survival.
-* Geographic replication - great for low writes needing high consistency.  If high writes
-  with high durability then we may need to write to kafka locally and replicate cross geo.
+* All of the above needs to happen fast-ish but only gets kicked off when order is set to READY_FOR_PICKUP.
+* May be driver is given 10s to accept/reject.
+* Each call needs Location Search, API call to compute route, sort and update Dasher's Order list (and save)

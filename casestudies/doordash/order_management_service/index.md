@@ -95,6 +95,10 @@ record Order {
   Status enum { PLACED, CONFIRMED, COOKING, READY_FOR_PICKUP, DELIVERING, DELIVERED, CANCELLED }
   Items List<OrderItem>
   
+  Priority int
+  PickupAt LatLong
+  DropoffAt LatLong
+  
   // Only keep the total price
   TotalPrice double
   
