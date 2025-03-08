@@ -1,6 +1,7 @@
 {{# include "./Header.html" #}}
 {{# include "./Footer.html" #}}
 {{# include "./CommonPageHeader.html" #}}
+{{# include "./Excalidraw.html" #}}
 
 {{ define "BasePage" }}
 <!DOCTYPE html>
@@ -20,6 +21,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {{ block "ExtraHeadSection" . }}<title>LeetCoach</title>{{ end }}
+    {{ template "ExcalidrawHeader" . }}
   {{ end }}
 </head>
 <body class="h-screen w-screen bg-white dark:bg-gray-900 transition-colors duration-200">

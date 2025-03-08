@@ -10,45 +10,18 @@ const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 
 const TEMPLATES_FOLDER = "./templates";
 
-// Read Samples first
-function readdir(path) {
-  const items = fs.readdirSync(path);
-  return items.map(function (item) {
-    let file = path;
-    if (item.startsWith("/") || file.endsWith("/")) {
-      file += item;
-    } else {
-      file += "/" + item;
-    }
-    const stats = fs.statSync(file);
-    return { file: file, name: item, stats: stats };
-  });
-}
-
 const components = [
-  // "NotationViewer",
-  // "NotationEditor",
-  //"ConsoleView",
   "CaseStudyPage"
 ];
 
 module.exports = (_env, options) => {
   context: path.resolve(__dirname);
   const isDevelopment = options.mode == "development";
-  const webpackConfigs = {
+  return webpackConfigs = {
     devtool: "source-map",
     devServer: {
       hot: true,
       serveIndex: true,
-      // contentBase: path.join(__dirname, "../dist/static/dist"),
-      before: function (app, server) {
-        app.get(/\/dir\/.*/, function (req, res) {
-          const path = "./" + req.path.substr(5);
-          console.log("Listing dir: ", path);
-          const listing = readdir(path);
-          res.json({ entries: listing });
-        });
-      },
     },
     externals: {
       // CodeMirror: 'CodeMirror',
@@ -56,21 +29,10 @@ module.exports = (_env, options) => {
       ace: "commonjs ace",
       // ace: 'ace',
     },
-    optimization: {
-      splitChunks: {
-        chunks: "all",
-      },
-    },
-    output: {
-      path: path.resolve(__dirname, "./static/js/gen/"),
-      publicPath: "/static/js/gen/",
-      // filename: "[name]-[hash:8].js",
-      filename: "[name].[contenthash].js",
-      library: ["notation", "[name]"],
-      libraryTarget: "umd",
-      umdNamedDefine: true,
-      globalObject: "this",
-    },
+    entry: components.reduce(function (map, comp) {
+      map[comp] = path.join(__dirname, `${TEMPLATES_FOLDER}/${comp}.ts`);
+      return map;
+    }, {}),
     module: {
       rules: [
         {
@@ -113,29 +75,14 @@ module.exports = (_env, options) => {
         },
       ],
     },
-    entry: components.reduce(function (map, comp) {
-      map[comp] = path.join(__dirname, `${TEMPLATES_FOLDER}/${comp}.ts`);
-      return map;
-    }, {}),
-    plugins: [
-      new CleanWebpackPlugin(),
-      new MiniCssExtractPlugin(),
-      ...components.map(
-        (component) =>
-          new HtmlWebpackPlugin({
-            chunks: [component],
-            // inject: false,
-            filename: path.resolve(__dirname, `${TEMPLATES_FOLDER}/gen.${component}.html`),
-            // template: path.resolve(__dirname, `${component}.html`),
-            templateContent: "",
-            minify: { collapseWhitespace: false },
-          }),
-      ),
-      new webpack.HotModuleReplacementPlugin(),
-    ],
     resolve: {
+      alias: {
+        'react': path.resolve('./node_modules/react'),
+        'react-dom': path.resolve('./node_modules/react-dom'),
+      },
       extensions: [".js", ".jsx", ".ts", ".tsx", ".scss", ".css", ".png"],
       fallback: {
+        /*
         "crypto-browserify": require.resolve("crypto-browserify"), //if you want to use this module also don't forget npm i crypto-browserify
         "querystring-es3": false,
         assert: false,
@@ -154,11 +101,44 @@ module.exports = (_env, options) => {
         url: false,
         util: false,
         zlib: false,
+        */
+        // Needed for Excalidraw
+        "process": require.resolve("process/browser")
+      },
+    },
+    output: {
+      path: path.resolve(__dirname, "./static/js/gen/"),
+      publicPath: "/static/js/gen/",
+      // filename: "[name]-[hash:8].js",
+      filename: "[name].[contenthash].js",
+      library: ["notation", "[name]"],
+      libraryTarget: "umd",
+      umdNamedDefine: true,
+      globalObject: "this",
+    },
+    plugins: [
+      new webpack.ProvidePlugin({
+        process: 'process/browser',
+      }),
+      new CleanWebpackPlugin(),
+      new MiniCssExtractPlugin(),
+      ...components.map(
+        (component) =>
+          new HtmlWebpackPlugin({
+            chunks: [component],
+            // inject: false,
+            filename: path.resolve(__dirname, `${TEMPLATES_FOLDER}/gen.${component}.html`),
+            // template: path.resolve(__dirname, `${component}.html`),
+            templateContent: "",
+            minify: { collapseWhitespace: false },
+          }),
+      ),
+      new webpack.HotModuleReplacementPlugin(),
+    ],
+    optimization: {
+      splitChunks: {
+        chunks: "all",
       },
     },
   };
-  if (false && !isDevelopment) {
-    webpackConfigs.plugins.splice(0, 0, new uglifyJsPlugin());
-  }
-  return webpackConfigs;
 };
