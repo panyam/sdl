@@ -32,6 +32,7 @@
   },
   "devDependencies": {
     "@tailwindcss/typography": "*",
+		"@tailwindcss/forms": "^0.5.10",
     "@types/ace": "^0.0.52",
     "@types/jest": "^29.5.13",
     "@types/react": "^18.2.0",

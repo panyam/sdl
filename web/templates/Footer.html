@@ -1,67 +1,29 @@
+{{# include "./SocialIcon.html" #}}
+
 {{ define "Footer" }}
-<footer class="bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
-    <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div>
-                <h3 class="text-sm font-semibold text-gray-600 dark:text-gray-300 tracking-wider uppercase">About</h3>
-                <ul class="mt-4 space-y-4">
-                    <li>
-                        <a href="/about" class="text-base text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
-                            About Us
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/contact" class="text-base text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
-                            Contact
-                        </a>
-                    </li>
-                </ul>
-            </div>
-            <div>
-                <h3 class="text-sm font-semibold text-gray-600 dark:text-gray-300 tracking-wider uppercase">Resources</h3>
-                <ul class="mt-4 space-y-4">
-                    <li>
-                        <a href="/documentation" class="text-base text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
-                            Documentation
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/tutorial" class="text-base text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
-                            Tutorials
-                        </a>
-                    </li>
-                </ul>
-            </div>
-            <div>
-                <h3 class="text-sm font-semibold text-gray-600 dark:text-gray-300 tracking-wider uppercase">Community</h3>
-                <ul class="mt-4 space-y-4">
-                    <li>
-                        <a href="#" class="text-base text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
-                            Forum
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#" class="text-base text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
-                            Discord
-                        </a>
-                    </li>
-                </ul>
-            </div>
-            <div>
-                <h3 class="text-sm font-semibold text-gray-600 dark:text-gray-300 tracking-wider uppercase">Legal</h3>
-                <ul class="mt-4 space-y-4">
-                    <li>
-                        <a href="/privacy-policy" class="text-base text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
-                            Privacy
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/terms-of-service" class="text-base text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
-                            Terms
-                        </a>
-                    </li>
-                </ul>
-            </div>
+    {{ $siteMetadata := (json "SiteMetadata.json" "") }}
+    <footer>
+      <div class="mt-16 flex flex-col items-center">
+        <div class="mb-3 flex space-x-4">
+            {{ template "SocialIcon" dict "Kind" "mail"  "Size" 6
+                    "ImgHref" (.Site.PathRelUrl "/static/socialicons/mail.svg" )
+                    "Href" "mailto:sri.panyam@gmail.com"  }}
+            {{ template "SocialIcon" dict "Kind" "github" "Size" 6
+                    "ImgHref" (.Site.PathRelUrl "/static/socialicons/github.svg" )
+                    "Href" "https://github.com/panyam"  }}
+            {{ template "SocialIcon" dict "Kind" "linkedin"  "Size" 6
+                    "ImgHref" (.Site.PathRelUrl "/static/socialicons/linkedin.svg" )
+                    "Href" "https://linkedin.com/in/srirampanyam" }}
         </div>
-    </div>
-</footer>{{ end }}
+        <div class="mb-2 flex space-x-2 text-sm text-gray-500 dark:text-gray-400">
+          <div>{{$siteMetadata.Author}}</div>
+          <div> • © {{ Now.UTC.Year }} • </div>
+          <a href="/">{{$siteMetadata.Title}}</a>
+        </div>
+        <div class="mb-8 text-sm text-gray-500 dark:text-gray-400">
+          <a href="https://github.com/panyam/">Sri Panyam </a>
+        </div>
+      </div>
+    </footer>
+{{ end }}
+

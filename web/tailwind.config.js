@@ -9,6 +9,7 @@ module.exports = {
     "./static/icons/*.svg",
     "./templates/*.html",
     "./templates/*.ts",
+    "./templates/*.html",
     "./templates/*.css"
   ],
   darkMode: 'class',
@@ -164,7 +165,5 @@ module.exports = {
       }),
     },
   },
-  plugins: [
-    require('@tailwindcss/typography'),
-  ],
+  plugins: [require('@tailwindcss/forms'), require('@tailwindcss/typography')],
 }

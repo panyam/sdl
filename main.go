@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	svc_addr = flag.String("svc_addr", DefaultServiceAddress(), "Address where the gRPC endpoint is running")
-	gw_addr  = flag.String("gw_addr", DefaultGatewayAddress(), "Address where the http grpc gateway endpoint is running")
+	// svc_addr = flag.String("svc_addr", DefaultServiceAddress(), "Address where the gRPC endpoint is running")
+	gw_addr = flag.String("gw_addr", DefaultGatewayAddress(), "Address where the http grpc gateway endpoint is running")
 )
 
 func main() {
@@ -41,4 +41,12 @@ func main() {
 	app.AddServer(&web.Server{Address: *gw_addr})
 	app.Start()
 	app.Done(nil)
+}
+
+func DefaultGatewayAddress() string {
+	gateway_addr := os.Getenv("LEETCOACH_WEB_PORT")
+	if gateway_addr != "" {
+		return gateway_addr
+	}
+	return ":8080"
 }

@@ -1,135 +1,31 @@
+
+{{# include "./ThemeSwitchView.html" #}}
+{{# include "./MobileNavView.html" #}}
+
 {{ define "Header" }}
-<nav class="bg-white dark:bg-gray-800 shadow-lg w-full absolute top-0 left-0 ">
-  <div class="{{.Width}} mx-auto px-4">
-    <div class="flex justify-between items-center h-16">
-      <!-- Left side: Logo and Title -->
-      <div class="flex items-center">
-        <div class="flex-shrink-0">
-          <a href="/">
-            {{/* <img class="h-8 w-auto" src="{{.HomeButtonImage}}" alt="Logo"> */}}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              version="1.0"
-              width="53px"
-              height="30px"
-              viewBox="0 0 1280.000000 720.000000"
-              preserveAspectRatio="xMidYMid meet"
-              class="text-gray-900 dark:text-white fill-current"
-            >
-              <metadata>Created by potrace 1.15, written by Peter Selinger 2001-2017</metadata>
-              <!--  // Using fill-current to inherit from parent -->
-              <g transform="translate(0.000000,720.000000) scale(0.100000,-0.100000)" class="fill-current stroke-none">
-                <path
-                  d="M6337 6523 c-19 -16 -61 -46 -92 -68 -32 -22 -86 -60 -120 -85 -34 -25 -117 -83 -184 -130 -67 -47 -148 -103 -179 -126 -70 -50 -857 -607 -1197 -847 -304 -214 -371 -262 -433 -307 -27 -19 -104 -73 -171 -120 -67 -47 -138 -96 -156 -110 -34 -25 -77 -55 -265 -187 -52 -36 -114 -80 -137 -97 -23 -17 -64 -46 -91 -65 -26 -19 -68 -62 -92 -95 l-44 -61 0 -115 -1 -115 55 -78 c129 -184 178 -230 278 -263 77 -24 147 -15 204 28 25 18 69 50 99 71 158 110 420 295 970 685 168 119 354 251 412 292 59 41 153 107 209 147 57 40 127 89 157 110 29 21 82 58 116 83 34 25 87 62 116 83 125 87 195 136 394 278 116 82 212 149 215 149 6 0 293 -201 515 -359 39 -28 104 -74 145 -102 41 -29 181 -127 310 -219 129 -92 399 -283 600 -425 201 -142 426 -301 500 -354 74 -53 151 -107 171 -121 35 -23 86 -59 251 -177 37 -26 109 -77 160 -113 l93 -65 70 0 c54 0 82 6 125 26 70 33 102 63 182 174 110 152 108 148 108 268 l0 105 -41 61 c-44 66 -5 37 -702 531 -199 141 -245 184 -294 277 -70 132 -67 104 -73 688 l-5 530 -23 45 c-30 56 -96 126 -144 151 -84 43 -118 49 -291 49 -181 0 -256 -15 -329 -63 -45 -31 -115 -119 -129 -164 -7 -22 -15 -130 -18 -248 -9 -332 -13 -333 -323 -114 -339 239 -699 495 -765 543 -73 54 -105 58 -156 19z"
-                />
-                <path
-                  d="M6270 5120 c-52 -38 -108 -78 -125 -90 -16 -12 -88 -63 -160 -113 -71 -51 -159 -113 -195 -138 -36 -25 -261 -184 -500 -354 -239 -170 -474 -336 -523 -369 -48 -34 -119 -83 -157 -111 -37 -27 -100 -72 -140 -100 -39 -27 -100 -72 -135 -98 l-65 -48 0 -1246 c0 -867 3 -1266 11 -1312 20 -117 103 -262 198 -343 56 -48 159 -107 209 -120 23 -6 45 -14 48 -19 3 -5 250 -9 554 -9 485 0 550 2 564 16 14 14 16 94 16 730 l0 714 530 0 530 0 0 -714 c0 -636 2 -716 16 -730 14 -14 78 -16 559 -16 l543 0 70 29 c100 40 159 77 224 139 77 73 135 165 164 259 l24 78 0 1273 0 1272 -26 23 c-14 12 -51 40 -83 62 -32 22 -92 63 -132 92 -99 70 -227 160 -324 228 -44 31 -114 81 -155 111 -41 29 -109 77 -150 105 -41 29 -174 122 -295 208 -121 87 -321 228 -445 316 -124 87 -254 180 -290 205 -237 170 -224 168 -360 70z"
-                />
-              </g>
-            </svg>
+  {{ $siteMetadata := (json "SiteMetadata.json" "") }}
+  <header class="flex items-center justify-between py-10">
+    <div>
+      <a href="{{.Site.PathPrefix}}/" aria-label={{$siteMetadata.HeaderTitle}}>
+        <div class="flex items-center justify-between">
+          <div class="mr-3"> <img src="{{.Site.PathPrefix}}/static/images/logo.svg" /></div>
+          <div class="hidden h-6 text-2xl font-semibold sm:block">{{$siteMetadata.HeaderTitle}}</div>
+        </div>
+      </a>
+    </div>
+    <div class="flex items-center text-base leading-5">
+      <div class="hidden sm:block">
+        {{ $site := .Site }}
+        {{ range (json "HeaderNavLinks.json" "") }}
+          {{ $headerUrl := ($site.PathRelUrl .Href ) }}
+          <a href={{ $headerUrl }} class="p-1 font-medium text-gray-900 dark:text-gray-100 sm:p-4">
+            {{.Title}}
           </a>
-        </div>
-        {{ block "HeaderLogo" . }}
-        <div class="ml-4 text-xl font-bold text-gray-800 dark:text-white">{{ or .LogoTitle "LeetCoach" }}</div>
         {{ end }}
       </div>
-
-      <!-- Middle: Navigation Items -->
-      <div class="hidden md:flex items-center space-x-4">
-        {{ range $item := .CenterMenuItems }}
-        <a href="{{$item.Link}}" class="nav-link {{$item.Class}}">{{$item.Title}}</a>
-        {{ end }} {{ block "special_buttons" . }} {{ end }}
-      </div>
-
-      <!-- Right side: Theme Switcher and Mobile Menu Button -->
-      <div class="flex items-center space-x-4">
-        <!-- Extra buttons right aligned --->
-        <div class="hidden md:flex items-center space-x-4">
-          {{ range $item := .RightMenuItems }}
-          <a href="{{$item.Link}}" id="{{$item.Id}}" class="nav-link {{$item.Class}}">{{$item.Title}}</a>
-          {{ end }} {{ block "special_right_buttons" . }} {{ end }}
-          {{ if .ShowComposeButton }}
-          <button
-            class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-            hx-get="/views/ComposerSelectionModal"
-            hx-target="body"
-            hx-swap="beforeend"
-          >
-            Compose
-          </button>
-          {{ end }}
-          {{ if and .ShowLoginButton (not .IsLoggedIn) }}
-            <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium">
-              <a href="/login">Login</a>
-            </button>
-          {{ end }}
-          {{ if and .ShowLogoutButton .IsLoggedIn }}
-            <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium">
-              <a href="/auth/logout?to=/">Logout</a>
-            </button>
-          {{ end }}
-        </div>
-
-        <!-- Theme Switcher -->
-        <div class="relative">
-          <button
-            id="theme-toggle"
-            class="text-gray-600 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400"
-          >
-            <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
-            </svg>
-            <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
-              ></path>
-            </svg>
-            <svg id="theme-toggle-system-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fill-rule="evenodd"
-                d="M3 5a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2h-2.22l.123.489.804.804A1 1 0 0113 18H7a1 1 0 01-.707-1.707l.804-.804L7.22 15H5a2 2 0 01-2-2V5zm5.771 7H5V5h10v7H8.771z"
-                clip-rule="evenodd"
-              ></path>
-            </svg>
-          </button>
-        </div>
-
-        <!-- Mobile menu button -->
-        <button
-          id="mobile-menu-button"
-          class="md:hidden text-gray-600 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400"
-        >
-          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
-      </div>
+      {{ template "ThemeSwitch" . }}
+      {{ template "MobileNav" . }}
     </div>
-
-    <!-- Mobile menu -->
-    <div id="mobile-menu" class="hidden md:hidden pb-4">
-      <div class="px-2 pt-2 pb-3 space-y-1">
-        {{ range $item := .CenterMenuItems }}
-        <div>
-          <a
-            href="{{$item.Link}}"
-            class="block text-gray-600 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 px-3 py-2 rounded-md text-base font-medium"
-            >{{$item.Title}}</a
-          >
-        </div>
-        {{ end }} {{ range $idx, $item := .RightMenuItems }} {{ if eq $idx 0 }}
-        <hr />
-        {{ end }}
-        <div>
-          <a
-            href="{{$item.Link}}"
-            class="block text-gray-600 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 px-3 py-2 rounded-md text-base font-medium"
-            >{{$item.Title}}</a
-          >
-        </div>
-        {{ end }}
-      </div>
-    </div>
-  </div>
-</nav>
+  </header>
 {{ end }}
+

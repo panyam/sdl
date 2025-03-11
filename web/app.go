@@ -125,7 +125,8 @@ func (n *LCApp) Handler() http.Handler {
 	// TODO - turn this into a handle that will dynamically create case studies based on path and contents
 	// n.mux.Handle("/casestudies/bitly", NewCaseStudy("../casestudies/bitly").Handler())
 	// n.mux.HandleFunc("/cases/bitly", func(w http.ResponseWriter, r *http.Request) { fmt.Fprintf(w, "Did this work?") })
-	n.RegisterCaseStudy("/cases/bitly", "./casestudies/bitly")
+	n.mux.Handle("/", &site)
+	// n.RegisterCaseStudy("/cases/bitly", "./casestudies/bitly")
 
 	return n.mux
 	// return n.Session.LoadAndSave(n.mux)

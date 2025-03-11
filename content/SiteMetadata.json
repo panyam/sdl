@@ -1,0 +1,51 @@
+{ "Title": "LeetCoach",
+  "Author": "Sri Panyam",
+  "HeaderTitle": "LeetCoach",
+  "Description": "One stop shop for master system designs and interview scenarios",
+  "HideDrafts": true,
+  "Language": "en-us",
+  "MaxPostsPerPage": 20,
+  "Theme": "system",
+  "SiteUrl": "https://leetcoach.com",
+  "SiteRepo": "https://github.com/panyam/leetcoach",
+  "SiteLogo": "/static/images/logo.png",
+  "Image": "/static/images/avatar.png",
+  "SocialBanner": "/static/images/twitter-card.png",
+  "Email": "sri.panyam@gmail.com",
+  "Github": "https://github.com/panyam",
+  "Twitter": "https://twitter.com/panyam",
+  "Facebook": "",
+  "Youtube": "",
+  "Linkedin": "https://www.linkedin.com/in/srirampanyam",
+  "Locale": "en-US",
+  "Analytics": {
+    "PlausibleDataDomain": "",
+    "SimpleAnalytics": false,
+    "UmamiWebsiteId": "",
+    "GoogleAnalyticsId": ""
+  },
+  "Newsletter": { "provider": "buttondown" },
+  "Comment": {
+    "Provider": "giscus",
+    "GiscusConfig": {
+      "Repo": "https://github.com/panyam/blogcomments",
+      "RepositoryId": "R_kgDOJTt14A",
+      "Category": "Announcements",
+      "CategoryId": "DIC_kwDOJTt14M4CVmZc",
+      "Mapping": "pathname",
+      "Reactions": "1",
+      "Metadata": "0",
+      "Theme": "light",
+      "DarkTheme": "transparent_dark",
+      "ThemeURL": ""
+    },
+    "UtterancesConfig": {
+      "Repo": "https://github.com/panyam/blogcomments",
+      "IssueTerm": "",
+      "Label": "",
+      "Theme": "",
+      "DarkTheme": ""
+    },
+    "DisqusConfig": { "Shortname": "" }
+  }
+}

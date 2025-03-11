@@ -168,10 +168,12 @@ func (c *CaseStudy) ServeMDX(w http.ResponseWriter, r *http.Request, path string
 		return
 	}
 
-	c.Templates.RenderHtmlTemplate(w, "CaseStudyPage", map[string]any{
-		"CaseStudy": c,
-		"Contents":  buf.String(),
-	})
+	/*
+		c.Templates.RenderHtmlTemplate(w, "CaseStudyPage", map[string]any{
+			"CaseStudy": c,
+			"Contents":  buf.String(),
+		}, nil)
+	*/
 }
 
 func (c *CaseStudy) PathForDrawingId(drawingId string) string {
