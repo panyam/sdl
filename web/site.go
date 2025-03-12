@@ -56,19 +56,7 @@ func TemplateFunctions() template.FuncMap {
 		"PagesByTag":    GetPagesByTag,
 		"AllTags":       GetAllTags,
 		"KeysForTagMap": KeysForTagMap,
-		"Drawing": func(params map[string]any) (out string, err error) {
-			width := "100%"
-			height := "800px"
-			if val, ok := params["width"]; ok && val != nil {
-				width = val.(string)
-			}
-			if val, ok := params["height"]; ok && val != nil {
-				height = val.(string)
-			}
-			out = fmt.Sprintf(`<div class="systemDrawing" style="width: %s; height: %s">
-			</div>`, width, height)
-			return
-		},
+		"Drawing":       DrawingView,
 	}
 }
 
@@ -226,5 +214,35 @@ func GetAllTags(resources []*s3.Resource) (tagCount map[string]int) {
 			}
 		}
 	}
+	return
+}
+
+func DrawingView(params map[string]any) (out string, err error) {
+	width := "100%"
+	height := "800px"
+	caseStudyId := ""
+	drawingId := ""
+	if val, ok := params["width"]; ok && val != nil {
+		width = val.(string)
+	}
+	if val, ok := params["width"]; ok && val != nil {
+		width = val.(string)
+	}
+	if val, ok := params["height"]; ok && val != nil {
+		height = val.(string)
+	}
+	if _, ok := params["id"]; ok {
+		if val, ok := params["id"].(string); ok && val != "" {
+			drawingId = val
+		}
+	}
+	if _, ok := params["caseStudyId"]; ok {
+		if val, ok := params["caseStudyId"].(string); ok && val != "" {
+			caseStudyId = val
+		}
+	}
+	toolbar := `<div class="toolbar"></div>`
+	out = fmt.Sprintf(`<div class="systemDrawing" style="width: %s; height: %s;" caseStudyId="%s" drawingId="%s">%s</div>`,
+		width, height, caseStudyId, drawingId, toolbar)
 	return
 }
