@@ -8,14 +8,31 @@
     <title>{{.Title}}</title>
     <meta property="og:title" content="{{.Title}}" />
     <meta property="og:description" content="{{.Summary}}" }} />
+    <style>
+    main {
+        display: flex;
+        flex-direction: row;
+    }
+
+    .gutter {
+        background-color: #eee;
+        background-repeat: no-repeat;
+        background-position: 50%;
+    }
+
+    .gutter.gutter-horizontal {
+        background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==');
+        cursor: col-resize;
+    }
+    </style>
 {{ end }}
 
 {{ define "BodySection" }}
 <input type=hidden id="caseStudyId" value="{{.Id}}" />
-<main class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<main class="w-full flex-grow overflow-y-auto">
   {{ template "ScrollTopAndComment" }}
-  <div id = "outlinePanel">Table of contents here</div>
-  <div id = "contentPanel overflow-auto pl-12 bg-white dark:bg-gray-300">
+  <div id = "outlinePanel" class="p-4 overflow-auto bg-white dark:bg-gray-300">Table of contents here</div>
+  <div id = "contentPanel" class="overflow-auto pl-12 bg-white dark:bg-gray-300">
     <div class="mx-auto max-w-3xl px-4 sm:px-6 xl:max-w-5xl xl:px-0">
     <div class="divide-y divide-gray-200 pb-8 dark:divide-gray-700 xl:divide-y-0 " style="gridTemplateRows: 'auto 1fr'">
     <div class="divide-y divide-gray-200 dark:divide-gray-700 xl:col-span-3 xl:row-span-2 xl:pb-0">
@@ -26,7 +43,7 @@
     </div>
     </div>
   </div>
-  <div id = "notesPanel"></div>
+  <div id = "notesPanel" class="p-4 overflow-auto bg-white dark:bg-gray-300"></div>
 </main>
 {{ end }}
 

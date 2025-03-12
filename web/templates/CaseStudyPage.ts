@@ -1,5 +1,6 @@
 
 import { ExcalidrawWrapper, ExcalidrawToolbar } from './ExcalidrawWrapper';
+import Split from 'split.js'
 
 // Export the class for use in browser
 export { ExcalidrawWrapper, ExcalidrawToolbar };
@@ -30,20 +31,25 @@ class SystemDrawing {
   }
 }
 
+// Overall CaseStudy page to also handle notes and TOC
 class CaseStudyPage {
+  caseStudyId: string
   constructor() {
-  }
-}
+    this.caseStudyId = (document.getElementById("caseStudyId") as HTMLInputElement).value
 
-document.addEventListener("DOMContentLoaded", function() {
-    const caseStudyId = (document.getElementById("caseStudyId") as HTMLInputElement).value
     // populate all drawings
     const drawings = document.querySelectorAll(".systemDrawing")
     for (const drawing of drawings) {
       const rootElem = drawing as HTMLDivElement
       const tbElem = rootElem.querySelector("toolbar") as HTMLDivElement
-      new SystemDrawing(caseStudyId, rootElem, tbElem)
+      const sd = new SystemDrawing(this.caseStudyId, rootElem, tbElem)
     }
-
     // Get references to HTML elements
+
+    Split(["#outlinePanel", "#contentPanel", "#notesPanel"], { sizes: [15, 70], direction: "horizontal", })
+  }
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  const csp = new CaseStudyPage()
 })
