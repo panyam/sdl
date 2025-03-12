@@ -8,8 +8,6 @@ summary: Leetcode
 template: "CaseStudyPage.html/CaseStudyPage"
 ---
 
-# Design LeetCode
-
 ## Requirements (~5 minutes)
 
 ### Functional Requirements (~2-3 minutes)

@@ -13,14 +13,13 @@
         </div>
       </a>
     </div>
+    <div class="flex items-center text-base leading-5">{{ block "HeaderCenterSection" . }} {{ end }}</div>
     <div class="flex items-center text-base leading-5">
       <div class="hidden sm:block">
         {{ $site := .Site }}
         {{ range (json "HeaderNavLinks.json" "") }}
           {{ $headerUrl := ($site.PathRelUrl .Href ) }}
-          <a href={{ $headerUrl }} class="p-1 font-medium text-gray-900 dark:text-gray-100 sm:p-4">
-            {{.Title}}
-          </a>
+          <a href={{ $headerUrl }} class="p-1 font-medium text-gray-900 dark:text-gray-100 sm:p-4"> {{.Title}} </a>
         {{ end }}
       </div>
       {{ template "ThemeSwitch" . }}

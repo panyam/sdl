@@ -7,15 +7,15 @@
 <!DOCTYPE html>
 <html lang="en" class="h-full">
 <head>
-  <script>
-    if (localStorage.theme === 'dark' ||
-        (!('theme' in localStorage) &&
-            window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-        document.documentElement.classList.add('dark');
-    } else {
-        document.documentElement.classList.remove('dark');
-    }
-  </script>
+    <script>
+      if (localStorage.getItem('dark-mode') === 'true' || (!('dark-mode' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.querySelector('html').classList.add('dark');
+          document.querySelector('html').style.setProperty("color-scheme", "dark")
+      } else {
+          document.querySelector('html').classList.remove('dark');
+          document.querySelector('html').style.setProperty("color-scheme", "light")
+      }
+    </script>
   {{ block "HeadSection" . }}
     {{ template "CommonPageHeader" dict "Site" .Site }}
     <meta charset="UTF-8">
@@ -24,8 +24,8 @@
     {{ template "ExcalidrawHeader" . }}
   {{ end }}
 </head>
-<body class="h-screen w-screen bg-white dark:bg-gray-900 transition-colors duration-200 flex flex-col overflow-hidden">
-  {{ block "HeaderSection" . }} {{ template "Header" .Header }} {{ end }} 
+<body class="h-screen w-screen bg-white text-black antialiased dark:bg-gray-900 dark:text-white transition-colors duration-200 flex flex-col overflow-hidden">
+  {{ block "HeaderSection" . }} {{ template "Header" . }} {{ end }} 
   {{ block "BodySection" . }} Default Body... {{ end }} 
   {{ block "FooterBody" . }} {{ template "Footer" . }} {{ end }} 
 </body>
