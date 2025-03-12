@@ -4,6 +4,7 @@ date: 2024-05-28T11:29:10AM
 tags: ['bitlly', 'easy']
 draft: false
 authors: ['Sri Panyam']
+template: "CaseStudyPage.html"
 summary: Bit.ly is a URL shortening service that converts long URLs into shorter, manageable links. It also provides analytics for the shortened URLs.
 ---
 

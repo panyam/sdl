@@ -1,26 +1,32 @@
 {{# include "./Header.html" #}}
-{{# include "./BasePage.html" #}}
+{{# include "./OldBasePage.html" #}}
 {{# include "./gen.CaseStudyPage.html" #}}
 {{# include "./CommonPageHeader.html" #}}
+{{# include "./ScrollTopAndComment.html" #}}
 
 {{ define "ExtraHeadSection" }}
-    <title>{{.Notation.Name}}</title>
-    <meta property="og:title" content="{{.Notation.Name}}" />
-    <meta property="og:description" content="{{.Notation.Description}}" }} />
+    <title>{{.Title}}</title>
+    <meta property="og:title" content="{{.Title}}" />
+    <meta property="og:description" content="{{.Summary}}" }} />
 {{ end }}
 
 {{ define "BodySection" }}
 <input type=hidden id="caseStudyId" value="{{.Id}}" />
 <main class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-<div id = "outlinePanel">
-  Table of contents here
-</div>
-<div id = "contentPanel overflow-auto pl-12 bg-white dark:bg-gray-300">
-<article class="prose dark:prose-invert text-gray-800 dark:text-gray-300">
-  {{ .Contents | HTML }}
-</article>
-</div>
-<div id = "notesPanel"></div>
+  {{ template "ScrollTopAndComment" }}
+  <div id = "outlinePanel">Table of contents here</div>
+  <div id = "contentPanel overflow-auto pl-12 bg-white dark:bg-gray-300">
+    <div class="mx-auto max-w-3xl px-4 sm:px-6 xl:max-w-5xl xl:px-0">
+    <div class="divide-y divide-gray-200 pb-8 dark:divide-gray-700 xl:divide-y-0 " style="gridTemplateRows: 'auto 1fr'">
+    <div class="divide-y divide-gray-200 dark:divide-gray-700 xl:col-span-3 xl:row-span-2 xl:pb-0">
+    <article class="prose max-w-none pb-8 pt-10 dark:prose-dark">
+      {{ .Content | HTML }}
+    </article>
+    </div>
+    </div>
+    </div>
+  </div>
+  <div id = "notesPanel"></div>
 </main>
 {{ end }}
 

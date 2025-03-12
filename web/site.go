@@ -25,12 +25,16 @@ var site = s3.Site{
 		Name:   "BasePage.html",
 		Params: map[any]any{"BodyTemplateName": "BaseBody"},
 	},
-	GetTemplate: func(res *s3.Resource, out *s3.PageTemplate) {
-		relpath := res.RelPath()
-		if strings.HasPrefix(relpath, "/casestudies/") {
-			out.Params = map[any]any{"BodyTemplateName": "PostSimple"}
-		}
-	},
+	/*
+		GetTemplate: func(res *s3.Resource, out *s3.PageTemplate) {
+			relpath := res.RelPath()
+			if strings.HasPrefix(relpath, "/casestudies/") {
+				out.Params = map[any]any{
+					"BodyTemplateName": "PostSimple",
+				}
+			}
+		},
+	*/
 }
 
 func init() {

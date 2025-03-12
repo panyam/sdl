@@ -5,9 +5,7 @@ draft: false
 images: []
 authors: ['Sri Panyam']
 hideInIndex: true
-templateParams: { BodyTemplateName: "BaseBody" } 
 ---
-
 
 {{# include "PostList.html" #}}
 
@@ -17,7 +15,7 @@ templateParams: { BodyTemplateName: "BaseBody" }
 {{ $filteredPosts := (Slice $allPosts 0 $pageSize ) }}
 {{ $numPages := Ceil (Div ( len $allPosts ) $pageSize) }}
 {{ template "PostList" dict
-      "Title" "AllPosts"
+      "Title" ""
       "Site" .Site
       "PageNum" 1
       "PageSize" $pageSize
