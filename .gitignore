@@ -2,6 +2,7 @@
 output
 __pycache__/
 public
+web/static/js/gen
 coverage
 datadir
 *.py[cod]

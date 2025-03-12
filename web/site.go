@@ -1,6 +1,7 @@
 package web
 
 import (
+	"fmt"
 	"html/template"
 	"log"
 	"os"
@@ -50,26 +51,23 @@ func init() {
 // //////////// Functions for our site
 func TemplateFunctions() template.FuncMap {
 	return template.FuncMap{
-		"Replace":       strings.Replace,
 		"LeafPages":     LeafPages,
 		"PagesByDate":   GetPagesByDate,
 		"PagesByTag":    GetPagesByTag,
 		"AllTags":       GetAllTags,
 		"KeysForTagMap": KeysForTagMap,
-		"AllRes": func() []*s3.Resource {
-			resources := site.ListResources(
-				func(res *s3.Resource) bool {
-					return !res.IsParametric
-				},
-				// sort by reverse date order
-				/*sort=*/
-				nil, -1, -1)
-			sort.Slice(resources, func(idx1, idx2 int) bool {
-				res1 := resources[idx1]
-				res2 := resources[idx2]
-				return res1.CreatedAt.Sub(res2.CreatedAt) > 0
-			})
-			return resources
+		"Drawing": func(params map[string]any) (out string, err error) {
+			width := "100%"
+			height := "800px"
+			if val, ok := params["width"]; ok && val != nil {
+				width = val.(string)
+			}
+			if val, ok := params["height"]; ok && val != nil {
+				height = val.(string)
+			}
+			out = fmt.Sprintf(`<div class="systemDrawing" style="width: %s; height: %s">
+			</div>`, width, height)
+			return
 		},
 	}
 }

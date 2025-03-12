@@ -1,7 +1,6 @@
 {{# include "./Header.html" #}}
 {{# include "./Footer.html" #}}
 {{# include "./CommonPageHeader.html" #}}
-{{# include "./Excalidraw.html" #}}
 
 {{ define "BasePage" }}
 <!DOCTYPE html>
@@ -21,7 +20,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {{ block "ExtraHeadSection" . }}<title>{{.FrontMatter.Title}}</title>{{ end }}
-    {{ template "ExcalidrawHeader" . }}
   {{ end }}
 </head>
 <body class="h-screen w-screen bg-white text-black antialiased dark:bg-gray-900 dark:text-white transition-colors duration-200 flex flex-col overflow-hidden">

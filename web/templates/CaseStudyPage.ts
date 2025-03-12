@@ -46,7 +46,12 @@ class CaseStudyPage {
     }
     // Get references to HTML elements
 
-    Split(["#outlinePanel", "#contentPanel", "#notesPanel"], { sizes: [15, 70], direction: "horizontal", })
+    Split(["#outlinePanel", "#contentPanel", "#notesPanel"], { sizes: [15, 70], direction: "horizontal", });
+
+    // For testing only
+    const contentPanel = document.getElementById('contentPanel') as HTMLDivElement
+    contentPanel.focus();
+    contentPanel.scrollTop = contentPanel.scrollHeight;
   }
 }
 

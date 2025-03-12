@@ -4,7 +4,7 @@ date: 2024-05-28T11:29:10AM
 tags: ['bitlly', 'easy']
 draft: false
 authors: ['Sri Panyam']
-template: "CaseStudyPage.html"
+template: "CaseStudyPage.html/CaseStudyPage"
 summary: Bit.ly is a URL shortening service that converts long URLs into shorter, manageable links. It also provides analytics for the shortened URLs.
 ---
 
@@ -112,4 +112,4 @@ Main index is hash-index - reads are 1-10 ms.   To get it faster introduce a cac
 
 Imagine load from all over the world.   Here it would be useful to replicate our store to other regions and have traffic from users go to regions closest to them for reads.  Writes would still go to a single region for consistency (otherwise managing global master-master configs are more complicated and expensive).
 
-<div class = "systemDrawing"></div>
+{{ Drawing ( dict "caseStudyId" "bitly" "id" "hld" ) }}

@@ -2086,11 +2086,6 @@ select {
   border-color: rgb(64 64 64 / var(--tw-border-opacity, 1));
 }
 
-.dark\:bg-gray-300:is(.dark *) {
-  --tw-bg-opacity: 1;
-  background-color: rgb(212 212 212 / var(--tw-bg-opacity, 1));
-}
-
 .dark\:bg-gray-700:is(.dark *) {
   --tw-bg-opacity: 1;
   background-color: rgb(64 64 64 / var(--tw-bg-opacity, 1));

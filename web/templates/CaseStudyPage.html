@@ -33,7 +33,7 @@
 
 {{ define "BodySection" }}
 <input type=hidden id="caseStudyId" value="{{.Id}}" />
-<main class="w-full flex-grow overflow-y-auto">
+<main class="w-full flex-grow overflow-y-auto" tabindex="0">
   {{ template "ScrollTopAndComment" }}
   <div id = "outlinePanel" class="p-4 overflow-auto" style="width: calc(15% - 5px);">Table of contents here</div>
   <div id = "contentPanel" class="overflow-auto pl-12" style="width: calc(70% - 10px);">
