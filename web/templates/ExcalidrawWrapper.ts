@@ -335,6 +335,9 @@ export class ExcalidrawWrapper {
       interface ExcalidrawComponentProps {
         onChange: (elements: readonly ExcalidrawElement[], appState: Partial<AppState>) => void;
       }
+      
+      // Render the component
+      const self = this;
 
       class ExcalidrawComponent extends React.Component<ExcalidrawComponentProps> {
         excalidrawRef: React.RefObject<ExcalidrawImperativeAPI>;
@@ -343,12 +346,12 @@ export class ExcalidrawWrapper {
           super(props);
           this.excalidrawRef = React.createRef<ExcalidrawImperativeAPI>();
         }
-        
-        componentDidMount() {
-          if (this.excalidrawRef.current) {
+
+        private obtainedExcalidrawAPI(api: ExcalidrawImperativeAPI) {
             // Pass the instance back to our wrapper
+          if (api) {
             const wrapperSelf = self; // Reference to the wrapper
-            wrapperSelf.excalidrawInstance = this.excalidrawRef.current;
+            wrapperSelf.excalidrawInstance = api;
             
             // Apply default settings
             wrapperSelf.excalidrawInstance.updateScene({
@@ -372,6 +375,12 @@ export class ExcalidrawWrapper {
                 }
               }, 300);
             }
+          } 
+        }
+        
+        componentDidMount() {
+          if (this.excalidrawRef.current) {
+            this.obtainedExcalidrawAPI(this.excalidrawRef.current)
           }
         }
         
@@ -420,13 +429,14 @@ export class ExcalidrawWrapper {
           
           // Use createRef via props instead of direct ref assignment
           props.excalidrawRef = this.excalidrawRef;
+          props.excalidrawAPI = (api: ExcalidrawImperativeAPI) => {
+            console.log("Ok we got here???")
+            this.obtainedExcalidrawAPI(api)
+          }
           
           return React.createElement(excalidrawModule.Excalidraw, props);
         }
       }
-      
-      // Render the component
-      const self = this;
       
       // Simply use the legacy React 17 render method to avoid issues
       // The newer React 18 createRoot API would require importing from react-dom/client

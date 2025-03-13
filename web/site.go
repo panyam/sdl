@@ -219,7 +219,7 @@ func GetAllTags(resources []*s3.Resource) (tagCount map[string]int) {
 
 func DrawingView(params map[string]any) (out string, err error) {
 	width := "100%"
-	height := "800px"
+	height := "400px"
 	caseStudyId := ""
 	drawingId := ""
 	if val, ok := params["width"]; ok && val != nil {
@@ -241,7 +241,7 @@ func DrawingView(params map[string]any) (out string, err error) {
 			caseStudyId = val
 		}
 	}
-	toolbar := `<div class="toolbar"></div>`
+	toolbar := `<toolbar></toolbar>`
 	out = fmt.Sprintf(`<div class="systemDrawing" style="width: %s; height: %s;" caseStudyId="%s" drawingId="%s">%s</div>`,
 		width, height, caseStudyId, drawingId, toolbar)
 	return
