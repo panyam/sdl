@@ -112,4 +112,7 @@ Main index is hash-index - reads are 1-10 ms.   To get it faster introduce a cac
 
 Imagine load from all over the world.   Here it would be useful to replicate our store to other regions and have traffic from users go to regions closest to them for reads.  Writes would still go to a single region for consistency (otherwise managing global master-master configs are more complicated and expensive).
 
-{{ Drawing ( dict "caseStudyId" "bitly" "id" "hld" ) }}
+{{# include "DrawingView.html" #}}
+
+{{ template "DrawingView" ( dict "caseStudyId" "bitly" "id" "hld" ) }}
+

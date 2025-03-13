@@ -217,7 +217,7 @@ func GetAllTags(resources []*s3.Resource) (tagCount map[string]int) {
 	return
 }
 
-func DrawingView(params map[string]any) (out string, err error) {
+func DrawingView(site *s3.Site, params map[string]any) (out string, err error) {
 	width := "100%"
 	height := "400px"
 	caseStudyId := ""
