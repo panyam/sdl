@@ -25,6 +25,34 @@
         cursor: col-resize;
     }
     </style>
+    <link
+      rel="stylesheet"
+      href="https://esm.sh/@excalidraw/excalidraw@0.18.0/dist/dev/index.css"
+    />
+    <style>
+    .toolbarButtonImage:hover {
+      border: solid 1px red
+    }
+    .toolbarButtonImage {
+      width: 32px;
+      height: 32px;
+      margin-top: 0px;
+      margin-bottom: 0px;
+    }
+    .toolbarButton {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: small;
+    }
+    .drawingToolbar {
+      gap: 5px;
+      padding: 5px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+  </style>
 {{ end }}
 
 {{ define "FooterBody" }}<hr/>{{ end }} 
@@ -37,15 +65,13 @@
   {{ template "ScrollTopAndComment" }}
   <div id = "outlinePanel" class="p-4 overflow-auto" style="width: calc(15% - 5px);">Table of contents here</div>
   <div id = "contentPanel" class="overflow-auto pl-12" style="width: calc(70% - 10px);">
-    <div class="mx-auto max-w-3xl px-4 sm:px-6 xl:max-w-5xl xl:px-0">
-    <div class="divide-y divide-gray-200 pb-8 dark:divide-gray-700 xl:divide-y-0 " style="gridTemplateRows: 'auto 1fr'">
-    <div class="divide-y divide-gray-200 dark:divide-gray-700 xl:col-span-3 xl:row-span-2 xl:pb-0">
-    <article class="prose max-w-none pb-8 pt-10 dark:prose-dark">
-      {{ .Content | HTML }}
-    </article>
-    {{ template "Footer" . }}
-    </div>
-    </div>
+    <div class="mx-auto px-4 sm:px-6 xl:px-0">
+      <div class="divide-y divide-gray-200 pb-8 dark:divide-gray-700 xl:divide-y-0 " style="gridTemplateRows: 'auto 1fr'">
+        <div class="divide-y divide-gray-200 dark:divide-gray-700 xl:col-span-3 xl:row-span-2 xl:pb-0">
+          <article class="prose max-w-none pb-8 pt-10 dark:prose-dark"> {{ .Content | HTML }} </article>
+          {{ template "Footer" . }}
+        </div>
+      </div>
     </div>
   </div>
   <div id = "notesPanel" class="p-4 overflow-auto"></div>

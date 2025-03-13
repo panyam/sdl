@@ -24,7 +24,7 @@ class SystemDrawing {
     })
     if (toolbarContainer) {
       this.excalToolbar = new ExcalidrawToolbar(toolbarContainer, {
-        vertical: true,
+        vertical: false,
         excalidrawWrapper: this.excalWrapper,
       })
     }
@@ -38,10 +38,10 @@ class CaseStudyPage {
     this.caseStudyId = (document.getElementById("caseStudyId") as HTMLInputElement).value
 
     // populate all drawings
-    const drawings = document.querySelectorAll(".systemDrawing")
-    for (const drawing of drawings) {
-      const rootElem = drawing as HTMLDivElement
-      const tbElem = rootElem.querySelector("toolbar") as HTMLDivElement
+    const drawings = document.querySelectorAll(".drawingContainer")
+    for (const container of drawings) {
+      const rootElem = container.querySelector(".systemDrawing") as HTMLDivElement;
+      const tbElem= container.querySelector(".drawingToolbar") as HTMLDivElement;
       const sd = new SystemDrawing(this.caseStudyId, rootElem, tbElem)
     }
     // Get references to HTML elements

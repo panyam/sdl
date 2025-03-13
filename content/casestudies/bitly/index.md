@@ -114,5 +114,5 @@ Imagine load from all over the world.   Here it would be useful to replicate our
 
 {{# include "DrawingView.html" #}}
 
-{{ template "DrawingView" ( dict "caseStudyId" "bitly" "id" "hld" ) }}
+{{ template "DrawingView" ( dict "caseStudyId" "bitly" "id" "casestudies/bitly/hld" ) }}
 

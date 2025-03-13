@@ -1,3 +1,5 @@
+import { FONT_FAMILY } from "@excalidraw/excalidraw";
+
 import {
   Excalidraw,
   exportToBlob,
@@ -12,19 +14,10 @@ import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types/types
 type ExcalidrawElement = any;
 type AppState = any;
 
-// Define our toolbar button properties
-export interface ToolbarButton {
-  label: string;
-  onClick: () => void;
-  className?: string;
-}
-
 /**
  * Independent toolbar for Excalidraw that can be placed anywhere
  */
 export class ExcalidrawToolbar {
-  private toolbarElement: HTMLDivElement;
-  private buttons: ToolbarButton[] = [];
   private excalidrawWrapper: ExcalidrawWrapper | null = null;
   
   /**
@@ -33,27 +26,16 @@ export class ExcalidrawToolbar {
    * @param options Configuration options
    */
   constructor(
-    container: HTMLElement, 
+    public container: HTMLElement, 
     options?: {
       vertical?: boolean;
       excalidrawWrapper?: ExcalidrawWrapper;
     }
   ) {
-    // Create toolbar element
-    this.toolbarElement = document.createElement("div");
-    this.toolbarElement.className = "excalidraw-toolbar";
-    this.toolbarElement.style.display = "flex";
-    this.toolbarElement.style.flexDirection = options?.vertical ? "column" : "row";
-    this.toolbarElement.style.gap = "5px";
-    this.toolbarElement.style.padding = "5px";
-    
     // Set wrapper if provided
     if (options?.excalidrawWrapper) {
       this.setExcalidrawWrapper(options.excalidrawWrapper);
     }
-    
-    // Append to container
-    container.appendChild(this.toolbarElement);
   }
   
   /**
@@ -63,172 +45,15 @@ export class ExcalidrawToolbar {
   public setExcalidrawWrapper(wrapper: ExcalidrawWrapper): void {
     this.excalidrawWrapper = wrapper;
     
-    // Add default buttons if wrapper is provided
-    this.addDefaultButtons();
-  }
-  
-  /**
-   * Add a button to the toolbar
-   * @param button The button configuration
-   */
-  public addButton(button: ToolbarButton): void {
-    const buttonEl = document.createElement("button");
-    buttonEl.textContent = button.label;
-    buttonEl.style.padding = "6px 12px";
-    buttonEl.style.cursor = "pointer";
-    buttonEl.style.border = "1px solid #ccc";
-    buttonEl.style.borderRadius = "4px";
-    buttonEl.style.backgroundColor = "white";
-    buttonEl.style.transition = "background-color 0.2s";
-    
-    if (button.className) {
-      buttonEl.className = button.className;
-    }
-    
-    buttonEl.addEventListener("click", button.onClick);
-    
-    // Add hover effect
-    buttonEl.addEventListener("mouseover", () => {
-      buttonEl.style.backgroundColor = "#f0f0f0";
-    });
-    
-    buttonEl.addEventListener("mouseout", () => {
-      buttonEl.style.backgroundColor = "white";
-    });
-    
-    this.toolbarElement.appendChild(buttonEl);
-    this.buttons.push(button);
-  }
-  
-  /**
-   * Add default buttons for controlling Excalidraw
-   */
-  private addDefaultButtons(): void {
-    if (!this.excalidrawWrapper) {
-      return;
-    }
-    
-    // Clear existing buttons
-    while (this.toolbarElement.firstChild) {
-      this.toolbarElement.removeChild(this.toolbarElement.firstChild);
-    }
-    this.buttons = [];
-    
-    // Add save button
-    this.addButton({
-      label: "Save",
-      onClick: async () => {
-        if (this.excalidrawWrapper) {
-          // Get the current drawing as JSON
-          const jsonData = this.excalidrawWrapper.getAsJSON();
-          
-          // 1. Update the Pre element if it exists
-          const container = this.excalidrawWrapper.getContainer();
-          const preElement = container.querySelector('pre');
-          if (preElement) {
-            preElement.textContent = jsonData;
-          }
-          
-          // 2. Save to API if an ID is provided in the container's data attribute
-          const drawingId = container.dataset.drawingId;
-          if (drawingId) {
-            try {
-              const response = await fetch(`/drawings/${drawingId}/`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: jsonData
-              });
-              
-              if (!response.ok) {
-                throw new Error(`API error: ${response.status}`);
-              }
-              
-              console.log(`Drawing saved to API with ID: ${drawingId}`);
-              
-              // Show notification via wrapper
-              this.excalidrawWrapper.showNotification("Drawing saved successfully!");
-            } catch (error) {
-              console.error("Failed to save drawing to API:", error);
-              this.excalidrawWrapper.showNotification("Error saving drawing to API", true);
-            }
-          } else {
-            // If no API saving is configured, fall back to download
-            const blob = new Blob([jsonData], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "excalidraw-drawing.json";
-            a.click();
-            URL.revokeObjectURL(url);
-          }
-        }
-      }
-    });
-    
-    // Add load button
-    this.addButton({
-      label: "Load",
-      onClick: () => {
-        if (this.excalidrawWrapper) {
-          const fileInput = document.createElement("input");
-          fileInput.type = "file";
-          fileInput.accept = "application/json";
-          fileInput.style.display = "none";
-          document.body.appendChild(fileInput);
-          
-          fileInput.addEventListener("change", async (e: Event) => {
-            const target = e.target as HTMLInputElement;
-            if (target.files && target.files[0] && this.excalidrawWrapper) {
-              const file = target.files[0];
-              await this.excalidrawWrapper.loadFromBlob(file);
-            }
-            document.body.removeChild(fileInput);
-          }, { once: true });
-          
-          fileInput.click();
-        }
-      }
-    });
-    
-    // Add clear button
-    this.addButton({
-      label: "Clear",
-      onClick: () => {
-        if (this.excalidrawWrapper) {
-          this.excalidrawWrapper.clearDrawing();
-        }
-      }
-    });
-    
-    // Add theme toggle button
-    this.addButton({
-      label: "Toggle Theme",
-      onClick: () => {
-        if (this.excalidrawWrapper) {
-          this.excalidrawWrapper.toggleTheme();
-        }
-      }
-    });
-    
-    // Add readonly toggle button
-    this.addButton({
-      label: "Toggle Read-Only",
-      onClick: () => {
-        if (this.excalidrawWrapper) {
-          this.excalidrawWrapper.toggleReadOnly();
-        }
-      }
-    });
-  }
-  
-  /**
-   * Get the toolbar element
-   * @returns The HTML element containing the toolbar
-   */
-  public getElement(): HTMLDivElement {
-    return this.toolbarElement;
+    const saveButton = this.container.querySelector(".saveButton") as HTMLButtonElement;
+    saveButton.addEventListener("click", async () => {
+      if (this.excalidrawWrapper)  await this.excalidrawWrapper.saveToServer();
+    })
+
+    const reloadButton = this.container.querySelector(".reloadButton") as HTMLButtonElement;
+    reloadButton.addEventListener("click", async () => {
+      if (this.excalidrawWrapper)  await this.excalidrawWrapper.reloadFromServer();
+    })
   }
 }
 
@@ -293,6 +118,73 @@ export class ExcalidrawWrapper {
     
     // Initialize the drawing component
     this.initialize(initialData);
+  }
+
+  async reloadFromServer() {
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = "application/json";
+    fileInput.style.display = "none";
+    document.body.appendChild(fileInput);
+    
+    fileInput.addEventListener("change", async (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      if (target.files && target.files[0]) {
+        const file = target.files[0];
+        await this.loadFromBlob(file);
+      }
+      document.body.removeChild(fileInput);
+    }, { once: true });
+    
+    fileInput.click();
+  }
+
+  async saveToServer() {
+    // Get the current drawing as JSON
+    const jsonData = this.getAsJSON();
+    console.log("Saved: ", jsonData)
+    
+    // 1. Update the Pre element if it exists
+    const container = this.getContainer();
+    const preElement = container.querySelector('pre');
+    if (preElement) {
+      preElement.textContent = jsonData;
+    }
+    
+    // 2. Save to API if an ID is provided in the container's data attribute
+    const drawingId = container.dataset.drawingId;
+    if (drawingId) {
+      try {
+        const response = await fetch(`/drawings/${drawingId}/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: jsonData
+        });
+        
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+        
+        console.log(`Drawing saved to API with ID: ${drawingId}`);
+        
+        // Show notification via wrapper
+        this.showNotification("Drawing saved successfully!");
+      } catch (error) {
+        console.error("Failed to save drawing to API:", error);
+        this.showNotification("Error saving drawing to API", true);
+      }
+    } else {
+      // If no API saving is configured, fall back to download
+      const blob = new Blob([jsonData], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "excalidraw-drawing.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
   }
   
   /**
@@ -430,7 +322,6 @@ export class ExcalidrawWrapper {
           // Use createRef via props instead of direct ref assignment
           props.excalidrawRef = this.excalidrawRef;
           props.excalidrawAPI = (api: ExcalidrawImperativeAPI) => {
-            console.log("Ok we got here???")
             this.obtainedExcalidrawAPI(api)
           }
           
@@ -446,6 +337,7 @@ export class ExcalidrawWrapper {
           onChange: (elements: readonly ExcalidrawElement[], appState: Partial<AppState>) => {
             self.elements = elements;
             self.appState = appState;
+            // console.log("AppState: ", appState)
             // You can add custom onChange handling here
           }
         }),
@@ -471,7 +363,8 @@ export class ExcalidrawWrapper {
       const elements = parsedData.elements || [];
       
       this.excalidrawInstance.updateScene({
-        elements: convertToExcalidrawElements(elements),
+        // elements: convertToExcalidrawElements(elements),
+        elements: (elements),
         appState: parsedData.appState || {}
       });
     } catch (error) {

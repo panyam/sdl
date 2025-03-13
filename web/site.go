@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -56,7 +57,7 @@ func TemplateFunctions() template.FuncMap {
 		"PagesByTag":    GetPagesByTag,
 		"AllTags":       GetAllTags,
 		"KeysForTagMap": KeysForTagMap,
-		"Drawing":       DrawingView,
+		"DrawingData":   DrawingData,
 	}
 }
 
@@ -217,32 +218,15 @@ func GetAllTags(resources []*s3.Resource) (tagCount map[string]int) {
 	return
 }
 
-func DrawingView(site *s3.Site, params map[string]any) (out string, err error) {
-	width := "100%"
-	height := "400px"
-	caseStudyId := ""
-	drawingId := ""
-	if val, ok := params["width"]; ok && val != nil {
-		width = val.(string)
+func DrawingData(drawingId string) (out string, err error) {
+	fullPath, err := filepath.Abs(filepath.Join(site.ContentRoot, fmt.Sprintf("%s.drawing", drawingId)))
+	if err != nil {
+		return fmt.Sprintf("%v", err), err
 	}
-	if val, ok := params["width"]; ok && val != nil {
-		width = val.(string)
+	contents, err := os.ReadFile(fullPath)
+	if err != nil {
+		return fmt.Sprintf("%v", err), err
 	}
-	if val, ok := params["height"]; ok && val != nil {
-		height = val.(string)
-	}
-	if _, ok := params["id"]; ok {
-		if val, ok := params["id"].(string); ok && val != "" {
-			drawingId = val
-		}
-	}
-	if _, ok := params["caseStudyId"]; ok {
-		if val, ok := params["caseStudyId"].(string); ok && val != "" {
-			caseStudyId = val
-		}
-	}
-	toolbar := `<toolbar></toolbar>`
-	out = fmt.Sprintf(`<div class="systemDrawing" style="width: %s; height: %s;" caseStudyId="%s" drawingId="%s">%s</div>`,
-		width, height, caseStudyId, drawingId, toolbar)
+	out = string(contents)
 	return
 }
