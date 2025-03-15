@@ -229,6 +229,5 @@ func DrawingData(drawingId string) (out string, err error) {
 		return fmt.Sprintf("%v", err), err
 	}
 	out = string(contents)
-	log.Println("Contents: ", out)
 	return
 }
