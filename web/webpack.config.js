@@ -8,6 +8,7 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 // const uglifyJsPlugin = require("uglifyjs-webpack-plugin");
 
+const SRC_FOLDER = "./components"
 const TEMPLATES_FOLDER = "./templates";
 
 const components = [
@@ -30,11 +31,26 @@ module.exports = (_env, options) => {
       // ace: 'ace',
     },
     entry: components.reduce(function (map, comp) {
-      map[comp] = path.join(__dirname, `${TEMPLATES_FOLDER}/${comp}.ts`);
+      map[comp] = path.join(__dirname, `${SRC_FOLDER}/${comp}.tsx`);
       return map;
     }, {}),
     module: {
       rules: [
+      {
+        test: /\.tsx?$/,
+        use: 'ts-loader',
+        exclude: /node_modules/,
+      },
+      {
+        test: /\.jsx?$/,
+        exclude: /node_modules/,
+        use: {
+          loader: 'ts-loader',
+          options: {
+            transpileOnly: true
+          }
+        },
+      },
         {
           test: /\.js$/,
           exclude: ["node_modules/", "dist"].map((x) => path.resolve(__dirname, x)),
@@ -43,25 +59,11 @@ module.exports = (_env, options) => {
         {
           test: /\.ts$/,
           exclude: [path.resolve(__dirname, "node_modules"), path.resolve(__dirname, "dist")],
-          include: [`${TEMPLATES_FOLDER}/`].map((x) => path.resolve(__dirname, x)),
+          include: [`${SRC_FOLDER}/`].map((x) => path.resolve(__dirname, x)),
           use: [
             {
               loader: "ts-loader",
               options: { configFile: "tsconfig.json" },
-            },
-          ],
-        },
-        {
-          test: /\.s(a|c)ss$/,
-          use: [
-            MiniCssExtractPlugin.loader,
-            // "style-loader",
-            "css-loader",
-            {
-              loader: "sass-loader",
-              options: {
-                sourceMap: isDevelopment,
-              },
             },
           ],
         },
@@ -119,6 +121,7 @@ module.exports = (_env, options) => {
     plugins: [
       new webpack.ProvidePlugin({
         process: 'process/browser',
+        React: 'react'
       }),
       new CleanWebpackPlugin(),
       new MiniCssExtractPlugin(),

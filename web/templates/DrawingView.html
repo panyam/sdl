@@ -4,7 +4,7 @@
 <div class="systemDrawing" style='width: 100%; height: 100%' caseStudyId="{{.caseStudyId}}" drawingId="{{.id}}">
 <pre><code>{{ DrawingData .id }}</code></pre>
 </div>
-{{ if not .HideToolBar }}
+{{ if .ShowToolBar }}
 <div class="drawingToolbar">
   <button class="toolbarButton"><img class="toolbarButtonImage saveButton" src="/static/images/save.svg"/>Save</button>
   <button class="toolbarButton"><img class="toolbarButtonImage reloadButton" src="/static/images/reset.svg" />Reload</button>

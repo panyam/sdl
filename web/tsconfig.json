@@ -1,6 +1,4 @@
 {
-  "include": [ "./templates/*.ts" ],
-  "exclude": [ "node_modules", "dist" ],
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
     "allowJs": false,
@@ -10,7 +8,7 @@
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "forceConsistentCasingInFileNames": true,
-    "jsx": "react",
+    "jsx": "react-jsx",
     "lib": ["es2019", "es2015", "dom", "dom.Iterable"],
     "module": "esnext",
     "moduleResolution": "node",
@@ -24,6 +22,9 @@
     "strict": true,
     "strictNullChecks": true,
     "strictPropertyInitialization": false,
-    "target": "es6"
-  }
+    "target": "es6",
+    "resolveJsonModule": true
+  },
+  "include": [ "./components/*.ts", "./components/*.tsx"],
+  "exclude": [ "node_modules", "dist" ]
 }

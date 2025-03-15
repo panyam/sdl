@@ -8,9 +8,10 @@ module.exports = {
     "./static/images/*.svg",
     "./static/icons/*.svg",
     "./templates/*.html",
-    "./templates/*.ts",
     "./templates/*.html",
-    "./templates/*.css"
+    "./templates/*.css",
+    "./components/*.ts",
+    "./components/*.tsx"
   ],
   darkMode: 'class',
   theme: {
