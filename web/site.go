@@ -220,6 +220,7 @@ func GetAllTags(resources []*s3.Resource) (tagCount map[string]int) {
 
 func DrawingData(drawingId string) (out string, err error) {
 	fullPath, err := filepath.Abs(filepath.Join(site.ContentRoot, fmt.Sprintf("%s.drawing", drawingId)))
+	log.Println("Loading drawing data: ", drawingId, fullPath)
 	if err != nil {
 		return fmt.Sprintf("%v", err), err
 	}
@@ -228,5 +229,6 @@ func DrawingData(drawingId string) (out string, err error) {
 		return fmt.Sprintf("%v", err), err
 	}
 	out = string(contents)
+	log.Println("Contents: ", out)
 	return
 }

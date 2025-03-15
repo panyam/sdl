@@ -2,7 +2,7 @@ import { FONT_FAMILY } from "@excalidraw/excalidraw";
 
 // import { ExcalidrawWrapper, ExcalidrawToolbar } from './ExcalidrawWrapper';
 import Split from 'split.js'
-import React, { useState, createContext, useContext } from 'react';
+import React, { useState, createRef, createContext, useContext } from 'react';
 import ReactDOM from 'react-dom/client';
 import {
   Excalidraw, MainMenu, Footer , exportToBlob,
@@ -23,6 +23,7 @@ type AppState = any;
 // (window as any).ExcalidrawWrapper = ExcalidrawWrapper;
 
 class SystemDrawing {
+  private drawingId: string;
   private excalidrawInstance: ExcalidrawImperativeAPI | null = null;
   private elements: readonly ExcalidrawElement[] = [];
   private appState: Partial<AppState> = {};
@@ -30,7 +31,7 @@ class SystemDrawing {
   private isReadOnly: boolean = false;
   private initialData: string | null = null;
   private preElement: HTMLPreElement;
-  private excalidrawRoot = document.createElement("div");
+  private container: HTMLDivElement;
 
   private uiOptions = {
     libraryMenu: true,   // Left sidebar toggle
@@ -42,16 +43,54 @@ class SystemDrawing {
   // excalToolbar: ExcalidrawToolbar;
 
   constructor(public readonly caseStudyId: string,
-              public readonly container: HTMLDivElement,
+              public readonly drawingRoot: HTMLDivElement,
               public readonly toolbarContainer: HTMLDivElement,
               options?: {
                 initialData?: string;
               }) {
-    if (!container) {
+    if (!drawingRoot) {
       throw new Error("Container element is required");
     }
-    ReactDOM.createRoot(container).render(
-      <Excalidraw excalidrawAPI = {this.obtainedExcalidrawAPI.bind(this)}>
+    this.drawingId = (drawingRoot.getAttribute("drawingId") || "").trim()
+    if (this.drawingId == "") {
+      throw new Error("drawingId missing")
+    }
+    this.container = drawingRoot.querySelector(".container") as HTMLDivElement;
+    if (!this.container) {
+      this.container = document.createElement("div");
+      this.container.style.width = "100%";
+      this.container.style.height = "100%";
+      drawingRoot.appendChild(this.container);
+      //this.container.style.position = "relative";
+    // Create a root element for Excalidraw
+    // Make sure container is positioned correctly for notifications
+    }
+
+    
+    // Check if there's a pre element with initial drawing data
+    this.preElement = drawingRoot.querySelector('pre') as HTMLPreElement;
+    const preElementData = this.preElement ? this.preElement.textContent : null;
+    if (this.preElement) {
+      this.preElement.style.display = 'none';
+    }
+    
+    // Determine initial data (prioritize explicitly passed data)
+    this.initialData = options?.initialData || preElementData || null;
+    const parsedData = JSON.parse(this.initialData || "{}");
+
+    // TODO - see how to save app state
+    const initialData = {
+      "elements": parsedData.elements || [],
+      "appState": parsedData.appState || {
+          theme: "light",
+          viewBackgroundColor: "#ffffff"
+      } as any,
+    }
+
+    const ref = createRef()
+
+    ReactDOM.createRoot(this.container).render(
+      <Excalidraw excalidrawAPI = {this.obtainedExcalidrawAPI.bind(this)} initialData = {initialData} onChange={this.onChange.bind(this)}>
         <MainMenu>
           <MainMenu.DefaultItems.LoadScene />
           <MainMenu.DefaultItems.SaveAsImage />
@@ -65,128 +104,56 @@ class SystemDrawing {
         </MainMenu>
       </Excalidraw>
     );
-    
-    // Check if there's a pre element with initial drawing data
-    this.preElement = container.querySelector('pre') as HTMLPreElement;
-    const preElementData = this.preElement ? this.preElement.textContent : null;
-    if (this.preElement) {
-      this.preElement.style.display = 'none';
-    }
-    
-    // Determine initial data (prioritize explicitly passed data)
-    this.initialData = options?.initialData || preElementData || null;
   }
 
-  /**
-   * Initialize the Excalidraw instance
-   * @param initialData Optional JSON string containing initial drawing data
-   */
-  private async initialize(): Promise<void> {
-    // Create a root element for Excalidraw
-    // this.excalidrawRoot.style.width = "100%";
-    // this.excalidrawRoot.style.height = "100%";
-    // this.container.appendChild(excalidrawRoot);
-    // Make sure container is positioned correctly for notifications
-    // this.container.style.position = "relative";
-
-    // If a pre element exists in the container, hide it
+  private onChange(elements: readonly ExcalidrawElement[], state: AppState, files: any) {
+    this.elements = elements;
+    this.appState = state;
   }
 
   private obtainedExcalidrawAPI(api: ExcalidrawImperativeAPI) {
-    const wrapperSelf = this
-    if (api) {
-      wrapperSelf.excalidrawInstance = api;
-      
-      // Apply default settings
-      wrapperSelf.excalidrawInstance.updateScene({
-        elements: wrapperSelf.elements,
-        appState: {
-          theme: "light",
-          viewBackgroundColor: "#ffffff"
-        },
-      });
-      
-      // If there's initial data, load it now that we have the instance
-      if (this.initialData && wrapperSelf.excalidrawInstance) {
-        // Small delay to ensure everything is ready
-        setTimeout(() => {
-          try {
-            if (this.initialData && wrapperSelf.excalidrawInstance) {
-              wrapperSelf.loadFromJSON(this.initialData);
-            }
-          } catch (error) {
-            console.error("Failed to load initial drawing data:", error);
-          }
-        }, 300);
-      }
-    } 
+    this.excalidrawInstance = api;
   }
 
   async saveToServer() {
-    // Get the current drawing as JSON
     const jsonData = this.getAsJSON();
     console.log("Saved: ", jsonData)
-    
-    // 1. Update the Pre element if it exists
-    const container = this.container;
-    const preElement = container.querySelector('pre');
-    if (preElement) {
-      preElement.textContent = jsonData;
-    }
-    
-    // 2. Save to API if an ID is provided in the container's data attribute
-    const drawingId = container.dataset.drawingId;
-    if (drawingId) {
-      try {
-        const response = await fetch(`/drawings/${drawingId}/`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: jsonData
-        });
-        
-        if (!response.ok) {
-          throw new Error(`API error: ${response.status}`);
-        }
-        
-        console.log(`Drawing saved to API with ID: ${drawingId}`);
-        
-        // Show notification via wrapper
-        this.showNotification("Drawing saved successfully!");
-      } catch (error) {
-        console.error("Failed to save drawing to API:", error);
-        this.showNotification("Error saving drawing to API", true);
+    try {
+      const response = await fetch(this.drawingUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonData
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
       }
-    } else {
-      // If no API saving is configured, fall back to download
-      const blob = new Blob([jsonData], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "excalidraw-drawing.json";
-      a.click();
-      URL.revokeObjectURL(url);
+      
+      console.log(`Drawing saved to API with ID: ${this.drawingId}`);
+
+      // 1. Update the Pre element if it exists
+      if (this.preElement) {
+        this.preElement.textContent = jsonData;
+      }
+      
+      // Show notification via wrapper
+      this.showNotification("Drawing saved successfully!");
+    } catch (error) {
+      console.error("Failed to save drawing to API:", error);
+      this.showNotification("Error saving drawing to API", true);
     }
   }
 
+  get drawingUrl(): string {
+    return `/api/drawings/${this.drawingId}`
+  }
+
   async reloadFromServer() {
-    const fileInput = document.createElement("input");
-    fileInput.type = "file";
-    fileInput.accept = "application/json";
-    fileInput.style.display = "none";
-    document.body.appendChild(fileInput);
-    
-    fileInput.addEventListener("change", async (e: Event) => {
-      const target = e.target as HTMLInputElement;
-      if (target.files && target.files[0]) {
-        const file = target.files[0];
-        await this.loadFromBlob(file);
-      }
-      document.body.removeChild(fileInput);
-    }, { once: true });
-    
-    fileInput.click();
+    const response = await fetch(this.drawingUrl);
+    const data = await response.json()
+    this.loadFromJSON(JSON.stringify(data))
   }
 
   /**
@@ -204,8 +171,8 @@ class SystemDrawing {
       const elements = parsedData.elements || [];
       
       this.excalidrawInstance.updateScene({
-        // elements: convertToExcalidrawElements(elements),
-        elements: (elements),
+        elements: convertToExcalidrawElements(elements),
+        // elements: (elements),
         appState: parsedData.appState || {},
       });
     } catch (error) {

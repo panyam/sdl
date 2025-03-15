@@ -122,8 +122,9 @@ func (n *LCApp) Handler() http.Handler {
 	// n.mux.Handle("/auth/", http.StripPrefix("/auth", n.Auth.Handler()))
 	n.mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("web/static"))))
 
-	// TODO - turn this into a handle that will dynamically create case studies based on path and contents
-	// n.mux.Handle("/casestudies/bitly", NewCaseStudy("../casestudies/bitly").Handler())
+	// For handling drawings
+	n.mux.Handle("/api/drawings/", http.StripPrefix("/api/drawings", NewDrawingApi("./content").Handler()))
+
 	// n.mux.HandleFunc("/cases/bitly", func(w http.ResponseWriter, r *http.Request) { fmt.Fprintf(w, "Did this work?") })
 	n.mux.Handle("/", &site)
 	// n.RegisterCaseStudy("/cases/bitly", "./casestudies/bitly")
@@ -141,7 +142,7 @@ func (n *LCApp) RegisterCaseStudy(path, folder string) {
 	}
 
 	tostrip := path[:len(path)-1]
-	cs := NewCaseStudy(folder)
+	cs := NewDrawingApi(folder)
 	cs.Templates = n.Context.Templates
 	n.mux.Handle(path, http.StripPrefix(tostrip, cs.Handler()))
 }
