@@ -52,12 +52,14 @@ func init() {
 // //////////// Functions for our site
 func TemplateFunctions() template.FuncMap {
 	return template.FuncMap{
-		"LeafPages":     LeafPages,
-		"PagesByDate":   GetPagesByDate,
-		"PagesByTag":    GetPagesByTag,
-		"AllTags":       GetAllTags,
-		"KeysForTagMap": KeysForTagMap,
-		"DrawingData":   DrawingData,
+		"LeafPages":         LeafPages,
+		"PagesByDate":       GetPagesByDate,
+		"PagesByTag":        GetPagesByTag,
+		"AllTags":           GetAllTags,
+		"KeysForTagMap":     KeysForTagMap,
+		"DrawingData":       DrawingData,
+		"DrawingPreviewUrl": DrawingPreviewUrl,
+		"DrawingEditorUrl":  DrawingEditorUrl,
 	}
 }
 
@@ -216,6 +218,14 @@ func GetAllTags(resources []*s3.Resource) (tagCount map[string]int) {
 		}
 	}
 	return
+}
+
+func DrawingEditorUrl(drawingId string) (out string) {
+	return fmt.Sprintf("/drawings/%s/editor", drawingId)
+}
+
+func DrawingPreviewUrl(drawingId string) (out string, err error) {
+	return filepath.Abs(filepath.Join(site.OutputDir, fmt.Sprintf("%s.svg", drawingId)))
 }
 
 func DrawingData(drawingId string) (out string, err error) {

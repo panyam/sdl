@@ -24,7 +24,7 @@ export default class SystemDrawing {
   private isReadOnly: boolean = false;
   private initialData: string | null = null;
   private preElement: HTMLPreElement;
-  private container: HTMLDivElement;
+  private excalidrawRoot: HTMLDivElement;
 
   private uiOptions = {
     libraryMenu: true,   // Left sidebar toggle
@@ -48,12 +48,12 @@ export default class SystemDrawing {
     if (this.drawingId == "") {
       throw new Error("drawingId missing")
     }
-    this.container = drawingRoot.querySelector(".container") as HTMLDivElement;
-    if (!this.container) {
-      this.container = document.createElement("div");
-      this.container.style.width = "100%";
-      this.container.style.height = "100%";
-      drawingRoot.appendChild(this.container);
+    this.excalidrawRoot = drawingRoot.querySelector(".excalidrawRoot") as HTMLDivElement;
+    if (!this.excalidrawRoot) {
+      this.excalidrawRoot = document.createElement("div");
+      this.excalidrawRoot.style.width = "100%";
+      this.excalidrawRoot.style.height = "100%";
+      drawingRoot.appendChild(this.excalidrawRoot);
       //this.container.style.position = "relative";
     // Create a root element for Excalidraw
     // Make sure container is positioned correctly for notifications
@@ -82,7 +82,7 @@ export default class SystemDrawing {
 
     const ref = createRef()
 
-    ReactDOM.createRoot(this.container).render(
+    ReactDOM.createRoot(this.excalidrawRoot).render(
       <Excalidraw excalidrawAPI = {this.obtainedExcalidrawAPI.bind(this)} initialData = {initialData} onChange={this.onChange.bind(this)}>
         <MainMenu>
           <MainMenu.DefaultItems.LoadScene />
@@ -360,7 +360,7 @@ export default class SystemDrawing {
     notification.style.opacity = "0";
     
     // Add to container
-    this.container.appendChild(notification);
+    this.excalidrawRoot.appendChild(notification);
     
     // Fade in
     setTimeout(() => {
@@ -371,8 +371,8 @@ export default class SystemDrawing {
     setTimeout(() => {
       notification.style.opacity = "0";
       setTimeout(() => {
-        if (notification.parentNode === this.container) {
-          this.container.removeChild(notification);
+        if (notification.parentNode === this.excalidrawRoot) {
+          this.excalidrawRoot.removeChild(notification);
         }
       }, 500);
     }, 3000);

@@ -1,0 +1,39 @@
+{{ define "TOCNode" }}
+<a id="tocnode-{{.ID}}" class="tocNode" href="#{{.ID}}">
+  <span style="padding-left: {{MultInts 0 .Level}}px">{{ .Text }}</span>
+</a>
+<div style="padding: 10px">
+  {{ range .Children }} {{ template "TOCNode" . }} {{ end }}
+</div>
+{{ end }} {{/* */}} {{ define "TOC" }} {{ if 0 }}
+<div>Table of contents</div>
+{{ end }}
+<style>
+  /* Base style for all TOC links */
+  #table-of-contents a {
+    color: #333;
+    text-decoration: none;
+    /* padding: 4px 8px; */
+    display: block;
+    border-left: 2px solid transparent;
+    transition: all 0.2s ease;
+  }
+
+  /* Hover effect for all links */
+  #table-of-contents a:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: #0056b3;
+  }
+
+  /* Style for active (currently visible section) links */
+  #table-of-contents a.active {
+    color: #0066cc;
+    font-weight: 600;
+    border-left: 2px solid #0066cc;
+    background-color: rgba(0, 102, 204, 0.05);
+  }
+</style>
+<div id="table-of-contents">
+  {{ range $i, $tocnode := . }} {{ template "TOCNode" . }} {{ end }}
+</div>
+{{ end }}

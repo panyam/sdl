@@ -3,6 +3,7 @@
 {{# include "./gen.CaseStudyPage.html" #}}
 {{# include "./CommonPageHeader.html" #}}
 {{# include "./ScrollTopAndComment.html" #}}
+{{# include "./TOC.html" #}}
 
 {{ define "ExtraHeadSection" }}
     <title>{{.Title}}</title>
@@ -63,7 +64,7 @@
 <input type=hidden id="caseStudyId" value="{{.Id}}" />
 <main class="w-full flex-grow overflow-y-auto" tabindex="0">
   {{ template "ScrollTopAndComment" }}
-  <div id = "outlinePanel" class="p-4 overflow-auto" style="width: calc(15% - 5px);">Table of contents here</div>
+  <div id = "outlinePanel" class="p-4 overflow-auto" style="width: calc(15% - 5px);"> {{ template "TOC" .Res.DocMetadata.TOC }} </div>
   <div id = "contentPanel" class="overflow-auto pl-12" style="width: calc(70% - 10px);">
     <div class="mx-auto px-4 sm:px-6 xl:px-0">
       <div class="divide-y divide-gray-200 pb-8 dark:divide-gray-700 xl:divide-y-0 " style="gridTemplateRows: 'auto 1fr'">
@@ -76,6 +77,10 @@
   </div>
   <div id = "notesPanel" class="p-4 overflow-auto"></div>
 </main>
+<script>
+  // Initialize the scroll spy when the DOM is fully loaded
+  // document.addEventListener("DOMContentLoaded", initScrollSpy);
+</script>
 {{ end }}
 
 {{ define "PostBodySection" }}

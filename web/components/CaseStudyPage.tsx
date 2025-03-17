@@ -1,5 +1,6 @@
 import Split from 'split.js'
 import SystemDrawing from "./SystemDrawing"
+import TOCHighlighter from "./TOCHighlighter"
 
 // Export the class for use in browser
 // export { ExcalidrawWrapper, ExcalidrawToolbar };
@@ -30,6 +31,9 @@ class CaseStudyPage {
     const contentPanel = document.getElementById('contentPanel') as HTMLDivElement
     // contentPanel.focus();
     contentPanel.scrollTop = contentPanel.scrollHeight;
+
+    const tocRoot = document.getElementById('table-of-contents') as HTMLDivElement;
+    const toc = new TOCHighlighter(contentPanel, tocRoot)
   }
 }
 
