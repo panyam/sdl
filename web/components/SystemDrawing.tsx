@@ -90,9 +90,11 @@ export default class SystemDrawing {
           <MainMenu.DefaultItems.Export />
           <MainMenu.DefaultItems.ToggleTheme />
           <MainMenu.DefaultItems.ClearCanvas />
+          <MainMenu.Item onSelect={() => this.toggleFullScreen()}> Toggle Full Screen </MainMenu.Item>
           <MainMenu.DefaultItems.ChangeCanvasBackground/>
           <MainMenu.DefaultItems.Help/>
           <MainMenu.Item onSelect={() => this.saveToServer()}> Save </MainMenu.Item>
+          <MainMenu.Item onSelect={() => this.reloadFromServer()}> Reload </MainMenu.Item>
           <MainMenu.Item onSelect={() => this.reloadFromServer()}> Reload </MainMenu.Item>
         </MainMenu>
       </Excalidraw>
@@ -106,6 +108,121 @@ export default class SystemDrawing {
 
   private obtainedExcalidrawAPI(api: ExcalidrawImperativeAPI) {
     this.excalidrawInstance = api;
+  }
+
+  scrollYPosition = 0
+  setFullscreen(fs = true) {
+    const divB = this.excalidrawRoot;
+    const self = this;
+    /**
+     * Handler for ESC key to exit fullscreen mode
+     */
+    function escKeyHandler(e: any) {
+      if (e.key === 'Escape') {
+        self.setFullscreen(false);
+      }
+    }
+
+    if (fs) {
+        this.scrollYPosition = window.scrollY;
+
+        // Move divB to body for fullscreen modal display
+        document.body.appendChild(divB);
+
+        // Apply fullscreen styles
+        divB.style.position = 'fixed';
+        divB.style.top = '0';
+        divB.style.left = '0';
+        divB.style.width = '100%';
+        divB.style.height = '100%';
+        divB.style.zIndex = '9999';
+        divB.style.background = 'white';
+        divB.style.overflow = 'auto';
+        divB.style.padding = '40px';
+        divB.style.boxSizing = 'border-box';
+
+        // Prevent scrolling on the body
+        document.body.style.overflow = 'hidden';
+
+        // Add a semi-transparent overlay
+        const overlay = document.createElement('div');
+        overlay.id = 'fullscreen-overlay';
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
+        overlay.style.width = '100%';
+        overlay.style.height = '100%';
+        overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        overlay.style.zIndex = '9998';
+        document.body.insertBefore(overlay, divB);
+
+        // Add close button to fullscreen mode
+        if (!document.getElementById('close-fullscreen-btn')) {
+          const closeBtn = document.createElement('button');
+          closeBtn.id = 'close-fullscreen-btn';
+          closeBtn.innerText = 'Close Fullscreen';
+          closeBtn.classList.add('close-btn');
+          closeBtn.style.position = 'fixed';
+          closeBtn.style.top = '20px';
+          closeBtn.style.right = '20px';
+          closeBtn.style.zIndex = '10000';
+          closeBtn.onclick = () => {
+            this.setFullscreen(false);
+          };
+          divB.appendChild(closeBtn);
+        }
+
+        // Add ESC key listener to exit fullscreen
+        document.addEventListener('keydown', escKeyHandler);
+    } else {
+        // Remove the overlay if it exists
+        const overlay = document.getElementById('fullscreen-overlay');
+        if (overlay) {
+          overlay.remove();
+        }
+
+        // Remove close button
+        const closeBtn = document.getElementById('close-fullscreen-btn');
+        if (closeBtn) {
+          closeBtn.remove();
+        }
+
+        // Move divB back to its original parent
+        this.drawingRoot.appendChild(divB);
+
+        // Restore original styles
+        divB.style.position = "";
+        divB.style.padding = '0px';
+        /*
+        divB.style.top = divB.originalPosition.top;
+        divB.style.left = divB.originalPosition.left;
+        divB.style.width = divB.originalPosition.width;
+        divB.style.height = divB.originalPosition.height;
+        divB.style.zIndex = divB.originalPosition.zIndex;
+        divB.style.padding = '20px';
+       */
+        divB.style.background = '#e0f7fa';
+        divB.style.overflow = '';
+
+        // Restore body scrolling
+        document.body.style.overflow = '';
+
+        // Restore scroll position
+        if (this.scrollYPosition !== undefined) {
+          window.scrollTo(0, this.scrollYPosition);
+        }
+
+        // Remove ESC key listener
+        document.removeEventListener('keydown', escKeyHandler);
+    }
+  }
+
+  toggleFullScreen() {
+    if (this.excalidrawRoot.parentElement == this.drawingRoot) {
+      this.setFullscreen(true)
+    } else {
+      this.setFullscreen(false)
+    }
   }
 
   async saveToServer() {

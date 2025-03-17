@@ -24,7 +24,7 @@ export class Config {
   parentActiveClass = 'parent-active';
 
   // How much of the section needs to be visible to be considered active (0-1)
-  intersectionThreshold = 0.5;
+  intersectionThreshold = 0.8;
 
   // Offset from the top of the viewport (in pixels)
   offsetTop = 100;
