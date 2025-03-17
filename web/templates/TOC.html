@@ -5,7 +5,11 @@
 <div style="padding: 10px">
   {{ range .Children }} {{ template "TOCNode" . }} {{ end }}
 </div>
-{{ end }} {{/* */}} {{ define "TOC" }} {{ if 0 }}
+{{ end }} 
+
+
+{{ define "TOC" }}
+{{ if 0 }}
 <div>Table of contents</div>
 {{ end }}
 <style>
@@ -17,6 +21,7 @@
     display: block;
     border-left: 2px solid transparent;
     transition: all 0.2s ease;
+    overflow-y: scroll;
   }
 
   /* Hover effect for all links */
@@ -31,6 +36,38 @@
     font-weight: 600;
     border-left: 2px solid #0066cc;
     background-color: rgba(0, 102, 204, 0.05);
+  }
+
+  #table-of-contents a.parent-active {
+    color: #0066cc;
+    border-left: 2px solid rgba(0, 102, 204, 0.5);
+    background-color: rgba(0, 102, 204, 0.02);
+  }
+
+  /* Optional: You can also style the parent list item if we are using list items*/
+  #table-of-contents li:has(> a.active) {
+    /* Only works in modern browsers that support :has() */
+    background-color: rgba(0, 102, 204, 0.02);
+  }
+
+  /* For parent list items */
+  #table-of-contents li.active {
+    background-color: rgba(0, 102, 204, 0.02);
+  }
+
+  /* For parent/ancestor list items */
+  #table-of-contents li.parent-active {
+    background-color: rgba(0, 102, 204, 0.01);
+  }
+
+  /* Nested list styles */
+  #table-of-contents ul ul {
+    padding-left: 15px;
+  }
+
+  /* Animation for expanding/collapsing nested lists (if needed) */
+  #table-of-contents ul {
+    transition: height 0.3s ease;
   }
 </style>
 <div id="table-of-contents">
