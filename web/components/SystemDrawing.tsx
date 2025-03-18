@@ -90,6 +90,8 @@ export default class SystemDrawing {
     ReactDOM.createRoot(this.excalidrawRoot).render(
       <Excalidraw excalidrawAPI = {this.obtainedExcalidrawAPI.bind(this)} initialData = {initialData} onChange={this.onChange.bind(this)}>
         <MainMenu>
+          <MainMenu.Item onSelect={() => this.saveToServer()}> Save to Server </MainMenu.Item>
+          <MainMenu.Item onSelect={() => this.reloadFromServer()}> Reload from Server </MainMenu.Item>
           <MainMenu.DefaultItems.LoadScene />
           <MainMenu.DefaultItems.SaveAsImage />
           <MainMenu.DefaultItems.Export />
@@ -98,8 +100,6 @@ export default class SystemDrawing {
           {true && <MainMenu.Item onSelect={() => this.toggleFullScreen()}> Toggle Full Screen </MainMenu.Item> }
           <MainMenu.DefaultItems.ChangeCanvasBackground/>
           <MainMenu.DefaultItems.Help/>
-          <MainMenu.Item onSelect={() => this.saveToServer()}> Save </MainMenu.Item>
-          <MainMenu.Item onSelect={() => this.reloadFromServer()}> Reload </MainMenu.Item>
         </MainMenu>
       </Excalidraw>
     );

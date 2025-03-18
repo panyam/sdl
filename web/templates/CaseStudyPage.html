@@ -78,6 +78,7 @@
 
 {{ define "BodySection" }}
 <input type=hidden id="caseStudyId" value="{{.Id}}" />
+<input type=hidden id="scrollToBottom" value="{{.FrontMatter.scrollToBottom}}" />
 <main class="w-full flex-grow" tabindex="0">
   {{ template "ScrollTopAndComment" }}
   <div id = "outlinePanel" class="noPrint p-4 overflow-auto" style="width: calc(15% - 5px);"> {{ template "TOC" .Res.DocMetadata.TOC }} </div>
@@ -93,6 +94,7 @@
   </div>
   <div id = "notesPanel" class="noPrint p-4 overflow-auto"></div>
 </main>
+
 {{ end }}
 
 {{ define "PostBodySection" }}
@@ -101,12 +103,4 @@
 
 {{ define "CaseStudyPage" }}
 {{ template "BasePage" . }}
-{{ if .FrontMatter.scrollToBottom }}
-<script>
-  // Initialize the scroll spy when the DOM is fully loaded
-  // document.addEventListener("DOMContentLoaded", initScrollSpy);
-    const contentPanel = document.getElementById('contentPanel') as HTMLDivElement
-    contentPanel.scrollTop = contentPanel.scrollHeight;
-</script>
-{{ end }}
 {{ end }}

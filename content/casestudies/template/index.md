@@ -7,13 +7,6 @@ Bit.ly is a URL shortening service that converts long URLs into shorter, managea
 
 ---
 
-
-
-
-
-
----
-
 <D-c>
 
 ### Functional Requirements (~2-3 minutes)

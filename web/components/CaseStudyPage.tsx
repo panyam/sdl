@@ -27,10 +27,15 @@ class CaseStudyPage {
     // Split(["#outlinePanel", "#contentPanel", "#notesPanel"], { sizes: [15, 70, 15], direction: "horizontal", });
     Split(["#outlinePanel", "#contentPanel"], { sizes: [15, 85], direction: "horizontal", });
 
-    // For testing only
     const contentPanel = document.getElementById('contentPanel') as HTMLDivElement
     const tocRoot = document.getElementById('table-of-contents') as HTMLDivElement;
     const toc = new TOCHighlighter(contentPanel, tocRoot)
+
+    // For testing only
+    const scrollToBottom = ((document.getElementById("scrollToBottom") as HTMLInputElement).value || "").trim()
+    if (scrollToBottom.toLowerCase() == "true") {
+      contentPanel.scrollTop = contentPanel.scrollHeight;
+    }
   }
 }
 
