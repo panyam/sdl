@@ -10,6 +10,22 @@
     <meta property="og:title" content="{{.Title}}" />
     <meta property="og:description" content="{{.Summary}}" }} />
     <style>
+    @media print {
+      .noPrint {
+        display:none;
+      }
+      #contentPanel {
+        overflow: scroll;
+      }
+    }
+    @media screen {
+      main {
+        overflow-y: auto;
+      }
+      #contentPanel {
+        overflow: auto;
+      }
+    }
     main {
         display: flex;
         flex-direction: row;
@@ -62,10 +78,10 @@
 
 {{ define "BodySection" }}
 <input type=hidden id="caseStudyId" value="{{.Id}}" />
-<main class="w-full flex-grow overflow-y-auto" tabindex="0">
+<main class="w-full flex-grow" tabindex="0">
   {{ template "ScrollTopAndComment" }}
-  <div id = "outlinePanel" class="p-4 overflow-auto" style="width: calc(15% - 5px);"> {{ template "TOC" .Res.DocMetadata.TOC }} </div>
-  <div id = "contentPanel" class="overflow-auto pl-12" style="width: calc(70% - 10px);">
+  <div id = "outlinePanel" class="noPrint p-4 overflow-auto" style="width: calc(15% - 5px);"> {{ template "TOC" .Res.DocMetadata.TOC }} </div>
+  <div id = "contentPanel" class="pl-12" style="width: calc(70% - 10px);">
     <div class="mx-auto px-4 sm:px-6 xl:px-0">
       <div class="divide-y divide-gray-200 pb-8 dark:divide-gray-700 xl:divide-y-0 " style="gridTemplateRows: 'auto 1fr'">
         <div class="divide-y divide-gray-200 dark:divide-gray-700 xl:col-span-3 xl:row-span-2 xl:pb-0">
@@ -75,7 +91,7 @@
       </div>
     </div>
   </div>
-  <div id = "notesPanel" class="p-4 overflow-auto"></div>
+  <div id = "notesPanel" class="noPrint p-4 overflow-auto"></div>
 </main>
 {{ end }}
 
