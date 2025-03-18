@@ -77,10 +77,6 @@
   </div>
   <div id = "notesPanel" class="p-4 overflow-auto"></div>
 </main>
-<script>
-  // Initialize the scroll spy when the DOM is fully loaded
-  // document.addEventListener("DOMContentLoaded", initScrollSpy);
-</script>
 {{ end }}
 
 {{ define "PostBodySection" }}
@@ -89,5 +85,12 @@
 
 {{ define "CaseStudyPage" }}
 {{ template "BasePage" . }}
+{{ if .FrontMatter.scrollToBottom }}
+<script>
+  // Initialize the scroll spy when the DOM is fully loaded
+  // document.addEventListener("DOMContentLoaded", initScrollSpy);
+    const contentPanel = document.getElementById('contentPanel') as HTMLDivElement
+    contentPanel.scrollTop = contentPanel.scrollHeight;
+</script>
 {{ end }}
-
+{{ end }}

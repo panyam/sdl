@@ -8,6 +8,8 @@ summary: Leetcode
 template: "CaseStudyPage.html/CaseStudyPage"
 ---
 
+{{# include "DrawingView.html" #}}
+
 ## Requirements (~5 minutes)
 
 ### Functional Requirements (~2-3 minutes)
@@ -153,10 +155,13 @@ service CompeittionService {
 
 ## High Level Design (~ 5-10 minutes)
 
+{{ template "DrawingView" ( dict "caseStudyId" "leetcode" "id" "casestudies/leetcode/hld" "width" "80%" ) }}
 
+{{/*
 ![alt High Level Design](./hld.png "High Level Design")
 <a href="https://excalidraw.com/#json=FjHc5-pd-AV6XsP-sfI9Y,eXh2Fe6JogqeevkHsPBNpg"
 target="_blank">Edit</a>
+*/}}
 
 ## Deep Dives
 

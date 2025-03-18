@@ -29,9 +29,6 @@ class CaseStudyPage {
 
     // For testing only
     const contentPanel = document.getElementById('contentPanel') as HTMLDivElement
-    // contentPanel.focus();
-    contentPanel.scrollTop = contentPanel.scrollHeight;
-
     const tocRoot = document.getElementById('table-of-contents') as HTMLDivElement;
     const toc = new TOCHighlighter(contentPanel, tocRoot)
   }

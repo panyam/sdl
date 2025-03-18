@@ -113,6 +113,7 @@ export default class SystemDrawing {
 
   private obtainedExcalidrawAPI(api: ExcalidrawImperativeAPI) {
     this.excalidrawInstance = api;
+    setTimeout(() => { api.scrollToContent(this.elements, { fitToContent: true, animate: true, }) }, 200)
   }
 
   scrollYPosition = 0

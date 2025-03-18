@@ -1,9 +1,18 @@
+---
+title: 'Design Bitly'
+date: 2024-05-28T11:29:10AM
+tags: ['bitlly', 'easy']
+draft: false
+authors: ['Sri Panyam']
+template: "CaseStudyPage.html/CaseStudyPage"
+summary: Robinhood is a commission-free trading platform for stocks, ETFs, options and cryptocurrencies.   Its features include real time market data and basic order management.  It is not an exchange on its own but rather a broker - it routes trades through market makers - ie exchanges and is compensated by those exchanges via a process called "payment for order flow".
+---
+
+{{# include "DrawingView.html" #}}
 
 # Design RobinHood
 
-## Description 
-
-Robinhood is a commission-free trading platform for stocks, ETFs, options and cryptocurrencies.   Its features include real time market data and basic order management.  It is not an exchange on its own but rather a broker - it routes trades through market makers - ie exchanges and is compensated by those exchanges via a process called "payment for order flow".   Il now share some of the requirements for a V1 of the system and we can evolve it as we see fit.  How does that sound?
+{{ .FrontMatter.summary }}
 
 --- 
 
@@ -38,8 +47,6 @@ Non Functional:
 
 Both:
 1) Tiered SLOs (usage/pricing/billing etc)
-
-How does this sound?   Are there other cases you would like to cover?   Otherwise I can proceed to some non-functional requirements
 
 ### Non Functional Requirements
 
@@ -377,4 +384,8 @@ store (since it is in-mem anyway).
 The TradeDB would have to be replicated geographically (for users globally).   Since write
 QPS is low - replication lag/latency wont be the limiting factor (even with master-master
 replication) - once replicated local regional instances' cache can handle local traffic.
+
+
+
+
 
