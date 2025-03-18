@@ -1,6 +1,6 @@
 ---
-title: 'Design Bitly'
-date: 2024-05-28T11:29:10AM
+title: 'Design Robinhood'
+date: 2025-02-01T11:29:10AM
 tags: ['bitlly', 'easy']
 draft: false
 authors: ['Sri Panyam']
