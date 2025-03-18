@@ -25,6 +25,11 @@ export default class SystemDrawing {
   private initialData: string | null = null;
   private preElement: HTMLPreElement;
   private excalidrawRoot: HTMLDivElement;
+  private toggleFSButton: HTMLButtonElement;
+  private lastUpdatedAt = 0
+  private lastSavedAt = -1
+  private saveSentAt = -1
+  private saverIntervalId = null as any
 
   private uiOptions = {
     libraryMenu: true,   // Left sidebar toggle
@@ -90,11 +95,10 @@ export default class SystemDrawing {
           <MainMenu.DefaultItems.Export />
           <MainMenu.DefaultItems.ToggleTheme />
           <MainMenu.DefaultItems.ClearCanvas />
-          <MainMenu.Item onSelect={() => this.toggleFullScreen()}> Toggle Full Screen </MainMenu.Item>
+          {true && <MainMenu.Item onSelect={() => this.toggleFullScreen()}> Toggle Full Screen </MainMenu.Item> }
           <MainMenu.DefaultItems.ChangeCanvasBackground/>
           <MainMenu.DefaultItems.Help/>
           <MainMenu.Item onSelect={() => this.saveToServer()}> Save </MainMenu.Item>
-          <MainMenu.Item onSelect={() => this.reloadFromServer()}> Reload </MainMenu.Item>
           <MainMenu.Item onSelect={() => this.reloadFromServer()}> Reload </MainMenu.Item>
         </MainMenu>
       </Excalidraw>
@@ -104,6 +108,7 @@ export default class SystemDrawing {
   private onChange(elements: readonly ExcalidrawElement[], state: AppState, files: any) {
     this.elements = elements;
     this.appState = state;
+    this.lastUpdatedAt = Date.now()
   }
 
   private obtainedExcalidrawAPI(api: ExcalidrawImperativeAPI) {
@@ -160,7 +165,7 @@ export default class SystemDrawing {
         if (!document.getElementById('close-fullscreen-btn')) {
           const closeBtn = document.createElement('button');
           closeBtn.id = 'close-fullscreen-btn';
-          closeBtn.innerText = 'Close Fullscreen';
+          closeBtn.innerHTML = '<img src="/static/images/close_fullscreen.svg" width="32px"/>'; // Close Fullscreen';
           closeBtn.classList.add('close-btn');
           closeBtn.style.position = 'fixed';
           closeBtn.style.top = '20px';
@@ -225,9 +230,10 @@ export default class SystemDrawing {
     }
   }
 
-  async saveToServer() {
+  async saveToServer(showNotification = true) {
     const jsonData = this.getAsJSON();
     console.log("Saved: ", jsonData)
+    this.saveSentAt = Date.now()
     try {
       const response = await fetch(this.drawingUrl, {
         method: 'POST',
@@ -241,7 +247,7 @@ export default class SystemDrawing {
         throw new Error(`API error: ${response.status}`);
       }
       
-      console.log(`Drawing saved to API with ID: ${this.drawingId}`);
+      console.log(`${Date.now()} - Drawing saved to API with ID: ${this.drawingId}`);
 
       // 1. Update the Pre element if it exists
       if (this.preElement) {
@@ -249,10 +255,13 @@ export default class SystemDrawing {
       }
       
       // Show notification via wrapper
-      this.showNotification("Drawing saved successfully!");
+      if (showNotification) this.showNotification("Drawing saved successfully!");
+      this.lastSavedAt = Date.now()
     } catch (error) {
       console.error("Failed to save drawing to API:", error);
       this.showNotification("Error saving drawing to API", true);
+    } finally {
+      this.saveSentAt = -1;
     }
   }
 
