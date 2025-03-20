@@ -1,5 +1,6 @@
 import Split from 'split.js'
 import SystemDrawing from "./SystemDrawing"
+import PreviewManager from "./PreviewManager"
 import TOCHighlighter from "./TOCHighlighter"
 
 // Export the class for use in browser
@@ -19,8 +20,15 @@ class CaseStudyPage {
     const drawings = document.querySelectorAll(".drawingContainer")
     for (const container of drawings) {
       const rootElem = container.querySelector(".systemDrawing") as HTMLDivElement;
+      const previewRoot = container.querySelector(".drawingPreviewContainer") as HTMLDivElement;
       const tbElem= container.querySelector(".drawingToolbar") as HTMLDivElement;
-      const sd = new SystemDrawing(this.caseStudyId, rootElem, tbElem)
+      const caseStudyId = (container.getAttribute("caseStudyId") || this.caseStudyId || "").trim()
+      if (rootElem) {
+        const sd = new SystemDrawing(caseStudyId, rootElem, tbElem)
+      } else {
+        // we have a "preview creator"
+        const pm = new PreviewManager(caseStudyId, previewRoot)
+      }
     }
     // Get references to HTML elements
 

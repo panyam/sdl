@@ -155,7 +155,7 @@ service CompeittionService {
 
 ## High Level Design (~ 5-10 minutes)
 
-{{ template "DrawingView" ( dict "caseStudyId" "leetcode" "id" "casestudies/leetcode/hld" "width" "80%" ) }}
+{{ template "DrawingView" ( dict "caseStudyId" "leetcode" "id" "hld" "width" "80%" ) }}
 
 {{/*
 ![alt High Level Design](./hld.png "High Level Design")

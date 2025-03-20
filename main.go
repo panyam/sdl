@@ -20,7 +20,7 @@ func main() {
 
 	// logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	envfile := ".env"
-	if os.Getenv("NOTATIONS_ENV") == "dev" {
+	if os.Getenv("LEETCOACH_ENV") == "dev" {
 		envfile = ".env.dev"
 		logger := slog.New(NewPrettyHandler(os.Stdout, PrettyHandlerOptions{
 			SlogOpts: slog.HandlerOptions{

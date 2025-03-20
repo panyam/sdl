@@ -66,7 +66,7 @@ service ThingService {
 
 ## High Level Design
 
-{{ template "DrawingView" ( dict "caseStudyId" "cleantemplate" "id" "casestudies/cleantemplate/hld" ) }}
+{{ template "DrawingView" ( dict "caseStudyId" "cleantemplate" "id" "hld" ) }}
 
 ---
 

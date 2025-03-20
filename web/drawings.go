@@ -1,25 +1,57 @@
 package web
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
-	"time"
 
 	gotl "github.com/panyam/templar"
 )
 
-type Drawing struct {
-	Id        string
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	Title     string
-	Format    string
-	Editor    string
-	Contents  any
+type DrawingPathUtils struct {
+	ContentRoot     string
+	CaseStudiesRoot string
+}
+
+func (d *DrawingPathUtils) FolderForDrawingId(caseStudyId, drawingId string, ensure bool) (folderPath string, exists bool, err error) {
+	folderPath, err = filepath.Abs(filepath.Join(d.ContentRoot, d.CaseStudiesRoot, caseStudyId, "drawings", drawingId))
+	if err != nil {
+		return
+	}
+
+	// check if fodler also exists
+	if ensure {
+		_, err := os.Stat(folderPath)
+		if err != nil && os.IsNotExist(err) {
+			err = os.MkdirAll(folderPath, os.ModePerm)
+		}
+		exists = err == nil
+	}
+	return
+}
+
+func (d *DrawingPathUtils) PathForDrawingId(caseStudyId, drawingId string, ensure bool, extension string) (fullPath string, exists bool, err error) {
+	folderPath, exists, err := d.FolderForDrawingId(caseStudyId, drawingId, ensure)
+
+	fullPath, err = filepath.Abs(filepath.Join(folderPath, fmt.Sprintf("contents.%s", extension)))
+	log.Println("Full Drawing Path: ", drawingId, extension, fullPath, err)
+	if err != nil {
+		log.Println("Error accessing path: ", fullPath, err)
+		return fullPath, false, err
+	}
+
+	if _, err := os.Stat(fullPath); err == nil {
+		exists = true
+	} else if os.IsNotExist(err) && ensure {
+		// create an empty file
+		err = os.WriteFile(fullPath, []byte(""), os.ModePerm)
+	}
+
+	return
 }
 
 // A handler for serving system design case studies along with ability to
@@ -44,7 +76,7 @@ type Drawing struct {
 //     Over time we will also add simulation/SDL components to view graphs and dynamic behavior of our systems.
 type DrawingApi struct {
 	// Root folder where the case study is hosted
-	ContentRoot string
+	DrawingPathUtils
 
 	Templates *gotl.TemplateGroup
 
@@ -53,8 +85,11 @@ type DrawingApi struct {
 
 func NewDrawingApi(contentRoot string) *DrawingApi {
 	out := &DrawingApi{
-		ContentRoot: contentRoot,
-		mux:         http.NewServeMux(),
+		DrawingPathUtils: DrawingPathUtils{
+			ContentRoot:     contentRoot,
+			CaseStudiesRoot: "casestudies",
+		},
+		mux: http.NewServeMux(),
 	}
 
 	out.setupRoutes()
@@ -70,47 +105,78 @@ func (c *DrawingApi) setupRoutes() {
 	// GET /drawings/<id>			-		Gets the content of a particular drawing by ID
 	// POST /drawings/<id>		-		Creates a new drawing by ID
 	// PUT /drawings/<id>			-		Updates a drawing ID
-	c.mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	c.mux.HandleFunc("/{caseStudyId}/", func(w http.ResponseWriter, r *http.Request) {
 		// Otherwise serve the file
-		drawingId := r.PathValue("drawingId")
-		reqPath := r.URL.Path[1:]
-		drawingPath, exists := c.PathForDrawingId(reqPath)
-		log.Println("drawingId: ", drawingId)
-		log.Println("reqPath: ", reqPath)
-		log.Println("drawingPath: ", drawingPath)
-		if drawingPath == "" || !exists {
-			w.WriteHeader(http.StatusNotFound)
-			fmt.Fprintln(w, "Invalid Drawing")
-		}
+		caseStudyId := r.PathValue("caseStudyId")
+		reqPath := r.URL.Path[1+len(caseStudyId):]
+		log.Println("caseStudyId: ", caseStudyId)
+		log.Println("drawingId: ", reqPath)
 		if r.Method == "GET" {
-			w.Header().Set("Content-Type", "application/json")
-			http.ServeFile(w, r, drawingPath)
+			c.ServeDrawing(caseStudyId, reqPath, w, r)
 		} else {
 			// We udpate it
-			log.Println("Updating drawing...")
-			body, err := io.ReadAll(r.Body)
-			if err != nil {
-				log.Printf("Error reading body: %v", err)
-				http.Error(w, "can't read body", http.StatusBadRequest)
-				return
-			}
-
-			err = os.WriteFile(drawingPath, body, 0666)
+			c.UpdateDrawing(caseStudyId, reqPath, w, r)
 		}
 	})
 }
 
-func (c *DrawingApi) PathForDrawingId(drawingId string) (fullPath string, exists bool) {
-	fullPath, err := filepath.Abs(filepath.Join(c.ContentRoot, fmt.Sprintf("%s.drawing", drawingId)))
-	log.Println("Full Drawing Path: ", drawingId, fullPath)
+func (c *DrawingApi) ServeDrawing(caseStudyId, drawingId string, w http.ResponseWriter, r *http.Request) {
+	format := r.URL.Query().Get("format")
+	if format == "" {
+		format = "json"
+	}
+	drawingPath, exists, err := c.PathForDrawingId(caseStudyId, drawingId, false, format)
+	log.Println("drawingPath: ", drawingPath, err)
+	if drawingPath == "" || !exists || err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintln(w, "Invalid Drawing")
+		return
+	}
+
+	if format == "json" {
+		w.Header().Set("Content-Type", "application/json")
+	}
+	http.ServeFile(w, r, drawingPath)
+}
+
+func (c *DrawingApi) UpdateDrawing(caseStudyId, drawingId string, w http.ResponseWriter, r *http.Request) {
+	log.Println("Updating drawing...")
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		log.Println("Error: ", err)
-		return "", false
+		log.Printf("Error reading body: %v", err)
+		http.Error(w, fmt.Sprintf("can't read body: %v", err), http.StatusBadRequest)
+		return
 	}
-	if _, err := os.Stat(fullPath); err == nil {
-		exists = true
-	} else if os.IsNotExist(err) {
-		exists = false
+
+	var payload map[string]any
+	err = json.Unmarshal(body, &payload)
+	if err != nil {
+		log.Printf("Error parsing body: %v", err)
+		http.Error(w, fmt.Sprintf("can't parse body: %v", err), http.StatusBadRequest)
+		return
 	}
-	return
+
+	if payload["formats"] != nil {
+		formats, ok := payload["formats"].(map[string]any)
+		if ok {
+			for fmt, body := range formats {
+				drawingPath, _, err := c.PathForDrawingId(caseStudyId, drawingId, true, fmt)
+				if err == nil {
+					log.Printf("Saving format (%s) -> %s", fmt, drawingPath)
+					err = os.WriteFile(drawingPath, []byte(body.(string)), 0666)
+				}
+				if err != nil {
+					// TODO - quit here or do someting else?
+					log.Println("Could not write to file: ", drawingPath, err)
+				}
+			}
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintln(w, `{"success": true}`)
+			return
+		}
+		log.Println("Not Ok: ")
+	}
+
+	log.Println("Did not find formats or error: ", payload)
+	http.Error(w, fmt.Sprintf("can't parse body: %v", err), http.StatusBadRequest)
 }

@@ -80,7 +80,6 @@
 <input type=hidden id="caseStudyId" value="{{.Id}}" />
 <input type=hidden id="scrollToBottom" value="{{.FrontMatter.scrollToBottom}}" />
 <main class="w-full flex-grow" tabindex="0">
-  {{ template "ScrollTopAndComment" }}
   <div id = "outlinePanel" class="noPrint p-4 overflow-auto" style="width: calc(15% - 5px);"> {{ template "TOC" .Res.DocMetadata.TOC }} </div>
   <div id = "contentPanel" class="pl-12" style="width: calc(70% - 10px);">
     <div class="mx-auto px-4 sm:px-6 xl:px-0">
@@ -88,6 +87,7 @@
         <div class="divide-y divide-gray-200 dark:divide-gray-700 xl:col-span-3 xl:row-span-2 xl:pb-0">
           <article class="prose max-w-none pb-8 pt-10 dark:prose-dark"> {{ .Content | HTML }} </article>
           {{ template "Footer" . }}
+          {{ template "ScrollTopAndComment" }}
         </div>
       </div>
     </div>

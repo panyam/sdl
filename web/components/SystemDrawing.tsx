@@ -5,12 +5,15 @@ import { FONT_FAMILY } from "@excalidraw/excalidraw";
 import React, { useState, createRef, createContext, useContext } from 'react';
 import ReactDOM from 'react-dom/client';
 import {
-  Excalidraw, MainMenu, Footer , exportToBlob,
+  Excalidraw, MainMenu, Footer,
   serializeAsJSON,
   loadFromBlob,
+  exportToBlob,
+  exportToSvg,
   convertToExcalidrawElements
 } from "@excalidraw/excalidraw";
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types/types";
+// import type { ExcalidrawElement } from "@excalidraw/excalidraw/types/types";
 
 type ExcalidrawElement = any;
 type AppState = any;
@@ -233,6 +236,30 @@ export default class SystemDrawing {
 
   async saveToServer(showNotification = true) {
     const jsonData = this.getAsJSON();
+    const asSvgDark = await exportToSvg({
+      elements: this.elements,
+      appState: {
+        exportBackground: true,
+        exportWithDarkMode: true,
+      },
+    } as any)
+
+    const asSvgLight = await exportToSvg({
+      elements: this.elements,
+      appState: {
+        exportBackground: true,
+        exportWithDarkMode: false,
+      },
+    } as any)
+
+    const payload = JSON.stringify({
+      "formats": {
+        "json": jsonData,
+        "dark.svg": asSvgDark.outerHTML,
+        "light.svg": asSvgLight.outerHTML,
+      },
+    })
+
     console.log("Saved: ", jsonData)
     this.saveSentAt = Date.now()
     try {
@@ -241,7 +268,7 @@ export default class SystemDrawing {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: jsonData
+        body: payload,
       });
       
       if (!response.ok) {
