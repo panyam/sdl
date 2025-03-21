@@ -17,6 +17,19 @@ type DrawingPathUtils struct {
 	CaseStudiesRoot string
 }
 
+func (d *DrawingPathUtils) SaveDrawing(caseStudyId, drawingId, format string, body []byte) (err error) {
+	drawingPath, _, err := d.PathForDrawingId(caseStudyId, drawingId, true, format)
+	if err == nil {
+		log.Printf("Saving format (%s) -> %s", format, drawingPath)
+		err = os.WriteFile(drawingPath, body, 0666)
+	}
+	if err != nil {
+		// TODO - quit here or do someting else?
+		log.Println("Could not write to file: ", drawingPath, err)
+	}
+	return
+}
+
 func (d *DrawingPathUtils) FolderForDrawingId(caseStudyId, drawingId string, ensure bool) (folderPath string, exists bool, err error) {
 	folderPath, err = filepath.Abs(filepath.Join(d.ContentRoot, d.CaseStudiesRoot, caseStudyId, "drawings", drawingId))
 	if err != nil {
@@ -128,8 +141,9 @@ func (c *DrawingApi) ServeDrawing(caseStudyId, drawingId string, w http.Response
 	drawingPath, exists, err := c.PathForDrawingId(caseStudyId, drawingId, false, format)
 	log.Println("drawingPath: ", drawingPath, err)
 	if drawingPath == "" || !exists || err != nil {
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprintln(w, "Invalid Drawing")
+		fmt.Fprintln(w, `{"error": "Invalid Drawing"}`)
 		return
 	}
 
@@ -160,15 +174,7 @@ func (c *DrawingApi) UpdateDrawing(caseStudyId, drawingId string, w http.Respons
 		formats, ok := payload["formats"].(map[string]any)
 		if ok {
 			for fmt, body := range formats {
-				drawingPath, _, err := c.PathForDrawingId(caseStudyId, drawingId, true, fmt)
-				if err == nil {
-					log.Printf("Saving format (%s) -> %s", fmt, drawingPath)
-					err = os.WriteFile(drawingPath, []byte(body.(string)), 0666)
-				}
-				if err != nil {
-					// TODO - quit here or do someting else?
-					log.Println("Could not write to file: ", drawingPath, err)
-				}
+				c.SaveDrawing(caseStudyId, drawingId, fmt, []byte(body.(string)))
 			}
 			w.Header().Set("Content-Type", "application/json")
 			fmt.Fprintln(w, `{"success": true}`)

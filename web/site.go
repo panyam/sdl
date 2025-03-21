@@ -3,6 +3,7 @@ package web
 import (
 	"fmt"
 	"html/template"
+	"log"
 	"os"
 	"strings"
 
@@ -52,7 +53,8 @@ func DrawingEditorUrl(caseStudyId, drawingId string) (out string) {
 }
 
 func DrawingPreviewExists(caseStudyId, drawingId, extension string) bool {
-	_, exists, err := dpUtils.PathForDrawingId(caseStudyId, drawingId, false, extension)
+	path, exists, err := dpUtils.PathForDrawingId(caseStudyId, drawingId, false, extension)
+	log.Println("Path: ", path, exists)
 	return exists && err == nil
 }
 

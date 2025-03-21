@@ -4,7 +4,7 @@
 {{ $drawingWidth := "" }}
 {{ $drawingHeight := "" }}
 
-{{ if or .DrawingEditable (DrawingPreviewExists .caseStudyId .id "dark.svg" ) }}
+{{ if and false (or .DrawingEditable (DrawingPreviewExists .caseStudyId .id "dark.svg" )) }}
   {{ $drawingHeight = (or .height "800px")}}
   {{ $drawingWidth = (or .width "100%")}}
 {{ end }}
