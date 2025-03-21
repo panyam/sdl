@@ -1,11 +1,9 @@
 package web
 
 import (
-	"fmt"
 	"html/template"
 	"net/http"
 	"strings"
-	"time"
 
 	// "github.com/go-session/cookie"
 
@@ -15,10 +13,6 @@ import (
 	gotl "github.com/panyam/templar"
 	"golang.org/x/oauth2"
 )
-
-var SUPERUSERS = map[string]bool{
-	"sri.panyam@gmail.com": true,
-}
 
 type LCContext struct {
 	Templates *gotl.TemplateGroup
@@ -71,39 +65,8 @@ func NewWebApp() (app *LCApp, err error) {
 		"AsHtmlAttribs": func(m map[string]string) template.HTML {
 			return `a = 'b' c = 'd'`
 		},
-		"Ago": func(t time.Time) string {
-			diff := time.Since(t)
-
-			if years := int64(diff.Hours() / (365 * 24)); years > 0 {
-				return fmt.Sprintf("%d years ago", years)
-			}
-
-			if months := int64(diff.Hours() / (30 * 24)); months > 0 {
-				return fmt.Sprintf("%d months ago", months)
-			}
-
-			if weeks := int64(diff.Hours() / (7 * 24)); weeks > 0 {
-				return fmt.Sprintf("%d weeks ago", weeks)
-			}
-
-			if days := int64(diff.Hours() / (24)); days > 0 {
-				return fmt.Sprintf("%d days ago", days)
-			}
-
-			if hours := int64(diff.Hours()); hours > 0 {
-				return fmt.Sprintf("%d hours ago", hours)
-			}
-
-			if minutes := int64(diff.Minutes()); minutes > 0 {
-				return fmt.Sprintf("%d minutes ago", minutes)
-			}
-
-			if diff.Seconds() > 0 {
-				return fmt.Sprintf("%d seconds ago", int64(diff.Seconds()))
-			}
-			return "just now"
-		},
 		"Indented": func(nspaces int, code string) (formatted string) {
+			// TBD
 			lines := (strings.Split(strings.TrimSpace(code), "\n"))
 			return strings.Join(lines, "<br/>")
 		},
