@@ -1,0 +1,21 @@
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 281.203125 197.90625" width="281.203125" height="197.90625" filter="invert(93%) hue-rotate(180deg)">
+  <!-- svg-source:excalidraw -->
+  
+  <defs>
+    <style class="style-fonts">
+      @font-face {
+        font-family: "Virgil";
+        src: url("https://unpkg.com/@excalidraw/excalidraw@undefined/dist/excalidraw-assets/Virgil.woff2");
+      }
+      @font-face {
+        font-family: "Cascadia";
+        src: url("https://unpkg.com/@excalidraw/excalidraw@undefined/dist/excalidraw-assets/Cascadia.woff2");
+      }
+      @font-face {
+        font-family: "Assistant";
+        src: url("https://unpkg.com/@excalidraw/excalidraw@undefined/dist/excalidraw-assets/Assistant-Regular.woff2");
+      }
+    </style>
+    
+  </defs>
+  <rect x="0" y="0" width="281.203125" height="197.90625" fill="#ffffff"></rect><g stroke-linecap="round" transform="translate(10 10) rotate(0 130.6015625 88.953125)"><path d="M32 0 C99.38 -0.18, 168.99 0.37, 229.2 0 M32 0 C78.88 0.07, 125.15 -0.13, 229.2 0 M229.2 0 C252.28 -0.09, 259.73 10.82, 261.2 32 M229.2 0 C249.67 -1.27, 261.62 12.33, 261.2 32 M261.2 32 C260.17 68.37, 258.88 104.95, 261.2 145.91 M261.2 32 C261.49 73.96, 261.83 115.09, 261.2 145.91 M261.2 145.91 C262.93 167.43, 249.62 179.59, 229.2 177.91 M261.2 145.91 C259 165.78, 248.5 179.58, 229.2 177.91 M229.2 177.91 C177.33 177.99, 122.6 179.28, 32 177.91 M229.2 177.91 C184.09 178.97, 141.74 179.7, 32 177.91 M32 177.91 C10.83 178.87, 0.07 168.39, 0 145.91 M32 177.91 C11.44 177, 1.48 168.8, 0 145.91 M0 145.91 C1.46 113.15, 0.92 79.94, 0 32 M0 145.91 C-0.16 120.29, -0.39 93.05, 0 32 M0 32 C0.85 11.06, 12.07 1.48, 32 0 M0 32 C-0.8 10.43, 8.85 0.98, 32 0" stroke="#1e1e1e" stroke-width="2" fill="none"></path></g><g transform="translate(76.08161163330078 86.453125) rotate(0 64.51995086669922 12.5)"><text x="64.51995086669922" y="0" font-family="Virgil, Segoe UI Emoji" font-size="20px" fill="#1e1e1e" text-anchor="middle" style="white-space: pre;" direction="ltr" dominant-baseline="text-before-edge">Hello World 2</text></g></svg>

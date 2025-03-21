@@ -6,66 +6,9 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
-	"path/filepath"
 
 	gotl "github.com/panyam/templar"
 )
-
-type DrawingPathUtils struct {
-	ContentRoot     string
-	CaseStudiesRoot string
-}
-
-func (d *DrawingPathUtils) SaveDrawing(caseStudyId, drawingId, format string, body []byte) (err error) {
-	drawingPath, _, err := d.PathForDrawingId(caseStudyId, drawingId, true, format)
-	if err == nil {
-		log.Printf("Saving format (%s) -> %s", format, drawingPath)
-		err = os.WriteFile(drawingPath, body, 0666)
-	}
-	if err != nil {
-		// TODO - quit here or do someting else?
-		log.Println("Could not write to file: ", drawingPath, err)
-	}
-	return
-}
-
-func (d *DrawingPathUtils) FolderForDrawingId(caseStudyId, drawingId string, ensure bool) (folderPath string, exists bool, err error) {
-	folderPath, err = filepath.Abs(filepath.Join(d.ContentRoot, d.CaseStudiesRoot, caseStudyId, "drawings", drawingId))
-	if err != nil {
-		return
-	}
-
-	// check if fodler also exists
-	if ensure {
-		_, err := os.Stat(folderPath)
-		if err != nil && os.IsNotExist(err) {
-			err = os.MkdirAll(folderPath, os.ModePerm)
-		}
-		exists = err == nil
-	}
-	return
-}
-
-func (d *DrawingPathUtils) PathForDrawingId(caseStudyId, drawingId string, ensure bool, extension string) (fullPath string, exists bool, err error) {
-	folderPath, exists, err := d.FolderForDrawingId(caseStudyId, drawingId, ensure)
-
-	fullPath, err = filepath.Abs(filepath.Join(folderPath, fmt.Sprintf("contents.%s", extension)))
-	log.Println("Full Drawing Path: ", drawingId, extension, fullPath, err)
-	if err != nil {
-		log.Println("Error accessing path: ", fullPath, err)
-		return fullPath, false, err
-	}
-
-	if _, err := os.Stat(fullPath); err == nil {
-		exists = true
-	} else if os.IsNotExist(err) && ensure {
-		// create an empty file
-		err = os.WriteFile(fullPath, []byte(""), os.ModePerm)
-	}
-
-	return
-}
 
 // A handler for serving system design case studies along with ability to
 // show them in certain easily consumeable ways as well as persistence for excalidraw
@@ -89,7 +32,7 @@ func (d *DrawingPathUtils) PathForDrawingId(caseStudyId, drawingId string, ensur
 //     Over time we will also add simulation/SDL components to view graphs and dynamic behavior of our systems.
 type DrawingApi struct {
 	// Root folder where the case study is hosted
-	DrawingPathUtils
+	DrawingService
 
 	Templates *gotl.TemplateGroup
 
@@ -98,7 +41,7 @@ type DrawingApi struct {
 
 func NewDrawingApi(contentRoot string) *DrawingApi {
 	out := &DrawingApi{
-		DrawingPathUtils: DrawingPathUtils{
+		DrawingService: DrawingService{
 			ContentRoot:     contentRoot,
 			CaseStudiesRoot: "casestudies",
 		},

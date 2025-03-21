@@ -101,9 +101,6 @@ export default class PreviewManager extends DrawingBase {
       window.scrollTo(0, this.scrollYPosition);
     }
 
-    // Remove ESC key listener
-    document.removeEventListener('keydown', this.closeEditor.bind(this));
-
     // TODO - see if a save is also needed
 
     // update image
@@ -136,17 +133,7 @@ export default class PreviewManager extends DrawingBase {
       return
     }
 
-    this.excalidrawRoot = this.drawingRoot.querySelector(".excalidrawRoot") as HTMLDivElement;
-    this.excalidrawRoot = document.createElement("div");
-
-    const divB = this.excalidrawRoot;
-    /*
-    this.excalidrawRoot.style.position = "absolute";
-    this.excalidrawRoot.style.left = "0px";
-    this.excalidrawRoot.style.top = "0px";
-    this.excalidrawRoot.style.width = "100%";
-    this.excalidrawRoot.style.height = "100%";
-   */
+    const divB = this.excalidrawRoot = document.createElement("div");
     document.body.appendChild(this.excalidrawRoot);
 
     // This will only happen when edited or clicked
@@ -167,9 +154,6 @@ export default class PreviewManager extends DrawingBase {
 
     const self = this;
     this.scrollYPosition = window.scrollY;
-
-    // Move divB to body for fullscreen modal display
-    document.body.appendChild(divB);
 
     // Apply fullscreen styles
     divB.style.position = 'fixed';
@@ -198,6 +182,15 @@ export default class PreviewManager extends DrawingBase {
     overlay.style.zIndex = '9998';
     document.body.insertBefore(overlay, divB);
 
+    const closer = (e: any) => {
+      if (e.key === 'Escape') {
+        if (confirm("Do you want to go finish editing?")) {
+          document.removeEventListener('keydown', closer)
+          this.closeEditor()
+        }
+      }
+    }
+
     // Add close button to fullscreen mode
     if (!document.getElementById('close-fullscreen-btn')) {
       const closeBtn = document.createElement('button');
@@ -213,11 +206,7 @@ export default class PreviewManager extends DrawingBase {
     }
 
     // Add ESC key listener to exit fullscreen
-    document.addEventListener('keydown', (e: any) => {
-      if (e.key === 'Escape') {
-        this.closeEditor()
-      }
-    })
+    document.addEventListener('keydown', closer)
   }
 
   async saveToServer(showNotification = true) {
