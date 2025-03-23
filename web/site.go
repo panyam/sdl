@@ -15,7 +15,7 @@ var site = s3.Site{
 	StaticFolders: []string{
 		"/static/", "web/static",
 	},
-	DefaultPageTemplate: s3.PageTemplate{
+	DefaultBaseTemplate: s3.BaseTemplate{
 		Name:   "BasePage.html",
 		Params: map[any]any{"BodyTemplateName": "BaseBody"},
 	},
