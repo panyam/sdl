@@ -1,3 +1,14 @@
+---
+title: "Design DoorDash's Search and Discovery"
+productName: 'DoorDash Search and Discovery System'
+date: 2025-02-07T11:29:10AM
+tags: ['doordash', 'medium', 'search', 'discovery', 'yelp', 'location' ]
+draft: false
+authors: ['Sri Panyam']
+template: "CaseStudyPage.html/CaseStudyPage"
+summary: 'A search and discovery system for DoorDash'
+scrollToBottom: true
+---
 
 # Design DoorDash's Search and Discovery System
 

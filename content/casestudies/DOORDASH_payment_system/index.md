@@ -1,3 +1,14 @@
+---
+title: 'Design '
+productName: 'Uber'
+date: 2025-02-05T11:29:10AM
+tags: ['uber', 'medium', 'taxi sharing' ]
+draft: false
+authors: ['Sri Panyam']
+template: "CaseStudyPage.html/CaseStudyPage"
+summary: 'A cab sharing/hailing service'
+scrollToBottom: true
+---
 
 # Design Fault Tolerant Payment System
 

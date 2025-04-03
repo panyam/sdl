@@ -1,9 +1,19 @@
+---
+title: 'Design Template'
+productName: 'Template'
+date: 2024-05-28T11:29:10AM
+tags: ['productName', 'difficulty', 'company']
+draft: false
+authors: ['Sri Panyam']
+template: "CaseStudyPage.html/CaseStudyPage"
+summary: Summary of the service being designed.
+---
 
-# Design ((Product Name))
+# Design {{.FrontMatter.productName}}
 
 <span style="color: red">**Describe the problem here.  More info the better**</span>
 
-Bit.ly is a URL shortening service that converts long URLs into shorter, manageable links. It also provides analytics for the shortened URLs.
+{{ .FrontMatter.summary }}
 
 ---
 

@@ -1,7 +1,18 @@
+---
+title: "Design DoorDash's inventory management system"
+productName: 'Inventory Management System'
+date: 2024-05-28T11:29:10AM
+tags: ['inventory management', 'inventory', 'medium', 'DoorDash']
+draft: false
+authors: ['Sri Panyam']
+template: "CaseStudyPage.html/CaseStudyPage"
+summary: This system will manage the availability and stock levels of items across virtual stores, ghost kitchens, grocery vendors, and partner restaurants, ensuring that inventory updates happen in real-time to prevent overselling and optimize logistics.
+---
 
-# Design DoorDash's Inventory Management System
+# {{.FrontMatter.title}}
 
-This system will manage the availability and stock levels of items across virtual stores, ghost kitchens, grocery vendors, and partner restaurants, ensuring that inventory updates happen in real-time to prevent overselling and optimize logistics.
+{{ .FrontMatter.summary }}
+
 
 ## Functional Requirements
 

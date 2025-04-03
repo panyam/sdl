@@ -1,7 +1,17 @@
+---
+title: "Design Ticketmaster's ticketting platform"
+productName: 'Ticketmaster Ticketing'
+date: 2025-02-07T11:29:10AM
+tags: ['ticketmaster', 'events', 'medium', 'ticket' ]
+draft: false
+authors: ['Sri Panyam']
+template: "CaseStudyPage.html/CaseStudyPage"
+summary: 'Ticketmaster is an online platform that allows users to purchase tickets for concerts, sports events, theater, and other live entertainment.'
+---
 
 # Design Ticketmaster
 
-Ticketmaster is an online platform that allows users to purchase tickets for concerts, sports events, theater, and other live entertainment.
+{{ .FrontMatter.summary }}
 
 ## Requirements (~5 minutes)
 

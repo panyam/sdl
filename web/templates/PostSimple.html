@@ -2,6 +2,7 @@
 {{# include "./ScrollTopAndComment.html" #}}
 {{# include "./Comments.html" #}}
 {{# include "./PageTitle.html" #}}
+{{# include "./Article.html" #}}
 
 {{ define "PostSimple" }}
   {{/* $SiteUrl := Join "/" .Site.SiteMetadata.SiteUrl "blog" .Post.Slug */}}
@@ -32,9 +33,9 @@
         </header>
         <div class="divide-y divide-gray-200 pb-8 dark:divide-gray-700 xl:divide-y-0 " style="gridTemplateRows: 'auto 1fr'">
           <div class="divide-y divide-gray-200 dark:divide-gray-700 xl:col-span-3 xl:row-span-2 xl:pb-0">
-            <article class="prose max-w-none pb-8 pt-10 dark:prose-dark">
-              {{ .Content | HTML }}
-            </article >
+            {{ $sourceAndTOC := ParseMD .Content }}
+            {{ StageSet "Document" $sourceAndTOC.Doc "TOC" $sourceAndTOC.TOC}}
+            {{ template "Article" . }}
           </div>
           {{/*{{ template "Comments" dict "frontMatter" .Content }}*/}}
           <footer>

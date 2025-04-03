@@ -1,3 +1,14 @@
+---
+title: "Design DoorDash's Delivery System"
+productName: 'DoorDash Delivery System'
+date: 2025-02-07T11:29:10AM
+tags: ['doordash', 'medium', 'delivery system' ]
+draft: false
+authors: ['Sri Panyam']
+template: "CaseStudyPage.html/CaseStudyPage"
+summary: 'A delivery system for DoorDash'
+scrollToBottom: true
+---
 
 # Design DoorDash's Dispatch Deliver System (DDS)
 

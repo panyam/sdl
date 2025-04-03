@@ -17,9 +17,9 @@ var (
 )
 
 func main() {
-
 	// logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	envfile := ".env"
+	log.Println("Environment: ", os.Getenv("LEETCOACH_ENV"))
 	if os.Getenv("LEETCOACH_ENV") == "dev" {
 		envfile = ".env.dev"
 		logger := slog.New(NewPrettyHandler(os.Stdout, PrettyHandlerOptions{

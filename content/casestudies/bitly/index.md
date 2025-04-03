@@ -1,7 +1,8 @@
 ---
 title: 'Design Bitly'
+productName: 'Bitly'
 date: 2024-05-28T11:29:10AM
-tags: ['bitlly', 'easy']
+tags: ['bitlly', 'easy', 'shorturl']
 draft: false
 authors: ['Sri Panyam']
 template: "CaseStudyPage.html/CaseStudyPage"

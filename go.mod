@@ -8,8 +8,8 @@ require (
 	github.com/felixge/httpsnoop v1.0.4
 	github.com/joho/godotenv v1.5.1
 	github.com/panyam/oneauth v0.0.3
-	github.com/panyam/s3gen v0.0.19
-	github.com/panyam/templar v0.0.4
+	github.com/panyam/s3gen v0.0.20
+	github.com/panyam/templar v0.0.5
 	golang.org/x/oauth2 v0.24.0
 )
 
@@ -33,6 +33,6 @@ require (
 	gopkg.in/yaml.v2 v2.3.0 // indirect
 )
 
-replace github.com/panyam/s3gen v0.0.19 => ./locallinks/s3gen
+replace github.com/panyam/s3gen v0.0.20 => ./locallinks/s3gen
 
-replace github.com/panyam/templar v0.0.4 => ./locallinks/templar/
+replace github.com/panyam/templar v0.0.5 => ./locallinks/templar/

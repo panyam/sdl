@@ -89,8 +89,8 @@ func (n *LCApp) Handler() http.Handler {
 	n.mux.Handle("/api/drawings/", http.StripPrefix("/api/drawings", NewDrawingApi("./content").Handler()))
 
 	// n.mux.HandleFunc("/cases/bitly", func(w http.ResponseWriter, r *http.Request) { fmt.Fprintf(w, "Did this work?") })
-	n.mux.Handle("/", &site)
 	// n.RegisterCaseStudy("/cases/bitly", "./casestudies/bitly")
+	n.mux.Handle("/", &site)
 
 	return n.mux
 	// return n.Session.LoadAndSave(n.mux)

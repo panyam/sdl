@@ -1,3 +1,17 @@
+---
+title: "Design a GPU Inference Platform"
+productName: 'GPU Inference Platform'
+date: 2024-05-28T11:29:10AM
+tags: ['easy', 'gpu', 'batching', 'inference']
+draft: false
+authors: ['Sri Panyam']
+template: "CaseStudyPage.html/CaseStudyPage"
+summary: A system for batching calls to a gpu inference platform.
+---
+
+# {{.FrontMatter.title}}
+
+{{ .FrontMatter.summary }}
 
 # Design A GPU Inference Platform
 

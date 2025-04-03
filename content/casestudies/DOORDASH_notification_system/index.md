@@ -1,7 +1,17 @@
+---
+title: "Design a Multiple Channel Notification System"
+productName: 'Multiple Channel Notification'
+date: 2024-05-28T11:29:10AM
+tags: ['medium', 'notification', 'channel', 'streaming']
+draft: false
+authors: ['Sri Panyam']
+template: "CaseStudyPage.html/CaseStudyPage"
+summary: A notification system for order status updates should focus on delivering timely, reliable, and user-preferred notifications while handling scale efficiently. 
+---
 
-# Design A Multi Channel Notification System
+# {{.FrontMatter.title}}
 
-A notification system for order status updates should focus on delivering timely, reliable, and user-preferred notifications while handling scale efficiently. 
+{{ .FrontMatter.summary }}
 
 ---
 
