@@ -7,8 +7,9 @@ draft: false
 authors: ['Sri Panyam']
 template: "CaseStudyPage.html/CaseStudyPage"
 summary: 'A cab sharing/hailing service'
-scrollToBottom: true
 ---
+
+{{# include "DrawingView.html" #}}
 
 # Design Uber
 

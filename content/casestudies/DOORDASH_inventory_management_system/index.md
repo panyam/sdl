@@ -1,5 +1,5 @@
 ---
-title: "Design DoorDash's inventory management system"
+title: "Design DoorDash's Inventory Management System"
 productName: 'Inventory Management System'
 date: 2024-05-28T11:29:10AM
 tags: ['inventory management', 'inventory', 'medium', 'DoorDash']
@@ -9,7 +9,9 @@ template: "CaseStudyPage.html/CaseStudyPage"
 summary: This system will manage the availability and stock levels of items across virtual stores, ghost kitchens, grocery vendors, and partner restaurants, ensuring that inventory updates happen in real-time to prevent overselling and optimize logistics.
 ---
 
-# {{.FrontMatter.title}}
+{{# include "DrawingView.html" #}}
+
+[#](#) {{.FrontMatter.title}}
 
 {{ .FrontMatter.summary }}
 
@@ -159,7 +161,9 @@ These APIs allow vendors to manage inventory and ensure real-time synchronizatio
 
 #### **➤ Get Inventory for a Vendor**
 
-`GET /vendors/{vendor_id}/inventory`
+```
+GET /vendors/<vendor_id>/inventory
+```
 
 **Purpose**: Fetch the current inventory of a vendor.
 
@@ -195,7 +199,9 @@ These APIs allow vendors to manage inventory and ensure real-time synchronizatio
 
 #### **➤ Update Stock for an Item**
 
-POST /vendors/{vendor_id}/inventory/{item_id}/update
+```
+POST /vendors/<vendor_id>/inventory<item_id>/update
+```
 
 **Request Body**:
 
@@ -225,7 +231,9 @@ POST /vendors/{vendor_id}/inventory/{item_id}/update
 
 #### **➤ Bulk Inventory Update (CSV or JSON Upload)**
 
-`POST /vendors/{vendor_id}/inventory/bulk_update`
+```
+POST /vendors/<vendor_id>/inventory/bulk_update
+```
 
 **Request Body (JSON Example)**:
 
@@ -255,7 +263,9 @@ POST /vendors/{vendor_id}/inventory/{item_id}/update
 
 #### **➤ Subscribe to Inventory Updates (Webhook for Real-Time Sync)**
 
-`POST /vendors/{vendor_id}/inventory/subscribe`
+```
+POST /vendors/<vendor_id>/inventory/subscribe
+```
 
 **Request Body**:
 
@@ -282,25 +292,15 @@ GET /inventory/events?vendor_id={vendor_id}
 
 ```
 {
-
   "events": [
-
     {
-
       "event_id": "evt-789",
-
       "item_id": "abc123",
-
       "event_type": "LOW_STOCK_ALERT",
-
       "previous_stock": 6,
-
       "new_stock": 5
-
     }
-
   ]
-
 }
 ```
 
@@ -546,7 +546,7 @@ Scaling strategies ensure the system can handle a high volume of inventory updat
 
 * **Use Caching (Redis / Memcached) for Fast Reads**  
   * Frequently accessed inventory data should be **cached** at the API layer.  
-  * Example: Store `vendor_id → {items[], stock levels}` in Redis.  
+  * Example: Store ```vendor_id → {items[], stock levels}``` in Redis.  
   * **Trade-off**: Slightly stale data (\~1–2 sec lag) in exchange for better performance.  
 * **Read Replicas for Load Distribution**  
   * Scale **PostgreSQL / DynamoDB** with **read replicas** to handle high QPS.  
@@ -655,4 +655,3 @@ Observability is crucial to detect failures in real-time.
   * **Distributed Tracing**: OpenTelemetry for tracking API requests.  
   * **Log Aggregation**: ELK Stack, Splunk, or Datadog for logging.  
   * **Metrics & Alerts**: Prometheus \+ Grafana for monitoring trends.
-

@@ -9,20 +9,13 @@ template: "CaseStudyPage.html/CaseStudyPage"
 summary: 'An order management system for DoorDash'
 ---
 
-# Design DoorDash's Order Management System (OMS)
+{{# include "DrawingView.html" #}}
 
-The Order Management System (OMS) is responsible for handling the entire lifecycle of an order, from creation to fulfillment. 
+# {{.FrontMatter.title}}
 
----
-
-
-
-
-
+{{.FrontMatter.summary}}
 
 ---
-
-<D-c>
 
 ### Functional Requirements (~2-3 minutes)
 

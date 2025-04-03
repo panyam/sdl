@@ -10,6 +10,8 @@ summary: 'A search and discovery system for DoorDash'
 scrollToBottom: true
 ---
 
+{{# include "DrawingView.html" #}}
+
 # Design DoorDash's Search and Discovery System
 
 For DoorDash’s Search and Discovery System, the key functional requirements should align with how users interact with the platform when searching for restaurants and food items.

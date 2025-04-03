@@ -9,6 +9,8 @@ template: "CaseStudyPage.html/CaseStudyPage"
 summary: Summary of the service being designed.
 ---
 
+{{# include "DrawingView.html" #}}
+
 # Design {{.FrontMatter.productName}}
 
 <span style="color: red">**Describe the problem here.  More info the better**</span>

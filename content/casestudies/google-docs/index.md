@@ -11,6 +11,10 @@ scrollToBottom: true
 
 {{# include "DrawingView.html" #}}
 
+# {{.FrontMatter.title}}
+
+{{ .FrontMatter.summary }}
+
 ## Requirements
 
 ### Functional Requirements

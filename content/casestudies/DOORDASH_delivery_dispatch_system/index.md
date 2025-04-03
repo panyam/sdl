@@ -7,16 +7,13 @@ draft: false
 authors: ['Sri Panyam']
 template: "CaseStudyPage.html/CaseStudyPage"
 summary: 'A delivery system for DoorDash'
-scrollToBottom: true
 ---
 
-# Design DoorDash's Dispatch Deliver System (DDS)
+{{# include "DrawingView.html" #}}
 
-A Real-Time Delivery Dispatch System ensures that orders are efficiently assigned to delivery drivers while optimizing for speed, cost, and service quality.
+# {{.FrontMatter.title}}
 
----
-
-<D-c>
+{{ .FrontMatter.summary }}
 
 ### Functional Requirements (~2-3 minutes)
 

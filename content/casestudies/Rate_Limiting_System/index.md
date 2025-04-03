@@ -9,6 +9,8 @@ template: "CaseStudyPage.html/CaseStudyPage"
 summary: Rate Limiting
 ---
 
+{{# include "DrawingView.html" #}}
+
 # {{.FrontMatter.title}}
 
 {{ .FrontMatter.summary }}

@@ -9,6 +9,8 @@ template: "CaseStudyPage.html/CaseStudyPage"
 summary: A system for batching calls to a gpu inference platform.
 ---
 
+{{# include "DrawingView.html" #}}
+
 # {{.FrontMatter.title}}
 
 {{ .FrontMatter.summary }}

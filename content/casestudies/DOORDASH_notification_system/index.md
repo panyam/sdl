@@ -9,6 +9,8 @@ template: "CaseStudyPage.html/CaseStudyPage"
 summary: A notification system for order status updates should focus on delivering timely, reliable, and user-preferred notifications while handling scale efficiently. 
 ---
 
+{{# include "DrawingView.html" #}}
+
 # {{.FrontMatter.title}}
 
 {{ .FrontMatter.summary }}
