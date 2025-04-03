@@ -82,10 +82,15 @@
 {{ define "HeaderCenterSection" }}<h1 class="text-3xl font-semibold">{{ .FrontMatter.title }}</h1>{{ end }} 
 
 {{ define "BodySection" }}
+
+{{/* Parse content and extract TOC */}}
+{{ $sourceAndTOC := ParseMD .Content }}
+{{ StageSet "Document" $sourceAndTOC.Doc "TOC" $sourceAndTOC.TOC}}
+
 <input type=hidden id="caseStudyId" value="{{.Id}}" />
 <input type=hidden id="scrollToBottom" value="{{.FrontMatter.scrollToBottom}}" />
 <main class="w-full flex-grow" tabindex="0">
-  <div id = "outlinePanel" class="noPrint p-4 overflow-auto" style="width: calc(15% - 5px);"> {{ template "TOC" .Res.Document.Metadata.TOC }} </div>
+  <div id = "outlinePanel" class="noPrint p-4 overflow-auto" style="width: calc(15% - 5px);"> {{ template "TOC" $sourceAndTOC.TOC }} </div>
   <div id = "contentPanel" class="pl-12" style="width: calc(70% - 10px);">
     <div class="mx-auto px-4 sm:px-6 xl:px-0">
       <div class="divide-y divide-gray-200 pb-8 dark:divide-gray-700 xl:divide-y-0 " style="gridTemplateRows: 'auto 1fr'">
