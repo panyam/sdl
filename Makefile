@@ -7,5 +7,13 @@ run: build
 deploy: build
 	gcloud app deploy --project leetcoach --verbosity=info
 
-build:
+build: webbuild resymlink
+
+webbuild:
 	cd web ; npm run build
+
+resymlink:
+	mkdir -p locallinks
+	rm -Rf locallinks/*
+	cd locallinks && ln -s ../../templar
+	cd locallinks && ln -s ../../s3gen

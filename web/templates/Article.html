@@ -1,0 +1,7 @@
+{{ define "Article" }}
+<article class="prose max-w-none pb-8 pt-10 dark:prose-dark">
+  We = {{.Content}}
+<hr/>
+  {{ MDToHtml  .Content }}
+</article>
+{{ end }}

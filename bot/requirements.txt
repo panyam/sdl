@@ -1,0 +1,6 @@
+sortedcontainers
+pyperclip
+ipdb
+coverage
+pytest
+openai
