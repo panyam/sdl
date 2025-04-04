@@ -132,7 +132,14 @@ PeopleIFollow = Select from Followers where followerId = <me>
 Select from Posts WHERE UserId in PeopleIFollow and ORDER BY CreatedAt DESC
 ```
 
-## Deep Dives - Scale
+## Deep Dives - Scale on Post Reads
+
+* Can be uneven (hot posts vs not)
+* Edits infrequent
+* Cache posts with TTL (LRU)
+* Sharded/Distributed cache
+
+## Deep Dives - Scale on Feed Reads
 
 * Instead of querying each time materialize the feed into a FeedDB
 
