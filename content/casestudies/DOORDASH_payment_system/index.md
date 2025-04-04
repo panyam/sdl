@@ -1,7 +1,7 @@
 ---
 title: 'Design '
 productName: 'Uber'
-date: 2025-02-05T11:29:10AM
+date: 2024-11-04T11:29:10AM
 tags: ['uber', 'medium', 'taxi sharing' ]
 draft: false
 authors: ['Sri Panyam']

@@ -1,7 +1,7 @@
 ---
 title: "Design DoorDash's Inventory Management System"
 productName: 'Inventory Management System'
-date: 2024-05-28T11:29:10AM
+date: 2024-10-03T11:29:10AM
 tags: ['inventory management', 'inventory', 'medium', 'DoorDash']
 draft: false
 authors: ['Sri Panyam']

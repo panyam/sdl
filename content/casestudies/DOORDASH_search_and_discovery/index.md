@@ -1,7 +1,7 @@
 ---
 title: "Design DoorDash's Search and Discovery"
 productName: 'DoorDash Search and Discovery System'
-date: 2025-02-07T11:29:10AM
+date: 2024-11-07T11:29:10AM
 tags: ['doordash', 'medium', 'search', 'discovery', 'yelp', 'location' ]
 draft: false
 authors: ['Sri Panyam']
