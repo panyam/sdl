@@ -1,12 +1,12 @@
 ---
-title: 'Design Dropbox'
-productName: 'Dropbox'
+title: 'Design a Video Streaming'
+productName: 'VideoStreaming'
 date: 2025-02-06T11:29:10AM
-tags: ['dropbox', 'easy', 'google drive', 'file storage']
+tags: ['netflix', 'youtube', 'medium', 'file storage']
 draft: false
 authors: ['Sri Panyam']
 template: "CaseStudyPage.html/CaseStudyPage"
-summary: Dropbox is a cloud-based file storage service that for users to store and share files in a secure and reliable waywhile accessing them from anywhere on any device.
+summary: A video [streaming](streaming) service.  It allows members to shows and movies on an internet-connected device available on various platforms like IOS, Android, Web etc.
 ---
 
 {{# include "DrawingView.html" #}}
@@ -19,24 +19,16 @@ summary: Dropbox is a cloud-based file storage service that for users to store a
 
 The functional requirements are:
 
-1.  Upload/Download files
-2.  Syncfiles to devices
-3.  Share files with friends and view/downloads downloaded files.
-
-Scale Requirements:
-
-* 1B users registered (DB has 700M I think)
-* User uploads 10 files a month and shares with say 20 friends, Average size 100MB, P90 1GB
-* Total files per month = 10B files ~ 250B files a year
-* Storage = 10% at 1GB, rest averaging 100MB = 1B at 1GB and 9B at 100MB ~ 2B GB per month ~ 25B GB per year
-* Sharing - 250B * 20 = 5Trillion shares a year
+1. Users can watch and share shows
+2. Admin - Can upload/delete shows
+3. Comment/Like videos
 
 ### Non functional requirements
 
-* Highly available - Users should be able to upload and download their files (even if sharing is degraded).
-* Large file support - 100GB
-* Security/Reliability/Durability - Files should not be lost or corrupted
-* Fast uploads/downloads/syncs
+* High scale and low-enough latency
+* Reliable/Durable uploads
+* Efficiency needs.
+* Availability over consistency 
 
 ### Extensions (Out of scope)
 
@@ -44,6 +36,25 @@ Scale Requirements:
 * Versioning, Scanning (malware, virsuses, csam etc)
 * Storage limits, billing etc
 * Analytics
+* Searching of shows
+* Geo blocking
+* Pause/Resume (assume video always downloaded - but can get around - becomes chunking/DBox problem)
+
+### Scale/Numbers
+
+* Read heavy system
+* Num users - 1B with 200M DAU
+* 5 shows per user per day on average = 1B watched shows.
+* Say 1:20 read:write ratio (in case of VideoStreaming it will be larger shows but with fewer uploads, with Youtube - smaller
+  but more uploads - eg shorts etc) - ie 50M videos uploaded daily
+* 
+
+#### Storage Requirements:
+
+* Youtube style - 1 Min of video is about 100MB of storage - so assuming average video is say 10Minutes  about 1GB per
+  upload per user.  So 50M uploaders per day * 400 days per year * 1Gb per upload (100MB per min for 10 mins) =~ 20000 ExaBytes of video storage per year
+* VideoStreaming style - Fewer - say 100 new shows a month - but each show being about say 1 hr long - could be 100 hours per
+  month - 100 * 60 * 0.1GB = 600GB
 
 ## API/Interface/Entities
 
@@ -52,7 +63,7 @@ record user {
   Id string
 }
 
-record File {
+record Video {
   Id string
   Name string
   CreatorId UserId
@@ -60,53 +71,28 @@ record File {
   UpdatedAt Timestamp
   ContentURI URI          // Where stored in S3
   DownloadURL URL         // URL to download the file from - this can keep changing and may even be generated on the fly
-  ContentType string
-  Status string
-  SharedWith UserId[]     // Option1 if small # users eg < 100, otherwise see Option 2
+  
+  // Show info - may be searchable
+  Metadata any
 }
 
-// Option 2 for share
-record FileShare {
-  FileId string
+record Comments {
+  VideoId string
   UserId string
-  Permissions []string
-}
-
-record FileContents {
-  FileId string
-  ContentURI string
-  ContentHash string
-  Blob []byte
+  CreatedAt Timestamp
+  Comment text
 }
 ```
 
 ```
-service FileService {
-  // Return the File with ID, CreatedAt, CreatorId
-  CreateFile(file: File) File {
-    POST: "/files"
-    BODY: {file}
-  }
-  
-  UpdateFileShares(file: File) File {
-    PATCH: "/files/{file.Id}"
-    BODY: {file.SharedWith}
-  }
-  
-  UploadFile(FileContents) {
-    POST /files/{fileId}
-  }
-  
-  DownloadFile(fileId string) FileContents {
-    GET /files/{fileId}
-  }
-}
+CRUD on Videos
+Upload/Download on Video - Similar to Dropbox
 ```
 
 ### High Level Design
 
 
-{{ template "DrawingView" ( dict "caseStudyId" "DropBox" "id" "hld" ) }}
+{{ template "DrawingView" ( dict "caseStudyId" "VideoStreaming" "id" "hld" ) }}
 
 1. User "uploads" a file - the client is really calling a CreateFile API and then calling the UploadFile API.
 2. On CreateFile, File entry is created and contentURI is also created (or we can create buckets with naming convention
@@ -145,4 +131,4 @@ record FileChunk {
 }
 ```
 
-{{ template "DrawingView" ( dict "caseStudyId" "DropBox" "id" "final" ) }}
+{{ template "DrawingView" ( dict "caseStudyId" "VideoStreaming" "id" "final" ) }}
