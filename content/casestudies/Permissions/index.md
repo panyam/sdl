@@ -1,12 +1,12 @@
 ---
-title: 'Design a Live Comments System'
-productName: 'LiveComments'
-date: 2025-02-16T11:29:10AM
+title: 'Design Permissions Management System'
+productName: 'Permissions'
+date: 2025-02-20T11:29:10AM
 tags: ['comments', 'facebook', 'meta', 'live', 'fan-out', 'medium' ]
 draft: false
 authors: ['Sri Panyam']
 template: "CaseStudyPage.html/CaseStudyPage"
-summary: LiveComments
+summary: Permissions
 scrollToBottom: true
 ---
 
@@ -20,9 +20,16 @@ TBR - To be rewritten
 
 ### Functional Requirements
 
-* Viewers can post comments on a Live video feed.
-* Viewers can see new comments being posted while they are watching the live video.
-* Viewers can see comments made before they joined the live feed.
+* Users can add/remove access to a resource for other users
+* System must validate whether a particular access by a user is allowed on a particular resource
+
+### Non functional requirements
+
+* Scalable for reads
+* Accurate
+* Strong consistency
+* Writes must be durable - consistency over availability?
+* Integrated by other parties (like live comments)
 
 ### Scale Requirements:
 
@@ -35,17 +42,9 @@ TBR - To be rewritten
   - Assume your feed can go back to a month
   - About 30 days * 200 followees * 10 posts per day = 60k posts
 
-### Non functional requirements
-
-* The system should scale to support millions of concurrent videos and thousands of comments per second per live video.
-* The system should prioritize availability over consistency, eventual consistency is fine.
-* The system should have low latency, broadcasting comments to viewers in near-real time (< 200ms end-to-end latency under typical network conditions)
-* Pluggable - Commenting system and Video team can be different teams
-
 ### Extensions (Out of scope)
 
-* Viewers can reply to comments
-* Viewers can react to comments
+* Transactional access
 
 General:
 * Authentication/User management
@@ -68,42 +67,27 @@ record User {
   Id string
 }
 
-record LiveVideo {
-  Id string
-  CreatorId string
-  CreatedAt Time
+record Permission {
+  EntityId string             // PKEY  - EntityId + UserId
+  UserId string
+  Permissions []string
   
+  UpdatedAt Time        // secondary index - CreatedAt
   // Other metadata
-}
-
-record Comment {
-  Id string         // PKEY  - can even have entityID as part of the ID for easier classification
-  EntityId string   // shard key - EntityId
-  CreatedAt Time    // secondary index - CreatedAt
-  CreatorId string
-  Text string
 }
 ```
 
 ```
 // Assume it exists
-service VideoService {
-    // ... CRUD
-}
-
-// Could be diff team and assumes authenticated
-service CommentService {
-  CreateComment(comment Comment) Comment {    // validates and sets comment.Id, CreatedAt and CreatorId 
-    POST /comments
-    BODY: {comment}
-  }
-  
-  ListComments(entityId string) Paginated<Comment> {
-    GET /comments/?entityId={entityId}
+service PermissionService {
+    UpdatePermissions(userId string, entityId string, permissionsi []string) Permission {
+      POST /permissions
+      BODY: {...}
+    }
     
-    // Alternatively - if enitty service wants to expose an endpoint (but needs teach specific change)
-    // GET /entitiType/{entityId}/comments
-  }
+    CanSee(entityId string, userId string) bool {
+      GET /permissions/?entityId,userId
+    }
 }
 
 ```
@@ -111,7 +95,7 @@ service CommentService {
 ### High Level Design
 
 
-{{ template "DrawingView" ( dict "caseStudyId" "LiveComments" "id" "hld" ) }}
+{{ template "DrawingView" ( dict "caseStudyId" "Permissions" "id" "hld" ) }}
 
 ### Deep Dive - New comments
 
@@ -120,7 +104,7 @@ service CommentService {
 * SSE can have limits (if commenting on multiple videos and listening) but is simpler
 * WS no limits - but increased complexity due to bidrectionality
 
-{{ template "DrawingView" ( dict "caseStudyId" "LiveComments" "id" "final" ) }}
+{{ template "DrawingView" ( dict "caseStudyId" "Permissions" "id" "final" ) }}
 
 ### Deep Dive - Scaling
 
@@ -129,7 +113,7 @@ service CommentService {
 
 or CommentID -> Secondary Index -> Comments
 
-{{ template "DrawingView" ( dict "caseStudyId" "LiveComments" "id" "channels" ) }}
+{{ template "DrawingView" ( dict "caseStudyId" "Permissions" "id" "channels" ) }}
 
 ### Deep Dive - Scaling Channel Services
 
@@ -158,7 +142,7 @@ Assume:
 * Keep replicas on standby so it can failover
 * Scaling can be autoscaling and registration with Router or Router monitors health and coordinates autoscaling.
 
-{{ template "DrawingView" ( dict "caseStudyId" "LiveComments" "id" "coordinator" ) }}
+{{ template "DrawingView" ( dict "caseStudyId" "Permissions" "id" "coordinator" ) }}
 
 ### Deep Dive - Regionalization
 
