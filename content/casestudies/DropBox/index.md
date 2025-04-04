@@ -108,44 +108,41 @@ service FileService {
 
 {{ template "DrawingView" ( dict "caseStudyId" "DropBox" "id" "hld" ) }}
 
+1. User "uploads" a file - the client is really calling a CreateFile API and then calling the UploadFile API.
+2. On CreateFile, File entry is created and contentURI is also created (or we can create buckets with naming convention
+   etc).
+3. UploadFile fetches a signed/authed upload URL (ephemaral).
+4. Client POSTs on this URL directly to the content store instead of going through DB
+5. Content store on upload can send to CDNs for caching, notifies FileService to update metadata (like hashes,
+   last udpated etc).  We can keep metadata seperately or as part of the content store itself.
+6. Sharing etc straight forward.
+   * Need File -> UserID (needs stronger consistency)
+   * Secondary index - UserId -> File (ok to be eventual - "my files")
 
-## Deep Dives
+## Deep Dives - Chunking and Parallel Uploads
 
-Here we will be asked what are the things to dive on and explain how our design addresses requirements.
+1. How do ensure resumability? ie dont want to file 90% of the way in only to start all over again.  Browsers may not
+   even allow it (not to mention VPNs, Firewalls etc). Not to mention this is too serial!
 
-1. How do we ensure each shortened URL is short and unique
 
-### Option 1: Setup a global counter and increment transactionally on each call
-
-### Option 2: Generate a random K char ID
+* Instead of a file - chunk into say 10-20MB chunks (depending on file size - 1GB = 50 chunks)
+* Upload by chunk - eg `POST files/{fileId}/chunks/{chunkId}` - each chunk would return its own upload URL
 
 ```
-1. set id = alias if one provided
-2. if id == "": id = generateShortId()
-3. entity := {Id: id, LongUrl: longUrl, Expiration....}
-4. db.InsertIfNotExists(entity)
-5. if failed: id = "" and goto step   // TODO - Provide # retries
-6. return entity
+record File {
+  ...
+  NumChunks int
+}
 
-
-// 6 alnum char gets us 2B IDs
-generateShortId(KChars = 6) {
-  out = ""
-  for range(KChars) {
-  out += randomAlphaOrDigit()
-  }
-  return out
+record FileChunk {
+  FileId string
+  ChunkSize int
+  ChunkIndex int
+  ChunkURI  URI   // uri in the content store
+  CreatedAt Timestamp
+  LastUpdated Timestamp
+  status string   // Uploading, Done  etc
 }
 ```
 
-Writing into this needs a write into the main index (by shortUrl - could be a hash index) followed by a write to a second index by longUrl (a btree index).
-Given 10k iops on SSDs, writes could be 50-100ms for both indexes.   May or may not be transactional to tradeoff consistency with Availability.
-
-2. How do you ensure redirects are fast
-
-Main index is hash-index - reads are 1-10 ms.   To get it faster introduce a cache infront of the Database.
-
-3. Further high scale
-
-Imagine load from all over the world.   Here it would be useful to replicate our store to other regions and have traffic from users go to regions closest to them for reads.  Writes would still go to a single region for consistency (otherwise managing global master-master configs are more complicated and expensive).
-
+{{ template "DrawingView" ( dict "caseStudyId" "DropBox" "id" "final" ) }}
