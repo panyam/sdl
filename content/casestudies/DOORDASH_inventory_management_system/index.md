@@ -9,12 +9,7 @@ template: "CaseStudyPage.html/CaseStudyPage"
 summary: This system will manage the availability and stock levels of items across virtual stores, ghost kitchens, grocery vendors, and partner restaurants, ensuring that inventory updates happen in real-time to prevent overselling and optimize logistics.
 ---
 
-{{# include "DrawingView.html" #}}
-
-[#](#) {{.FrontMatter.title}}
-
 {{ .FrontMatter.summary }}
-
 
 ## Functional Requirements
 

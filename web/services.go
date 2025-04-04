@@ -49,7 +49,7 @@ func (d *DrawingService) PathForDrawingId(caseStudyId, drawingId string, ensure 
 	folderPath, exists, err := d.FolderForDrawingId(caseStudyId, drawingId, ensure)
 
 	fullPath, err = filepath.Abs(filepath.Join(folderPath, fmt.Sprintf("contents.%s", extension)))
-	log.Println("Full Drawing Path: ", drawingId, extension, fullPath, err)
+	// log.Println("Full Drawing Path: ", drawingId, extension, fullPath, err)
 	if err != nil {
 		log.Println("Error accessing path: ", fullPath, err)
 		return fullPath, false, err
@@ -59,7 +59,6 @@ func (d *DrawingService) PathForDrawingId(caseStudyId, drawingId string, ensure 
 		exists = true
 	} else if os.IsNotExist(err) && ensure {
 		// create an empty file
-		log.Println("Ok here we are...., err: ", err)
 		err = os.WriteFile(fullPath, []byte(""), os.ModePerm)
 	}
 
@@ -71,8 +70,8 @@ func (d *DrawingService) EditorUrl(caseStudyId, drawingId string) (out string) {
 }
 
 func (d *DrawingService) PreviewExists(caseStudyId, drawingId, extension string) bool {
-	path, exists, err := dpUtils.PathForDrawingId(caseStudyId, drawingId, false, extension)
-	log.Println("Path: ", path, exists)
+	_, exists, err := dpUtils.PathForDrawingId(caseStudyId, drawingId, false, extension)
+	//log.Println("Path: ", path, exists)
 	return exists && err == nil
 }
 
