@@ -1,0 +1,12 @@
+runtime: go124
+env_variables:
+  ALGOLIA_INDEX: notation_scores_PROD
+
+handlers:
+- url: /static
+  static_dir: web/static
+
+- url: /.*
+  script: auto
+    # upload: web/templates/.*
+

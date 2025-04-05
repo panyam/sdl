@@ -41,9 +41,7 @@ class CaseStudyPage {
 
     // For testing only
     const scrollToBottom = ((document.getElementById("scrollToBottom") as HTMLInputElement).value || "").trim()
-    if (scrollToBottom.toLowerCase() == "true") {
-      contentPanel.scrollTop = contentPanel.scrollHeight;
-    }
+    // if (scrollToBottom.toLowerCase() == "true") { contentPanel.scrollTop = contentPanel.scrollHeight; }
   }
 }
 

@@ -3,7 +3,7 @@ title: 'Design Template'
 productName: 'Template'
 date: 2024-05-28T11:29:10AM
 tags: ['productName', 'difficulty', 'company']
-draft: false
+draft: true
 authors: ['Sri Panyam']
 template: "CaseStudyPage.html/CaseStudyPage"
 summary: Summary of the service being designed.
