@@ -7,16 +7,19 @@ import (
 	"net/http"
 
 	"github.com/felixge/httpsnoop"
+	svc "github.com/panyam/leetcoach/services"
 )
 
 type Server struct {
 	Address       string
+	GrpcAddress   string
 	AllowLocalDev bool
 }
 
 // func (s *Server) Start(ctx context.Context, mux http.Handler, gw_addr string, srvErr chan error, stopChan chan bool) {
 func (s *Server) Start(ctx context.Context, srvErr chan error, stopChan chan bool) error {
-	app, err := NewWebApp()
+	clients := svc.NewClientMgr(s.GrpcAddress)
+	app, err := NewWebApp(s.GrpcAddress, clients)
 	if err != nil {
 		return err
 	}

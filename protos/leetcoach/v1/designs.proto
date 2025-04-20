@@ -1,3 +1,5 @@
+// protos/leetcoach/v1/designs.proto
+
 syntax = "proto3";
 import "google/protobuf/field_mask.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
@@ -7,6 +9,14 @@ package leetcoach.v1;
 
 import "leetcoach/v1/models.proto";
 import "google/api/annotations.proto";
+
+// Used for positioning new/moved sections
+enum PositionType {
+  POSITION_TYPE_UNSPECIFIED = 0;
+  POSITION_TYPE_BEFORE = 1; // Insert before the relative_section_id
+  POSITION_TYPE_AFTER = 2;  // Insert after the relative_section_id
+  POSITION_TYPE_END = 3;    // Append to the end of the design
+}
 
 /**
  * Service for operating on design documents
@@ -66,21 +76,50 @@ service DesignService {
       patch: "/v1/designs/{design.id=*}"
       body: "*"
     };
-    // option (google.api.method_signature) = "notation,update_mask";
+    // option (google.api.method_signature) = "design,update_mask";
   }
 
-  /**
-   * Social actions on a design
-   */
-/*
-  rpc ActionDesign(ActionDesignRequest) returns (ActionDesignResponse) {
+  //  ----- Section Operations -----
+
+  // Adds a section to a design's section_ids list and creates the section resource.
+  rpc AddSection (AddSectionRequest) returns (Section) {
     option (google.api.http) = {
-      patch: "/v1/designs/{design.id=*}/actions/{action.action_type}"
-      body: "*"
+      post: "/v1/designs/{section.design_id}/sections"
+      body: "*" // Contains initial title, type, content, and positioning info
     };
-    // option (google.api.method_signature) = "notation,update_mask";
   }
-*/
+
+  rpc GetSection (GetSectionRequest) returns (Section) {
+    option (google.api.http) = {
+      get: "/v1/designs/{design_id}/sections/{section_id}"
+    };
+  }
+
+  // Use PATCH for partial updates to a section (title, content)
+  rpc UpdateSection (UpdateSectionRequest) returns (Section) {
+     option (google.api.http) = {
+       patch: "/v1/designs/{section.design_id}/sections/{section.id}"
+       body: "section" // Only the 'section' field goes in the body
+     };
+  }
+
+  // Moves a section within the Design's section_ids list
+  // We could have done this via an UpdateDesign with the changed order but this is 
+  // clearer and only needs to deal with the current (and target) section instead of
+  // needing to know all sections for an update.
+  rpc MoveSection (MoveSectionRequest) returns (MoveSectionResponse) {
+    option (google.api.http) = {
+      // Use a custom verb ':move' applied to the specific section resource
+      post: "/v1/designs/{design_id}/sections/{section_id}:move"
+      body: "*" // Contains relative_section_id and position
+    };
+  }
+
+  rpc DeleteSection (DeleteSectionRequest) returns (DeleteSectionResponse) {
+    option (google.api.http) = {
+      delete: "/v1/designs/{design_id}/sections/{section_id}"
+    };
+  }
 }
 
 /**
@@ -91,16 +130,6 @@ message CreateDesignRequest {
    * Design being updated
    */
   Design design = 1;
-
-  /**
-   * Which collection to post this design in
-   */
-  string collection_id = 2;
-
-  /**
-   * Contents to save with.
-   */
-  Content content = 3;
 }
 
 /**
@@ -128,12 +157,7 @@ message ListDesignsRequest {
   /**
    * Limit to designs of a particular user
    */
-  string user_id = 3;
-
-  /** 
-   * Limit to designs in a collection
-   */
-  string collection_id = 4;
+  string owner_id = 3;
 
   /**
    * Whether to only get public ones.
@@ -167,10 +191,8 @@ message GetDesignRequest {
    */
   string id = 1;
 
-  /**
-   * Returns if contents are also to be returned.
-   */
-  bool with_contents = 2;
+  // New flag to request metadata inclusion.  Note section content is NOT returned here but instead with GetSection
+  bool include_section_metadata = 2;
 }
 
 /**
@@ -179,8 +201,10 @@ message GetDesignRequest {
 message GetDesignResponse {
   Design design = 1;
 
-  // Content for the design if we need it
-  Content content = 2;
+  // Optionally populated by server if include_section_metadata was true.
+  // Sections in this list will *not* have their 'content' oneof populated.
+  // The order should match design.section_ids.
+  repeated Section sections_metadata = 2;
 }
 
 /**
@@ -217,7 +241,8 @@ message DeleteDesignResponse {
 }
 
 /**
- * The request for (partially) updating an Design.
+ * The request for (partially) updating an Design.  Note this only updates design level metadata.
+ * Specific changes to section contetn will not happen here.
  */
 message UpdateDesignRequest {
   option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
@@ -235,11 +260,6 @@ message UpdateDesignRequest {
    * Mask of fields being updated in this Design to make partial changes.
    */
   google.protobuf.FieldMask update_mask = 2;
-
-  /**
-   * Update with new contents if provided.
-   */
-  optional Content content = 3;
 }
 
 /**
@@ -256,4 +276,45 @@ message UpdateDesignResponse {
    * Design being updated
    */
   Design design = 1;
+}
+
+
+// --- Section Messages ---
+
+message AddSectionRequest {
+  Section section = 1;
+  string relative_section_id = 2;
+  PositionType position = 3;
+}
+
+message GetSectionRequest {
+  string design_id = 1;
+  string section_id = 2;
+}
+
+// Consolidate section updates into one RPC using PATCH and FieldMask
+message UpdateSectionRequest {
+  // Section object containing *only* the fields to be updated.
+  // The server will use the update_mask to know which fields from
+  // this 'section' message to apply to the stored section.
+  Section section = 1;
+  google.protobuf.FieldMask update_mask = 2; // e.g., paths: "title", paths: "text_content"
+}
+
+message MoveSectionRequest {
+  string design_id = 1;
+  string section_id = 2; // The section being moved
+  string relative_section_id = 3;
+  PositionType position = 4;
+}
+
+message MoveSectionResponse {
+}
+
+message DeleteSectionRequest {
+  string design_id = 1;
+  string section_id = 2;
+}
+
+message DeleteSectionResponse {
 }

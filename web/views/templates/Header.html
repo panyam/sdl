@@ -1,0 +1,55 @@
+<!-- templates/Header.html -->
+{{ define "Header" }}
+<header class="bg-white dark:bg-gray-800 shadow-sm px-4 py-3 flex items-center justify-between">
+    <!-- Logo and Site Name -->
+    <div class="flex items-center">
+        <div class="flex items-center space-x-2">
+            <!-- Logo -->
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600 dark:text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" />
+            </svg>
+            
+            <!-- Site Name -->
+            <span class="font-bold text-xl text-gray-900 dark:text-white">LeetCoach</span>
+        </div>
+        
+        <!-- Tag Line -->
+        <span class="hidden md:inline-block ml-3 text-sm text-gray-600 dark:text-gray-400 border-l border-gray-300 dark:border-gray-600 pl-3">
+            System Design Interview Preparation
+        </span>
+    </div>
+    
+    <!-- Action Buttons -->
+    <div class="flex items-center space-x-4">
+        <!-- Save Button -->
+        <button class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition duration-150 ease-in-out flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+            </svg>
+            Save
+        </button>
+        
+        <!-- Export Button -->
+        <button class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 text-sm font-medium rounded-md transition duration-150 ease-in-out flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            Export
+        </button>
+
+        <!-- Theme Toggle Button -->
+        <button id="theme-toggle-button" type="button" class="p-2 rounded-md text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900" aria-label="Toggle theme">
+            <span id="theme-toggle-icon" class="inline-block h-5 w-5">
+                <!-- Icon will be populated by JS -->
+            </span>
+        </button>
+        
+        <!-- Menu Button (Mobile Only) -->
+        <button id="mobile-menu-button" class="md:hidden p-1 rounded-md text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+        </button>
+    </div>
+</header>
+{{ end }}

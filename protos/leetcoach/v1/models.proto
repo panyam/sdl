@@ -1,3 +1,5 @@
+// protos/leetcoach/v1/models.proto
+
 syntax = "proto3";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/struct.proto";
@@ -70,31 +72,6 @@ message Tag {
   int64 num_designs = 8;
 }
 
-message Content {
-  google.protobuf.Timestamp created_at = 1;
-  google.protobuf.Timestamp updated_at = 2;
-
-  // ID of this user
-  string id = 3;
-
-  string user_id = 4;
-
-  string parent_type = 5;
-  string parent_id = 6;
-
-  // Any metadata for the content
-  google.protobuf.Struct metadata = 7;
-
-  // Where the content is located, eg raw, github, bitbucket, s3 etc
-  string store_type = 8;
-
-  // A credential ID for accessing the repo.
-  string credential = 9;
-
-  // Raw data if content is being saved locally
-  string raw_content = 10;
-}
-
 message Credential {
   google.protobuf.Timestamp created_at = 1;
   google.protobuf.Timestamp updated_at = 2;
@@ -117,7 +94,7 @@ message Design {
   google.protobuf.Timestamp created_at = 1;
   google.protobuf.Timestamp updated_at = 2;
   string id = 3;
-  string user_id = 4;
+  string owner_id = 4;
   string visibility = 5;
   repeated string visible_to = 6;
 
@@ -130,15 +107,21 @@ message Design {
   string description = 8;
 
   // Metadata about the content itself that user may want to
-  // highlight (or the system extracts).  This are the fields
-  // found in the notation itself via the front matter
+  // highlight (or the system extracts).  
   google.protobuf.Struct content_metadata = 9;
 
-  // IDs of all the sections in this 
-  repeated DesignSection sections = 10;
+  // IDs of all the sections in this Design
+  repeated string section_ids = 10;
 }
 
-message DesignSection {
+enum SectionType {
+  SECTION_TYPE_UNSPECIFIED = 0;
+  SECTION_TYPE_TEXT = 1;
+  SECTION_TYPE_DRAWING = 2;
+  SECTION_TYPE_PLOT = 3;
+}
+
+message Section {
   google.protobuf.Timestamp created_at = 1;
   google.protobuf.Timestamp updated_at = 2;
 
@@ -155,7 +138,7 @@ message DesignSection {
   /**
    * Type of section, eg text, drawing, plot etc.
    */
-  string section_type = 5;
+  SectionType type = 5;
 
   /**
    * Title of this section.
@@ -163,7 +146,31 @@ message DesignSection {
   string title = 6;
 
   /**
-   * URI of the content for this section.   The content will most often be stored outside in a blob store.
+   * Section content type
    */
-  string content_uri = 7;
+  string content_type = 7; // e.g., "application/json", "text/html" etc
+
+  /**
+   * Format of the section. 
+   */
+  string format = 8; // e.g., "chartjs/json", "plotly/json"
+
+  // Note section content may not always be served here.
+  oneof content {
+    TextSectionContent text_content = 9;
+    DrawingSectionContent drawing_content = 10;
+    PlotSectionContent plot_content = 11;
+  }
+}
+
+message TextSectionContent {
+  string html_content = 1;
+}
+
+message PlotSectionContent {
+  bytes data = 2;    // The plot configuration or data as bytes (likely JSON string bytes)
+}
+
+message DrawingSectionContent {
+  bytes data = 2;    // The actual drawing data (can be JSON string bytes, raw SVG bytes, etc.)
 }

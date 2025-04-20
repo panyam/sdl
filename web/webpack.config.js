@@ -125,7 +125,7 @@ module.exports = (_env, options) => {
       // Public path where browser requests bundles/assets. Matches path structure served by static server.
       publicPath: `${staticPublicPath}/js/gen/`, // -> /static/js/gen/
       filename: "[name].[contenthash].js",
-      library: ["notation", "[name]"],
+      library: ["leetcoach", "[name]"],
       libraryTarget: "umd",
       umdNamedDefine: true,
       globalObject: "this",

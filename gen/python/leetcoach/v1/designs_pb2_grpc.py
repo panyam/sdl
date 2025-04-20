@@ -3,6 +3,7 @@
 import grpc
 
 from leetcoach.v1 import designs_pb2 as leetcoach_dot_v1_dot_designs__pb2
+from leetcoach.v1 import models_pb2 as leetcoach_dot_v1_dot_models__pb2
 
 
 class DesignServiceStub(object):
@@ -45,6 +46,31 @@ class DesignServiceStub(object):
                 '/leetcoach.v1.DesignService/UpdateDesign',
                 request_serializer=leetcoach_dot_v1_dot_designs__pb2.UpdateDesignRequest.SerializeToString,
                 response_deserializer=leetcoach_dot_v1_dot_designs__pb2.UpdateDesignResponse.FromString,
+                _registered_method=True)
+        self.AddSection = channel.unary_unary(
+                '/leetcoach.v1.DesignService/AddSection',
+                request_serializer=leetcoach_dot_v1_dot_designs__pb2.AddSectionRequest.SerializeToString,
+                response_deserializer=leetcoach_dot_v1_dot_models__pb2.Section.FromString,
+                _registered_method=True)
+        self.GetSection = channel.unary_unary(
+                '/leetcoach.v1.DesignService/GetSection',
+                request_serializer=leetcoach_dot_v1_dot_designs__pb2.GetSectionRequest.SerializeToString,
+                response_deserializer=leetcoach_dot_v1_dot_models__pb2.Section.FromString,
+                _registered_method=True)
+        self.UpdateSection = channel.unary_unary(
+                '/leetcoach.v1.DesignService/UpdateSection',
+                request_serializer=leetcoach_dot_v1_dot_designs__pb2.UpdateSectionRequest.SerializeToString,
+                response_deserializer=leetcoach_dot_v1_dot_models__pb2.Section.FromString,
+                _registered_method=True)
+        self.MoveSection = channel.unary_unary(
+                '/leetcoach.v1.DesignService/MoveSection',
+                request_serializer=leetcoach_dot_v1_dot_designs__pb2.MoveSectionRequest.SerializeToString,
+                response_deserializer=leetcoach_dot_v1_dot_designs__pb2.MoveSectionResponse.FromString,
+                _registered_method=True)
+        self.DeleteSection = channel.unary_unary(
+                '/leetcoach.v1.DesignService/DeleteSection',
+                request_serializer=leetcoach_dot_v1_dot_designs__pb2.DeleteSectionRequest.SerializeToString,
+                response_deserializer=leetcoach_dot_v1_dot_designs__pb2.DeleteSectionResponse.FromString,
                 _registered_method=True)
 
 
@@ -101,6 +127,44 @@ class DesignServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def AddSection(self, request, context):
+        """----- Section Operations -----
+
+        Adds a section to a design's section_ids list and creates the section resource.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetSection(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def UpdateSection(self, request, context):
+        """Use PATCH for partial updates to a section (title, content)
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def MoveSection(self, request, context):
+        """Moves a section within the Design's section_ids list
+        We could have done this via an UpdateDesign with the changed order but this is 
+        clearer and only needs to deal with the current (and target) section instead of
+        needing to know all sections for an update.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DeleteSection(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_DesignServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -133,6 +197,31 @@ def add_DesignServiceServicer_to_server(servicer, server):
                     servicer.UpdateDesign,
                     request_deserializer=leetcoach_dot_v1_dot_designs__pb2.UpdateDesignRequest.FromString,
                     response_serializer=leetcoach_dot_v1_dot_designs__pb2.UpdateDesignResponse.SerializeToString,
+            ),
+            'AddSection': grpc.unary_unary_rpc_method_handler(
+                    servicer.AddSection,
+                    request_deserializer=leetcoach_dot_v1_dot_designs__pb2.AddSectionRequest.FromString,
+                    response_serializer=leetcoach_dot_v1_dot_models__pb2.Section.SerializeToString,
+            ),
+            'GetSection': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetSection,
+                    request_deserializer=leetcoach_dot_v1_dot_designs__pb2.GetSectionRequest.FromString,
+                    response_serializer=leetcoach_dot_v1_dot_models__pb2.Section.SerializeToString,
+            ),
+            'UpdateSection': grpc.unary_unary_rpc_method_handler(
+                    servicer.UpdateSection,
+                    request_deserializer=leetcoach_dot_v1_dot_designs__pb2.UpdateSectionRequest.FromString,
+                    response_serializer=leetcoach_dot_v1_dot_models__pb2.Section.SerializeToString,
+            ),
+            'MoveSection': grpc.unary_unary_rpc_method_handler(
+                    servicer.MoveSection,
+                    request_deserializer=leetcoach_dot_v1_dot_designs__pb2.MoveSectionRequest.FromString,
+                    response_serializer=leetcoach_dot_v1_dot_designs__pb2.MoveSectionResponse.SerializeToString,
+            ),
+            'DeleteSection': grpc.unary_unary_rpc_method_handler(
+                    servicer.DeleteSection,
+                    request_deserializer=leetcoach_dot_v1_dot_designs__pb2.DeleteSectionRequest.FromString,
+                    response_serializer=leetcoach_dot_v1_dot_designs__pb2.DeleteSectionResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -299,6 +388,141 @@ class DesignService(object):
             '/leetcoach.v1.DesignService/UpdateDesign',
             leetcoach_dot_v1_dot_designs__pb2.UpdateDesignRequest.SerializeToString,
             leetcoach_dot_v1_dot_designs__pb2.UpdateDesignResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def AddSection(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/leetcoach.v1.DesignService/AddSection',
+            leetcoach_dot_v1_dot_designs__pb2.AddSectionRequest.SerializeToString,
+            leetcoach_dot_v1_dot_models__pb2.Section.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetSection(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/leetcoach.v1.DesignService/GetSection',
+            leetcoach_dot_v1_dot_designs__pb2.GetSectionRequest.SerializeToString,
+            leetcoach_dot_v1_dot_models__pb2.Section.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def UpdateSection(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/leetcoach.v1.DesignService/UpdateSection',
+            leetcoach_dot_v1_dot_designs__pb2.UpdateSectionRequest.SerializeToString,
+            leetcoach_dot_v1_dot_models__pb2.Section.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def MoveSection(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/leetcoach.v1.DesignService/MoveSection',
+            leetcoach_dot_v1_dot_designs__pb2.MoveSectionRequest.SerializeToString,
+            leetcoach_dot_v1_dot_designs__pb2.MoveSectionResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DeleteSection(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/leetcoach.v1.DesignService/DeleteSection',
+            leetcoach_dot_v1_dot_designs__pb2.DeleteSectionRequest.SerializeToString,
+            leetcoach_dot_v1_dot_designs__pb2.DeleteSectionResponse.FromString,
             options,
             channel_credentials,
             insecure,

@@ -62,15 +62,8 @@
             "format": "int32"
           },
           {
-            "name": "userId",
+            "name": "ownerId",
             "description": "*\nLimit to designs of a particular user",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "collectionId",
-            "description": "* \nLimit to designs in a collection",
             "in": "query",
             "required": false,
             "type": "string"
@@ -170,7 +163,7 @@
                       "type": "string",
                       "format": "date-time"
                     },
-                    "userId": {
+                    "ownerId": {
                       "type": "string"
                     },
                     "visibility": {
@@ -192,15 +185,14 @@
                     },
                     "contentMetadata": {
                       "type": "object",
-                      "title": "Metadata about the content itself that user may want to\nhighlight (or the system extracts).  This are the fields\nfound in the notation itself via the front matter"
+                      "description": "Metadata about the content itself that user may want to\nhighlight (or the system extracts)."
                     },
-                    "sections": {
+                    "sectionIds": {
                       "type": "array",
                       "items": {
-                        "type": "object",
-                        "$ref": "#/definitions/v1DesignSection"
+                        "type": "string"
                       },
-                      "title": "IDs of all the sections in this"
+                      "title": "IDs of all the sections in this Design"
                     }
                   },
                   "title": "*\nDesign being updated"
@@ -208,14 +200,134 @@
                 "updateMask": {
                   "type": "string",
                   "description": "*\nMask of fields being updated in this Design to make partial changes."
-                },
-                "content": {
-                  "$ref": "#/definitions/v1Content",
-                  "description": "*\nUpdate with new contents if provided."
                 }
               },
-              "description": "*\nThe request for (partially) updating an Design.",
+              "description": "*\nThe request for (partially) updating an Design.  Note this only updates design level metadata.\nSpecific changes to section contetn will not happen here.",
               "title": "UpdateDesignRequest"
+            }
+          }
+        ],
+        "tags": [
+          "DesignService"
+        ]
+      }
+    },
+    "/v1/designs/{designId}/sections/{sectionId}": {
+      "get": {
+        "operationId": "DesignService_GetSection",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Section"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "designId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "sectionId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "DesignService"
+        ]
+      },
+      "delete": {
+        "operationId": "DesignService_DeleteSection",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DeleteSectionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "designId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "sectionId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "DesignService"
+        ]
+      }
+    },
+    "/v1/designs/{designId}/sections/{sectionId}:move": {
+      "post": {
+        "summary": "Moves a section within the Design's section_ids list\nWe could have done this via an UpdateDesign with the changed order but this is \nclearer and only needs to deal with the current (and target) section instead of\nneeding to know all sections for an update.",
+        "operationId": "DesignService_MoveSection",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1MoveSectionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "designId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "sectionId",
+            "description": "The section being moved",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "relativeSectionId": {
+                  "type": "string"
+                },
+                "position": {
+                  "$ref": "#/definitions/v1PositionType"
+                }
+              }
             }
           }
         ],
@@ -252,8 +364,8 @@
             "pattern": "[^/]+"
           },
           {
-            "name": "withContents",
-            "description": "*\nReturns if contents are also to be returned.",
+            "name": "includeSectionMetadata",
+            "description": "New flag to request metadata inclusion.  Note section content is NOT returned here but instead with GetSection",
             "in": "query",
             "required": false,
             "type": "boolean"
@@ -288,6 +400,182 @@
             "required": true,
             "type": "string",
             "pattern": "[^/]+"
+          }
+        ],
+        "tags": [
+          "DesignService"
+        ]
+      }
+    },
+    "/v1/designs/{section.designId}/sections": {
+      "post": {
+        "summary": "Adds a section to a design's section_ids list and creates the section resource.",
+        "operationId": "DesignService_AddSection",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Section"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "section.designId",
+            "description": "*\nWhich design this section belong to.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "section": {
+                  "type": "object",
+                  "properties": {
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "id": {
+                      "type": "string",
+                      "title": "*\nID of this section - only needs ot be unique within a design"
+                    },
+                    "type": {
+                      "$ref": "#/definitions/v1SectionType",
+                      "description": "*\nType of section, eg text, drawing, plot etc."
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "*\nTitle of this section."
+                    },
+                    "contentType": {
+                      "type": "string",
+                      "description": "e.g., \"application/json\", \"text/html\" etc",
+                      "title": "*\nSection content type"
+                    },
+                    "format": {
+                      "type": "string",
+                      "description": "*\nFormat of the section.\n\ne.g., \"chartjs/json\", \"plotly/json\""
+                    },
+                    "textContent": {
+                      "$ref": "#/definitions/v1TextSectionContent"
+                    },
+                    "drawingContent": {
+                      "$ref": "#/definitions/v1DrawingSectionContent"
+                    },
+                    "plotContent": {
+                      "$ref": "#/definitions/v1PlotSectionContent"
+                    }
+                  }
+                },
+                "relativeSectionId": {
+                  "type": "string"
+                },
+                "position": {
+                  "$ref": "#/definitions/v1PositionType"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "DesignService"
+        ]
+      }
+    },
+    "/v1/designs/{section.designId}/sections/{section.id}": {
+      "patch": {
+        "summary": "Use PATCH for partial updates to a section (title, content)",
+        "operationId": "DesignService_UpdateSection",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Section"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "section.designId",
+            "description": "*\nWhich design this section belong to.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "section.id",
+            "description": "*\nID of this section - only needs ot be unique within a design",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "section",
+            "description": "Section object containing *only* the fields to be updated.\nThe server will use the update_mask to know which fields from\nthis 'section' message to apply to the stored section.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "updatedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "type": {
+                  "$ref": "#/definitions/v1SectionType",
+                  "description": "*\nType of section, eg text, drawing, plot etc."
+                },
+                "title": {
+                  "type": "string",
+                  "description": "*\nTitle of this section."
+                },
+                "contentType": {
+                  "type": "string",
+                  "description": "e.g., \"application/json\", \"text/html\" etc",
+                  "title": "*\nSection content type"
+                },
+                "format": {
+                  "type": "string",
+                  "description": "*\nFormat of the section.\n\ne.g., \"chartjs/json\", \"plotly/json\""
+                },
+                "textContent": {
+                  "$ref": "#/definitions/v1TextSectionContent"
+                },
+                "drawingContent": {
+                  "$ref": "#/definitions/v1DrawingSectionContent"
+                },
+                "plotContent": {
+                  "$ref": "#/definitions/v1PlotSectionContent"
+                }
+              },
+              "title": "Section object containing *only* the fields to be updated.\nThe server will use the update_mask to know which fields from\nthis 'section' message to apply to the stored section."
+            }
           }
         ],
         "tags": [
@@ -736,62 +1024,12 @@
         }
       }
     },
-    "v1Content": {
-      "type": "object",
-      "properties": {
-        "createdAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "id": {
-          "type": "string",
-          "title": "ID of this user"
-        },
-        "userId": {
-          "type": "string"
-        },
-        "parentType": {
-          "type": "string"
-        },
-        "parentId": {
-          "type": "string"
-        },
-        "metadata": {
-          "type": "object",
-          "title": "Any metadata for the content"
-        },
-        "storeType": {
-          "type": "string",
-          "title": "Where the content is located, eg raw, github, bitbucket, s3 etc"
-        },
-        "credential": {
-          "type": "string",
-          "description": "A credential ID for accessing the repo."
-        },
-        "rawContent": {
-          "type": "string",
-          "title": "Raw data if content is being saved locally"
-        }
-      }
-    },
     "v1CreateDesignRequest": {
       "type": "object",
       "properties": {
         "design": {
           "$ref": "#/definitions/v1Design",
           "title": "*\nDesign being updated"
-        },
-        "collectionId": {
-          "type": "string",
-          "title": "*\nWhich collection to post this design in"
-        },
-        "content": {
-          "$ref": "#/definitions/v1Content",
-          "description": "*\nContents to save with."
         }
       },
       "title": "*\nDesign creation request object"
@@ -834,6 +1072,9 @@
       "type": "object",
       "title": "*\nDesign deletion response"
     },
+    "v1DeleteSectionResponse": {
+      "type": "object"
+    },
     "v1DeleteTagResponse": {
       "type": "object",
       "title": "*\nTag deletion response"
@@ -852,7 +1093,7 @@
         "id": {
           "type": "string"
         },
-        "userId": {
+        "ownerId": {
           "type": "string"
         },
         "visibility": {
@@ -874,48 +1115,24 @@
         },
         "contentMetadata": {
           "type": "object",
-          "title": "Metadata about the content itself that user may want to\nhighlight (or the system extracts).  This are the fields\nfound in the notation itself via the front matter"
+          "description": "Metadata about the content itself that user may want to\nhighlight (or the system extracts)."
         },
-        "sections": {
+        "sectionIds": {
           "type": "array",
           "items": {
-            "type": "object",
-            "$ref": "#/definitions/v1DesignSection"
+            "type": "string"
           },
-          "title": "IDs of all the sections in this"
+          "title": "IDs of all the sections in this Design"
         }
       }
     },
-    "v1DesignSection": {
+    "v1DrawingSectionContent": {
       "type": "object",
       "properties": {
-        "createdAt": {
+        "data": {
           "type": "string",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "id": {
-          "type": "string",
-          "title": "*\nID of this section - only needs ot be unique within a design"
-        },
-        "designId": {
-          "type": "string",
-          "description": "*\nWhich design this section belong to."
-        },
-        "sectionType": {
-          "type": "string",
-          "description": "*\nType of section, eg text, drawing, plot etc."
-        },
-        "title": {
-          "type": "string",
-          "description": "*\nTitle of this section."
-        },
-        "contentUri": {
-          "type": "string",
-          "description": "*\nURI of the content for this section.   The content will most often be stored outside in a blob store."
+          "format": "byte",
+          "title": "The actual drawing data (can be JSON string bytes, raw SVG bytes, etc.)"
         }
       }
     },
@@ -925,9 +1142,13 @@
         "design": {
           "$ref": "#/definitions/v1Design"
         },
-        "content": {
-          "$ref": "#/definitions/v1Content",
-          "title": "Content for the design if we need it"
+        "sectionsMetadata": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Section"
+          },
+          "description": "Optionally populated by server if include_section_metadata was true.\nSections in this list will *not* have their 'content' oneof populated.\nThe order should match design.section_ids."
         }
       },
       "title": "*\nDesign get response"
@@ -1000,6 +1221,9 @@
       },
       "description": "*\nResponse of a tag search/listing."
     },
+    "v1MoveSectionResponse": {
+      "type": "object"
+    },
     "v1Pagination": {
       "type": "object",
       "properties": {
@@ -1039,6 +1263,93 @@
           "type": "integer",
           "format": "int32",
           "description": "*\nTotal number of results."
+        }
+      }
+    },
+    "v1PlotSectionContent": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "string",
+          "format": "byte",
+          "title": "The plot configuration or data as bytes (likely JSON string bytes)"
+        }
+      }
+    },
+    "v1PositionType": {
+      "type": "string",
+      "enum": [
+        "POSITION_TYPE_UNSPECIFIED",
+        "POSITION_TYPE_BEFORE",
+        "POSITION_TYPE_AFTER",
+        "POSITION_TYPE_END"
+      ],
+      "default": "POSITION_TYPE_UNSPECIFIED",
+      "description": "- POSITION_TYPE_BEFORE: Insert before the relative_section_id\n - POSITION_TYPE_AFTER: Insert after the relative_section_id\n - POSITION_TYPE_END: Append to the end of the design",
+      "title": "Used for positioning new/moved sections"
+    },
+    "v1Section": {
+      "type": "object",
+      "properties": {
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "id": {
+          "type": "string",
+          "title": "*\nID of this section - only needs ot be unique within a design"
+        },
+        "designId": {
+          "type": "string",
+          "description": "*\nWhich design this section belong to."
+        },
+        "type": {
+          "$ref": "#/definitions/v1SectionType",
+          "description": "*\nType of section, eg text, drawing, plot etc."
+        },
+        "title": {
+          "type": "string",
+          "description": "*\nTitle of this section."
+        },
+        "contentType": {
+          "type": "string",
+          "description": "e.g., \"application/json\", \"text/html\" etc",
+          "title": "*\nSection content type"
+        },
+        "format": {
+          "type": "string",
+          "description": "*\nFormat of the section.\n\ne.g., \"chartjs/json\", \"plotly/json\""
+        },
+        "textContent": {
+          "$ref": "#/definitions/v1TextSectionContent"
+        },
+        "drawingContent": {
+          "$ref": "#/definitions/v1DrawingSectionContent"
+        },
+        "plotContent": {
+          "$ref": "#/definitions/v1PlotSectionContent"
+        }
+      }
+    },
+    "v1SectionType": {
+      "type": "string",
+      "enum": [
+        "SECTION_TYPE_UNSPECIFIED",
+        "SECTION_TYPE_TEXT",
+        "SECTION_TYPE_DRAWING",
+        "SECTION_TYPE_PLOT"
+      ],
+      "default": "SECTION_TYPE_UNSPECIFIED"
+    },
+    "v1TextSectionContent": {
+      "type": "object",
+      "properties": {
+        "htmlContent": {
+          "type": "string"
         }
       }
     },

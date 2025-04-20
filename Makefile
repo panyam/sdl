@@ -12,7 +12,7 @@ checklinks:
 	fi
 
 deploy: checklinks build
-	gcloud app deploy --project notations --verbosity=info
+	gcloud app deploy --project leetcoach --verbosity=info
 
 build: webbuild resymlink
 

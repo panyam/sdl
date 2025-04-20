@@ -1,6 +1,6 @@
 runtime: go124
 env_variables:
-  ALGOLIA_INDEX: notation_scores_PROD
+  ALGOLIA_INDEX: leetcoach_PROD
 
 handlers:
 - url: /static
