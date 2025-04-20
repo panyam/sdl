@@ -1,0 +1,259 @@
+syntax = "proto3";
+import "google/protobuf/field_mask.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "github.com/leetcoach/protos";
+package leetcoach.v1;
+
+import "leetcoach/v1/models.proto";
+import "google/api/annotations.proto";
+
+/**
+ * Service for operating on design documents
+ */
+service DesignService {
+  /**
+   * Create a new sesssion
+   */
+  rpc CreateDesign(CreateDesignRequest) returns (CreateDesignResponse) {
+    option (google.api.http) = {
+      post: "/v1/designs",
+      body: "*",
+    };
+  }
+
+  /**
+   * List all designs from a user.
+   */
+  rpc ListDesigns(ListDesignsRequest) returns (ListDesignsResponse) { 
+    option (google.api.http) = {
+      get: "/v1/designs"
+    };
+  }
+
+  /**
+   * Get a particular design
+   */
+  rpc GetDesign(GetDesignRequest) returns (GetDesignResponse) { 
+    option (google.api.http) = {
+      get: "/v1/designs/{id=*}"
+    };
+  }
+
+  /**
+   * Batch get multiple designs by ID
+   */
+  rpc GetDesigns(GetDesignsRequest) returns (GetDesignsResponse) { 
+    option (google.api.http) = {
+      get: "/v1/designs:batchGet"
+    };
+  }
+
+  /**
+   * Delete a particular design
+   */
+  rpc DeleteDesign(DeleteDesignRequest) returns (DeleteDesignResponse) { 
+    option (google.api.http) = {
+      delete: "/v1/designs/{id=*}"
+    };
+  }
+
+  /**
+   * Updates specific fields of a design
+   */
+  rpc UpdateDesign(UpdateDesignRequest) returns (UpdateDesignResponse) {
+    option (google.api.http) = {
+      patch: "/v1/designs/{design.id=*}"
+      body: "*"
+    };
+    // option (google.api.method_signature) = "notation,update_mask";
+  }
+
+  /**
+   * Social actions on a design
+   */
+/*
+  rpc ActionDesign(ActionDesignRequest) returns (ActionDesignResponse) {
+    option (google.api.http) = {
+      patch: "/v1/designs/{design.id=*}/actions/{action.action_type}"
+      body: "*"
+    };
+    // option (google.api.method_signature) = "notation,update_mask";
+  }
+*/
+}
+
+/**
+ * Design creation request object
+ */
+message CreateDesignRequest {
+  /**
+   * Design being updated
+   */
+  Design design = 1;
+
+  /**
+   * Which collection to post this design in
+   */
+  string collection_id = 2;
+
+  /**
+   * Contents to save with.
+   */
+  Content content = 3;
+}
+
+/**
+ * Response of an design creation.
+ */
+message CreateDesignResponse {
+  /**
+   * Design being created
+   */
+  Design design = 1;
+
+  /**
+   * Error specific to a field if there are any errors.
+   */
+  map<string, string> field_errors = 2;
+}
+
+/**
+ * An design search request.  For now only paginations params are provided.
+ */
+message ListDesignsRequest {
+  // Pagination info
+  Pagination pagination = 1;
+
+  /**
+   * Limit to designs of a particular user
+   */
+  string user_id = 3;
+
+  /** 
+   * Limit to designs in a collection
+   */
+  string collection_id = 4;
+
+  /**
+   * Whether to only get public ones.
+   */
+  bool limit_to_public = 5;
+
+  /**
+   * "recent" or "name"
+   */
+  string order_by = 6;
+}
+
+/**
+ * Response of a design search/listing.
+ */
+message ListDesignsResponse {
+  /**
+   * The list of designs found as part of this response.
+   */
+  repeated Design designs = 1;
+
+  PaginationResponse pagination = 2;
+}
+
+/**
+ * Request to get an design.
+ */
+message GetDesignRequest {
+  /**
+   * ID of the design to be fetched
+   */
+  string id = 1;
+
+  /**
+   * Returns if contents are also to be returned.
+   */
+  bool with_contents = 2;
+}
+
+/**
+ * Design get response
+ */
+message GetDesignResponse {
+  Design design = 1;
+
+  // Content for the design if we need it
+  Content content = 2;
+}
+
+/**
+ * Request to batch get designs
+ */
+message GetDesignsRequest {
+  /**
+   * IDs of the design to be fetched
+   */
+  repeated string ids = 1;
+}
+
+/**
+ * Design batch-get response
+ */
+message GetDesignsResponse {
+  map<string, Design> designs = 1;
+}
+
+/**
+ * Request to delete an design.
+ */
+message DeleteDesignRequest {
+  /**
+   * ID of the design to be deleted.
+   */
+  string id = 1;
+}
+
+/**
+ * Design deletion response
+ */
+message DeleteDesignResponse {
+}
+
+/**
+ * The request for (partially) updating an Design.
+ */
+message UpdateDesignRequest {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
+    json_schema: {
+      title: "UpdateDesignRequest"
+    }
+  };
+
+  /**
+   * Design being updated
+   */
+  Design design = 1;
+
+  /**
+   * Mask of fields being updated in this Design to make partial changes.
+   */
+  google.protobuf.FieldMask update_mask = 2;
+
+  /**
+   * Update with new contents if provided.
+   */
+  optional Content content = 3;
+}
+
+/**
+ * The request for (partially) updating an Design.
+ */
+message UpdateDesignResponse {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
+    json_schema: {
+      title: "UpdateDesignResponse"
+    }
+  };
+
+  /**
+   * Design being updated
+   */
+  Design design = 1;
+}

@@ -1,0 +1,1025 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "leetcoach/v1/models.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "DesignService"
+    },
+    {
+      "name": "TagService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/designs": {
+      "get": {
+        "summary": "*\nList all designs from a user.",
+        "operationId": "DesignService_ListDesigns",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListDesignsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "pagination.pageKey",
+            "description": "*\nInstead of an offset an abstract  \"page\" key is provided that offers\nan opaque \"pointer\" into some offset in a result set.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.pageOffset",
+            "description": "*\nIf a pagekey is not supported we can also support a direct integer offset\nfor cases where it makes sense.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.pageSize",
+            "description": "*\nNumber of results to return.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "userId",
+            "description": "*\nLimit to designs of a particular user",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "collectionId",
+            "description": "* \nLimit to designs in a collection",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "limitToPublic",
+            "description": "*\nWhether to only get public ones.",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "orderBy",
+            "description": "*\n\"recent\" or \"name\"",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "DesignService"
+        ]
+      },
+      "post": {
+        "summary": "*\nCreate a new sesssion",
+        "operationId": "DesignService_CreateDesign",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CreateDesignResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateDesignRequest"
+            }
+          }
+        ],
+        "tags": [
+          "DesignService"
+        ]
+      }
+    },
+    "/v1/designs/{design.id}": {
+      "patch": {
+        "summary": "*\nUpdates specific fields of a design",
+        "operationId": "DesignService_UpdateDesign",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateDesignResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "design.id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "pattern": "[^/]+"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "design": {
+                  "type": "object",
+                  "properties": {
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "userId": {
+                      "type": "string"
+                    },
+                    "visibility": {
+                      "type": "string"
+                    },
+                    "visibleTo": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "name": {
+                      "type": "string",
+                      "title": "*\nName of the system design"
+                    },
+                    "description": {
+                      "type": "string",
+                      "title": "A description or abstract for the design"
+                    },
+                    "sectionIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "title": "IDs of all the sections in this"
+                    }
+                  },
+                  "title": "*\nDesign being updated"
+                },
+                "updateMask": {
+                  "type": "string",
+                  "description": "*\nMask of fields being updated in this Design to make partial changes."
+                },
+                "content": {
+                  "$ref": "#/definitions/v1Content",
+                  "description": "*\nUpdate with new contents if provided."
+                }
+              },
+              "description": "*\nThe request for (partially) updating an Design.",
+              "title": "UpdateDesignRequest"
+            }
+          }
+        ],
+        "tags": [
+          "DesignService"
+        ]
+      }
+    },
+    "/v1/designs/{id}": {
+      "get": {
+        "summary": "*\nGet a particular design",
+        "operationId": "DesignService_GetDesign",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetDesignResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "*\nID of the design to be fetched",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "pattern": "[^/]+"
+          },
+          {
+            "name": "withContents",
+            "description": "*\nReturns if contents are also to be returned.",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "DesignService"
+        ]
+      },
+      "delete": {
+        "summary": "*\nDelete a particular design",
+        "operationId": "DesignService_DeleteDesign",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DeleteDesignResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "*\nID of the design to be deleted.",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "pattern": "[^/]+"
+          }
+        ],
+        "tags": [
+          "DesignService"
+        ]
+      }
+    },
+    "/v1/designs:batchGet": {
+      "get": {
+        "summary": "*\nBatch get multiple designs by ID",
+        "operationId": "DesignService_GetDesigns",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetDesignsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ids",
+            "description": "*\nIDs of the design to be fetched",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "DesignService"
+        ]
+      }
+    },
+    "/v1/tags": {
+      "get": {
+        "summary": "*\nList all tags",
+        "operationId": "TagService_ListTags",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListTagsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "pageKey",
+            "description": "*\nInstead of an offset an abstract  \"page\" key is provided that offers\nan opaque \"pointer\" into some offset in a result set.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pageSize",
+            "description": "*\nNumber of results to return.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "userId",
+            "description": "*\nLimit to tags of a particular user",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "prefix",
+            "description": "*\nsearch by tag prefix.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "orderBy",
+            "description": "*\n\"recent\" or \"name\" or num_designs",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "TagService"
+        ]
+      }
+    },
+    "/v1/tags/{id}": {
+      "get": {
+        "summary": "*\nGet a particular tag",
+        "operationId": "TagService_GetTag",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetTagResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "*\nID of the tag to be fetched",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "pattern": "[^/]+"
+          },
+          {
+            "name": "withContents",
+            "description": "*\nReturns if contents are also to be returned.",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "TagService"
+        ]
+      },
+      "delete": {
+        "summary": "*\nDelete a particular tag",
+        "operationId": "TagService_DeleteTag",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DeleteTagResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "*\nID of the tag to be deleted.",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "pattern": "[^/]+"
+          }
+        ],
+        "tags": [
+          "TagService"
+        ]
+      }
+    },
+    "/v1/tags/{tag.name}": {
+      "post": {
+        "summary": "*\nCreate a new tag.  If a tag by name already exists then it is returned.",
+        "operationId": "TagService_CreateTag",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CreateTagResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "tag.name",
+            "description": "Unique label across our system",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "pattern": "[^/]+"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "tag": {
+                  "type": "object",
+                  "properties": {
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "normalizedName": {
+                      "type": "string",
+                      "title": "Normalized label for making search easier"
+                    },
+                    "firstUserId": {
+                      "type": "string",
+                      "title": "First user that created this"
+                    },
+                    "description": {
+                      "type": "string",
+                      "title": "Description for this tag"
+                    },
+                    "imageUrl": {
+                      "type": "string",
+                      "title": "An optional image url for this tag"
+                    },
+                    "numDesigns": {
+                      "type": "string",
+                      "format": "int64",
+                      "title": "Number of designs this tag is in - will be calculated periodically"
+                    }
+                  },
+                  "title": "*\nTag being updated"
+                }
+              },
+              "title": "*\nTag creation request object"
+            }
+          }
+        ],
+        "tags": [
+          "TagService"
+        ]
+      },
+      "patch": {
+        "summary": "*\nUpdates specific fields of a tag",
+        "operationId": "TagService_UpdateTag",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateTagResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "tag.name",
+            "description": "Unique label across our system",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "pattern": "[^/]+"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "tag": {
+                  "type": "object",
+                  "properties": {
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "normalizedName": {
+                      "type": "string",
+                      "title": "Normalized label for making search easier"
+                    },
+                    "firstUserId": {
+                      "type": "string",
+                      "title": "First user that created this"
+                    },
+                    "description": {
+                      "type": "string",
+                      "title": "Description for this tag"
+                    },
+                    "imageUrl": {
+                      "type": "string",
+                      "title": "An optional image url for this tag"
+                    },
+                    "numDesigns": {
+                      "type": "string",
+                      "format": "int64",
+                      "title": "Number of designs this tag is in - will be calculated periodically"
+                    }
+                  },
+                  "title": "*\nTag being updated"
+                },
+                "updateMask": {
+                  "type": "string",
+                  "description": "*\nMask of fields being updated in this Tag to make partial changes."
+                }
+              },
+              "description": "*\nThe request for (partially) updating an Tag.",
+              "title": "UpdateTagRequest"
+            }
+          }
+        ],
+        "tags": [
+          "TagService"
+        ]
+      }
+    },
+    "/v1/tags:batchGet": {
+      "get": {
+        "summary": "*\nBatch get multiple tags by ID",
+        "operationId": "TagService_GetTags",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetTagsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ids",
+            "description": "*\nIDs of the tag to be fetched",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "TagService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "leetcoachv1Tag": {
+      "type": "object",
+      "properties": {
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "name": {
+          "type": "string",
+          "title": "Unique label across our system"
+        },
+        "normalizedName": {
+          "type": "string",
+          "title": "Normalized label for making search easier"
+        },
+        "firstUserId": {
+          "type": "string",
+          "title": "First user that created this"
+        },
+        "description": {
+          "type": "string",
+          "title": "Description for this tag"
+        },
+        "imageUrl": {
+          "type": "string",
+          "title": "An optional image url for this tag"
+        },
+        "numDesigns": {
+          "type": "string",
+          "format": "int64",
+          "title": "Number of designs this tag is in - will be calculated periodically"
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "protobufNullValue": {
+      "type": "string",
+      "enum": [
+        "NULL_VALUE"
+      ],
+      "default": "NULL_VALUE",
+      "description": "`NullValue` is a singleton enumeration to represent the null value for the\n`Value` type union.\n\nThe JSON representation for `NullValue` is JSON `null`.\n\n - NULL_VALUE: Null value."
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v1Content": {
+      "type": "object",
+      "properties": {
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "id": {
+          "type": "string",
+          "title": "ID of this user"
+        },
+        "userId": {
+          "type": "string"
+        },
+        "parentType": {
+          "type": "string"
+        },
+        "parentId": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object",
+          "title": "Any metadata for the content"
+        },
+        "storeType": {
+          "type": "string",
+          "title": "Where the content is located, eg raw, github, bitbucket, s3 etc"
+        },
+        "credential": {
+          "type": "string",
+          "description": "A credential ID for accessing the repo."
+        },
+        "rawContent": {
+          "type": "string",
+          "title": "Raw data if content is being saved locally"
+        }
+      }
+    },
+    "v1CreateDesignRequest": {
+      "type": "object",
+      "properties": {
+        "design": {
+          "$ref": "#/definitions/v1Design",
+          "title": "*\nDesign being updated"
+        },
+        "collectionId": {
+          "type": "string",
+          "title": "*\nWhich collection to post this design in"
+        },
+        "content": {
+          "$ref": "#/definitions/v1Content",
+          "description": "*\nContents to save with."
+        }
+      },
+      "title": "*\nDesign creation request object"
+    },
+    "v1CreateDesignResponse": {
+      "type": "object",
+      "properties": {
+        "design": {
+          "$ref": "#/definitions/v1Design",
+          "title": "*\nDesign being created"
+        },
+        "fieldErrors": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "*\nError specific to a field if there are any errors."
+        }
+      },
+      "description": "*\nResponse of an design creation."
+    },
+    "v1CreateTagResponse": {
+      "type": "object",
+      "properties": {
+        "tag": {
+          "$ref": "#/definitions/leetcoachv1Tag",
+          "title": "*\nTag being created"
+        },
+        "fieldErrors": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "*\nError specific to a field if there are any errors."
+        }
+      },
+      "description": "*\nResponse of an tag creation."
+    },
+    "v1DeleteDesignResponse": {
+      "type": "object",
+      "title": "*\nDesign deletion response"
+    },
+    "v1DeleteTagResponse": {
+      "type": "object",
+      "title": "*\nTag deletion response"
+    },
+    "v1Design": {
+      "type": "object",
+      "properties": {
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "id": {
+          "type": "string"
+        },
+        "userId": {
+          "type": "string"
+        },
+        "visibility": {
+          "type": "string"
+        },
+        "visibleTo": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "name": {
+          "type": "string",
+          "title": "*\nName of the system design"
+        },
+        "description": {
+          "type": "string",
+          "title": "A description or abstract for the design"
+        },
+        "sectionIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "IDs of all the sections in this"
+        }
+      }
+    },
+    "v1GetDesignResponse": {
+      "type": "object",
+      "properties": {
+        "design": {
+          "$ref": "#/definitions/v1Design"
+        },
+        "content": {
+          "$ref": "#/definitions/v1Content",
+          "title": "Content for the design if we need it"
+        }
+      },
+      "title": "*\nDesign get response"
+    },
+    "v1GetDesignsResponse": {
+      "type": "object",
+      "properties": {
+        "designs": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/v1Design"
+          }
+        }
+      },
+      "title": "*\nDesign batch-get response"
+    },
+    "v1GetTagResponse": {
+      "type": "object",
+      "properties": {
+        "tag": {
+          "$ref": "#/definitions/leetcoachv1Tag"
+        }
+      },
+      "title": "*\nTag get response"
+    },
+    "v1GetTagsResponse": {
+      "type": "object",
+      "properties": {
+        "tags": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/leetcoachv1Tag"
+          }
+        }
+      },
+      "title": "*\nTag batch-get response"
+    },
+    "v1ListDesignsResponse": {
+      "type": "object",
+      "properties": {
+        "designs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Design"
+          },
+          "description": "*\nThe list of designs found as part of this response."
+        },
+        "pagination": {
+          "$ref": "#/definitions/v1PaginationResponse"
+        }
+      },
+      "description": "*\nResponse of a design search/listing."
+    },
+    "v1ListTagsResponse": {
+      "type": "object",
+      "properties": {
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/leetcoachv1Tag"
+          },
+          "description": "*\nThe list of tags found as part of this response."
+        },
+        "nextPageKey": {
+          "type": "string",
+          "description": "*\nThe key/pointer string that subsequent List requests should pass to\ncontinue the pagination."
+        }
+      },
+      "description": "*\nResponse of a tag search/listing."
+    },
+    "v1Pagination": {
+      "type": "object",
+      "properties": {
+        "pageKey": {
+          "type": "string",
+          "description": "*\nInstead of an offset an abstract  \"page\" key is provided that offers\nan opaque \"pointer\" into some offset in a result set."
+        },
+        "pageOffset": {
+          "type": "integer",
+          "format": "int32",
+          "description": "*\nIf a pagekey is not supported we can also support a direct integer offset\nfor cases where it makes sense."
+        },
+        "pageSize": {
+          "type": "integer",
+          "format": "int32",
+          "description": "*\nNumber of results to return."
+        }
+      }
+    },
+    "v1PaginationResponse": {
+      "type": "object",
+      "properties": {
+        "nextPageKey": {
+          "type": "string",
+          "description": "*\nThe key/pointer string that subsequent List requests should pass to\ncontinue the pagination."
+        },
+        "nextPageOffset": {
+          "type": "integer",
+          "format": "int32",
+          "title": "*\nAlso support an integer offset if possible"
+        },
+        "hasMore": {
+          "type": "boolean",
+          "description": "*\nWhether theere are more results."
+        },
+        "totalResults": {
+          "type": "integer",
+          "format": "int32",
+          "description": "*\nTotal number of results."
+        }
+      }
+    },
+    "v1UpdateDesignResponse": {
+      "type": "object",
+      "properties": {
+        "design": {
+          "$ref": "#/definitions/v1Design",
+          "title": "*\nDesign being updated"
+        }
+      },
+      "description": "*\nThe request for (partially) updating an Design.",
+      "title": "UpdateDesignResponse"
+    },
+    "v1UpdateTagResponse": {
+      "type": "object",
+      "properties": {
+        "tag": {
+          "$ref": "#/definitions/leetcoachv1Tag",
+          "title": "*\nTag being updated"
+        }
+      },
+      "description": "*\nThe request for (partially) updating an Tag.",
+      "title": "UpdateTagResponse"
+    }
+  }
+}

@@ -8,14 +8,15 @@ import (
 	// "github.com/go-session/cookie"
 
 	"github.com/alexedwards/scs/v2"
+	gotl "github.com/panyam/goutils/template"
 	oa "github.com/panyam/oneauth"
 	oa2 "github.com/panyam/oneauth/oauth2"
-	gotl "github.com/panyam/templar"
+	"github.com/panyam/templar"
 	"golang.org/x/oauth2"
 )
 
 type LCContext struct {
-	Templates *gotl.TemplateGroup
+	Templates *templar.TemplateGroup
 }
 
 type LCApp struct {
@@ -55,8 +56,8 @@ func NewWebApp() (app *LCApp, err error) {
 		}
 	*/
 
-	templates := gotl.NewTemplateGroup()
-	templates.Loader = (&gotl.LoaderList{}).AddLoader(gotl.NewFileSystemLoader("./web/templates"))
+	templates := templar.NewTemplateGroup()
+	templates.Loader = (&templar.LoaderList{}).AddLoader(templar.NewFileSystemLoader("./web/templates"))
 	templates.AddFuncs(gotl.DefaultFuncMap())
 	templates.AddFuncs(template.FuncMap{
 		"Ctx": func() *LCContext {

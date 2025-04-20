@@ -1,0 +1,164 @@
+syntax = "proto3";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+option go_package = "github.com/leetcoach/protos";
+package leetcoach.v1;
+
+message Pagination {
+  /**
+   * Instead of an offset an abstract  "page" key is provided that offers
+   * an opaque "pointer" into some offset in a result set.
+   */
+  string page_key = 1;
+
+  /**
+   * If a pagekey is not supported we can also support a direct integer offset
+   * for cases where it makes sense.
+   */
+  int32 page_offset = 2;
+
+  /**
+   * Number of results to return.
+   */
+  int32 page_size = 3;
+}
+
+message PaginationResponse {
+  /**
+   * The key/pointer string that subsequent List requests should pass to
+   * continue the pagination.
+   */
+  string next_page_key = 2;
+
+  /**
+   * Also support an integer offset if possible
+   */
+  int32 next_page_offset = 3;
+
+  /**
+   * Whether theere are more results.
+   */
+  bool has_more = 4;
+
+  /**
+   * Total number of results.
+   */
+  int32 total_results = 5;
+}
+
+message Tag {
+  google.protobuf.Timestamp created_at = 1;
+  google.protobuf.Timestamp updated_at = 2;
+
+  // Unique label across our system
+  string name = 3;
+
+  // Normalized label for making search easier
+  string normalized_name = 4;
+
+  // First user that created this
+  string first_user_id = 5;
+
+  // Description for this tag
+  string description = 6;
+
+  // An optional image url for this tag
+  string image_url = 7;
+
+  // Number of designs this tag is in - will be calculated periodically
+  int64 num_designs = 8;
+}
+
+message Content {
+  google.protobuf.Timestamp created_at = 1;
+  google.protobuf.Timestamp updated_at = 2;
+
+  // ID of this user
+  string id = 3;
+
+  string user_id = 4;
+
+  string parent_type = 5;
+  string parent_id = 6;
+
+  // Any metadata for the content
+  google.protobuf.Struct metadata = 7;
+
+  // Where the content is located, eg raw, github, bitbucket, s3 etc
+  string store_type = 8;
+
+  // A credential ID for accessing the repo.
+  string credential = 9;
+
+  // Raw data if content is being saved locally
+  string raw_content = 10;
+}
+
+message Credential {
+  google.protobuf.Timestamp created_at = 1;
+  google.protobuf.Timestamp updated_at = 2;
+
+  string id = 3;
+
+  string owner = 4;
+
+  // Name/Labelfor this setof credentials (eg github, aws, bitbucket etc)
+  string name = 5;
+
+  // eg AWS, github, datastore etc
+  string provider = 6;
+
+  // Actual credential data
+  google.protobuf.Struct credential_data = 9;
+}
+
+message Design {
+  google.protobuf.Timestamp created_at = 1;
+  google.protobuf.Timestamp updated_at = 2;
+  string id = 3;
+  string user_id = 4;
+  string visibility = 5;
+  repeated string visible_to = 6;
+
+  /**
+   * Name of the system design
+   */
+  string name = 7;
+
+  // A description or abstract for the design
+  string description = 8;
+
+  // IDs of all the sections in this 
+  repeated string section_ids = 9;
+}
+
+message DesignSection {
+  google.protobuf.Timestamp created_at = 1;
+  google.protobuf.Timestamp updated_at = 2;
+
+  /**
+   * ID of this section - only needs ot be unique within a design
+   */
+  string id = 3;
+
+  /**
+   * Which design this section belong to.
+   */
+  string design_id = 4;
+
+  /**
+   * Type of section, eg text, drawing, plot etc.
+   */
+  string section_type = 5;
+
+  /**
+   * Title of this section.
+   */
+  string title = 6;
+
+  /**
+   * Content of this section.  Typically we want this to be in a blob store somewhere.
+   */
+  string content = 7;
+}
