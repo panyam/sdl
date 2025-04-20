@@ -328,11 +328,20 @@ export declare type Design = Message<"leetcoach.v1.Design"> & {
   description: string;
 
   /**
+   * Metadata about the content itself that user may want to
+   * highlight (or the system extracts).  This are the fields
+   * found in the notation itself via the front matter
+   *
+   * @generated from field: google.protobuf.Struct content_metadata = 9;
+   */
+  contentMetadata?: JsonObject;
+
+  /**
    * IDs of all the sections in this 
    *
-   * @generated from field: repeated string section_ids = 9;
+   * @generated from field: repeated leetcoach.v1.DesignSection sections = 10;
    */
-  sectionIds: string[];
+  sections: DesignSection[];
 };
 
 /**
@@ -389,11 +398,11 @@ export declare type DesignSection = Message<"leetcoach.v1.DesignSection"> & {
 
   /**
    * *
-   * Content of this section.  Typically we want this to be in a blob store somewhere.
+   * URI of the content for this section.   The content will most often be stored outside in a blob store.
    *
-   * @generated from field: string content = 7;
+   * @generated from field: string content_uri = 7;
    */
-  content: string;
+  contentUri: string;
 };
 
 /**

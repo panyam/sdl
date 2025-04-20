@@ -190,10 +190,15 @@
                       "type": "string",
                       "title": "A description or abstract for the design"
                     },
-                    "sectionIds": {
+                    "contentMetadata": {
+                      "type": "object",
+                      "title": "Metadata about the content itself that user may want to\nhighlight (or the system extracts).  This are the fields\nfound in the notation itself via the front matter"
+                    },
+                    "sections": {
                       "type": "array",
                       "items": {
-                        "type": "string"
+                        "type": "object",
+                        "$ref": "#/definitions/v1DesignSection"
                       },
                       "title": "IDs of all the sections in this"
                     }
@@ -867,12 +872,50 @@
           "type": "string",
           "title": "A description or abstract for the design"
         },
-        "sectionIds": {
+        "contentMetadata": {
+          "type": "object",
+          "title": "Metadata about the content itself that user may want to\nhighlight (or the system extracts).  This are the fields\nfound in the notation itself via the front matter"
+        },
+        "sections": {
           "type": "array",
           "items": {
-            "type": "string"
+            "type": "object",
+            "$ref": "#/definitions/v1DesignSection"
           },
           "title": "IDs of all the sections in this"
+        }
+      }
+    },
+    "v1DesignSection": {
+      "type": "object",
+      "properties": {
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "id": {
+          "type": "string",
+          "title": "*\nID of this section - only needs ot be unique within a design"
+        },
+        "designId": {
+          "type": "string",
+          "description": "*\nWhich design this section belong to."
+        },
+        "sectionType": {
+          "type": "string",
+          "description": "*\nType of section, eg text, drawing, plot etc."
+        },
+        "title": {
+          "type": "string",
+          "description": "*\nTitle of this section."
+        },
+        "contentUri": {
+          "type": "string",
+          "description": "*\nURI of the content for this section.   The content will most often be stored outside in a blob store."
         }
       }
     },

@@ -129,8 +129,13 @@ message Design {
   // A description or abstract for the design
   string description = 8;
 
+  // Metadata about the content itself that user may want to
+  // highlight (or the system extracts).  This are the fields
+  // found in the notation itself via the front matter
+  google.protobuf.Struct content_metadata = 9;
+
   // IDs of all the sections in this 
-  repeated string section_ids = 9;
+  repeated DesignSection sections = 10;
 }
 
 message DesignSection {
@@ -158,7 +163,7 @@ message DesignSection {
   string title = 6;
 
   /**
-   * Content of this section.  Typically we want this to be in a blob store somewhere.
+   * URI of the content for this section.   The content will most often be stored outside in a blob store.
    */
-  string content = 7;
+  string content_uri = 7;
 }

@@ -8,12 +8,13 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
+	svc "github.com/panyam/leetcoach/services"
 	"github.com/panyam/leetcoach/web"
 )
 
 var (
-	// svc_addr = flag.String("svc_addr", DefaultServiceAddress(), "Address where the gRPC endpoint is running")
-	gw_addr = flag.String("gw_addr", DefaultGatewayAddress(), "Address where the http grpc gateway endpoint is running")
+	svc_addr = flag.String("svc_addr", DefaultServiceAddress(), "Address where the gRPC endpoint is running")
+	gw_addr  = flag.String("gw_addr", DefaultGatewayAddress(), "Address where the http grpc gateway endpoint is running")
 )
 
 func main() {
@@ -37,7 +38,7 @@ func main() {
 
 	flag.Parse()
 	app := App{Ctx: context.Background()}
-	// app.AddServer(&svc.Server{Address: *svc_addr})
+	app.AddServer(&svc.Server{Address: *svc_addr})
 	app.AddServer(&web.Server{Address: *gw_addr})
 	app.Start()
 	app.Done(nil)
@@ -49,4 +50,12 @@ func DefaultGatewayAddress() string {
 		return gateway_addr
 	}
 	return ":8080"
+}
+
+func DefaultServiceAddress() string {
+	port := os.Getenv("LEETCOACH_GRPC_PORT")
+	if port != "" {
+		return port
+	}
+	return ":9090"
 }
