@@ -6,8 +6,11 @@ import (
 	"log/slog"
 	"strings"
 	"time"
+	"unicode"
 
-	"cloud.google.com/go/datastore"
+	"golang.org/x/text/runes"
+	"golang.org/x/text/transform"
+	"golang.org/x/text/unicode/norm"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	tspb "google.golang.org/protobuf/types/known/timestamppb"
@@ -18,6 +21,15 @@ import (
 	protos "github.com/panyam/leetcoach/gen/go/leetcoach/v1"
 	// tspb "google.golang.org/protobuf/types/known/timestamppb"
 )
+
+func removeAccents(s string) string {
+	t := transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
+	output, _, e := transform.String(t, s)
+	if e != nil {
+		panic(e)
+	}
+	return output
+}
 
 type TagService struct {
 	protos.UnimplementedTagServiceServer
@@ -98,7 +110,7 @@ func (s *TagService) GetTag(ctx context.Context, req *protos.GetTagRequest) (res
 	var tag Tag
 	err = dsc.GetByID(req.Id, &tag)
 	if err != nil {
-		if err == datastore.ErrNoSuchEntity {
+		if err == ErrNoSuchEntity {
 			return nil, status.Error(codes.NotFound, fmt.Sprintf("Tag with id '%s' not found", tag.Name))
 		} else {
 			return nil, err

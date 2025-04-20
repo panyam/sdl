@@ -37,6 +37,9 @@ func (ds *DataStore[T]) GetByID(id string, out *T) error {
 	err := ds.DSClient.Get(context.Background(), key, out)
 	if err != nil {
 		slog.Error("Error getting by ID: ", "kind", ds.kind, "id", id, "err", err)
+		if err == datastore.ErrNoSuchEntity {
+			return ErrNoSuchEntity
+		}
 	}
 	return err
 }

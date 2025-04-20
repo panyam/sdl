@@ -3,7 +3,7 @@ package services
 import (
 	"log"
 
-	"cloud.google.com/go/datastore"
+	// "cloud.google.com/go/datastore"
 	protos "github.com/panyam/leetcoach/gen/go/leetcoach/v1"
 	"google.golang.org/protobuf/types/known/structpb"
 	tspb "google.golang.org/protobuf/types/known/timestamppb"
@@ -79,6 +79,7 @@ func TagFromProto(input *protos.Tag) (out *Tag) {
 	return
 }
 
+/*
 func EntityToStruct(input *datastore.Entity, output **structpb.Struct) {
 	if len(input.Properties) > 0 {
 		propmap := map[string]any{}
@@ -104,3 +105,4 @@ func StructToEntity(input *structpb.Struct, output *datastore.Entity) {
 		}
 	}
 }
+*/

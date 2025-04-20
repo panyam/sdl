@@ -35,9 +35,6 @@ importers:
       split.js:
         specifier: ^1.6.5
         version: 1.6.5
-      tlex:
-        specifier: '*'
-        version: 0.0.73
     devDependencies:
       '@tailwindcss/forms':
         specifier: ^0.5.10

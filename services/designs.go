@@ -8,20 +8,14 @@ import (
 	"strings"
 	"time"
 
-	"cloud.google.com/go/datastore"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	tspb "google.golang.org/protobuf/types/known/timestamppb"
 
 	// "strings"
 
-	"unicode"
-
 	fn "github.com/panyam/goutils/fn"
 	protos "github.com/panyam/leetcoach/gen/go/leetcoach/v1"
-	"golang.org/x/text/runes"
-	"golang.org/x/text/transform"
-	"golang.org/x/text/unicode/norm"
 	// tspb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -29,29 +23,16 @@ import (
 const ENFORCE_LOGIN = false
 const FAKE_USER_ID = ""
 
-func removeAccents(s string) string {
-	t := transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
-	output, _, e := transform.String(t, s)
-	if e != nil {
-		panic(e)
-	}
-	return output
-}
-
 type DesignService struct {
 	protos.UnimplementedDesignServiceServer
 	BaseService
 	clients *ClientMgr
-	idgen   *IDGen
 }
 
 func NewDesignService(clients *ClientMgr) *DesignService {
 	out := &DesignService{
-		idgen:   NewIDGen("Scores"),
 		clients: clients,
 	}
-	out.idgen.NextIDFunc = SimpleIDFunc(nil, 5)
-	log.Println("IDG: ", out.idgen)
 	return out
 }
 
@@ -141,23 +122,28 @@ func (s *DesignService) CreateDesign(ctx context.Context, req *protos.CreateDesi
 			return nil, status.Error(codes.AlreadyExists, fmt.Sprintf("Design with id '%s' already exists", design.Id))
 		}
 	} else {
-		for {
-			var existing Design
-			log.Println("IDGEN: ", s.idgen)
-			if newid, err := s.idgen.NextID("", time.Time{}); err == nil {
-				err := dsc.GetByID(newid.Id, &existing)
-				if err == datastore.ErrNoSuchEntity {
-					// Finally found an id that was not taken by another score
-					design.Id = newid.Id
-					break
-				} else if err != nil {
-					log.Println("Error: ", err)
+		// For now enforce ID is provided by user
+		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("id MUST be provided '%s'"))
+
+		/*
+			for {
+				var existing Design
+				log.Println("IDGEN: ", s.idgen)
+				if newid, err := s.idgen.NextID("", time.Time{}); err == nil {
+					err := dsc.GetByID(newid.Id, &existing)
+					if err == ErrNoSuchEntity {
+						// Finally found an id that was not taken by another design
+						design.Id = newid.Id
+						break
+					} else if err != nil {
+						log.Println("Error: ", err)
+						return nil, err
+					}
+				} else {
 					return nil, err
 				}
-			} else {
-				return nil, err
 			}
-		}
+		*/
 	}
 	// for indexed tags are user tags
 	// TODO - treat x=y tags differently
@@ -221,7 +207,7 @@ func (s *DesignService) GetDesign(ctx context.Context, req *protos.GetDesignRequ
 	var design Design
 	err = dsc.GetByID(req.Id, &design)
 	if err != nil {
-		if err == datastore.ErrNoSuchEntity {
+		if err == ErrNoSuchEntity {
 			return nil, status.Error(codes.NotFound, fmt.Sprintf("Design with id '%s' not found", req.Id))
 		} else {
 			return nil, err

@@ -1,7 +1,6 @@
 package services
 
 import (
-	"log"
 
 	// "strings"
 
@@ -15,15 +14,11 @@ type AdminService struct {
 	protos.UnimplementedAdminServiceServer
 	BaseService
 	clients *ClientMgr
-	idgen   *IDGen
 }
 
 func NewAdminService(clients *ClientMgr) *AdminService {
 	out := &AdminService{
-		idgen:   NewIDGen("Scores"),
 		clients: clients,
 	}
-	out.idgen.NextIDFunc = SimpleIDFunc(nil, 5)
-	log.Println("IDG: ", out.idgen)
 	return out
 }
