@@ -21,14 +21,18 @@
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    {{ block "ExtraHeadSection" . }}<title>LeetCoach - {{.Title}}</title>{{ end }}
+    <title>LeetCoach - {{.Title}}</title>
+    {{ block "ExtraHeadSection" . }}{{ end }}
 </head>
-<body class="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200">
+
+<body class='{{ or .BodyClass "min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200" }}'>
   {{ block "HeaderSection" . }}
+    {{ if not .CustomHeader }}
     <!-- Header Block -->
-    <div class="sticky top-0 z-20 border-b border-gray-200 dark:border-gray-700">
+    <div class="sticky left-0 top-0 z-20 border-b border-gray-200 dark:border-gray-700">
         {{ template "Header" . }} <!-- Theme toggle is inside here -->
     </div>
+    {{ end }}
   {{ end }} 
 
   {{ block "BodySection" . }} 
@@ -54,6 +58,7 @@
   </div>
 
   {{ block "FooterBody" . }} {{ end }} 
+  {{ block "PreBodySection" . }} {{ end }} 
 </body>
 {{ block "PostBodySection" . }} {{ end }}
 </html>

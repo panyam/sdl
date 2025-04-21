@@ -14,7 +14,7 @@
                 <input type="search" id="search-documents-input" name="q"
                     placeholder="Search designs..."
                     class="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    hx-get="/documents/search"
+                    hx-get="/designs/search"
                     hx-trigger="keyup changed delay:500ms, search"
                     hx-target="#document-list-body"
                     hx-swap="innerHTML"
@@ -27,7 +27,7 @@
                  <label for="sort-documents-select" class="sr-only">Sort by</label>
                  <select id="sort-documents-select" name="sort"
                     class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                    hx-get="/documents/search"
+                    hx-get="/designs/search"
                     hx-trigger="change"
                     hx-target="#document-list-body"
                     hx-swap="innerHTML"
@@ -42,7 +42,7 @@
                 </select>
             </div>
             <!-- Create New Button (Now a simple link) -->
-            <a href="/documents/new"
+            <a href="/designs/new"
                class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 whitespace-nowrap">
                 <svg class="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" /></svg>
                 Create New
@@ -81,7 +81,7 @@
                     {{ range .Designs }}
                     <tr id="doc-row-{{ .ID }}" class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150">
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <a href="/documents/{{ .ID }}" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline">
+                            <a href="/designs/{{ .ID }}" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline">
                                 {{ .Title }}
                             </a>
                         </td>
@@ -98,7 +98,7 @@
                             <div class="action-menu hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-10">
                                <div class="py-1" role="menu" aria-orientation="vertical">
                                    <button class="action-delete block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-600" role="menuitem"
-                                           hx-delete="/documents/{{ .ID }}"
+                                           hx-delete="/designs/{{ .ID }}"
                                            hx-target="closest tr"
                                            hx-swap="outerHTML swap:200ms"
                                            hx-confirm="Are you sure you want to delete '{{ .Title }}'?"
@@ -123,7 +123,7 @@
             <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No system designs</h3>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by creating a new design.</p>
             <div class="mt-6">
-                 <a href="/documents/new" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800">
+                 <a href="/designs/new" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800">
                     <svg class="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" /></svg>
                     Create New Design
                 </a>

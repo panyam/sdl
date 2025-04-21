@@ -15,6 +15,7 @@ const components = [
   // ["CaseStudyPage", 0, "tsx"]
   ["DetailPage", 0, "ts"],
   ["HomePage", 0, "ts"],
+  ["LoginPage", 0, "ts"],
 ];
 
 module.exports = (_env, options) => {

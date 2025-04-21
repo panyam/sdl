@@ -1,0 +1,125 @@
+<!-- templates/LoginPage.html -->
+{{# include "./BasePage.html" #}}
+
+{{ define "ExtraHeadSection" }}
+<meta name="csrf-token" content="{{.CsrfToken}}" />
+{{ end }}
+
+{{ define "BodySection" }}
+<!-- Minimal Header -->
+<div class="absolute top-0 left-0 p-4 sm:p-6">
+    <div class="flex items-center space-x-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600 dark:text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" />
+        </svg>
+        <span class="font-bold text-xl text-gray-900 dark:text-white">LeetCoach</span>
+    </div>
+</div>
+    <!-- Login/Signup Card -->
+    <div class="w-full max-w-md space-y-8">
+        <div>
+            <h2 id="auth-title" class="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+                Sign in to your account
+            </h2>
+        </div>
+
+        <!-- Error Message Area -->
+        <div id="auth-error-message" class="text-center text-sm text-red-600 dark:text-red-400 min-h-[1.25rem]">
+            <!-- Errors populated by server or HTMX -->
+        </div>
+
+        <!-- Form -->
+        <!-- Add hx-* attributes later if using HTMX for submission -->
+        <form id="auth-form" class="mt-8 space-y-6" action="/login" method="POST"> <!-- Action points to login by default -->
+            <input type="hidden" name="remember" value="true"> <!-- Example hidden field -->
+            <div class="rounded-md shadow-sm -space-y-px">
+                <div>
+                    <label for="email-address" class="sr-only">Email address</label>
+                    <input id="email-address" name="email" type="email" autocomplete="email" required
+                           class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                           placeholder="Email address">
+                </div>
+                <div>
+                    <label for="password" class="sr-only">Password</label>
+                    <input id="password" name="password" type="password" autocomplete="current-password" required
+                           class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                           placeholder="Password">
+                </div>
+                <!-- Confirm Password (Hidden by default, for Sign Up) -->
+                <div id="confirm-password-group" class="hidden">
+                    <label for="confirm-password" class="sr-only">Confirm Password</label>
+                    <input id="confirm-password" name="confirmPassword" type="password" autocomplete="new-password"
+                           class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                           placeholder="Confirm Password">
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between">
+                <div class="text-sm">
+                    <a href="/forgot-password" class="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
+                        Forgot your password?
+                    </a>
+                </div>
+            </div>
+
+            <div>
+                <button id="auth-submit-button" type="submit"
+                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800">
+                    Sign in
+                </button>
+            </div>
+
+             <div class="text-sm text-center">
+                <a href="#" id="auth-toggle-link" class="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
+                    Need an account? Sign Up
+                </a>
+            </div>
+        </form>
+
+        <!-- Social Login Separator -->
+        <div class="relative my-6">
+          <div class="absolute inset-0 flex items-center" aria-hidden="true">
+            <div class="w-full border-t border-gray-300 dark:border-gray-600"></div>
+          </div>
+          <div class="relative flex justify-center text-sm">
+            <span class="px-2 bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400">
+              Or continue with
+            </span>
+          </div>
+        </div>
+
+        <!-- Social Login Buttons -->
+        <div class="mt-6 grid grid-cols-1 gap-3"> <!-- Changed to single column for better stacking -->
+             <div>
+                <a href="/auth/google/login"
+                   class="w-full inline-flex justify-center py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600">
+                    <span class="sr-only">Sign in with Google</span>
+                    <svg class="w-5 h-5 mr-2" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.477 0 10c0 4.418 2.865 8.14 6.839 9.486.5.092.682-.217.682-.483 0-.237-.009-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.026 2.747-1.026.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.309.678.92.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.001 10.001 0 0020 10c0-5.523-4.477-10-10-10z" clip-rule="evenodd" />
+                    </svg>
+                    Google
+                </a>
+            </div>
+
+            <div>
+                <a href="/auth/github/login"
+                   class="w-full inline-flex justify-center py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600">
+                    <span class="sr-only">Sign in with GitHub</span>
+                    <svg class="w-5 h-5 mr-2" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20">
+                       <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.477 0 10c0 4.418 2.865 8.14 6.839 9.486.5.092.682-.217.682-.483 0-.237-.009-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.026 2.747-1.026.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.309.678.92.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.001 10.001 0 0020 10c0-5.523-4.477-10-10-10z" clip-rule="evenodd"></path>
+                    </svg>
+                    GitHub
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{{ end }} 
+
+{{ define "PostBodySection" }} 
+{{# include "gen.LoginPage.html" #}}
+{{ end }} 
+
+{{ define "LoginPage" }}
+{{ template "BasePage" . }}
+{{ end }}
