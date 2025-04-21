@@ -64,7 +64,7 @@ require (
 	gopkg.in/yaml.v2 v2.3.0 // indirect
 )
 
-// replace github.com/panyam/oneauth v0.0.8 => ./locallinks/oneauth/
+replace github.com/panyam/oneauth v0.0.8 => ./locallinks/oneauth/
 
 replace github.com/panyam/templar v0.0.17 => ./locallinks/templar/
 

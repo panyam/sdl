@@ -13,7 +13,7 @@ const OUTPUT_DIR = path.resolve(__dirname, "./static/js/gen/");
 
 const components = [
   // ["CaseStudyPage", 0, "tsx"]
-  ["DetailPage", 0, "ts"],
+  ["DesignEditorPage", 0, "ts"],
   ["HomePage", 0, "ts"],
   ["LoginPage", 0, "ts"],
 ];

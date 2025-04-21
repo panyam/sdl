@@ -12,6 +12,7 @@ class LoginPage {
     private confirmPasswordGroup: HTMLElement | null;
     private confirmPasswordInput: HTMLInputElement | null;
     private emailInput: HTMLInputElement | null;
+    private callbackURL: HTMLInputElement;
 
     private isSignUpMode: boolean = false;
 
@@ -21,6 +22,7 @@ class LoginPage {
         ToastManager.init(); // Initialize toast for potential messages
 
         // Find form elements
+        this.callbackURL = (document.getElementById("callbackURL") as HTMLInputElement)
         this.form = document.getElementById('auth-form') as HTMLFormElement;
         this.titleElement = document.getElementById('auth-title');
         this.submitButton = document.getElementById('auth-submit-button') as HTMLButtonElement;
@@ -64,7 +66,7 @@ class LoginPage {
             this.toggleLink.textContent = 'Already have an account? Sign In';
             this.confirmPasswordGroup.classList.remove('hidden');
             this.confirmPasswordInput.required = true;
-            this.form.action = '/signup'; // Point form action to signup endpoint
+            this.form.action = '/auth/signup?callbackURL=' + this.callbackURL.value; // Point form action to signup endpoint
             this.emailInput.autocomplete = 'email';
             (this.form.querySelector('#password') as HTMLInputElement).autocomplete = 'new-password';
         } else {
@@ -74,7 +76,7 @@ class LoginPage {
             this.confirmPasswordGroup.classList.add('hidden');
             this.confirmPasswordInput.required = false;
             this.confirmPasswordInput.value = ''; // Clear confirm password field
-            this.form.action = '/login'; // Point form action to login endpoint
+            this.form.action = '/auth/login?callbackURL=' + this.callbackURL.value; // Point form action to signup endpoint
             this.emailInput.autocomplete = 'email';
              (this.form.querySelector('#password') as HTMLInputElement).autocomplete = 'current-password';
         }

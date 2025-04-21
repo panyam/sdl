@@ -64,4 +64,8 @@
 {{ define "PostBodySection" }}
 {{# include "gen.DesignEditorPage.html" #}}
 {{# include "TemplateRegistry.html" #}}
-</html>
+{{ end }}
+
+{{ define "DesignEditorPage" }}
+{{ template "BasePage" . }}
+{{ end }}

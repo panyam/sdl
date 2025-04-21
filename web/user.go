@@ -27,3 +27,19 @@ func (n *LCApp) EnsureAuthUser(authtype string, provider string, token *oauth2.T
 	user.User, err = n.ClientMgr.GetAuthService().EnsureAuthUser(authtype, provider, token, userInfo)
 	return &user, err
 }
+
+func (n *LCApp) ValidateUsernamePassword(username string, password string) (out oa.User, err error) {
+	if username == "test@gmail.com" {
+		out = &LCAuthUser{
+			User: &svc.User{
+				Id: "test1",
+				Profile: svc.StringMapField{
+					Properties: map[string]any{
+						"Name": "Test User",
+					},
+				},
+			},
+		}
+	}
+	return
+}

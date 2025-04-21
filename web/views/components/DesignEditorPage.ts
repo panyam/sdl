@@ -89,7 +89,6 @@ class LeetCoachApp {
 
     /** Load document data and set initial UI states */
     private loadInitialState(): void {
-        this.loadDocument(DOCUMENT); // Load the document data
         this.updateThemeButtonState(); // Set the initial theme icon/label
     }
 

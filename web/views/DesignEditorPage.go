@@ -11,6 +11,7 @@ import (
 )
 
 type DesignEditorPage struct {
+	BasePage
 	Header        Header
 	IsOwner       bool
 	DesignId      string
