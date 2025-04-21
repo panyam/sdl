@@ -101,9 +101,6 @@ func NewLCViews(middleware *oa.Middleware, clients *svc.ClientMgr) *LCViews {
 				"AvatarUrl": "/avatar/url",
 			}
 		},
-		"AsHtmlAttribs": func(m map[string]string) template.HTML {
-			return `a = 'b' c = 'd'`
-		},
 		"Indented": func(nspaces int, code string) (formatted string) {
 			lines := (strings.Split(strings.TrimSpace(code), "\n"))
 			return strings.Join(lines, "<br/>")

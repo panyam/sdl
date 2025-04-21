@@ -6,8 +6,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-
-	gotl "github.com/panyam/templar"
 )
 
 // A handler for serving system design case studies along with ability to
@@ -33,8 +31,6 @@ import (
 type DrawingApi struct {
 	// Root folder where the case study is hosted
 	DrawingService
-
-	Templates *gotl.TemplateGroup
 
 	mux *http.ServeMux
 }

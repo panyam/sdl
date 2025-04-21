@@ -4,9 +4,15 @@ import (
 	"net/http"
 )
 
+type BasePage struct {
+	Title string
+}
+
 type HomePage struct {
-	Header     Header
-	ShowSearch bool
+	BasePage
+	Header         Header
+	DesignListView DesignListView
+	ShowSearch     bool
 }
 
 func (p *HomePage) Load(r *http.Request, w http.ResponseWriter, vc *ViewContext) (err error, finished bool) {

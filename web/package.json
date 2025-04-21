@@ -26,6 +26,7 @@
     "galore": "*",
     "golden-layout": "^2.6.0",
     "markdown-it": "*",
+    "tinymce": "^7.8.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "split.js": "^1.6.5"
@@ -91,6 +92,7 @@
     "buildcss": "tailwindcss -i ./tailwind.input.css -o ./static/css/tailwind.css",
     "buildprod": "webpack --mode=production",
     "build": "npm run buildcss && webpack --mode=development",
+    "watch": "webpack --mode=development --watch",
     "test": "jest --coverage --runInBand",
     "lint": "eslint './src' --quiet --ext .ts --resolve-plugins-relative-to .",
     "lintfix": "eslint 'src/**/*.ts' --quiet --fix --resolve-plugins-relative-to .",

@@ -1,7 +1,6 @@
 package web
 
 import (
-	"html/template"
 	"log"
 	"net/http"
 	"strings"
@@ -9,16 +8,14 @@ import (
 	// "github.com/go-session/cookie"
 
 	"github.com/alexedwards/scs/v2"
-	gotl "github.com/panyam/goutils/template"
 	svc "github.com/panyam/leetcoach/services"
 	views "github.com/panyam/leetcoach/web/views"
 	oa "github.com/panyam/oneauth"
 	oa2 "github.com/panyam/oneauth/oauth2"
-	"github.com/panyam/templar"
 )
 
 type LCContext struct {
-	Templates *templar.TemplateGroup
+	// Templates *templar.TemplateGroup
 }
 
 type LCApp struct {
@@ -64,25 +61,27 @@ func NewWebApp(grpcAddress string, ClientMgr *svc.ClientMgr) (app *LCApp, err er
 		}
 	*/
 
-	templates := templar.NewTemplateGroup()
-	templates.Loader = (&templar.LoaderList{}).AddLoader(templar.NewFileSystemLoader("./web/templates"))
-	templates.AddFuncs(gotl.DefaultFuncMap())
-	templates.AddFuncs(template.FuncMap{
-		"Ctx": func() *LCContext {
-			return &app.Context
-		},
-		"AsHtmlAttribs": func(m map[string]string) template.HTML {
-			return `a = 'b' c = 'd'`
-		},
-		"Indented": func(nspaces int, code string) (formatted string) {
-			// TBD
-			lines := (strings.Split(strings.TrimSpace(code), "\n"))
-			return strings.Join(lines, "<br/>")
-		},
-	})
-	app.Context = LCContext{
-		Templates: templates,
-	}
+	/*
+		templates := templar.NewTemplateGroup()
+		templates.Loader = (&templar.LoaderList{}).AddLoader(templar.NewFileSystemLoader("./web/templates"))
+		templates.AddFuncs(gotl.DefaultFuncMap())
+		templates.AddFuncs(template.FuncMap{
+			"Ctx": func() *LCContext {
+				return &app.Context
+			},
+			"AsHtmlAttribs": func(m map[string]string) template.HTML {
+				return `a = 'b' c = 'd'`
+			},
+			"Indented": func(nspaces int, code string) (formatted string) {
+				// TBD
+				lines := (strings.Split(strings.TrimSpace(code), "\n"))
+				return strings.Join(lines, "<br/>")
+			},
+		})
+		app.Context = LCContext{
+			Templates: templates,
+		}
+	*/
 	return
 }
 
@@ -131,6 +130,6 @@ func (n *LCApp) RegisterCaseStudy(path, folder string) {
 
 	tostrip := path[:len(path)-1]
 	cs := NewDrawingApi(folder)
-	cs.Templates = n.Context.Templates
+	// cs.Templates = n.Context.Templates
 	n.mux.Handle(path, http.StripPrefix(tostrip, cs.Handler()))
 }

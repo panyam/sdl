@@ -1,0 +1,101 @@
+<!-- templates/Section.html -->
+
+{{ define "Section" }}
+<div id="section-template" class="bg-white dark:bg-gray-800 rounded-lg shadow mb-6"> <!-- Removed hidden, added margin -->
+ 
+     <!-- Exit Fullscreen Button (Initially Hidden, positioned relative to this container when fullscreen) -->
+     <button type="button" class="section-exit-fullscreen hidden absolute top-3 right-3 z-[51] p-2 bg-gray-700 dark:bg-gray-900 bg-opacity-50 hover:bg-opacity-75 rounded-full text-white hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-white" title="Exit fullscreen">
+         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+           <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+         </svg>
+     </button>
+ 
+    <!-- Section Header -->
+    <div class="section-header group rounded-t-lg border-b border-gray-200 dark:border-gray-700 flex items-center pr-2"> <!-- Added padding-right -->
+        <!-- Drag Handle (Optional - currently commented out) -->
+        <!-- ... -->
+
+        <!-- Section Number and Title -->
+        <div class="section-title-container flex-1 p-3">
+            <h2 class="text-lg font-medium text-gray-900 dark:text-white flex items-center">
+                <span class="section-type-icon mr-2 inline-block h-5 w-5 text-gray-500 dark:text-gray-400" title="Section Type"></span> <!-- Icon placeholder -->
+                <span class="section-number mr-2">1.</span>
+                <span class="section-title">Section Title</span>
+            </h2>
+        </div>
+
+        <!-- Section Controls -->
+        <!-- Make controls visible on hover of the entire section block, not just header -->
+        <div class="section-controls flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <!-- Add Before Button -->
+            <button class="section-add-before p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400" title="Add section before this one">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 12H9" /> <!-- Simple horizontal line for visual cue -->
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 9V6" /> <!-- Arrow pointing up -->
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 8l2-2 2 2" />
+                </svg>
+            </button>
+             <!-- Add After Button -->
+            <button class="section-add-after p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400" title="Add section after this one">
+                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 12H9" /> <!-- Simple horizontal line -->
+                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v3" /> <!-- Arrow pointing down -->
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10 16l2 2 2-2" />
+                </svg>
+            </button>
+
+            <!-- Separator -->
+            <span class="inline-block h-5 w-px bg-gray-300 dark:bg-gray-600 mx-1"></span>
+
+            <!-- Move Up/Down Buttons -->
+            <button class="section-move-up p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" title="Move section up">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                </svg>
+            </button>
+            <button class="section-move-down p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" title="Move section down">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+             
+             <!-- Fullscreen Button (Placeholder for Drawing/Plot) -->
+             <button class="section-fullscreen hidden p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400" title="Toggle fullscreen">
+                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                     <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v4m0 0h-4m4 0l-5-5" />
+                 </svg>
+             </button>
+
+            <!-- Settings Button -->
+            <button class="section-settings p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" title="Section settings">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            </button>
+
+            <!-- Delete Button -->
+            <button class="section-delete p-2 text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400" title="Delete section">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            </button>
+
+            <!-- AI Assistant Button -->
+            <button class="section-ai p-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center" title="Ask LLM"> <!-- Removed mr-2 -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <span class="text-sm font-medium hidden sm:inline">LLM</span> <!-- Hide text on small screens -->
+            </button>
+        </div>
+    </div>
+
+    <!-- Section Content (Container remains the same) -->
+    <div class="section-content bg-white dark:bg-gray-800 rounded-b-lg p-4 relative min-h-[100px]">
+        <!-- Content (View or Edit template) will be dynamically loaded here by BaseSection -->
+    </div>
+</div>
+{{ end }}

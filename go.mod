@@ -12,7 +12,7 @@ require (
 	github.com/panyam/goutils v0.1.3
 	github.com/panyam/oneauth v0.0.8
 	github.com/panyam/s3gen v0.0.28
-	github.com/panyam/templar v0.0.15
+	github.com/panyam/templar v0.0.17
 	golang.org/x/oauth2 v0.27.0
 	golang.org/x/text v0.22.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20250303144028-a0af3efb3deb
@@ -66,6 +66,6 @@ require (
 
 // replace github.com/panyam/oneauth v0.0.8 => ./locallinks/oneauth/
 
-// replace github.com/panyam/templar v0.0.15 => ./locallinks/templar/
+replace github.com/panyam/templar v0.0.17 => ./locallinks/templar/
 
 // replace github.com/panyam/s3gen v0.0.28 => ./locallinks/s3gen/

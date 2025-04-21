@@ -1,0 +1,286 @@
+<!-- Add this to index.html or create a new file -->
+<div
+  id="template-registry"
+  style="display: none; position: absolute; visibility: hidden"
+  aria-hidden="true"
+>
+  <!-- Store all modal templates here with data attributes -->
+  <div data-template-id="section-type-selector">
+    <!-- Header -->
+    <div
+      class="bg-gray-50 dark:bg-gray-700 px-4 py-5 border-b border-gray-200 dark:border-gray-600"
+    >
+      <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-white">
+        Choose Section Type
+      </h3>
+    </div>
+    <!-- Section Type Options -->
+    <div class="p-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <!-- Text/Markdown Section -->
+      <button
+        class="section-type-option flex flex-col items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-8 w-8 text-blue-600 dark:text-blue-400 mb-3"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          />
+        </svg>
+        <span class="text-sm font-medium text-gray-900 dark:text-white"
+          >Text</span
+        >
+        <span class="text-xs text-gray-500 dark:text-gray-400 text-center mt-1"
+          >Rich text with Markdown support</span
+        >
+      </button>
+
+      <!-- Drawing Section -->
+      <button
+        class="section-type-option flex flex-col items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-8 w-8 text-blue-600 dark:text-blue-400 mb-3"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+          />
+        </svg>
+        <span class="text-sm font-medium text-gray-900 dark:text-white"
+          >Drawing</span
+        >
+        <span class="text-xs text-gray-500 dark:text-gray-400 text-center mt-1"
+          >Architecture diagrams and flowcharts</span
+        >
+      </button>
+
+      <!-- Plot Section -->
+      <button
+        class="section-type-option flex flex-col items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-8 w-8 text-blue-600 dark:text-blue-400 mb-3"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"
+          />
+        </svg>
+        <span class="text-sm font-medium text-gray-900 dark:text-white"
+          >Plot</span
+        >
+        <span class="text-xs text-gray-500 dark:text-gray-400 text-center mt-1"
+          >Charts and data visualizations</span
+        >
+      </button>
+    </div>
+
+    <!-- Footer -->
+    <div
+      class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 border-t border-gray-200 dark:border-gray-600"
+    >
+      <button
+        id="section-type-cancel"
+        type="button"
+        class="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2 text-base font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:mt-0 sm:w-auto sm:text-sm"
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- Add other existing modal templates here if any (e.g., LlmDialog, LlmResults) -->
+  <!-- Placeholder for LlmDialog (assuming it exists here or included elsewhere) -->
+  <div data-template-id="llm-dialog">
+    <!-- Simplified structure - keep your original LlmDialog content here -->
+    <p>LLM Dialog Placeholder Content</p>
+  </div>
+  <!-- Placeholder for LlmResults (assuming it exists here or included elsewhere) -->
+  <div data-template-id="llm-results">
+    <!-- Simplified structure - keep your original LlmResults content here -->
+    <p>LLM Results Placeholder Content</p>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- == NEW Section View/Edit Templates Start == -->
+  <!-- ============================================ -->
+  <hr class="my-6 border-gray-400 dark:border-gray-600" />
+
+  <!-- == Text Section Templates == -->
+  <div data-template-id="text-section-view">
+    <!-- Root element takes full space of its container -->
+    <div
+      class="w-full h-full prose dark:prose-invert max-w-none section-view-content cursor-pointer"
+      title="Click to edit"
+    >
+      <!-- Actual text content will be injected here by TextSection.ts -->
+      <p class="text-gray-400 italic">View Mode: Text content appears here.</p>
+    </div>
+  </div>
+
+  <div data-template-id="text-section-edit">
+    <!-- Root element takes full space and arranges children vertically -->
+    <div class="w-full h-full flex flex-col section-edit-form">
+      <!-- Tinymce editor target -->
+      <div
+        class="text-editor-target flex-grow min-h-[200px]"
+        aria-label="Section text content"
+      >
+        <!-- TinyMCE will initialize here, replacing this comment -->
+        <!-- Keep min-h for initial sizing before editor loads -->
+      </div>
+      <!-- Edit controls fixed at the bottom -->
+      <div class="edit-controls mt-2 text-right space-x-2 flex-shrink-0">
+        <button
+          type="button"
+          class="section-edit-cancel px-3 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="section-edit-save px-3 py-1 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 border border-transparent rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+          Save
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- == Drawing Section Templates == -->
+  <div data-template-id="drawing-section-view">
+    <!-- Root element takes full space, centers content, adds border -->
+    <div
+      class="w-full h-full flex flex-col items-center justify-center border border-dashed border-gray-300 dark:border-gray-600 rounded relative section-view-content p-4 min-h-[200px]"
+    >
+      <!-- Container for the drawing preview image/svg -->
+      <div
+        class="drawing-preview-container flex-grow w-full flex items-center justify-center overflow-auto"
+      >
+        <p class="text-gray-500 dark:text-gray-400 italic">
+          View Mode: Drawing preview appears here.
+        </p>
+        <!-- e.g., <img src="..." alt="Drawing preview"> or SVG element -->
+      </div>
+      <!-- Edit button positioned top-right -->
+      <button
+        type="button"
+        class="section-edit-trigger absolute top-2 right-2 px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-200 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-md border border-gray-300 dark:border-gray-500 shadow-sm"
+      >
+        Edit
+      </button>
+    </div>
+  </div>
+
+  <div data-template-id="drawing-section-edit">
+    <!-- Root element takes full space and arranges children vertically -->
+    <div class="w-full h-full flex flex-col section-edit-form">
+      <!-- Drawing library will attach to this container, it grows -->
+      <div
+        class="drawing-editor-container flex-grow border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 rounded-t-md min-h-[300px] overflow-hidden"
+      >
+        <p class="p-4 text-gray-500 dark:text-gray-400 italic">
+          Edit Mode: Drawing editor loads here.
+        </p>
+      </div>
+      <!-- Edit controls fixed at the bottom -->
+      <div
+        class="edit-controls p-2 text-right space-x-2 border-t border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 rounded-b-md"
+      >
+        <button
+          type="button"
+          class="section-edit-cancel px-3 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="section-edit-save px-3 py-1 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 border border-transparent rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+          Save
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- == Plot Section Templates == -->
+  <div data-template-id="plot-section-view">
+    <!-- Root element takes full space, centers content, adds border -->
+    <div
+      class="w-full h-full flex flex-col items-center justify-center border border-dashed border-gray-300 dark:border-gray-600 rounded relative section-view-content p-4 min-h-[200px]"
+    >
+      <!-- Container for the rendered plot -->
+      <div
+        class="plot-preview-container flex-grow w-full flex items-center justify-center overflow-auto"
+      >
+        <p class="text-gray-500 dark:text-gray-400 italic">
+          View Mode: Plot appears here.
+        </p>
+        <!-- e.g., <canvas id="plot-canvas-..."></canvas> -->
+      </div>
+      <!-- Edit button positioned top-right -->
+      <button
+        type="button"
+        class="section-edit-trigger absolute top-2 right-2 px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-200 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-md border border-gray-300 dark:border-gray-500 shadow-sm"
+      >
+        Edit
+      </button>
+    </div>
+  </div>
+
+  <div data-template-id="plot-section-edit">
+    <!-- Root element takes full space and arranges children vertically -->
+    <div class="w-full h-full flex flex-col section-edit-form">
+      <!-- Plot configuration editor area -->
+      <div
+        class="plot-editor-container flex-grow p-4 border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 rounded-t-md min-h-[250px] overflow-auto"
+      >
+        <p class="text-gray-500 dark:text-gray-400 italic">
+          Edit Mode: Plot configuration form/editor loads here.
+        </p>
+        <!-- e.g., <textarea placeholder="Plot JSON config..."></textarea> or form fields -->
+      </div>
+      <!-- Edit controls fixed at the bottom -->
+      <div
+        class="edit-controls p-2 text-right space-x-2 border-t border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 rounded-b-md"
+      >
+        <button
+          type="button"
+          class="section-edit-cancel px-3 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="section-edit-save px-3 py-1 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 border border-transparent rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+          Save
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- == NEW Section View/Edit Templates End == -->
+  <!-- ========================================== -->
+</div>

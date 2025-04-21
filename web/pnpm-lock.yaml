@@ -35,6 +35,9 @@ importers:
       split.js:
         specifier: ^1.6.5
         version: 1.6.5
+      tinymce:
+        specifier: ^7.8.0
+        version: 7.8.0
     devDependencies:
       '@tailwindcss/forms':
         specifier: ^0.5.10
@@ -4667,6 +4670,9 @@ packages:
   tinyglobby@0.2.12:
     resolution: {integrity: sha512-qkf4trmKSIiMTs/E63cxH+ojC2unam7rJ0WrauAzpT3ECNTxGRMlaXxVbfxMUC/w0LaYk6jQ4y/nGR9uBO3tww==}
     engines: {node: '>=12.0.0'}
+
+  tinymce@7.8.0:
+    resolution: {integrity: sha512-MUER5MWV9mkOB4expgbWknh/C5ZJvOXQlMVSx4tJxTuYtcUCDB6bMZ34fWNOIc8LvrnXmGHGj0eGQuxjQyRgrA==}
 
   tldts-core@6.1.84:
     resolution: {integrity: sha512-NaQa1W76W2aCGjXybvnMYzGSM4x8fvG2AN/pla7qxcg0ZHbooOPhA8kctmOZUDfZyhDL27OGNbwAeig8P4p1vg==}
@@ -10588,6 +10594,8 @@ snapshots:
     dependencies:
       fdir: 6.4.3(picomatch@4.0.2)
       picomatch: 4.0.2
+
+  tinymce@7.8.0: {}
 
   tldts-core@6.1.84: {}
 

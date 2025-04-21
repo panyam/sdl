@@ -27,7 +27,7 @@ var dpUtils = DrawingService{
 }
 
 func init() {
-	if os.Getenv("APP_ENV") != "production" {
+	if false && os.Getenv("APP_ENV") != "production" {
 		site.CommonFuncMap = dpUtils.TemplateFunctions()
 		// site.NewViewFunc = NewView
 		site.Watch()
