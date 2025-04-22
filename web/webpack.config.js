@@ -128,7 +128,7 @@ module.exports = (_env, options) => {
         (component) =>
           new HtmlWebpackPlugin({
             chunks: [component[0]],
-            filename: path.resolve(__dirname, `${OUTPUT_FOLDERS[component[1]]}/gen.${component[0]}.html`),
+            filename: path.resolve(__dirname, `${OUTPUT_FOLDERS[component[1]]}/gen/${component[0]}.html`),
             templateContent: "",
             minify: false, // { collapseWhitespace: false },
             inject: 'body',
