@@ -79,14 +79,14 @@
                     -->
                     {{/* Example Go template syntax - adapt for your backend */}}
                     {{ range .Designs }}
-                    <tr id="doc-row-{{ .ID }}" class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150">
+                    <tr id="doc-row-{{ .Id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150">
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <a href="/designs/{{ .ID }}" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline">
-                                {{ .Title }}
+                            <a href="/designs/{{ .Id }}" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline">
+                                {{ .Name }}
                             </a>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                            {{ .LastModified | Ago }} <!-- Server formats the date -->
+                            {{ .UpdatedAt.AsTime | Ago }} <!-- Server formats the date -->
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium relative"> <!-- Relative position for dropdown -->
                             <button class="document-actions-btn p-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-full hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800"
@@ -98,10 +98,10 @@
                             <div class="action-menu hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-10">
                                <div class="py-1" role="menu" aria-orientation="vertical">
                                    <button class="action-delete block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-600" role="menuitem"
-                                           hx-delete="/designs/{{ .ID }}"
+                                           hx-delete="/designs/{{ .Id }}"
                                            hx-target="closest tr"
                                            hx-swap="outerHTML swap:200ms"
-                                           hx-confirm="Are you sure you want to delete '{{ .Title }}'?"
+                                           hx-confirm="Are you sure you want to delete '{{ .Name }}'?"
                                            hx-indicator="#list-loading-indicator">
                                        Delete
                                    </button>

@@ -16,6 +16,13 @@ deploy: checklinks build
 
 build: webbuild resymlink
 
+cligen:
+	npx @openapitools/openapi-generator-cli generate 		\
+  -i gen/openapiv2/services.swagger.json 							\
+  -g typescript-fetch                                 \
+  -o ./web/views/components/apiclient 								\
+  --additional-properties=supportsES6=true,typescriptThreePlus=true,useSingleRequestParameter=true # Common useful options
+
 webbuild:
 	cd web ; npm run build
 
