@@ -1,14 +1,12 @@
 package views
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"log/slog"
 	"net/http"
 
 	protos "github.com/panyam/leetcoach/gen/go/leetcoach/v1"
-	"google.golang.org/grpc/metadata"
 )
 
 type DesignEditorPage struct {
@@ -50,7 +48,7 @@ func (v *DesignEditorPage) Load(r *http.Request, w http.ResponseWriter, vc *View
 		v.IsOwner = true
 
 		// create a new design
-		ctx := metadata.AppendToOutgoingContext(context.Background(), "LoggedInUserId", loggedInUserId)
+		ctx := vc.ClientMgr.ClientContext(nil, loggedInUserId)
 		resp, err := client.CreateDesign(ctx, &protos.CreateDesignRequest{
 			Design: &protos.Design{
 				Name: "Untitled Design",
@@ -63,7 +61,8 @@ func (v *DesignEditorPage) Load(r *http.Request, w http.ResponseWriter, vc *View
 		http.Redirect(w, r, fmt.Sprintf("/designs/%s/edit", resp.Design.Id), http.StatusFound)
 		// hxgeturl := fmt.Sprintf("/views/designs/MDEditorView?name=%s&description=%s", v.Design.Name, v.Design.Description)
 	} else {
-		resp, err := client.GetDesign(context.Background(), &protos.GetDesignRequest{
+		ctx := vc.ClientMgr.ClientContext(nil, loggedInUserId)
+		resp, err := client.GetDesign(ctx, &protos.GetDesignRequest{
 			Id: v.DesignId,
 		})
 		if err != nil {
