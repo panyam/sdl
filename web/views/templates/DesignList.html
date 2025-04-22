@@ -54,7 +54,7 @@
     <div class="bg-white dark:bg-gray-800 shadow sm:rounded-lg overflow-hidden">
         <div class="overflow-x-auto relative"> <!-- Relative positioning for indicator -->
              <!-- Loading Indicator -->
-            <div id="list-loading-indicator" class="htmx-indicator absolute inset-0 bg-gray-500/30 dark:bg-gray-900/50 flex items-center justify-center z-10">
+            <div id="list-loading-indicator" class="hidden htmx-indicator absolute inset-0 bg-gray-500/30 dark:bg-gray-900/50 flex items-center justify-center z-10">
                 <svg class="animate-spin h-8 w-8 text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -81,7 +81,7 @@
                     {{ range .Designs }}
                     <tr id="doc-row-{{ .Id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150">
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <a href="/designs/{{ .Id }}" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline">
+                            <a href="/designs/{{ .Id }}/edit" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline">
                                 {{ .Name }}
                             </a>
                         </td>
