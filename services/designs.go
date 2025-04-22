@@ -2,10 +2,14 @@ package services
 
 import (
 	"context"
+	"encoding/json" // Added
 	"fmt"
 	"log"
 	"log/slog"
+	"os"            // Added
+	"path/filepath" // Added
 	"strings"
+	"sync" // Added
 	"time"
 
 	"google.golang.org/grpc/codes"
@@ -14,7 +18,7 @@ import (
 
 	// "strings"
 
-	fn "github.com/panyam/goutils/fn"
+	// fn "github.com/panyam/goutils/fn"
 	protos "github.com/panyam/leetcoach/gen/go/leetcoach/v1"
 	// tspb "google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -23,230 +27,244 @@ import (
 const ENFORCE_LOGIN = false
 const FAKE_USER_ID = ""
 
+// Filesystem storage constants
+const designsBasePath = "./data/designs" // Base directory for all designs
+
+// In-memory mutex map for design IDs
+var designMutexes sync.Map // maps[string]*sync.Mutex
+
+// Struct representing the metadata stored in design.json
+type DesignMetadata struct {
+	ID          string        `json:"id"`
+	OwnerID     string        `json:"ownerId"`
+	Name        string        `json:"name"`
+	Description string        `json:"description"`
+	Visibility  string        `json:"visibility"`
+	VisibleTo   []string      `json:"visibleTo"`
+	CreatedAt   time.Time     `json:"createdAt"`
+	UpdatedAt   time.Time     `json:"updatedAt"`
+	Sections    []SectionMeta `json:"sections"` // List of section metadata
+}
+
+// Struct representing metadata for a single section within design.json
+type SectionMeta struct {
+	ID    string `json:"id"`
+	Title string `json:"title"`
+	Type  string `json:"type"` // "text", "drawing", "plot"
+	Order int    `json:"order"`
+}
+
+// Helper to get or create a mutex for a specific design ID
+func getDesignMutex(designId string) *sync.Mutex {
+	mutex, _ := designMutexes.LoadOrStore(designId, &sync.Mutex{})
+	return mutex.(*sync.Mutex)
+}
+
+// Helper to get the path for a specific design
+func getDesignPath(designId string) string {
+	return filepath.Join(designsBasePath, designId)
+}
+
+// Helper to get the path for the design metadata file
+func getDesignMetadataPath(designId string) string {
+	return filepath.Join(getDesignPath(designId), "design.json")
+}
+
+// Helper to get the base path for a design's sections
+func getSectionsBasePath(designId string) string {
+	return filepath.Join(getDesignPath(designId), "sections")
+}
+
+// Helper to ensure a directory exists
+func ensureDir(path string) error {
+	err := os.MkdirAll(path, 0755) // Use 0755 for permissions
+	if err != nil && !os.IsExist(err) {
+		slog.Error("Failed to create directory", "path", path, "error", err)
+		return err
+	}
+	return nil
+}
+
+// Helper function to convert DesignMetadata to proto (similar to DesignToProto)
+func DesignMetadataToProto(input *DesignMetadata) *protos.Design {
+	out := &protos.Design{
+		Id:          input.ID,
+		OwnerId:     input.OwnerID,
+		Name:        input.Name,
+		Description: input.Description,
+		Visibility:  input.Visibility,
+		VisibleTo:   input.VisibleTo,
+		CreatedAt:   tspb.New(input.CreatedAt),
+		UpdatedAt:   tspb.New(input.UpdatedAt),
+		SectionIds:  make([]string, len(input.Sections)), // Populate Section IDs
+	}
+	for i, secMeta := range input.Sections {
+		out.SectionIds[i] = secMeta.ID
+	}
+	// Note: The proto definition doesn't have explicit order or type for sections,
+	// only the IDs. This is handled by the structure in design.json.
+	// ContentMetadata from the original DB model is not in DesignMetadata.json yet.
+	// We can add it later if needed.
+	return out
+}
+
+// --- Rest of DesignService struct and NewDesignService function ---
 type DesignService struct {
 	protos.UnimplementedDesignServiceServer
 	BaseService
-	clients *ClientMgr
+	clients *ClientMgr // Keep clients for now, might need auth parts
 }
 
 func NewDesignService(clients *ClientMgr) *DesignService {
 	out := &DesignService{
 		clients: clients,
 	}
+	// Ensure base directory exists on startup
+	if err := ensureDir(designsBasePath); err != nil {
+		log.Fatalf("Could not create base designs directory '%s': %v", designsBasePath, err)
+	}
 	return out
 }
 
-// Update a new Design
+// --- UpdateDesign - Keep placeholder for now ---
 func (s *DesignService) UpdateDesign(ctx context.Context, req *protos.UpdateDesignRequest) (resp *protos.UpdateDesignResponse, err error) {
 	log.Println("In design update: ", req)
-	loggedInOwnerId, err := s.EnsureLoggedIn(ctx)
-	if ENFORCE_LOGIN && err != nil {
-		log.Println("Login Failed: ", err)
-		return
-	}
-	resp = &protos.UpdateDesignResponse{}
-	design := req.Design
-	dsc := s.clients.GetDesignDSClient()
-	currnot := Design{}
-	err = dsc.GetByID(design.Id, &currnot)
-	if err != nil {
-		return nil, status.Error(codes.NotFound, fmt.Sprintf("Design with id '%s' not found", design.Id))
-	}
-
-	if ENFORCE_LOGIN && (loggedInOwnerId == "" || loggedInOwnerId != currnot.OwnerId) {
-		return nil, status.Error(codes.PermissionDenied, fmt.Sprintf("User '%s' cannot update Design '%s'", loggedInOwnerId, design.Id))
-	}
-
-	// Now update things based on mask
-	log.Println("Loaded Design from DS: ", currnot, currnot.Visibility)
-	update_mask := req.UpdateMask
-	has_update_mask := update_mask != nil && len(update_mask.Paths) > 0
-	if !has_update_mask {
-		return nil, status.Error(codes.InvalidArgument,
-			"update_mask should specify (nested) fields to update or provide a content")
-	}
-
-	if req.UpdateMask != nil {
-		log.Println("Got update mask: ", req.UpdateMask)
-		for _, path := range req.UpdateMask.Paths {
-			switch path {
-			case "visibility", "design.visibility":
-				currnot.Visibility = req.Design.Visibility
-			case "visible_to", "design.visible_to":
-				currnot.VisibleTo = req.Design.VisibleTo
-			case "name", "design.name":
-				if strings.TrimSpace(req.Design.Name) == "" {
-					return nil, status.Errorf(codes.InvalidArgument, "Name cannot be empty")
-				}
-				currnot.Name = req.Design.Name
-			case "description", "design.description":
-				currnot.Description = req.Design.Description
-			case "content_metadata", "design.content_metadata":
-				currnot.ContentMetadata.Properties = nil
-				if req.Design.ContentMetadata != nil {
-					currnot.ContentMetadata.Properties = req.Design.ContentMetadata.AsMap()
-				}
-			default:
-				log.Println("Invalid Field Path: ", path)
-				return nil, status.Errorf(codes.InvalidArgument, "Custom Error - UpdateDesign - update_mask contains invalid path: %s", path)
-			}
-		}
-	}
-
-	currnot.UpdatedAt = time.Now()
-	log.Println("Finally Updated Design: ", currnot)
-	if _, err = dsc.SaveEntity(&currnot); err != nil {
-		slog.Error("error saving design: ", "err", err)
-		return
-	}
-
-	resp.Design = design
-	return resp, err
+	// ... (Implementation in next checkpoint) ...
+	return nil, status.Errorf(codes.Unimplemented, "UpdateDesign not implemented yet")
 }
 
 // Create a new Design
 func (s *DesignService) CreateDesign(ctx context.Context, req *protos.CreateDesignRequest) (resp *protos.CreateDesignResponse, err error) {
-	log.Println("In design creation: ", req)
-	design := req.Design
-	design.OwnerId, err = s.EnsureLoggedIn(ctx)
+	slog.Info("CreateDesign Request", "req", req)
+	designProto := req.Design
+	if designProto == nil {
+		return nil, status.Error(codes.InvalidArgument, "Design payload cannot be nil")
+	}
+
+	// 1. Get User ID
+	// Using BaseService method, assuming metadata propagation works
+	ownerId, err := s.EnsureLoggedIn(ctx)
 	if ENFORCE_LOGIN && err != nil {
-		return
+		slog.Error("Login enforcement failed", "error", err)
+		return nil, err // Return the unauthenticated error
 	}
-	resp = &protos.CreateDesignResponse{}
-	dsc := s.clients.GetDesignDSClient()
-	if design.Id != "" {
-		// see if it already exists
-		dsnot := Design{}
-		err := dsc.GetByID(design.Id, &dsnot)
-		if err == nil {
-			return nil, status.Error(codes.AlreadyExists, fmt.Sprintf("Design with id '%s' already exists", design.Id))
+	// Allow override if not enforcing login (useful for initial testing)
+	if !ENFORCE_LOGIN && ownerId == "" {
+		ownerId = "dev_user" // Default owner for testing
+	}
+
+	// 2. Validate input
+	if designProto.Id == "" {
+		// In Phase 1, require ID from client. Later could generate UUIDs.
+		return nil, status.Error(codes.InvalidArgument, "Design ID must be provided during creation in this phase")
+	}
+	designId := designProto.Id // Use the provided ID
+	if strings.TrimSpace(designProto.Name) == "" {
+		// Name is essential metadata
+		return nil, status.Error(codes.InvalidArgument, "Design name cannot be empty")
+	}
+
+	// 3. Acquire mutex
+	mutex := getDesignMutex(designId)
+	mutex.Lock()
+	defer mutex.Unlock()
+	slog.Debug("Acquired mutex", "designId", designId)
+
+	// 4. Check if design already exists
+	designPath := getDesignPath(designId)
+	metadataPath := getDesignMetadataPath(designId)
+	if _, err := os.Stat(designPath); err == nil {
+		// Directory exists, check if design.json also exists to be sure
+		if _, err := os.Stat(metadataPath); err == nil {
+			slog.Warn("Design already exists", "designId", designId)
+			return nil, status.Error(codes.AlreadyExists, fmt.Sprintf("Design with id '%s' already exists", designId))
 		}
-	} else {
-		// For now enforce ID is provided by user
-		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("id MUST be provided '%s'"))
+		// Directory exists but no metadata file? Could be corrupted state.
+		// For now, let's treat it as existing to prevent overwriting potentially valid section data.
+		slog.Warn("Design directory exists but metadata missing", "designId", designId, "path", metadataPath)
+		return nil, status.Error(codes.AlreadyExists, fmt.Sprintf("Design with id '%s' potentially exists but metadata is missing", designId))
 
-		/*
-			for {
-				var existing Design
-				log.Println("IDGEN: ", s.idgen)
-				if newid, err := s.idgen.NextID("", time.Time{}); err == nil {
-					err := dsc.GetByID(newid.Id, &existing)
-					if err == ErrNoSuchEntity {
-						// Finally found an id that was not taken by another design
-						design.Id = newid.Id
-						break
-					} else if err != nil {
-						log.Println("Error: ", err)
-						return nil, err
-					}
-				} else {
-					return nil, err
-				}
-			}
-		*/
+	} else if !os.IsNotExist(err) {
+		// Some other error occurred checking the path
+		slog.Error("Error checking design path", "designId", designId, "path", designPath, "error", err)
+		return nil, status.Error(codes.Internal, "Failed to check design existence")
 	}
-	// for indexed tags are user tags
-	// TODO - treat x=y tags differently
-	design.CreatedAt = tspb.New(time.Now())
-	design.UpdatedAt = tspb.New(time.Now())
+	// Path does not exist, proceed with creation
 
-	title := strings.TrimSpace(design.Name)
-	if title == "" {
-		resp.FieldErrors["title"] = "Title cannot be empty"
-		return
-	} else {
-		// Now save it
-		dbnot := DesignFromProto(design)
-		if _, err = dsc.SaveEntity(dbnot); err != nil {
-			slog.Error("error saving design: ", "err", err)
-		}
+	// 5. Create directories
+	sectionsPath := getSectionsBasePath(designId)
+	if err := ensureDir(sectionsPath); err != nil { // ensureDir creates parent dirs too
+		return nil, status.Error(codes.Internal, "Failed to create design directories")
+	}
+	slog.Debug("Ensured directories exist", "designPath", designPath, "sectionsPath", sectionsPath)
+
+	// 6. Create DesignMetadata struct
+	now := time.Now()
+	metadata := DesignMetadata{
+		ID:          designId,
+		OwnerID:     ownerId, // Use obtained ownerId
+		Name:        designProto.Name,
+		Description: designProto.Description,
+		Visibility:  designProto.Visibility, // Ensure default is handled if empty
+		VisibleTo:   designProto.VisibleTo,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+		Sections:    []SectionMeta{}, // Start with empty sections
+	}
+	// Set default visibility if not provided
+	if metadata.Visibility == "" {
+		metadata.Visibility = "private" // Default to private
 	}
 
-	// Now save the contents
-	resp.Design = design
-	return resp, err
+	// 7. Marshal DesignMetadata to JSON
+	jsonData, err := json.MarshalIndent(metadata, "", "  ") // Use MarshalIndent for readability
+	if err != nil {
+		slog.Error("Failed to marshal design metadata", "designId", designId, "error", err)
+		// Attempt cleanup? For now, just return error.
+		// os.RemoveAll(designPath) // Optional: Attempt cleanup
+		return nil, status.Error(codes.Internal, "Failed to serialize design metadata")
+	}
+
+	// 8. Write JSON to design.json
+	err = os.WriteFile(metadataPath, jsonData, 0644) // Use 0644 permissions
+	if err != nil {
+		slog.Error("Failed to write design metadata file", "designId", designId, "path", metadataPath, "error", err)
+		// Attempt cleanup?
+		// os.RemoveAll(designPath) // Optional: Attempt cleanup
+		return nil, status.Error(codes.Internal, "Failed to save design metadata")
+	}
+	slog.Info("Successfully created design metadata", "designId", designId, "path", metadataPath)
+
+	// 9. Handle initial sections (Skip for this checkpoint)
+
+	// 10. Convert metadata back to proto for response
+	createdDesignProto := DesignMetadataToProto(&metadata)
+
+	resp = &protos.CreateDesignResponse{
+		Design: createdDesignProto,
+	}
+	return resp, nil
 }
 
-// Finds and retrieves designs matching the particular criteria.
+// --- ListDesigns - Keep placeholder for now ---
 func (s *DesignService) ListDesigns(ctx context.Context, req *protos.ListDesignsRequest) (resp *protos.ListDesignsResponse, err error) {
-	if req.Pagination == nil {
-		req.Pagination = &protos.Pagination{}
-	}
-	if req.Pagination.PageSize <= 0 {
-		req.Pagination.PageSize = 200
-	}
-	query := s.clients.GetDesignDSClient().NewQuery().Offset(int(req.Pagination.PageOffset)).Limit(int(req.Pagination.PageSize) + 1)
-	if req.OwnerId != "" {
-		query = query.FilterField("userId", "=", req.OwnerId)
-	}
-	if req.LimitToPublic {
-		query = query.FilterField("visibility", "=", "public")
-	}
-
-	if req.OrderBy == "recent" {
-		query = query.Order("-updatedAt")
-	}
-	results, err := s.clients.GetDesignDSClient().Select(query)
-	if err != nil {
-		return nil, err
-	}
-	resp = &protos.ListDesignsResponse{
-		Pagination: &protos.PaginationResponse{
-			HasMore: len(results) > int(req.Pagination.PageSize),
-		},
-	}
-	if resp.Pagination.HasMore {
-		results = results[:req.Pagination.PageSize]
-	}
-	resp.Designs = fn.Map(results, DesignToProto)
-	return
+	// ... (Implementation in next checkpoint) ...
+	return nil, status.Errorf(codes.Unimplemented, "ListDesigns not implemented yet")
 }
 
+// --- GetDesign - Keep placeholder for now ---
 func (s *DesignService) GetDesign(ctx context.Context, req *protos.GetDesignRequest) (resp *protos.GetDesignResponse, err error) {
-	dsc := s.clients.GetDesignDSClient()
-	var design Design
-	err = dsc.GetByID(req.Id, &design)
-	if err != nil {
-		if err == ErrNoSuchEntity {
-			return nil, status.Error(codes.NotFound, fmt.Sprintf("Design with id '%s' not found", req.Id))
-		} else {
-			return nil, err
-		}
-	}
-	resp = &protos.GetDesignResponse{
-		Design: DesignToProto(&design),
-	}
-	return
+	// ... (Implementation in next checkpoint) ...
+	return nil, status.Errorf(codes.Unimplemented, "GetDesign not implemented yet")
 }
 
+// --- GetDesigns - Keep placeholder for now (Likely not needed if GetDesign handles single ID) ---
 func (s *DesignService) GetDesigns(ctx context.Context, req *protos.GetDesignsRequest) (resp *protos.GetDesignsResponse, err error) {
-	return
+	return nil, status.Errorf(codes.Unimplemented, "GetDesigns not implemented yet")
 }
 
-// Deletes an design from our system.
+// --- DeleteDesign - Keep placeholder for now ---
 func (s *DesignService) DeleteDesign(ctx context.Context, req *protos.DeleteDesignRequest) (resp *protos.DeleteDesignResponse, err error) {
-	loggedInOwnerId, err := s.EnsureLoggedIn(ctx)
-	if ENFORCE_LOGIN && err != nil {
-		return
-	}
-
-	resp = &protos.DeleteDesignResponse{}
-	dsc := s.clients.GetDesignDSClient()
-	currnot := Design{}
-	err = dsc.GetByID(req.Id, &currnot)
-	if err != nil {
-		return nil, status.Error(codes.NotFound, fmt.Sprintf("Design with id '%s' not found", req.Id))
-	}
-	log.Println("LoggedInUser: ", loggedInOwnerId)
-	log.Println("DesignUser: ", currnot.OwnerId)
-	if ENFORCE_LOGIN && (loggedInOwnerId == "" || loggedInOwnerId != currnot.OwnerId) {
-		return nil, status.Error(codes.PermissionDenied, fmt.Sprintf("User '%s' cannot delete Design '%s'", loggedInOwnerId, req.Id))
-	}
-
-	// delete content first
-	err = dsc.DeleteByKey(req.Id)
-	if err != nil {
-		return
-	}
-	return
+	// ... (Implementation in next checkpoint) ...
+	return nil, status.Errorf(codes.Unimplemented, "DeleteDesign not implemented yet")
 }

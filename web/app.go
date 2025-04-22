@@ -3,7 +3,6 @@ package web
 import (
 	"log"
 	"net/http"
-	"strings"
 
 	// "github.com/go-session/cookie"
 
@@ -99,7 +98,7 @@ func (n *LCApp) Handler() http.Handler {
 	n.mux.Handle("/", n.Views.Handler())
 
 	// For handling drawings
-	n.mux.Handle("/api/drawings/", http.StripPrefix("/api/drawings", NewDrawingApi("./content").Handler()))
+	// n.mux.Handle("/api/drawings/", http.StripPrefix("/api/drawings", NewDrawingApi("./content").Handler()))
 
 	return n.Session.LoadAndSave(n.mux)
 }
@@ -122,6 +121,7 @@ func (n *LCApp) GetUser(r *http.Request) *svc.User {
 	return &user
 }
 
+/*
 func (n *LCApp) RegisterCaseStudy(path, folder string) {
 	if !strings.HasPrefix(path, "/") {
 		path = "/" + path
@@ -135,3 +135,4 @@ func (n *LCApp) RegisterCaseStudy(path, folder string) {
 	// cs.Templates = n.Context.Templates
 	n.mux.Handle(path, http.StripPrefix(tostrip, cs.Handler()))
 }
+*/
