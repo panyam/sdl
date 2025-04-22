@@ -95,6 +95,13 @@ export interface DesignServiceAddSectionRequestSection {
      */
     format?: string;
     /**
+     * *
+     * Order of the section in the list of sections.  This is a readonly field.
+     * @type {number}
+     * @memberof DesignServiceAddSectionRequestSection
+     */
+    order?: number;
+    /**
      * 
      * @type {V1TextSectionContent}
      * @memberof DesignServiceAddSectionRequestSection
@@ -140,6 +147,7 @@ export function DesignServiceAddSectionRequestSectionFromJSONTyped(json: any, ig
         'title': json['title'] == null ? undefined : json['title'],
         'contentType': json['contentType'] == null ? undefined : json['contentType'],
         'format': json['format'] == null ? undefined : json['format'],
+        'order': json['order'] == null ? undefined : json['order'],
         'textContent': json['textContent'] == null ? undefined : V1TextSectionContentFromJSON(json['textContent']),
         'drawingContent': json['drawingContent'] == null ? undefined : V1DrawingSectionContentFromJSON(json['drawingContent']),
         'plotContent': json['plotContent'] == null ? undefined : V1PlotSectionContentFromJSON(json['plotContent']),
@@ -164,6 +172,7 @@ export function DesignServiceAddSectionRequestSectionToJSONTyped(value?: DesignS
         'title': value['title'],
         'contentType': value['contentType'],
         'format': value['format'],
+        'order': value['order'],
         'textContent': V1TextSectionContentToJSON(value['textContent']),
         'drawingContent': V1DrawingSectionContentToJSON(value['drawingContent']),
         'plotContent': V1PlotSectionContentToJSON(value['plotContent']),

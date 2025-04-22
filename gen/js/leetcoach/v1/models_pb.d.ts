@@ -347,25 +347,33 @@ export declare type Section = Message<"leetcoach.v1.Section"> & {
   format: string;
 
   /**
+   * *
+   * Order of the section in the list of sections.  This is a readonly field.
+   *
+   * @generated from field: uint32 order = 9;
+   */
+  order: number;
+
+  /**
    * Note section content may not always be served here.
    *
    * @generated from oneof leetcoach.v1.Section.content
    */
   content: {
     /**
-     * @generated from field: leetcoach.v1.TextSectionContent text_content = 9;
+     * @generated from field: leetcoach.v1.TextSectionContent text_content = 10;
      */
     value: TextSectionContent;
     case: "textContent";
   } | {
     /**
-     * @generated from field: leetcoach.v1.DrawingSectionContent drawing_content = 10;
+     * @generated from field: leetcoach.v1.DrawingSectionContent drawing_content = 11;
      */
     value: DrawingSectionContent;
     case: "drawingContent";
   } | {
     /**
-     * @generated from field: leetcoach.v1.PlotSectionContent plot_content = 11;
+     * @generated from field: leetcoach.v1.PlotSectionContent plot_content = 12;
      */
     value: PlotSectionContent;
     case: "plotContent";

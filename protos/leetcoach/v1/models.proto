@@ -155,11 +155,16 @@ message Section {
    */
   string format = 8; // e.g., "chartjs/json", "plotly/json"
 
+  /**
+   * Order of the section in the list of sections.  This is a readonly field.
+   */
+  uint32 order = 9;
+
   // Note section content may not always be served here.
   oneof content {
-    TextSectionContent text_content = 9;
-    DrawingSectionContent drawing_content = 10;
-    PlotSectionContent plot_content = 11;
+    TextSectionContent text_content = 10;
+    DrawingSectionContent drawing_content = 11;
+    PlotSectionContent plot_content = 12;
   }
 }
 

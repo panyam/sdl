@@ -472,6 +472,11 @@
                       "type": "string",
                       "description": "*\nFormat of the section.\n\ne.g., \"chartjs/json\", \"plotly/json\""
                     },
+                    "order": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "*\nOrder of the section in the list of sections.  This is a readonly field."
+                    },
                     "textContent": {
                       "$ref": "#/definitions/v1TextSectionContent"
                     },
@@ -563,6 +568,11 @@
                 "format": {
                   "type": "string",
                   "description": "*\nFormat of the section.\n\ne.g., \"chartjs/json\", \"plotly/json\""
+                },
+                "order": {
+                  "type": "integer",
+                  "format": "int64",
+                  "description": "*\nOrder of the section in the list of sections.  This is a readonly field."
                 },
                 "textContent": {
                   "$ref": "#/definitions/v1TextSectionContent"
@@ -1323,6 +1333,11 @@
         "format": {
           "type": "string",
           "description": "*\nFormat of the section.\n\ne.g., \"chartjs/json\", \"plotly/json\""
+        },
+        "order": {
+          "type": "integer",
+          "format": "int64",
+          "description": "*\nOrder of the section in the list of sections.  This is a readonly field."
         },
         "textContent": {
           "$ref": "#/definitions/v1TextSectionContent"
