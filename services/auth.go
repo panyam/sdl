@@ -24,6 +24,11 @@ func (a *AuthService) EnsureAuthUser(authtype string, provider string, token *oa
 	// userPicture := userInfo["picture"].(string)
 	userEmail := userInfo["email"].(string)
 
+	// HACK: We are using the "email" as the connecting key between the provider
+	// and our own internal user.  This way a user with same email from multiple providers
+	// is treated as the "same" user.  Is this the way to go?  If this is really an expectation
+	// then why not just make the email field a bonafied param for this method instead of being
+	// hidden in the userInfo map?
 	idsc := a.clients.GetIdentityDSClient()
 	idKey := fmt.Sprintf("email:%s", userEmail)
 	identity := Identity{
@@ -50,20 +55,6 @@ func (a *AuthService) EnsureAuthUser(authtype string, provider string, token *oa
 		if err != nil {
 			user = nil
 			slog.Error("Error getting user: ", "user", identity.PrimaryUser, "err", err)
-		} else {
-			/*
-				} else if user.Picture != userPicture || user.Name != fullName || user.Email != idKey {
-					// chance to update
-					user.Picture = userPicture
-					user.Name = fullName
-					user.Email = userEmail
-					user.Id = idKey
-					if _, err = userdsc.SaveEntity(&user); err != nil {
-						slog.Error("Error saving user: ", idKey, err)
-						ctx.JSON(http.StatusUnauthorized, map[string]any{"error": "Unable to save user"})
-						return
-					}
-			*/
 		}
 	}
 

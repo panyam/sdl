@@ -8,7 +8,7 @@ import (
 	"cloud.google.com/go/datastore"
 )
 
-type DataStore[T interface{}] struct {
+type DataStore[T any] struct {
 	DSClient      *datastore.Client
 	kind          string
 	autoCreateKey bool
@@ -18,7 +18,7 @@ type DataStore[T interface{}] struct {
 	SetEntityKey  func(entity *T, key *datastore.Key)
 }
 
-func NewDataStore[T interface{}](kind string, autoCreateKey bool) *DataStore[T] {
+func NewDataStore[T any](kind string, autoCreateKey bool) *DataStore[T] {
 	return &DataStore[T]{
 		kind:          kind,
 		autoCreateKey: autoCreateKey,

@@ -1,7 +1,6 @@
 package web
 
 import (
-	"log"
 	"net/http"
 
 	// "github.com/go-session/cookie"
@@ -13,10 +12,6 @@ import (
 	oa2 "github.com/panyam/oneauth/oauth2"
 )
 
-type LCContext struct {
-	// Templates *templar.TemplateGroup
-}
-
 type LCApp struct {
 	// TODO - turn this over to slicer to manage clients
 	ClientMgr *svc.ClientMgr
@@ -27,7 +22,6 @@ type LCApp struct {
 
 	mux     *http.ServeMux
 	BaseUrl string
-	Context LCContext
 }
 
 func NewWebApp(grpcAddress string, ClientMgr *svc.ClientMgr) (app *LCApp, err error) {
@@ -36,7 +30,6 @@ func NewWebApp(grpcAddress string, ClientMgr *svc.ClientMgr) (app *LCApp, err er
 
 	oneauth := oa.New("LeetCoach")
 	oneauth.Session = session
-	oneauth.UsernameField = "email"
 	oneauth.Middleware.SessionGetter = func(r *http.Request, key string) any {
 		return session.GetString(r.Context(), key)
 	}
@@ -50,7 +43,11 @@ func NewWebApp(grpcAddress string, ClientMgr *svc.ClientMgr) (app *LCApp, err er
 		Api:       NewLCApi(grpcAddress, &oneauth.Middleware, ClientMgr),
 		Views:     views.NewLCViews(&oneauth.Middleware, ClientMgr),
 	}
-	oneauth.ValidateUsernamePassword = app.ValidateUsernamePassword
+	oneauth.AddAuth("/login", &oa.LocalAuth{
+		UsernameField:            "email",
+		ValidateUsernamePassword: app.ValidateUsernamePassword,
+		HandleUser:               oneauth.SaveUserAndRedirect,
+	})
 
 	// TODO - setup oneauth.UserStore
 	oneauth.UserStore = app
@@ -103,6 +100,7 @@ func (n *LCApp) Handler() http.Handler {
 	return n.Session.LoadAndSave(n.mux)
 }
 
+/*
 func (n *LCApp) GetUser(r *http.Request) *svc.User {
 	userId := n.Auth.Middleware.GetLoggedInUserId(r)
 	if userId == "" {
@@ -120,6 +118,7 @@ func (n *LCApp) GetUser(r *http.Request) *svc.User {
 	// TODO - Also validate the user so it cant just be "set"
 	return &user
 }
+*/
 
 /*
 func (n *LCApp) RegisterCaseStudy(path, folder string) {
