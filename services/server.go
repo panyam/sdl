@@ -21,7 +21,7 @@ func (s *Server) Start(ctx context.Context, srvErr chan error, srvChan chan bool
 	server := grpc.NewServer(
 	// grpc.UnaryInterceptor(EnsureAccessToken),
 	)
-	v1.RegisterDesignServiceServer(server, NewDesignService(clients))
+	v1.RegisterDesignServiceServer(server, NewDesignService(clients, ""))
 	v1.RegisterTagServiceServer(server, NewTagService(clients))
 	if os.Getenv("LEETCOACH_ENV") == "dev" {
 		v1.RegisterAdminServiceServer(server, NewAdminService(clients))

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
-	"math/rand"
 	"os"
 	"path/filepath"
 	"sort"
@@ -17,36 +16,9 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	tspb "google.golang.org/protobuf/types/known/timestamppb"
 
 	protos "github.com/panyam/leetcoach/gen/go/leetcoach/v1"
 )
-
-// Default configuration values (can be overridden in constructor if needed)
-const defaultDesignsBasePath = "./data/designs"
-const defaultGeneratedIDLength = 6
-const defaultIDChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-const defaultMaxIDGenerationRetries = 10
-
-// --- DesignMetadata and SectionMeta structs remain the same ---
-type DesignMetadata struct {
-	ID          string        `json:"id"`
-	OwnerID     string        `json:"ownerId"`
-	Name        string        `json:"name"`
-	Description string        `json:"description"`
-	Visibility  string        `json:"visibility"`
-	VisibleTo   []string      `json:"visibleTo"`
-	CreatedAt   time.Time     `json:"createdAt"`
-	UpdatedAt   time.Time     `json:"updatedAt"`
-	Sections    []SectionMeta `json:"sections"`
-}
-
-type SectionMeta struct {
-	ID    string `json:"id"`
-	Title string `json:"title"`
-	Type  string `json:"type"`
-	Order int    `json:"order"`
-}
 
 // --- DesignService struct holds configuration and state ---
 type DesignService struct {
@@ -54,26 +26,26 @@ type DesignService struct {
 	BaseService
 	clients *ClientMgr // Keep for potential auth needs
 
+	idgen IDGen
+
 	// Configuration / State moved from globals
-	basePath        string
-	idLength        int
-	idChars         string
-	maxIDGenRetries int
-	randSource      *rand.Rand // Source for random numbers
-	mutexMap        sync.Map   // Mutex map keyed by design ID
+	basePath string
+	mutexMap sync.Map // Mutex map keyed by design ID
 }
 
 // --- NewDesignService Constructor ---
-func NewDesignService(clients *ClientMgr) *DesignService {
+func NewDesignService(clients *ClientMgr, basePath string) *DesignService {
 	// Initialize with defaults
+	if basePath == "" {
+		basePath = defaultDesignsBasePath
+	}
 	out := &DesignService{
-		clients:         clients,
-		basePath:        defaultDesignsBasePath,
-		idLength:        defaultGeneratedIDLength,
-		idChars:         defaultIDChars,
-		maxIDGenRetries: defaultMaxIDGenerationRetries,
-		randSource:      rand.New(rand.NewSource(time.Now().UnixNano())),
-		// mutexMap is implicitly initialized
+		clients:  clients,
+		basePath: basePath,
+	}
+	out.idgen = IDGen{
+		NextIDFunc: (&SimpleIDGen{}).NextID,
+		GetID:      func(kind, id string) (*GenID, error) { return out.getDesignId(id) },
 	}
 	// Ensure base directory exists on startup using the struct's path
 	if err := ensureDir(out.basePath); err != nil {
@@ -84,6 +56,20 @@ func NewDesignService(clients *ClientMgr) *DesignService {
 }
 
 // --- Helper functions are now methods on DesignService ---
+func (s *DesignService) getDesignId(id string) (g *GenID, err error) {
+	designPath := s.getDesignPath(id) // Use s.getDesignPath
+	_, err = os.Stat(designPath)
+	if err == nil {
+		g = &GenID{Id: id}
+		return
+	}
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, nil // Directory does not exist
+	}
+	// Some other error occurred
+	slog.Error("Error checking design path existence", "id", id, "path", designPath, "error", err)
+	return nil, err
+}
 
 // Helper to get or create a mutex for a specific design ID
 func (s *DesignService) getDesignMutex(designId string) *sync.Mutex {
@@ -108,30 +94,6 @@ func (s *DesignService) getSectionsBasePath(designId string) string {
 	return filepath.Join(s.getDesignPath(designId), "sections")
 }
 
-// Helper function to generate a random string using service config
-func (s *DesignService) generateShortID() string {
-	b := make([]byte, s.idLength) // Use s.idLength
-	for i := range b {
-		b[i] = s.idChars[s.randSource.Intn(len(s.idChars))] // Use s.idChars and s.randSource
-	}
-	return string(b)
-}
-
-// Helper function to check if a design ID (directory) already exists
-func (s *DesignService) designIDExists(designId string) (bool, error) {
-	designPath := s.getDesignPath(designId) // Use s.getDesignPath
-	_, err := os.Stat(designPath)
-	if err == nil {
-		return true, nil // Directory exists
-	}
-	if errors.Is(err, os.ErrNotExist) {
-		return false, nil // Directory does not exist
-	}
-	// Some other error occurred
-	slog.Error("Error checking design path existence", "id", designId, "path", designPath, "error", err)
-	return false, err
-}
-
 // --- Static/Utility Helpers (can remain outside the struct or moved) ---
 
 // ensureDir doesn't depend on service state, can stay as utility
@@ -143,27 +105,6 @@ func ensureDir(path string) error {
 	}
 	return nil
 }
-
-// DesignMetadataToProto doesn't depend on service state
-func DesignMetadataToProto(input *DesignMetadata) *protos.Design {
-	out := &protos.Design{
-		Id:          input.ID,
-		OwnerId:     input.OwnerID,
-		Name:        input.Name,
-		Description: input.Description,
-		Visibility:  input.Visibility,
-		VisibleTo:   input.VisibleTo,
-		CreatedAt:   tspb.New(input.CreatedAt),
-		UpdatedAt:   tspb.New(input.UpdatedAt),
-		SectionIds:  make([]string, len(input.Sections)),
-	}
-	for i, secMeta := range input.Sections {
-		out.SectionIds[i] = secMeta.ID
-	}
-	return out
-}
-
-// --- Service Methods (Updated to use receiver methods/fields) ---
 
 func (s *DesignService) CreateDesign(ctx context.Context, req *protos.CreateDesignRequest) (resp *protos.CreateDesignResponse, err error) {
 	slog.Info("CreateDesign Request", "req", req)
@@ -185,23 +126,13 @@ func (s *DesignService) CreateDesign(ctx context.Context, req *protos.CreateDesi
 
 	if designId == "" {
 		slog.Debug("Design ID not provided, attempting auto-generation")
-		for i := 0; i < s.maxIDGenRetries; i++ { // Use s.maxIDGenRetries
-			candidateId := s.generateShortID()                // Use s.generateShortID
-			exists, checkErr := s.designIDExists(candidateId) // Use s.designIDExists
-			if checkErr != nil {
-				return nil, status.Error(codes.Internal, "Failed to check candidate ID existence")
-			}
-			if !exists {
-				designId = candidateId
-				slog.Info("Generated unique Design ID", "id", designId, "attempt", i+1)
-				break
-			}
-			slog.Debug("Generated ID collided, retrying", "candidateId", candidateId, "attempt", i+1)
-		}
-		if designId == "" {
-			slog.Error("Failed to generate a unique design ID after multiple retries", "retries", s.maxIDGenRetries)
+		genid, err := s.idgen.NextID("design", ownerId, time.Unix(0, 0))
+		if genid == nil {
+			slog.Error("Failed to generate a unique design ID after multiple retries", "error", err)
 			return nil, status.Error(codes.Internal, "Failed to generate unique design ID")
 		}
+		designId = genid.Id
+		slog.Info("Generated unique Design ID", "id", designId)
 	} else {
 		slog.Debug("Using client-provided Design ID", "id", designId)
 	}
@@ -237,16 +168,18 @@ func (s *DesignService) CreateDesign(ctx context.Context, req *protos.CreateDesi
 	slog.Debug("Ensured directories exist", "designPath", designPath, "sectionsPath", sectionsPath)
 
 	now := time.Now()
-	metadata := DesignMetadata{
-		ID:          designId,
-		OwnerID:     ownerId,
+	metadata := Design{
+		BaseModel: BaseModel{
+			CreatedAt: now,
+			UpdatedAt: now,
+		},
+		Id:          designId,
+		OwnerId:     ownerId,
 		Name:        designProto.Name,
 		Description: designProto.Description,
 		Visibility:  designProto.Visibility,
 		VisibleTo:   designProto.VisibleTo,
-		CreatedAt:   now,
-		UpdatedAt:   now,
-		Sections:    []SectionMeta{},
+		SectionIds:  []string{},
 	}
 	if metadata.Visibility == "" {
 		metadata.Visibility = "private"
@@ -265,7 +198,7 @@ func (s *DesignService) CreateDesign(ctx context.Context, req *protos.CreateDesi
 	}
 	slog.Info("Successfully created design metadata", "designId", designId, "path", metadataPath)
 
-	createdDesignProto := DesignMetadataToProto(&metadata) // Static utility
+	createdDesignProto := DesignToProto(&metadata) // Static utility
 
 	resp = &protos.CreateDesignResponse{
 		Design: createdDesignProto,
@@ -298,7 +231,7 @@ func (s *DesignService) GetDesign(ctx context.Context, req *protos.GetDesignRequ
 		return nil, status.Error(codes.Internal, "Failed to read design metadata")
 	}
 
-	var metadata DesignMetadata
+	var metadata Design
 	err = json.Unmarshal(jsonData, &metadata)
 	if err != nil {
 		slog.Error("Failed to unmarshal metadata JSON", "designId", designId, "path", metadataPath, "error", err)
@@ -307,7 +240,7 @@ func (s *DesignService) GetDesign(ctx context.Context, req *protos.GetDesignRequ
 
 	// TODO: Permission Checks
 
-	designProto := DesignMetadataToProto(&metadata) // Static utility
+	designProto := DesignToProto(&metadata) // Static utility
 	resp = &protos.GetDesignResponse{
 		Design: designProto,
 	}
@@ -325,7 +258,7 @@ func (s *DesignService) ListDesigns(ctx context.Context, req *protos.ListDesigns
 		return nil, status.Error(codes.Internal, "Failed to list designs")
 	}
 
-	var allMetadata []*DesignMetadata
+	var allMetadata []*Design
 	for _, entry := range entries {
 		if !entry.IsDir() {
 			continue
@@ -340,14 +273,14 @@ func (s *DesignService) ListDesigns(ctx context.Context, req *protos.ListDesigns
 				continue
 			}
 
-			var metadata DesignMetadata
+			var metadata Design
 			unmarshalErr := json.Unmarshal(jsonData, &metadata)
 			if unmarshalErr != nil {
 				slog.Warn("Failed to unmarshal metadata JSON during list", "designId", designId, "path", metadataPath, "error", unmarshalErr)
 				continue
 			}
-			if metadata.ID != designId {
-				slog.Warn("Mismatch between directory name and metadata ID", "dirName", designId, "metadataId", metadata.ID)
+			if metadata.Id != designId {
+				slog.Warn("Mismatch between directory name and metadata Id", "dirName", designId, "metadataId", metadata.Id)
 				continue
 			}
 			allMetadata = append(allMetadata, &metadata)
@@ -358,13 +291,13 @@ func (s *DesignService) ListDesigns(ctx context.Context, req *protos.ListDesigns
 	slog.Debug("Collected metadata for designs", "count", len(allMetadata))
 
 	// Filtering logic remains the same...
-	var filteredMetadata []*DesignMetadata
+	var filteredMetadata []*Design
 	loggedInUserId, _ := s.EnsureLoggedIn(ctx)
 	for _, meta := range allMetadata {
-		if req.OwnerId != "" && meta.OwnerID != req.OwnerId {
+		if req.OwnerId != "" && meta.OwnerId != req.OwnerId {
 			continue
 		}
-		isOwner := (!ENFORCE_LOGIN && meta.OwnerID == "dev_user") || (ENFORCE_LOGIN && loggedInUserId == meta.OwnerID)
+		isOwner := (!ENFORCE_LOGIN && meta.OwnerId == "dev_user") || (ENFORCE_LOGIN && loggedInUserId == meta.OwnerId)
 		isVisible := meta.Visibility == "public" || isOwner
 
 		if req.LimitToPublic && meta.Visibility != "public" {
@@ -410,7 +343,7 @@ func (s *DesignService) ListDesigns(ctx context.Context, req *protos.ListDesigns
 			start = 0
 		}
 		if start >= totalResults {
-			filteredMetadata = []*DesignMetadata{}
+			filteredMetadata = []*Design{}
 			start = 0
 			end = 0
 		} else {
@@ -427,7 +360,7 @@ func (s *DesignService) ListDesigns(ctx context.Context, req *protos.ListDesigns
 
 	finalProtos := make([]*protos.Design, len(filteredMetadata))
 	for i, meta := range filteredMetadata {
-		finalProtos[i] = DesignMetadataToProto(meta) // Static utility
+		finalProtos[i] = DesignToProto(meta) // Static utility
 	}
 
 	resp = &protos.ListDesignsResponse{
@@ -494,7 +427,7 @@ func (s *DesignService) UpdateDesign(ctx context.Context, req *protos.UpdateDesi
 		return nil, status.Error(codes.Internal, "Failed to read design metadata for update")
 	}
 
-	var metadata DesignMetadata
+	var metadata Design
 	if err = json.Unmarshal(jsonData, &metadata); err != nil {
 		slog.Error("Failed to unmarshal metadata JSON for update", "designId", designId, "path", metadataPath, "error", err)
 		return nil, status.Error(codes.DataLoss, "Failed to parse design metadata (corrupted data?)")
@@ -505,8 +438,8 @@ func (s *DesignService) UpdateDesign(ctx context.Context, req *protos.UpdateDesi
 		if err != nil {
 			return nil, err
 		}
-		if loggedInUserId != metadata.OwnerID {
-			slog.Warn("Permission denied for update", "designId", designId, "loggedInUser", loggedInUserId, "owner", metadata.OwnerID)
+		if loggedInUserId != metadata.OwnerId {
+			slog.Warn("Permission denied for update", "designId", designId, "loggedInUser", loggedInUserId, "owner", metadata.OwnerId)
 			return nil, status.Error(codes.PermissionDenied, "User does not have permission to update this design")
 		}
 	}
@@ -583,7 +516,7 @@ func (s *DesignService) UpdateDesign(ctx context.Context, req *protos.UpdateDesi
 		slog.Info("No changes detected based on update mask", "designId", designId)
 	}
 
-	updatedProto := DesignMetadataToProto(&metadata) // Static utility
+	updatedProto := DesignToProto(&metadata) // Static utility
 	resp = &protos.UpdateDesignResponse{
 		Design: updatedProto,
 	}
@@ -614,7 +547,7 @@ func (s *DesignService) DeleteDesign(ctx context.Context, req *protos.DeleteDesi
 		return nil, status.Error(codes.Internal, "Failed to read design metadata for delete")
 	}
 
-	var metadata DesignMetadata
+	var metadata Design
 	if err = json.Unmarshal(jsonData, &metadata); err != nil {
 		slog.Error("Failed to unmarshal metadata JSON for delete permission check", "designId", designId, "path", metadataPath, "error", err)
 		return nil, status.Error(codes.DataLoss, "Failed to parse design metadata (corrupted data?)")
@@ -625,8 +558,8 @@ func (s *DesignService) DeleteDesign(ctx context.Context, req *protos.DeleteDesi
 		if err != nil {
 			return nil, err
 		}
-		if loggedInUserId != metadata.OwnerID {
-			slog.Warn("Permission denied for delete", "designId", designId, "loggedInUser", loggedInUserId, "owner", metadata.OwnerID)
+		if loggedInUserId != metadata.OwnerId {
+			slog.Warn("Permission denied for delete", "designId", designId, "loggedInUser", loggedInUserId, "owner", metadata.OwnerId)
 			return nil, status.Error(codes.PermissionDenied, "User does not have permission to delete this design")
 		}
 	}
