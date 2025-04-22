@@ -32,7 +32,7 @@ func (n *LCViews) setupDesignsMux() *http.ServeMux {
 	mux.HandleFunc("/new", n.ViewRenderer(Copier(&DesignEditorPage{}), ""))
 	mux.HandleFunc("/{designId}/view", n.ViewRenderer(Copier(&DesignViewerPage{}), ""))
 
-	mux.HandleFunc("/{designId}/compose", n.ViewRenderer(Copier(&DesignEditorPage{}), ""))
+	mux.HandleFunc("/{designId}/edit", n.ViewRenderer(Copier(&DesignEditorPage{}), ""))
 	mux.HandleFunc("/{designId}/copy", func(w http.ResponseWriter, r *http.Request) {
 		designId := r.PathValue("designId")
 		http.Redirect(w, r, fmt.Sprintf("/designs/new?copyFrom=%s", designId), http.StatusFound)
