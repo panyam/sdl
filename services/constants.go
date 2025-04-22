@@ -1,7 +1,7 @@
 package services
 
 // Just for test
-const ENFORCE_LOGIN = false
+const ENFORCE_LOGIN = true
 const FAKE_USER_ID = ""
 
 // Default configuration values (can be overridden in constructor if needed)

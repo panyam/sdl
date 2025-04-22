@@ -33,6 +33,9 @@ type ClientMgr struct {
 
 func NewClientMgr(svc_addr string) *ClientMgr {
 	log.Println("Client Mgr Svc Addr: ", svc_addr)
+	if svc_addr == "" {
+		panic("Service Address is nil")
+	}
 	return &ClientMgr{svcAddr: svc_addr}
 }
 
@@ -45,6 +48,7 @@ func (c *ClientMgr) GetAuthService() *AuthService {
 
 func (c *ClientMgr) GetDesignSvcClient() (out protos.DesignServiceClient, err error) {
 	if c.designSvcClient == nil {
+		log.Println("Addr: ", c.svcAddr)
 		designSvcConn, err := grpc.NewClient(c.svcAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			log.Printf("cannot connect with server %v", err)

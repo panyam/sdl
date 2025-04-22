@@ -19,6 +19,7 @@ type HomePage struct {
 
 func (p *HomePage) Load(r *http.Request, w http.ResponseWriter, vc *ViewContext) (err error, finished bool) {
 	p.Header.Load(r, w, vc)
+	p.DesignListView.Load(r, w, vc)
 	// p.ShowSearch = true
 	return
 }

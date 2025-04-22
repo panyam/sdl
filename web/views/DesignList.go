@@ -37,6 +37,7 @@ func (p *DesignListView) Load(r *http.Request, w http.ResponseWriter, vc *ViewCo
 		log.Println("error getting notations: ", err)
 		return err, false
 	}
+	log.Println("Found Designs: ", resp.Designs)
 	p.Designs = resp.Designs
 	p.Paginator.HasPrevPage = p.Paginator.CurrentPage > 0
 	p.Paginator.HasNextPage = resp.Pagination.HasMore

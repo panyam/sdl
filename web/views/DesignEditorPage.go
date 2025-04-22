@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	protos "github.com/panyam/leetcoach/gen/go/leetcoach/v1"
+	"google.golang.org/grpc/metadata"
 )
 
 type DesignEditorPage struct {
@@ -28,13 +29,14 @@ func (v *DesignEditorPage) SetupDefaults() {
 func (v *DesignEditorPage) Load(r *http.Request, w http.ResponseWriter, vc *ViewContext) (err error, finished bool) {
 	v.Header.Load(r, w, vc)
 	v.SetupDefaults()
-	queryParams := r.URL.Query()
 	v.DesignId = r.PathValue("designId")
-	templateName := queryParams.Get("template")
+	// queryParams := r.URL.Query()
+	// templateName := queryParams.Get("template")
 	loggedInUserId := vc.AuthMiddleware.GetLoggedInUserId(r)
 
 	slog.Info("Loading editor for design with ID: ", "nid", v.DesignId)
 
+	client, _ := vc.ClientMgr.GetDesignSvcClient()
 	if v.DesignId == "" {
 		if loggedInUserId == "" {
 			// For now enforce login even on new
@@ -46,14 +48,21 @@ func (v *DesignEditorPage) Load(r *http.Request, w http.ResponseWriter, vc *View
 			return nil, true
 		}
 		v.IsOwner = true
-		v.Design = &protos.Design{}
-		if v.Design.Name == "" {
-			v.Design.Name = "Untitled Design"
+
+		// create a new design
+		ctx := metadata.AppendToOutgoingContext(context.Background(), "LoggedInUserId", loggedInUserId)
+		resp, err := client.CreateDesign(ctx, &protos.CreateDesignRequest{
+			Design: &protos.Design{
+				Name: "Untitled Design",
+			},
+		})
+		if err != nil {
+			log.Println("Error getting design: ", err)
+			return err, false
 		}
-		log.Println("Using template: ", templateName)
+		http.Redirect(w, r, fmt.Sprintf("/designs/%s/edit", resp.Design.Id), http.StatusFound)
 		// hxgeturl := fmt.Sprintf("/views/designs/MDEditorView?name=%s&description=%s", v.Design.Name, v.Design.Description)
 	} else {
-		client, _ := vc.ClientMgr.GetDesignSvcClient()
 		resp, err := client.GetDesign(context.Background(), &protos.GetDesignRequest{
 			Id: v.DesignId,
 		})

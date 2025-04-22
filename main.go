@@ -39,7 +39,7 @@ func main() {
 	flag.Parse()
 	app := App{Ctx: context.Background()}
 	app.AddServer(&svc.Server{Address: *svc_addr})
-	app.AddServer(&web.Server{Address: *gw_addr})
+	app.AddServer(&web.Server{GrpcAddress: *svc_addr, Address: *gw_addr})
 	app.Start()
 	app.Done(nil)
 }

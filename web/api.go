@@ -54,10 +54,10 @@ func (web *LCApi) createSvcMux(grpc_addr string) (*runtime.ServeMux, error) {
 			if ok { // TODO: Enable if turning on basic auth
 				// TODO - Validate password if doing basic auth
 				// send 401 if password is invalid
-				md.Append("LeetcoachUserId", username)
+				md.Append("LoggedInUserId", username)
 			} else if loggedInUserId != "" {
 				log.Println("LoggedInUserId: ", loggedInUserId)
-				md.Append("LeetcoachUserId", loggedInUserId)
+				md.Append("LoggedInUserId", loggedInUserId)
 			}
 			return md
 		}),
