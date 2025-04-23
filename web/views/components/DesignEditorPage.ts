@@ -13,7 +13,7 @@ import { V1GetDesignResponse } from './apiclient';
 /**
  * Main application initialization
  */
-class LeetCoachApp {
+class DesignEditorPage {
     // Keep other component properties...
     private themeManager: typeof ThemeManager | null = null; // Use typeof for static class
     private documentTitle: DocumentTitle | null = null;
@@ -332,14 +332,14 @@ class LeetCoachApp {
     }
 
     /** Initialize the application */
-    public static init(): LeetCoachApp {
-        return new LeetCoachApp();
+    public static init(): DesignEditorPage {
+        return new DesignEditorPage();
     }
 }
 
 // Initialize the application when the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
-    const lc = LeetCoachApp.init();
+    const lc = DesignEditorPage.init();
     // Sample document loading is REMOVED. Loading is triggered by API call in constructor/init.
     // lc.loadDocument(DOCUMENT);
 });
