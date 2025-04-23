@@ -45,23 +45,27 @@ export function extractContentFromApiSection(apiSection: V1Section): SectionData
         return apiSection.textContent.htmlContent || '';
     }
     if (type === 'drawing' && apiSection.drawingContent) {
-        // Assuming drawing data is stored as a stringified JSON
+        // Assuming drawing data is stored as base64 encoded JSON string
+        const base64Data = apiSection.drawingContent.data as string | undefined; // API client might type it as string
         try {
+            const jsonData = base64Data ? atob(base64Data) : '{}'; // Decode base64
             return {
                 format: apiSection.format || 'placeholder_drawing_json', // Use format if available
-                data: JSON.parse(apiSection.drawingContent.data || '{}')
+                data: JSON.parse(jsonData)
             } as DrawingContent;
         } catch (e) {
-            console.error(`Failed to parse drawing content data for section ${apiSection.id}:`, e, "Data:", apiSection.drawingContent.data);
+            console.error(`Failed to decode/parse drawing content data for section ${apiSection.id}:`, e, "Base64 Data:", base64Data);
             return { format: 'placeholder_drawing_json', data: {} } as DrawingContent; // Default fallback
         }
-    }
+    } // Assuming plotContent.data is string
     if (type === 'plot' && apiSection.plotContent) {
-         // Assuming plot data is stored as a stringified JSON
+        // Assuming plot data is stored as base64 encoded JSON string
+        const base64Data = apiSection.plotContent.data as string | undefined; // API client might type it as string
         try {
+            const jsonData = base64Data ? atob(base64Data) : '{}'; // Decode base64
             return {
                 format: apiSection.format || 'placeholder_plot_json', // Use format if available
-                data: JSON.parse(apiSection.plotContent.data || '{}')
+                data: JSON.parse(jsonData) // Parse the decoded JSON
             } as PlotContent;
         } catch (e) {
             console.error(`Failed to parse plot content data for section ${apiSection.id}:`, e, "Data:", apiSection.plotContent.data);
@@ -95,16 +99,18 @@ export function mapFrontendContentToApiUpdate(
             break;
         case 'drawing':
             const drawingContent = content as DrawingContent;
-            // Ensure data is stringified
-            update.drawingContent = { data: JSON.stringify(drawingContent?.data ?? {}) };
+            // Ensure data is stringified JSON, then base64 encoded
+            const drawingJson = JSON.stringify(drawingContent?.data ?? {});
+            update.drawingContent = { data: btoa(drawingJson) }; // Base64 encode
             update.format = drawingContent?.format || 'placeholder_drawing_json'; // Pass format back, ensure default
             // update.contentType = 'application/json'; // Or specific format MIME type
             break;
         case 'plot':
             const plotContent = content as PlotContent;
-             // Ensure data is stringified
-            update.plotContent = { data: JSON.stringify(plotContent?.data ?? {}) };
-             update.format = plotContent?.format || 'placeholder_plot_json'; // Pass format back, ensure default
+            // Ensure data is stringified JSON, then base64 encoded
+            const plotJson = JSON.stringify(plotContent?.data ?? {});
+            update.plotContent = { data: btoa(plotJson) }; // Base64 encode
+            update.format = plotContent?.format || 'placeholder_plot_json'; // Pass format back, ensure default
            // update.contentType = 'application/json'; // Or specific format MIME type
             break;
         default:
