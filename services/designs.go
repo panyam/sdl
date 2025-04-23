@@ -1,6 +1,7 @@
 package services
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -16,6 +17,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	protos "github.com/panyam/leetcoach/gen/go/leetcoach/v1"
 )
@@ -92,6 +94,29 @@ func (s *DesignService) getDesignMetadataPath(designId string) string {
 func (s *DesignService) getSectionsBasePath(designId string) string {
 	// Internally calls s.getDesignPath
 	return filepath.Join(s.getDesignPath(designId), "sections")
+}
+
+// Helper to get the path for a specific section's data file
+func (s *DesignService) getSectionPath(designId, sectionId string) string {
+	return filepath.Join(s.getSectionsBasePath(designId), fmt.Sprintf("%s.json", sectionId))
+}
+
+// Helper to read section data from its file
+func (s *DesignService) readSectionData(designId, sectionId string) (*Section, error) {
+	sectionPath := s.getSectionPath(designId, sectionId)
+	jsonData, err := os.ReadFile(sectionPath)
+	if err != nil {
+		// Distinguish between file not existing and other errors
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, ErrNoSuchEntity // Use our custom error
+		}
+		return nil, fmt.Errorf("failed to read section file %s: %w", sectionPath, err)
+	}
+	var section Section
+	if err := json.Unmarshal(jsonData, &section); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal section data from %s: %w", sectionPath, err)
+	}
+	return &section, nil
 }
 
 // --- Static/Utility Helpers (can remain outside the struct or moved) ---
@@ -248,6 +273,37 @@ func (s *DesignService) GetDesign(ctx context.Context, req *protos.GetDesignRequ
 	return resp, nil
 }
 
+// GetSection retrieves the content and metadata of a single section.
+func (s *DesignService) GetSection(ctx context.Context, req *protos.GetSectionRequest) (resp *protos.Section, err error) {
+	designId := req.DesignId
+	sectionId := req.SectionId
+	if designId == "" || sectionId == "" {
+		return nil, status.Error(codes.InvalidArgument, "Design ID and Section ID must be provided")
+	}
+	slog.Info("GetSection Request", "designId", designId, "sectionId", sectionId)
+
+	// No need for mutex for reads usually, but consistency might be desired if reads/writes are frequent.
+	// Let's skip the mutex for GetSection for now to optimize reads.
+
+	sectionData, err := s.readSectionData(designId, sectionId)
+	if err != nil {
+		if errors.Is(err, ErrNoSuchEntity) {
+			slog.Warn("Section not found", "designId", designId, "sectionId", sectionId)
+			return nil, status.Errorf(codes.NotFound, "Section with id '%s' not found in design '%s'", sectionId, designId)
+		}
+		slog.Error("Failed to read section data", "designId", designId, "sectionId", sectionId, "error", err)
+		return nil, status.Error(codes.Internal, "Failed to read section data")
+	}
+
+	// TODO: Add permission check - can the user view this design/section?
+
+	// Note: Order is not stored in the section file, needs to be looked up if required.
+	// The GetSection API doesn't necessarily need to return order, but the converter handles it.
+	resp = SectionToProto(sectionData) // Convert to proto
+	slog.Info("Successfully retrieved section", "designId", designId, "sectionId", sectionId)
+	return resp, nil
+}
+
 func (s *DesignService) ListDesigns(ctx context.Context, req *protos.ListDesignsRequest) (resp *protos.ListDesignsResponse, err error) {
 	slog.Info("ListDesigns Request", "req", req)
 
@@ -369,6 +425,123 @@ func (s *DesignService) ListDesigns(ctx context.Context, req *protos.ListDesigns
 	}
 
 	slog.Info("Successfully listed designs", "request", req, "responseCount", len(resp.Designs))
+	return resp, nil
+}
+
+// AddSection creates a new section, saves its data, and adds its ID to the design's list.
+func (s *DesignService) AddSection(ctx context.Context, req *protos.AddSectionRequest) (resp *protos.Section, err error) {
+	designId := req.Section.GetDesignId() // designId is now part of the section proto
+	sectionProto := req.Section
+
+	if designId == "" {
+		return nil, status.Error(codes.InvalidArgument, "Design ID must be provided within the section payload")
+	}
+	if sectionProto == nil {
+		return nil, status.Error(codes.InvalidArgument, "Section payload cannot be nil")
+	}
+	if sectionProto.Type == protos.SectionType_SECTION_TYPE_UNSPECIFIED {
+		return nil, status.Error(codes.InvalidArgument, "Section type must be specified")
+	}
+	slog.Info("AddSection Request", "designId", designId, "type", sectionProto.Type, "relativeTo", req.RelativeSectionId, "position", req.Position)
+
+	ownerId, err := s.EnsureLoggedIn(ctx)
+	if ENFORCE_LOGIN && err != nil {
+		return nil, err
+	}
+
+	mutex := s.getDesignMutex(designId)
+	mutex.Lock()
+	defer mutex.Unlock()
+	slog.Debug("Acquired mutex for AddSection", "designId", designId)
+
+	// 1. Read and check design metadata + permissions
+	metadataPath := s.getDesignMetadataPath(designId)
+	metadataJson, err := os.ReadFile(metadataPath)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			slog.Warn("Design not found for AddSection", "designId", designId)
+			return nil, status.Errorf(codes.NotFound, "Design '%s' not found", designId)
+		}
+		slog.Error("Failed to read design metadata for AddSection", "designId", designId, "error", err)
+		return nil, status.Error(codes.Internal, "Failed to read design metadata")
+	}
+	var metadata Design
+	if err = json.Unmarshal(metadataJson, &metadata); err != nil {
+		slog.Error("Failed to unmarshal design metadata for AddSection", "designId", designId, "error", err)
+		return nil, status.Error(codes.DataLoss, "Failed to parse design metadata")
+	}
+
+	if ENFORCE_LOGIN && ownerId != metadata.OwnerId {
+		slog.Warn("Permission denied for AddSection", "designId", designId, "user", ownerId)
+		return nil, status.Error(codes.PermissionDenied, "User cannot add sections to this design")
+	}
+
+	// 2. Generate new Section ID
+	genid, err := s.idgen.NextID("section", ownerId, time.Unix(0, 0)) // Using ownerId context for section ID generation too
+	if err != nil || genid == nil {
+		slog.Error("Failed to generate unique section ID", "designId", designId, "error", err)
+		return nil, status.Error(codes.Internal, "Failed to generate section ID")
+	}
+	newSectionId := genid.Id
+	slog.Info("Generated new section ID", "designId", designId, "newSectionId", newSectionId)
+
+	// 3. Prepare new Section data struct
+	now := time.Now()
+	newSectionData := SectionFromProto(sectionProto) // Use converter
+	newSectionData.Id = newSectionId
+	newSectionData.DesignId = designId // Ensure design ID is set
+	newSectionData.CreatedAt = now
+	newSectionData.UpdatedAt = now
+
+	// 4. Determine insertion index in metadata.SectionIds
+	insertIndex := len(metadata.SectionIds) // Default to end
+	if req.RelativeSectionId != "" {
+		found := false
+		for i, id := range metadata.SectionIds {
+			if id == req.RelativeSectionId {
+				if req.Position == protos.PositionType_POSITION_TYPE_BEFORE {
+					insertIndex = i
+				} else { // Default to AFTER
+					insertIndex = i + 1
+				}
+				found = true
+				break
+			}
+		}
+		if !found {
+			slog.Warn("RelativeSectionId not found during AddSection", "designId", designId, "relativeId", req.RelativeSectionId)
+			// Optional: return error or just append to end? Let's append.
+			insertIndex = len(metadata.SectionIds)
+		}
+	} // If RelativeSectionId is empty, insertIndex remains len(metadata.SectionIds) -> append
+
+	// 5. Write new section data file *first*
+	sectionPath := s.getSectionPath(designId, newSectionId)
+	sectionJson, err := json.MarshalIndent(newSectionData, "", "  ")
+	if err != nil {
+		slog.Error("Failed to marshal new section data", "designId", designId, "sectionId", newSectionId, "error", err)
+		return nil, status.Error(codes.Internal, "Failed to serialize section data")
+	}
+	if err = os.WriteFile(sectionPath, sectionJson, 0644); err != nil {
+		slog.Error("Failed to write new section file", "designId", designId, "sectionPath", sectionPath, "error", err)
+		return nil, status.Error(codes.Internal, "Failed to save section data")
+	}
+	slog.Info("Successfully wrote new section file", "path", sectionPath)
+
+	// 6. Update and write design metadata *second*
+	metadata.SectionIds = append(metadata.SectionIds[:insertIndex], append([]string{newSectionId}, metadata.SectionIds[insertIndex:]...)...)
+	metadata.UpdatedAt = now
+	if err = s.writeDesignMetadata(designId, &metadata); err != nil {
+		// Attempt to clean up orphaned section file, but prioritize reporting the metadata write error
+		slog.Error("Failed to write updated design metadata after adding section", "designId", designId, "error", err)
+		_ = os.Remove(sectionPath) // Best effort cleanup
+		return nil, status.Error(codes.Internal, "Failed to update design metadata after adding section")
+	}
+	slog.Info("Successfully updated design metadata with new section ID", "designId", designId)
+
+	// 7. Prepare and return response proto
+	resp = SectionToProto(newSectionData)
+	resp.Order = uint32(insertIndex) // Add the calculated order
 	return resp, nil
 }
 
@@ -520,6 +693,96 @@ func (s *DesignService) UpdateDesign(ctx context.Context, req *protos.UpdateDesi
 	return resp, nil
 }
 
+// UpdateSection updates specific fields of an existing section.
+func (s *DesignService) UpdateSection(ctx context.Context, req *protos.UpdateSectionRequest) (resp *protos.Section, err error) {
+	designId := req.Section.DesignId
+	sectionId := req.Section.Id
+	updatesProto := req.Section // This contains the partial updates
+	updateMask := req.UpdateMask
+
+	if designId == "" || sectionId == "" {
+		return nil, status.Error(codes.InvalidArgument, "Design ID and Section ID must be provided")
+	}
+	if updatesProto == nil {
+		return nil, status.Error(codes.InvalidArgument, "Section update payload cannot be nil")
+	}
+	if updateMask == nil || len(updateMask.Paths) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "Update mask must be provided with at least one field path for section update")
+	}
+	slog.Info("UpdateSection Request", "designId", designId, "sectionId", sectionId, "mask", updateMask.Paths)
+
+	ownerId, err := s.EnsureLoggedIn(ctx)
+	if ENFORCE_LOGIN && err != nil {
+		return nil, err
+	}
+
+	mutex := s.getDesignMutex(designId)
+	mutex.Lock()
+	defer mutex.Unlock()
+	slog.Debug("Acquired mutex for UpdateSection", "designId", designId, "sectionId", sectionId)
+
+	// 1. Check design exists and user has permission
+	metadata, err := s.readDesignMetadata(designId)
+	if err != nil {
+		// Handles NotFound and other read errors
+		return nil, err
+	}
+	if ENFORCE_LOGIN && ownerId != metadata.OwnerId {
+		slog.Warn("Permission denied for UpdateSection", "designId", designId, "user", ownerId)
+		return nil, status.Error(codes.PermissionDenied, "User cannot update sections in this design")
+	}
+
+	// 2. Check section exists within the design's list
+	sectionIndex := -1
+	for i, id := range metadata.SectionIds {
+		if id == sectionId {
+			sectionIndex = i
+			break
+		}
+	}
+	if sectionIndex == -1 {
+		slog.Warn("Section ID not found in design metadata during update", "designId", designId, "sectionId", sectionId)
+		return nil, status.Errorf(codes.NotFound, "Section '%s' not found in design '%s'", sectionId, designId)
+	}
+
+	// 3. Read existing section data
+	sectionData, err := s.readSectionData(designId, sectionId)
+	if err != nil {
+		if errors.Is(err, ErrNoSuchEntity) {
+			slog.Error("Inconsistency: Section ID in metadata but file not found", "designId", designId, "sectionId", sectionId)
+			return nil, status.Errorf(codes.Internal, "Section '%s' data file not found despite being listed in design '%s'", sectionId, designId)
+		}
+		slog.Error("Failed to read section data for update", "designId", designId, "sectionId", sectionId, "error", err)
+		return nil, status.Error(codes.Internal, "Failed to read section data for update")
+	}
+
+	// 4. Apply updates based on mask
+	updated := applySectionUpdates(sectionData, updatesProto, updateMask)
+
+	// 5. Write updated section data if changed
+	if updated {
+		slog.Info("Section data changed, saving...", "designId", designId, "sectionId", sectionId)
+		sectionData.UpdatedAt = time.Now()
+		if err = s.writeSectionData(designId, sectionId, sectionData); err != nil {
+			return nil, status.Error(codes.Internal, "Failed to write updated section data")
+		}
+
+		// 6. Update design metadata timestamp (only if section was updated)
+		metadata.UpdatedAt = sectionData.UpdatedAt
+		if err = s.writeDesignMetadata(designId, metadata); err != nil {
+			// Log error, but proceed as section data *was* saved. Maybe return warning?
+			slog.Error("Failed to update design metadata timestamp after section update", "designId", designId, "error", err)
+		}
+	} else {
+		slog.Info("No changes detected for section based on update mask", "designId", designId, "sectionId", sectionId)
+	}
+
+	// 7. Return the potentially updated section
+	resp = SectionToProto(sectionData)
+	resp.Order = uint32(sectionIndex) // Add the order based on its position
+	return resp, nil
+}
+
 func (s *DesignService) DeleteDesign(ctx context.Context, req *protos.DeleteDesignRequest) (resp *protos.DeleteDesignResponse, err error) {
 	slog.Info("DeleteDesign Request", "req", req)
 	designId := req.Id
@@ -579,7 +842,310 @@ func (s *DesignService) DeleteDesign(ctx context.Context, req *protos.DeleteDesi
 	return resp, nil
 }
 
+// DeleteSection removes a section from the design's list and deletes its data file.
+func (s *DesignService) DeleteSection(ctx context.Context, req *protos.DeleteSectionRequest) (resp *protos.DeleteSectionResponse, err error) {
+	designId := req.DesignId
+	sectionId := req.SectionId
+
+	if designId == "" || sectionId == "" {
+		return nil, status.Error(codes.InvalidArgument, "Design ID and Section ID must be provided")
+	}
+	slog.Info("DeleteSection Request", "designId", designId, "sectionId", sectionId)
+
+	ownerId, err := s.EnsureLoggedIn(ctx)
+	if ENFORCE_LOGIN && err != nil {
+		return nil, err
+	}
+
+	mutex := s.getDesignMutex(designId)
+	mutex.Lock()
+	defer mutex.Unlock()
+	slog.Debug("Acquired mutex for DeleteSection", "designId", designId, "sectionId", sectionId)
+
+	// 1. Read design metadata & check permissions
+	metadata, err := s.readDesignMetadata(designId)
+	if err != nil {
+		if errors.Is(err, ErrNoSuchEntity) {
+			slog.Warn("Design not found during DeleteSection", "designId", designId)
+			// Design doesn't exist, so section implicitly doesn't. Idempotency.
+			return &protos.DeleteSectionResponse{}, nil
+		}
+		slog.Error("Failed to read design metadata for DeleteSection", "designId", designId, "error", err)
+		return nil, status.Error(codes.Internal, "Failed to read design metadata")
+	}
+
+	if ENFORCE_LOGIN && ownerId != metadata.OwnerId {
+		slog.Warn("Permission denied for DeleteSection", "designId", designId, "user", ownerId)
+		return nil, status.Error(codes.PermissionDenied, "User cannot delete sections from this design")
+	}
+
+	// 2. Find and remove section ID from metadata list
+	foundIndex := -1
+	originalLen := len(metadata.SectionIds)
+	newSectionIds := make([]string, 0, originalLen)
+	for i, id := range metadata.SectionIds {
+		if id == sectionId {
+			foundIndex = i
+		} else {
+			newSectionIds = append(newSectionIds, id)
+		}
+	}
+
+	if foundIndex == -1 {
+		slog.Warn("Section ID not found in metadata during DeleteSection (idempotent)", "designId", designId, "sectionId", sectionId)
+		return &protos.DeleteSectionResponse{}, nil // Section already gone or never existed
+	}
+
+	// 3. Update and write metadata *first*
+	metadata.SectionIds = newSectionIds
+	metadata.UpdatedAt = time.Now()
+	if err = s.writeDesignMetadata(designId, metadata); err != nil {
+		slog.Error("Failed to write updated design metadata after removing section ID", "designId", designId, "error", err)
+		// Don't delete the section file if metadata update failed
+		return nil, status.Error(codes.Internal, "Failed to update design metadata before deleting section")
+	}
+	slog.Info("Successfully updated design metadata removing section ID", "designId", designId, "sectionId", sectionId)
+
+	// 4. Delete section data file *second*
+	sectionPath := s.getSectionPath(designId, sectionId)
+	err = os.Remove(sectionPath)
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		// Log the error but consider the operation successful as metadata was updated
+		slog.Error("Failed to delete section data file, but metadata was updated", "designId", designId, "sectionPath", sectionPath, "error", err)
+	} else {
+		slog.Info("Successfully deleted section data file (or it was already gone)", "path", sectionPath)
+	}
+
+	return &protos.DeleteSectionResponse{}, nil
+}
+
+// MoveSection reorders a section within the design's section ID list.
+func (s *DesignService) MoveSection(ctx context.Context, req *protos.MoveSectionRequest) (resp *protos.MoveSectionResponse, err error) {
+	designId := req.DesignId
+	sectionIdToMove := req.SectionId
+	relativeSectionId := req.RelativeSectionId
+	position := req.Position
+
+	if designId == "" || sectionIdToMove == "" {
+		return nil, status.Error(codes.InvalidArgument, "Design ID and Section ID to move must be provided")
+	}
+	// POSITION_TYPE_END doesn't make sense for move, only add.
+	// relativeSectionId is required if position is BEFORE or AFTER.
+	if position == protos.PositionType_POSITION_TYPE_UNSPECIFIED || position == protos.PositionType_POSITION_TYPE_END {
+		return nil, status.Error(codes.InvalidArgument, "Position must be BEFORE or AFTER for move operation")
+	}
+	if relativeSectionId == "" {
+		return nil, status.Error(codes.InvalidArgument, "Relative Section ID must be provided for BEFORE/AFTER position")
+	}
+	slog.Info("MoveSection Request", "designId", designId, "sectionId", sectionIdToMove, "relativeTo", relativeSectionId, "position", position)
+
+	ownerId, err := s.EnsureLoggedIn(ctx)
+	if ENFORCE_LOGIN && err != nil {
+		return nil, err
+	}
+
+	mutex := s.getDesignMutex(designId)
+	mutex.Lock()
+	defer mutex.Unlock()
+	slog.Debug("Acquired mutex for MoveSection", "designId", designId, "sectionId", sectionIdToMove)
+
+	// 1. Read metadata & check permissions
+	metadata, err := s.readDesignMetadata(designId)
+	if err != nil {
+		return nil, err // Handles NotFound etc.
+	}
+	if ENFORCE_LOGIN && ownerId != metadata.OwnerId {
+		slog.Warn("Permission denied for MoveSection", "designId", designId, "user", ownerId)
+		return nil, status.Error(codes.PermissionDenied, "User cannot move sections in this design")
+	}
+
+	// 2. Find indices
+	currentIndex := -1
+	relativeIndex := -1
+	for i, id := range metadata.SectionIds {
+		if id == sectionIdToMove {
+			currentIndex = i
+		}
+		if id == relativeSectionId {
+			relativeIndex = i
+		}
+	}
+
+	if currentIndex == -1 {
+		return nil, status.Errorf(codes.NotFound, "Section to move ('%s') not found in design '%s'", sectionIdToMove, designId)
+	}
+	if relativeIndex == -1 {
+		return nil, status.Errorf(codes.NotFound, "Relative section ('%s') not found in design '%s'", relativeSectionId, designId)
+	}
+
+	// 3. Calculate new position and perform move
+	newSectionIds := make([]string, 0, len(metadata.SectionIds))
+	// Copy elements before removal
+	for i, id := range metadata.SectionIds {
+		if i != currentIndex {
+			newSectionIds = append(newSectionIds, id)
+		}
+	}
+
+	// Adjust relativeIndex if removal affected it
+	if currentIndex < relativeIndex {
+		relativeIndex--
+	}
+
+	// Calculate insertion point
+	insertIndex := 0
+	if position == protos.PositionType_POSITION_TYPE_BEFORE {
+		insertIndex = relativeIndex
+	} else { // AFTER
+		insertIndex = relativeIndex + 1
+	}
+
+	// Perform insertion
+	finalSectionIds := append(newSectionIds[:insertIndex], append([]string{sectionIdToMove}, newSectionIds[insertIndex:]...)...)
+
+	// 4. Update and write metadata
+	metadata.SectionIds = finalSectionIds
+	metadata.UpdatedAt = time.Now()
+	if err = s.writeDesignMetadata(designId, metadata); err != nil {
+		slog.Error("Failed to write updated design metadata after moving section", "designId", designId, "error", err)
+		return nil, status.Error(codes.Internal, "Failed to update design metadata after move")
+	}
+	slog.Info("Successfully updated design metadata after moving section", "designId", designId, "sectionId", sectionIdToMove)
+
+	return &protos.MoveSectionResponse{}, nil
+}
+
 func (s *DesignService) GetDesigns(ctx context.Context, req *protos.GetDesignsRequest) (resp *protos.GetDesignsResponse, err error) {
 	slog.Warn("GetDesigns called, which is inefficient for filesystem backend")
 	return nil, status.Error(codes.Unimplemented, "GetDesigns is not efficiently implemented for the filesystem backend. Use GetDesign for individual IDs.")
+}
+
+// --- Internal Helpers ---
+
+// Helper to read and unmarshal design metadata, handling errors.
+func (s *DesignService) readDesignMetadata(designId string) (*Design, error) {
+	metadataPath := s.getDesignMetadataPath(designId)
+	jsonData, err := os.ReadFile(metadataPath)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, status.Errorf(codes.NotFound, "Design '%s' not found", designId)
+		}
+		slog.Error("Failed to read design metadata", "designId", designId, "path", metadataPath, "error", err)
+		return nil, status.Error(codes.Internal, "Failed to read design metadata")
+	}
+	var metadata Design
+	if err = json.Unmarshal(jsonData, &metadata); err != nil {
+		slog.Error("Failed to unmarshal design metadata", "designId", designId, "path", metadataPath, "error", err)
+		return nil, status.Error(codes.DataLoss, "Failed to parse design metadata")
+	}
+	return &metadata, nil
+}
+
+// Helper to marshal and write design metadata.
+func (s *DesignService) writeDesignMetadata(designId string, metadata *Design) error {
+	metadataPath := s.getDesignMetadataPath(designId)
+	jsonData, err := json.MarshalIndent(metadata, "", "  ")
+	if err != nil {
+		slog.Error("Failed to marshal design metadata for writing", "designId", designId, "error", err)
+		return status.Error(codes.Internal, "Failed to serialize design metadata")
+	}
+	if err = os.WriteFile(metadataPath, jsonData, 0644); err != nil {
+		slog.Error("Failed to write design metadata file", "designId", designId, "path", metadataPath, "error", err)
+		return status.Error(codes.Internal, "Failed to save design metadata")
+	}
+	return nil
+}
+
+// Helper to marshal and write section data.
+func (s *DesignService) writeSectionData(designId, sectionId string, sectionData *Section) error {
+	sectionPath := s.getSectionPath(designId, sectionId)
+	jsonData, err := json.MarshalIndent(sectionData, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal section data %s/%s: %w", designId, sectionId, err)
+	}
+	if err = os.WriteFile(sectionPath, jsonData, 0644); err != nil {
+		return fmt.Errorf("failed to write section file %s: %w", sectionPath, err)
+	}
+	slog.Info("Successfully wrote section file", "path", sectionPath)
+	return nil
+}
+
+// Helper function to apply updates to section data based on field mask
+func applySectionUpdates(section *Section, updates *protos.Section, mask *fieldmaskpb.FieldMask) (updated bool) {
+	for _, path := range mask.Paths {
+		switch path {
+		case "title":
+			newVal := updates.GetTitle()
+			if section.Title != newVal {
+				// Add validation if needed (e.g., title cannot be empty)
+				if strings.TrimSpace(newVal) == "" {
+					slog.Warn("Attempted to update section title to empty, ignoring", "sectionId", section.Id)
+					continue // Or return error
+				}
+				section.Title = newVal
+				updated = true
+			}
+		case "text_content": // Check oneof field directly
+			// Ensure the incoming update actually has text content
+			if updates.GetTextContent() != nil {
+				newVal := updates.GetTextContent().GetHtmlContent()
+				// Check existing content type and value
+				currentVal, ok := section.Content.(string)
+				if !ok || currentVal != newVal {
+					// Type changed or value changed
+					section.Content = newVal
+					section.Type = "text" // Ensure type matches content being set
+					updated = true
+				}
+			}
+		case "drawing_content":
+			// Ensure the incoming update actually has drawing content
+			if updates.GetDrawingContent() != nil {
+				newVal := updates.GetDrawingContent().GetData() // This is []byte
+				// Check existing content type and value (use bytes.Equal for comparison)
+				currentVal, ok := section.Content.([]byte)
+				// Use bytes.Equal for comparing byte slices
+				if !ok || !bytes.Equal(currentVal, newVal) {
+					// Type changed or value changed
+					section.Content = newVal
+					section.Type = "drawing" // Ensure type matches content being set
+					updated = true
+				}
+			}
+		case "plot_content":
+			// Ensure the incoming update actually has plot content
+			if updates.GetPlotContent() != nil {
+				newVal := updates.GetPlotContent().GetData() // This is []byte
+				// Check existing content type and value (use bytes.Equal for comparison)
+				currentVal, ok := section.Content.([]byte)
+				// Use bytes.Equal for comparing byte slices
+				if !ok || !bytes.Equal(currentVal, newVal) {
+					// Type changed or value changed
+					section.Content = newVal
+					section.Type = "plot" // Ensure type matches content being set
+					updated = true
+				}
+			}
+		case "format":
+			// Setting format might imply content type change, but usually content is updated too.
+			// If only format changes, the underlying content might become incompatible.
+			// This logic assumes format is just metadata alongside content.
+			newVal := updates.GetFormat()
+			if section.Format != newVal {
+				section.Format = newVal
+				// Should we also clear content if format changes drastically? Maybe not here.
+				// Frontend/User should handle content update when format changes.
+				updated = true
+			}
+		case "content_type":
+			newVal := updates.GetContentType()
+			if section.ContentType != newVal {
+				section.ContentType = newVal
+				updated = true
+			}
+			// Note: Updating 'type' itself is generally not supported via UpdateSection
+			// Note: Updating 'order' is done via MoveSection
+		}
+	}
+	return updated
 }

@@ -64,13 +64,22 @@ type Design struct {
 
 type Section struct {
 	BaseModel
-	Id   string `datastore:"id" json:"id"`
-	Type string `datastore:"type" json:"type"`
+	Id       string `datastore:"id" json:"id"`
+	DesignId string `json:"designId"` // Added DesignId field
+	Type     string `datastore:"type" json:"type"`
 
 	// This field will not be persisted in the DB but only for view purposes.
 	// This is because we are using an ordered list of IDs in the design to
 	// identify the order of the sections.
-	Order int `json:"order"`
+	// Order int `json:"order"` // Removed order from struct
+
+	// Title, format, content type
+	Title       string `json:"title"`
+	ContentType string `json:"contentType"`
+	Format      string `json:"format"`
+
+	// Content stored based on type (e.g., string for HTML, stringified JSON for others)
+	Content any `json:"content"`
 }
 
 /**
