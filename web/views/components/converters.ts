@@ -5,7 +5,7 @@ import {
     V1Section, V1SectionType,
     V1TextSectionContent, V1DrawingSectionContent, V1PlotSectionContent,
     // Renaming the long type for clarity
-    SectionObjectContainingOnlyTheFieldsToBeUpdatedTheServerWillUseTheUpdateMaskToKnowWhichFieldsFromThisSectionMessageToApplyToTheStoredSection as ApiSectionUpdateObject
+    ConsolidateSectionUpdatesIntoOneRPCUsingPATCHAndFieldMask as ApiSectionUpdateObject
 } from './apiclient'; // Adjust path as needed
 
 // --- Type Mapping ---
@@ -87,30 +87,32 @@ export function mapFrontendContentToApiUpdate(
     type: SectionType,
     content: SectionData['content']
 ): Partial<ApiSectionUpdateObject> {
-    const update: Partial<ApiSectionUpdateObject> = {};
+    const update: Partial<ApiSectionUpdateObject> = {
+    };
     // Always set the type in the update object based on the frontend type
-    update.type = mapFrontendSectionTypeToApi(type);
+    update.section = update.section || {}
+    update.section.type = mapFrontendSectionTypeToApi(type);
 
     switch (type) {
         case 'text':
             // Ensure content is a string for text type
-            update.textContent = { htmlContent: typeof content === 'string' ? content : '' };
+            update.section.textContent = { htmlContent: typeof content === 'string' ? content : '' };
             // update.contentType = 'text/html'; // Optional: set standard content type
             break;
         case 'drawing':
             const drawingContent = content as DrawingContent;
             // Ensure data is stringified JSON, then base64 encoded
             const drawingJson = JSON.stringify(drawingContent?.data ?? {});
-            update.drawingContent = { data: btoa(drawingJson) }; // Base64 encode
-            update.format = drawingContent?.format || 'placeholder_drawing_json'; // Pass format back, ensure default
+            update.section.drawingContent = { data: btoa(drawingJson) }; // Base64 encode
+            update.section.format = drawingContent?.format || 'placeholder_drawing_json'; // Pass format back, ensure default
             // update.contentType = 'application/json'; // Or specific format MIME type
             break;
         case 'plot':
             const plotContent = content as PlotContent;
             // Ensure data is stringified JSON, then base64 encoded
             const plotJson = JSON.stringify(plotContent?.data ?? {});
-            update.plotContent = { data: btoa(plotJson) }; // Base64 encode
-            update.format = plotContent?.format || 'placeholder_plot_json'; // Pass format back, ensure default
+            update.section.plotContent = { data: btoa(plotJson) }; // Base64 encode
+            update.section.format = plotContent?.format || 'placeholder_plot_json'; // Pass format back, ensure default
            // update.contentType = 'application/json'; // Or specific format MIME type
             break;
         default:
@@ -146,7 +148,8 @@ export function createApiSectionUpdateObject(
 ): ApiSectionUpdateObject {
      const apiUpdate: Partial<ApiSectionUpdateObject> = {}; // Use Partial for easier construction
      if (updates.title !== undefined) {
-         apiUpdate.title = updates.title;
+        apiUpdate.section = apiUpdate.section || {}
+        apiUpdate.section.title = updates.title;
      }
      if (updates.content !== undefined) {
          const contentUpdate = mapFrontendContentToApiUpdate(currentType, updates.content);

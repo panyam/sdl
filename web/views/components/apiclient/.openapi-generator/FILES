@@ -2,6 +2,7 @@ apis/DesignServiceApi.ts
 apis/TagServiceApi.ts
 apis/index.ts
 index.ts
+models/ConsolidateSectionUpdatesIntoOneRPCUsingPATCHAndFieldMask.ts
 models/DesignBeingUpdated.ts
 models/DesignServiceAddSectionRequest.ts
 models/DesignServiceAddSectionRequestSection.ts

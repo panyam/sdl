@@ -345,27 +345,14 @@ func local_request_DesignService_GetSection_0(ctx context.Context, marshaler run
 	return msg, metadata, err
 }
 
-var filter_DesignService_UpdateSection_0 = &utilities.DoubleArray{Encoding: map[string]int{"section": 0, "design_id": 1, "id": 2}, Base: []int{1, 3, 1, 2, 0, 0, 0}, Check: []int{0, 1, 2, 2, 3, 4, 2}}
-
 func request_DesignService_UpdateSection_0(ctx context.Context, marshaler runtime.Marshaler, client DesignServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
 		protoReq UpdateSectionRequest
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Section); err != nil && !errors.Is(err, io.EOF) {
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if protoReq.UpdateMask == nil || len(protoReq.UpdateMask.GetPaths()) == 0 {
-		if fieldMask, err := runtime.FieldMaskFromRequestBody(newReader(), protoReq.Section); err != nil {
-			return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-		} else {
-			protoReq.UpdateMask = fieldMask
-		}
 	}
 	val, ok := pathParams["section.design_id"]
 	if !ok {
@@ -382,12 +369,6 @@ func request_DesignService_UpdateSection_0(ctx context.Context, marshaler runtim
 	err = runtime.PopulateFieldFromPath(&protoReq, "section.id", val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "section.id", err)
-	}
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_DesignService_UpdateSection_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	msg, err := client.UpdateSection(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
@@ -399,19 +380,8 @@ func local_request_DesignService_UpdateSection_0(ctx context.Context, marshaler 
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq.Section); err != nil && !errors.Is(err, io.EOF) {
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if protoReq.UpdateMask == nil || len(protoReq.UpdateMask.GetPaths()) == 0 {
-		if fieldMask, err := runtime.FieldMaskFromRequestBody(newReader(), protoReq.Section); err != nil {
-			return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-		} else {
-			protoReq.UpdateMask = fieldMask
-		}
 	}
 	val, ok := pathParams["section.design_id"]
 	if !ok {
@@ -428,12 +398,6 @@ func local_request_DesignService_UpdateSection_0(ctx context.Context, marshaler 
 	err = runtime.PopulateFieldFromPath(&protoReq, "section.id", val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "section.id", err)
-	}
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_DesignService_UpdateSection_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	msg, err := server.UpdateSection(ctx, &protoReq)
 	return msg, metadata, err

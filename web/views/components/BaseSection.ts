@@ -275,15 +275,19 @@ export abstract class BaseSection {
      */
     public switchToViewMode(saveChanges: boolean): void {
         if (this.mode === 'edit' && saveChanges) {
+            console.log(`switchToViewMode: Attempting to get content from edit mode for section ${this.data.id}`);
             const newContent = this.getContentFromEditMode();
-            // Check if content actually changed (simple check for strings, might need deeper compare for objects)
-            if (JSON.stringify(newContent) !== JSON.stringify(this.data.content)) {
-                 this.data.content = newContent;
-                 this.callbacks.onContentChange?.(this.data.id, this.data.content as string); // Cast for simplicity, might need adjustment
+            // --- Modification: Always call the callback on save intent ---
+            // Let the SectionManager or API decide if an update is truly needed.
+            // The comparison check can be done there if desired, but usually better to just send the update.
+            // if (JSON.stringify(newContent) !== JSON.stringify(this.data.content)) {
+                 this.data.content = newContent; // Update local data regardless
+                 this.callbacks.onContentChange?.(this.data.id, this.data.content); // Always call callback
                  console.log(`Section ${this.data.id} content saved.`);
-            } else {
-                 console.log(`Section ${this.data.id} content unchanged.`);
-            }
+            // } else {
+            //      console.log(`Section ${this.data.id} content unchanged, but callback will still be called.`);
+            //      this.callbacks.onContentChange?.(this.data.id, this.data.content); // Call even if unchanged? Maybe not. Let's stick to calling ONLY if changed or always sending to API. Let's ALWAYS send.
+            // }
         }
 
         this.mode = 'view';

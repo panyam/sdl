@@ -1,5 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
+export * from './ConsolidateSectionUpdatesIntoOneRPCUsingPATCHAndFieldMask';
 export * from './DesignBeingUpdated';
 export * from './DesignServiceAddSectionRequest';
 export * from './DesignServiceAddSectionRequestSection';

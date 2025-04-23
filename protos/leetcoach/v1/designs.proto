@@ -99,7 +99,7 @@ service DesignService {
   rpc UpdateSection (UpdateSectionRequest) returns (Section) {
      option (google.api.http) = {
        patch: "/v1/designs/{section.design_id}/sections/{section.id}"
-       body: "section" // Only the 'section' field goes in the body
+       body: "*" // Only the 'section' field goes in the body
      };
   }
 

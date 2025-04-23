@@ -547,17 +547,18 @@ export class SectionManager {
             return;
         }
         const sectionData = this.sectionData.find(s => s.id === sectionId);
-        if (sectionData && sectionData.title !== newTitle) {
+        if (sectionData) {
             sectionData.title = newTitle;
             this.triggerTocUpdate(); // Update TOC when title changes
 
             // --- API Call ---
             console.log(`Calling API to update title for section ${sectionId} in design ${this.currentDesignId}`);
             const updatePayload = createApiSectionUpdateObject({ title: newTitle }, sectionData.type);
+            updatePayload.updateMask = "title";
             DesignApi.designServiceUpdateSection({
                 sectionDesignId: this.currentDesignId,
                 sectionId: sectionId,
-                section: updatePayload
+                body: updatePayload,
             }).then(updatedSection => {
                 console.log(`API: Successfully updated title for section ${sectionId}`, updatedSection);
                 // Optional: Update local data with server response if needed, though unlikely for title
@@ -581,10 +582,16 @@ export class SectionManager {
             // --- API Call ---
             console.log(`Calling API to update content for section ${sectionId} (type: ${sectionData.type}) in design ${this.currentDesignId}`);
             const updatePayload = createApiSectionUpdateObject({ content: newContent }, sectionData.type);
-             DesignApi.designServiceUpdateSection({
+            // Determine the correct mask path based on the section type
+            let maskPath: string = "";
+            if (sectionData.type === 'text') maskPath = "textContent";
+            else if (sectionData.type === 'drawing') maskPath = "drawing_content";
+            else if (sectionData.type === 'plot') maskPath = "plot_content";
+            updatePayload.updateMask = maskPath;
+            DesignApi.designServiceUpdateSection({
                  sectionDesignId: this.currentDesignId,
                  sectionId: sectionId,
-                 section: updatePayload
+                 body: updatePayload,
              }).then(updatedSection => {
                  console.log(`API: Successfully updated content for section ${sectionId}`, updatedSection);
                  // Optional: Update local data with server response if needed (e.g., updated timestamp)

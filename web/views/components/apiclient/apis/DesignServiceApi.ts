@@ -15,10 +15,10 @@
 
 import * as runtime from '../runtime';
 import type {
+  ConsolidateSectionUpdatesIntoOneRPCUsingPATCHAndFieldMask,
   DesignServiceAddSectionRequest,
   DesignServiceMoveSectionRequest,
   RpcStatus,
-  SectionObjectContainingOnlyTheFieldsToBeUpdatedTheServerWillUseTheUpdateMaskToKnowWhichFieldsFromThisSectionMessageToApplyToTheStoredSection,
   UpdateDesignRequest,
   V1CreateDesignRequest,
   V1CreateDesignResponse,
@@ -29,14 +29,14 @@ import type {
   V1UpdateDesignResponse,
 } from '../models/index';
 import {
+    ConsolidateSectionUpdatesIntoOneRPCUsingPATCHAndFieldMaskFromJSON,
+    ConsolidateSectionUpdatesIntoOneRPCUsingPATCHAndFieldMaskToJSON,
     DesignServiceAddSectionRequestFromJSON,
     DesignServiceAddSectionRequestToJSON,
     DesignServiceMoveSectionRequestFromJSON,
     DesignServiceMoveSectionRequestToJSON,
     RpcStatusFromJSON,
     RpcStatusToJSON,
-    SectionObjectContainingOnlyTheFieldsToBeUpdatedTheServerWillUseTheUpdateMaskToKnowWhichFieldsFromThisSectionMessageToApplyToTheStoredSectionFromJSON,
-    SectionObjectContainingOnlyTheFieldsToBeUpdatedTheServerWillUseTheUpdateMaskToKnowWhichFieldsFromThisSectionMessageToApplyToTheStoredSectionToJSON,
     UpdateDesignRequestFromJSON,
     UpdateDesignRequestToJSON,
     V1CreateDesignRequestFromJSON,
@@ -110,7 +110,7 @@ export interface DesignServiceUpdateDesignRequest {
 export interface DesignServiceUpdateSectionRequest {
     sectionDesignId: string;
     sectionId: string;
-    section: SectionObjectContainingOnlyTheFieldsToBeUpdatedTheServerWillUseTheUpdateMaskToKnowWhichFieldsFromThisSectionMessageToApplyToTheStoredSection;
+    body: ConsolidateSectionUpdatesIntoOneRPCUsingPATCHAndFieldMask;
 }
 
 /**
@@ -534,10 +534,10 @@ export class DesignServiceApi extends runtime.BaseAPI {
             );
         }
 
-        if (requestParameters['section'] == null) {
+        if (requestParameters['body'] == null) {
             throw new runtime.RequiredError(
-                'section',
-                'Required parameter "section" was null or undefined when calling designServiceUpdateSection().'
+                'body',
+                'Required parameter "body" was null or undefined when calling designServiceUpdateSection().'
             );
         }
 
@@ -552,7 +552,7 @@ export class DesignServiceApi extends runtime.BaseAPI {
             method: 'PATCH',
             headers: headerParameters,
             query: queryParameters,
-            body: SectionObjectContainingOnlyTheFieldsToBeUpdatedTheServerWillUseTheUpdateMaskToKnowWhichFieldsFromThisSectionMessageToApplyToTheStoredSectionToJSON(requestParameters['section']),
+            body: ConsolidateSectionUpdatesIntoOneRPCUsingPATCHAndFieldMaskToJSON(requestParameters['body']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => V1SectionFromJSON(jsonValue));

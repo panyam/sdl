@@ -85,6 +85,15 @@ export class TextSection extends BaseSection {
                           console.log(`Cleaned up editor instance variable on 'remove' event for ${this.data.id}`);
                        }
                     });
+                    // --- Add Keydown Listener for Save Shortcut ---
+                    editor.on('keydown', (e: KeyboardEvent) => {
+                        // Check for Cmd/Ctrl + Enter
+                        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+                            e.preventDefault(); // Prevent default Enter behavior (like adding a newline)
+                            console.log(`Cmd/Ctrl+Enter detected in section ${this.data.id}, triggering save.`);
+                            this.handleSaveClick(); // Trigger the save action
+                        }
+                    });
                 }
             }).catch((error: any) => {
                 console.error(`Error initializing TinyMCE for section ${this.data.id}:`, error);
@@ -195,9 +204,11 @@ export class TextSection extends BaseSection {
         }
     }
 
-    private handleSaveClick(): void {
+    public handleSaveClick(): void {
+        console.log(`Save button clicked or shortcut used for section ${this.data.id}.`);
         this.switchToViewMode(true);
     }
+
     private handleCancelClick(): void {
         this.switchToViewMode(false);
     }
@@ -219,8 +230,9 @@ export class TextSection extends BaseSection {
     // Ensure switchToViewMode also reliably cleans up
     public override switchToViewMode(saveChanges: boolean): void {
         let contentToSave: TextContent | undefined = undefined;
+        const wasInEditMode = this.mode === 'edit'; // Remember if we were editing
 
-        if (this.mode === 'edit') {
+        if (wasInEditMode) {
             if (this.editorInstance && this.editorInstance.initialized) {
                  if (saveChanges) {
                     try {
@@ -247,7 +259,9 @@ export class TextSection extends BaseSection {
         }
 
         // Process saving *after* attempting editor removal
-        if (this.mode === 'edit' && saveChanges && contentToSave !== undefined) {
+        if (wasInEditMode && saveChanges && contentToSave !== undefined) {
+            console.log(`switchToViewMode: Proceeding with save for section ${this.data.id}`);
+
             const newContent = contentToSave;
             if (newContent !== this.data.content) {
                 this.data.content = newContent;
@@ -256,6 +270,8 @@ export class TextSection extends BaseSection {
             } else {
                 console.log(`Section ${this.data.id} content unchanged.`);
             }
+        } else if (wasInEditMode && !saveChanges) {
+            console.log(`switchToViewMode: Cancelling edit, no save for section ${this.data.id}`);
         }
 
         // Switch mode and load view template

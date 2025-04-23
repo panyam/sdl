@@ -43,7 +43,9 @@ import {
 } from './V1TextSectionContent';
 
 /**
- * 
+ * Section object containing *only* the fields to be updated.
+ * The server will use the update_mask to know which fields from
+ * this 'section' message to apply to the stored section.
  * @export
  * @interface SectionObjectContainingOnlyTheFieldsToBeUpdatedTheServerWillUseTheUpdateMaskToKnowWhichFieldsFromThisSectionMessageToApplyToTheStoredSection
  */
