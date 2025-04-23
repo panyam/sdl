@@ -102,7 +102,7 @@ class LeetCoachApp {
 
         // --- NEW: Get Design ID and Load Data ---
         // Assume the design ID is embedded in the body's data attribute by the Go template
-        const designId = (document.getElementById("deisgnIdInput") as HTMLInputElement).value.trim();
+        const designId = (document.getElementById("designIdInput") as HTMLInputElement).value.trim();
         if (designId.length > 0) {
             this.currentDesignId = designId;
             console.log(`Found Design ID: ${this.currentDesignId}. Loading data...`);
