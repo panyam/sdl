@@ -1,6 +1,6 @@
 // ./web/views/components/converters.ts
 
-import { SectionData, SectionType, TextContent, DrawingContent, PlotContent } from './types';
+import { SectionData, SectionType, TextContent, DrawingContent, PlotContent, ExcalidrawSceneData } from './types';
 import {
     V1Section, V1SectionType,
     V1TextSectionContent, V1DrawingSectionContent, V1PlotSectionContent,
@@ -49,13 +49,15 @@ export function extractContentFromApiSection(apiSection: V1Section): SectionData
         const base64Data = apiSection.drawingContent.data as string | undefined; // API client might type it as string
         try {
             const jsonData = base64Data ? atob(base64Data) : '{}'; // Decode base64
+            const parsedData = JSON.parse(jsonData);
             return {
-                format: apiSection.format || 'placeholder_drawing_json', // Use format if available
-                data: JSON.parse(jsonData)
+                // Prefer format from API, default to excalidraw if sensible, else placeholder
+                format: apiSection.format || 'excalidraw/json',
+                data: parsedData as ExcalidrawSceneData // Assume it's Excalidraw structure if format implies it
             } as DrawingContent;
         } catch (e) {
             console.error(`Failed to decode/parse drawing content data for section ${apiSection.id}:`, e, "Base64 Data:", base64Data);
-            return { format: 'placeholder_drawing_json', data: {} } as DrawingContent; // Default fallback
+            return { format: 'placeholder_drawing_error', data: {} } as DrawingContent; // Default fallback
         }
     } // Assuming plotContent.data is string
     if (type === 'plot' && apiSection.plotContent) {
@@ -69,7 +71,7 @@ export function extractContentFromApiSection(apiSection: V1Section): SectionData
             } as PlotContent;
         } catch (e) {
             console.error(`Failed to parse plot content data for section ${apiSection.id}:`, e, "Data:", apiSection.plotContent.data);
-            return { format: 'placeholder_plot_json', data: {} } as PlotContent; // Default fallback
+            return { format: 'placeholder_plot_error', data: {} } as PlotContent; // Default fallback
         }
     }
     // Fallback for unknown or missing content appropriate for the type
@@ -112,7 +114,7 @@ export function mapFrontendContentToApiUpdate(
             // Ensure data is stringified JSON, then base64 encoded
             const plotJson = JSON.stringify(plotContent?.data ?? {});
             update.section.plotContent = { data: btoa(plotJson) }; // Base64 encode
-            update.section.format = plotContent?.format || 'placeholder_plot_json'; // Pass format back, ensure default
+            update.section.format = plotContent?.format || 'placeholder_plot_json'; // Keep generic placeholder for plot for now
            // update.contentType = 'application/json'; // Or specific format MIME type
             break;
         default:

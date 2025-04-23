@@ -42,8 +42,6 @@ export abstract class BaseSection {
     protected fullscreenButton: HTMLElement | null; // Moved from subclasses
     protected exitFullscreenButton: HTMLElement | null = null; // Found after view load
 
-
-
     constructor(data: SectionData, element: HTMLElement, callbacks: SectionCallbacks = {}) {
         this.data = data;
         this.element = element;
@@ -75,6 +73,14 @@ export abstract class BaseSection {
         this.bindCommonEvents();
         this.initializeSectionDisplay(); // Load initial view mode template
          // Fullscreen button is bound dynamically by `enableFullscreen` if called by subclass
+     }
+
+     public get sectionId(): string {
+       return this.data.id
+     }
+
+     public get designId(): string {
+       return this.data.designId
      }
  
      /** Enables the fullscreen button functionality for this section */

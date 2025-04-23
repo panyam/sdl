@@ -11,9 +11,18 @@ export interface DocumentMetadata {
 
 export type TextContent = string; // HTML content
 
+// More specific structure for Excalidraw data
+export interface ExcalidrawSceneData {
+    elements: ReadonlyArray<any>; // Use ExcalidrawElement type if importing Excalidraw types
+    appState: any; // Use ExcalidrawAppState type if importing
+}
+
+
 export interface DrawingContent {
-  format: string; // e.g., "excalidraw_json", "svg_xml", etc.
-  data: object | string; // The actual drawing data (could be JSON object or SVG string)
+  format: "excalidraw/json" | string; // Be specific for Excalidraw
+  // Use the specific scene data type or fallback to object/string
+  // Use object for Excalidraw as we store { elements, appState }
+  data: ExcalidrawSceneData | object | string;
 }
 
 export interface PlotContent {
