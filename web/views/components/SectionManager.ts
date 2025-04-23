@@ -413,34 +413,111 @@ export class SectionManager {
 
     /** Delete a section */
     private deleteSection(sectionId: string): void {
+        if (!this.currentDesignId) {
+            console.error("Cannot delete section: Design ID not set.");
+            // toastManager.showToast("Error", "Cannot delete section: Design ID missing.", "error");
+            return;
+        }
         if (!confirm('Are you sure you want to delete this section?')) return;
+
+
+        console.log(`Attempting to delete section ${sectionId} from design ${this.currentDesignId}`);
+        // Show loading indicator?
+
+        // --- API Call FIRST ---
         const sectionInstance = this.sections.get(sectionId);
-        if (sectionInstance) {
+        if (!sectionInstance) {
+            console.warn(`Section instance ${sectionId} not found during delete.`);
+            return; // Should not happen if UI is consistent
+        }
+
+        DesignApi.designServiceDeleteSection({
+            designId: this.currentDesignId,
+            sectionId: sectionId
+        }).then(() => {
+            console.log(`API: Successfully deleted section ${sectionId}`);
+            // --- Local Removal on API Success ---
             sectionInstance.removeElement(); // Use the public method
             this.sectionData = this.sectionData.filter(s => s.id !== sectionId);
             this.sections.delete(sectionId);
             this.normalizeOrdersAndRenumber();
+            this.reorderSectionsInDOM(); // Ensure DOM order reflects data
             this.triggerTocUpdate();
             this.handleEmptyState();
+            // toastManager.showToast("Section Deleted", "Section removed successfully.", "success", 2000);
+        }).catch(error => {
+            console.error(`API Error deleting section ${sectionId}:`, error);
+            // toastManager.showToast("Delete Error", `Failed to delete section: ${error.message || 'Server Error'}`, "error");
+            // Do NOT remove locally if API failed
+        }).finally(() => {
+            // Hide loading indicator?
+        });
+    }
+
+    /** Common logic for moving sections via API */
+    private async moveSectionApi(sectionId: string, moveUp: boolean): Promise<void> {
+        if (!this.currentDesignId) {
+             console.error("Cannot move section: Design ID not set.");
+            // toastManager.showToast("Error", "Cannot move section: Design ID missing.", "error");
+             return;
+         }
+        const currentIndex = this.sectionData.findIndex(s => s.id === sectionId);
+        if (moveUp && currentIndex <= 0) return; // Cannot move first item up
+        if (!moveUp && currentIndex >= this.sectionData.length - 1) return; // Cannot move last item down
+
+        const targetIndex = moveUp ? currentIndex - 1 : currentIndex + 1;
+        if (targetIndex < 0 || targetIndex >= this.sectionData.length) {
+            console.warn("Calculated invalid target index for move:", { sectionId, moveUp, currentIndex, targetIndex });
+            return; // Should be caught by above checks, but safeguard
+        }
+
+        const relativeSectionId = this.sectionData[targetIndex].id;
+        // If moving up, we position BEFORE the item currently at the target index.
+        // If moving down, we position AFTER the item currently at the target index.
+        const position = moveUp ? V1PositionType.PositionTypeBefore : V1PositionType.PositionTypeAfter;
+
+        console.log(`Attempting to move section ${sectionId} ${position} section ${relativeSectionId} in design ${this.currentDesignId}`);
+        // Show loading indicator?
+
+        try {
+            await DesignApi.designServiceMoveSection({
+                designId: this.currentDesignId,
+                sectionId: sectionId, // Section being moved
+                body: {
+                    relativeSectionId: relativeSectionId,
+                    position: position,
+                }
+            });
+            console.log(`API: Successfully moved section ${sectionId}`);
+
+            // --- Local Reorder on API Success ---
+            // Adjust local order slightly to force resorting, then normalize
+            const currentOrder = this.sectionData[currentIndex].order;
+            const targetOrder = this.sectionData[targetIndex].order;
+            // Give it a temporary order between the target and its neighbor
+            this.sectionData[currentIndex].order = moveUp ? targetOrder - 0.5 : targetOrder + 0.5;
+
+            this.reorderAndRenumber(); // This normalizes orders, updates DOM numbers, reorders DOM, triggers TOC
+            // toastManager.showToast("Section Moved", "Section reordered successfully.", "success", 1500);
+
+        } catch (error) {
+            console.error(`API Error moving section ${sectionId}:`, error);
+            // toastManager.showToast("Move Error", `Failed to move section: ${error.message || 'Server Error'}`, "error");
+            // Do NOT reorder locally if API failed
+        } finally {
+             // Hide loading indicator?
         }
     }
 
-
     /** Move a section up */
     private moveSectionUp(sectionId: string): void {
-        const sectionIndex = this.sectionData.findIndex(s => s.id === sectionId);
-        if (sectionIndex <= 0) return;
-        this.sectionData[sectionIndex].order -= 1.5; // Adjust order for sorting
-        this.reorderAndRenumber();
+        this.moveSectionApi(sectionId, true);
     }
 
 
     /** Move a section down */
     private moveSectionDown(sectionId: string): void {
-        const sectionIndex = this.sectionData.findIndex(s => s.id === sectionId);
-        if (sectionIndex === -1 || sectionIndex >= this.sectionData.length - 1) return;
-        this.sectionData[sectionIndex].order += 1.5; // Adjust order for sorting
-        this.reorderAndRenumber();
+        this.moveSectionApi(sectionId, false);
     }
 
 
