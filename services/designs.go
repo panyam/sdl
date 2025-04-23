@@ -338,10 +338,7 @@ func (s *DesignService) ListDesigns(ctx context.Context, req *protos.ListDesigns
 		if req.Pagination.PageSize > 0 {
 			pageSize = int(req.Pagination.PageSize)
 		}
-		start = int(req.Pagination.PageOffset)
-		if start < 0 {
-			start = 0
-		}
+		start = max(int(req.Pagination.PageOffset), 0)
 		if start >= totalResults {
 			filteredMetadata = []*Design{}
 			start = 0

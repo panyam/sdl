@@ -6,7 +6,7 @@ import { Modal } from './Modal';
 import { SectionManager } from './SectionManager';
 import { ToastManager } from './ToastManager';
 import { TableOfContents } from './TableOfContents';
-import { LeetCoachDocument, DocumentSection } from './types';
+import { LeetCoachDocument, DocumentSection, SectionType } from './types';
 import { DesignApi } from './Api';
 import { V1GetDesignResponse } from './apiclient';
 
@@ -42,14 +42,19 @@ class LeetCoachApp {
         this.modal = Modal.init();
         this.toastManager = ToastManager.init();
         this.documentTitle = new DocumentTitle(designId);
-        this.sectionManager = SectionManager.init();
+        this.sectionManager = new SectionManager(designId);
         this.tableOfContents = TableOfContents.init({
             onAddSectionClick: () => {
                 // We need the last section ID to add after it.
-                // Get sorted section data from SectionManager.
+                // Let SectionManager handle opening the selector, it knows the context.
+                // This was changed because the selector modal now calls back to SectionManager's
+                // handleSectionTypeSelection directly.
+                this.sectionManager?.openSectionTypeSelector(this.getLastSectionId(), 'after');
+                /* // OLD logic:
                 const sections = this.sectionManager?.getDocumentSections() || []; // Get sorted data
                 const lastSectionId = sections.length > 0 ? sections[sections.length - 1].id : null;
                 this.sectionManager?.openSectionTypeSelector(lastSectionId, 'after'); // Use 'after' last section
+                */
             }
         });
 
@@ -89,12 +94,46 @@ class LeetCoachApp {
             saveButton.addEventListener('click', this.saveDocument.bind(this)); // Save button is now a placeholder
         }
 
+       // --- Bind section type selection from modal ---
+       // The SectionManager now handles the API call internally after selection.
+        document.addEventListener('click', (e: MouseEvent) => {
+            const target = e.target as HTMLElement;
+            const sectionTypeOption = target.closest('.section-type-option, button.section-type-option');
+
+            if (sectionTypeOption && this.modal?.getCurrentTemplate() === 'section-type-selector') {
+                this.handleSectionTypeSelectionFromModal(sectionTypeOption);
+            }
+        });
+
         // --- Export button ---
         const exportButton = document.querySelector('header button.bg-gray-200');
         if (exportButton) {
             exportButton.addEventListener('click', this.exportDocument.bind(this)); // Export remains placeholder
         }
     }
+
+     /**
+      * NEW: Handles the click on a section type button within the modal.
+      * Calls the SectionManager to initiate the API call and subsequent creation.
+      */
+     private handleSectionTypeSelectionFromModal(buttonElement: Element): void {
+         if (!this.sectionManager || !this.modal) return;
+
+         let sectionType: SectionType = 'text';
+         const typeText = buttonElement.querySelector('span')?.textContent?.trim().toLowerCase() || '';
+
+         if (typeText === 'drawing') sectionType = 'drawing';
+         else if (typeText === 'plot') sectionType = 'plot';
+
+         const modalData = this.modal.getCurrentData();
+         const relativeToId = modalData?.relativeToId || null;
+         const position = modalData?.position || 'after';
+
+         // Call SectionManager to handle the API call and creation process
+         this.sectionManager.handleSectionTypeSelection(sectionType, relativeToId, position);
+
+         this.modal.hide(); // Close modal
+     }
 
     /** Load document data and set initial UI states */
     private loadInitialState(): void {
@@ -218,6 +257,12 @@ class LeetCoachApp {
 
         // Notify SectionManager which will, in turn, notify all sections
         this.sectionManager?.notifySectionsOfThemeChange();
+    }
+ 
+    /** Helper to get the ID of the last section currently managed */
+    private getLastSectionId(): string | null {
+        const sections = this.sectionManager?.getDocumentSections() || []; // Get sorted data
+        return sections.length > 0 ? sections[sections.length - 1].id : null;
     }
 
     /** Updates the theme toggle button's icon and aria-label */

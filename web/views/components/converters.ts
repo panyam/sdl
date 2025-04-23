@@ -10,7 +10,7 @@ import {
 
 // --- Type Mapping ---
 
-function mapApiSectionTypeToFrontend(apiType?: V1SectionType): SectionType {
+export function mapApiSectionTypeToFrontend(apiType?: V1SectionType): SectionType {
     switch (apiType) {
         case V1SectionType.SectionTypeText: return 'text';
         case V1SectionType.SectionTypeDrawing: return 'drawing';
@@ -79,7 +79,7 @@ export function extractContentFromApiSection(apiSection: V1Section): SectionData
 }
 
 
-function mapFrontendContentToApiUpdate(
+export function mapFrontendContentToApiUpdate(
     type: SectionType,
     content: SectionData['content']
 ): Partial<ApiSectionUpdateObject> {
