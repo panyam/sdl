@@ -5,9 +5,10 @@ import (
 )
 
 type BasePage struct {
-	Title        string
-	BodyClass    string
-	CustomHeader bool
+	Title              string
+	BodyClass          string
+	CustomHeader       bool
+	BodyDataAttributes string
 }
 
 type HomePage struct {

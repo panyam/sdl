@@ -1,4 +1,4 @@
-// components/DetailPage.ts
+// components/DesignEditorPage.ts
 
 import { ThemeManager } from './ThemeManager';
 import { DocumentTitle } from './DocumentTitle';
@@ -6,8 +6,10 @@ import { Modal } from './Modal';
 import { SectionManager } from './SectionManager';
 import { ToastManager } from './ToastManager';
 import { TableOfContents } from './TableOfContents';
-import { LeetCoachDocument } from './types';
-import { DOCUMENT } from "./samples";
+import { LeetCoachDocument, DocumentSection } from './types'; // Keep DocumentSection if needed elsewhere
+// import { DOCUMENT } from "./samples"; // Remove sample data import
+import { DesignApi } from './Api'; // Import the configured API client
+import { V1GetDesignResponse } from './apiclient'; // Import response type
 
 /**
  * Main application initialization
@@ -25,6 +27,9 @@ class LeetCoachApp {
     private themeToggleButton: HTMLButtonElement | null = null;
     private themeToggleIcon: HTMLElement | null = null;
 
+    // Store the current design ID
+    private currentDesignId: string | null = null;
+
     constructor() {
         this.initializeComponents();
         this.bindEvents();
@@ -40,7 +45,11 @@ class LeetCoachApp {
         this.sectionManager = SectionManager.init();
         this.tableOfContents = TableOfContents.init({
             onAddSectionClick: () => {
-                this.sectionManager?.openSectionTypeSelector(null);
+                // We need the last section ID to add after it.
+                // Get sorted section data from SectionManager.
+                const sections = this.sectionManager?.getDocumentSections() || []; // Get sorted data
+                const lastSectionId = sections.length > 0 ? sections[sections.length - 1].id : null;
+                this.sectionManager?.openSectionTypeSelector(lastSectionId, 'after'); // Use 'after' last section
             }
         });
 
@@ -77,21 +86,92 @@ class LeetCoachApp {
         // --- Save button ---
         const saveButton = document.querySelector('header button.bg-blue-600');
         if (saveButton) {
-            saveButton.addEventListener('click', this.saveDocument.bind(this));
+            saveButton.addEventListener('click', this.saveDocument.bind(this)); // Save button is now a placeholder
         }
 
         // --- Export button ---
         const exportButton = document.querySelector('header button.bg-gray-200');
         if (exportButton) {
-            exportButton.addEventListener('click', this.exportDocument.bind(this));
+            exportButton.addEventListener('click', this.exportDocument.bind(this)); // Export remains placeholder
         }
     }
 
     /** Load document data and set initial UI states */
     private loadInitialState(): void {
         this.updateThemeButtonState(); // Set the initial theme icon/label
+
+        // --- NEW: Get Design ID and Load Data ---
+        // Assume the design ID is embedded in the body's data attribute by the Go template
+        const designId = (document.getElementById("deisgnIdInput") as HTMLInputElement).value.trim();
+        if (designId.length > 0) {
+            this.currentDesignId = designId;
+            console.log(`Found Design ID: ${this.currentDesignId}. Loading data...`);
+            this.loadDesignData(this.currentDesignId);
+        } else {
+            console.error("Design ID not found in body data attribute (data-design-id). Cannot load document.");
+            this.toastManager?.showToast("Error", "Could not load document: Design ID missing.", "error");
+            // Optionally, load empty state or redirect
+            this.sectionManager?.handleEmptyState(); // Show empty state if no ID
+        }
+        // --- End NEW ---
     }
 
+    /**
+     * NEW: Fetches design metadata (title, section IDs/metadata) from the API.
+     */
+    private async loadDesignData(designId: string): Promise<void> {
+        if (!this.documentTitle || !this.sectionManager || !this.toastManager) {
+            console.error("Cannot load design data: Core components not initialized.");
+            return;
+        }
+
+        // Optional: Show loading state
+        // this.showLoadingIndicator(true);
+
+        try {
+            const response: V1GetDesignResponse = await DesignApi.designServiceGetDesign({
+                id: designId,
+                includeSectionMetadata: true // Request metadata for potential use later
+            });
+
+            console.log("API Response (GetDesign):", response);
+
+            if (response.design) {
+                // Update Document Title
+                this.documentTitle.setTitle(response.design.name || "Untitled Design");
+
+                // Pass Section Info to SectionManager
+                const sectionIds = response.design.sectionIds || [];
+                const sectionsMetadata = response.sectionsMetadata || null; // API might return undefined
+                this.sectionManager.setInitialSectionInfo(sectionIds, sectionsMetadata);
+
+                // --- Trigger Step 1.2 (to be implemented next) ---
+                // At this point, we would trigger the loading of individual sections
+                // based on the sectionIds stored in SectionManager.
+                // For now, the page will remain empty section-wise.
+                 console.log("Step 1.1 Complete: Design metadata loaded. Section content loading deferred.");
+                 // If sectionIds is empty, handle empty state now. If not, handleEmptyState
+                 // will be called later by SectionManager after loading sections.
+                 if (sectionIds.length === 0) {
+                     this.sectionManager.handleEmptyState();
+                 }
+
+            } else {
+                throw new Error("API response missing design object.");
+            }
+
+        } catch (error: any) {
+            console.error("Error loading design data:", error);
+            const errorMsg = error.message || "Failed to fetch design details from the server.";
+            this.toastManager.showToast("Load Failed", errorMsg, "error");
+            // Show empty state on error
+             this.sectionManager.handleEmptyState();
+
+        } finally {
+            // Optional: Hide loading state
+            // this.showLoadingIndicator(false);
+        }
+    }
 
     /** Handles click on the new theme toggle button */
     private handleThemeToggleClick(): void {
@@ -122,53 +202,45 @@ class LeetCoachApp {
 
 
     /** Load document data into the components */
-    public loadDocument(doc: LeetCoachDocument): void {
-        console.log("Loading document:", doc.metadata.id);
-        if (this.documentTitle) {
-            this.documentTitle.setTitle(doc.title);
-        }
-        if (this.sectionManager) {
-            // loadSections will now also trigger the TOC update via the connected component
-            this.sectionManager.loadSections(doc.sections);
-        } else {
-            console.error("SectionManager not initialized, cannot load document sections.");
-        }
-    }
+    // public loadDocument(doc: LeetCoachDocument): void { // Keep signature if needed? No, API drives load now.
+    //     console.log("Loading document:", doc.metadata.id);
+    //     if (this.documentTitle) {
+    //         this.documentTitle.setTitle(doc.title);
+    //     }
+    //     if (this.sectionManager) {
+    //         // loadSections will now also trigger the TOC update via the connected component
+    //         // THIS IS REPLACED BY API LOADING
+    //         // this.sectionManager.loadSections(doc.sections);
+    //     } else {
+    //         console.error("SectionManager not initialized, cannot load document sections.");
+    //     }
+    // }
 
-    /** Save document */
+    /** Save document (Placeholder - needs full implementation later) */
     private saveDocument(): void {
-        console.log("Attempting to save document...");
-        // ... (save logic remains the same) ...
-        if (!this.documentTitle || !this.sectionManager || !this.toastManager) {
-            console.error("Cannot save: Core components not initialized.");
+        console.log("Save button clicked (Placeholder - Requires API integration for full save)");
+        if (!this.currentDesignId || !this.documentTitle || !this.sectionManager || !this.toastManager) {
+            console.error("Cannot save: Core components not initialized or design ID missing.");
             this.toastManager?.showToast('Save Failed', 'Could not save document.', 'error');
             return;
         }
+        // This full save logic will be replaced by incremental saves triggered by component callbacks
+        this.toastManager.showToast('Save Action', 'Incremental saves handle updates. Full save TBD.', 'info');
 
+        /*
+        // --- Example of how full save *might* look (but prefer incremental) ---
         const currentTimestamp = new Date().toISOString();
         const documentData: LeetCoachDocument = {
             metadata: {
-                id: "doc-placeholder-uuid", // Replace with actual ID
+                id: this.currentDesignId, // Use the actual ID
                 schemaVersion: "1.0",
                 lastSavedAt: currentTimestamp
             },
             title: this.documentTitle.getTitle(),
             sections: this.sectionManager.getDocumentSections() // Get data from manager
         };
-
-        try {
-            const jsonString = JSON.stringify(documentData, null, 2);
-            console.log("--- LeetCoach Document State (JSON) ---");
-            console.log(jsonString);
-            console.log("---------------------------------------");
-            this.toastManager.showToast('Document Saved', 'Content logged to console.', 'success');
-            // Update last saved time display in DocumentTitle component
-            this.documentTitle.updateLastSavedTime();
-
-        } catch (error) {
-            console.error("Error serializing document data:", error);
-            this.toastManager.showToast('Save Error', 'Could not prepare data for saving.', 'error');
-        }
+        // Call API to save the full documentData (less ideal than incremental)
+        */
     }
 
     /** Export document (Placeholder) */
@@ -190,6 +262,6 @@ class LeetCoachApp {
 // Initialize the application when the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
     const lc = LeetCoachApp.init();
-    // Sample document loading is now handled within LeetCoachApp constructor/init process
+    // Sample document loading is REMOVED. Loading is triggered by API call in constructor/init.
     // lc.loadDocument(DOCUMENT);
 });

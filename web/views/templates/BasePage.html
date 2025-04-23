@@ -1,6 +1,6 @@
 <!-- templates/BasePage.html -->
 {{# include "Header.html" #}}
-{{# include "ModalContainer.html" #}}  <!-- Kept for potential future use or complex confirmations -->
+{{# include "ModalContainer.html" #}}
 {{# include "ToastContainer.html" #}}
 
 {{ define "BasePage" }}
@@ -25,7 +25,8 @@
     {{ block "ExtraHeadSection" . }}{{ end }}
 </head>
 
-<body class='{{ or .BodyClass "min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200" }}'>
+{{/* Add data attributes passed from child templates */}}
+<body class='{{ or .BodyClass "min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200" }}' {{ .BodyDataAttributes | safeHTMLAttr }}>
   {{ block "HeaderSection" . }}
     {{ if not .CustomHeader }}
     <!-- Header Block -->
@@ -33,7 +34,7 @@
         {{ template "Header" . }} <!-- Theme toggle is inside here -->
     </div>
     {{ end }}
-  {{ end }} 
+  {{ end }}
 
   {{ block "BodySection" . }} 
     {{/* <!-- Main Content Area -->
@@ -57,8 +58,8 @@
       {{ template "ToastContainer" . }}
   </div>
 
-  {{ block "FooterBody" . }} {{ end }} 
-  {{ block "PreBodySection" . }} {{ end }} 
+  {{ block "FooterBody" . }} {{ end }}
+  {{ block "PreBodySection" . }} {{ end }}
 </body>
 {{ block "PostBodySection" . }} {{ end }}
 </html>

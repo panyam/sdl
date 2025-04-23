@@ -93,6 +93,17 @@ func NewLCViews(middleware *oa.Middleware, clients *svc.ClientMgr) *LCViews {
 		"Ctx": func() *ViewContext {
 			return out.Context
 		},
+		"dset": func(d map[string]any, key string, value any) map[string]any {
+			d[key] = value
+			return d
+		},
+		"lset": func(a []any, index int, value any) []any {
+			a[index] = value
+			return a
+		},
+		"safeHTMLAttr": func(s string) template.HTMLAttr {
+			return template.HTMLAttr(s)
+		},
 		"UserInfo": func(userId string) map[string]any {
 			// Just a hacky cache
 			return map[string]any{

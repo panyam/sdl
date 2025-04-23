@@ -6,8 +6,8 @@ import { TextSection } from './TextSection';
 import { DrawingSection } from './DrawingSection';
 import { PlotSection } from './PlotSection';
 import { DocumentSection, SectionType, TextContent, DrawingContent, PlotContent, SectionData, SectionCallbacks } from './types';
-// Import the TOC specific type
-import { TocItemInfo, TableOfContents } from './TableOfContents'; // Import TableOfContents type for reference
+import { TocItemInfo, TableOfContents } from './TableOfContents';
+import { V1Section } from './apiclient'; // Import V1Section
 
 /**
  * Manages document sections using the BaseSection hierarchy.
@@ -25,6 +25,10 @@ export class SectionManager {
 
     // Reference to the external TOC component - set via method/constructor
     private tocComponent: TableOfContents | null = null;
+
+    // Store section IDs and metadata fetched from the API before loading content
+    private initialSectionIds: string[] = [];
+    private initialSectionsMetadata: V1Section[] | null = null; // Optional metadata
 
     // Predefined title suggestions (keep as before)
     private static readonly TEXT_TITLES: string[] = [
@@ -78,6 +82,18 @@ export class SectionManager {
         this.tocComponent = toc;
         // Update TOC immediately when it's set, in case sections loaded before TOC was ready
         this.triggerTocUpdate();
+    }
+
+    /**
+     * NEW: Stores the initial section IDs and metadata received from the API.
+     * This data will be used later to load the actual section content.
+     */
+    public setInitialSectionInfo(ids: string[], metadata?: V1Section[] | null): void {
+        console.log("SectionManager: Received initial section info", { count: ids.length, hasMetadata: !!metadata });
+        this.initialSectionIds = ids;
+        this.initialSectionsMetadata = metadata || null;
+        // Do NOT load sections here yet. That's Step 1.2.
+        // Do NOT call handleEmptyState here yet, as sectionData is still empty.
     }
 
     /** Bind event listeners (only for section creation/type selection now) */
@@ -148,16 +164,18 @@ export class SectionManager {
         type: SectionType,
         relativeToId: string | null = null,
         position: 'before' | 'after' = 'after', // Default to 'after' if not specified
-        initialData?: Partial<SectionData>
+        initialData?: Partial<SectionData> // Changed to Partial<SectionData> to accept incomplete data during load
     ): BaseSection | null {
         // Handle load scenario: initialData is present, relativeToId/position are irrelevant for initial placement logic
+        // Ensure initialData has an ID if provided, otherwise generate one
+        const sectionId = initialData?.id || `section-${this.nextSectionId++}`;
+
         if (initialData?.order !== undefined) {
             relativeToId = null; // Ignore relative positioning during load
             position = 'after'; // Doesn't matter, order is explicit
         }
 
         // --- Section Data Creation (Simplified) ---
-        const sectionId = initialData?.id || `section-${this.nextSectionId++}`;
         let sectionOrder: number;
         const providedOrder = initialData?.order;
 
@@ -179,9 +197,10 @@ export class SectionManager {
         }
 
 
+        // Use provided data or generate defaults
         const sectionData: SectionData = {
             id: sectionId,
-            type: type,
+            type: type, // Type is required
             title: initialData?.title || SectionManager.getRandomTitle(type),
             content: initialData?.content || this.getDefaultContent(type),
             order: sectionOrder, // Will be normalized later
@@ -222,7 +241,7 @@ export class SectionManager {
             onContentChange: this.updateSectionContent.bind(this),
             onAddSectionRequest: this.openSectionTypeSelector.bind(this) // New callback handler
         };
-        // (Switch statement to create Text/Drawing/PlotSection remains the same)
+
         switch (type) {
             case 'text':
                 sectionInstance = new TextSection(sectionData, sectionEl, callbacks);
@@ -242,13 +261,13 @@ export class SectionManager {
 
         // --- Update State and UI ---
         this.sections.set(sectionId, sectionInstance);
-        this.sectionData.push(sectionData);
+        this.sectionData.push(sectionData); // Add the full data object
 
         // Only renumber/update TOC if it's a single user action, not during bulk load
         if (initialData?.order === undefined) {
              this.normalizeOrdersAndRenumber(); // Sort data, set final order, update DOM numbers
              this.triggerTocUpdate();           // Tell TOC to re-render
-             this.handleEmptyState();
+             this.handleEmptyState(); // Update empty state based on sectionData length
         }
 
         return sectionInstance;
@@ -266,32 +285,36 @@ export class SectionManager {
     }
 
 
-    /** Loads multiple sections from document data */
-    public loadSections(sectionsData: DocumentSection[]): void {
+    /**
+     * Loads multiple sections from provided data (typically from API in Step 1.2).
+     * Replaces the old loadSections that used sample data.
+     */
+    public loadSectionsFromData(sectionsData: SectionData[]): void {
         if (!this.sectionsContainer) return;
-        console.log("Loading sections:", sectionsData.length);
+        console.log("SectionManager: Loading sections from data:", sectionsData.length);
         this.clearAllSections(); // Clear DOM, data, map
         let maxIdNum = 0;
 
-        sectionsData
-            .sort((a, b) => a.order - b.order) // Sort by order first
-            .forEach(data => {
-                const createdSection = this.createSection(data.type, null, 'after', data); // Pass order via initialData, position doesn't matter here
-                 if (createdSection) {
-                     const idNumMatch = data.id.match(/\d+$/);
-                     if (idNumMatch) {
-                         maxIdNum = Math.max(maxIdNum, parseInt(idNumMatch[0], 10));
-                     }
-                 }
-            });
+        // Data should already be sorted by order from API or processing step
+        sectionsData.forEach(data => {
+            // Use createSection, passing the full SectionData object
+            const createdSection = this.createSection(data.type, null, 'after', data);
+            if (createdSection) {
+                const idNumMatch = data.id.match(/\d+$/);
+                if (idNumMatch) {
+                    maxIdNum = Math.max(maxIdNum, parseInt(idNumMatch[0], 10));
+                }
+            }
+        });
 
         this.nextSectionId = maxIdNum + 1;
         this.normalizeOrdersAndRenumber(); // Final renumbering after load
         this.triggerTocUpdate();           // Update TOC once after loading all
-        this.handleEmptyState();
-        console.log("Sections loaded and rendered.");
+        this.handleEmptyState();           // Update empty state based on sectionData length
+        console.log("SectionManager: Sections loaded and rendered from data.");
     }
 
+    // --- REMOVED old loadSections method that used DocumentSection[] ---
 
     /** Clears all sections and resets state */
      private clearAllSections(): void {
@@ -385,9 +408,6 @@ export class SectionManager {
     }
 
 
-    // --- REMOVED updateTableOfContents method ---
-
-
     /** Creates the simplified data structure needed by the TOC component */
     private getTocItemsInfo(): TocItemInfo[] {
         return this.sectionData
@@ -412,7 +432,7 @@ export class SectionManager {
 
 
     /** Handle empty state visibility */
-    private handleEmptyState(): void {
+    public handleEmptyState(): void {
         if (!this.emptyStateEl || !this.fabAddSectionBtn) return;
         if (this.sectionData.length === 0) {
             this.emptyStateEl.classList.remove('hidden');
@@ -447,10 +467,7 @@ export class SectionManager {
     }
 
 
-    /**
-     * Notifies all managed sections that the application theme has changed.
-     * Each section is responsible for handling the change if necessary.
-     */
+    /** Notifies all managed sections that the application theme has changed. */
     public notifySectionsOfThemeChange(): void {
         console.log("SectionManager: Notifying all sections of theme change...");
         this.sections.forEach(section => {

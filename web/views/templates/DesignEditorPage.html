@@ -23,6 +23,7 @@
 {{ end }}
 
 {{ define "BodySection" }}
+    <input id="designIdInput" value = "{{ .DesignId }}" type="hidden" />
     <!-- Main Content Area -->
     <div class="flex flex-col md:flex-row">
         <!-- Sidebar (fixed on desktop, collapsible on mobile) -->
@@ -39,12 +40,14 @@
             <div class="max-w-4xl mx-auto">
                 <!-- Document Title Block -->
                 <div class="mb-6">
-                    {{ template "DocumentTitle" . }}
+                    <!-- Pass the loaded design data to the DocumentTitle template -->
+                    {{ template "DocumentTitle" .Design }}
                 </div>
 
                 <!-- Sections Container -->
                 <!--<div id="sections-container" class="space-y-6">-->
                 <div id="sections-container">
+                    <!-- SectionsList template doesn't need data directly anymore, JS populates -->
                     {{ template "SectionsList" . }}
                 </div>
             </div>
@@ -66,6 +69,7 @@
 {{# include "TemplateRegistry.html" #}}
 {{ end }}
 
+{{/* --- IMPORTANT: Modify the BasePage block in DesignEditorPage template --- */}}
 {{ define "DesignEditorPage" }}
-{{ template "BasePage" . }}
+    {{ template "BasePage" . }}
 {{ end }}

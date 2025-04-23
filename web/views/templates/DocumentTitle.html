@@ -8,7 +8,8 @@
             <!-- Display Mode -->
             <div id="document-title-display" class="cursor-pointer group">
                 <h1 class="text-2xl font-bold text-gray-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-150">
-                    Untitled System Design Document
+                    <!-- Use loaded name if available, fallback -->
+                    {{ or .Name "Untitled Design" }}
                 </h1>
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 flex items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -17,12 +18,12 @@
                     Click to edit
                 </p>
             </div>
-            
+
             <!-- Edit Mode (Hidden by default) -->
             <div id="document-title-edit" class="hidden">
-                <input type="text" id="document-title-input" 
-                    class="block w-full text-2xl font-bold border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:text-white" 
-                    value="Untitled System Design Document">
+                <input type="text" id="document-title-input"
+                    class="block w-full text-2xl font-bold border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:text-white"
+                     value="{{ or .Name "Untitled Design" }}">
                 <div class="mt-2 flex justify-end space-x-2">
                     <button id="cancel-title-edit" class="px-3 py-1 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors duration-150">
                         Cancel
@@ -33,10 +34,17 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Document Info -->
         <div class="ml-4 flex-shrink-0 flex items-center text-sm text-gray-500 dark:text-gray-400">
-            <span id="last-saved-time">Last saved: Today at 2:30 PM</span>
+             <!-- Use UpdatedAt if available, otherwise placeholder -->
+             <span id="last-saved-time">
+                 {{ with .UpdatedAt }}
+                     Last saved: {{ .AsTime | Ago }}
+                 {{ else }}
+                     Not saved yet
+                 {{ end }}
+             </span>
         </div>
     </div>
 </div>
