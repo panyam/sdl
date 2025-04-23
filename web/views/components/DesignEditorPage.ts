@@ -37,10 +37,11 @@ class LeetCoachApp {
 
     /** Initialize all application components */
     private initializeComponents(): void {
+        const designId = (document.getElementById("designIdInput") as HTMLInputElement).value.trim();
         ThemeManager.init(); // Static init call
         this.modal = Modal.init();
         this.toastManager = ToastManager.init();
-        this.documentTitle = DocumentTitle.init();
+        this.documentTitle = new DocumentTitle(designId);
         this.sectionManager = SectionManager.init();
         this.tableOfContents = TableOfContents.init({
             onAddSectionClick: () => {
