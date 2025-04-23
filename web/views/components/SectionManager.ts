@@ -99,7 +99,9 @@ export class SectionManager {
         this.initialSectionsMetadata = metadata || null;
         // Do NOT load sections here yet. That's Step 1.2.
         // Do NOT call handleEmptyState here yet, as sectionData is still empty.
+        this.clearAllSections();
     }
+
 
     /** Bind event listeners (only for section creation/type selection now) */
     private bindEvents(): void {
@@ -358,7 +360,14 @@ export class SectionManager {
 
     /** Clears all sections and resets state */
      private clearAllSections(): void {
-         if (this.sectionsContainer) this.sectionsContainer.innerHTML = '';
+         // if (this.sectionsContainer) this.sectionsContainer.innerHTML = '';
+         if (this.sectionsContainer) {
+             // Remove only the actual section elements, not the empty state container
+             const sectionElements = this.sectionsContainer.querySelectorAll('[data-section-id]');
+             sectionElements.forEach(el => el.remove());
+             console.log("SectionManager: Cleared section elements.");
+         }
+
          this.sections.clear();
          this.sectionData = [];
          this.nextSectionId = 1;
