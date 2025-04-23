@@ -19,7 +19,6 @@ type ExcalidrawElement = any;
 type AppState = any;
 
 export default class SystemDrawing {
-  private drawingId: string;
   private excalidrawInstance: ExcalidrawImperativeAPI | null = null;
   private elements: readonly ExcalidrawElement[] = [];
   private appState: Partial<AppState> = {};
@@ -43,18 +42,14 @@ export default class SystemDrawing {
   // excalWrapper: ExcalidrawWrapper;
   // excalToolbar: ExcalidrawToolbar;
 
-  constructor(public readonly caseStudyId: string,
+  constructor(public readonly designId: string,
+              public readonly sectionId: string,
               public readonly drawingRoot: HTMLDivElement,
-              public readonly toolbarContainer: HTMLDivElement,
               options?: {
                 initialData?: string;
               }) {
     if (!drawingRoot) {
       throw new Error("Container element is required");
-    }
-    this.drawingId = (drawingRoot.getAttribute("drawingId") || "").trim()
-    if (this.drawingId == "") {
-      throw new Error("drawingId missing")
     }
     this.excalidrawRoot = drawingRoot.querySelector(".excalidrawRoot") as HTMLDivElement;
     if (!this.excalidrawRoot) {
@@ -275,7 +270,7 @@ export default class SystemDrawing {
         throw new Error(`API error: ${response.status}`);
       }
       
-      console.log(`${Date.now()} - Drawing saved to API with ID: ${this.drawingId}`);
+      console.log(`${Date.now()} - Drawing saved to API with ID: ${this.sectionId}`);
 
       // 1. Update the Pre element if it exists
       if (this.preElement) {
@@ -294,7 +289,7 @@ export default class SystemDrawing {
   }
 
   get drawingUrl(): string {
-    return `/api/drawings/${this.drawingId}`
+    return `/api/drawings/${this.sectionId}`
   }
 
   async reloadFromServer() {
