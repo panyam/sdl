@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata" // <-- Add gRPC metadata import
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
@@ -23,6 +25,13 @@ import (
 	// ****** ADDED IMPORT ******
 	"github.com/google/go-cmp/cmp" // Correct import for cmp.Equal/Diff
 )
+
+// Helper to create a context with a logged-in user ID for testing
+func testContextWithUser(userId string) context.Context {
+	md := metadata.Pairs("loggedinuserid", userId)
+	ctx := metadata.NewIncomingContext(context.Background(), md)
+	return ctx
+}
 
 // Helper to create a DesignService instance using a temporary directory
 func newTestDesignService(t *testing.T) (*DesignService, string) {
@@ -79,7 +88,7 @@ func readDesignMetadata(t *testing.T, basePath string, designId string) *Design 
 
 func TestCreateDesign(t *testing.T) {
 	service, tempDir := newTestDesignService(t)
-	ctx := context.Background()
+	ctx := testContextWithUser("test-creator")
 
 	t.Run("Create with Provided ID", func(t *testing.T) {
 		req := &protos.CreateDesignRequest{
@@ -100,6 +109,7 @@ func TestCreateDesign(t *testing.T) {
 		assert.Equal(t, "Description 1", resp.Design.Description)
 		assert.Equal(t, "public", resp.Design.Visibility)
 		assert.NotEmpty(t, resp.Design.OwnerId)
+		assert.Equal(t, "test-creator", resp.Design.OwnerId) // Verify owner ID
 		assert.NotNil(t, resp.Design.CreatedAt)
 		assert.NotNil(t, resp.Design.UpdatedAt)
 
@@ -127,6 +137,7 @@ func TestCreateDesign(t *testing.T) {
 		assert.Regexp(t, `^[a-zA-Z0-9]+$`, resp.Design.Id)
 		assert.Equal(t, "Test Auto ID", resp.Design.Name)
 		assert.Equal(t, "private", resp.Design.Visibility)
+		assert.Equal(t, "test-creator", resp.Design.OwnerId) // Verify owner ID
 
 		generatedId := resp.Design.Id
 		meta := readDesignMetadata(t, tempDir, generatedId)
@@ -143,7 +154,6 @@ func TestCreateDesign(t *testing.T) {
 				Name: "  ",
 			},
 		}
-		// ****** FIXED: Removed unused resp variable ******
 		_, err := service.CreateDesign(ctx, req)
 		require.Error(t, err)
 		st, ok := status.FromError(err)
@@ -171,7 +181,7 @@ func TestCreateDesign(t *testing.T) {
 
 func TestGetDesign(t *testing.T) {
 	service, tempDir := newTestDesignService(t)
-	ctx := context.Background()
+	ctx := testContextWithUser("test-creator")
 
 	now := time.Now().UTC().Truncate(time.Second)
 	setupMeta := Design{
@@ -242,7 +252,7 @@ func TestGetDesign(t *testing.T) {
 
 func TestListDesigns(t *testing.T) {
 	service, tempDir := newTestDesignService(t)
-	ctx := context.Background()
+	ctx := testContextWithUser("user1")
 
 	ts := time.Now().UTC().Truncate(time.Second)
 	meta1 := Design{Id: "list-aaa", OwnerId: "user1", Name: "AAA Design", Visibility: "public", BaseModel: BaseModel{UpdatedAt: ts.Add(-2 * time.Hour)}}
@@ -331,7 +341,7 @@ func TestListDesigns(t *testing.T) {
 
 func TestUpdateDesign(t *testing.T) {
 	service, tempDir := newTestDesignService(t)
-	ctx := context.Background()
+	ctx := testContextWithUser("updater")
 
 	setupTime := time.Now().UTC().Truncate(time.Second)
 	meta := Design{Id: "update-1", OwnerId: "updater", Name: "Original Name", Description: "Original Desc", Visibility: "private", BaseModel: BaseModel{CreatedAt: setupTime, UpdatedAt: setupTime}}
@@ -397,7 +407,6 @@ func TestUpdateDesign(t *testing.T) {
 			Design:     &protos.Design{Id: "not-found"},
 			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"name"}},
 		}
-		// ****** FIXED: Removed unused resp variable ******
 		_, err := service.UpdateDesign(ctx, req)
 		require.Error(t, err)
 		st, ok := status.FromError(err)
@@ -446,7 +455,7 @@ func TestUpdateDesign(t *testing.T) {
 
 func TestDeleteDesign(t *testing.T) {
 	service, tempDir := newTestDesignService(t)
-	ctx := context.Background()
+	ctx := testContextWithUser("deleter")
 
 	meta := Design{Id: "delete-1", OwnerId: "deleter", Name: "To Be Deleted", BaseModel: BaseModel{CreatedAt: time.Now(), UpdatedAt: time.Now()}}
 	createDesignDirectly(t, tempDir, meta)
@@ -489,7 +498,7 @@ func TestDeleteDesign(t *testing.T) {
 
 func TestGetDesigns(t *testing.T) {
 	service, _ := newTestDesignService(t)
-	ctx := context.Background()
+	ctx := testContextWithUser("test-user")
 	req := &protos.GetDesignsRequest{Ids: []string{"some-id"}}
 
 	_, err := service.GetDesigns(ctx, req)
@@ -497,4 +506,94 @@ func TestGetDesigns(t *testing.T) {
 	st, ok := status.FromError(err)
 	require.True(t, ok)
 	assert.Equal(t, codes.Unimplemented, st.Code())
+}
+
+// --- NEW Section Tests ---
+
+// Helper to create a section file directly
+func createSectionDirectly(t *testing.T, basePath, designId, sectionId string, sectionData Section) {
+	t.Helper()
+	sectionPath := filepath.Join(basePath, designId, "sections", fmt.Sprintf("%s.json", sectionId))
+	jsonData, err := json.MarshalIndent(sectionData, "", "  ")
+	require.NoError(t, err, "Failed to marshal section data for direct creation")
+	err = os.WriteFile(sectionPath, jsonData, 0644)
+	require.NoError(t, err, "Failed to write section file for direct creation")
+}
+
+// Helper to read section data directly
+func readSectionDataDirectly(t *testing.T, basePath, designId, sectionId string) *Section {
+	t.Helper()
+	sectionPath := filepath.Join(basePath, designId, "sections", fmt.Sprintf("%s.json", sectionId))
+	jsonData, err := os.ReadFile(sectionPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		require.NoError(t, err, "Failed to read section file for verification")
+	}
+	var sectionData Section
+	err = json.Unmarshal(jsonData, &sectionData)
+	require.NoError(t, err, "Failed to unmarshal section data for verification")
+	return &sectionData
+}
+
+func TestGetSection(t *testing.T) {
+	service, tempDir := newTestDesignService(t)
+	ctx := testContextWithUser("section-owner")
+	designId := "design-for-sections"
+	sectionId := "sec-1"
+
+	// Setup Design
+	createDesignDirectly(t, tempDir, Design{
+		Id:         designId,
+		OwnerId:    "section-owner",
+		Name:       "Design with Sections",
+		SectionIds: []string{sectionId}, // Ensure design metadata lists the section
+	})
+
+	// Setup Section
+	now := time.Now()
+	sectionData := Section{
+		Id:        sectionId,
+		DesignId:  designId,
+		Type:      "text",
+		Title:     "Test Section Title",
+		Content:   "<p>Hello Section</p>",
+		BaseModel: BaseModel{CreatedAt: now, UpdatedAt: now},
+	}
+	createSectionDirectly(t, tempDir, designId, sectionId, sectionData)
+
+	t.Run("Get Existing Section", func(t *testing.T) {
+		req := &protos.GetSectionRequest{DesignId: designId, SectionId: sectionId}
+		resp, err := service.GetSection(ctx, req)
+
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+		assert.Equal(t, sectionId, resp.Id)
+		assert.Equal(t, designId, resp.DesignId)
+		assert.Equal(t, protos.SectionType_SECTION_TYPE_TEXT, resp.Type)
+		assert.Equal(t, "Test Section Title", resp.Title)
+		assert.NotNil(t, resp.GetTextContent())
+		assert.Equal(t, "<p>Hello Section</p>", resp.GetTextContent().HtmlContent)
+		// assert.EqualValues(t, 0, resp.Order) // Order is not directly returned by GetSection in this implementation
+	})
+
+	t.Run("Get Non-Existent Section", func(t *testing.T) {
+		req := &protos.GetSectionRequest{DesignId: designId, SectionId: "non-existent-sec"}
+		_, err := service.GetSection(ctx, req)
+		require.Error(t, err)
+		st, ok := status.FromError(err)
+		require.True(t, ok)
+		assert.Equal(t, codes.NotFound, st.Code())
+	})
+
+	t.Run("Get Section from Non-Existent Design", func(t *testing.T) {
+		req := &protos.GetSectionRequest{DesignId: "non-existent-design", SectionId: sectionId}
+		_, err := service.GetSection(ctx, req)
+		require.Error(t, err)
+		st, ok := status.FromError(err)
+		require.True(t, ok)
+		// Depending on implementation, could be NotFound for the section or the design path check error
+		assert.Contains(t, []codes.Code{codes.NotFound, codes.Internal}, st.Code())
+	})
 }
