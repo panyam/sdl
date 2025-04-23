@@ -7,13 +7,18 @@ import { DrawingSection } from './DrawingSection';
 import { PlotSection } from './PlotSection';
 import { DocumentSection, SectionType, TextContent, DrawingContent, PlotContent, SectionData, SectionCallbacks } from './types';
 import { TocItemInfo, TableOfContents } from './TableOfContents';
-import { V1Section } from './apiclient'; // Import V1Section
+import { V1Section, /* other models if needed */ } from './apiclient'; // Import V1Section and response types if specific needed
+import { DesignApi } from './Api'; // Import API client
+import { convertApiSectionToSectionData } from './converters'; // Import the converter
+
+
 
 /**
  * Manages document sections using the BaseSection hierarchy.
  * Collaborates with TableOfContents component for UI updates.
  */
 export class SectionManager {
+    private designId: string = "";
     private sections: Map<string, BaseSection> = new Map();
     private sectionData: SectionData[] = [];
     private nextSectionId: number = 1;
@@ -90,7 +95,7 @@ export class SectionManager {
      */
     public setInitialSectionInfo(ids: string[], metadata?: V1Section[] | null): void {
         console.log("SectionManager: Received initial section info", { count: ids.length, hasMetadata: !!metadata });
-        this.initialSectionIds = ids;
+        this.initialSectionIds = ids || [];
         this.initialSectionsMetadata = metadata || null;
         // Do NOT load sections here yet. That's Step 1.2.
         // Do NOT call handleEmptyState here yet, as sectionData is still empty.
@@ -196,10 +201,10 @@ export class SectionManager {
              }
         }
 
-
         // Use provided data or generate defaults
         const sectionData: SectionData = {
             id: sectionId,
+            designId: this.designId,
             type: type, // Type is required
             title: initialData?.title || SectionManager.getRandomTitle(type),
             content: initialData?.content || this.getDefaultContent(type),
@@ -284,6 +289,43 @@ export class SectionManager {
         }
     }
 
+    /**
+     * NEW: Fetches content for multiple section IDs and then loads them.
+     */
+    public async loadSectionContentsByIds(designId: string, sectionIds: string[]): Promise<void> {
+        if (sectionIds.length === 0) {
+            console.log("SectionManager: No section IDs provided to load.");
+            this.handleEmptyState(); // Ensure empty state is shown if called with empty list
+            return;
+        }
+        console.log(`SectionManager: Fetching content for ${sectionIds.length} sections...`);
+        this.designId = designId;
+
+        const sectionPromises = sectionIds.map(id =>
+            DesignApi.designServiceGetSection({ designId: designId, sectionId: id })
+                .then(response => {
+                    // Assuming response is directly V1Section based on generated client
+                    // Adjust if it's wrapped (e.g., response.section)
+                    const apiSection: V1Section = response; // Adjust based on actual API response structure
+                    return convertApiSectionToSectionData(apiSection);
+                })
+                .catch(error => {
+                    console.error(`Failed to fetch or convert section ${id}:`, error);
+                    // Return null or a specific marker for failed sections
+                    return null;
+                })
+        );
+
+        const results = await Promise.all(sectionPromises);
+
+        // Filter out null results (failed loads/conversions) and sort by original order
+        const loadedSectionsData = results.filter(data => data !== null) as SectionData[];
+        // Sort based on the original order from the API/Design metadata
+        loadedSectionsData.sort((a, b) => a.order - b.order);
+
+        console.log(`SectionManager: Successfully fetched and converted ${loadedSectionsData.length} sections.`);
+        this.loadSectionsFromData(loadedSectionsData); // Use the existing method to render
+    }
 
     /**
      * Loads multiple sections from provided data (typically from API in Step 1.2).
@@ -313,8 +355,6 @@ export class SectionManager {
         this.handleEmptyState();           // Update empty state based on sectionData length
         console.log("SectionManager: Sections loaded and rendered from data.");
     }
-
-    // --- REMOVED old loadSections method that used DocumentSection[] ---
 
     /** Clears all sections and resets state */
      private clearAllSections(): void {

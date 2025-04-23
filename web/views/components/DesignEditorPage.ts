@@ -6,10 +6,9 @@ import { Modal } from './Modal';
 import { SectionManager } from './SectionManager';
 import { ToastManager } from './ToastManager';
 import { TableOfContents } from './TableOfContents';
-import { LeetCoachDocument, DocumentSection } from './types'; // Keep DocumentSection if needed elsewhere
-// import { DOCUMENT } from "./samples"; // Remove sample data import
-import { DesignApi } from './Api'; // Import the configured API client
-import { V1GetDesignResponse } from './apiclient'; // Import response type
+import { LeetCoachDocument, DocumentSection } from './types';
+import { DesignApi } from './Api';
+import { V1GetDesignResponse } from './apiclient';
 
 /**
  * Main application initialization
@@ -151,6 +150,8 @@ class LeetCoachApp {
                 // For now, the page will remain empty section-wise.
                  console.log("Step 1.1 Complete: Design metadata loaded. Section content loading deferred.");
                  // If sectionIds is empty, handle empty state now. If not, handleEmptyState
+                 this.loadSectionsContent(designId, sectionIds); // <-- NEW: Trigger section loading
+
                  // will be called later by SectionManager after loading sections.
                  if (sectionIds.length === 0) {
                      this.sectionManager.handleEmptyState();
@@ -170,6 +171,37 @@ class LeetCoachApp {
         } finally {
             // Optional: Hide loading state
             // this.showLoadingIndicator(false);
+        }
+    }
+
+    /**
+     * NEW: Fetches content for each section ID and loads them into SectionManager.
+     */
+    private async loadSectionsContent(designId: string, sectionIds: string[]): Promise<void> {
+        if (!this.sectionManager || !this.toastManager) return;
+        if (sectionIds.length === 0) {
+            console.log("No section IDs found, skipping content loading.");
+            // Empty state already handled by loadDesignData
+            return;
+        }
+
+        console.log(`Step 1.2: Loading content for ${sectionIds.length} sections...`);
+        // Optional: Show loading state for sections
+        // this.showSectionLoadingIndicator(true);
+
+        try {
+            // Pass the IDs to SectionManager to handle the fetching and loading
+            await this.sectionManager.loadSectionContentsByIds(designId, sectionIds);
+            console.log("Step 1.2 Complete: Section content loading finished.");
+
+        } catch (error: any) {
+            console.error("Error during section content loading process:", error);
+            this.toastManager.showToast("Section Load Failed", "Could not load content for some sections.", "error");
+            // Ensure empty state is handled if loading completely fails or results in zero sections
+            this.sectionManager.handleEmptyState();
+        } finally {
+            // Optional: Hide loading state for sections
+            // this.showSectionLoadingIndicator(false);
         }
     }
 

@@ -42,11 +42,13 @@ export interface PlotDocumentSection extends BaseDocumentSection {
   content: PlotContent; // Placeholder content for now
 }
 
+
 export interface SectionData {
   id: string;
+  designId: string; // <-- ADD THIS LINE
   type: SectionType;
   title: string;
-  content: TextContent | DrawingContent | PlotContent; // Use specific types
+  content: TextContent | DrawingContent | PlotContent;
   order: number;
 }
 

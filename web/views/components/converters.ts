@@ -125,6 +125,7 @@ export function convertApiSectionToSectionData(apiSection: V1Section): SectionDa
     const frontendType = mapApiSectionTypeToFrontend(apiSection.type);
     return {
         id: apiSection.id,
+        designId: apiSection.designId || "",
         type: frontendType,
         title: apiSection.title || `Untitled ${frontendType} Section`, // Provide default title
         // Use || 0 safely as order is number | undefined
