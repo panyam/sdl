@@ -247,6 +247,7 @@ func TestGetDesign(t *testing.T) {
 		st, ok := status.FromError(err)
 		require.True(t, ok)
 		assert.Contains(t, []codes.Code{codes.DataLoss, codes.Internal}, st.Code())
+		assert.Equal(t, codes.DataLoss, st.Code()) // Be specific if possible
 	})
 }
 
@@ -513,7 +514,11 @@ func TestGetDesigns(t *testing.T) {
 // Helper to create a section file directly
 func createSectionDirectly(t *testing.T, basePath, designId, sectionId string, sectionData Section) {
 	t.Helper()
-	sectionPath := filepath.Join(basePath, designId, "sections", fmt.Sprintf("%s.json", sectionId))
+	sectionsDir := filepath.Join(basePath, designId, "sections")
+	err := os.MkdirAll(sectionsDir, 0755) // Ensure sections dir exists
+	require.NoError(t, err, "Failed to create sections directory for direct section creation")
+
+	sectionPath := filepath.Join(sectionsDir, fmt.Sprintf("%s.json", sectionId))
 	jsonData, err := json.MarshalIndent(sectionData, "", "  ")
 	require.NoError(t, err, "Failed to marshal section data for direct creation")
 	err = os.WriteFile(sectionPath, jsonData, 0644)
@@ -573,7 +578,7 @@ func TestGetSection(t *testing.T) {
 		assert.Equal(t, designId, resp.DesignId)
 		assert.Equal(t, protos.SectionType_SECTION_TYPE_TEXT, resp.Type)
 		assert.Equal(t, "Test Section Title", resp.Title)
-		assert.NotNil(t, resp.GetTextContent())
+		require.NotNil(t, resp.GetTextContent(), "TextContent should not be nil")
 		assert.Equal(t, "<p>Hello Section</p>", resp.GetTextContent().HtmlContent)
 		// assert.EqualValues(t, 0, resp.Order) // Order is not directly returned by GetSection in this implementation
 	})
@@ -593,7 +598,305 @@ func TestGetSection(t *testing.T) {
 		require.Error(t, err)
 		st, ok := status.FromError(err)
 		require.True(t, ok)
-		// Depending on implementation, could be NotFound for the section or the design path check error
-		assert.Contains(t, []codes.Code{codes.NotFound, codes.Internal}, st.Code())
+		// Should be NotFound because the design path doesn't exist
+		assert.Equal(t, codes.NotFound, st.Code())
 	})
+
+}
+
+func TestAddSection(t *testing.T) {
+	service, tempDir := newTestDesignService(t)
+	ownerId := "add-sec-owner"
+	ctx := testContextWithUser(ownerId)
+	designId := "design-add-sec"
+
+	// Setup Design
+	createDesignDirectly(t, tempDir, Design{
+		Id:         designId,
+		OwnerId:    ownerId,
+		Name:       "Design for Adding Sections",
+		SectionIds: []string{"sec-a"}, // Start with one section
+	})
+	createSectionDirectly(t, tempDir, designId, "sec-a", Section{Id: "sec-a", DesignId: designId, Type: "text", Title: "Section A"})
+
+	t.Run("Add Section to End", func(t *testing.T) {
+		req := &protos.AddSectionRequest{
+			Section: &protos.Section{
+				DesignId: designId, // Important: Pass design ID in section proto now
+				Type:     protos.SectionType_SECTION_TYPE_DRAWING,
+				Title:    "New Drawing Section",
+				Content:  &protos.Section_DrawingContent{DrawingContent: &protos.DrawingSectionContent{Data: []byte(`{"key":"val"}`)}},
+			},
+			Position: protos.PositionType_POSITION_TYPE_END, // Explicitly add to end
+		}
+		resp, err := service.AddSection(ctx, req)
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+		newSectionId := resp.Id
+		assert.NotEmpty(t, newSectionId)
+		assert.Equal(t, protos.SectionType_SECTION_TYPE_DRAWING, resp.Type)
+		assert.Equal(t, "New Drawing Section", resp.Title)
+		assert.EqualValues(t, 1, resp.Order) // Should be order 1 (after sec-a at index 0)
+
+		// Verify metadata
+		meta := readDesignMetadata(t, tempDir, designId)
+		require.NotNil(t, meta)
+		assert.Equal(t, []string{"sec-a", newSectionId}, meta.SectionIds)
+
+		// Verify section file
+		secData := readSectionDataDirectly(t, tempDir, designId, newSectionId)
+		require.NotNil(t, secData)
+		assert.Equal(t, "drawing", secData.Type)
+		assert.Equal(t, "New Drawing Section", secData.Title)
+		// Content is []byte, which json marshals to base64
+		_, ok := secData.Content.(string) // Check if it's string (base64)
+		assert.True(t, ok, "Drawing content should be stored as base64 string in JSON")
+
+	})
+
+	t.Run("Add Section After", func(t *testing.T) {
+		req := &protos.AddSectionRequest{
+			Section: &protos.Section{
+				DesignId: designId,
+				Type:     protos.SectionType_SECTION_TYPE_TEXT,
+				Title:    "Section B",
+				Content:  &protos.Section_TextContent{TextContent: &protos.TextSectionContent{HtmlContent: "<p>B</p>"}},
+			},
+			RelativeSectionId: "sec-a",
+			Position:          protos.PositionType_POSITION_TYPE_AFTER,
+		}
+		resp, err := service.AddSection(ctx, req)
+		require.NoError(t, err)
+		newSectionIdB := resp.Id
+		assert.EqualValues(t, 1, resp.Order) // Should be inserted at index 1
+
+		meta := readDesignMetadata(t, tempDir, designId)
+		require.NotNil(t, meta)
+		// Order depends on previous test: ["sec-a", newDrawingId, newSectionIdB] ?
+		// Let's assume the drawing section from previous test is newId1
+		require.GreaterOrEqual(t, len(meta.SectionIds), 3) // A, Drawing, B
+		foundA := false
+		// foundB := false
+		for i, id := range meta.SectionIds {
+			if id == "sec-a" {
+				foundA = true
+				// B should be immediately after A if no other sections were added between tests
+				// This assertion is fragile if tests run concurrently or state persists.
+				// Better check: Ensure B exists and A exists before it in the final list.
+				require.Contains(t, meta.SectionIds, newSectionIdB)
+				// Find B's index relative to A's index
+				indexB := -1
+				for j, bid := range meta.SectionIds {
+					if bid == newSectionIdB {
+						indexB = j
+						break
+					}
+				}
+				require.NotEqual(t, -1, indexB)
+				require.Greater(t, indexB, i) // B's index must be after A's index
+				break
+			}
+		}
+		require.True(t, foundA, "Section A should be in the list")
+
+		secDataB := readSectionDataDirectly(t, tempDir, designId, newSectionIdB)
+		require.NotNil(t, secDataB)
+		assert.Equal(t, "text", secDataB.Type)
+	})
+
+	// Add more tests: Add Before, Add without type, Add to non-existent design, Permission denied
+}
+
+func TestUpdateSection(t *testing.T) {
+	service, tempDir := newTestDesignService(t)
+	ownerId := "update-sec-owner"
+	ctx := testContextWithUser(ownerId)
+	designId := "design-update-sec"
+	secIdText := "update-text-1"
+	secIdDraw := "update-draw-1"
+
+	// Setup Design & Sections
+	createDesignDirectly(t, tempDir, Design{
+		Id:         designId,
+		OwnerId:    ownerId,
+		SectionIds: []string{secIdText, secIdDraw},
+	})
+	createSectionDirectly(t, tempDir, designId, secIdText, Section{Id: secIdText, DesignId: designId, Type: "text", Title: "Original Text", Content: "<p>Original</p>"})
+	createSectionDirectly(t, tempDir, designId, secIdDraw, Section{Id: secIdDraw, DesignId: designId, Type: "drawing", Title: "Original Draw", Content: []byte(`{"a":1}`)}) // Store []byte
+
+	t.Run("Update Text Content", func(t *testing.T) {
+		newContent := "<p>Updated Content</p>"
+		req := &protos.UpdateSectionRequest{
+			Section: &protos.Section{ // Payload only needs updated fields + ID/DesignID maybe? Check API impl. No, handled by paths.
+				DesignId: designId,
+				Id:       secIdText,
+				Type:     protos.SectionType_SECTION_TYPE_TEXT, // Good practice to send type
+				Content:  &protos.Section_TextContent{TextContent: &protos.TextSectionContent{HtmlContent: newContent}},
+			},
+			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"text_content"}},
+		}
+		resp, err := service.UpdateSection(ctx, req)
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+		assert.Equal(t, "Original Text", resp.Title) // Title should not change
+		require.NotNil(t, resp.GetTextContent())
+		assert.Equal(t, newContent, resp.GetTextContent().HtmlContent)
+
+		// Verify file
+		secData := readSectionDataDirectly(t, tempDir, designId, secIdText)
+		require.NotNil(t, secData)
+		assert.Equal(t, newContent, secData.Content)
+		assert.Equal(t, "Original Text", secData.Title)
+	})
+
+	t.Run("Update Drawing Content", func(t *testing.T) {
+		newContentBytes := []byte(`{"a":2, "b": "new"}`)
+		req := &protos.UpdateSectionRequest{
+			Section: &protos.Section{
+				DesignId: designId,
+				Id:       secIdDraw,
+				Type:     protos.SectionType_SECTION_TYPE_DRAWING,
+				Content:  &protos.Section_DrawingContent{DrawingContent: &protos.DrawingSectionContent{Data: newContentBytes}},
+			},
+			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"drawing_content"}},
+		}
+		resp, err := service.UpdateSection(ctx, req)
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+		assert.Equal(t, "Original Draw", resp.Title) // Title should not change
+		require.NotNil(t, resp.GetDrawingContent())
+		assert.Equal(t, newContentBytes, resp.GetDrawingContent().Data) // Compare bytes
+
+		// Verify file
+		secData := readSectionDataDirectly(t, tempDir, designId, secIdDraw)
+		require.NotNil(t, secData)
+		// JSON stores bytes as base64 string
+		_ /*contentStr*/, ok := secData.Content.(string)
+		require.True(t, ok, "Content should be base64 string")
+		// Decode and compare underlying data if needed, or just check type for now
+		// For simplicity, we assume if it's a string, it's the base64 from json marshal
+		// A more robust test would decode base64 and unmarshal the JSON inside
+		assert.Equal(t, "Original Draw", secData.Title)
+	})
+
+	t.Run("Update Title Only", func(t *testing.T) {
+		newTitle := "Updated Text Title"
+		req := &protos.UpdateSectionRequest{
+			Section: &protos.Section{
+				DesignId: designId,
+				Id:       secIdText,
+				Title:    newTitle,
+			},
+			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"title"}},
+		}
+		resp, err := service.UpdateSection(ctx, req)
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+		assert.Equal(t, newTitle, resp.Title)
+		require.NotNil(t, resp.GetTextContent())
+		assert.Equal(t, "<p>Updated Content</p>", resp.GetTextContent().HtmlContent) // Content from previous test run
+
+		// Verify file
+		secData := readSectionDataDirectly(t, tempDir, designId, secIdText)
+		require.NotNil(t, secData)
+		assert.Equal(t, newTitle, secData.Title)
+		assert.Equal(t, "<p>Updated Content</p>", secData.Content)
+	})
+
+	// Add more tests: Update non-existent, permission denied, no mask, invalid mask
+}
+
+func TestDeleteSection(t *testing.T) {
+	service, tempDir := newTestDesignService(t)
+	ownerId := "delete-sec-owner"
+	ctx := testContextWithUser(ownerId)
+	designId := "design-delete-sec"
+	secA := "del-a"
+	secB := "del-b"
+	secC := "del-c"
+
+	// Setup Design & Sections
+	createDesignDirectly(t, tempDir, Design{
+		Id:         designId,
+		OwnerId:    ownerId,
+		SectionIds: []string{secA, secB, secC},
+	})
+	createSectionDirectly(t, tempDir, designId, secA, Section{Id: secA, DesignId: designId})
+	createSectionDirectly(t, tempDir, designId, secB, Section{Id: secB, DesignId: designId})
+	createSectionDirectly(t, tempDir, designId, secC, Section{Id: secC, DesignId: designId})
+
+	t.Run("Delete Existing Section", func(t *testing.T) {
+		req := &protos.DeleteSectionRequest{DesignId: designId, SectionId: secB}
+		_, err := service.DeleteSection(ctx, req)
+		require.NoError(t, err)
+
+		// Verify metadata
+		meta := readDesignMetadata(t, tempDir, designId)
+		require.NotNil(t, meta)
+		assert.Equal(t, []string{secA, secC}, meta.SectionIds)
+
+		// Verify files
+		assert.Nil(t, readSectionDataDirectly(t, tempDir, designId, secB))    // Should be gone
+		assert.NotNil(t, readSectionDataDirectly(t, tempDir, designId, secA)) // Should exist
+		assert.NotNil(t, readSectionDataDirectly(t, tempDir, designId, secC)) // Should exist
+	})
+
+	t.Run("Delete Non-Existent Section (Idempotent)", func(t *testing.T) {
+		req := &protos.DeleteSectionRequest{DesignId: designId, SectionId: "non-existent"}
+		_, err := service.DeleteSection(ctx, req)
+		require.NoError(t, err)
+
+		meta := readDesignMetadata(t, tempDir, designId)
+		require.NotNil(t, meta)
+		assert.Equal(t, []string{secA, secC}, meta.SectionIds) // Should be unchanged from previous test
+	})
+
+	// Add tests: Delete from non-existent design, permission denied
+}
+
+func TestMoveSection(t *testing.T) {
+	service, tempDir := newTestDesignService(t)
+	ownerId := "move-sec-owner"
+	ctx := testContextWithUser(ownerId)
+	designId := "design-move-sec"
+	secA, secB, secC, secD := "mv-a", "mv-b", "mv-c", "mv-d"
+
+	// Setup Design & Sections
+	createDesignDirectly(t, tempDir, Design{
+		Id:         designId,
+		OwnerId:    ownerId,
+		SectionIds: []string{secA, secB, secC, secD},
+	})
+	// No need to create section files for move test, only metadata matters
+
+	t.Run("Move B After C", func(t *testing.T) {
+		req := &protos.MoveSectionRequest{
+			DesignId:          designId,
+			SectionId:         secB,
+			RelativeSectionId: secC,
+			Position:          protos.PositionType_POSITION_TYPE_AFTER,
+		}
+		_, err := service.MoveSection(ctx, req)
+		require.NoError(t, err)
+		meta := readDesignMetadata(t, tempDir, designId)
+		require.NotNil(t, meta)
+		assert.Equal(t, []string{secA, secC, secB, secD}, meta.SectionIds)
+	})
+
+	t.Run("Move D Before C", func(t *testing.T) {
+		// State after previous test: [A, C, B, D]
+		req := &protos.MoveSectionRequest{
+			DesignId:          designId,
+			SectionId:         secD,
+			RelativeSectionId: secC,
+			Position:          protos.PositionType_POSITION_TYPE_BEFORE,
+		}
+		_, err := service.MoveSection(ctx, req)
+		require.NoError(t, err)
+		meta := readDesignMetadata(t, tempDir, designId)
+		require.NotNil(t, meta)
+		assert.Equal(t, []string{secA, secD, secC, secB}, meta.SectionIds) // A, D, C, B
+	})
+
+	// Add more tests: Move non-existent section, non-existent relative, permission denied, invalid position
 }

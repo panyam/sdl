@@ -108,15 +108,23 @@ func SectionToProto(input *Section) (out *protos.Section) {
 		}
 	case protos.SectionType_SECTION_TYPE_DRAWING:
 		// Assuming content is stored as stringified JSON for drawing/plot
-		if contentStr, ok := input.Content.(string); ok {
+		contentBytes, ok := input.Content.([]byte)
+		if !ok {
+			// Log an error if the content isn't []byte for a drawing type
+			log.Printf("Error: Expected []byte content for drawing section %s, but got %T", input.Id, input.Content)
+		} else {
 			out.Content = &protos.Section_DrawingContent{
-				DrawingContent: &protos.DrawingSectionContent{Data: []byte(contentStr)},
+				DrawingContent: &protos.DrawingSectionContent{Data: contentBytes},
 			}
 		}
 	case protos.SectionType_SECTION_TYPE_PLOT:
-		if contentStr, ok := input.Content.(string); ok {
+		contentBytes, ok := input.Content.([]byte)
+		if !ok {
+			// Log an error if the content isn't []byte for a plot type
+			log.Printf("Error: Expected []byte content for plot section %s, but got %T", input.Id, input.Content)
+		} else {
 			out.Content = &protos.Section_PlotContent{
-				PlotContent: &protos.PlotSectionContent{Data: []byte(contentStr)},
+				PlotContent: &protos.PlotSectionContent{Data: contentBytes},
 			}
 		}
 	}
