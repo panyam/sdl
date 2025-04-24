@@ -5,6 +5,7 @@ import { SectionData, SectionType, DocumentSection, TextContent, DrawingContent,
 import { DesignApi } from './Api'; // Import API client
 import { V1Section } from './apiclient'; // Import API Section type
 import { extractContentFromApiSection } from './converters'; // Import the converter
+import { TemplateLoader } from './TemplateLoader'; // Import the converter
 
 /**
  * Abstract base class for all document sections.
@@ -33,6 +34,8 @@ export abstract class BaseSection {
     protected addAfterButton: HTMLElement | null;
     protected fullscreenButton: HTMLElement | null; // Moved from subclasses
     protected exitFullscreenButton: HTMLElement | null = null; // Found after view load
+
+    protected templateLoader = new TemplateLoader()
 
     constructor(data: SectionData, element: HTMLElement, callbacks: SectionCallbacks = {}) {
         this.data = data; // May have null/empty content initially
@@ -274,7 +277,7 @@ export abstract class BaseSection {
             // The view template is *already loaded*. We just need to populate it.
             if (viewContentArea) {
                 // Clear the loading message before populating
-                viewContentArea.innerHTML = '';
+                this.resetViewContent(viewContentArea as HTMLDivElement)
                 this.populateViewContent(); // Subclass renders into the cleared viewContentArea
                 console.log(`Section ${this.sectionId}: View template populated.`);
             } else {
@@ -330,7 +333,7 @@ export abstract class BaseSection {
         // Find the content area within the already loaded view template
          const viewContentArea = this.contentContainer?.querySelector('.section-view-content');
          if (viewContentArea) {
-             viewContentArea.innerHTML = ''; // Clear any loading message
+             this.resetViewContent(viewContentArea as HTMLDivElement)
              this.populateViewContent(); // Render the provided initial content
              this.bindViewModeEvents(); // Ensure events are bound
          } else {
@@ -568,32 +571,14 @@ export abstract class BaseSection {
      */
     protected loadTemplate(mode: 'view' | 'edit'): boolean {
         if (!this.contentContainer) return false;
-
         const templateId = `${this.data.type}-section-${mode}`;
-        const templateRegistry = document.getElementById('template-registry');
-        if (!templateRegistry) {
-            console.error("Template registry not found!");
-            return false;
-        }
-
-        // TODO: Migrate registry to use <template> tag for better semantics and performance.
-        // When migrating, find <template> and clone its '.content' DocumentFragment.
-        const templateWrapper = templateRegistry.querySelector(`[data-template-id="${templateId}"]`);
-        if (!templateWrapper) {
-            console.error(`Template not found in registry: ${templateId}`);
-            return false;
-        }
-
-        // Using hidden div: Clone the first child element which is the actual template root
-        const templateRootElement = templateWrapper.firstElementChild?.cloneNode(true) as HTMLElement | null;
-        if (!templateRootElement) {
-             console.error(`Template content is empty for: ${templateId}`);
-             return false;
-        }
+        const templateRootElement = this.templateLoader.load(templateId)
 
         // Clear previous content and append the new template
         this.contentContainer.innerHTML = '';
-        this.contentContainer.appendChild(templateRootElement);
+        if (templateRootElement) {
+          this.contentContainer.appendChild(templateRootElement);
+        }
 
         return true;
     }
@@ -609,7 +594,16 @@ export abstract class BaseSection {
       return ""
     }
 
-    // --- Abstract methods to be implemented by derived classes ---
+    // Resets the view content to default state (uses the template's initial content as default)
+    protected resetViewContent(viewContentArea: HTMLDivElement) {
+      viewContentArea.innerHTML = ''; // Clear any loading message
+      const mode = "view"
+      const templateId = `${this.data.type}-section-${mode}`;
+      const template = this.templateLoader.load(templateId)
+      if (template) {
+        viewContentArea.innerHTML = template.innerHTML;
+      }
+    }
 
     /** Populates the loaded View mode template with the section's current data. */
     protected abstract populateViewContent(): void;
