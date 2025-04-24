@@ -42,8 +42,8 @@ class DesignEditorPage {
         ThemeManager.init();
         this.modal = Modal.init();
         this.toastManager = ToastManager.init();
-        this.documentTitle = new DocumentTitle(designId); // Pass initial ID
-        this.sectionManager = new SectionManager(designId); // Pass initial ID
+        this.documentTitle = new DocumentTitle(designId);
+        this.sectionManager = new SectionManager(designId);
         this.tableOfContents = TableOfContents.init({
             onAddSectionClick: () => {
                 this.sectionManager?.openSectionTypeSelector(this.getLastSectionId(), 'after');
@@ -81,7 +81,7 @@ class DesignEditorPage {
             saveButton.addEventListener('click', this.saveDocument.bind(this));
         }
 
-       document.addEventListener('click', (e: MouseEvent) => {
+        document.addEventListener('click', (e: MouseEvent) => {
             const target = e.target as HTMLElement;
             const sectionTypeOption = target.closest('.section-type-option, button.section-type-option');
 

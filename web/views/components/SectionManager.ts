@@ -155,18 +155,14 @@ export class SectionManager {
 
     /**
      * Handles the user's choice from the section type selector modal.
-     * This is the entry point for USER-TRIGGERED section creation.
-     * It calls the API first, then calls createSectionInternal with the API response.
+     * Calls the API first, then calls createSectionInternal with the API response,
+     * and finally tells the new section instance to render its initial content.
      */
     public async handleSectionTypeSelection(
         type: SectionType,
         relativeToId: string | null = null,
         position: 'before' | 'after' = 'after'
     ): Promise<void> {
-        // This function remains largely the same. It calls the AddSection API,
-        // which returns the *full* new section data (including generated ID and initial content).
-        // It then calls createSectionInternal with this complete data.
-        // Content loading responsibility only changes for *existing* sections.
          if (!this.currentDesignId) {
             console.error("Cannot add section: Design ID not set in SectionManager.");
             // toastManager.showToast("Error", "Cannot add section: Design ID missing.", "error");
@@ -176,14 +172,12 @@ export class SectionManager {
 
         let apiPosition: V1PositionType = V1PositionType.PositionTypeEnd;
         if (relativeToId) {
-             apiPosition = position === 'before' ? V1PositionType.PositionTypeBefore : V1PositionType.PositionTypeAfter;
+            apiPosition = position === 'before' ? V1PositionType.PositionTypeBefore : V1PositionType.PositionTypeAfter;
         }
 
-        // Prepare minimal section data for the API request
         const apiSectionPayload = {
              type: mapFrontendSectionTypeToApi(type),
              title: SectionManager.getRandomTitle(type),
-             // Generate default content for the *creation* request
              ...mapFrontendContentToApiUpdate(type, this.getDefaultContent(type)),
         };
 
@@ -199,41 +193,37 @@ export class SectionManager {
             });
             console.log("API Success: designServiceAddSection returned:", createdApiSection);
 
-            // Convert API response (contains initial content) to frontend SectionData
+            // Convert API response to frontend SectionData
             const newSectionData = convertApiSectionToSectionData(createdApiSection);
             newSectionData.designId = this.currentDesignId; // Ensure designId is set
 
-            // Now create the section locally using the data from the API response.
-            // This section *does* have initial content from the server.
+            // Create the section instance and DOM shell (constructor shows loading initially)
             const newSectionInstance = this.createSectionInternal(newSectionData, true); // Pass true for user action
 
-            // Manually trigger content load? No, the BaseSection constructor handles initial loading state.
-            // The content provided by the API response should be used by populateViewContent.
-            // However, BaseSection now expects loadContent to be called. Let's adjust.
             if (newSectionInstance) {
-                // Since the API provided the initial content, we don't need to fetch it again.
-                // We need to bypass the loadContent mechanism for newly created sections.
-                // Let's add a flag or modify BaseSection's constructor logic slightly.
-                // *Alternative thought:* Maybe createSectionInternal should directly call populateViewContent
-                // *if* content is provided, skipping the loadContent path?
-                // Let's stick to the plan: BaseSection constructor shows loading,
-                // but `handleSectionTypeSelection` could call a method like `setContentAndRender`
-                // *after* `createSectionInternal`. Or, `createSectionInternal` returns the instance,
-                // and we call a method on it here.
+                // --- Use the new method to render the initial content ---
+                // This bypasses the loadContent fetch for the newly created section,
+                // using the content we just received from the API.
+                console.log(`Calling setInitialContentAndRender for new section ${newSectionInstance.sectionId}`);
+                newSectionInstance.setInitialContentAndRender(newSectionData.content);
+                // --- End new method call ---
 
-                // Let's refine: BaseSection constructor shows loading.
-                // createSectionInternal returns the instance.
-                // Here, we call a new method on the instance to set initial content and render.
-                 newSectionInstance.setInitialContentAndRender(newSectionData.content);
+                // Scroll the new section into view smoothly
+                const sectionElement = document.getElementById(newSectionInstance.sectionId);
+                if (sectionElement) {
+                    sectionElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
 
             } else {
                  console.error("Failed to create section instance locally after API success.");
-                 // Handle this error state
+                 // toastManager.showToast(...)
             }
 
-        } catch (error) {
+        } catch (error: any) { // Catch specific error type if known
             console.error("API Error adding section:", error);
-            // toastManager.showToast(...)
+            // Consider checking error status code (e.g., 4xx vs 5xx) for different messages
+            const errorMsg = error.message || (error.response ? await error.response.text() : 'Server Error');
+            // toastManager.showToast("Error Adding Section", `Failed to add section: ${errorMsg}`, "error");
         }
     }
 
