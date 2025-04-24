@@ -5,11 +5,11 @@ import { BaseSection } from './BaseSection';
 import { TextSection } from './TextSection';
 import { DrawingSection } from './DrawingSection';
 import { PlotSection } from './PlotSection';
-import { DocumentSection, SectionType, TextContent, DrawingContent, PlotContent, SectionData, SectionCallbacks } from './types';
+import { SectionContent, DocumentSection, SectionType, TextContent, DrawingContent, PlotContent, SectionData, SectionCallbacks } from './types';
 import { TocItemInfo, TableOfContents } from './TableOfContents';
 import { V1Section, V1PositionType, /* other models if needed */ } from './apiclient'; // Import V1Section and V1PositionType
 import { DesignApi } from './Api'; // Import API client
-import { createApiSectionUpdateObject, convertApiSectionToSectionData , mapFrontendContentToApiUpdate, mapFrontendSectionTypeToApi } from './converters'; // Import the update object creator
+import { createApiSectionUpdateObject, convertApiSectionToSectionData , mapFrontendSectionTypeToApi } from './converters'; // Import the update object creator
 
 
 /**
@@ -178,7 +178,7 @@ export class SectionManager {
         const apiSectionPayload = {
              type: mapFrontendSectionTypeToApi(type),
              title: SectionManager.getRandomTitle(type),
-             ...mapFrontendContentToApiUpdate(type, this.getDefaultContent(type)),
+             // ...mapFrontendContentToApiUpdate(type, this.getDefaultContent(type)),
         };
 
         try {
@@ -205,7 +205,7 @@ export class SectionManager {
                 // This bypasses the loadContent fetch for the newly created section,
                 // using the content we just received from the API.
                 console.log(`Calling setInitialContentAndRender for new section ${newSectionInstance.sectionId}`);
-                newSectionInstance.setInitialContentAndRender(newSectionData.content);
+                newSectionInstance.setInitialContentAndRender();
                 // --- End new method call ---
 
                 // Scroll the new section into view smoothly
@@ -299,7 +299,6 @@ export class SectionManager {
              type: sectionData.type,
              title: sectionData.title,
              order: sectionData.order,
-             content: null // SectionManager doesn't store content here anymore
          });
 
         // Renumber and update TOC only if it's a user action causing immediate UI change.
@@ -315,7 +314,7 @@ export class SectionManager {
     }
 
     /** Returns appropriate default content for a section type */
-    private getDefaultContent(type: SectionType): SectionData['content'] {
+    private getDefaultContent(type: SectionType): SectionContent {
         switch (type) {
             case 'text': return '';
             case 'drawing': return { format: 'placeholder_drawing', data: {} };
@@ -323,13 +322,6 @@ export class SectionManager {
             default: return '';
         }
     }
-
-    /**
-     * REMOVED: Fetches content for multiple section IDs and then loads them.
-     * This is now handled by BaseSection.loadContent().
-     */
-    // public async loadSectionContentsByIds(designId: string, sectionIds: string[]): Promise<void> { /* ... removed ... */ }
-
 
     /**
      * Initializes section shells based on provided metadata (typically from API).
@@ -350,10 +342,7 @@ export class SectionManager {
 
         sectionsMetadata.forEach(meta => {
             // Ensure content is null/empty for initial shell creation
-            const initialData: SectionData = {
-                ...meta,
-                content: null // Explicitly null/empty content
-            };
+            const initialData: SectionData = { ...meta };
 
             // Create the section shell
             const sectionInstance = this.createSectionInternal(initialData, false); // isUserAction = false
@@ -553,13 +542,6 @@ export class SectionManager {
         }
     }
 
-    /**
-     * REMOVED: Update section content in data.
-     * This is now handled by BaseSection.saveContent().
-     */
-    // private updateSectionContent(sectionId: string, newContent: SectionData['content']): void { /* ... removed ... */ }
-
-
     /** Creates the simplified data structure needed by the TOC component */
     private getTocItemsInfo(): TocItemInfo[] {
         return this.sectionData
@@ -571,7 +553,6 @@ export class SectionManager {
             }));
     }
 
-
     /** Calls the update method on the TOC component, if available */
     private triggerTocUpdate(): void {
         if (this.tocComponent) {
@@ -581,7 +562,6 @@ export class SectionManager {
             console.warn("Cannot trigger TOC update: TOC component not set.");
         }
     }
-
 
     /** Handle empty state visibility */
     public handleEmptyState(): void {
@@ -595,17 +575,18 @@ export class SectionManager {
         }
     }
 
-
-    /** Get all section data formatted for the document model */
-    public getDocumentSections(): DocumentSection[] {
-        return this.sectionData
+    /** Helper to get the ID of the last section currently managed */
+    public getLastSectionId(): string | null {
+        const sections = this.sectionData
             .sort((a, b) => a.order - b.order)
             .map(sectionDataItem => {
+              /*
                 const sectionInstance = this.sections.get(sectionDataItem.id);
                 if (sectionInstance) {
                     // Get the data *including potentially unsaved content* from the instance
                     return sectionInstance.getDocumentData();
                 }
+               */
                 // Fallback: Return metadata only if instance is missing
                 console.warn(`Section instance not found for ID: ${sectionDataItem.id} during getDocumentSections.`);
                 // Return a structure matching DocumentSection but potentially without content
@@ -617,8 +598,8 @@ export class SectionManager {
                     content: null // Indicate content might be missing
                 } as any; // Cast needed as content is missing
             });
+        return sections.length > 0 ? sections[sections.length - 1].id : null;
     }
-
 
     /** Notifies all managed sections that the application theme has changed. */
     public notifySectionsOfThemeChange(): void {

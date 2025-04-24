@@ -1,11 +1,11 @@
 // components/BaseSection.ts
 
 import { Modal } from './Modal';
-import { SectionData, SectionType, DocumentSection, TextContent, DrawingContent, PlotContent, SectionCallbacks } from './types';
+import { SectionData, SectionType, SectionContent, DocumentSection, TextContent, DrawingContent, PlotContent, SectionCallbacks } from './types';
 import { DesignApi } from './Api'; // Import API client
 import { V1Section } from './apiclient'; // Import API Section type
-import { extractContentFromApiSection } from './converters'; // Import the converter
 import { TemplateLoader } from './TemplateLoader'; // Import the converter
+import { ToastManager } from './ToastManager'; // Import the converter
 
 /**
  * Abstract base class for all document sections.
@@ -35,13 +35,15 @@ export abstract class BaseSection {
     protected fullscreenButton: HTMLElement | null; // Moved from subclasses
     protected exitFullscreenButton: HTMLElement | null = null; // Found after view load
 
+    protected toastManager: ToastManager; // Add toast manager
     protected templateLoader = new TemplateLoader()
 
     constructor(data: SectionData, element: HTMLElement, callbacks: SectionCallbacks = {}) {
-        this.data = data; // May have null/empty content initially
+        this.data = data;
         this.element = element;
         this.callbacks = callbacks;
         this.modal = Modal.getInstance();
+        this.toastManager = ToastManager.getInstance();
 
         // Find common structural elements
         this.sectionHeaderElement = this.element.querySelector('.section-header');
@@ -58,6 +60,7 @@ export abstract class BaseSection {
         this.fullscreenButton = this.element.querySelector('.section-fullscreen');
         this.exitFullscreenButton = this.element.querySelector('.section-exit-fullscreen'); // Find it once in constructor
 
+
         if (!this.contentContainer) {
             console.error(`Section content container not found for section ID: ${this.data.id}`);
         }
@@ -72,8 +75,6 @@ export abstract class BaseSection {
     }
 
     protected initViewAndLoadingState() {
-      if (true) {
-        // --- NEW: Initialize with View Template and Loading State ---
         this.mode = 'view'; // Start in view mode
         if (this.contentContainer) {
             if (this.loadTemplate('view')) {
@@ -103,27 +104,6 @@ export abstract class BaseSection {
                 console.error(`Section ${this.sectionId}: Failed to load initial view template.`);
             }
         }
-      } else if (this.contentContainer) {
-          // Initial state: Show loading placeholder UNLESS initial content is already provided
-          // (This check is a bit redundant now as loadContent/setInitialContentAndRender will overwrite)
-          if (!this.data.content) { // Only show loading if no content passed initially
-              this.contentContainer!.innerHTML = `
-                  <div class="p-4 text-center text-gray-500 dark:text-gray-400 italic">
-                      Loading content...
-                  </div>`;
-          } else {
-               // If content *was* passed in constructor (e.g., from AddSection response), render it immediately.
-               // This avoids the loading flash for newly created sections.
-              console.log(`Section ${this.sectionId}: Initial content provided in constructor. Rendering view.`);
-              this.mode = 'view';
-              if (this.loadTemplate('view')) {
-                  this.populateViewContent();
-                  this.bindViewModeEvents();
-              } else {
-                  this.contentContainer!.innerHTML = `<div class="p-4 text-red-500">Error loading view template.</div>`;
-              }
-          }
-      }
     }
 
      public get sectionId(): string {
@@ -249,47 +229,23 @@ export abstract class BaseSection {
         } else {
              console.warn(`Section ${this.sectionId}: '.section-view-content' not found during loadContent start.`);
              // Show loading in the main container as fallback
-             this.contentContainer.innerHTML = `<div class="p-4 text-center text-gray-500 dark:text-gray-400 italic">Loading...</div>`;
+             this.contentContainer.innerHTML = `<div class="p-4 text-red-500">Error: View content area missing.</div>`;
+             return
         }
         // --- End Loading State Update ---
 
         console.log(`Section ${this.sectionId}: Loading content for design ${this.designId}...`);
+        // const content = this.loadViewContent()
 
         try {
-            const apiSection: V1Section = await DesignApi.designServiceGetSection({
-                designId: this.designId,
-                sectionId: this.sectionId,
-            });
-
-            console.log(`Section ${this.sectionId}: API response received`, apiSection);
-            this.data.content = extractContentFromApiSection(apiSection);
-
-            // Update title if needed
-            if (apiSection.title && apiSection.title !== this.data.title) {
-                console.log(`Section ${this.sectionId}: Title updated from API: "${this.data.title}" -> "${apiSection.title}"`);
-                this.data.title = apiSection.title;
-                this.updateDisplayTitle();
-            }
-
-            console.log(`Section ${this.sectionId}: Content extracted`, this.data.content);
-
             // --- Content Population ---
             // The view template is *already loaded*. We just need to populate it.
-            if (viewContentArea) {
-                // Clear the loading message before populating
-                this.resetViewContent(viewContentArea as HTMLDivElement)
-                this.populateViewContent(); // Subclass renders into the cleared viewContentArea
-                console.log(`Section ${this.sectionId}: View template populated.`);
-            } else {
-                 console.error(`Section ${this.sectionId}: '.section-view-content' not found for population after load.`);
-                 this.contentContainer.innerHTML = `<div class="p-4 text-red-500">Error: View content area missing.</div>`;
-            }
-            // --- End Content Population ---
+            this.resetViewContent(viewContentArea as HTMLDivElement)
+            this.populateViewContent(); // Subclass renders into the cleared viewContentArea
+            console.log(`Section ${this.sectionId}: View template populated.`);
 
             // Re-bind events just in case populateViewContent overwrites something, though unlikely
-             this.bindViewModeEvents();
-
-
+            this.bindViewModeEvents();
         } catch (error: any) {
             console.error(`Section ${this.sectionId}: Failed to load content`, error);
             const errorMsg = error.message || (error.response ? await error.response.text() : 'Unknown error');
@@ -315,7 +271,7 @@ export abstract class BaseSection {
      * and renders the view mode directly, bypassing the loadContent fetch.
      * @param initialContent The content to render immediately.
      */
-    public setInitialContentAndRender(initialContent: SectionData['content']): void {
+    public setInitialContentAndRender(): void {
          if (this.mode !== 'view') {
               console.warn(`Section ${this.sectionId}: setInitialContentAndRender called while not in view mode. Forcing view mode.`);
               this.mode = 'view'; // Ensure correct mode
@@ -327,7 +283,6 @@ export abstract class BaseSection {
          }
 
          console.log(`Section ${this.sectionId}: Setting initial content and rendering.`);
-         this.data.content = initialContent;
          this.isLoading = false; // Ensure loading is false
 
         // Find the content area within the already loaded view template
@@ -465,12 +420,10 @@ export abstract class BaseSection {
             console.log(`switchToViewMode: Save requested for ${this.sectionId}. Saving logic TBD in Step 5.`);
              // **** PLACEHOLDER for Step 5: Call this.saveContent() ****
              const newContent = this.getContentFromEditMode();
-             this.data.content = newContent; // Update local data optimistically (will be confirmed/overwritten by saveContent)
-             console.log(`Section ${this.sectionId} content updated locally (API save TBD).`);
+             console.log(`Section ${this.sectionId} content updated locally (API save TBD): `, newContent);
 
             // Cleanup editor state *after* getting content, before rendering view
             this.cleanupEditMode();
-
         } else if (this.mode === 'edit' && !saveChanges) {
              // Cleanup editor state if needed
              this.cleanupEditMode();
@@ -616,7 +569,7 @@ export abstract class BaseSection {
 
 
     /** Retrieves the current content state from the Edit mode UI elements. */
-    protected abstract getContentFromEditMode(): SectionData['content'];
+    protected abstract getContentFromEditMode(): SectionContent;
 
 
     // --- Public API ---
@@ -646,35 +599,6 @@ export abstract class BaseSection {
         return this.data.order;
     }
 
-    /**
-     * Gets the section data formatted for the document model.
-     * Ensures content reflects the latest saved state.
-     */
-    public getDocumentData(): DocumentSection {
-        // Important: Assumes this.data.content is kept up-to-date by switchToViewMode(true)
-        // If called while in edit mode *before* saving, it returns the *last saved* content.
-         const baseData = {
-            id: this.data.id,
-            title: this.data.title,
-            order: this.data.order,
-        };
-
-        // Return type assertion based on the section's type
-        switch (this.data.type) {
-            case 'text':
-                return { ...baseData, type: 'text', content: this.data.content as TextContent };
-            case 'drawing':
-                return { ...baseData, type: 'drawing', content: this.data.content as DrawingContent };
-            case 'plot':
-                return { ...baseData, type: 'plot', content: this.data.content as PlotContent };
-            default:
-                // Should not happen if types are handled correctly
-                console.error(`Unknown section type in getDocumentData: ${this.data.type}`);
-                // Fallback or throw error - returning as text for now
-                return { ...baseData, type: 'text', content: String(this.data.content) };
-        }
-    }
- 
      // --- Fullscreen State and Methods ---
      protected isFullscreen: boolean = false;
  

@@ -46,7 +46,7 @@ class DesignEditorPage {
         this.sectionManager = new SectionManager(designId);
         this.tableOfContents = TableOfContents.init({
             onAddSectionClick: () => {
-                this.sectionManager?.openSectionTypeSelector(this.getLastSectionId(), 'after');
+                this.sectionManager?.openSectionTypeSelector(this.sectionManager.getLastSectionId(), 'after');
             }
         });
 
@@ -237,12 +237,6 @@ class DesignEditorPage {
         this.sectionManager?.notifySectionsOfThemeChange();
     }
  
-    /** Helper to get the ID of the last section currently managed */
-    private getLastSectionId(): string | null {
-        const sections = this.sectionManager?.getDocumentSections() || []; // Get sorted data
-        return sections.length > 0 ? sections[sections.length - 1].id : null;
-    }
-
     /** Updates the theme toggle button's icon and aria-label */
     private updateThemeButtonState(currentTheme?: string): void {
         if (!this.themeToggleButton || !this.themeToggleIcon) return;
@@ -266,21 +260,6 @@ class DesignEditorPage {
         }
         // This full save logic will be replaced by incremental saves triggered by component callbacks
         this.toastManager.showToast('Save Action', 'Incremental saves handle updates. Full save TBD.', 'info');
-
-        /*
-        // --- Example of how full save *might* look (but prefer incremental) ---
-        const currentTimestamp = new Date().toISOString();
-        const documentData: LeetCoachDocument = {
-            metadata: {
-                id: this.currentDesignId, // Use the actual ID
-                schemaVersion: "1.0",
-                lastSavedAt: currentTimestamp
-            },
-            title: this.documentTitle.getTitle(),
-            sections: this.sectionManager.getDocumentSections() // Get data from manager
-        };
-        // Call API to save the full documentData (less ideal than incremental)
-        */
     }
 
     /** Export document (Placeholder) */

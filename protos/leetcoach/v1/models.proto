@@ -150,38 +150,9 @@ message Section {
   string title = 6;
 
   /**
-   * Section content type
-   */
-  string content_type = 7; // e.g., "application/json", "text/html" etc
-
-  /**
-   * Format of the section. 
-   */
-  string format = 8; // e.g., "chartjs/json", "plotly/json"
-
-  /**
    * Order of the section in the list of sections.  This is a readonly field.
    */
-  uint32 order = 9;
-
-  // Note section content may not always be served here.
-  oneof content {
-    TextSectionContent text_content = 10;
-    DrawingSectionContent drawing_content = 11;
-    PlotSectionContent plot_content = 12;
-  }
-}
-
-message TextSectionContent {
-  string html_content = 1;
-}
-
-message PlotSectionContent {
-  bytes data = 2;    // The plot configuration or data as bytes (likely JSON string bytes)
-}
-
-message DrawingSectionContent {
-  bytes data = 2;    // The actual drawing data (can be JSON string bytes, raw SVG bytes, etc.)
+  uint32 order = 7;
 }
 
 /**

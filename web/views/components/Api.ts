@@ -1,6 +1,6 @@
 
 // Example in DesignEditorPage.ts or a dedicated api service wrapper
-import { Configuration, DesignServiceApi /*, other APIs */ } from './apiclient';
+import { Configuration, DesignServiceApi, ContentServiceApi /*, other APIs */ } from './apiclient'; // <-- Add ContentServiceApi
 
 function getCookie(cname: string) : string {
   let name = cname + "=";
@@ -19,35 +19,40 @@ function getCookie(cname: string) : string {
 }
 
 // Function to get your token (implement this based on your auth flow)
-// This might involve reading from session storage, a cookie handled by the server,
-// or calling an endpoint that returns the current user's token.
 function getAuthToken(): string | null | Promise<string | null> {
-    // Placeholder: Retrieve token logic
-    // Example: Read from a meta tag set by the server
-    // const meta = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]'); // Or a dedicated auth token meta tag
-    // return meta ? meta.content : null;
-    // Example: Read from session storage (if applicable)
     return getCookie("LeetCoachAuthToken")
-     // return sessionStorage.getItem('authToken');
-    // Example: Return null if not logged in
 }
 
 const apiConfig = new Configuration({
     basePath: '/api', // Your gRPC Gateway base path
+    // basePath: '/api/v1', // Ensure this points to your gRPC Gateway prefix (usually /api/v1)
     // --- Authentication ---
-    accessToken: async () => {
-        // Use a function for dynamic token retrieval
+    fetchApi: async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+        // Define a wrapper around fetch to inject the token
         const token = await getAuthToken();
-        return `Bearer ${token}`
+        const headers = new Headers(init?.headers);
+        if (token) {
+            headers.set('Authorization', `Bearer ${token}`);
+        }
+        // Ensure Content-Type is set for relevant methods if not already present
+        // if (init?.method === 'POST' || init?.method === 'PUT' || init?.method === 'PATCH') {
+        //     if (!headers.has('Content-Type')) {
+        //         headers.set('Content-Type', 'application/json'); // Default, adjust if needed
+        //     }
+        // }
+        const modifiedInit = { ...init, headers };
+        return fetch(input, modifiedInit);
     },
-    // OR for API Key (if you use that instead/additionally)
-    // apiKey: async () => {
-    //    const key = await getApiKey();
-    //    return key ? `YOUR_API_KEY_PREFIX ${key}` : undefined; // Adjust prefix if needed
+
+    // Note: Using fetchApi interceptor is generally preferred over accessToken function
+    // with openapi-generator v6+ for more robust header injection.
+    // accessToken: async () => {
+    //    // Use a function for dynamic token retrieval
+    //    const token = await getAuthToken();
+    //    return token ? `Bearer ${token}` : undefined; // Return undefined if no token
     // },
-    // --- Other Config ---
-    // middleware: [...] // Add fetch middleware if needed (e.g., for complex logging/error handling)
 });
 
 // Instantiate your API clients
 export const DesignApi = new DesignServiceApi(apiConfig);
+export const ContentApi = new ContentServiceApi(apiConfig); // <-- Export ContentServiceApi instance

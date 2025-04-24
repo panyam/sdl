@@ -12,6 +12,7 @@ import 'tinymce/models/dom/model';
 export class TextSection extends BaseSection {
     protected static readonly ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" /></svg>`;
     private editorInstance: Editor | null = null;
+    private textContent: TextContent;
 
     constructor(data: SectionData, element: HTMLElement, callbacks: SectionCallbacks = {}) {
         super(data, element, callbacks);
@@ -36,8 +37,8 @@ export class TextSection extends BaseSection {
     protected populateViewContent(): void {
         const viewContent = this.contentContainer?.querySelector('.section-view-content');
         if (viewContent) {
-            const initialContent = (typeof this.data.content === 'string' && this.data.content.length > 0)
-                ? this.data.content
+            const initialContent = (typeof this.textContent === 'string' && this.textContent.length > 0)
+                ? this.textContent
                 : '<p class="text-gray-400 dark:text-gray-500 italic">Click to add content...</p>';
             viewContent.innerHTML = initialContent;
         } else {
@@ -49,7 +50,7 @@ export class TextSection extends BaseSection {
     protected override populateEditContent(): void {
         const editorTarget = this.contentContainer?.querySelector('.text-editor-target');
         if (editorTarget instanceof HTMLElement) {
-            const initialContent = (typeof this.data.content === 'string') ? this.data.content : '';
+            const initialContent = (typeof this.textContent === 'string') ? this.textContent : '';
             const isDarkMode = document.documentElement.classList.contains('dark');
             const tinyMCEPublicPath = '/static/js/gen/';
 
@@ -148,7 +149,7 @@ export class TextSection extends BaseSection {
              }
         } else {
             // Fallback to stored data if editor wasn't ready
-            currentContent = typeof this.data.content === 'string' ? this.data.content : '';
+            currentContent = typeof this.textContent === 'string' ? this.textContent : '';
         }
 
         // Destroy the existing editor instance if it exists
@@ -208,11 +209,11 @@ export class TextSection extends BaseSection {
                 return this.editorInstance.getContent() || '';
             } catch (error) {
                 console.error(`Error getting content from TinyMCE for section ${this.data.id}:`, error);
-                return typeof this.data.content === 'string' ? this.data.content : '';
+                return typeof this.textContent === 'string' ? this.textContent : '';
             }
         }
         console.warn(`TinyMCE instance not found or not initialized when getting content for section ${this.data.id}.`);
-        return typeof this.data.content === 'string' ? this.data.content : '';
+        return typeof this.textContent === 'string' ? this.textContent : '';
     }
 
     // Ensure switchToViewMode also reliably cleans up
@@ -251,9 +252,9 @@ export class TextSection extends BaseSection {
             console.log(`switchToViewMode: Proceeding with save for section ${this.data.id}`);
 
             const newContent = contentToSave;
-            if (newContent !== this.data.content) {
-                this.data.content = newContent;
-                this.callbacks.onContentChange?.(this.data.id, this.data.content);
+            if (newContent !== this.textContent) {
+                this.textContent = newContent;
+                this.callbacks.onContentChange?.(this.data.id, this.textContent);
                 console.log(`Section ${this.data.id} content saved.`);
             } else {
                 console.log(`Section ${this.data.id} content unchanged.`);
@@ -307,4 +308,66 @@ export class TextSection extends BaseSection {
          // If specific resizing logic were needed (e.g., for a different editor), it would go here.
          // Example: this.editorInstance?.execCommand('mceAutoResize'); // Might force a recalc if needed
      }
+
+    /** Gets HTML string directly from TinyMCE editor */
+    protected getInterpretedContentForSaving(): TextContent {
+        if (this.editorInstance && this.editorInstance.initialized) {
+            try {
+                return this.editorInstance.getContent() || '';
+            } catch (error) {
+                console.error(`Error getting content from TinyMCE for saving ${this.data.id}:`, error);
+                return this.decodeContent(this.textContent); // Fallback to last saved/decoded
+            }
+        }
+        console.warn(`TinyMCE instance not available for saving ${this.data.id}.`);
+        return this.decodeContent(this.textContent); // Fallback
+    }
+
+    /** Encodes HTML string to base64 */
+    protected encodeContentForSaving(interpretedContent: TextContent): { contentBytes: string; contentType: string; format: string; } {
+        const contentString = typeof interpretedContent === 'string' ? interpretedContent : '';
+        const contentBytes = btoa(unescape(encodeURIComponent(contentString))); // String -> UTF8 -> Base64
+        return {
+            contentBytes: contentBytes,
+            contentType: 'text/html',
+            format: 'html'
+        };
+    }
+
+    /** Destroys the TinyMCE editor instance */
+    protected cleanupEditMode(): void {
+        if (this.editorInstance) {
+            console.log(`Cleanup: Removing TinyMCE instance for ${this.data.id}`);
+            try {
+                tinymce.remove(this.editorInstance);
+            } catch (error) {
+                console.error(`Error removing TinyMCE instance during cleanup for ${this.data.id}:`, error);
+            } finally {
+                this.editorInstance = null;
+            }
+        }
+    }
+
+    /** Returns the content formatted for the DocumentSection type (string) */
+    protected getDocumentFormattedContent(): TextContent {
+        if (this.mode === 'edit') {
+            return this.getInterpretedContentForSaving(); // Get current editor state
+        } else {
+            return this.decodeContent(this.textContent); // Decode stored raw content
+        }
+    }
+
+    /** Decodes raw data (base64 string) and returns interpreted content (HTML string) */
+    private decodeContent(rawContent: any | null): string {
+        if (typeof rawContent === 'string') {
+            try {
+                // Decode base64 -> UTF8 bytes -> string
+                return decodeURIComponent(escape(atob(rawContent)));
+            } catch (e) {
+                console.error(`TextSection ${this.data.id}: Failed to decode base64 content.`, e);
+                return '<p>Error: Could not load content.</p>';
+            }
+        }
+        return ''; // Default to empty string if content is null or not a string
+    }
 }

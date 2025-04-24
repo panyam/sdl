@@ -9,12 +9,13 @@ export class PlotSection extends BaseSection {
     // Placeholder for plot library instance or config data
     private plotConfig: object = {};
     private plotCanvas: HTMLCanvasElement | null = null; // If using canvas
+    private plotContent: PlotContent;
 
     constructor(data: SectionData, element: HTMLElement, callbacks: SectionCallbacks = {}) {
         super(data, element, callbacks);
          // Ensure content is initialized as an object if not present
-         if (typeof this.data.content !== 'object' || this.data.content === null) {
-            this.data.content = { format: 'placeholder_plot', data: {} };
+         if (typeof this.plotContent !== 'object' || this.plotContent === null) {
+            this.plotContent = { format: 'placeholder_plot', data: {} };
         }
         this.enableFullscreen();
     }
@@ -33,7 +34,7 @@ export class PlotSection extends BaseSection {
     protected populateViewContent(): void {
         const previewContainer = this.contentContainer?.querySelector('.plot-preview-container');
         if (previewContainer) {
-             const content = this.data.content as PlotContent;
+             const content = this.plotContent as PlotContent;
              previewContainer.innerHTML = ''; // Clear placeholder/previous plot
 
              console.log(`Placeholder: Render plot in section ${this.data.id}`);
@@ -55,7 +56,7 @@ export class PlotSection extends BaseSection {
     protected populateEditContent(): void {
         const editorContainer = this.contentContainer?.querySelector('.plot-editor-container');
         if (editorContainer instanceof HTMLElement) {
-            const content = this.data.content as PlotContent;
+            const content = this.plotContent as PlotContent;
             this.plotConfig = content.data || {}; // Store current config
 
             // **Placeholder:** Create form fields or a JSON editor (like CodeMirror or Monaco)

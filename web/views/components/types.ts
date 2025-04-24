@@ -1,7 +1,7 @@
 // components/types.ts
 
 export type SectionType = 'text' | 'drawing' | 'plot';
-
+export type SectionContent = TextContent | DrawingContent | PlotContent | null;
 export interface DocumentMetadata {
   id: string; // UUID - Placeholder for now
   schemaVersion: string;
@@ -57,7 +57,7 @@ export interface SectionData {
   designId: string; // <-- ADD THIS LINE
   type: SectionType;
   title: string;
-  content?: TextContent | DrawingContent | PlotContent | null;
+  // content?: TextContent | DrawingContent | PlotContent | null;
   order: number;
 }
 
@@ -67,13 +67,15 @@ export interface SectionCallbacks {
   onMoveDown?: (sectionId: string) => void;
   onTitleChange?: (sectionId: string, newTitle: string) => void;
   // Ensure content type matches SectionData['content']
-  onContentChange?: (sectionId: string, newContent: SectionData['content']) => void;
+  onContentChange?: (sectionId: string, newContent: SectionContent) => void;
   // Callback for requesting section addition
   onAddSectionRequest?: (relativeToId: string, position: 'before' | 'after') => void;
 }
 
+// DocumentSection represents the interpreted state, useful for export/display.
 export type DocumentSection = TextDocumentSection | DrawingDocumentSection | PlotDocumentSection;
 
+// LeetCoachDocument represents the interpreted state of the whole document.
 export interface LeetCoachDocument {
   metadata: DocumentMetadata;
   title: string;
