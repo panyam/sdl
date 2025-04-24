@@ -97,8 +97,18 @@ func (s *DesignService) getSectionsBasePath(designId string) string {
 }
 
 // Helper to get the path for a specific section's data file
+func (s *DesignService) ensureSectionPath(designId, sectionId string) (string, error) {
+	sectionPath := filepath.Join(s.getSectionsBasePath(designId), sectionId) // fmt.Sprintf("%s.json", sectionId))
+	err := os.MkdirAll(sectionPath, 0755)
+	if err != nil && !errors.Is(err, os.ErrExist) {
+		slog.Error("Failed to create directory", "path", sectionPath, "error", err)
+		return sectionPath, err
+	}
+	return filepath.Join(s.getSectionsBasePath(designId), sectionId, "main.json"), nil
+}
+
 func (s *DesignService) getSectionPath(designId, sectionId string) string {
-	return filepath.Join(s.getSectionsBasePath(designId), fmt.Sprintf("%s.json", sectionId))
+	return filepath.Join(s.getSectionsBasePath(designId), sectionId, "main.json") // fmt.Sprintf("%s.json", sectionId))
 }
 
 // Helper to read section data from its file
@@ -516,7 +526,11 @@ func (s *DesignService) AddSection(ctx context.Context, req *protos.AddSectionRe
 	} // If RelativeSectionId is empty, insertIndex remains len(metadata.SectionIds) -> append
 
 	// 5. Write new section data file *first*
-	sectionPath := s.getSectionPath(designId, newSectionId)
+	sectionPath, err := s.ensureSectionPath(designId, newSectionId)
+	if err != nil {
+		slog.Error("Failed to get section path", "designId", designId, "sectionId", newSectionId, "error", err)
+		return nil, status.Error(codes.Internal, "Failed to ensure section path")
+	}
 	sectionJson, err := json.MarshalIndent(newSectionData, "", "  ")
 	if err != nil {
 		slog.Error("Failed to marshal new section data", "designId", designId, "sectionId", newSectionId, "error", err)
@@ -914,6 +928,18 @@ func (s *DesignService) DeleteSection(ctx context.Context, req *protos.DeleteSec
 		slog.Error("Failed to delete section data file, but metadata was updated", "designId", designId, "sectionPath", sectionPath, "error", err)
 	} else {
 		slog.Info("Successfully deleted section data file (or it was already gone)", "path", sectionPath)
+	}
+
+	// Remove the folder too
+	sectionDir := filepath.Join(s.getSectionsBasePath(designId), sectionId)
+	err = os.RemoveAll(sectionDir)
+	if err != nil {
+		if _, statErr := os.Stat(sectionDir); errors.Is(statErr, os.ErrNotExist) {
+			slog.Warn("Section directory already gone during delete", "designId", designId, "sectionId", sectionId, "path", sectionDir)
+		} else {
+			slog.Error("Failed to delete section directory", "designId", designId, "sectionId", sectionId, "path", sectionDir, "error", err)
+			return nil, status.Error(codes.Internal, "Failed to delete section")
+		}
 	}
 
 	return &protos.DeleteSectionResponse{}, nil

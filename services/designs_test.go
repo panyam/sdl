@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -514,11 +513,11 @@ func TestGetDesigns(t *testing.T) {
 // Helper to create a section file directly
 func createSectionDirectly(t *testing.T, basePath, designId, sectionId string, sectionData Section) {
 	t.Helper()
-	sectionsDir := filepath.Join(basePath, designId, "sections")
+	sectionsDir := filepath.Join(basePath, designId, "sections", sectionId)
 	err := os.MkdirAll(sectionsDir, 0755) // Ensure sections dir exists
 	require.NoError(t, err, "Failed to create sections directory for direct section creation")
 
-	sectionPath := filepath.Join(sectionsDir, fmt.Sprintf("%s.json", sectionId))
+	sectionPath := filepath.Join(sectionsDir, "main.json")
 	jsonData, err := json.MarshalIndent(sectionData, "", "  ")
 	require.NoError(t, err, "Failed to marshal section data for direct creation")
 	err = os.WriteFile(sectionPath, jsonData, 0644)
@@ -528,7 +527,8 @@ func createSectionDirectly(t *testing.T, basePath, designId, sectionId string, s
 // Helper to read section data directly
 func readSectionDataDirectly(t *testing.T, basePath, designId, sectionId string) *Section {
 	t.Helper()
-	sectionPath := filepath.Join(basePath, designId, "sections", fmt.Sprintf("%s.json", sectionId))
+	sectionsDir := filepath.Join(basePath, designId, "sections", sectionId)
+	sectionPath := filepath.Join(sectionsDir, "main.json")
 	jsonData, err := os.ReadFile(sectionPath)
 	if err != nil {
 		if os.IsNotExist(err) {

@@ -62,30 +62,65 @@ export abstract class BaseSection {
         this.updateDisplayTitle();
         this.updateTypeIcon();
         this.bindCommonEvents();
-
-        // Initial state: Show loading placeholder UNLESS initial content is already provided
-        // (This check is a bit redundant now as loadContent/setInitialContentAndRender will overwrite)
-        if (this.contentContainer && !this.data.content) { // Only show loading if no content passed initially
-            this.contentContainer.innerHTML = `
-                <div class="p-4 text-center text-gray-500 dark:text-gray-400 italic">
-                    Loading content...
-                </div>`;
-        } else if (this.contentContainer && this.data.content) {
-             // If content *was* passed in constructor (e.g., from AddSection response), render it immediately.
-             // This avoids the loading flash for newly created sections.
-            console.log(`Section ${this.sectionId}: Initial content provided in constructor. Rendering view.`);
-            this.mode = 'view';
-            if (this.loadTemplate('view')) {
-                this.populateViewContent();
-                this.bindViewModeEvents();
-            } else {
-                this.contentContainer.innerHTML = `<div class="p-4 text-red-500">Error loading view template.</div>`;
-            }
-        }
+        this.initViewAndLoadingState();
 
         // Add instance to the element for easy access (e.g., retry button)
-         (this.element as any).componentInstance = this;
+        (this.element as any).componentInstance = this;
+    }
 
+    protected initViewAndLoadingState() {
+      if (true) {
+        // --- NEW: Initialize with View Template and Loading State ---
+        this.mode = 'view'; // Start in view mode
+        if (this.contentContainer) {
+            if (this.loadTemplate('view')) {
+                // Find the primary content area within the loaded view template
+                const viewContentArea = this.contentContainer.querySelector('.section-view-content');
+                if (viewContentArea) {
+                    // Set loading state *inside* the view template structure
+                    viewContentArea.innerHTML = `
+                        <div class="p-4 text-center text-gray-500 dark:text-gray-400 italic">
+                            Loading content...
+                        </div>`;
+                } else {
+                    // Fallback if the standard content class isn't found
+                    this.contentContainer.innerHTML = `
+                        <div class="p-4 text-center text-gray-500 dark:text-gray-400 italic">
+                            Loading content... (Template structure missing '.section-view-content')
+                        </div>`;
+                    console.warn(`Section ${this.sectionId}: View template loaded, but '.section-view-content' not found.`);
+                }
+                this.bindViewModeEvents(); // Bind events to the loaded view template
+            } else {
+                // Handle template loading failure immediately
+                this.contentContainer.innerHTML = `
+                    <div class="p-4 text-red-500 dark:text-red-400 text-center">
+                        Error: Could not load view template for type '${this.data.type}'.
+                    </div>`;
+                console.error(`Section ${this.sectionId}: Failed to load initial view template.`);
+            }
+        }
+      } else if (this.contentContainer) {
+          // Initial state: Show loading placeholder UNLESS initial content is already provided
+          // (This check is a bit redundant now as loadContent/setInitialContentAndRender will overwrite)
+          if (!this.data.content) { // Only show loading if no content passed initially
+              this.contentContainer!.innerHTML = `
+                  <div class="p-4 text-center text-gray-500 dark:text-gray-400 italic">
+                      Loading content...
+                  </div>`;
+          } else {
+               // If content *was* passed in constructor (e.g., from AddSection response), render it immediately.
+               // This avoids the loading flash for newly created sections.
+              console.log(`Section ${this.sectionId}: Initial content provided in constructor. Rendering view.`);
+              this.mode = 'view';
+              if (this.loadTemplate('view')) {
+                  this.populateViewContent();
+                  this.bindViewModeEvents();
+              } else {
+                  this.contentContainer!.innerHTML = `<div class="p-4 text-red-500">Error loading view template.</div>`;
+              }
+          }
+      }
     }
 
      public get sectionId(): string {
@@ -189,24 +224,32 @@ export abstract class BaseSection {
      * Fetches the section's content from the API and populates the view.
      */
     public async loadContent(): Promise<void> {
-        // Prevent loading if content is already present (e.g., set by constructor/setInitial)
-        // or if already loading.
-        if (this.data.content || this.isLoading || !this.contentContainer) {
-            console.warn(`Section ${this.sectionId}: Load skipped (already loaded, loading, or container missing). Has Content: ${!!this.data.content}, Is Loading: ${this.isLoading}`);
-            // If content exists but view isn't rendered (rare edge case), render it now.
-            if (this.data.content && this.contentContainer?.querySelector('.text-gray-500')) { // Check if placeholder is still there
-                this.setInitialContentAndRender(this.data.content);
-            }
+        if (this.isLoading || !this.contentContainer) {
+            console.warn(`Section ${this.sectionId}: Load attempt while already loading or content container missing.`);
             return;
+        }
+        // Ensure we are in view mode visually, even if called unexpectedly
+        if (this.mode !== 'view') {
+             console.warn(`Section ${this.sectionId}: loadContent called while not in view mode. Switching...`);
+             this.switchToViewMode(false); // Cancel any edit and switch to view
         }
 
         this.isLoading = true;
-        this.mode = 'view'; // Ensure mode is view during load
+        // --- Loading state is now handled *within* the already loaded view template ---
+        // Find the content area again (it might have been replaced by error previously)
+        const viewContentArea = this.contentContainer.querySelector('.section-view-content');
+        if (viewContentArea) {
+             viewContentArea.innerHTML = `
+                 <div class="p-4 text-center text-gray-500 dark:text-gray-400 italic">
+                     Loading content...
+                 </div>`;
+        } else {
+             console.warn(`Section ${this.sectionId}: '.section-view-content' not found during loadContent start.`);
+             // Show loading in the main container as fallback
+             this.contentContainer.innerHTML = `<div class="p-4 text-center text-gray-500 dark:text-gray-400 italic">Loading...</div>`;
+        }
+        // --- End Loading State Update ---
 
-        this.contentContainer.innerHTML = `
-            <div class="p-4 text-center text-gray-500 dark:text-gray-400 italic">
-                Loading content...
-            </div>`;
         console.log(`Section ${this.sectionId}: Loading content for design ${this.designId}...`);
 
         try {
@@ -214,27 +257,50 @@ export abstract class BaseSection {
                 designId: this.designId,
                 sectionId: this.sectionId,
             });
-            console.log(`Section ${this.sectionId}: API response received`, apiSection);
-            this.data.content = extractContentFromApiSection(apiSection); // Store fetched content
 
-            // Update title from API response if needed
+            console.log(`Section ${this.sectionId}: API response received`, apiSection);
+            this.data.content = extractContentFromApiSection(apiSection);
+
+            // Update title if needed
             if (apiSection.title && apiSection.title !== this.data.title) {
+                console.log(`Section ${this.sectionId}: Title updated from API: "${this.data.title}" -> "${apiSection.title}"`);
                 this.data.title = apiSection.title;
                 this.updateDisplayTitle();
             }
 
-            console.log(`Section ${this.sectionId}: Content extracted, rendering view.`);
-            // Call internal render method
-            this.renderViewMode();
+            console.log(`Section ${this.sectionId}: Content extracted`, this.data.content);
+
+            // --- Content Population ---
+            // The view template is *already loaded*. We just need to populate it.
+            if (viewContentArea) {
+                // Clear the loading message before populating
+                viewContentArea.innerHTML = '';
+                this.populateViewContent(); // Subclass renders into the cleared viewContentArea
+                console.log(`Section ${this.sectionId}: View template populated.`);
+            } else {
+                 console.error(`Section ${this.sectionId}: '.section-view-content' not found for population after load.`);
+                 this.contentContainer.innerHTML = `<div class="p-4 text-red-500">Error: View content area missing.</div>`;
+            }
+            // --- End Content Population ---
+
+            // Re-bind events just in case populateViewContent overwrites something, though unlikely
+             this.bindViewModeEvents();
+
 
         } catch (error: any) {
             console.error(`Section ${this.sectionId}: Failed to load content`, error);
             const errorMsg = error.message || (error.response ? await error.response.text() : 'Unknown error');
-            this.contentContainer.innerHTML = `
+
+             // --- Error Display ---
+             // Display error within the view content area if possible
+            const targetErrorArea = viewContentArea || this.contentContainer; // Fallback to main container
+            targetErrorArea.innerHTML = `
                  <div class="p-4 text-red-500 dark:text-red-400 text-center">
                     Error loading content: ${errorMsg}
                     <button class="ml-2 text-blue-600 dark:text-blue-400 hover:underline" onclick="document.getElementById('${this.sectionId}')?.componentInstance?.loadContent()">Retry</button>
                  </div>`;
+            // --- End Error Display ---
+
         } finally {
             this.isLoading = false;
             console.log(`Section ${this.sectionId}: Loading finished.`);
@@ -242,25 +308,37 @@ export abstract class BaseSection {
     }
 
     /**
-     * Sets the initial content provided (e.g., after API creation) and renders the view.
-     * Bypasses the API fetch in loadContent.
-     * @param initialContent The content to set.
+     * Sets the initial content provided (e.g., by the AddSection API response)
+     * and renders the view mode directly, bypassing the loadContent fetch.
+     * @param initialContent The content to render immediately.
      */
     public setInitialContentAndRender(initialContent: SectionData['content']): void {
-        if (this.isLoading || !this.contentContainer) {
-            console.warn(`Section ${this.sectionId}: Called setInitialContentAndRender while loading or missing container.`);
-            return;
-        }
+         if (this.mode !== 'view') {
+              console.warn(`Section ${this.sectionId}: setInitialContentAndRender called while not in view mode. Forcing view mode.`);
+              this.mode = 'view'; // Ensure correct mode
+               if (!this.loadTemplate('view')) {
+                    console.error(`Section ${this.sectionId}: Failed to load view template in setInitialContentAndRender.`);
+                     this.contentContainer!.innerHTML = `<div class="p-4 text-red-500">Error: Could not load view template.</div>`;
+                    return;
+               }
+         }
 
-        console.log(`Section ${this.sectionId}: Setting initial content and rendering view.`);
-        this.data.content = initialContent; // Set the content directly
-        this.mode = 'view'; // Ensure mode is view
+         console.log(`Section ${this.sectionId}: Setting initial content and rendering.`);
+         this.data.content = initialContent;
+         this.isLoading = false; // Ensure loading is false
 
-        // Call internal render method
-        this.renderViewMode();
-
-         // Ensure loading state is off if it was somehow on
-         this.isLoading = false;
+        // Find the content area within the already loaded view template
+         const viewContentArea = this.contentContainer?.querySelector('.section-view-content');
+         if (viewContentArea) {
+             viewContentArea.innerHTML = ''; // Clear any loading message
+             this.populateViewContent(); // Render the provided initial content
+             this.bindViewModeEvents(); // Ensure events are bound
+         } else {
+              console.error(`Section ${this.sectionId}: '.section-view-content' not found during setInitialContentAndRender.`);
+               if (this.contentContainer) {
+                    this.contentContainer.innerHTML = `<div class="p-4 text-red-500">Error: View content area missing.</div>`;
+               }
+         }
     }
 
     /**
