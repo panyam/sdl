@@ -15,49 +15,6 @@ type ExcalidrawElement = any;
 type AppState = any;
 
 /**
- * Independent toolbar for Excalidraw that can be placed anywhere
- */
-export class ExcalidrawToolbar {
-  private excalidrawWrapper: ExcalidrawWrapper | null = null;
-  
-  /**
-   * Creates a toolbar for Excalidraw
-   * @param container The HTML element to mount the toolbar in
-   * @param options Configuration options
-   */
-  constructor(
-    public container: HTMLElement, 
-    options?: {
-      vertical?: boolean;
-      excalidrawWrapper?: ExcalidrawWrapper;
-    }
-  ) {
-    // Set wrapper if provided
-    if (options?.excalidrawWrapper) {
-      this.setExcalidrawWrapper(options.excalidrawWrapper);
-    }
-  }
-  
-  /**
-   * Associate an ExcalidrawWrapper with this toolbar
-   * @param wrapper The ExcalidrawWrapper instance
-   */
-  public setExcalidrawWrapper(wrapper: ExcalidrawWrapper): void {
-    this.excalidrawWrapper = wrapper;
-    
-    const saveButton = this.container.querySelector(".saveButton") as HTMLButtonElement;
-    saveButton.addEventListener("click", async () => {
-      if (this.excalidrawWrapper)  await this.excalidrawWrapper.saveToServer();
-    })
-
-    const reloadButton = this.container.querySelector(".reloadButton") as HTMLButtonElement;
-    reloadButton.addEventListener("click", async () => {
-      if (this.excalidrawWrapper)  await this.excalidrawWrapper.reloadFromServer();
-    })
-  }
-}
-
-/**
  * A vanilla TypeScript wrapper for Excalidraw that doesn't require React
  */
 export class ExcalidrawWrapper {
