@@ -279,6 +279,39 @@ func (s *DesignService) GetDesign(ctx context.Context, req *protos.GetDesignRequ
 	resp = &protos.GetDesignResponse{
 		Design: designProto,
 	}
+
+	// --- Populate SectionsMetadata if requested ---
+	if req.IncludeSectionMetadata {
+		slog.Debug("IncludeSectionMetadata requested, fetching section metadata", "designId", designId, "sectionCount", len(metadata.SectionIds))
+		sectionMetadataProtos := make([]*protos.Section, 0, len(metadata.SectionIds))
+
+		for index, sectionId := range metadata.SectionIds {
+			sectionData, readErr := s.readSectionData(designId, sectionId)
+			if readErr != nil {
+				// Log error but continue, maybe the file is missing/corrupt
+				slog.Warn("Failed to read section data while fetching metadata",
+					"designId", designId,
+					"sectionId", sectionId,
+					"error", readErr)
+				// Optionally, add a placeholder section with an error indicator?
+				// For now, we just skip it.
+				continue
+			}
+
+			// Convert to proto
+			sectionProto := SectionToProto(sectionData)
+
+			// --- CRUCIAL: Clear the content field for metadata response ---
+			sectionProto.Content = nil
+			// Set the order based on its index in the design's list
+			sectionProto.Order = uint32(index)
+
+			sectionMetadataProtos = append(sectionMetadataProtos, sectionProto)
+		}
+		resp.SectionsMetadata = sectionMetadataProtos
+		slog.Debug("Finished fetching section metadata", "designId", designId, "metadataCount", len(resp.SectionsMetadata))
+	}
+
 	slog.Info("Successfully retrieved design metadata", "designId", designId)
 	return resp, nil
 }

@@ -6,11 +6,11 @@ import { Modal } from './Modal';
 import { SectionManager } from './SectionManager';
 import { ToastManager } from './ToastManager';
 import { TableOfContents } from './TableOfContents';
-import { LeetCoachDocument, DocumentSection, SectionType, SectionData } from './types'; // Added SectionData
+import { LeetCoachDocument, DocumentSection, SectionType, SectionData } from './types';
 import { DesignApi } from './Api';
-import { V1GetDesignResponse, V1Section } from './apiclient'; // Added V1Section
-import { mapApiSectionTypeToFrontend } from './converters'; // Added converter
-import { BaseSection } from './BaseSection'; // Added BaseSection
+import { V1GetDesignResponse, V1Section } from './apiclient';
+import { convertApiSectionToSectionData } from './converters';
+import { BaseSection } from './BaseSection';
 
 /**
  * Main application initialization
@@ -141,87 +141,88 @@ class DesignEditorPage {
      * Fetches design metadata, initializes section shells, and triggers content loading for each section.
      */
     private async loadDesignData(designId: string): Promise<void> {
-        if (!this.documentTitle || !this.sectionManager || !this.toastManager || this.isLoadingDesign) {
-            console.warn("Cannot load design data: Core components not initialized or already loading.");
+        if (!this.documentTitle || !this.sectionManager || !this.toastManager) {
+            console.error("Cannot load design data: Core components not initialized.");
             return;
         }
 
-        this.isLoadingDesign = true;
-        // Optional: Show global loading state
-        document.body.classList.add('opacity-50', 'pointer-events-none'); // Example loading state
-        console.log(`Step 1.1: Loading design metadata for ${designId}...`);
+        // TODO: Show global loading indicator
+        console.log(`DesignEditorPage: Loading design ${designId}...`);
 
         try {
+            // Step 1: Fetch Design Metadata (including section metadata)
             const response: V1GetDesignResponse = await DesignApi.designServiceGetDesign({
                 id: designId,
-                includeSectionMetadata: true
+                includeSectionMetadata: true // Request metadata (id, type, title, order)
             });
             console.log("API Response (GetDesign):", response);
 
-            if (response.design) {
-                this.documentTitle.setTitle(response.design.name || "Untitled Design");
-
-                let sectionsMeta: SectionData[] = [];
-                if (response.sectionsMetadata && response.sectionsMetadata.length > 0) {
-                     console.log("Using sectionsMetadata from API response.");
-                     sectionsMeta = response.sectionsMetadata.map(apiMeta => ({
-                         id: apiMeta.id || '',
-                         designId: designId,
-                         type: mapApiSectionTypeToFrontend(apiMeta.type),
-                         title: apiMeta.title || '',
-                         order: apiMeta.order || 0,
-                         content: null // Start with null content
-                     }));
-                } else if (response.design.sectionIds && response.design.sectionIds.length > 0) {
-                     console.warn("sectionsMetadata not returned, initializing shells with IDs only.");
-                     sectionsMeta = response.design.sectionIds.map((id, index) => ({
-                         id: id, designId: designId, type: 'text', title: `Section ${index + 1}`, order: index + 1, content: null
-                     }));
-                 } else {
-                    console.log("Design has no sections.");
-                 }
-
-                console.log("Step 1.2: Initializing section shells...");
-                // InitializeSections creates the instances and renders the basic structure
-                const sectionInstances = this.sectionManager.initializeSections(sectionsMeta);
-
-                console.log(`Step 1.3: Triggering content loading for ${sectionInstances.length} sections...`);
-                if (sectionInstances.length > 0) {
-                    const loadPromises = sectionInstances.map(instance => {
-                        // Wrap loadContent in a try/catch just in case the promise itself rejects unexpectedly
-                        // although loadContent already has internal error handling.
-                        return instance.loadContent().catch(err => {
-                             console.error(`Unhandled error during loadContent for section ${instance.sectionId}:`, err);
-                             // Potentially update UI to show a permanent error for this section if needed
-                        });
-                    });
-                    // Wait for all sections to attempt loading. Individual errors are handled within loadContent.
-                    await Promise.all(loadPromises);
-                    console.log("Step 1.3 Complete: All sections finished loading attempt.");
-                } else {
-                    console.log("No sections to load content for.");
-                }
-
-                // Update empty state *after* attempting to load all sections
-                this.sectionManager.handleEmptyState();
-
-            } else {
+            if (!response.design) {
                 throw new Error("API response missing design object.");
             }
+
+            // Update Document Title
+            this.documentTitle.setTitle(response.design.name || "Untitled Design");
+            this.documentTitle.updateLastSavedTime(new Date(response.design.updatedAt || Date.now())); // Use timestamp from API
+
+            // Step 2: Prepare Metadata for SectionManager
+            const sectionsMetadataRaw = response.sectionsMetadata || [];
+            const sectionsMetadata: SectionData[] = sectionsMetadataRaw.map(apiSec => ({
+                // Convert API metadata to the SectionData structure needed by initializeSections
+                // Explicitly set content to null - it will be loaded by the section itself
+                id: apiSec.id || '', // Ensure ID exists
+                designId: designId, // Add designId here
+                type: convertApiSectionToSectionData(apiSec).type, // Use converter for type mapping
+                title: apiSec.title || 'Untitled Section',
+                order: apiSec.order || 0,
+                content: null // Mark content as not loaded yet
+            }));
+
+            // Step 3: Initialize Section Shells using SectionManager
+            console.log(`DesignEditorPage: Initializing ${sectionsMetadata.length} section shells...`);
+            // This creates the instances and DOM, but doesn't load content yet
+            const sectionInstances: BaseSection[] = this.sectionManager.initializeSections(sectionsMetadata);
+
+            // Step 4: Trigger Content Loading for Each Section Instance
+            if (sectionInstances.length > 0) {
+                console.log(`DesignEditorPage: Triggering loadContent() for ${sectionInstances.length} sections...`);
+                const loadPromises = sectionInstances.map(instance =>
+                    instance.loadContent().catch(err => {
+                        // Catch individual load errors here so Promise.allSettled sees them as 'rejected'
+                        console.error(`Error caught during loadContent for section ${instance.sectionId}:`, err);
+                        return Promise.reject(err); // Ensure it's still treated as a rejection
+                    })
+                );
+
+                // Wait for all load attempts to complete (successfully or with errors)
+                const results = await Promise.allSettled(loadPromises);
+                console.log("DesignEditorPage: All section load attempts finished.", results);
+
+                // Optionally: Check results for overall success/failure logging
+                const failedLoads = results.filter(r => r.status === 'rejected').length;
+                if (failedLoads > 0) {
+                     this.toastManager.showToast("Load Warning", `${failedLoads} section(s) failed to load content.`, "warning");
+                }
+            } else {
+                 console.log("DesignEditorPage: No sections found to load content for.");
+            }
+
+            // Step 5: Update empty state *after* initialization and load attempts
+            this.sectionManager.handleEmptyState(); // Reflects loaded sections (or lack thereof)
+
 
         } catch (error: any) {
             console.error("Error loading design data:", error);
             const errorMsg = error.message || "Failed to fetch design details from the server.";
             this.toastManager.showToast("Load Failed", errorMsg, "error");
-            this.sectionManager?.handleEmptyState();
+            // Ensure empty state is shown on a major load failure
+            this.sectionManager.handleEmptyState();
+
         } finally {
-            this.isLoadingDesign = false;
-            // Optional: Hide global loading state
-            document.body.classList.remove('opacity-50', 'pointer-events-none');
-            console.log("Design loading process finished.");
+            // TODO: Hide global loading indicator
+             console.log(`DesignEditorPage: Design loading process complete for ${designId}.`);
         }
     }
-
     /** Handles click on the new theme toggle button */
     private handleThemeToggleClick(): void {
         const currentSetting = ThemeManager.getCurrentThemeSetting();
