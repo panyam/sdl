@@ -114,6 +114,12 @@ export class TextSection extends BaseSection {
         }
     }
 
+    public async handleSaveClick(): Promise<void> {
+        const content = this.getContentFromEditMode()
+        console.log(`Save button clicked or shortcut used for section ${this.data.id}.`);
+        this.switchToViewMode(true);
+    }
+
     /**
      * Handles theme changes specifically for the TextSection.
      * If the section is currently in edit mode, it reinitializes the

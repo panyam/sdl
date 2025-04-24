@@ -553,7 +553,7 @@ export abstract class BaseSection {
         }
     }
 
-    public handleSaveClick(): void {
+    public async handleSaveClick(): Promise<void> {
         console.log(`Save button clicked or shortcut used for section ${this.data.id}.`);
         this.switchToViewMode(true);
     }
