@@ -2,18 +2,9 @@
 
 import { Modal } from './Modal';
 import { SectionData, SectionType, DocumentSection, TextContent, DrawingContent, PlotContent, SectionCallbacks } from './types';
-
-// --- Placeholders for icons/titles - can be moved/refined ---
-const TEXT_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" /></svg>`;
-const DRAWING_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /></svg>`;
-const PLOT_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6" /></svg>`;
-const TYPE_TITLES: Record<SectionType, string> = {
-    text: "Text Section",
-    drawing: "Drawing Section",
-    plot: "Plot Section"
-};
-// --- End Placeholders ---
-
+import { DesignApi } from './Api'; // Import API client
+import { V1Section } from './apiclient'; // Import API Section type
+import { extractContentFromApiSection } from './converters'; // Import the converter
 
 /**
  * Abstract base class for all document sections.
@@ -22,12 +13,13 @@ const TYPE_TITLES: Record<SectionType, string> = {
  */
 export abstract class BaseSection {
     protected data: SectionData;
-    protected element: HTMLElement; // The root element for this section (<div id="section-...">)
+    protected element: HTMLElement;
     protected callbacks: SectionCallbacks;
     protected modal: Modal;
     protected mode: 'view' | 'edit' = 'view';
+    protected isLoading: boolean = false;
 
-    // Common DOM elements within the section structure
+    // Common DOM elements
     protected sectionHeaderElement: HTMLElement | null;
     protected contentContainer: HTMLElement | null; // The .section-content div
     protected titleElement: HTMLElement | null;
@@ -38,12 +30,12 @@ export abstract class BaseSection {
     protected settingsButton: HTMLElement | null;
     protected llmButton: HTMLElement | null;
     protected addBeforeButton: HTMLElement | null;
-    protected addAfterButton: HTMLElement | null; 
+    protected addAfterButton: HTMLElement | null;
     protected fullscreenButton: HTMLElement | null; // Moved from subclasses
     protected exitFullscreenButton: HTMLElement | null = null; // Found after view load
 
     constructor(data: SectionData, element: HTMLElement, callbacks: SectionCallbacks = {}) {
-        this.data = data;
+        this.data = data; // May have null/empty content initially
         this.element = element;
         this.callbacks = callbacks;
         this.modal = Modal.getInstance();
@@ -63,17 +55,38 @@ export abstract class BaseSection {
         this.fullscreenButton = this.element.querySelector('.section-fullscreen');
         this.exitFullscreenButton = this.element.querySelector('.section-exit-fullscreen'); // Find it once in constructor
 
-
         if (!this.contentContainer) {
             console.error(`Section content container not found for section ID: ${this.data.id}`);
         }
 
-        this.updateDisplayTitle(); // Set initial title display
-        this.updateTypeIcon();   // Set initial type icon
+        this.updateDisplayTitle();
+        this.updateTypeIcon();
         this.bindCommonEvents();
-        this.initializeSectionDisplay(); // Load initial view mode template
-         // Fullscreen button is bound dynamically by `enableFullscreen` if called by subclass
-     }
+
+        // Initial state: Show loading placeholder UNLESS initial content is already provided
+        // (This check is a bit redundant now as loadContent/setInitialContentAndRender will overwrite)
+        if (this.contentContainer && !this.data.content) { // Only show loading if no content passed initially
+            this.contentContainer.innerHTML = `
+                <div class="p-4 text-center text-gray-500 dark:text-gray-400 italic">
+                    Loading content...
+                </div>`;
+        } else if (this.contentContainer && this.data.content) {
+             // If content *was* passed in constructor (e.g., from AddSection response), render it immediately.
+             // This avoids the loading flash for newly created sections.
+            console.log(`Section ${this.sectionId}: Initial content provided in constructor. Rendering view.`);
+            this.mode = 'view';
+            if (this.loadTemplate('view')) {
+                this.populateViewContent();
+                this.bindViewModeEvents();
+            } else {
+                this.contentContainer.innerHTML = `<div class="p-4 text-red-500">Error loading view template.</div>`;
+            }
+        }
+
+        // Add instance to the element for easy access (e.g., retry button)
+         (this.element as any).componentInstance = this;
+
+    }
 
      public get sectionId(): string {
        return this.data.id
@@ -110,15 +123,8 @@ export abstract class BaseSection {
     /** Updates the type icon in the section header */
     protected updateTypeIcon(): void {
         if (this.typeIconElement) {
-            let iconSvg: string;
-            switch (this.data.type) {
-                case 'drawing': iconSvg = DRAWING_ICON_SVG; break;
-                case 'plot':    iconSvg = PLOT_ICON_SVG; break;
-                case 'text':
-                default:        iconSvg = TEXT_ICON_SVG; break;
-            }
-            this.typeIconElement.innerHTML = iconSvg;
-            this.typeIconElement.setAttribute('title', TYPE_TITLES[this.data.type] || 'Section');
+            this.typeIconElement.innerHTML = this.getSectionIconSvg();
+            this.typeIconElement.setAttribute('title', this.getSectionTypeTitle())
         }
     }
 
@@ -179,9 +185,102 @@ export abstract class BaseSection {
         }
     }
 
-    /** Initializes the section by loading the view mode template */
-    protected initializeSectionDisplay(): void {
-        this.switchToViewMode(false); // Start in view mode, don't save anything
+    /**
+     * Fetches the section's content from the API and populates the view.
+     */
+    public async loadContent(): Promise<void> {
+        // Prevent loading if content is already present (e.g., set by constructor/setInitial)
+        // or if already loading.
+        if (this.data.content || this.isLoading || !this.contentContainer) {
+            console.warn(`Section ${this.sectionId}: Load skipped (already loaded, loading, or container missing). Has Content: ${!!this.data.content}, Is Loading: ${this.isLoading}`);
+            // If content exists but view isn't rendered (rare edge case), render it now.
+            if (this.data.content && this.contentContainer?.querySelector('.text-gray-500')) { // Check if placeholder is still there
+                this.setInitialContentAndRender(this.data.content);
+            }
+            return;
+        }
+
+        this.isLoading = true;
+        this.mode = 'view'; // Ensure mode is view during load
+
+        this.contentContainer.innerHTML = `
+            <div class="p-4 text-center text-gray-500 dark:text-gray-400 italic">
+                Loading content...
+            </div>`;
+        console.log(`Section ${this.sectionId}: Loading content for design ${this.designId}...`);
+
+        try {
+            const apiSection: V1Section = await DesignApi.designServiceGetSection({
+                designId: this.designId,
+                sectionId: this.sectionId,
+            });
+            console.log(`Section ${this.sectionId}: API response received`, apiSection);
+            this.data.content = extractContentFromApiSection(apiSection); // Store fetched content
+
+            // Update title from API response if needed
+            if (apiSection.title && apiSection.title !== this.data.title) {
+                this.data.title = apiSection.title;
+                this.updateDisplayTitle();
+            }
+
+            console.log(`Section ${this.sectionId}: Content extracted, rendering view.`);
+            // Call internal render method
+            this.renderViewMode();
+
+        } catch (error: any) {
+            console.error(`Section ${this.sectionId}: Failed to load content`, error);
+            const errorMsg = error.message || (error.response ? await error.response.text() : 'Unknown error');
+            this.contentContainer.innerHTML = `
+                 <div class="p-4 text-red-500 dark:text-red-400 text-center">
+                    Error loading content: ${errorMsg}
+                    <button class="ml-2 text-blue-600 dark:text-blue-400 hover:underline" onclick="document.getElementById('${this.sectionId}')?.componentInstance?.loadContent()">Retry</button>
+                 </div>`;
+        } finally {
+            this.isLoading = false;
+            console.log(`Section ${this.sectionId}: Loading finished.`);
+        }
+    }
+
+    /**
+     * Sets the initial content provided (e.g., after API creation) and renders the view.
+     * Bypasses the API fetch in loadContent.
+     * @param initialContent The content to set.
+     */
+    public setInitialContentAndRender(initialContent: SectionData['content']): void {
+        if (this.isLoading || !this.contentContainer) {
+            console.warn(`Section ${this.sectionId}: Called setInitialContentAndRender while loading or missing container.`);
+            return;
+        }
+
+        console.log(`Section ${this.sectionId}: Setting initial content and rendering view.`);
+        this.data.content = initialContent; // Set the content directly
+        this.mode = 'view'; // Ensure mode is view
+
+        // Call internal render method
+        this.renderViewMode();
+
+         // Ensure loading state is off if it was somehow on
+         this.isLoading = false;
+    }
+
+    /**
+     * Internal helper to load the view template and populate it.
+     * Assumes this.data.content is already set.
+     */
+    private renderViewMode(): void {
+        if (!this.contentContainer) return;
+
+        if (this.loadTemplate('view')) {
+            this.populateViewContent(); // Subclass implements this to render the actual content
+            this.bindViewModeEvents();
+            console.log(`Section ${this.sectionId}: View template loaded and populated.`);
+        } else {
+            console.error(`Section ${this.sectionId}: Failed to load view template.`);
+            this.contentContainer.innerHTML = `
+                <div class="p-4 text-red-500 dark:text-red-400 text-center">
+                    Error: Could not load view template.
+                </div>`;
+        }
     }
 
     /** Handles the logic for editing the section title */
@@ -280,30 +379,33 @@ export abstract class BaseSection {
      * Loads the appropriate view template from the registry.
      */
     public switchToViewMode(saveChanges: boolean): void {
+        // Step 5 will add the saving logic here using this.saveContent()
         if (this.mode === 'edit' && saveChanges) {
-            console.log(`switchToViewMode: Attempting to get content from edit mode for section ${this.data.id}`);
-            const newContent = this.getContentFromEditMode();
-            // --- Modification: Always call the callback on save intent ---
-            // Let the SectionManager or API decide if an update is truly needed.
-            // The comparison check can be done there if desired, but usually better to just send the update.
-            // if (JSON.stringify(newContent) !== JSON.stringify(this.data.content)) {
-                 this.data.content = newContent; // Update local data regardless
-                 this.callbacks.onContentChange?.(this.data.id, this.data.content); // Always call callback
-                 console.log(`Section ${this.data.id} content saved.`);
-            // } else {
-            //      console.log(`Section ${this.data.id} content unchanged, but callback will still be called.`);
-            //      this.callbacks.onContentChange?.(this.data.id, this.data.content); // Call even if unchanged? Maybe not. Let's stick to calling ONLY if changed or always sending to API. Let's ALWAYS send.
-            // }
+            console.log(`switchToViewMode: Save requested for ${this.sectionId}. Saving logic TBD in Step 5.`);
+             // **** PLACEHOLDER for Step 5: Call this.saveContent() ****
+             const newContent = this.getContentFromEditMode();
+             this.data.content = newContent; // Update local data optimistically (will be confirmed/overwritten by saveContent)
+             console.log(`Section ${this.sectionId} content updated locally (API save TBD).`);
+
+            // Cleanup editor state *after* getting content, before rendering view
+            this.cleanupEditMode();
+
+        } else if (this.mode === 'edit' && !saveChanges) {
+             // Cleanup editor state if needed
+             this.cleanupEditMode();
         }
 
         this.mode = 'view';
-        console.log(`Switching ${this.data.id} to view mode.`);
-        if (this.loadTemplate('view')) {
-            this.populateViewContent();
-            this.bindViewModeEvents();
-        } else {
-            console.error("Failed to load view template for section", this.data.id);
-        }
+        console.log(`Switching ${this.sectionId} to view mode.`);
+        // Render the view using the current this.data.content
+        this.renderViewMode();
+    }
+
+    // Add a cleanup method to be called before switching away from edit mode without saving
+    protected cleanupEditMode(): void {
+        // Base implementation does nothing. Subclasses (like DrawingSection)
+        // will override this to unmount React components, etc.
+        console.log(`BaseSection ${this.sectionId}: Cleaning up edit mode.`);
     }
 
     /**
@@ -311,15 +413,28 @@ export abstract class BaseSection {
      * Loads the appropriate edit template from the registry.
      */
     public switchToEditMode(): void {
-        if (this.mode === 'edit') return; // Already in edit mode
+        if (this.mode === 'edit') {
+            // If already in edit mode, maybe focus the editor?
+            console.log(`Section ${this.sectionId}: Already in edit mode.`);
+            return;
+        }
+
+        // Optional: Check if content has been loaded successfully before allowing edit?
+        // if (this.data.content === undefined) { // Or check based on an error flag
+        //    console.warn(`Section ${this.sectionId}: Cannot switch to edit, content not loaded.`);
+        //    // Optionally trigger loadContent again or show a message
+        //    // await this.loadContent(); // Maybe retry load?
+        //    // if (this.data.content === undefined) return; // Exit if load failed again
+        //    return;
+        // }
 
         this.mode = 'edit';
-        console.log(`Switching ${this.data.id} to edit mode.`);
+        console.log(`Switching ${this.sectionId} to edit mode.`);
         if (this.loadTemplate('edit')) {
-            this.populateEditContent();
+            this.populateEditContent(); // Initialize the editor with current this.data.content
             this.bindEditModeEvents();
         } else {
-             console.error("Failed to load edit template for section", this.data.id);
+             console.error("Failed to load edit template for section", this.sectionId);
              this.mode = 'view'; // Revert mode if template fails
         }
     }
@@ -403,6 +518,17 @@ export abstract class BaseSection {
         this.contentContainer.appendChild(templateRootElement);
 
         return true;
+    }
+
+    /** Returns the (type) title for this section. */
+    protected getSectionTypeTitle(): string {
+      return "Section"
+    }
+
+
+    /** Returns the svg content to show for this section. */
+    protected getSectionIconSvg(): string {
+      return ""
     }
 
     // --- Abstract methods to be implemented by derived classes ---

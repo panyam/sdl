@@ -38,17 +38,17 @@ export interface BaseDocumentSection {
 
 export interface TextDocumentSection extends BaseDocumentSection {
   type: 'text';
-  content: TextContent;
+  content: TextContent | null;
 }
 
 export interface DrawingDocumentSection extends BaseDocumentSection {
   type: 'drawing';
-  content: DrawingContent; // Placeholder content for now
+  content: DrawingContent | null;
 }
 
 export interface PlotDocumentSection extends BaseDocumentSection {
   type: 'plot';
-  content: PlotContent; // Placeholder content for now
+  content: PlotContent | null;
 }
 
 
@@ -57,7 +57,7 @@ export interface SectionData {
   designId: string; // <-- ADD THIS LINE
   type: SectionType;
   title: string;
-  content: TextContent | DrawingContent | PlotContent;
+  content?: TextContent | DrawingContent | PlotContent | null;
   order: number;
 }
 

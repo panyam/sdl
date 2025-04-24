@@ -1,4 +1,4 @@
-// components/DesignEditorPage.ts
+// ./web/views/components/DesignEditorPage.ts
 
 import { ThemeManager } from './ThemeManager';
 import { DocumentTitle } from './DocumentTitle';
@@ -6,55 +6,47 @@ import { Modal } from './Modal';
 import { SectionManager } from './SectionManager';
 import { ToastManager } from './ToastManager';
 import { TableOfContents } from './TableOfContents';
-import { LeetCoachDocument, DocumentSection, SectionType } from './types';
+import { LeetCoachDocument, DocumentSection, SectionType, SectionData } from './types'; // Added SectionData
 import { DesignApi } from './Api';
-import { V1GetDesignResponse } from './apiclient';
+import { V1GetDesignResponse, V1Section } from './apiclient'; // Added V1Section
+import { mapApiSectionTypeToFrontend } from './converters'; // Added converter
+import { BaseSection } from './BaseSection'; // Added BaseSection
 
 /**
  * Main application initialization
  */
 class DesignEditorPage {
-    // Keep other component properties...
-    private themeManager: typeof ThemeManager | null = null; // Use typeof for static class
+    private themeManager: typeof ThemeManager | null = null;
     private documentTitle: DocumentTitle | null = null;
     private modal: Modal | null = null;
     private sectionManager: SectionManager | null = null;
     private toastManager: ToastManager | null = null;
     private tableOfContents: TableOfContents | null = null;
 
-    // New elements for theme toggle
     private themeToggleButton: HTMLButtonElement | null = null;
     private themeToggleIcon: HTMLElement | null = null;
 
-    // Store the current design ID
     private currentDesignId: string | null = null;
+    private isLoadingDesign: boolean = false; // Loading state
 
     constructor() {
         this.initializeComponents();
         this.bindEvents();
-        this.loadInitialState(); // Load document and set initial theme icon
+        this.loadInitialState();
     }
 
-    /** Initialize all application components */
     private initializeComponents(): void {
-        const designId = (document.getElementById("designIdInput") as HTMLInputElement).value.trim();
-        ThemeManager.init(); // Static init call
+        const designIdInput = document.getElementById("designIdInput") as HTMLInputElement | null;
+        const designId = designIdInput?.value.trim() || null; // Allow null if input not found/empty
+
+        ThemeManager.init();
         this.modal = Modal.init();
         this.toastManager = ToastManager.init();
-        this.documentTitle = new DocumentTitle(designId);
-        this.sectionManager = new SectionManager(designId);
+        this.documentTitle = new DocumentTitle(designId); // Pass initial ID
+        this.sectionManager = new SectionManager(designId); // Pass initial ID
         this.tableOfContents = TableOfContents.init({
             onAddSectionClick: () => {
-                // We need the last section ID to add after it.
-                // Let SectionManager handle opening the selector, it knows the context.
-                // This was changed because the selector modal now calls back to SectionManager's
-                // handleSectionTypeSelection directly.
                 this.sectionManager?.openSectionTypeSelector(this.getLastSectionId(), 'after');
-                /* // OLD logic:
-                const sections = this.sectionManager?.getDocumentSections() || []; // Get sorted data
-                const lastSectionId = sections.length > 0 ? sections[sections.length - 1].id : null;
-                this.sectionManager?.openSectionTypeSelector(lastSectionId, 'after'); // Use 'after' last section
-                */
             }
         });
 
@@ -62,7 +54,6 @@ class DesignEditorPage {
             this.sectionManager.setTocComponent(this.tableOfContents);
         }
 
-        // Find new theme toggle elements
         this.themeToggleButton = document.getElementById('theme-toggle-button') as HTMLButtonElement;
         this.themeToggleIcon = document.getElementById('theme-toggle-icon');
 
@@ -73,14 +64,11 @@ class DesignEditorPage {
         console.log('LeetCoach application initialized');
     }
 
-    /** Bind application-level events */
     private bindEvents(): void {
-        // --- Add new theme toggle button event ---
         if (this.themeToggleButton) {
             this.themeToggleButton.addEventListener('click', this.handleThemeToggleClick.bind(this));
         }
 
-        // --- Mobile menu toggle ---
         const mobileMenuButton = document.getElementById('mobile-menu-button');
         if (mobileMenuButton) {
             mobileMenuButton.addEventListener('click', () => {
@@ -88,15 +76,12 @@ class DesignEditorPage {
             });
         }
 
-        // --- Save button ---
         const saveButton = document.querySelector('header button.bg-blue-600');
         if (saveButton) {
-            saveButton.addEventListener('click', this.saveDocument.bind(this)); // Save button is now a placeholder
+            saveButton.addEventListener('click', this.saveDocument.bind(this));
         }
 
-       // --- Bind section type selection from modal ---
-       // The SectionManager now handles the API call internally after selection.
-        document.addEventListener('click', (e: MouseEvent) => {
+       document.addEventListener('click', (e: MouseEvent) => {
             const target = e.target as HTMLElement;
             const sectionTypeOption = target.closest('.section-type-option, button.section-type-option');
 
@@ -105,15 +90,14 @@ class DesignEditorPage {
             }
         });
 
-        // --- Export button ---
         const exportButton = document.querySelector('header button.bg-gray-200');
         if (exportButton) {
-            exportButton.addEventListener('click', this.exportDocument.bind(this)); // Export remains placeholder
+            exportButton.addEventListener('click', this.exportDocument.bind(this));
         }
     }
 
      /**
-      * NEW: Handles the click on a section type button within the modal.
+      * Handles the click on a section type button within the modal.
       * Calls the SectionManager to initiate the API call and subsequent creation.
       */
      private handleSectionTypeSelectionFromModal(buttonElement: Element): void {
@@ -129,73 +113,97 @@ class DesignEditorPage {
          const relativeToId = modalData?.relativeToId || null;
          const position = modalData?.position || 'after';
 
-         // Call SectionManager to handle the API call and creation process
+         // SectionManager handles API call and creation, including calling setInitialContentAndRender
          this.sectionManager.handleSectionTypeSelection(sectionType, relativeToId, position);
 
-         this.modal.hide(); // Close modal
+         this.modal.hide();
      }
 
     /** Load document data and set initial UI states */
     private loadInitialState(): void {
-        this.updateThemeButtonState(); // Set the initial theme icon/label
+        this.updateThemeButtonState();
 
-        // --- NEW: Get Design ID and Load Data ---
-        // Assume the design ID is embedded in the body's data attribute by the Go template
-        const designId = (document.getElementById("designIdInput") as HTMLInputElement).value.trim();
-        if (designId.length > 0) {
+        const designIdInput = document.getElementById("designIdInput") as HTMLInputElement | null;
+        const designId = designIdInput?.value.trim() || null;
+
+        if (designId) {
             this.currentDesignId = designId;
             console.log(`Found Design ID: ${this.currentDesignId}. Loading data...`);
             this.loadDesignData(this.currentDesignId);
         } else {
-            console.error("Design ID not found in body data attribute (data-design-id). Cannot load document.");
+            console.error("Design ID input element not found or has no value. Cannot load document.");
             this.toastManager?.showToast("Error", "Could not load document: Design ID missing.", "error");
-            // Optionally, load empty state or redirect
-            this.sectionManager?.handleEmptyState(); // Show empty state if no ID
+            this.sectionManager?.handleEmptyState();
         }
-        // --- End NEW ---
     }
 
     /**
-     * NEW: Fetches design metadata (title, section IDs/metadata) from the API.
+     * Fetches design metadata, initializes section shells, and triggers content loading for each section.
      */
     private async loadDesignData(designId: string): Promise<void> {
-        if (!this.documentTitle || !this.sectionManager || !this.toastManager) {
-            console.error("Cannot load design data: Core components not initialized.");
+        if (!this.documentTitle || !this.sectionManager || !this.toastManager || this.isLoadingDesign) {
+            console.warn("Cannot load design data: Core components not initialized or already loading.");
             return;
         }
 
-        // Optional: Show loading state
-        // this.showLoadingIndicator(true);
+        this.isLoadingDesign = true;
+        // Optional: Show global loading state
+        document.body.classList.add('opacity-50', 'pointer-events-none'); // Example loading state
+        console.log(`Step 1.1: Loading design metadata for ${designId}...`);
 
         try {
             const response: V1GetDesignResponse = await DesignApi.designServiceGetDesign({
                 id: designId,
-                includeSectionMetadata: true // Request metadata for potential use later
+                includeSectionMetadata: true
             });
-
             console.log("API Response (GetDesign):", response);
 
             if (response.design) {
-                // Update Document Title
                 this.documentTitle.setTitle(response.design.name || "Untitled Design");
 
-                // Pass Section Info to SectionManager
-                const sectionIds = response.design.sectionIds || [];
-                const sectionsMetadata = response.sectionsMetadata || null; // API might return undefined
-                this.sectionManager.setInitialSectionInfo(sectionIds, sectionsMetadata);
-
-                // --- Trigger Step 1.2 (to be implemented next) ---
-                // At this point, we would trigger the loading of individual sections
-                // based on the sectionIds stored in SectionManager.
-                // For now, the page will remain empty section-wise.
-                 console.log("Step 1.1 Complete: Design metadata loaded. Section content loading deferred.");
-                 // If sectionIds is empty, handle empty state now. If not, handleEmptyState
-                 this.loadSectionsContent(designId, sectionIds); // <-- NEW: Trigger section loading
-
-                 // will be called later by SectionManager after loading sections.
-                 if (sectionIds.length === 0) {
-                     this.sectionManager.handleEmptyState();
+                let sectionsMeta: SectionData[] = [];
+                if (response.sectionsMetadata && response.sectionsMetadata.length > 0) {
+                     console.log("Using sectionsMetadata from API response.");
+                     sectionsMeta = response.sectionsMetadata.map(apiMeta => ({
+                         id: apiMeta.id || '',
+                         designId: designId,
+                         type: mapApiSectionTypeToFrontend(apiMeta.type),
+                         title: apiMeta.title || '',
+                         order: apiMeta.order || 0,
+                         content: null // Start with null content
+                     }));
+                } else if (response.design.sectionIds && response.design.sectionIds.length > 0) {
+                     console.warn("sectionsMetadata not returned, initializing shells with IDs only.");
+                     sectionsMeta = response.design.sectionIds.map((id, index) => ({
+                         id: id, designId: designId, type: 'text', title: `Section ${index + 1}`, order: index + 1, content: null
+                     }));
+                 } else {
+                    console.log("Design has no sections.");
                  }
+
+                console.log("Step 1.2: Initializing section shells...");
+                // InitializeSections creates the instances and renders the basic structure
+                const sectionInstances = this.sectionManager.initializeSections(sectionsMeta);
+
+                console.log(`Step 1.3: Triggering content loading for ${sectionInstances.length} sections...`);
+                if (sectionInstances.length > 0) {
+                    const loadPromises = sectionInstances.map(instance => {
+                        // Wrap loadContent in a try/catch just in case the promise itself rejects unexpectedly
+                        // although loadContent already has internal error handling.
+                        return instance.loadContent().catch(err => {
+                             console.error(`Unhandled error during loadContent for section ${instance.sectionId}:`, err);
+                             // Potentially update UI to show a permanent error for this section if needed
+                        });
+                    });
+                    // Wait for all sections to attempt loading. Individual errors are handled within loadContent.
+                    await Promise.all(loadPromises);
+                    console.log("Step 1.3 Complete: All sections finished loading attempt.");
+                } else {
+                    console.log("No sections to load content for.");
+                }
+
+                // Update empty state *after* attempting to load all sections
+                this.sectionManager.handleEmptyState();
 
             } else {
                 throw new Error("API response missing design object.");
@@ -205,43 +213,12 @@ class DesignEditorPage {
             console.error("Error loading design data:", error);
             const errorMsg = error.message || "Failed to fetch design details from the server.";
             this.toastManager.showToast("Load Failed", errorMsg, "error");
-            // Show empty state on error
-             this.sectionManager.handleEmptyState();
-
+            this.sectionManager?.handleEmptyState();
         } finally {
-            // Optional: Hide loading state
-            // this.showLoadingIndicator(false);
-        }
-    }
-
-    /**
-     * NEW: Fetches content for each section ID and loads them into SectionManager.
-     */
-    private async loadSectionsContent(designId: string, sectionIds: string[]): Promise<void> {
-        if (!this.sectionManager || !this.toastManager) return;
-        if (sectionIds.length === 0) {
-            console.log("No section IDs found, skipping content loading.");
-            // Empty state already handled by loadDesignData
-            return;
-        }
-
-        console.log(`Step 1.2: Loading content for ${sectionIds.length} sections...`);
-        // Optional: Show loading state for sections
-        // this.showSectionLoadingIndicator(true);
-
-        try {
-            // Pass the IDs to SectionManager to handle the fetching and loading
-            await this.sectionManager.loadSectionContentsByIds(designId, sectionIds);
-            console.log("Step 1.2 Complete: Section content loading finished.");
-
-        } catch (error: any) {
-            console.error("Error during section content loading process:", error);
-            this.toastManager.showToast("Section Load Failed", "Could not load content for some sections.", "error");
-            // Ensure empty state is handled if loading completely fails or results in zero sections
-            this.sectionManager.handleEmptyState();
-        } finally {
-            // Optional: Hide loading state for sections
-            // this.showSectionLoadingIndicator(false);
+            this.isLoadingDesign = false;
+            // Optional: Hide global loading state
+            document.body.classList.remove('opacity-50', 'pointer-events-none');
+            console.log("Design loading process finished.");
         }
     }
 
@@ -277,22 +254,6 @@ class DesignEditorPage {
         this.themeToggleButton.setAttribute('aria-label', label);
         this.themeToggleButton.setAttribute('title', label); // Add tooltip
     }
-
-
-    /** Load document data into the components */
-    // public loadDocument(doc: LeetCoachDocument): void { // Keep signature if needed? No, API drives load now.
-    //     console.log("Loading document:", doc.metadata.id);
-    //     if (this.documentTitle) {
-    //         this.documentTitle.setTitle(doc.title);
-    //     }
-    //     if (this.sectionManager) {
-    //         // loadSections will now also trigger the TOC update via the connected component
-    //         // THIS IS REPLACED BY API LOADING
-    //         // this.sectionManager.loadSections(doc.sections);
-    //     } else {
-    //         console.error("SectionManager not initialized, cannot load document sections.");
-    //     }
-    // }
 
     /** Save document (Placeholder - needs full implementation later) */
     private saveDocument(): void {
@@ -330,16 +291,8 @@ class DesignEditorPage {
             }, 1500);
         }
     }
-
-    /** Initialize the application */
-    public static init(): DesignEditorPage {
-        return new DesignEditorPage();
-    }
 }
 
-// Initialize the application when the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
-    const lc = DesignEditorPage.init();
-    // Sample document loading is REMOVED. Loading is triggered by API call in constructor/init.
-    // lc.loadDocument(DOCUMENT);
+    const lc = new DesignEditorPage();
 });

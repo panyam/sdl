@@ -1,4 +1,4 @@
-// components/SectionManager.ts
+// ./web/views/components/SectionManager.ts
 
 import { Modal } from './Modal';
 import { BaseSection } from './BaseSection';
@@ -9,8 +9,7 @@ import { DocumentSection, SectionType, TextContent, DrawingContent, PlotContent,
 import { TocItemInfo, TableOfContents } from './TableOfContents';
 import { V1Section, V1PositionType, /* other models if needed */ } from './apiclient'; // Import V1Section and V1PositionType
 import { DesignApi } from './Api'; // Import API client
-import { convertApiSectionToSectionData } from './converters'; // Import the converter
-import { createApiSectionUpdateObject, mapFrontendContentToApiUpdate, mapFrontendSectionTypeToApi } from './converters'; // Import the update object creator
+import { createApiSectionUpdateObject, convertApiSectionToSectionData , mapFrontendContentToApiUpdate, mapFrontendSectionTypeToApi } from './converters'; // Import the update object creator
 
 
 /**
@@ -20,8 +19,10 @@ import { createApiSectionUpdateObject, mapFrontendContentToApiUpdate, mapFronten
 export class SectionManager {
     private designId: string = "";
     private sections: Map<string, BaseSection> = new Map();
+    // sectionData now primarily stores metadata managed by SectionManager (title, order).
+    // Content is primarily managed within the BaseSection instance's data property after load.
     private sectionData: SectionData[] = [];
-    private nextSectionId: number = 1;
+    private nextSectionId: number = 1; // Still potentially useful for client-side ID generation fallback? Maybe remove later.
     private sectionsContainer: HTMLElement | null;
     private emptyStateEl: HTMLElement | null;
     private fabAddSectionBtn: HTMLElement | null;
@@ -31,9 +32,9 @@ export class SectionManager {
     // Reference to the external TOC component - set via method/constructor
     private tocComponent: TableOfContents | null = null;
 
-    // Store section IDs and metadata fetched from the API before loading content
-    private initialSectionIds: string[] = [];
-    private initialSectionsMetadata: V1Section[] | null = null; // Optional metadata
+    // Store section IDs and metadata fetched from the API before initializing shells
+    private initialSectionIds: string[] = []; // Keep this if GetDesign returns only IDs
+    private initialSectionsMetadata: V1Section[] | null = null; // Keep this
 
     // Predefined title suggestions (keep as before)
     private static readonly TEXT_TITLES: string[] = [
@@ -67,7 +68,7 @@ export class SectionManager {
     constructor(public currentDesignId: string | null) {
         this.sectionsContainer = document.getElementById('sections-container');
         this.emptyStateEl = document.getElementById('empty-state');
-        this.fabAddSectionBtn = document.getElementById('fab-add-section-btn'); // Find the new area
+        this.fabAddSectionBtn = document.getElementById('fab-add-section-btn');
         this.sectionTemplate = document.getElementById('section-template');
         this.modal = Modal.getInstance();
 
@@ -79,7 +80,8 @@ export class SectionManager {
         }
 
         this.bindEvents();
-        this.handleEmptyState(); // Initial check
+        // Initial handleEmptyState check might show empty briefly before load starts
+        this.handleEmptyState();
     }
 
     /** Sets the TableOfContents component instance for communication */
@@ -98,18 +100,16 @@ export class SectionManager {
     }
 
     /**
-     * NEW: Stores the initial section IDs and metadata received from the API.
-     * This data will be used later to load the actual section content.
+     * Stores the initial section IDs and metadata received from the API (e.g., from GetDesign).
+     * This data will be used by initializeSections to create the section shells.
      */
     public setInitialSectionInfo(ids: string[], metadata?: V1Section[] | null): void {
         console.log("SectionManager: Received initial section info", { count: ids.length, hasMetadata: !!metadata });
         this.initialSectionIds = ids || [];
         this.initialSectionsMetadata = metadata || null;
-        // Do NOT load sections here yet. That's Step 1.2.
-        // Do NOT call handleEmptyState here yet, as sectionData is still empty.
+        // Clear any existing sections before initializing new ones
         this.clearAllSections();
     }
-
 
     /** Bind event listeners (only for section creation/type selection now) */
     private bindEvents(): void {
@@ -163,6 +163,10 @@ export class SectionManager {
         relativeToId: string | null = null,
         position: 'before' | 'after' = 'after'
     ): Promise<void> {
+        // This function remains largely the same. It calls the AddSection API,
+        // which returns the *full* new section data (including generated ID and initial content).
+        // It then calls createSectionInternal with this complete data.
+        // Content loading responsibility only changes for *existing* sections.
          if (!this.currentDesignId) {
             console.error("Cannot add section: Design ID not set in SectionManager.");
             // toastManager.showToast("Error", "Cannot add section: Design ID missing.", "error");
@@ -170,22 +174,17 @@ export class SectionManager {
         }
         console.log(`User requested to add a '${type}' section ${position} ${relativeToId || 'the end'}`);
 
-        // Map frontend position to API position type
-        let apiPosition: V1PositionType;
-        if (!relativeToId) {
-            apiPosition = V1PositionType.PositionTypeEnd;
-        } else {
-            apiPosition = position === 'before' ? V1PositionType.PositionTypeBefore : V1PositionType.PositionTypeAfter;
+        let apiPosition: V1PositionType = V1PositionType.PositionTypeEnd;
+        if (relativeToId) {
+             apiPosition = position === 'before' ? V1PositionType.PositionTypeBefore : V1PositionType.PositionTypeAfter;
         }
 
         // Prepare minimal section data for the API request
         const apiSectionPayload = {
-             // No ID - server generates it
-             type: mapFrontendSectionTypeToApi(type), // Use existing converter
+             type: mapFrontendSectionTypeToApi(type),
              title: SectionManager.getRandomTitle(type),
-             // Use default content based on type for the API request
-             // The converters should handle mapping this to textContent/drawingContent/plotContent
-             ...mapFrontendContentToApiUpdate(type, this.getDefaultContent(type)), // Spread the oneof field
+             // Generate default content for the *creation* request
+             ...mapFrontendContentToApiUpdate(type, this.getDefaultContent(type)),
         };
 
         try {
@@ -194,45 +193,76 @@ export class SectionManager {
                 sectionDesignId: this.currentDesignId,
                 body: {
                     section: apiSectionPayload,
-                    relativeSectionId: relativeToId || undefined, // API expects undefined if null
+                    relativeSectionId: relativeToId || undefined,
                     position: apiPosition,
                 }
             });
             console.log("API Success: designServiceAddSection returned:", createdApiSection);
 
-            // Convert API response to frontend SectionData
+            // Convert API response (contains initial content) to frontend SectionData
             const newSectionData = convertApiSectionToSectionData(createdApiSection);
+            newSectionData.designId = this.currentDesignId; // Ensure designId is set
 
-            // Now create the section locally using the data from the API response
-            this.createSectionInternal(newSectionData, true); // Pass true to indicate it's a user action
+            // Now create the section locally using the data from the API response.
+            // This section *does* have initial content from the server.
+            const newSectionInstance = this.createSectionInternal(newSectionData, true); // Pass true for user action
+
+            // Manually trigger content load? No, the BaseSection constructor handles initial loading state.
+            // The content provided by the API response should be used by populateViewContent.
+            // However, BaseSection now expects loadContent to be called. Let's adjust.
+            if (newSectionInstance) {
+                // Since the API provided the initial content, we don't need to fetch it again.
+                // We need to bypass the loadContent mechanism for newly created sections.
+                // Let's add a flag or modify BaseSection's constructor logic slightly.
+                // *Alternative thought:* Maybe createSectionInternal should directly call populateViewContent
+                // *if* content is provided, skipping the loadContent path?
+                // Let's stick to the plan: BaseSection constructor shows loading,
+                // but `handleSectionTypeSelection` could call a method like `setContentAndRender`
+                // *after* `createSectionInternal`. Or, `createSectionInternal` returns the instance,
+                // and we call a method on it here.
+
+                // Let's refine: BaseSection constructor shows loading.
+                // createSectionInternal returns the instance.
+                // Here, we call a new method on the instance to set initial content and render.
+                 newSectionInstance.setInitialContentAndRender(newSectionData.content);
+
+            } else {
+                 console.error("Failed to create section instance locally after API success.");
+                 // Handle this error state
+            }
 
         } catch (error) {
             console.error("API Error adding section:", error);
-            // toastManager.showToast("Error Adding Section", `Failed to add section: ${error.message || 'Server Error'}`, "error");
+            // toastManager.showToast(...)
         }
     }
 
     /**
      * Internal method to create the section instance, DOM elements, and update state.
-     * Called either during initial load (with data from getSection) or after a successful addSection API call.
-     * @param sectionData - The complete data for the section (potentially from API).
-     * @param isUserAction - Flag to differentiate between load and user add for reordering/TOC updates.
+     * Called during initial load (with metadata only) or after a successful addSection API call (with full data).
+     * @param sectionData - Data for the section. Crucially, `content` might be empty/null during initial load.
+     * @param isUserAction - Flag for reordering/TOC updates.
+     * @returns The created BaseSection instance or null on failure.
      */
     private createSectionInternal(
         sectionData: SectionData,
-        isUserAction: boolean = false // Default to false (load)
+        isUserAction: boolean = false
     ): BaseSection | null {
         console.log("createSectionInternal called with data:", sectionData, "isUserAction:", isUserAction);
 
-        // Data is now passed in fully formed
         const sectionId = sectionData.id;
         const type = sectionData.type;
-        const order = sectionData.order; // Order comes from API response or load
+        const order = sectionData.order;
+
+        if (!sectionId || !type) {
+            console.error("Cannot create section internal: Missing ID or Type in data", sectionData);
+            return null;
+        }
 
         // --- DOM Element Creation ---
-        if (!this.sectionTemplate || !this.sectionsContainer) {
-            console.error("Missing section template or container in createSectionInternal.");
-            return null;
+        if (!this.sectionTemplate || !this.sectionsContainer) { 
+          console.error("sectionTemplate and sectionContainer are both missing")
+          return null
         }
         const sectionEl = this.sectionTemplate.cloneNode(true) as HTMLElement;
         sectionEl.classList.remove('hidden');
@@ -241,26 +271,8 @@ export class SectionManager {
         sectionEl.dataset.sectionType = type;
 
         // --- DOM Insertion ---
-        // For both load and user-action adds after API call, we rely on reordering later.
-        // Append to the end for now, normalizeOrdersAndRenumber will fix the visual order.
+        // Append to the end for now, reorderSectionsInDOM will fix the visual order later.
         this.sectionsContainer.appendChild(sectionEl);
-
-        /* // --- Old DOM insertion logic based on relative position (No longer needed here) ---
-        let insertBeforeEl: HTMLElement | null = null;
-        if (isUserAction && relativeToId) { // Only calculate DOM position for user adds
-             const relativeEl = this.sectionsContainer.querySelector(`[data-section-id="${relativeToId}"]`) as HTMLElement;
-             if (relativeEl) {
-                 insertBeforeEl = (position === 'before') ? relativeEl : relativeEl.nextElementSibling as HTMLElement | null;
-             }
-        } else {
-            this.sectionsContainer.appendChild(sectionEl);
-        }
-        if (insertBeforeEl) { // Insert before a specific element (handles 'before' and 'after')
-            this.sectionsContainer.insertBefore(sectionEl, insertBeforeEl);
-        } else { // Append to the end (handles adding to empty list, loading, or fallback)
-             this.sectionsContainer.appendChild(sectionEl); // Append to end if loading or no insert point found
-        }
-        */
 
         // --- Section Instance Creation ---
         let sectionInstance: BaseSection;
@@ -269,40 +281,46 @@ export class SectionManager {
             onMoveUp: this.moveSectionUp.bind(this),
             onMoveDown: this.moveSectionDown.bind(this),
             onTitleChange: this.updateSectionTitle.bind(this),
-            onContentChange: this.updateSectionContent.bind(this),
-            onAddSectionRequest: this.openSectionTypeSelector.bind(this) // New callback handler
+            // onContentChange: REMOVED - Content saving handled by BaseSection
+            onAddSectionRequest: this.openSectionTypeSelector.bind(this)
         };
 
+        // Create instance with the provided data (content might be missing initially)
+        // The BaseSection constructor now handles the initial loading state display.
         switch (type) {
-            case 'text':
-                sectionInstance = new TextSection(sectionData, sectionEl, callbacks);
-                break;
-            case 'drawing':
-                sectionInstance = new DrawingSection(sectionData, sectionEl, callbacks);
-                break;
-            case 'plot':
-                sectionInstance = new PlotSection(sectionData, sectionEl, callbacks);
-                break;
+            case 'text':    sectionInstance = new TextSection(sectionData, sectionEl, callbacks); break;
+            case 'drawing': sectionInstance = new DrawingSection(sectionData, sectionEl, callbacks); break;
+            case 'plot':    sectionInstance = new PlotSection(sectionData, sectionEl, callbacks); break;
             default:
                 console.warn(`Unhandled section type "${type}" during creation. Defaulting to Text.`);
-                sectionData.type = 'text';
+                sectionData.type = 'text'; // Correct the data type if defaulting
                 sectionInstance = new TextSection(sectionData, sectionEl, callbacks);
         }
 
+        // Add instance to the element for easy access (e.g., retry button)
+        (sectionEl as any).componentInstance = sectionInstance;
 
         // --- Update State and UI ---
         this.sections.set(sectionId, sectionInstance);
-        this.sectionData.push(sectionData); // Add the full data object
+        // Store the metadata part in sectionData
+        this.sectionData.push({
+             id: sectionData.id,
+             designId: sectionData.designId,
+             type: sectionData.type,
+             title: sectionData.title,
+             order: sectionData.order,
+             content: null // SectionManager doesn't store content here anymore
+         });
 
-        // Renumber and update TOC. If it's a user action, this ensures the new
-        // section appears in the correct place visually. If it's part of a bulk load,
-        // it will be called once at the end by loadSectionsFromData.
+        // Renumber and update TOC only if it's a user action causing immediate UI change.
+        // For bulk initialization, this will be called once at the end.
         if (isUserAction) {
-             this.normalizeOrdersAndRenumber(); // Sort data, set final order, update DOM numbers
-             this.reorderSectionsInDOM();       // Ensure DOM order matches data order
-             this.triggerTocUpdate();           // Tell TOC to re-render based on new data order
+             this.normalizeOrdersAndRenumber();
+             this.reorderSectionsInDOM();
+             this.triggerTocUpdate();
              this.handleEmptyState();
         }
+
         return sectionInstance;
     }
 
@@ -317,70 +335,51 @@ export class SectionManager {
     }
 
     /**
-     * NEW: Fetches content for multiple section IDs and then loads them.
+     * REMOVED: Fetches content for multiple section IDs and then loads them.
+     * This is now handled by BaseSection.loadContent().
      */
-    public async loadSectionContentsByIds(designId: string, sectionIds: string[]): Promise<void> {
-        if (sectionIds.length === 0) {
-            console.log("SectionManager: No section IDs provided to load.");
-            this.handleEmptyState(); // Ensure empty state is shown if called with empty list
-            return;
-        }
-        console.log(`SectionManager: Fetching content for ${sectionIds.length} sections...`);
-        this.designId = designId;
+    // public async loadSectionContentsByIds(designId: string, sectionIds: string[]): Promise<void> { /* ... removed ... */ }
 
-        const sectionPromises = sectionIds.map(id =>
-            DesignApi.designServiceGetSection({ designId: designId, sectionId: id })
-                .then(response => {
-                    // Assuming response is directly V1Section based on generated client
-                    // Adjust if it's wrapped (e.g., response.section)
-                    const apiSection: V1Section = response; // Adjust based on actual API response structure
-                    return convertApiSectionToSectionData(apiSection);
-                })
-                .catch(error => {
-                    console.error(`Failed to fetch or convert section ${id}:`, error);
-                    // Return null or a specific marker for failed sections
-                    return null;
-                })
-        );
-
-        const results = await Promise.all(sectionPromises);
-
-        // Filter out null results (failed loads/conversions) and sort by original order
-        const loadedSectionsData = results.filter(data => data !== null) as SectionData[];
-        // Sort based on the original order from the API/Design metadata
-        loadedSectionsData.sort((a, b) => a.order - b.order);
-
-        console.log(`SectionManager: Successfully fetched and converted ${loadedSectionsData.length} sections.`);
-        this.loadSectionsFromData(loadedSectionsData); // Use the existing method to render
-    }
 
     /**
-     * Loads multiple sections from provided data (typically from API in Step 1.2).
-     * Replaces the old loadSections that used sample data.
+     * Initializes section shells based on provided metadata (typically from API).
+     * Creates instances and renders basic structure, but does *not* load content.
+     * Content loading is triggered separately by calling loadContent() on the returned instances.
+     * @param sectionsMetadata - Array of section metadata objects.
+     * @returns An array of the created BaseSection instances.
      */
-    public loadSectionsFromData(sectionsData: SectionData[]): void {
-        if (!this.sectionsContainer) return;
-        console.log("SectionManager: Loading sections from data:", sectionsData.length);
+    public initializeSections(sectionsMetadata: SectionData[]): BaseSection[] {
+        if (!this.sectionsContainer) return [];
+        console.log("SectionManager: Initializing sections from metadata:", sectionsMetadata.length);
         this.clearAllSections(); // Clear DOM, data, map
-        let maxIdNum = 0;
 
-        // Data should already be sorted by order from API or processing step
-        sectionsData.forEach(data => {
-            // Use createSection, passing the full SectionData object
-            const createdSection = this.createSectionInternal(data, false); // isUserAction = false
-            if (createdSection) {
-                const idNumMatch = data.id.match(/\d+$/);
-                if (idNumMatch) {
-                    maxIdNum = Math.max(maxIdNum, parseInt(idNumMatch[0], 10));
-                }
+        const createdInstances: BaseSection[] = [];
+
+        // Ensure metadata is sorted by order before creating instances
+        sectionsMetadata.sort((a, b) => a.order - b.order);
+
+        sectionsMetadata.forEach(meta => {
+            // Ensure content is null/empty for initial shell creation
+            const initialData: SectionData = {
+                ...meta,
+                content: null // Explicitly null/empty content
+            };
+
+            // Create the section shell
+            const sectionInstance = this.createSectionInternal(initialData, false); // isUserAction = false
+            if (sectionInstance) {
+                createdInstances.push(sectionInstance);
+            } else {
+                 console.error(`Failed to create section instance for ID: ${meta.id}`);
             }
         });
 
-        this.nextSectionId = maxIdNum + 1;
-        this.normalizeOrdersAndRenumber(); // Final renumbering after load
-        this.triggerTocUpdate();           // Update TOC once after loading all
-        this.handleEmptyState();           // Update empty state based on sectionData length
-        console.log("SectionManager: Sections loaded and rendered from data.");
+        this.normalizeOrdersAndRenumber(); // Final renumbering after creating all shells
+        this.triggerTocUpdate();           // Update TOC once after initializing all
+        this.handleEmptyState();           // Update empty state (might be empty initially until content loads)
+
+        console.log(`SectionManager: ${createdInstances.length} section shells initialized.`);
+        return createdInstances;
     }
 
     /** Clears all sections and resets state */
@@ -399,7 +398,6 @@ export class SectionManager {
          this.triggerTocUpdate(); // Update TOC to reflect emptiness
          this.handleEmptyState();
      }
-
 
     /** Normalize order values and update numbering */
      private normalizeOrdersAndRenumber(): void {
@@ -420,11 +418,7 @@ export class SectionManager {
         }
         if (!confirm('Are you sure you want to delete this section?')) return;
 
-
         console.log(`Attempting to delete section ${sectionId} from design ${this.currentDesignId}`);
-        // Show loading indicator?
-
-        // --- API Call FIRST ---
         const sectionInstance = this.sections.get(sectionId);
         if (!sectionInstance) {
             console.warn(`Section instance ${sectionId} not found during delete.`);
@@ -437,11 +431,11 @@ export class SectionManager {
         }).then(() => {
             console.log(`API: Successfully deleted section ${sectionId}`);
             // --- Local Removal on API Success ---
-            sectionInstance.removeElement(); // Use the public method
-            this.sectionData = this.sectionData.filter(s => s.id !== sectionId);
-            this.sections.delete(sectionId);
+            sectionInstance.removeElement(); // Remove from DOM
+            this.sectionData = this.sectionData.filter(s => s.id !== sectionId); // Remove metadata
+            this.sections.delete(sectionId); // Remove instance reference
             this.normalizeOrdersAndRenumber();
-            this.reorderSectionsInDOM(); // Ensure DOM order reflects data
+            this.reorderSectionsInDOM();
             this.triggerTocUpdate();
             this.handleEmptyState();
             // toastManager.showToast("Section Deleted", "Section removed successfully.", "success", 2000);
@@ -456,6 +450,7 @@ export class SectionManager {
 
     /** Common logic for moving sections via API */
     private async moveSectionApi(sectionId: string, moveUp: boolean): Promise<void> {
+        // This relies on this.sectionData having correct order info, which it should
         if (!this.currentDesignId) {
              console.error("Cannot move section: Design ID not set.");
             // toastManager.showToast("Error", "Cannot move section: Design ID missing.", "error");
@@ -470,14 +465,10 @@ export class SectionManager {
             console.warn("Calculated invalid target index for move:", { sectionId, moveUp, currentIndex, targetIndex });
             return; // Should be caught by above checks, but safeguard
         }
+         const relativeSectionId = this.sectionData[targetIndex].id;
+         const position = moveUp ? V1PositionType.PositionTypeBefore : V1PositionType.PositionTypeAfter;
 
-        const relativeSectionId = this.sectionData[targetIndex].id;
-        // If moving up, we position BEFORE the item currently at the target index.
-        // If moving down, we position AFTER the item currently at the target index.
-        const position = moveUp ? V1PositionType.PositionTypeBefore : V1PositionType.PositionTypeAfter;
-
-        console.log(`Attempting to move section ${sectionId} ${position} section ${relativeSectionId} in design ${this.currentDesignId}`);
-        // Show loading indicator?
+         console.log(`Attempting to move section ${sectionId} ${position} section ${relativeSectionId} in design ${this.currentDesignId}`);
 
         try {
             await DesignApi.designServiceMoveSection({
@@ -489,37 +480,25 @@ export class SectionManager {
                 }
             });
             console.log(`API: Successfully moved section ${sectionId}`);
-
             // --- Local Reorder on API Success ---
-            // Adjust local order slightly to force resorting, then normalize
             const currentOrder = this.sectionData[currentIndex].order;
             const targetOrder = this.sectionData[targetIndex].order;
-            // Give it a temporary order between the target and its neighbor
-            this.sectionData[currentIndex].order = moveUp ? targetOrder - 0.5 : targetOrder + 0.5;
-
-            this.reorderAndRenumber(); // This normalizes orders, updates DOM numbers, reorders DOM, triggers TOC
+            this.sectionData[currentIndex].order = moveUp ? targetOrder - 0.5 : targetOrder + 0.5; // Temp order for sort
+            this.reorderAndRenumber(); // Normalizes orders, updates DOM numbers, reorders DOM, triggers TOC
             // toastManager.showToast("Section Moved", "Section reordered successfully.", "success", 1500);
-
         } catch (error) {
             console.error(`API Error moving section ${sectionId}:`, error);
             // toastManager.showToast("Move Error", `Failed to move section: ${error.message || 'Server Error'}`, "error");
-            // Do NOT reorder locally if API failed
         } finally {
-             // Hide loading indicator?
+          // Hide loading indicator?
         }
     }
 
     /** Move a section up */
-    private moveSectionUp(sectionId: string): void {
-        this.moveSectionApi(sectionId, true);
-    }
-
+    private moveSectionUp(sectionId: string): void { this.moveSectionApi(sectionId, true); }
 
     /** Move a section down */
-    private moveSectionDown(sectionId: string): void {
-        this.moveSectionApi(sectionId, false);
-    }
-
+    private moveSectionDown(sectionId: string): void { this.moveSectionApi(sectionId, false); }
 
     /** Reorders DOM, renumbers, and updates TOC */
     private reorderAndRenumber(): void {
@@ -548,20 +527,33 @@ export class SectionManager {
         }
         const sectionData = this.sectionData.find(s => s.id === sectionId);
         if (sectionData) {
+             // Check if title actually changed before calling API
+             if (sectionData.title === newTitle) {
+                console.log(`Section ${sectionId}: Title unchanged, skipping API call.`);
+                this.triggerTocUpdate(); // Still update TOC in case of display issues
+                return;
+            }
             sectionData.title = newTitle;
             this.triggerTocUpdate(); // Update TOC when title changes
 
-            // --- API Call ---
-            console.log(`Calling API to update title for section ${sectionId} in design ${this.currentDesignId}`);
-            const updatePayload = createApiSectionUpdateObject({ title: newTitle }, sectionData.type);
-            updatePayload.updateMask = "title";
+            console.log(`Calling API to update title for section ${sectionId}`);
+            // API call ONLY for title, mask is just "title"
             DesignApi.designServiceUpdateSection({
                 sectionDesignId: this.currentDesignId,
                 sectionId: sectionId,
-                body: updatePayload,
+                body: {
+                     // The section object inside the body should ONLY contain the fields
+                     // specified in the updateMask. The API client model might require
+                     // the full structure, but only the 'title' field matters here.
+                     // Let's rely on the backend correctly interpreting the mask.
+                     // We can send a minimal section object.
+                    section: { title: newTitle }, // Minimal payload
+                    updateMask: "title", // Specify only title
+                },
             }).then(updatedSection => {
                 console.log(`API: Successfully updated title for section ${sectionId}`, updatedSection);
-                // Optional: Update local data with server response if needed, though unlikely for title
+                // Optional: Update local sectionData.title again from response if needed
+                // sectionData.title = updatedSection.title || newTitle;
                 // toastManager.showToast("Title Saved", `Section "${newTitle}" title saved.`, "success", 1500);
             }).catch(error => {
                 console.error(`API Error updating title for section ${sectionId}:`, error);
@@ -571,40 +563,11 @@ export class SectionManager {
         }
     }
 
-    /** Update section content in data (called by BaseSection on save) */
-    private updateSectionContent(sectionId: string, newContent: SectionData['content']): void {
-        const sectionData = this.sectionData.find(s => s.id === sectionId);
-        if (sectionData && this.currentDesignId) {
-            sectionData.content = newContent;
-            // No TOC update needed for content change
-
-            // --- API Call ---
-            console.log(`Calling API to update content for section ${sectionId} (type: ${sectionData.type}) in design ${this.currentDesignId}`);
-            const updatePayload = createApiSectionUpdateObject({ content: newContent }, sectionData.type);
-            // Determine the correct mask path based on the section type
-            let maskPath: string = "";
-            if (sectionData.type === 'text') maskPath = "textContent";
-            else if (sectionData.type === 'drawing') maskPath = "drawing_content";
-            else if (sectionData.type === 'plot') maskPath = "plot_content";
-            updatePayload.updateMask = maskPath;
-            DesignApi.designServiceUpdateSection({
-                 sectionDesignId: this.currentDesignId,
-                 sectionId: sectionId,
-                 body: updatePayload,
-             }).then(updatedSection => {
-                 console.log(`API: Successfully updated content for section ${sectionId}`, updatedSection);
-                 // Optional: Update local data with server response if needed (e.g., updated timestamp)
-                 // const updatedData = convertApiSectionToSectionData(updatedSection);
-                 // sectionData.content = updatedData.content; // Refresh content just in case
-                 // Update timestamps if applicable in BaseSection/SectionData
-                // toastManager.showToast("Content Saved", `Content for section "${sectionData.title}" saved.`, "success", 1500);
-             }).catch(error => {
-                 console.error(`API Error updating content for section ${sectionId}:`, error);
-                // toastManager.showToast("Save Error", `Failed to save content for section "${sectionData.title}".`, "error");
-                 // TODO: Consider marking section as unsaved?
-             });
-        }
-    }
+    /**
+     * REMOVED: Update section content in data.
+     * This is now handled by BaseSection.saveContent().
+     */
+    // private updateSectionContent(sectionId: string, newContent: SectionData['content']): void { /* ... removed ... */ }
 
 
     /** Creates the simplified data structure needed by the TOC component */
@@ -645,23 +608,24 @@ export class SectionManager {
 
     /** Get all section data formatted for the document model */
     public getDocumentSections(): DocumentSection[] {
-         // Ensure data is sorted before retrieving
         return this.sectionData
             .sort((a, b) => a.order - b.order)
             .map(sectionDataItem => {
                 const sectionInstance = this.sections.get(sectionDataItem.id);
                 if (sectionInstance) {
+                    // Get the data *including potentially unsaved content* from the instance
                     return sectionInstance.getDocumentData();
                 }
-                // Fallback if instance not found (should be rare)
-                 console.warn(`Section instance not found for ID: ${sectionDataItem.id} during save.`);
-                 return {
-                     id: sectionDataItem.id,
-                     title: sectionDataItem.title,
-                     order: sectionDataItem.order,
-                     type: sectionDataItem.type,
-                     content: sectionDataItem.content
-                 } as DocumentSection;
+                // Fallback: Return metadata only if instance is missing
+                console.warn(`Section instance not found for ID: ${sectionDataItem.id} during getDocumentSections.`);
+                // Return a structure matching DocumentSection but potentially without content
+                return {
+                    id: sectionDataItem.id,
+                    title: sectionDataItem.title,
+                    order: sectionDataItem.order,
+                    type: sectionDataItem.type,
+                    content: null // Indicate content might be missing
+                } as any; // Cast needed as content is missing
             });
     }
 

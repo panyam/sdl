@@ -9,9 +9,8 @@ import 'tinymce/themes/silver/theme';
 import 'tinymce/icons/default/icons';
 import 'tinymce/models/dom/model';
 
-
 export class TextSection extends BaseSection {
-
+    protected static readonly ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-full h-full"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" /></svg>`;
     private editorInstance: Editor | null = null;
 
     constructor(data: SectionData, element: HTMLElement, callbacks: SectionCallbacks = {}) {
@@ -21,6 +20,17 @@ export class TextSection extends BaseSection {
     /** Checks if the section is currently in edit mode */
     public isInEditMode(): boolean {
         return this.mode === 'edit';
+    }
+
+    /** Returns the (type) title for this section. */
+    protected getSectionTypeTitle(): string {
+      return "Text Section"
+    }
+
+
+    /** Returns the svg content to show for this section. */
+    protected getSectionIconSvg(): string {
+      return TextSection.ICON_SVG;
     }
 
     protected populateViewContent(): void {
