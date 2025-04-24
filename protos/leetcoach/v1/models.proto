@@ -3,7 +3,6 @@
 syntax = "proto3";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/struct.proto";
-
 option go_package = "github.com/leetcoach/protos";
 package leetcoach.v1;
 
@@ -114,6 +113,11 @@ message Design {
   repeated string section_ids = 10;
 }
 
+enum ContentState {
+  CONTENT_STATE_CREATED = 0;
+  CONTENT_STATE_POPULATED = 1;
+}
+
 enum SectionType {
   SECTION_TYPE_UNSPECIFIED = 0;
   SECTION_TYPE_TEXT = 1;
@@ -178,4 +182,29 @@ message PlotSectionContent {
 
 message DrawingSectionContent {
   bytes data = 2;    // The actual drawing data (can be JSON string bytes, raw SVG bytes, etc.)
+}
+
+/**
+ * Each section can have multiple pieces of content identified by a "name"
+ * The name 
+ */
+message Content {
+  google.protobuf.Timestamp created_at = 1;
+  google.protobuf.Timestamp updated_at = 2;
+
+
+  // Unique name of the content piece within the section
+  string name = 3;
+
+  /**
+   * Type of content being attached to this section.
+   * This would determine what kind of media we are working with
+   * eg e
+   */
+  string type = 5; // e.g., "application/json", "text/html" etc
+
+  /**
+   * Format of the section. 
+   */
+  string format = 6; // e.g., "chartjs/json", "plotly/json"
 }

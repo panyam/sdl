@@ -1,0 +1,112 @@
+// protos/leetcoach/v1/content.proto
+syntax = "proto3";
+
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/empty.proto";
+import "leetcoach/v1/models.proto";
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+option go_package = "github.com/leetcoach/protos";
+package leetcoach.v1;
+
+// --- Request/Response Messages ---
+// --- Service Definition ---
+service ContentService {
+  // Get a specific content piece's metadata and bytes.
+  rpc GetContent(GetContentRequest) returns (GetContentResponse) {
+    option (google.api.http) = {
+      get: "/v1/designs/{design_id=*}/sections/{section_id=*}/content/{name=*}"
+    };
+  };
+
+  // Set or create a content piece's metadata (type/format) and/or its bytes.
+  rpc SetContent(SetContentRequest) returns (SetContentResponse) {
+    option (google.api.http) = {
+      patch: "/v1/designs/{design_id=*}/sections/{section_id=*}/content/{content.name=*}"
+      body: "*"
+    };
+  };
+
+  // Delete a named content piece from a section.
+  rpc DeleteContent(DeleteContentRequest) returns (DeleteContentResponse) {
+    option (google.api.http) = {
+      delete: "/v1/designs/{design_id=*}/sections/{section_id=*}/content/{name=*}"
+    };
+  };
+}
+
+message GetContentRequest {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
+    json_schema: {
+      title: "GetContentRequest"
+    }
+  };
+
+  string design_id = 1;
+
+  string section_id = 2;
+
+  // The unique name of the content piece within the section (e.g., "main", "diagram_svg", "notes")
+  string name = 3;
+}
+
+message GetContentResponse {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
+    json_schema: {
+      title: "GetContentResponse"
+    }
+  };
+
+  // The metadata for the requested content piece.
+  Content content = 1;
+
+  // The actual content bytes.
+  bytes content_bytes = 2;
+}
+
+message SetContentRequest {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
+    json_schema: {
+      title: "SetContentRequest"
+    }
+  };
+  string design_id = 1;
+  string section_id = 2;
+
+  // Content fields to be patched based on the update_mask
+  Content content = 3;
+
+  // Optional: New content bytes.
+  bytes content_bytes = 4;
+
+  // Mask specifying which fields are being updated.
+  // Valid paths: "content_type", "format", "content_bytes".
+  google.protobuf.FieldMask update_mask = 5;
+}
+
+/**
+ * Response of an content update
+ */
+message SetContentResponse {
+  option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_schema) = {
+    json_schema: {
+      title: "SetContentResponse"
+    }
+  };
+
+  /**
+   * Content metadata being updated/set
+   */
+  Content content = 1;
+}
+
+message DeleteContentRequest {
+  string design_id = 1;
+  string section_id = 2;
+  string name = 3;
+}
+
+message DeleteContentResponse {
+  // Empty - success is indicated by lack of error.
+}
+
