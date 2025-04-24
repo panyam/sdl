@@ -204,39 +204,56 @@ export abstract class BaseSection {
     }
 
     /**
+     * Sets view state of the section as content loading.
+     * By default shows a "Loading content..." message but sections can do other things.
+     * @param isLoading Whether to show the loading or not-loading state.
+     * @returns Whether view state succesfully changed.
+     */
+    protected setContentLoading(isLoading = true): boolean {
+        if (isLoading) {
+            if (this.isLoading || !this.contentContainer) {
+                console.warn(`Section ${this.sectionId}: Load attempt while already loading or content container missing.`);
+                return false
+            }
+            // Ensure we are in view mode visually, even if called unexpectedly
+            if (this.mode !== 'view') {
+                 console.warn(`Section ${this.sectionId}: loadContent called while not in view mode. Switching...`);
+                 this.switchToViewMode(false); // Cancel any edit and switch to view
+            }
+
+            this.isLoading = true;
+            // --- Loading state is now handled *within* the already loaded view template ---
+            // Find the content area again (it might have been replaced by error previously)
+            const viewContentArea = this.contentContainer.querySelector('.section-view-content');
+            if (viewContentArea) {
+                 viewContentArea.innerHTML = `
+                     <div class="p-4 text-center text-gray-500 dark:text-gray-400 italic">
+                         Loading content...
+                     </div>`;
+            } else {
+                 console.warn(`Section ${this.sectionId}: '.section-view-content' not found during loadContent start.`);
+                 // Show loading in the main container as fallback
+                 this.contentContainer.innerHTML = `<div class="p-4 text-red-500">Error: View content area missing.</div>`;
+                 return false
+            }
+            console.log(`Section ${this.sectionId}: Loading content for design ${this.designId}...`);
+        } else {
+            this.isLoading = false;
+            console.log(`Section ${this.sectionId}: Loading finished.`);
+        }
+        return true
+    }
+
+    /**
      * Fetches the section's content from the API and populates the view.
      */
     public async loadContent(): Promise<void> {
-        if (this.isLoading || !this.contentContainer) {
-            console.warn(`Section ${this.sectionId}: Load attempt while already loading or content container missing.`);
-            return;
-        }
-        // Ensure we are in view mode visually, even if called unexpectedly
-        if (this.mode !== 'view') {
-             console.warn(`Section ${this.sectionId}: loadContent called while not in view mode. Switching...`);
-             this.switchToViewMode(false); // Cancel any edit and switch to view
-        }
+        if (!this.setContentLoading(true)) return
 
-        this.isLoading = true;
-        // --- Loading state is now handled *within* the already loaded view template ---
-        // Find the content area again (it might have been replaced by error previously)
-        const viewContentArea = this.contentContainer.querySelector('.section-view-content');
-        if (viewContentArea) {
-             viewContentArea.innerHTML = `
-                 <div class="p-4 text-center text-gray-500 dark:text-gray-400 italic">
-                     Loading content...
-                 </div>`;
-        } else {
-             console.warn(`Section ${this.sectionId}: '.section-view-content' not found during loadContent start.`);
-             // Show loading in the main container as fallback
-             this.contentContainer.innerHTML = `<div class="p-4 text-red-500">Error: View content area missing.</div>`;
-             return
-        }
-        // --- End Loading State Update ---
+        // Asks the section to load any content it might need from the server (if it thinks things are stale)
+        await this.refreshContentFromServer();
 
-        console.log(`Section ${this.sectionId}: Loading content for design ${this.designId}...`);
-        // const content = this.loadViewContent()
-
+        const viewContentArea = this.contentContainer!.querySelector('.section-view-content');
         try {
             // --- Content Population ---
             // The view template is *already loaded*. We just need to populate it.
@@ -253,16 +270,15 @@ export abstract class BaseSection {
              // --- Error Display ---
              // Display error within the view content area if possible
             const targetErrorArea = viewContentArea || this.contentContainer; // Fallback to main container
-            targetErrorArea.innerHTML = `
-                 <div class="p-4 text-red-500 dark:text-red-400 text-center">
-                    Error loading content: ${errorMsg}
-                    <button class="ml-2 text-blue-600 dark:text-blue-400 hover:underline" onclick="document.getElementById('${this.sectionId}')?.componentInstance?.loadContent()">Retry</button>
-                 </div>`;
-            // --- End Error Display ---
-
+            if (targetErrorArea) {
+              targetErrorArea.innerHTML = `
+                   <div class="p-4 text-red-500 dark:text-red-400 text-center">
+                      Error loading content: ${errorMsg}
+                      <button class="ml-2 text-blue-600 dark:text-blue-400 hover:underline" onclick="document.getElementById('${this.sectionId}')?.componentInstance?.loadContent()">Retry</button>
+                   </div>`;
+            }
         } finally {
-            this.isLoading = false;
-            console.log(`Section ${this.sectionId}: Loading finished.`);
+            this.setContentLoading(false)
         }
     }
 
@@ -567,10 +583,13 @@ export abstract class BaseSection {
     /** Handles resizing the section's specific content (e.g., canvas, plot) when entering/exiting fullscreen or on window resize. */
     protected abstract resizeContentForFullscreen(isEntering: boolean): void;
 
-
     /** Retrieves the current content state from the Edit mode UI elements. */
     protected abstract getContentFromEditMode(): SectionContent;
 
+    /** Reloads the preview content from the server. */
+    protected async refreshContentFromServer(): Promise<void> {
+      // 
+    }
 
     // --- Public API ---
 
