@@ -6,6 +6,9 @@
   },
   "tags": [
     {
+      "name": "ContentService"
+    },
+    {
       "name": "DesignService"
     },
     {
@@ -279,6 +282,187 @@
         ],
         "tags": [
           "DesignService"
+        ]
+      }
+    },
+    "/v1/designs/{designId}/sections/{sectionId}/content/{content.name}": {
+      "patch": {
+        "summary": "Set or create a content piece's metadata (type/format) and/or its bytes.",
+        "operationId": "ContentService_SetContent",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SetContentResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "designId",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "pattern": "[^/]+"
+          },
+          {
+            "name": "sectionId",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "pattern": "[^/]+"
+          },
+          {
+            "name": "content.name",
+            "description": "Unique name of the content piece within the section",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "pattern": "[^/]+"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "content": {
+                  "type": "object",
+                  "properties": {
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "type": {
+                      "type": "string",
+                      "description": "e.g., \"application/json\", \"text/html\" etc",
+                      "title": "*\nType of content being attached to this section.\nThis would determine what kind of media we are working with\neg e"
+                    },
+                    "format": {
+                      "type": "string",
+                      "description": "*\nFormat of the section.\n\ne.g., \"chartjs/json\", \"plotly/json\""
+                    }
+                  },
+                  "title": "Content fields to be patched based on the update_mask"
+                },
+                "contentBytes": {
+                  "type": "string",
+                  "format": "byte",
+                  "description": "Optional: New content bytes."
+                },
+                "updateMask": {
+                  "type": "string",
+                  "description": "Mask specifying which fields are being updated.\nValid paths: \"content_type\", \"format\", \"content_bytes\"."
+                }
+              },
+              "title": "SetContentRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ContentService"
+        ]
+      }
+    },
+    "/v1/designs/{designId}/sections/{sectionId}/content/{name}": {
+      "get": {
+        "summary": "Get a specific content piece's metadata and bytes.",
+        "operationId": "ContentService_GetContent",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetContentResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "designId",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "pattern": "[^/]+"
+          },
+          {
+            "name": "sectionId",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "pattern": "[^/]+"
+          },
+          {
+            "name": "name",
+            "description": "The unique name of the content piece within the section (e.g., \"main\", \"diagram_svg\", \"notes\")",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "pattern": "[^/]+"
+          }
+        ],
+        "tags": [
+          "ContentService"
+        ]
+      },
+      "delete": {
+        "summary": "Delete a named content piece from a section.",
+        "operationId": "ContentService_DeleteContent",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DeleteContentResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "designId",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "pattern": "[^/]+"
+          },
+          {
+            "name": "sectionId",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "pattern": "[^/]+"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "pattern": "[^/]+"
+          }
+        ],
+        "tags": [
+          "ContentService"
         ]
       }
     },
@@ -1044,6 +1228,33 @@
         }
       }
     },
+    "v1Content": {
+      "type": "object",
+      "properties": {
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "name": {
+          "type": "string",
+          "title": "Unique name of the content piece within the section"
+        },
+        "type": {
+          "type": "string",
+          "description": "e.g., \"application/json\", \"text/html\" etc",
+          "title": "*\nType of content being attached to this section.\nThis would determine what kind of media we are working with\neg e"
+        },
+        "format": {
+          "type": "string",
+          "description": "*\nFormat of the section.\n\ne.g., \"chartjs/json\", \"plotly/json\""
+        }
+      },
+      "title": "*\nEach section can have multiple pieces of content identified by a \"name\"\nThe name"
+    },
     "v1CreateDesignRequest": {
       "type": "object",
       "properties": {
@@ -1087,6 +1298,10 @@
         }
       },
       "description": "*\nResponse of an tag creation."
+    },
+    "v1DeleteContentResponse": {
+      "type": "object",
+      "description": "Empty - success is indicated by lack of error."
     },
     "v1DeleteDesignResponse": {
       "type": "object",
@@ -1155,6 +1370,21 @@
           "title": "The actual drawing data (can be JSON string bytes, raw SVG bytes, etc.)"
         }
       }
+    },
+    "v1GetContentResponse": {
+      "type": "object",
+      "properties": {
+        "content": {
+          "$ref": "#/definitions/v1Content",
+          "description": "The metadata for the requested content piece."
+        },
+        "contentBytes": {
+          "type": "string",
+          "format": "byte",
+          "description": "The actual content bytes."
+        }
+      },
+      "title": "GetContentResponse"
     },
     "v1GetDesignResponse": {
       "type": "object",
@@ -1369,6 +1599,16 @@
         "SECTION_TYPE_PLOT"
       ],
       "default": "SECTION_TYPE_UNSPECIFIED"
+    },
+    "v1SetContentResponse": {
+      "type": "object",
+      "properties": {
+        "content": {
+          "$ref": "#/definitions/v1Content",
+          "title": "*\nContent metadata being updated/set"
+        }
+      },
+      "title": "SetContentResponse"
     },
     "v1TextSectionContent": {
       "type": "object",

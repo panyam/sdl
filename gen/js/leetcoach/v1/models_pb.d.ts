@@ -439,6 +439,80 @@ export declare type DrawingSectionContent = Message<"leetcoach.v1.DrawingSection
 export declare const DrawingSectionContentSchema: GenMessage<DrawingSectionContent>;
 
 /**
+ * *
+ * Each section can have multiple pieces of content identified by a "name"
+ * The name 
+ *
+ * @generated from message leetcoach.v1.Content
+ */
+export declare type Content = Message<"leetcoach.v1.Content"> & {
+  /**
+   * @generated from field: google.protobuf.Timestamp created_at = 1;
+   */
+  createdAt?: Timestamp;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp updated_at = 2;
+   */
+  updatedAt?: Timestamp;
+
+  /**
+   * Unique name of the content piece within the section
+   *
+   * @generated from field: string name = 3;
+   */
+  name: string;
+
+  /**
+   * *
+   * Type of content being attached to this section.
+   * This would determine what kind of media we are working with
+   * eg e
+   *
+   * e.g., "application/json", "text/html" etc
+   *
+   * @generated from field: string type = 5;
+   */
+  type: string;
+
+  /**
+   * *
+   * Format of the section. 
+   *
+   * e.g., "chartjs/json", "plotly/json"
+   *
+   * @generated from field: string format = 6;
+   */
+  format: string;
+};
+
+/**
+ * Describes the message leetcoach.v1.Content.
+ * Use `create(ContentSchema)` to create a new message.
+ */
+export declare const ContentSchema: GenMessage<Content>;
+
+/**
+ * @generated from enum leetcoach.v1.ContentState
+ */
+export enum ContentState {
+  /**
+   * @generated from enum value: CONTENT_STATE_CREATED = 0;
+   */
+  CREATED = 0,
+
+  /**
+   * @generated from enum value: CONTENT_STATE_POPULATED = 1;
+   */
+  POPULATED = 1,
+}
+
+/**
+ * Describes the enum leetcoach.v1.ContentState.
+ */
+export declare const ContentStateSchema: GenEnum<ContentState>;
+
+/**
  * @generated from enum leetcoach.v1.SectionType
  */
 export enum SectionType {
