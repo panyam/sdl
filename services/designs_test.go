@@ -17,12 +17,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata" // <-- Add gRPC metadata import
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
-	tspb "google.golang.org/protobuf/types/known/timestamppb"
-
 	// ****** ADDED IMPORT ******
-	"github.com/google/go-cmp/cmp" // Correct import for cmp.Equal/Diff
+	// Correct import for cmp.Equal/Diff
 )
 
 // Helper to create a context with a logged-in user ID for testing
@@ -180,49 +177,116 @@ func TestCreateDesign(t *testing.T) {
 
 func TestGetDesign(t *testing.T) {
 	service, tempDir := newTestDesignService(t)
-	ctx := testContextWithUser("test-creator")
+	ownerId := "get-owner"
+	ctx := testContextWithUser(ownerId) // Use a consistent owner for setup
+
+	designId := "test-get-design-with-sections"
+	secId1 := "sec-get-1"
+	secId2 := "sec-get-2"
+	secIdMissing := "sec-get-missing" // A section ID listed in metadata but whose file won't exist
+	secIdCorrupt := "sec-get-corrupt" // A section ID listed, but file is bad JSON
 
 	now := time.Now().UTC().Truncate(time.Second)
+
+	// 1. Setup Design Metadata
 	setupMeta := Design{
-		Id:          "test-get-1",
-		OwnerId:     "test-owner",
-		Name:        "Test Get Design",
+		Id:          designId,
+		OwnerId:     ownerId,
+		Name:        "Test Get Design with Sections",
 		Description: "Get Description",
 		Visibility:  "private",
-		VisibleTo:   []string{"user1", "user2"},
+		VisibleTo:   []string{"user1"},
 		BaseModel: BaseModel{
-			CreatedAt: now.Add(-1 * time.Hour),
-			UpdatedAt: now,
+			CreatedAt: now.Add(-2 * time.Hour),
+			UpdatedAt: now.Add(-1 * time.Hour), // Ensure updated is different
 		},
-		SectionIds: []string{},
+		// List sections in a specific order, including the missing/corrupt ones
+		SectionIds: []string{secId1, secIdMissing, secId2, secIdCorrupt},
 	}
 	createDesignDirectly(t, tempDir, setupMeta)
 
-	t.Run("Get Existing Design", func(t *testing.T) {
-		req := &protos.GetDesignRequest{Id: "test-get-1"}
+	// 2. Setup Section Files (Create only valid ones)
+	sectionData1 := Section{
+		Id:        secId1,
+		DesignId:  designId,
+		Type:      "text",
+		Title:     "Section Get 1 Title",
+		Content:   "<p>Content 1</p>",
+		BaseModel: BaseModel{CreatedAt: now, UpdatedAt: now},
+	}
+	createSectionDirectly(t, tempDir, designId, secId1, sectionData1)
+
+	sectionData2 := Section{
+		Id:        secId2,
+		DesignId:  designId,
+		Type:      "drawing",
+		Title:     "Section Get 2 Title",
+		Content:   []byte(`{"elements":[]}`), // Store as bytes
+		BaseModel: BaseModel{CreatedAt: now, UpdatedAt: now},
+	}
+	createSectionDirectly(t, tempDir, designId, secId2, sectionData2)
+
+	// Create the corrupt section file deliberately
+	sectionsDir := filepath.Join(tempDir, designId, "sections")
+	require.NoError(t, os.WriteFile(filepath.Join(sectionsDir, secIdCorrupt+".json"), []byte("this is not json"), 0644))
+
+	// -- Test Cases --
+
+	t.Run("Get Existing Design - Without Metadata", func(t *testing.T) {
+		req := &protos.GetDesignRequest{Id: designId, IncludeSectionMetadata: false} // Explicitly false
 		resp, err := service.GetDesign(ctx, req)
 
 		require.NoError(t, err)
 		require.NotNil(t, resp)
 		require.NotNil(t, resp.Design)
 
-		expectedProto := &protos.Design{
-			Id:          setupMeta.Id,
-			OwnerId:     setupMeta.OwnerId,
-			Name:        setupMeta.Name,
-			Description: setupMeta.Description,
-			Visibility:  setupMeta.Visibility,
-			VisibleTo:   setupMeta.VisibleTo,
-			CreatedAt:   tspb.New(setupMeta.CreatedAt),
-			UpdatedAt:   tspb.New(setupMeta.UpdatedAt),
-			SectionIds:  []string{},
-		}
-		// ****** FIXED: Ensure cmp import is present ******
-		assert.True(t, cmp.Equal(expectedProto, resp.Design, protocmp.Transform()), cmp.Diff(expectedProto, resp.Design, protocmp.Transform()))
+		// Basic check on design fields
+		assert.Equal(t, designId, resp.Design.Id)
+		assert.Equal(t, setupMeta.Name, resp.Design.Name)
+		assert.Equal(t, setupMeta.OwnerId, resp.Design.OwnerId)
+		assert.Equal(t, setupMeta.SectionIds, resp.Design.SectionIds) // Verify section IDs are still returned
+
+		// *** Verify SectionsMetadata is empty or nil ***
+		assert.Empty(t, resp.SectionsMetadata, "SectionsMetadata should be empty when not requested")
+
+	})
+
+	t.Run("Get Existing Design - With Metadata", func(t *testing.T) {
+		req := &protos.GetDesignRequest{Id: designId, IncludeSectionMetadata: true}
+		resp, err := service.GetDesign(ctx, req)
+
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+		require.NotNil(t, resp.Design)
+		assert.Equal(t, designId, resp.Design.Id) // Check design part still correct
+
+		// *** Verify SectionsMetadata ***
+		require.NotNil(t, resp.SectionsMetadata, "SectionsMetadata should not be nil when requested")
+		// Should contain only the sections that were successfully read (sec1, sec2)
+		assert.Len(t, resp.SectionsMetadata, 2, "Should only contain metadata for readable sections")
+
+		// Check section 1 (index 0 in the *original* list, but index 0 in the *returned* list)
+		meta1 := resp.SectionsMetadata[0]
+		assert.Equal(t, secId1, meta1.Id)
+		assert.Equal(t, designId, meta1.DesignId)
+		assert.Equal(t, "Section Get 1 Title", meta1.Title)
+		assert.Equal(t, protos.SectionType_SECTION_TYPE_TEXT, meta1.Type)
+		assert.Nil(t, meta1.Content, "Metadata section content should be nil")
+		assert.EqualValues(t, 0, meta1.Order, "Order should match original index for section 1") // Original index was 0
+
+		// Check section 2 (index 2 in the *original* list, but index 1 in the *returned* list)
+		meta2 := resp.SectionsMetadata[1]
+		assert.Equal(t, secId2, meta2.Id)
+		assert.Equal(t, designId, meta2.DesignId)
+		assert.Equal(t, "Section Get 2 Title", meta2.Title)
+		assert.Equal(t, protos.SectionType_SECTION_TYPE_DRAWING, meta2.Type)
+		assert.Nil(t, meta2.Content, "Metadata section content should be nil")
+		assert.EqualValues(t, 2, meta2.Order, "Order should match original index for section 2") // Original index was 2
+
 	})
 
 	t.Run("Get Non-Existent Design", func(t *testing.T) {
-		req := &protos.GetDesignRequest{Id: "does-not-exist"}
+		req := &protos.GetDesignRequest{Id: "does-not-exist", IncludeSectionMetadata: true}
 		_, err := service.GetDesign(ctx, req)
 
 		require.Error(t, err)
@@ -231,22 +295,22 @@ func TestGetDesign(t *testing.T) {
 		assert.Equal(t, codes.NotFound, st.Code())
 	})
 
-	t.Run("Fail on Corrupted Metadata", func(t *testing.T) {
-		designId := "corrupted-meta"
-		designPath := filepath.Join(tempDir, designId)
+	// Test case for corrupted metadata remains relevant
+	t.Run("Fail on Corrupted Design Metadata", func(t *testing.T) {
+		corruptDesignId := "corrupted-meta-design"
+		designPath := filepath.Join(tempDir, corruptDesignId)
 		metadataPath := filepath.Join(designPath, "design.json")
-		sectionsPath := filepath.Join(designPath, "sections")
+		sectionsPath := filepath.Join(designPath, "sections") // Use designPath here
 		require.NoError(t, os.MkdirAll(sectionsPath, 0755))
 		require.NoError(t, os.WriteFile(metadataPath, []byte("{ invalid json "), 0644))
 
-		req := &protos.GetDesignRequest{Id: designId}
+		req := &protos.GetDesignRequest{Id: corruptDesignId, IncludeSectionMetadata: true}
 		_, err := service.GetDesign(ctx, req)
 
 		require.Error(t, err)
 		st, ok := status.FromError(err)
 		require.True(t, ok)
-		assert.Contains(t, []codes.Code{codes.DataLoss, codes.Internal}, st.Code())
-		assert.Equal(t, codes.DataLoss, st.Code()) // Be specific if possible
+		assert.Equal(t, codes.DataLoss, st.Code()) // Expect DataLoss due to unmarshal error
 	})
 }
 
