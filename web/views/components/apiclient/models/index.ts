@@ -1,6 +1,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export * from './ConsolidateSectionUpdatesIntoOneRPCUsingPATCHAndFieldMask';
+export * from './ContentFieldsToBePatchedBasedOnTheUpdateMask';
 export * from './DesignBeingUpdated';
 export * from './DesignServiceAddSectionRequest';
 export * from './DesignServiceAddSectionRequestSection';
@@ -10,15 +11,17 @@ export * from './ProtobufAny';
 export * from './ProtobufNullValue';
 export * from './RpcStatus';
 export * from './SectionObjectContainingOnlyTheFieldsToBeUpdatedTheServerWillUseTheUpdateMaskToKnowWhichFieldsFromThisSectionMessageToApplyToTheStoredSection';
+export * from './SetContentRequest';
 export * from './TagBeingUpdated';
 export * from './TagCreationRequestObject';
 export * from './UpdateDesignRequest';
 export * from './UpdateTagRequest';
+export * from './V1Content';
 export * from './V1CreateDesignRequest';
 export * from './V1CreateDesignResponse';
 export * from './V1CreateTagResponse';
 export * from './V1Design';
-export * from './V1DrawingSectionContent';
+export * from './V1GetContentResponse';
 export * from './V1GetDesignResponse';
 export * from './V1GetDesignsResponse';
 export * from './V1GetTagResponse';
@@ -27,10 +30,9 @@ export * from './V1ListDesignsResponse';
 export * from './V1ListTagsResponse';
 export * from './V1Pagination';
 export * from './V1PaginationResponse';
-export * from './V1PlotSectionContent';
 export * from './V1PositionType';
 export * from './V1Section';
 export * from './V1SectionType';
-export * from './V1TextSectionContent';
+export * from './V1SetContentResponse';
 export * from './V1UpdateDesignResponse';
 export * from './V1UpdateTagResponse';

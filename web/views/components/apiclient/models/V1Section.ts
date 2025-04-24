@@ -13,13 +13,6 @@
  */
 
 import { mapValues } from '../runtime';
-import type { V1PlotSectionContent } from './V1PlotSectionContent';
-import {
-    V1PlotSectionContentFromJSON,
-    V1PlotSectionContentFromJSONTyped,
-    V1PlotSectionContentToJSON,
-    V1PlotSectionContentToJSONTyped,
-} from './V1PlotSectionContent';
 import type { V1SectionType } from './V1SectionType';
 import {
     V1SectionTypeFromJSON,
@@ -27,20 +20,6 @@ import {
     V1SectionTypeToJSON,
     V1SectionTypeToJSONTyped,
 } from './V1SectionType';
-import type { V1DrawingSectionContent } from './V1DrawingSectionContent';
-import {
-    V1DrawingSectionContentFromJSON,
-    V1DrawingSectionContentFromJSONTyped,
-    V1DrawingSectionContentToJSON,
-    V1DrawingSectionContentToJSONTyped,
-} from './V1DrawingSectionContent';
-import type { V1TextSectionContent } from './V1TextSectionContent';
-import {
-    V1TextSectionContentFromJSON,
-    V1TextSectionContentFromJSONTyped,
-    V1TextSectionContentToJSON,
-    V1TextSectionContentToJSONTyped,
-} from './V1TextSectionContent';
 
 /**
  * 
@@ -87,45 +66,12 @@ export interface V1Section {
      */
     title?: string;
     /**
-     * e.g., "application/json", "text/html" etc
-     * @type {string}
-     * @memberof V1Section
-     */
-    contentType?: string;
-    /**
-     * *
-     * Format of the section.
-     * 
-     * e.g., "chartjs/json", "plotly/json"
-     * @type {string}
-     * @memberof V1Section
-     */
-    format?: string;
-    /**
      * *
      * Order of the section in the list of sections.  This is a readonly field.
      * @type {number}
      * @memberof V1Section
      */
     order?: number;
-    /**
-     * 
-     * @type {V1TextSectionContent}
-     * @memberof V1Section
-     */
-    textContent?: V1TextSectionContent;
-    /**
-     * 
-     * @type {V1DrawingSectionContent}
-     * @memberof V1Section
-     */
-    drawingContent?: V1DrawingSectionContent;
-    /**
-     * 
-     * @type {V1PlotSectionContent}
-     * @memberof V1Section
-     */
-    plotContent?: V1PlotSectionContent;
 }
 
 
@@ -153,12 +99,7 @@ export function V1SectionFromJSONTyped(json: any, ignoreDiscriminator: boolean):
         'designId': json['designId'] == null ? undefined : json['designId'],
         'type': json['type'] == null ? undefined : V1SectionTypeFromJSON(json['type']),
         'title': json['title'] == null ? undefined : json['title'],
-        'contentType': json['contentType'] == null ? undefined : json['contentType'],
-        'format': json['format'] == null ? undefined : json['format'],
         'order': json['order'] == null ? undefined : json['order'],
-        'textContent': json['textContent'] == null ? undefined : V1TextSectionContentFromJSON(json['textContent']),
-        'drawingContent': json['drawingContent'] == null ? undefined : V1DrawingSectionContentFromJSON(json['drawingContent']),
-        'plotContent': json['plotContent'] == null ? undefined : V1PlotSectionContentFromJSON(json['plotContent']),
     };
 }
 
@@ -179,12 +120,7 @@ export function V1SectionToJSONTyped(value?: V1Section | null, ignoreDiscriminat
         'designId': value['designId'],
         'type': V1SectionTypeToJSON(value['type']),
         'title': value['title'],
-        'contentType': value['contentType'],
-        'format': value['format'],
         'order': value['order'],
-        'textContent': V1TextSectionContentToJSON(value['textContent']),
-        'drawingContent': V1DrawingSectionContentToJSON(value['drawingContent']),
-        'plotContent': V1PlotSectionContentToJSON(value['plotContent']),
     };
 }
 
