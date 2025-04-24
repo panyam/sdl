@@ -647,28 +647,10 @@
                       "type": "string",
                       "description": "*\nTitle of this section."
                     },
-                    "contentType": {
-                      "type": "string",
-                      "description": "e.g., \"application/json\", \"text/html\" etc",
-                      "title": "*\nSection content type"
-                    },
-                    "format": {
-                      "type": "string",
-                      "description": "*\nFormat of the section.\n\ne.g., \"chartjs/json\", \"plotly/json\""
-                    },
                     "order": {
                       "type": "integer",
                       "format": "int64",
                       "description": "*\nOrder of the section in the list of sections.  This is a readonly field."
-                    },
-                    "textContent": {
-                      "$ref": "#/definitions/v1TextSectionContent"
-                    },
-                    "drawingContent": {
-                      "$ref": "#/definitions/v1DrawingSectionContent"
-                    },
-                    "plotContent": {
-                      "$ref": "#/definitions/v1PlotSectionContent"
                     }
                   }
                 },
@@ -746,28 +728,10 @@
                       "type": "string",
                       "description": "*\nTitle of this section."
                     },
-                    "contentType": {
-                      "type": "string",
-                      "description": "e.g., \"application/json\", \"text/html\" etc",
-                      "title": "*\nSection content type"
-                    },
-                    "format": {
-                      "type": "string",
-                      "description": "*\nFormat of the section.\n\ne.g., \"chartjs/json\", \"plotly/json\""
-                    },
                     "order": {
                       "type": "integer",
                       "format": "int64",
                       "description": "*\nOrder of the section in the list of sections.  This is a readonly field."
-                    },
-                    "textContent": {
-                      "$ref": "#/definitions/v1TextSectionContent"
-                    },
-                    "drawingContent": {
-                      "$ref": "#/definitions/v1DrawingSectionContent"
-                    },
-                    "plotContent": {
-                      "$ref": "#/definitions/v1PlotSectionContent"
                     }
                   },
                   "description": "Section object containing *only* the fields to be updated.\nThe server will use the update_mask to know which fields from\nthis 'section' message to apply to the stored section.",
@@ -1361,16 +1325,6 @@
         }
       }
     },
-    "v1DrawingSectionContent": {
-      "type": "object",
-      "properties": {
-        "data": {
-          "type": "string",
-          "format": "byte",
-          "title": "The actual drawing data (can be JSON string bytes, raw SVG bytes, etc.)"
-        }
-      }
-    },
     "v1GetContentResponse": {
       "type": "object",
       "properties": {
@@ -1516,16 +1470,6 @@
         }
       }
     },
-    "v1PlotSectionContent": {
-      "type": "object",
-      "properties": {
-        "data": {
-          "type": "string",
-          "format": "byte",
-          "title": "The plot configuration or data as bytes (likely JSON string bytes)"
-        }
-      }
-    },
     "v1PositionType": {
       "type": "string",
       "enum": [
@@ -1565,28 +1509,10 @@
           "type": "string",
           "description": "*\nTitle of this section."
         },
-        "contentType": {
-          "type": "string",
-          "description": "e.g., \"application/json\", \"text/html\" etc",
-          "title": "*\nSection content type"
-        },
-        "format": {
-          "type": "string",
-          "description": "*\nFormat of the section.\n\ne.g., \"chartjs/json\", \"plotly/json\""
-        },
         "order": {
           "type": "integer",
           "format": "int64",
           "description": "*\nOrder of the section in the list of sections.  This is a readonly field."
-        },
-        "textContent": {
-          "$ref": "#/definitions/v1TextSectionContent"
-        },
-        "drawingContent": {
-          "$ref": "#/definitions/v1DrawingSectionContent"
-        },
-        "plotContent": {
-          "$ref": "#/definitions/v1PlotSectionContent"
         }
       }
     },
@@ -1609,14 +1535,6 @@
         }
       },
       "title": "SetContentResponse"
-    },
-    "v1TextSectionContent": {
-      "type": "object",
-      "properties": {
-        "htmlContent": {
-          "type": "string"
-        }
-      }
     },
     "v1UpdateDesignResponse": {
       "type": "object",
