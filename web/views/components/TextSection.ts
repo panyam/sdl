@@ -117,12 +117,17 @@ export class TextSection extends BaseSection {
     }
 
     protected override async refreshContentFromServer() {
-        const resp = await ContentApi.contentServiceGetContent({
-          designId: this.designId,
-          sectionId: this.sectionId,
-          name: "main",
-        })
-        this.textContent = atob(resp.contentBytes || "")
+        this.textContent = ""
+        try {
+            const resp = await ContentApi.contentServiceGetContent({
+              designId: this.designId,
+              sectionId: this.sectionId,
+              name: "main",
+            })
+            this.textContent = atob(resp.contentBytes || "")
+        } catch (err: any) {
+          console.error("error loading: ", err)
+        }
     }
 
     public async handleSaveClick(): Promise<void> {
