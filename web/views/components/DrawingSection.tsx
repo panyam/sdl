@@ -1,12 +1,22 @@
 // components/DrawingSection.ts
 
+import { ContentApi } from './Api'; // Import API client
 import { BaseSection } from './BaseSection';
 import { SectionData, SectionCallbacks, DrawingContent, ExcalidrawSceneData } from './types';
 
 // --- Excalidraw Integration ---
 import React from 'react';
 import ReactDOM from 'react-dom/client'; // Use client for React 18+
-import { Excalidraw, convertToExcalidrawElements } from '@excalidraw/excalidraw';
+import {
+  serializeAsJSON,
+  loadFromBlob,
+  exportToBlob,
+  exportToSvg,
+  convertToExcalidrawElements
+} from "@excalidraw/excalidraw";
+import {
+  Excalidraw, MainMenu, Footer,
+} from "@excalidraw/excalidraw";
 // Optional: Import types if needed for stricter typing
 // import { ExcalidrawElement, ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types/element/types';
 // import { AppState } from '@excalidraw/excalidraw/types/types';
@@ -21,39 +31,16 @@ export class DrawingSection extends BaseSection {
     // Store React root and Excalidraw API instance
     private reactRoot: ReactDOM.Root | null = null;
     private excalidrawAPI: ExcalidrawApi | null = null;
-    private currentDrawingData: ExcalidrawSceneData | null = null; // Store current state for saving
     private editorContainerElement: HTMLDivElement | null = null; // Store container reference
     private drawingContent: DrawingContent | null;
+    private lightPreview = "";
+    private darkPreview = "";
 
     constructor(data: SectionData, element: HTMLElement, callbacks: SectionCallbacks = {}) {
         super(data, element, callbacks);
         // Ensure content is initialized as an object if not present
         this.drawingContent = { format: 'excalidraw/json', data: { elements: [], appState: {} } };
         this.enableFullscreen();
-    }
-
-    /** Decodes raw base64 string, parses JSON into ExcalidrawSceneData */
-    private decodeContent(rawContent: any | null): ExcalidrawSceneData {
-        const defaultScene: ExcalidrawSceneData = { elements: [], appState: {} };
-        if (typeof rawContent === 'string') {
-            try {
-                const jsonString = decodeURIComponent(escape(atob(rawContent)));
-                const parsed = JSON.parse(jsonString);
-                // Basic validation: check if it looks like scene data
-                if (parsed && typeof parsed === 'object' && Array.isArray(parsed.elements) && typeof parsed.appState === 'object') {
-                     // Ensure elements are converted if necessary (might be redundant if saved correctly)
-                     parsed.elements = convertToExcalidrawElements(parsed.elements);
-                    return parsed as ExcalidrawSceneData;
-                } else {
-                    console.warn(`DrawingSection ${this.data.id}: Decoded content is not valid SceneData.`, parsed);
-                    return defaultScene;
-                }
-            } catch (e) {
-                console.error(`DrawingSection ${this.data.id}: Failed to decode/parse content.`, e);
-                return defaultScene;
-            }
-        }
-        return defaultScene; // Return default if content is null or not string
     }
 
     /** Returns the (type) title for this section. */
@@ -68,13 +55,19 @@ export class DrawingSection extends BaseSection {
     }
 
     protected populateViewContent(): void {
+        const isDarkMode = document.documentElement.classList.contains('dark');
         const previewContainer = this.contentContainer?.querySelector('.drawing-preview-container');
+        const svg = isDarkMode ? this.darkPreview : this.lightPreview
         if (previewContainer) {
             const content = this.drawingContent
             // **Placeholder:** Render based on content.format and content.data
             // TODO: Implement a static SVG export/render for view mode later
             if (content && content.format === 'excalidraw/json' && (content.data as ExcalidrawSceneData)?.elements?.length > 0) {
+                if (svg.length == 0) {
                  previewContainer.innerHTML = `<pre class="text-xs text-gray-600 dark:text-gray-400">${JSON.stringify(content.data, null, 2)}</pre>`;
+                } else {
+                 previewContainer.innerHTML = svg
+                }
             } else {
                  previewContainer.innerHTML = `<p class="text-gray-500 dark:text-gray-400 italic">No drawing data. Click 'Edit' to start.</p>`;
             }
@@ -102,27 +95,38 @@ export class DrawingSection extends BaseSection {
             let initialElements: any[] = [];
             let initialAppState: any = {};
 
-            if (initialContent?.format === 'excalidraw/json' && typeof initialContent.data === 'object') {
+            if (true || (initialContent?.format === 'excalidraw/json' && typeof initialContent?.data === 'object')) {
                  // Ensure data conforms to ExcalidrawSceneData structure
-                 const sceneData = initialContent.data as ExcalidrawSceneData;
+                 const sceneData = initialContent!.data as ExcalidrawSceneData;
                  // initialElements = convertToExcalidrawElements(sceneData?.elements || []); // Use Excalidraw's conversion
                  initialElements = convertToExcalidrawElements([...(sceneData?.elements || [])]);
                  initialAppState = sceneData?.appState || {};
+                 initialAppState.collaborators = []
             }
 
             // Determine theme
             const isDarkMode = document.documentElement.classList.contains('dark');
 
-            this.reactRoot.render(
-                React.createElement(Excalidraw, {
-                    excalidrawAPI: (api: ExcalidrawApi) => { this.excalidrawAPI = api; }, // Store API handle
-                    initialData: {
+            this.reactRoot?.render(
+              <Excalidraw 
+                    theme = { isDarkMode ? 'dark' : 'light' }
+                    excalidrawAPI ={ (api: ExcalidrawApi) => { this.excalidrawAPI = api; } }
+                    onChange = { this.handleExcalidrawChange.bind(this) } // Debounced save or flag dirty state
+                    initialData = { {
                         elements: initialElements,
                         appState: initialAppState,
-                    },
-                    onChange: this.handleExcalidrawChange.bind(this), // Debounced save or flag dirty state
-                    theme: isDarkMode ? 'dark' : 'light',
-                })
+                    } }
+              >
+                <MainMenu>
+                  <MainMenu.DefaultItems.LoadScene />
+                  <MainMenu.DefaultItems.SaveAsImage />
+                  <MainMenu.DefaultItems.Export />
+                  <MainMenu.DefaultItems.ToggleTheme />
+                  <MainMenu.DefaultItems.ClearCanvas />
+                  <MainMenu.DefaultItems.ChangeCanvasBackground/>
+                  <MainMenu.DefaultItems.Help/>
+                  </MainMenu>
+                  </Excalidraw>
             );
         } else {
              console.warn(`Edit content area not found for drawing section ${this.data.id}`);
@@ -132,7 +136,7 @@ export class DrawingSection extends BaseSection {
     /** Handles changes from Excalidraw - could be used for auto-save or marking dirty */
     private handleExcalidrawChange(elements: ReadonlyArray<any>, appState: any): void {
         // Store the latest data internally. Debounce saving or mark as dirty here.
-        this.currentDrawingData = { elements, appState };
+        this.drawingContent = { format: 'excalidraw/json', data: {elements, appState} };
         // console.log(`Excalidraw changed in section ${this.data.id}. Elements: ${elements.length}`);
         // Example: Trigger debounced save after inactivity
         // this.debouncedSave();
@@ -144,8 +148,8 @@ export class DrawingSection extends BaseSection {
         let drawingData: ExcalidrawSceneData = { elements: [], appState: {} };
 
         // Try to get data from the stored state updated by onChange
-        if (this.currentDrawingData) {
-            drawingData = this.currentDrawingData;
+        if (this.drawingContent) {
+            drawingData = this.drawingContent.data as ExcalidrawSceneData;
         }
         // Fallback: Try to get directly from API if onChange didn't fire recently (less ideal)
         else if (this.excalidrawAPI) {
@@ -156,16 +160,11 @@ export class DrawingSection extends BaseSection {
             console.warn(`Getting Excalidraw data directly from API for ${this.data.id}. Should ideally use onChange state.`);
         } else {
              console.error(`Cannot get Excalidraw data: API instance not found for section ${this.data.id}. Returning empty.`);
-             // Return the last known saved data or empty
-             const savedContent = this.drawingContent
-             if (savedContent?.format === 'excalidraw/json') {
-                drawingData = savedContent.data as ExcalidrawSceneData;
-             }
         }
 
         // Return in the expected DrawingContent format
         return {
-            format: 'placeholder_drawing', // Or the actual format used by your lib
+            format: 'excalidraw/json', // Or the actual format used by your lib
             data: drawingData
         };
     }
@@ -183,12 +182,86 @@ export class DrawingSection extends BaseSection {
                     this.reactRoot = null;
                     this.excalidrawAPI = null;
                     this.editorContainerElement = null; // Clear container ref
-                    this.currentDrawingData = null; // Clear temporary state
                 }
             }
         }
         // Call the base class method *after* cleanup
         super.switchToViewMode(saveChanges);
+    }
+
+    protected override async refreshContentFromServer() {
+        this.drawingContent = { format: 'excalidraw/json', data: { elements: [], appState: {} } };
+        try {
+            const resp = await ContentApi.contentServiceGetContent({
+              designId: this.designId,
+              sectionId: this.sectionId,
+              name: "main",
+            })
+            if (resp.contentBytes) {
+              const json = atob(resp.contentBytes)
+              if (json.trim().length > 0) {
+                this.drawingContent = JSON.parse(json)
+              }
+            }
+            // Now load dark and light svgs
+            const respLight = await ContentApi.contentServiceGetContent({
+              designId: this.designId,
+              sectionId: this.sectionId,
+              name: "light.svg",
+            })
+            if (respLight.contentBytes) this.lightPreview = atob(respLight.contentBytes)
+            const respDark = await ContentApi.contentServiceGetContent({
+              designId: this.designId,
+              sectionId: this.sectionId,
+              name: "dark.svg",
+            })
+            if (respDark.contentBytes) this.darkPreview = atob(respDark.contentBytes)
+        } catch (err: any) {
+          console.error("error loading: ", err)
+        }
+    }
+
+    public async handleSaveClick(): Promise<void> {
+        this.drawingContent = this.getContentFromEditMode()
+        const sceneData = this.drawingContent!.data as ExcalidrawSceneData;
+        const asSvgDark = await exportToSvg({
+          elements: sceneData.elements,
+          appState: {
+            exportBackground: true,
+            exportWithDarkMode: true,
+          },
+        } as any)
+
+        const resp1 = await ContentApi.contentServiceSetContent({
+          designId: this.designId,
+          sectionId: this.sectionId,
+          name: "dark.svg",
+          contentBytes: btoa(JSON.stringify(asSvgDark.outerHTML)),
+        })
+
+        const asSvgLight = await exportToSvg({
+          elements: sceneData.elements,
+          appState: {
+            exportBackground: true,
+            exportWithDarkMode: false,
+          },
+        } as any)
+
+        const resp2 = await ContentApi.contentServiceSetContent({
+          designId: this.designId,
+          sectionId: this.sectionId,
+          name: "light.svg",
+          contentBytes: btoa(asSvgLight.outerHTML),
+        })
+
+        console.log(`Save button clicked or shortcut used for section ${this.data.id}.`);
+        const resp = await ContentApi.contentServiceSetContent({
+          designId: this.designId,
+          sectionId: this.sectionId,
+          name: "main",
+          contentBytes: btoa(JSON.stringify(this.drawingContent)),
+        })
+        this.switchToViewMode(true);
     }
 
     /**
@@ -205,8 +278,7 @@ export class DrawingSection extends BaseSection {
          console.log(`DrawingSection ${this.data.id}: Re-rendering Excalidraw for theme change.`);
 
          // Get current content before unmounting/re-rendering
-         const currentContent = this.getContentFromEditMode();
-         this.drawingContent = currentContent; // Update internal data immediately
+         this.drawingContent = this.getContentFromEditMode();
 
          // Unmount the existing instance cleanly
          this.reactRoot.unmount();
@@ -224,53 +296,5 @@ export class DrawingSection extends BaseSection {
         // Example: if (this.drawingEditorInstance && typeof this.drawingEditorInstance.resize === 'function') {
         //     this.drawingEditorInstance.resize(); // Call the library's specific resize/redraw method
         // }
-    }
-    /** Gets the current Excalidraw scene data from the internal state updated by onChange */
-    protected getInterpretedContentForSaving(): ExcalidrawSceneData {
-        // Prefer the state updated by onChange
-        if (this.currentDrawingData) {
-            return this.currentDrawingData;
-        }
-        // Fallback to API - less ideal as it might miss very last changes
-        if (this.excalidrawAPI) {
-            console.warn(`DrawingSection ${this.data.id}: Falling back to excalidrawAPI.getSceneElements/getAppState for saving.`);
-            return {
-                elements: this.excalidrawAPI.getSceneElements() || [],
-                appState: this.excalidrawAPI.getAppState() || {},
-            };
-        }
-        console.error(`DrawingSection ${this.data.id}: Cannot get content for saving - no state and no API.`);
-        return this.decodeContent(this.drawingContent); // Absolute fallback
-    }
-
-    /** Encodes Excalidraw scene data object to base64 */
-    protected encodeContentForSaving(interpretedContent: ExcalidrawSceneData): { contentBytes: string; contentType: string; format: string; } {
-        try {
-            const jsonString = JSON.stringify(interpretedContent || { elements: [], appState: {} });
-            const contentBytes = btoa(unescape(encodeURIComponent(jsonString))); // JSON -> UTF8 -> Base64
-            return {
-                contentBytes: contentBytes,
-                contentType: 'application/json',
-                format: 'excalidraw/json' // Be specific
-            };
-        } catch (e) {
-             console.error(`DrawingSection ${this.data.id}: Failed to stringify/encode scene data.`, e);
-             // Return empty content to avoid saving corrupted data?
-             return { contentBytes: btoa(unescape(encodeURIComponent('{"elements":[],"appState":{}}'))), contentType: 'application/json', format: 'excalidraw/json' };
-        }
-    }
-
-    /** Returns the content formatted for the DocumentSection type (DrawingContent object) */
-    protected getDocumentFormattedContent(): DrawingContent {
-        let sceneData: ExcalidrawSceneData;
-        if (this.mode === 'edit') {
-            sceneData = this.getInterpretedContentForSaving(); // Get current editor state
-        } else {
-            sceneData = this.decodeContent(this.drawingContent); // Decode stored raw content
-        }
-        return {
-            format: 'excalidraw/json',
-            data: sceneData
-        };
     }
 }
