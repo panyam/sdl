@@ -231,12 +231,13 @@ export class DrawingSection extends BaseSection {
             exportWithDarkMode: true,
           },
         } as any)
+        this.darkPreview = asSvgDark.outerHTML
 
         const resp1 = await ContentApi.contentServiceSetContent({
           designId: this.designId,
           sectionId: this.sectionId,
           name: "dark.svg",
-          contentBytes: btoa(JSON.stringify(asSvgDark.outerHTML)),
+          contentBytes: btoa(this.darkPreview),
         })
 
         const asSvgLight = await exportToSvg({
@@ -246,12 +247,13 @@ export class DrawingSection extends BaseSection {
             exportWithDarkMode: false,
           },
         } as any)
+        this.lightPreview = asSvgLight.outerHTML
 
         const resp2 = await ContentApi.contentServiceSetContent({
           designId: this.designId,
           sectionId: this.sectionId,
           name: "light.svg",
-          contentBytes: btoa(asSvgLight.outerHTML),
+          contentBytes: btoa(this.lightPreview)
         })
 
         console.log(`Save button clicked or shortcut used for section ${this.data.id}.`);
