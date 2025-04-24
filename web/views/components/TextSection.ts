@@ -186,34 +186,6 @@ export class TextSection extends BaseSection {
         }
     }
 
-    private handleViewClick(): void {
-        this.switchToEditMode();
-    }
-
-    protected bindEditModeEvents(): void {
-        const saveButton = this.contentContainer?.querySelector('.section-edit-save');
-        const cancelButton = this.contentContainer?.querySelector('.section-edit-cancel');
-
-        if (saveButton) {
-            saveButton.removeEventListener('click', this.handleSaveClick);
-            saveButton.addEventListener('click', this.handleSaveClick.bind(this));
-        }
-        if (cancelButton) {
-            cancelButton.removeEventListener('click', this.handleCancelClick);
-            cancelButton.addEventListener('click', this.handleCancelClick.bind(this));
-        }
-    }
-
-    public handleSaveClick(): void {
-        console.log(`Save button clicked or shortcut used for section ${this.data.id}.`);
-        this.switchToViewMode(true);
-    }
-
-    private handleCancelClick(): void {
-        this.switchToViewMode(false);
-    }
-
-
     protected getContentFromEditMode(): TextContent {
         if (this.editorInstance && this.editorInstance.initialized) {
             try {

@@ -325,6 +325,48 @@ export abstract class BaseSection {
     }
 
     /**
+     * By default binds a "section-edit-trigger" button click handler to switch to edit mode.
+     * Child sections can use other bindings.
+     */
+    protected bindViewModeEvents(): void {
+        const editTrigger = this.contentContainer?.querySelector('.section-edit-trigger');
+        if (editTrigger) {
+             editTrigger.removeEventListener('click', this.handleViewClick); // Prevent multiple listeners
+             editTrigger.addEventListener('click', this.handleViewClick.bind(this));
+        }
+    }
+
+    /**
+     * Called when the container is clicked in view mode.  By default switches to switch to edit mode.
+     */
+    protected handleViewClick(): void {
+        this.switchToEditMode();
+    }
+
+    protected bindEditModeEvents(): void {
+        const saveButton = this.contentContainer?.querySelector('.section-edit-save');
+        const cancelButton = this.contentContainer?.querySelector('.section-edit-cancel');
+
+        if (saveButton) {
+            saveButton.removeEventListener('click', this.handleSaveClick);
+            saveButton.addEventListener('click', this.handleSaveClick.bind(this));
+        }
+        if (cancelButton) {
+            cancelButton.removeEventListener('click', this.handleCancelClick);
+            cancelButton.addEventListener('click', this.handleCancelClick.bind(this));
+        }
+    }
+
+    public handleSaveClick(): void {
+        console.log(`Save button clicked or shortcut used for section ${this.data.id}.`);
+        this.switchToViewMode(true);
+    }
+
+    private handleCancelClick(): void {
+        this.switchToViewMode(false);
+    }
+
+    /**
      * Loads the specified template (view or edit) from the registry
      * and injects it into the section's content container.
      * Uses the hidden div approach for now.
@@ -370,12 +412,6 @@ export abstract class BaseSection {
 
     /** Populates the loaded Edit mode template with the section's current data and initializes editors. */
     protected abstract populateEditContent(): void;
-
-    /** Binds event listeners specific to the elements within the View mode template. */
-    protected abstract bindViewModeEvents(): void;
-
-    /** Binds event listeners specific to the elements within the Edit mode template (e.g., save/cancel buttons). */
-    protected abstract bindEditModeEvents(): void;
 
     /** Handles resizing the section's specific content (e.g., canvas, plot) when entering/exiting fullscreen or on window resize. */
     protected abstract resizeContentForFullscreen(isEntering: boolean): void;

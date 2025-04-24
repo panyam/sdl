@@ -571,7 +571,6 @@ export class SectionManager {
         }
     }
 
-
     /** Update section content in data (called by BaseSection on save) */
     private updateSectionContent(sectionId: string, newContent: SectionData['content']): void {
         const sectionData = this.sectionData.find(s => s.id === sectionId);

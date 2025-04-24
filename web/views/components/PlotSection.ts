@@ -58,37 +58,6 @@ export class PlotSection extends BaseSection {
         }
     }
 
-    protected bindViewModeEvents(): void {
-         const editTrigger = this.contentContainer?.querySelector('.section-edit-trigger');
-        if (editTrigger) {
-             editTrigger.removeEventListener('click', this.handleViewClick); // Prevent multiple listeners
-             editTrigger.addEventListener('click', this.handleViewClick.bind(this));
-        }
-         // **Placeholder:** Add listeners for plot interactions if needed
-    }
-
-    // Handler function to ensure 'this' context is correct
-     private handleViewClick(): void {
-        this.switchToEditMode();
-    }
-
-    protected bindEditModeEvents(): void {
-        const saveButton = this.contentContainer?.querySelector('.section-edit-save');
-        const cancelButton = this.contentContainer?.querySelector('.section-edit-cancel');
-
-        if (saveButton) {
-            saveButton.addEventListener('click', () => {
-                this.switchToViewMode(true); // Save changes
-            });
-        }
-        if (cancelButton) {
-            cancelButton.addEventListener('click', () => {
-                this.switchToViewMode(false); // Discard changes
-            });
-        }
-        // **Placeholder:** Add listeners for config editor changes if needed
-    }
-
     protected getContentFromEditMode(): PlotContent {
         console.log(`Placeholder: Get data from plot config editor for section ${this.data.id}`);
         let plotData: object = {};

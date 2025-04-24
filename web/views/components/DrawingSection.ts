@@ -94,36 +94,6 @@ export class DrawingSection extends BaseSection {
         }
     }
 
-    protected bindViewModeEvents(): void {
-        const editTrigger = this.contentContainer?.querySelector('.section-edit-trigger');
-        if (editTrigger) {
-             editTrigger.removeEventListener('click', this.handleViewClick); // Prevent multiple listeners
-             editTrigger.addEventListener('click', this.handleViewClick.bind(this));
-        }
-    }
-
-     // Handler function to ensure 'this' context is correct
-     private handleViewClick(): void {
-        this.switchToEditMode();
-    }
-
-    protected bindEditModeEvents(): void {
-        const saveButton = this.contentContainer?.querySelector('.section-edit-save');
-        const cancelButton = this.contentContainer?.querySelector('.section-edit-cancel');
-
-        if (saveButton) {
-            saveButton.addEventListener('click', () => {
-                this.switchToViewMode(true); // Save changes
-            });
-        }
-        if (cancelButton) {
-            cancelButton.addEventListener('click', () => {
-                // No explicit discard needed, just switch mode without saving
-                this.switchToViewMode(false); // Discard changes
-            });
-        }
-    }
-
     /** Handles changes from Excalidraw - could be used for auto-save or marking dirty */
     private handleExcalidrawChange(elements: ReadonlyArray<any>, appState: any): void {
         // Store the latest data internally. Debounce saving or mark as dirty here.
