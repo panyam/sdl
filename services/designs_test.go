@@ -15,11 +15,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata" // <-- Add gRPC metadata import
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
-	// ****** ADDED IMPORT ******
-	// Correct import for cmp.Equal/Diff
 )
 
 // Helper to create a context with a logged-in user ID for testing
@@ -29,37 +27,47 @@ func testContextWithUser(userId string) context.Context {
 	return ctx
 }
 
-// Helper to create a DesignService instance using a temporary directory
 func newTestDesignService(t *testing.T) (*DesignService, string) {
 	t.Helper()
-
 	tempDir := t.TempDir()
 	t.Logf("Using temp directory for test service: %s", tempDir)
-
+	// Assume ClientMgr is nil for these filesystem tests
 	service := NewDesignService(nil, tempDir)
-
 	t.Cleanup(func() {
-		service.mutexMap = sync.Map{}
+		service.mutexMap = sync.Map{} // Clear mutex map after test
 	})
-
 	return service, tempDir
 }
 
-// Helper to directly create a design metadata file for test setup
+// Helper to directly create a design metadata file (design.json)
 func createDesignDirectly(t *testing.T, basePath string, metadata Design) {
 	t.Helper()
 	designPath := filepath.Join(basePath, metadata.Id)
 	metadataPath := filepath.Join(designPath, "design.json")
 	sectionsPath := filepath.Join(designPath, "sections")
 
-	err := os.MkdirAll(sectionsPath, 0755)
-	require.NoError(t, err, "Failed to create directories for direct creation")
+	err := os.MkdirAll(sectionsPath, 0755) // Ensure sections dir exists too
+	require.NoError(t, err, "Failed to create directories for direct design creation")
 
 	jsonData, err := json.MarshalIndent(metadata, "", "  ")
-	require.NoError(t, err, "Failed to marshal metadata for direct creation")
+	require.NoError(t, err, "Failed to marshal design metadata for direct creation")
 
 	err = os.WriteFile(metadataPath, jsonData, 0644)
-	require.NoError(t, err, "Failed to write metadata file for direct creation")
+	require.NoError(t, err, "Failed to write design metadata file for direct creation")
+}
+
+// Helper to directly create section metadata (main.json)
+func createSectionDirectly(t *testing.T, basePath, designId, sectionId string, sectionData Section) {
+	t.Helper()
+	sectionsDir := filepath.Join(basePath, designId, "sections", sectionId)
+	err := os.MkdirAll(sectionsDir, 0755) // Ensure sections dir exists
+	require.NoError(t, err, "Failed to create sections directory for direct section creation")
+
+	sectionPath := filepath.Join(sectionsDir, "main.json")
+	jsonData, err := json.MarshalIndent(sectionData, "", "  ")
+	require.NoError(t, err, "Failed to marshal section data for direct creation")
+	err = os.WriteFile(sectionPath, jsonData, 0644)
+	require.NoError(t, err, "Failed to write section file for direct creation")
 }
 
 // Helper to read design metadata directly from file for verification
@@ -78,6 +86,24 @@ func readDesignMetadata(t *testing.T, basePath string, designId string) *Design 
 	err = json.Unmarshal(jsonData, &metadata)
 	require.NoError(t, err, "Failed to unmarshal metadata for verification")
 	return &metadata
+}
+
+// Helper to read section data directly
+func readSectionDataDirectly(t *testing.T, basePath, designId, sectionId string) *Section {
+	t.Helper()
+	sectionsDir := filepath.Join(basePath, designId, "sections", sectionId)
+	sectionPath := filepath.Join(sectionsDir, "main.json")
+	jsonData, err := os.ReadFile(sectionPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		require.NoError(t, err, "Failed to read section file for verification")
+	}
+	var sectionData Section
+	err = json.Unmarshal(jsonData, &sectionData)
+	require.NoError(t, err, "Failed to unmarshal section data for verification")
+	return &sectionData
 }
 
 // --- Test Cases ---
@@ -211,7 +237,6 @@ func TestGetDesign(t *testing.T) {
 		DesignId:  designId,
 		Type:      "text",
 		Title:     "Section Get 1 Title",
-		Content:   "<p>Content 1</p>",
 		BaseModel: BaseModel{CreatedAt: now, UpdatedAt: now},
 	}
 	createSectionDirectly(t, tempDir, designId, secId1, sectionData1)
@@ -221,7 +246,6 @@ func TestGetDesign(t *testing.T) {
 		DesignId:  designId,
 		Type:      "drawing",
 		Title:     "Section Get 2 Title",
-		Content:   []byte(`{"elements":[]}`), // Store as bytes
 		BaseModel: BaseModel{CreatedAt: now, UpdatedAt: now},
 	}
 	createSectionDirectly(t, tempDir, designId, secId2, sectionData2)
@@ -271,7 +295,6 @@ func TestGetDesign(t *testing.T) {
 		assert.Equal(t, designId, meta1.DesignId)
 		assert.Equal(t, "Section Get 1 Title", meta1.Title)
 		assert.Equal(t, protos.SectionType_SECTION_TYPE_TEXT, meta1.Type)
-		assert.Nil(t, meta1.Content, "Metadata section content should be nil")
 		assert.EqualValues(t, 0, meta1.Order, "Order should match original index for section 1") // Original index was 0
 
 		// Check section 2 (index 2 in the *original* list, but index 1 in the *returned* list)
@@ -280,7 +303,6 @@ func TestGetDesign(t *testing.T) {
 		assert.Equal(t, designId, meta2.DesignId)
 		assert.Equal(t, "Section Get 2 Title", meta2.Title)
 		assert.Equal(t, protos.SectionType_SECTION_TYPE_DRAWING, meta2.Type)
-		assert.Nil(t, meta2.Content, "Metadata section content should be nil")
 		assert.EqualValues(t, 2, meta2.Order, "Order should match original index for section 2") // Original index was 2
 
 	})
@@ -572,40 +594,6 @@ func TestGetDesigns(t *testing.T) {
 	assert.Equal(t, codes.Unimplemented, st.Code())
 }
 
-// --- NEW Section Tests ---
-
-// Helper to create a section file directly
-func createSectionDirectly(t *testing.T, basePath, designId, sectionId string, sectionData Section) {
-	t.Helper()
-	sectionsDir := filepath.Join(basePath, designId, "sections", sectionId)
-	err := os.MkdirAll(sectionsDir, 0755) // Ensure sections dir exists
-	require.NoError(t, err, "Failed to create sections directory for direct section creation")
-
-	sectionPath := filepath.Join(sectionsDir, "main.json")
-	jsonData, err := json.MarshalIndent(sectionData, "", "  ")
-	require.NoError(t, err, "Failed to marshal section data for direct creation")
-	err = os.WriteFile(sectionPath, jsonData, 0644)
-	require.NoError(t, err, "Failed to write section file for direct creation")
-}
-
-// Helper to read section data directly
-func readSectionDataDirectly(t *testing.T, basePath, designId, sectionId string) *Section {
-	t.Helper()
-	sectionsDir := filepath.Join(basePath, designId, "sections", sectionId)
-	sectionPath := filepath.Join(sectionsDir, "main.json")
-	jsonData, err := os.ReadFile(sectionPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
-		require.NoError(t, err, "Failed to read section file for verification")
-	}
-	var sectionData Section
-	err = json.Unmarshal(jsonData, &sectionData)
-	require.NoError(t, err, "Failed to unmarshal section data for verification")
-	return &sectionData
-}
-
 func TestGetSection(t *testing.T) {
 	service, tempDir := newTestDesignService(t)
 	ctx := testContextWithUser("section-owner")
@@ -627,7 +615,6 @@ func TestGetSection(t *testing.T) {
 		DesignId:  designId,
 		Type:      "text",
 		Title:     "Test Section Title",
-		Content:   "<p>Hello Section</p>",
 		BaseModel: BaseModel{CreatedAt: now, UpdatedAt: now},
 	}
 	createSectionDirectly(t, tempDir, designId, sectionId, sectionData)
@@ -642,8 +629,6 @@ func TestGetSection(t *testing.T) {
 		assert.Equal(t, designId, resp.DesignId)
 		assert.Equal(t, protos.SectionType_SECTION_TYPE_TEXT, resp.Type)
 		assert.Equal(t, "Test Section Title", resp.Title)
-		require.NotNil(t, resp.GetTextContent(), "TextContent should not be nil")
-		assert.Equal(t, "<p>Hello Section</p>", resp.GetTextContent().HtmlContent)
 		// assert.EqualValues(t, 0, resp.Order) // Order is not directly returned by GetSection in this implementation
 	})
 
@@ -689,7 +674,6 @@ func TestAddSection(t *testing.T) {
 				DesignId: designId, // Important: Pass design ID in section proto now
 				Type:     protos.SectionType_SECTION_TYPE_DRAWING,
 				Title:    "New Drawing Section",
-				Content:  &protos.Section_DrawingContent{DrawingContent: &protos.DrawingSectionContent{Data: []byte(`{"key":"val"}`)}},
 			},
 			Position: protos.PositionType_POSITION_TYPE_END, // Explicitly add to end
 		}
@@ -712,9 +696,6 @@ func TestAddSection(t *testing.T) {
 		require.NotNil(t, secData)
 		assert.Equal(t, "drawing", secData.Type)
 		assert.Equal(t, "New Drawing Section", secData.Title)
-		// Content is []byte, which json marshals to base64
-		_, ok := secData.Content.(string) // Check if it's string (base64)
-		assert.True(t, ok, "Drawing content should be stored as base64 string in JSON")
 
 	})
 
@@ -724,7 +705,6 @@ func TestAddSection(t *testing.T) {
 				DesignId: designId,
 				Type:     protos.SectionType_SECTION_TYPE_TEXT,
 				Title:    "Section B",
-				Content:  &protos.Section_TextContent{TextContent: &protos.TextSectionContent{HtmlContent: "<p>B</p>"}},
 			},
 			RelativeSectionId: "sec-a",
 			Position:          protos.PositionType_POSITION_TYPE_AFTER,
@@ -785,17 +765,15 @@ func TestUpdateSection(t *testing.T) {
 		OwnerId:    ownerId,
 		SectionIds: []string{secIdText, secIdDraw},
 	})
-	createSectionDirectly(t, tempDir, designId, secIdText, Section{Id: secIdText, DesignId: designId, Type: "text", Title: "Original Text", Content: "<p>Original</p>"})
-	createSectionDirectly(t, tempDir, designId, secIdDraw, Section{Id: secIdDraw, DesignId: designId, Type: "drawing", Title: "Original Draw", Content: []byte(`{"a":1}`)}) // Store []byte
+	createSectionDirectly(t, tempDir, designId, secIdText, Section{Id: secIdText, DesignId: designId, Type: "text", Title: "Original Text"})
+	createSectionDirectly(t, tempDir, designId, secIdDraw, Section{Id: secIdDraw, DesignId: designId, Type: "drawing", Title: "Original Draw"}) // Store []byte
 
 	t.Run("Update Text Content", func(t *testing.T) {
-		newContent := "<p>Updated Content</p>"
 		req := &protos.UpdateSectionRequest{
 			Section: &protos.Section{ // Payload only needs updated fields + ID/DesignID maybe? Check API impl. No, handled by paths.
 				DesignId: designId,
 				Id:       secIdText,
 				Type:     protos.SectionType_SECTION_TYPE_TEXT, // Good practice to send type
-				Content:  &protos.Section_TextContent{TextContent: &protos.TextSectionContent{HtmlContent: newContent}},
 			},
 			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"text_content"}},
 		}
@@ -803,24 +781,19 @@ func TestUpdateSection(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, resp)
 		assert.Equal(t, "Original Text", resp.Title) // Title should not change
-		require.NotNil(t, resp.GetTextContent())
-		assert.Equal(t, newContent, resp.GetTextContent().HtmlContent)
 
 		// Verify file
 		secData := readSectionDataDirectly(t, tempDir, designId, secIdText)
 		require.NotNil(t, secData)
-		assert.Equal(t, newContent, secData.Content)
 		assert.Equal(t, "Original Text", secData.Title)
 	})
 
 	t.Run("Update Drawing Content", func(t *testing.T) {
-		newContentBytes := []byte(`{"a":2, "b": "new"}`)
 		req := &protos.UpdateSectionRequest{
 			Section: &protos.Section{
 				DesignId: designId,
 				Id:       secIdDraw,
 				Type:     protos.SectionType_SECTION_TYPE_DRAWING,
-				Content:  &protos.Section_DrawingContent{DrawingContent: &protos.DrawingSectionContent{Data: newContentBytes}},
 			},
 			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"drawing_content"}},
 		}
@@ -828,15 +801,11 @@ func TestUpdateSection(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, resp)
 		assert.Equal(t, "Original Draw", resp.Title) // Title should not change
-		require.NotNil(t, resp.GetDrawingContent())
-		assert.Equal(t, newContentBytes, resp.GetDrawingContent().Data) // Compare bytes
 
 		// Verify file
 		secData := readSectionDataDirectly(t, tempDir, designId, secIdDraw)
 		require.NotNil(t, secData)
 		// JSON stores bytes as base64 string
-		_ /*contentStr*/, ok := secData.Content.(string)
-		require.True(t, ok, "Content should be base64 string")
 		// Decode and compare underlying data if needed, or just check type for now
 		// For simplicity, we assume if it's a string, it's the base64 from json marshal
 		// A more robust test would decode base64 and unmarshal the JSON inside
@@ -857,14 +826,11 @@ func TestUpdateSection(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, resp)
 		assert.Equal(t, newTitle, resp.Title)
-		require.NotNil(t, resp.GetTextContent())
-		assert.Equal(t, "<p>Updated Content</p>", resp.GetTextContent().HtmlContent) // Content from previous test run
 
 		// Verify file
 		secData := readSectionDataDirectly(t, tempDir, designId, secIdText)
 		require.NotNil(t, secData)
 		assert.Equal(t, newTitle, secData.Title)
-		assert.Equal(t, "<p>Updated Content</p>", secData.Content)
 	})
 
 	// Add more tests: Update non-existent, permission denied, no mask, invalid mask

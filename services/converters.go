@@ -4,7 +4,7 @@ import (
 	"log"
 	"strings"
 
-	// "cloud.google.com/go/datastore"
+	// "cloud.google.com/go/datastore" // Keep if used by other converters
 
 	protos "github.com/panyam/leetcoach/gen/go/leetcoach/v1"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -23,7 +23,6 @@ func DesignToProto(input *Design) (out *protos.Design) {
 		Name:        input.Name,
 		Description: input.Description,
 	}
-	// EntityToStruct(&input.ContentMetadata, &out.ContentMetadata)
 	if input.ContentMetadata.Properties != nil {
 		if data, err := structpb.NewStruct(input.ContentMetadata.Properties); err != nil {
 			log.Println("Error converting ContentMetadata: ", err)
@@ -48,7 +47,6 @@ func DesignFromProto(input *protos.Design) (out *Design) {
 		Name:        input.Name,
 		Description: input.Description,
 	}
-	// StructToEntity(input.ContentMetadata, &out.ContentMetadata)
 	if input.ContentMetadata != nil {
 		out.ContentMetadata.Properties = input.ContentMetadata.AsMap()
 	}
@@ -64,6 +62,7 @@ func TagToProto(input *Tag) (out *protos.Tag) {
 		Description:    input.Description,
 		NormalizedName: input.NormalizedName,
 		ImageUrl:       input.ImageUrl,
+		NumDesigns:     input.NumDesigns, // Added num_designs
 	}
 	return
 }
@@ -79,88 +78,78 @@ func TagFromProto(input *protos.Tag) (out *Tag) {
 		Description:    input.Description,
 		NormalizedName: input.NormalizedName,
 		ImageUrl:       input.ImageUrl,
+		NumDesigns:     input.NumDesigns, // Added num_designs
 	}
 	return
 }
 
-// SectionToProto converts a services.Section struct to a protos.Section proto.
-// Note: Order is typically calculated contextually and added after this conversion.
+// SectionToProto converts a services.Section struct (metadata only) to a protos.Section proto.
 func SectionToProto(input *Section) (out *protos.Section) {
+	if input == nil {
+		return nil
+	}
 	out = &protos.Section{
-		CreatedAt:   tspb.New(input.BaseModel.CreatedAt),
-		UpdatedAt:   tspb.New(input.BaseModel.UpdatedAt),
-		Id:          input.Id,
-		DesignId:    input.DesignId,
-		Type:        SectionTypeFromString(input.Type), // Needs mapping
-		Title:       input.Title,
-		ContentType: input.ContentType,
-		Format:      input.Format,
-		// Order: is set contextually based on design.SectionIds index
+		CreatedAt: tspb.New(input.BaseModel.CreatedAt),
+		UpdatedAt: tspb.New(input.BaseModel.UpdatedAt),
+		Id:        input.Id,
+		DesignId:  input.DesignId,
+		Type:      SectionTypeFromString(input.Type), // Use helper
+		Title:     input.Title,
 	}
-
-	// Handle content based on type
-	switch out.Type {
-	case protos.SectionType_SECTION_TYPE_TEXT:
-		if contentStr, ok := input.Content.(string); ok {
-			out.Content = &protos.Section_TextContent{
-				TextContent: &protos.TextSectionContent{HtmlContent: contentStr},
-			}
-		}
-	case protos.SectionType_SECTION_TYPE_DRAWING:
-		// Assuming content is stored as stringified JSON for drawing/plot
-		contentBytes, ok := input.Content.([]byte)
-		if !ok {
-			// Log an error if the content isn't []byte for a drawing type
-			log.Printf("Error: Expected []byte content for drawing section %s, but got %T", input.Id, input.Content)
-		} else {
-			out.Content = &protos.Section_DrawingContent{
-				DrawingContent: &protos.DrawingSectionContent{Data: contentBytes},
-			}
-		}
-	case protos.SectionType_SECTION_TYPE_PLOT:
-		contentBytes, ok := input.Content.([]byte)
-		if !ok {
-			// Log an error if the content isn't []byte for a plot type
-			log.Printf("Error: Expected []byte content for plot section %s, but got %T", input.Id, input.Content)
-		} else {
-			out.Content = &protos.Section_PlotContent{
-				PlotContent: &protos.PlotSectionContent{Data: contentBytes},
-			}
-		}
-	}
+	// Content oneof is intentionally NOT populated.
 	return out
 }
 
-// SectionFromProto converts a protos.Section proto to a services.Section struct.
+// SectionFromProto converts a protos.Section proto (metadata only) to a services.Section struct.
 func SectionFromProto(input *protos.Section) (out *Section) {
+	if input == nil {
+		return nil
+	}
 	out = &Section{
 		BaseModel: BaseModel{
 			CreatedAt: input.CreatedAt.AsTime(),
 			UpdatedAt: input.UpdatedAt.AsTime(),
 		},
-		Id:          input.Id,
-		DesignId:    input.DesignId,
-		Type:        SectionTypeToString(input.Type), // Needs mapping
-		Title:       input.Title,
-		ContentType: input.ContentType,
-		Format:      input.Format,
-		// Order is not stored in the struct
+		Id:       input.Id,
+		DesignId: input.DesignId,
+		Type:     SectionTypeToString(input.Type), // Use helper
+		Title:    input.Title,
+		// Order is not stored in the service struct
+		// Content-related fields (ContentType, Format) from the proto are ignored here.
 	}
-
-	// Extract content from the oneof field
-	switch c := input.Content.(type) {
-	case *protos.Section_TextContent:
-		out.Content = c.TextContent.GetHtmlContent() // Store string
-	case *protos.Section_DrawingContent:
-		out.Content = c.DrawingContent.GetData() // Store []byte
-	case *protos.Section_PlotContent:
-		out.Content = c.PlotContent.GetData() // Store []byte
-	default:
-		// Handle case where content is nil or unknown type
-		log.Printf("Warning: Unknown or nil content type (%T) for section %s", c, input.Id)
-		out.Content = nil // Or perhaps empty string/byte slice depending on expected behavior
-	}
+	// Content field in the service struct is intentionally left nil/unset.
 	return
+}
+
+// ContentMetadataToProto converts services.ContentMetadata to protos.Content
+func ContentMetadataToProto(input *ContentMetadata) *protos.Content {
+	if input == nil {
+		return nil
+	}
+	return &protos.Content{
+		CreatedAt: tspb.New(input.CreatedAt),
+		UpdatedAt: tspb.New(input.UpdatedAt),
+		Name:      input.Name,
+		Type:      input.ContentType,
+		Format:    input.Format,
+		// Size is not in the proto, could be added if needed.
+	}
+}
+
+// ContentMetadataFromProto converts protos.Content to services.ContentMetadata
+func ContentMetadataFromProto(input *protos.Content) *ContentMetadata {
+	if input == nil {
+		return nil
+	}
+	return &ContentMetadata{
+		BaseModel: BaseModel{
+			CreatedAt: input.CreatedAt.AsTime(),
+			UpdatedAt: input.UpdatedAt.AsTime(),
+		},
+		Name:        input.Name,
+		ContentType: input.Type,
+		Format:      input.Format,
+	}
 }
 
 // Helper function to map proto enum to string

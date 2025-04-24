@@ -166,7 +166,7 @@ func (s *ContentService) SetContent(ctx context.Context, req *protos.SetContentR
 	//   if sectionMeta.ContentMetadata == nil { sectionMeta.ContentMetadata = make(...) }
 	//   if mask includes "type" && contentProto.Type != ... { update; updated = true }
 	//   if mask includes "format" && contentProto.Format != ... { update; updated = true }
-	//   if updated { s.designService.writeSectionMetadata(...) }
+	//   if updated { s.designService.writeSectionData(...) }
 	// } else { log error reading section meta }
 	metadataUpdated := false // Placeholder
 
@@ -177,8 +177,8 @@ func (s *ContentService) SetContent(ctx context.Context, req *protos.SetContentR
 		sectionMeta, err := s.designService.readSectionData(designId, sectionId)
 		if err == nil {
 			sectionMeta.UpdatedAt = now
-			if err_write := s.designService.writeSectionMetadata(designId, sectionId, sectionMeta); err_write != nil {
-				slog.Error("Failed to update section metadata timestamp after SetContent", "path", s.designService.getSectionMetadataPath(designId, sectionId), "error", err_write)
+			if err_write := s.designService.writeSectionData(designId, sectionId, sectionMeta); err_write != nil {
+				slog.Error("Failed to update section metadata timestamp after SetContent", "path", s.designService.getSectionPath(designId, sectionId), "error", err_write)
 				// Continue, as content was potentially saved
 			}
 		} else {
@@ -262,7 +262,7 @@ func (s *ContentService) DeleteContent(ctx context.Context, req *protos.DeleteCo
 	sectionMeta, err := s.designService.readSectionData(designId, sectionId)
 	if err == nil {
 		sectionMeta.UpdatedAt = now
-		if err_write := s.designService.writeSectionMetadata(designId, sectionId, sectionMeta); err_write != nil {
+		if err_write := s.designService.writeSectionData(designId, sectionId, sectionMeta); err_write != nil {
 			slog.Error("Failed to update section metadata timestamp after DeleteContent", "error", err_write)
 			// Continue, main action succeeded
 		}

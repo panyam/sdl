@@ -1,7 +1,6 @@
 package services
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -20,6 +19,8 @@ import (
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	protos "github.com/panyam/leetcoach/gen/go/leetcoach/v1"
+	// Add if using SectionMetadataToProto helper:
+	// tspb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // --- DesignService struct holds configuration and state ---
@@ -37,7 +38,6 @@ type DesignService struct {
 
 // --- NewDesignService Constructor ---
 func NewDesignService(clients *ClientMgr, basePath string) *DesignService {
-	// Initialize with defaults
 	if basePath == "" {
 		basePath = defaultDesignsBasePath
 	}
@@ -49,50 +49,45 @@ func NewDesignService(clients *ClientMgr, basePath string) *DesignService {
 		NextIDFunc: (&SimpleIDGen{}).NextID,
 		GetID:      func(kind, id string) (*GenID, error) { return out.getDesignId(id) },
 	}
-	// Ensure base directory exists on startup using the struct's path
 	if err := ensureDir(out.basePath); err != nil {
-		// Use log.Fatalf for critical startup errors
 		log.Fatalf("Could not create base designs directory '%s': %v", out.basePath, err)
 	}
 	return out
 }
 
-// --- Helper functions are now methods on DesignService ---
+// --- Filesystem Path Helpers ---
 func (s *DesignService) getDesignId(id string) (g *GenID, err error) {
-	designPath := s.getDesignPath(id) // Use s.getDesignPath
+	designPath := s.getDesignPath(id)
 	_, err = os.Stat(designPath)
 	if err == nil {
 		g = &GenID{Id: id}
 		return
 	}
 	if errors.Is(err, os.ErrNotExist) {
-		return nil, nil // Directory does not exist
+		return nil, nil
 	}
-	// Some other error occurred
 	slog.Error("Error checking design path existence", "id", id, "path", designPath, "error", err)
 	return nil, err
 }
 
 // Helper to get or create a mutex for a specific design ID
 func (s *DesignService) getDesignMutex(designId string) *sync.Mutex {
-	mutex, _ := s.mutexMap.LoadOrStore(designId, &sync.Mutex{}) // Use s.mutexMap
+	mutex, _ := s.mutexMap.LoadOrStore(designId, &sync.Mutex{})
 	return mutex.(*sync.Mutex)
 }
 
 // Helper to get the path for a specific design
 func (s *DesignService) getDesignPath(designId string) string {
-	return filepath.Join(s.basePath, designId) // Use s.basePath
+	return filepath.Join(s.basePath, designId)
 }
 
 // Helper to get the path for the design metadata file
 func (s *DesignService) getDesignMetadataPath(designId string) string {
-	// Internally calls s.getDesignPath
 	return filepath.Join(s.getDesignPath(designId), "design.json")
 }
 
 // Helper to get the base path for a design's sections
 func (s *DesignService) getSectionsBasePath(designId string) string {
-	// Internally calls s.getDesignPath
 	return filepath.Join(s.getDesignPath(designId), "sections")
 }
 
@@ -111,7 +106,21 @@ func (s *DesignService) getSectionPath(designId, sectionId string) string {
 	return filepath.Join(s.getSectionsBasePath(designId), sectionId, "main.json") // fmt.Sprintf("%s.json", sectionId))
 }
 
-// Helper to read section data from its file
+func (s *DesignService) getSectionBasePath(designId, sectionId string) string {
+	return filepath.Join(s.getSectionsBasePath(designId), sectionId)
+}
+
+func (s *DesignService) getContentPath(designId, sectionId, contentName string) string {
+	safeName := strings.ReplaceAll(contentName, "..", "")
+	safeName = strings.ReplaceAll(safeName, "/", "")
+	safeName = strings.ReplaceAll(safeName, "\\", "")
+	if safeName == "" {
+		safeName = "default"
+	}
+	return filepath.Join(s.getSectionBasePath(designId, sectionId), fmt.Sprintf("content.%s", safeName))
+}
+
+// Helper to read and unmarshal section metadata (main.json)
 func (s *DesignService) readSectionData(designId, sectionId string) (*Section, error) {
 	sectionPath := s.getSectionPath(designId, sectionId)
 	jsonData, err := os.ReadFile(sectionPath)
@@ -158,12 +167,11 @@ func (s *DesignService) CreateDesign(ctx context.Context, req *protos.CreateDesi
 	}
 
 	designId := designProto.Id
-
 	if designId == "" {
 		slog.Debug("Design ID not provided, attempting auto-generation")
 		genid, err := s.idgen.NextID("design", ownerId, time.Unix(0, 0))
-		if genid == nil {
-			slog.Error("Failed to generate a unique design ID after multiple retries", "error", err)
+		if genid == nil || err != nil {
+			slog.Error("Failed to generate a unique design ID", "error", err)
 			return nil, status.Error(codes.Internal, "Failed to generate unique design ID")
 		}
 		designId = genid.Id
@@ -176,12 +184,11 @@ func (s *DesignService) CreateDesign(ctx context.Context, req *protos.CreateDesi
 		return nil, status.Error(codes.InvalidArgument, "Design name cannot be empty")
 	}
 
-	mutex := s.getDesignMutex(designId) // Use s.getDesignMutex
+	mutex := s.getDesignMutex(designId)
 	mutex.Lock()
 	defer mutex.Unlock()
 	slog.Debug("Acquired mutex", "designId", designId)
 
-	// Use helper methods for paths
 	designPath := s.getDesignPath(designId)
 	metadataPath := s.getDesignMetadataPath(designId)
 	if _, err := os.Stat(designPath); err == nil {
@@ -196,6 +203,7 @@ func (s *DesignService) CreateDesign(ctx context.Context, req *protos.CreateDesi
 		return nil, status.Error(codes.Internal, "Failed to check design existence")
 	}
 
+	// Ensure base directory and sections subdir exist
 	sectionsPath := s.getSectionsBasePath(designId)
 	if err := ensureDir(sectionsPath); err != nil { // ensureDir is still static utility
 		return nil, status.Error(codes.Internal, "Failed to create design directories")
@@ -300,9 +308,6 @@ func (s *DesignService) GetDesign(ctx context.Context, req *protos.GetDesignRequ
 
 			// Convert to proto
 			sectionProto := SectionToProto(sectionData)
-
-			// --- CRUCIAL: Clear the content field for metadata response ---
-			sectionProto.Content = nil
 			// Set the order based on its index in the design's list
 			sectionProto.Order = uint32(index)
 
@@ -575,7 +580,7 @@ func (s *DesignService) AddSection(ctx context.Context, req *protos.AddSectionRe
 	}
 	slog.Info("Successfully wrote new section file", "path", sectionPath)
 
-	// 6. Update and write design metadata *second*
+	// 6. Update and write design metadata
 	metadata.SectionIds = append(metadata.SectionIds[:insertIndex], append([]string{newSectionId}, metadata.SectionIds[insertIndex:]...)...)
 	metadata.UpdatedAt = now
 	if err = s.writeDesignMetadata(designId, &metadata); err != nil {
@@ -1144,66 +1149,6 @@ func applySectionUpdates(section *Section, updates *protos.Section, mask *fieldm
 				section.Title = newVal
 				updated = true
 			}
-		case "text_content": // Check oneof field directly
-			// Ensure the incoming update actually has text content
-			if updates.GetTextContent() != nil {
-				newVal := updates.GetTextContent().GetHtmlContent()
-				// Check existing content type and value
-				currentVal, ok := section.Content.(string)
-				if !ok || currentVal != newVal {
-					// Type changed or value changed
-					section.Content = newVal
-					section.Type = "text" // Ensure type matches content being set
-					updated = true
-				}
-			}
-		case "drawing_content":
-			// Ensure the incoming update actually has drawing content
-			if updates.GetDrawingContent() != nil {
-				newVal := updates.GetDrawingContent().GetData() // This is []byte
-				// Check existing content type and value (use bytes.Equal for comparison)
-				currentVal, ok := section.Content.([]byte)
-				// Use bytes.Equal for comparing byte slices
-				if !ok || !bytes.Equal(currentVal, newVal) {
-					// Type changed or value changed
-					section.Content = newVal
-					section.Type = "drawing" // Ensure type matches content being set
-					updated = true
-				}
-			}
-		case "plot_content":
-			// Ensure the incoming update actually has plot content
-			if updates.GetPlotContent() != nil {
-				newVal := updates.GetPlotContent().GetData() // This is []byte
-				// Check existing content type and value (use bytes.Equal for comparison)
-				currentVal, ok := section.Content.([]byte)
-				// Use bytes.Equal for comparing byte slices
-				if !ok || !bytes.Equal(currentVal, newVal) {
-					// Type changed or value changed
-					section.Content = newVal
-					section.Type = "plot" // Ensure type matches content being set
-					updated = true
-				}
-			}
-		case "format":
-			// Setting format might imply content type change, but usually content is updated too.
-			// If only format changes, the underlying content might become incompatible.
-			// This logic assumes format is just metadata alongside content.
-			newVal := updates.GetFormat()
-			if section.Format != newVal {
-				section.Format = newVal
-				// Should we also clear content if format changes drastically? Maybe not here.
-				// Frontend/User should handle content update when format changes.
-				updated = true
-			}
-		case "content_type":
-			newVal := updates.GetContentType()
-			if section.ContentType != newVal {
-				section.ContentType = newVal
-				updated = true
-			}
-			// Note: Updating 'type' itself is generally not supported via UpdateSection
-			// Note: Updating 'order' is done via MoveSection
 		}
 	}
 	return updated

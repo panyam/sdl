@@ -20,7 +20,7 @@ func setupSectionMetaForContentTest(t *testing.T, basePath, designId, sectionId,
 	// Ensure design exists first
 	createDesignDirectly(t, basePath, Design{Id: designId, OwnerId: ownerId, SectionIds: []string{sectionId}})
 	// Create section metadata
-	createSectionMetadataDirectly(t, basePath, designId, sectionId, Section{
+	createSectionDirectly(t, basePath, designId, sectionId, Section{
 		Id: sectionId, DesignId: designId, Type: "text", Title: "Content Test Section",
 	})
 }
@@ -87,7 +87,7 @@ func TestSetContent(t *testing.T) {
 		assert.Equal(t, contentBytes, readBytes)
 
 		// Verify timestamps updated (check modification time of file or main.json)
-		secMeta := readSectionMetadataDirectly(t, tempDir, designId, sectionId)
+		secMeta := readSectionDataDirectly(t, tempDir, designId, sectionId)
 		require.NotNil(t, secMeta)
 		assert.True(t, secMeta.UpdatedAt.After(secMeta.CreatedAt)) // Updated time should be later
 	})
