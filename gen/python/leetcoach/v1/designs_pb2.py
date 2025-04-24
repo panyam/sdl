@@ -25,10 +25,11 @@ _sym_db = _symbol_database.Default()
 from google.protobuf import field_mask_pb2 as google_dot_protobuf_dot_field__mask__pb2
 from protoc_gen_openapiv2.options import annotations_pb2 as protoc__gen__openapiv2_dot_options_dot_annotations__pb2
 from leetcoach.v1 import models_pb2 as leetcoach_dot_v1_dot_models__pb2
+from leetcoach.v1 import content_pb2 as leetcoach_dot_v1_dot_content__pb2
 from google.api import annotations_pb2 as google_dot_api_dot_annotations__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1aleetcoach/v1/designs.proto\x12\x0cleetcoach.v1\x1a google/protobuf/field_mask.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\x1a\x19leetcoach/v1/models.proto\x1a\x1cgoogle/api/annotations.proto\"C\n\x13\x43reateDesignRequest\x12,\n\x06\x64\x65sign\x18\x01 \x01(\x0b\x32\x14.leetcoach.v1.DesignR\x06\x64\x65sign\"\xdc\x01\n\x14\x43reateDesignResponse\x12,\n\x06\x64\x65sign\x18\x01 \x01(\x0b\x32\x14.leetcoach.v1.DesignR\x06\x64\x65sign\x12V\n\x0c\x66ield_errors\x18\x02 \x03(\x0b\x32\x33.leetcoach.v1.CreateDesignResponse.FieldErrorsEntryR\x0b\x66ieldErrors\x1a>\n\x10\x46ieldErrorsEntry\x12\x10\n\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n\x05value\x18\x02 \x01(\tR\x05value:\x02\x38\x01\"\xac\x01\n\x12ListDesignsRequest\x12\x38\n\npagination\x18\x01 \x01(\x0b\x32\x18.leetcoach.v1.PaginationR\npagination\x12\x19\n\x08owner_id\x18\x03 \x01(\tR\x07ownerId\x12&\n\x0flimit_to_public\x18\x05 \x01(\x08R\rlimitToPublic\x12\x19\n\x08order_by\x18\x06 \x01(\tR\x07orderBy\"\x87\x01\n\x13ListDesignsResponse\x12.\n\x07\x64\x65signs\x18\x01 \x03(\x0b\x32\x14.leetcoach.v1.DesignR\x07\x64\x65signs\x12@\n\npagination\x18\x02 \x01(\x0b\x32 .leetcoach.v1.PaginationResponseR\npagination\"\\\n\x10GetDesignRequest\x12\x0e\n\x02id\x18\x01 \x01(\tR\x02id\x12\x38\n\x18include_section_metadata\x18\x02 \x01(\x08R\x16includeSectionMetadata\"\x85\x01\n\x11GetDesignResponse\x12,\n\x06\x64\x65sign\x18\x01 \x01(\x0b\x32\x14.leetcoach.v1.DesignR\x06\x64\x65sign\x12\x42\n\x11sections_metadata\x18\x02 \x03(\x0b\x32\x15.leetcoach.v1.SectionR\x10sectionsMetadata\"%\n\x11GetDesignsRequest\x12\x10\n\x03ids\x18\x01 \x03(\tR\x03ids\"\xaf\x01\n\x12GetDesignsResponse\x12G\n\x07\x64\x65signs\x18\x01 \x03(\x0b\x32-.leetcoach.v1.GetDesignsResponse.DesignsEntryR\x07\x64\x65signs\x1aP\n\x0c\x44\x65signsEntry\x12\x10\n\x03key\x18\x01 \x01(\tR\x03key\x12*\n\x05value\x18\x02 \x01(\x0b\x32\x14.leetcoach.v1.DesignR\x05value:\x02\x38\x01\"%\n\x13\x44\x65leteDesignRequest\x12\x0e\n\x02id\x18\x01 \x01(\tR\x02id\"\x16\n\x14\x44\x65leteDesignResponse\"\x9c\x01\n\x13UpdateDesignRequest\x12,\n\x06\x64\x65sign\x18\x01 \x01(\x0b\x32\x14.leetcoach.v1.DesignR\x06\x64\x65sign\x12;\n\x0bupdate_mask\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.FieldMaskR\nupdateMask:\x1a\x92\x41\x17\n\x15*\x13UpdateDesignRequest\"a\n\x14UpdateDesignResponse\x12,\n\x06\x64\x65sign\x18\x01 \x01(\x0b\x32\x14.leetcoach.v1.DesignR\x06\x64\x65sign:\x1b\x92\x41\x18\n\x16*\x14UpdateDesignResponse\"\xac\x01\n\x11\x41\x64\x64SectionRequest\x12/\n\x07section\x18\x01 \x01(\x0b\x32\x15.leetcoach.v1.SectionR\x07section\x12.\n\x13relative_section_id\x18\x02 \x01(\tR\x11relativeSectionId\x12\x36\n\x08position\x18\x03 \x01(\x0e\x32\x1a.leetcoach.v1.PositionTypeR\x08position\"O\n\x11GetSectionRequest\x12\x1b\n\tdesign_id\x18\x01 \x01(\tR\x08\x64\x65signId\x12\x1d\n\nsection_id\x18\x02 \x01(\tR\tsectionId\"\x84\x01\n\x14UpdateSectionRequest\x12/\n\x07section\x18\x01 \x01(\x0b\x32\x15.leetcoach.v1.SectionR\x07section\x12;\n\x0bupdate_mask\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.FieldMaskR\nupdateMask\"\xb8\x01\n\x12MoveSectionRequest\x12\x1b\n\tdesign_id\x18\x01 \x01(\tR\x08\x64\x65signId\x12\x1d\n\nsection_id\x18\x02 \x01(\tR\tsectionId\x12.\n\x13relative_section_id\x18\x03 \x01(\tR\x11relativeSectionId\x12\x36\n\x08position\x18\x04 \x01(\x0e\x32\x1a.leetcoach.v1.PositionTypeR\x08position\"\x15\n\x13MoveSectionResponse\"R\n\x14\x44\x65leteSectionRequest\x12\x1b\n\tdesign_id\x18\x01 \x01(\tR\x08\x64\x65signId\x12\x1d\n\nsection_id\x18\x02 \x01(\tR\tsectionId\"\x17\n\x15\x44\x65leteSectionResponse*w\n\x0cPositionType\x12\x1d\n\x19POSITION_TYPE_UNSPECIFIED\x10\x00\x12\x18\n\x14POSITION_TYPE_BEFORE\x10\x01\x12\x17\n\x13POSITION_TYPE_AFTER\x10\x02\x12\x15\n\x11POSITION_TYPE_END\x10\x03\x32\xdd\n\n\rDesignService\x12m\n\x0c\x43reateDesign\x12!.leetcoach.v1.CreateDesignRequest\x1a\".leetcoach.v1.CreateDesignResponse\"\x16\x82\xd3\xe4\x93\x02\x10\"\x0b/v1/designs:\x01*\x12g\n\x0bListDesigns\x12 .leetcoach.v1.ListDesignsRequest\x1a!.leetcoach.v1.ListDesignsResponse\"\x13\x82\xd3\xe4\x93\x02\r\x12\x0b/v1/designs\x12h\n\tGetDesign\x12\x1e.leetcoach.v1.GetDesignRequest\x1a\x1f.leetcoach.v1.GetDesignResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/v1/designs/{id=*}\x12m\n\nGetDesigns\x12\x1f.leetcoach.v1.GetDesignsRequest\x1a .leetcoach.v1.GetDesignsResponse\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/v1/designs:batchGet\x12q\n\x0c\x44\x65leteDesign\x12!.leetcoach.v1.DeleteDesignRequest\x1a\".leetcoach.v1.DeleteDesignResponse\"\x1a\x82\xd3\xe4\x93\x02\x14*\x12/v1/designs/{id=*}\x12{\n\x0cUpdateDesign\x12!.leetcoach.v1.UpdateDesignRequest\x1a\".leetcoach.v1.UpdateDesignResponse\"$\x82\xd3\xe4\x93\x02\x1e\x32\x19/v1/designs/{design.id=*}:\x01*\x12y\n\nAddSection\x12\x1f.leetcoach.v1.AddSectionRequest\x1a\x15.leetcoach.v1.Section\"3\x82\xd3\xe4\x93\x02-\"(/v1/designs/{section.design_id}/sections:\x01*\x12{\n\nGetSection\x12\x1f.leetcoach.v1.GetSectionRequest\x1a\x15.leetcoach.v1.Section\"5\x82\xd3\xe4\x93\x02/\x12-/v1/designs/{design_id}/sections/{section_id}\x12\x8c\x01\n\rUpdateSection\x12\".leetcoach.v1.UpdateSectionRequest\x1a\x15.leetcoach.v1.Section\"@\x82\xd3\xe4\x93\x02:25/v1/designs/{section.design_id}/sections/{section.id}:\x01*\x12\x91\x01\n\x0bMoveSection\x12 .leetcoach.v1.MoveSectionRequest\x1a!.leetcoach.v1.MoveSectionResponse\"=\x82\xd3\xe4\x93\x02\x37\"2/v1/designs/{design_id}/sections/{section_id}:move:\x01*\x12\x8f\x01\n\rDeleteSection\x12\".leetcoach.v1.DeleteSectionRequest\x1a#.leetcoach.v1.DeleteSectionResponse\"5\x82\xd3\xe4\x93\x02/*-/v1/designs/{design_id}/sections/{section_id}B\x8e\x01\n\x10\x63om.leetcoach.v1B\x0c\x44\x65signsProtoP\x01Z\x1bgithub.com/leetcoach/protos\xa2\x02\x03LXX\xaa\x02\x0cLeetcoach.V1\xca\x02\x0cLeetcoach\\V1\xe2\x02\x18Leetcoach\\V1\\GPBMetadata\xea\x02\rLeetcoach::V1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1aleetcoach/v1/designs.proto\x12\x0cleetcoach.v1\x1a google/protobuf/field_mask.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\x1a\x19leetcoach/v1/models.proto\x1a\x1aleetcoach/v1/content.proto\x1a\x1cgoogle/api/annotations.proto\"C\n\x13\x43reateDesignRequest\x12,\n\x06\x64\x65sign\x18\x01 \x01(\x0b\x32\x14.leetcoach.v1.DesignR\x06\x64\x65sign\"\xdc\x01\n\x14\x43reateDesignResponse\x12,\n\x06\x64\x65sign\x18\x01 \x01(\x0b\x32\x14.leetcoach.v1.DesignR\x06\x64\x65sign\x12V\n\x0c\x66ield_errors\x18\x02 \x03(\x0b\x32\x33.leetcoach.v1.CreateDesignResponse.FieldErrorsEntryR\x0b\x66ieldErrors\x1a>\n\x10\x46ieldErrorsEntry\x12\x10\n\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n\x05value\x18\x02 \x01(\tR\x05value:\x02\x38\x01\"\xac\x01\n\x12ListDesignsRequest\x12\x38\n\npagination\x18\x01 \x01(\x0b\x32\x18.leetcoach.v1.PaginationR\npagination\x12\x19\n\x08owner_id\x18\x03 \x01(\tR\x07ownerId\x12&\n\x0flimit_to_public\x18\x05 \x01(\x08R\rlimitToPublic\x12\x19\n\x08order_by\x18\x06 \x01(\tR\x07orderBy\"\x87\x01\n\x13ListDesignsResponse\x12.\n\x07\x64\x65signs\x18\x01 \x03(\x0b\x32\x14.leetcoach.v1.DesignR\x07\x64\x65signs\x12@\n\npagination\x18\x02 \x01(\x0b\x32 .leetcoach.v1.PaginationResponseR\npagination\"\\\n\x10GetDesignRequest\x12\x0e\n\x02id\x18\x01 \x01(\tR\x02id\x12\x38\n\x18include_section_metadata\x18\x02 \x01(\x08R\x16includeSectionMetadata\"\x85\x01\n\x11GetDesignResponse\x12,\n\x06\x64\x65sign\x18\x01 \x01(\x0b\x32\x14.leetcoach.v1.DesignR\x06\x64\x65sign\x12\x42\n\x11sections_metadata\x18\x02 \x03(\x0b\x32\x15.leetcoach.v1.SectionR\x10sectionsMetadata\"%\n\x11GetDesignsRequest\x12\x10\n\x03ids\x18\x01 \x03(\tR\x03ids\"\xaf\x01\n\x12GetDesignsResponse\x12G\n\x07\x64\x65signs\x18\x01 \x03(\x0b\x32-.leetcoach.v1.GetDesignsResponse.DesignsEntryR\x07\x64\x65signs\x1aP\n\x0c\x44\x65signsEntry\x12\x10\n\x03key\x18\x01 \x01(\tR\x03key\x12*\n\x05value\x18\x02 \x01(\x0b\x32\x14.leetcoach.v1.DesignR\x05value:\x02\x38\x01\"%\n\x13\x44\x65leteDesignRequest\x12\x0e\n\x02id\x18\x01 \x01(\tR\x02id\"\x16\n\x14\x44\x65leteDesignResponse\"\x9c\x01\n\x13UpdateDesignRequest\x12,\n\x06\x64\x65sign\x18\x01 \x01(\x0b\x32\x14.leetcoach.v1.DesignR\x06\x64\x65sign\x12;\n\x0bupdate_mask\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.FieldMaskR\nupdateMask:\x1a\x92\x41\x17\n\x15*\x13UpdateDesignRequest\"a\n\x14UpdateDesignResponse\x12,\n\x06\x64\x65sign\x18\x01 \x01(\x0b\x32\x14.leetcoach.v1.DesignR\x06\x64\x65sign:\x1b\x92\x41\x18\n\x16*\x14UpdateDesignResponse\"\xac\x01\n\x11\x41\x64\x64SectionRequest\x12/\n\x07section\x18\x01 \x01(\x0b\x32\x15.leetcoach.v1.SectionR\x07section\x12.\n\x13relative_section_id\x18\x02 \x01(\tR\x11relativeSectionId\x12\x36\n\x08position\x18\x03 \x01(\x0e\x32\x1a.leetcoach.v1.PositionTypeR\x08position\"O\n\x11GetSectionRequest\x12\x1b\n\tdesign_id\x18\x01 \x01(\tR\x08\x64\x65signId\x12\x1d\n\nsection_id\x18\x02 \x01(\tR\tsectionId\"\x84\x01\n\x14UpdateSectionRequest\x12/\n\x07section\x18\x01 \x01(\x0b\x32\x15.leetcoach.v1.SectionR\x07section\x12;\n\x0bupdate_mask\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.FieldMaskR\nupdateMask\"\xb8\x01\n\x12MoveSectionRequest\x12\x1b\n\tdesign_id\x18\x01 \x01(\tR\x08\x64\x65signId\x12\x1d\n\nsection_id\x18\x02 \x01(\tR\tsectionId\x12.\n\x13relative_section_id\x18\x03 \x01(\tR\x11relativeSectionId\x12\x36\n\x08position\x18\x04 \x01(\x0e\x32\x1a.leetcoach.v1.PositionTypeR\x08position\"\x15\n\x13MoveSectionResponse\"R\n\x14\x44\x65leteSectionRequest\x12\x1b\n\tdesign_id\x18\x01 \x01(\tR\x08\x64\x65signId\x12\x1d\n\nsection_id\x18\x02 \x01(\tR\tsectionId\"\x17\n\x15\x44\x65leteSectionResponse*w\n\x0cPositionType\x12\x1d\n\x19POSITION_TYPE_UNSPECIFIED\x10\x00\x12\x18\n\x14POSITION_TYPE_BEFORE\x10\x01\x12\x17\n\x13POSITION_TYPE_AFTER\x10\x02\x12\x15\n\x11POSITION_TYPE_END\x10\x03\x32\xdd\n\n\rDesignService\x12m\n\x0c\x43reateDesign\x12!.leetcoach.v1.CreateDesignRequest\x1a\".leetcoach.v1.CreateDesignResponse\"\x16\x82\xd3\xe4\x93\x02\x10\"\x0b/v1/designs:\x01*\x12g\n\x0bListDesigns\x12 .leetcoach.v1.ListDesignsRequest\x1a!.leetcoach.v1.ListDesignsResponse\"\x13\x82\xd3\xe4\x93\x02\r\x12\x0b/v1/designs\x12h\n\tGetDesign\x12\x1e.leetcoach.v1.GetDesignRequest\x1a\x1f.leetcoach.v1.GetDesignResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/v1/designs/{id=*}\x12m\n\nGetDesigns\x12\x1f.leetcoach.v1.GetDesignsRequest\x1a .leetcoach.v1.GetDesignsResponse\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/v1/designs:batchGet\x12q\n\x0c\x44\x65leteDesign\x12!.leetcoach.v1.DeleteDesignRequest\x1a\".leetcoach.v1.DeleteDesignResponse\"\x1a\x82\xd3\xe4\x93\x02\x14*\x12/v1/designs/{id=*}\x12{\n\x0cUpdateDesign\x12!.leetcoach.v1.UpdateDesignRequest\x1a\".leetcoach.v1.UpdateDesignResponse\"$\x82\xd3\xe4\x93\x02\x1e\x32\x19/v1/designs/{design.id=*}:\x01*\x12y\n\nAddSection\x12\x1f.leetcoach.v1.AddSectionRequest\x1a\x15.leetcoach.v1.Section\"3\x82\xd3\xe4\x93\x02-\"(/v1/designs/{section.design_id}/sections:\x01*\x12{\n\nGetSection\x12\x1f.leetcoach.v1.GetSectionRequest\x1a\x15.leetcoach.v1.Section\"5\x82\xd3\xe4\x93\x02/\x12-/v1/designs/{design_id}/sections/{section_id}\x12\x8c\x01\n\rUpdateSection\x12\".leetcoach.v1.UpdateSectionRequest\x1a\x15.leetcoach.v1.Section\"@\x82\xd3\xe4\x93\x02:25/v1/designs/{section.design_id}/sections/{section.id}:\x01*\x12\x91\x01\n\x0bMoveSection\x12 .leetcoach.v1.MoveSectionRequest\x1a!.leetcoach.v1.MoveSectionResponse\"=\x82\xd3\xe4\x93\x02\x37\"2/v1/designs/{design_id}/sections/{section_id}:move:\x01*\x12\x8f\x01\n\rDeleteSection\x12\".leetcoach.v1.DeleteSectionRequest\x1a#.leetcoach.v1.DeleteSectionResponse\"5\x82\xd3\xe4\x93\x02/*-/v1/designs/{design_id}/sections/{section_id}B\x8e\x01\n\x10\x63om.leetcoach.v1B\x0c\x44\x65signsProtoP\x01Z\x1bgithub.com/leetcoach/protos\xa2\x02\x03LXX\xaa\x02\x0cLeetcoach.V1\xca\x02\x0cLeetcoach\\V1\xe2\x02\x18Leetcoach\\V1\\GPBMetadata\xea\x02\rLeetcoach::V1b\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -66,50 +67,50 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_DESIGNSERVICE'].methods_by_name['MoveSection']._serialized_options = b'\202\323\344\223\0027\"2/v1/designs/{design_id}/sections/{section_id}:move:\001*'
   _globals['_DESIGNSERVICE'].methods_by_name['DeleteSection']._loaded_options = None
   _globals['_DESIGNSERVICE'].methods_by_name['DeleteSection']._serialized_options = b'\202\323\344\223\002/*-/v1/designs/{design_id}/sections/{section_id}'
-  _globals['_POSITIONTYPE']._serialized_start=2266
-  _globals['_POSITIONTYPE']._serialized_end=2385
-  _globals['_CREATEDESIGNREQUEST']._serialized_start=183
-  _globals['_CREATEDESIGNREQUEST']._serialized_end=250
-  _globals['_CREATEDESIGNRESPONSE']._serialized_start=253
-  _globals['_CREATEDESIGNRESPONSE']._serialized_end=473
-  _globals['_CREATEDESIGNRESPONSE_FIELDERRORSENTRY']._serialized_start=411
-  _globals['_CREATEDESIGNRESPONSE_FIELDERRORSENTRY']._serialized_end=473
-  _globals['_LISTDESIGNSREQUEST']._serialized_start=476
-  _globals['_LISTDESIGNSREQUEST']._serialized_end=648
-  _globals['_LISTDESIGNSRESPONSE']._serialized_start=651
-  _globals['_LISTDESIGNSRESPONSE']._serialized_end=786
-  _globals['_GETDESIGNREQUEST']._serialized_start=788
-  _globals['_GETDESIGNREQUEST']._serialized_end=880
-  _globals['_GETDESIGNRESPONSE']._serialized_start=883
-  _globals['_GETDESIGNRESPONSE']._serialized_end=1016
-  _globals['_GETDESIGNSREQUEST']._serialized_start=1018
-  _globals['_GETDESIGNSREQUEST']._serialized_end=1055
-  _globals['_GETDESIGNSRESPONSE']._serialized_start=1058
-  _globals['_GETDESIGNSRESPONSE']._serialized_end=1233
-  _globals['_GETDESIGNSRESPONSE_DESIGNSENTRY']._serialized_start=1153
-  _globals['_GETDESIGNSRESPONSE_DESIGNSENTRY']._serialized_end=1233
-  _globals['_DELETEDESIGNREQUEST']._serialized_start=1235
-  _globals['_DELETEDESIGNREQUEST']._serialized_end=1272
-  _globals['_DELETEDESIGNRESPONSE']._serialized_start=1274
-  _globals['_DELETEDESIGNRESPONSE']._serialized_end=1296
-  _globals['_UPDATEDESIGNREQUEST']._serialized_start=1299
-  _globals['_UPDATEDESIGNREQUEST']._serialized_end=1455
-  _globals['_UPDATEDESIGNRESPONSE']._serialized_start=1457
-  _globals['_UPDATEDESIGNRESPONSE']._serialized_end=1554
-  _globals['_ADDSECTIONREQUEST']._serialized_start=1557
-  _globals['_ADDSECTIONREQUEST']._serialized_end=1729
-  _globals['_GETSECTIONREQUEST']._serialized_start=1731
-  _globals['_GETSECTIONREQUEST']._serialized_end=1810
-  _globals['_UPDATESECTIONREQUEST']._serialized_start=1813
-  _globals['_UPDATESECTIONREQUEST']._serialized_end=1945
-  _globals['_MOVESECTIONREQUEST']._serialized_start=1948
-  _globals['_MOVESECTIONREQUEST']._serialized_end=2132
-  _globals['_MOVESECTIONRESPONSE']._serialized_start=2134
-  _globals['_MOVESECTIONRESPONSE']._serialized_end=2155
-  _globals['_DELETESECTIONREQUEST']._serialized_start=2157
-  _globals['_DELETESECTIONREQUEST']._serialized_end=2239
-  _globals['_DELETESECTIONRESPONSE']._serialized_start=2241
-  _globals['_DELETESECTIONRESPONSE']._serialized_end=2264
-  _globals['_DESIGNSERVICE']._serialized_start=2388
-  _globals['_DESIGNSERVICE']._serialized_end=3761
+  _globals['_POSITIONTYPE']._serialized_start=2294
+  _globals['_POSITIONTYPE']._serialized_end=2413
+  _globals['_CREATEDESIGNREQUEST']._serialized_start=211
+  _globals['_CREATEDESIGNREQUEST']._serialized_end=278
+  _globals['_CREATEDESIGNRESPONSE']._serialized_start=281
+  _globals['_CREATEDESIGNRESPONSE']._serialized_end=501
+  _globals['_CREATEDESIGNRESPONSE_FIELDERRORSENTRY']._serialized_start=439
+  _globals['_CREATEDESIGNRESPONSE_FIELDERRORSENTRY']._serialized_end=501
+  _globals['_LISTDESIGNSREQUEST']._serialized_start=504
+  _globals['_LISTDESIGNSREQUEST']._serialized_end=676
+  _globals['_LISTDESIGNSRESPONSE']._serialized_start=679
+  _globals['_LISTDESIGNSRESPONSE']._serialized_end=814
+  _globals['_GETDESIGNREQUEST']._serialized_start=816
+  _globals['_GETDESIGNREQUEST']._serialized_end=908
+  _globals['_GETDESIGNRESPONSE']._serialized_start=911
+  _globals['_GETDESIGNRESPONSE']._serialized_end=1044
+  _globals['_GETDESIGNSREQUEST']._serialized_start=1046
+  _globals['_GETDESIGNSREQUEST']._serialized_end=1083
+  _globals['_GETDESIGNSRESPONSE']._serialized_start=1086
+  _globals['_GETDESIGNSRESPONSE']._serialized_end=1261
+  _globals['_GETDESIGNSRESPONSE_DESIGNSENTRY']._serialized_start=1181
+  _globals['_GETDESIGNSRESPONSE_DESIGNSENTRY']._serialized_end=1261
+  _globals['_DELETEDESIGNREQUEST']._serialized_start=1263
+  _globals['_DELETEDESIGNREQUEST']._serialized_end=1300
+  _globals['_DELETEDESIGNRESPONSE']._serialized_start=1302
+  _globals['_DELETEDESIGNRESPONSE']._serialized_end=1324
+  _globals['_UPDATEDESIGNREQUEST']._serialized_start=1327
+  _globals['_UPDATEDESIGNREQUEST']._serialized_end=1483
+  _globals['_UPDATEDESIGNRESPONSE']._serialized_start=1485
+  _globals['_UPDATEDESIGNRESPONSE']._serialized_end=1582
+  _globals['_ADDSECTIONREQUEST']._serialized_start=1585
+  _globals['_ADDSECTIONREQUEST']._serialized_end=1757
+  _globals['_GETSECTIONREQUEST']._serialized_start=1759
+  _globals['_GETSECTIONREQUEST']._serialized_end=1838
+  _globals['_UPDATESECTIONREQUEST']._serialized_start=1841
+  _globals['_UPDATESECTIONREQUEST']._serialized_end=1973
+  _globals['_MOVESECTIONREQUEST']._serialized_start=1976
+  _globals['_MOVESECTIONREQUEST']._serialized_end=2160
+  _globals['_MOVESECTIONRESPONSE']._serialized_start=2162
+  _globals['_MOVESECTIONRESPONSE']._serialized_end=2183
+  _globals['_DELETESECTIONREQUEST']._serialized_start=2185
+  _globals['_DELETESECTIONREQUEST']._serialized_end=2267
+  _globals['_DELETESECTIONRESPONSE']._serialized_start=2269
+  _globals['_DELETESECTIONRESPONSE']._serialized_end=2292
+  _globals['_DESIGNSERVICE']._serialized_start=2416
+  _globals['_DESIGNSERVICE']._serialized_end=3789
 # @@protoc_insertion_point(module_scope)

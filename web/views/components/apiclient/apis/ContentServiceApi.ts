@@ -16,15 +16,12 @@
 import * as runtime from '../runtime';
 import type {
   RpcStatus,
-  SetContentRequest,
   V1GetContentResponse,
   V1SetContentResponse,
 } from '../models/index';
 import {
     RpcStatusFromJSON,
     RpcStatusToJSON,
-    SetContentRequestFromJSON,
-    SetContentRequestToJSON,
     V1GetContentResponseFromJSON,
     V1GetContentResponseToJSON,
     V1SetContentResponseFromJSON,
@@ -46,8 +43,8 @@ export interface ContentServiceGetContentRequest {
 export interface ContentServiceSetContentRequest {
     designId: string;
     sectionId: string;
-    contentName: string;
-    body: SetContentRequest;
+    name: string;
+    contentBytes: string;
 }
 
 /**
@@ -167,17 +164,17 @@ export class ContentServiceApi extends runtime.BaseAPI {
             );
         }
 
-        if (requestParameters['contentName'] == null) {
+        if (requestParameters['name'] == null) {
             throw new runtime.RequiredError(
-                'contentName',
-                'Required parameter "contentName" was null or undefined when calling contentServiceSetContent().'
+                'name',
+                'Required parameter "name" was null or undefined when calling contentServiceSetContent().'
             );
         }
 
-        if (requestParameters['body'] == null) {
+        if (requestParameters['contentBytes'] == null) {
             throw new runtime.RequiredError(
-                'body',
-                'Required parameter "body" was null or undefined when calling contentServiceSetContent().'
+                'contentBytes',
+                'Required parameter "contentBytes" was null or undefined when calling contentServiceSetContent().'
             );
         }
 
@@ -188,11 +185,11 @@ export class ContentServiceApi extends runtime.BaseAPI {
         headerParameters['Content-Type'] = 'application/json';
 
         const response = await this.request({
-            path: `/v1/designs/{designId}/sections/{sectionId}/content/{content.name}`.replace(`{${"designId"}}`, encodeURIComponent(String(requestParameters['designId']))).replace(`{${"sectionId"}}`, encodeURIComponent(String(requestParameters['sectionId']))).replace(`{${"content.name"}}`, encodeURIComponent(String(requestParameters['contentName']))),
+            path: `/v1/designs/{designId}/sections/{sectionId}/content/{name}`.replace(`{${"designId"}}`, encodeURIComponent(String(requestParameters['designId']))).replace(`{${"sectionId"}}`, encodeURIComponent(String(requestParameters['sectionId']))).replace(`{${"name"}}`, encodeURIComponent(String(requestParameters['name']))),
             method: 'PATCH',
             headers: headerParameters,
             query: queryParameters,
-            body: SetContentRequestToJSON(requestParameters['body']),
+            body: requestParameters['contentBytes'] as any,
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => V1SetContentResponseFromJSON(jsonValue));

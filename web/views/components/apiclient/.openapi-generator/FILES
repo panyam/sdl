@@ -4,7 +4,6 @@ apis/TagServiceApi.ts
 apis/index.ts
 index.ts
 models/ConsolidateSectionUpdatesIntoOneRPCUsingPATCHAndFieldMask.ts
-models/ContentFieldsToBePatchedBasedOnTheUpdateMask.ts
 models/DesignBeingUpdated.ts
 models/DesignServiceAddSectionRequest.ts
 models/DesignServiceAddSectionRequestSection.ts
@@ -14,7 +13,6 @@ models/ProtobufAny.ts
 models/ProtobufNullValue.ts
 models/RpcStatus.ts
 models/SectionObjectContainingOnlyTheFieldsToBeUpdatedTheServerWillUseTheUpdateMaskToKnowWhichFieldsFromThisSectionMessageToApplyToTheStoredSection.ts
-models/SetContentRequest.ts
 models/TagBeingUpdated.ts
 models/TagCreationRequestObject.ts
 models/UpdateDesignRequest.ts

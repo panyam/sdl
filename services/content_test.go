@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
 // Helper to create section metadata (main.json) without content for content tests
@@ -61,16 +60,10 @@ func TestSetContent(t *testing.T) {
 	t.Run("Set Initial Content", func(t *testing.T) {
 		contentBytes := []byte("<p>Initial Content</p>")
 		req := &protos.SetContentRequest{
-			DesignId:  designId,
-			SectionId: sectionId,
-			Content: &protos.Content{ // Provide metadata hint
-				Name: contentName,
-				Type: "text/html",
-			},
+			DesignId:     designId,
+			SectionId:    sectionId,
+			Name:         contentName,
 			ContentBytes: contentBytes,
-			// UpdateMask: nil, // Implicitly update bytes if provided? Or require mask? Assume required for now.
-			// UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"content_bytes", "content"}}, // Include 'content' if updating metadata too
-			UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"content_bytes"}}, // Mask only bytes
 		}
 
 		resp, err := contentService.SetContent(ctx, req)
@@ -97,9 +90,8 @@ func TestSetContent(t *testing.T) {
 		req := &protos.SetContentRequest{
 			DesignId:     designId,
 			SectionId:    sectionId,
-			Content:      &protos.Content{Name: contentName}, // Name is key
+			Name:         contentName,
 			ContentBytes: contentBytes,
-			UpdateMask:   &fieldmaskpb.FieldMask{Paths: []string{"content_bytes"}},
 		}
 
 		resp, err := contentService.SetContent(ctx, req)
@@ -115,15 +107,10 @@ func TestSetContent(t *testing.T) {
 	t.Run("Set Content for Different Name", func(t *testing.T) {
 		contentBytes := []byte(`{"elements":[]}`)
 		req := &protos.SetContentRequest{
-			DesignId:  designId,
-			SectionId: sectionId,
-			Content: &protos.Content{
-				Name:   "diagram.excalidraw.json",
-				Type:   "application/json",
-				Format: "excalidraw/json",
-			},
+			DesignId:     designId,
+			SectionId:    sectionId,
+			Name:         "diagram.excalidraw.json",
 			ContentBytes: contentBytes,
-			UpdateMask:   &fieldmaskpb.FieldMask{Paths: []string{"content_bytes"}}, // Assume metadata update isn't implemented yet
 		}
 		_, err := contentService.SetContent(ctx, req)
 		require.NoError(t, err)
@@ -142,9 +129,8 @@ func TestSetContent(t *testing.T) {
 		req := &protos.SetContentRequest{
 			DesignId:     designId,
 			SectionId:    "non-existent-sec",
-			Content:      &protos.Content{Name: "main"},
+			Name:         "main",
 			ContentBytes: []byte("test"),
-			UpdateMask:   &fieldmaskpb.FieldMask{Paths: []string{"content_bytes"}},
 		}
 		_, err := contentService.SetContent(ctx, req)
 		require.Error(t, err)

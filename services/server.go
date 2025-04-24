@@ -30,9 +30,9 @@ func (s *Server) Start(ctx context.Context, srvErr chan error, srvChan chan bool
 	)
 
 	// Register services
-	v1.RegisterDesignServiceServer(server, designSvc)
 	v1.RegisterContentServiceServer(server, contentSvc) // Register ContentService
-	v1.RegisterTagServiceServer(server, tagSvc)         // Register TagService
+	v1.RegisterDesignServiceServer(server, designSvc)
+	v1.RegisterTagServiceServer(server, tagSvc) // Register TagService
 
 	if os.Getenv("LEETCOACH_ENV") == "dev" {
 		adminSvc := NewAdminService(clients) // Instantiate AdminService

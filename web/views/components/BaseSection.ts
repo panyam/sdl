@@ -2,7 +2,6 @@
 
 import { Modal } from './Modal';
 import { SectionData, SectionType, SectionContent, DocumentSection, TextContent, DrawingContent, PlotContent, SectionCallbacks } from './types';
-import { DesignApi } from './Api'; // Import API client
 import { V1Section } from './apiclient'; // Import API Section type
 import { TemplateLoader } from './TemplateLoader'; // Import the converter
 import { ToastManager } from './ToastManager'; // Import the converter

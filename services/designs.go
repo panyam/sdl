@@ -1084,6 +1084,104 @@ func (s *DesignService) GetDesigns(ctx context.Context, req *protos.GetDesignsRe
 	return nil, status.Error(codes.Unimplemented, "GetDesigns is not efficiently implemented for the filesystem backend. Use GetDesign for individual IDs.")
 }
 
+/*
+func (s *DesignService) SetContent(ctx context.Context, req *protos.SetContentRequest) (*protos.SetContentResponse, error) {
+	designId := req.DesignId
+	sectionId := req.SectionId
+
+	if designId == "" || sectionId == "" || req.Name == "" {
+		return nil, status.Error(codes.InvalidArgument, "Design ID, Section ID, and Content with Name must be provided")
+	}
+	contentName := req.Name
+
+	slog.Info("SetContent Request", "designId", designId, "sectionId", sectionId, "name", contentName)
+
+	ownerId, err := s.EnsureLoggedIn(ctx)
+	if ENFORCE_LOGIN && err != nil {
+		return nil, err
+	}
+
+	// --- Acquire Lock ---
+	mutex := s.getDesignMutex(designId) // Use design-level lock
+	mutex.Lock()
+	defer mutex.Unlock()
+	slog.Debug("Acquired mutex for SetContent", "designId", designId, "sectionId", sectionId, "name", contentName)
+
+	// --- Check Permissions & Existence ---
+	designMeta, err := s.readDesignMetadata(designId)
+	if err != nil {
+		return nil, err // Handles NotFound
+	}
+	if ENFORCE_LOGIN && ownerId != designMeta.OwnerId {
+		slog.Warn("Permission denied for SetContent", "designId", designId, "user", ownerId)
+		return nil, status.Error(codes.PermissionDenied, "User cannot set content in this design")
+	}
+	// Ensure section directory exists (section metadata doesn't need to be read here unless updating it)
+	sectionPath := s.getSectionPath(designId, sectionId)
+	if _, err := os.Stat(sectionPath); errors.Is(err, os.ErrNotExist) {
+		// If AddSection didn't run or failed, the dir might not exist
+		slog.Warn("Section directory not found during SetContent", "path", sectionPath)
+		return nil, status.Errorf(codes.NotFound, "Section '%s' not found in design '%s'", sectionId, designId)
+	} else if err != nil {
+		slog.Error("Error checking section directory existence", "path", sectionPath, "error", err)
+		return nil, status.Error(codes.Internal, "Failed to access section directory")
+	}
+
+	// --- Handle Content Byte Update ---
+	contentPath := s.getContentPath(designId, sectionId, contentName)
+	bytesUpdated := false
+	// Check if content_bytes is explicitly in the mask OR if the mask is nil/empty (implying full replace)
+	// Or adopt a convention: if content_bytes is provided, always write it.
+	// Let's assume if bytes are provided, we write them.
+	if req.ContentBytes != nil {
+		err = os.WriteFile(contentPath, req.ContentBytes, 0644)
+		if err != nil {
+			slog.Error("Failed to write content bytes", "path", contentPath, "error", err)
+			return nil, status.Error(codes.Internal, "Failed to save content")
+		}
+		bytesUpdated = true
+		slog.Info("Successfully wrote content bytes", "path", contentPath, "size", len(req.ContentBytes))
+	}
+
+	metadataUpdated := false // Placeholder
+
+	// --- Update Timestamps ---
+	now := time.Now()
+	if bytesUpdated || metadataUpdated {
+		// Update section's main.json timestamp
+		sectionMeta, err := s.readSectionData(designId, sectionId)
+		if err == nil {
+			sectionMeta.UpdatedAt = now
+			if err_write := s.writeSectionData(designId, sectionId, sectionMeta); err_write != nil {
+				slog.Error("Failed to update section metadata timestamp after SetContent", "path", s.getSectionPath(designId, sectionId), "error", err_write)
+				// Continue, as content was potentially saved
+			}
+		} else {
+			slog.Warn("Could not read section metadata to update timestamp", "designId", designId, "sectionId", sectionId, "error", err)
+		}
+
+		// Update design's design.json timestamp
+		designMeta.UpdatedAt = now
+		if err_write := s.writeDesignMetadata(designId, designMeta); err_write != nil {
+			slog.Error("Failed to update design metadata timestamp after SetContent", "path", s.getDesignMetadataPath(designId), "error", err_write)
+			// Continue
+		}
+	}
+
+	// Return the metadata provided in the request (or read back if implemented)
+	finalContentProto := &protos.Content{
+		Name:      contentName,
+		UpdatedAt: tspb.New(now),
+		// CreatedAt needs proper tracking if important
+	}
+
+	resp := &protos.SetContentResponse{
+		Content: finalContentProto,
+	}
+	return resp, nil
+}
+*/
+
 // --- Internal Helpers ---
 
 // Helper to read and unmarshal design metadata, handling errors.

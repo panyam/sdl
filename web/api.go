@@ -81,6 +81,11 @@ func (web *LCApi) createSvcMux(grpc_addr string) (*runtime.ServeMux, error) {
 		log.Fatal("Unable to register collections service: ", err)
 		panic(err)
 	}
+	err = v1.RegisterContentServiceHandlerFromEndpoint(ctx, svcMux, grpc_addr, opts)
+	if err != nil {
+		log.Fatal("Unable to register content service: ", err)
+		panic(err)
+	}
 	err = v1.RegisterTagServiceHandlerFromEndpoint(ctx, svcMux, grpc_addr, opts)
 	if err != nil {
 		log.Fatal("Unable to register tags service: ", err)

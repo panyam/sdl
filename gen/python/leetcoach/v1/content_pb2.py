@@ -29,7 +29,7 @@ from google.api import annotations_pb2 as google_dot_api_dot_annotations__pb2
 from protoc_gen_openapiv2.options import annotations_pb2 as protoc__gen__openapiv2_dot_options_dot_annotations__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1aleetcoach/v1/content.proto\x12\x0cleetcoach.v1\x1a google/protobuf/field_mask.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x19leetcoach/v1/models.proto\x1a\x1cgoogle/api/annotations.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\"}\n\x11GetContentRequest\x12\x1b\n\tdesign_id\x18\x01 \x01(\tR\x08\x64\x65signId\x12\x1d\n\nsection_id\x18\x02 \x01(\tR\tsectionId\x12\x12\n\x04name\x18\x03 \x01(\tR\x04name:\x18\x92\x41\x15\n\x13*\x11GetContentRequest\"\x85\x01\n\x12GetContentResponse\x12/\n\x07\x63ontent\x18\x01 \x01(\x0b\x32\x15.leetcoach.v1.ContentR\x07\x63ontent\x12#\n\rcontent_bytes\x18\x02 \x01(\x0cR\x0c\x63ontentBytes:\x19\x92\x41\x16\n\x14*\x12GetContentResponse\"\xfc\x01\n\x11SetContentRequest\x12\x1b\n\tdesign_id\x18\x01 \x01(\tR\x08\x64\x65signId\x12\x1d\n\nsection_id\x18\x02 \x01(\tR\tsectionId\x12/\n\x07\x63ontent\x18\x03 \x01(\x0b\x32\x15.leetcoach.v1.ContentR\x07\x63ontent\x12#\n\rcontent_bytes\x18\x04 \x01(\x0cR\x0c\x63ontentBytes\x12;\n\x0bupdate_mask\x18\x05 \x01(\x0b\x32\x1a.google.protobuf.FieldMaskR\nupdateMask:\x18\x92\x41\x15\n\x13*\x11SetContentRequest\"`\n\x12SetContentResponse\x12/\n\x07\x63ontent\x18\x01 \x01(\x0b\x32\x15.leetcoach.v1.ContentR\x07\x63ontent:\x19\x92\x41\x16\n\x14*\x12SetContentResponse\"f\n\x14\x44\x65leteContentRequest\x12\x1b\n\tdesign_id\x18\x01 \x01(\tR\x08\x64\x65signId\x12\x1d\n\nsection_id\x18\x02 \x01(\tR\tsectionId\x12\x12\n\x04name\x18\x03 \x01(\tR\x04name\"\x17\n\x15\x44\x65leteContentResponse2\xfe\x03\n\x0e\x43ontentService\x12\x9b\x01\n\nGetContent\x12\x1f.leetcoach.v1.GetContentRequest\x1a .leetcoach.v1.GetContentResponse\"J\x82\xd3\xe4\x93\x02\x44\x12\x42/v1/designs/{design_id=*}/sections/{section_id=*}/content/{name=*}\x12\xa6\x01\n\nSetContent\x12\x1f.leetcoach.v1.SetContentRequest\x1a .leetcoach.v1.SetContentResponse\"U\x82\xd3\xe4\x93\x02O2J/v1/designs/{design_id=*}/sections/{section_id=*}/content/{content.name=*}:\x01*\x12\xa4\x01\n\rDeleteContent\x12\".leetcoach.v1.DeleteContentRequest\x1a#.leetcoach.v1.DeleteContentResponse\"J\x82\xd3\xe4\x93\x02\x44*B/v1/designs/{design_id=*}/sections/{section_id=*}/content/{name=*}B\x8e\x01\n\x10\x63om.leetcoach.v1B\x0c\x43ontentProtoP\x01Z\x1bgithub.com/leetcoach/protos\xa2\x02\x03LXX\xaa\x02\x0cLeetcoach.V1\xca\x02\x0cLeetcoach\\V1\xe2\x02\x18Leetcoach\\V1\\GPBMetadata\xea\x02\rLeetcoach::V1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1aleetcoach/v1/content.proto\x12\x0cleetcoach.v1\x1a google/protobuf/field_mask.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x19leetcoach/v1/models.proto\x1a\x1cgoogle/api/annotations.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\"}\n\x11GetContentRequest\x12\x1b\n\tdesign_id\x18\x01 \x01(\tR\x08\x64\x65signId\x12\x1d\n\nsection_id\x18\x02 \x01(\tR\tsectionId\x12\x12\n\x04name\x18\x03 \x01(\tR\x04name:\x18\x92\x41\x15\n\x13*\x11GetContentRequest\"\x85\x01\n\x12GetContentResponse\x12/\n\x07\x63ontent\x18\x01 \x01(\x0b\x32\x15.leetcoach.v1.ContentR\x07\x63ontent\x12#\n\rcontent_bytes\x18\x02 \x01(\x0cR\x0c\x63ontentBytes:\x19\x92\x41\x16\n\x14*\x12GetContentResponse\"\xa2\x01\n\x11SetContentRequest\x12\x1b\n\tdesign_id\x18\x01 \x01(\tR\x08\x64\x65signId\x12\x1d\n\nsection_id\x18\x02 \x01(\tR\tsectionId\x12\x12\n\x04name\x18\x03 \x01(\tR\x04name\x12#\n\rcontent_bytes\x18\x04 \x01(\x0cR\x0c\x63ontentBytes:\x18\x92\x41\x15\n\x13*\x11SetContentRequest\"`\n\x12SetContentResponse\x12/\n\x07\x63ontent\x18\x01 \x01(\x0b\x32\x15.leetcoach.v1.ContentR\x07\x63ontent:\x19\x92\x41\x16\n\x14*\x12SetContentResponse\"f\n\x14\x44\x65leteContentRequest\x12\x1b\n\tdesign_id\x18\x01 \x01(\tR\x08\x64\x65signId\x12\x1d\n\nsection_id\x18\x02 \x01(\tR\tsectionId\x12\x12\n\x04name\x18\x03 \x01(\tR\x04name\"\x17\n\x15\x44\x65leteContentResponse2\x82\x04\n\x0e\x43ontentService\x12\x9b\x01\n\nGetContent\x12\x1f.leetcoach.v1.GetContentRequest\x1a .leetcoach.v1.GetContentResponse\"J\x82\xd3\xe4\x93\x02\x44\x12\x42/v1/designs/{design_id=*}/sections/{section_id=*}/content/{name=*}\x12\xaa\x01\n\nSetContent\x12\x1f.leetcoach.v1.SetContentRequest\x1a .leetcoach.v1.SetContentResponse\"Y\x82\xd3\xe4\x93\x02S2B/v1/designs/{design_id=*}/sections/{section_id=*}/content/{name=*}:\rcontent_bytes\x12\xa4\x01\n\rDeleteContent\x12\".leetcoach.v1.DeleteContentRequest\x1a#.leetcoach.v1.DeleteContentResponse\"J\x82\xd3\xe4\x93\x02\x44*B/v1/designs/{design_id=*}/sections/{section_id=*}/content/{name=*}B\x8e\x01\n\x10\x63om.leetcoach.v1B\x0c\x43ontentProtoP\x01Z\x1bgithub.com/leetcoach/protos\xa2\x02\x03LXX\xaa\x02\x0cLeetcoach.V1\xca\x02\x0cLeetcoach\\V1\xe2\x02\x18Leetcoach\\V1\\GPBMetadata\xea\x02\rLeetcoach::V1b\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -48,7 +48,7 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_CONTENTSERVICE'].methods_by_name['GetContent']._loaded_options = None
   _globals['_CONTENTSERVICE'].methods_by_name['GetContent']._serialized_options = b'\202\323\344\223\002D\022B/v1/designs/{design_id=*}/sections/{section_id=*}/content/{name=*}'
   _globals['_CONTENTSERVICE'].methods_by_name['SetContent']._loaded_options = None
-  _globals['_CONTENTSERVICE'].methods_by_name['SetContent']._serialized_options = b'\202\323\344\223\002O2J/v1/designs/{design_id=*}/sections/{section_id=*}/content/{content.name=*}:\001*'
+  _globals['_CONTENTSERVICE'].methods_by_name['SetContent']._serialized_options = b'\202\323\344\223\002S2B/v1/designs/{design_id=*}/sections/{section_id=*}/content/{name=*}:\rcontent_bytes'
   _globals['_CONTENTSERVICE'].methods_by_name['DeleteContent']._loaded_options = None
   _globals['_CONTENTSERVICE'].methods_by_name['DeleteContent']._serialized_options = b'\202\323\344\223\002D*B/v1/designs/{design_id=*}/sections/{section_id=*}/content/{name=*}'
   _globals['_GETCONTENTREQUEST']._serialized_start=212
@@ -56,13 +56,13 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_GETCONTENTRESPONSE']._serialized_start=340
   _globals['_GETCONTENTRESPONSE']._serialized_end=473
   _globals['_SETCONTENTREQUEST']._serialized_start=476
-  _globals['_SETCONTENTREQUEST']._serialized_end=728
-  _globals['_SETCONTENTRESPONSE']._serialized_start=730
-  _globals['_SETCONTENTRESPONSE']._serialized_end=826
-  _globals['_DELETECONTENTREQUEST']._serialized_start=828
-  _globals['_DELETECONTENTREQUEST']._serialized_end=930
-  _globals['_DELETECONTENTRESPONSE']._serialized_start=932
-  _globals['_DELETECONTENTRESPONSE']._serialized_end=955
-  _globals['_CONTENTSERVICE']._serialized_start=958
-  _globals['_CONTENTSERVICE']._serialized_end=1468
+  _globals['_SETCONTENTREQUEST']._serialized_end=638
+  _globals['_SETCONTENTRESPONSE']._serialized_start=640
+  _globals['_SETCONTENTRESPONSE']._serialized_end=736
+  _globals['_DELETECONTENTREQUEST']._serialized_start=738
+  _globals['_DELETECONTENTREQUEST']._serialized_end=840
+  _globals['_DELETECONTENTRESPONSE']._serialized_start=842
+  _globals['_DELETECONTENTRESPONSE']._serialized_end=865
+  _globals['_CONTENTSERVICE']._serialized_start=868
+  _globals['_CONTENTSERVICE']._serialized_end=1382
 # @@protoc_insertion_point(module_scope)

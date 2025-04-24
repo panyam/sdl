@@ -1,7 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
 export * from './ConsolidateSectionUpdatesIntoOneRPCUsingPATCHAndFieldMask';
-export * from './ContentFieldsToBePatchedBasedOnTheUpdateMask';
 export * from './DesignBeingUpdated';
 export * from './DesignServiceAddSectionRequest';
 export * from './DesignServiceAddSectionRequestSection';
@@ -11,7 +10,6 @@ export * from './ProtobufAny';
 export * from './ProtobufNullValue';
 export * from './RpcStatus';
 export * from './SectionObjectContainingOnlyTheFieldsToBeUpdatedTheServerWillUseTheUpdateMaskToKnowWhichFieldsFromThisSectionMessageToApplyToTheStoredSection';
-export * from './SetContentRequest';
 export * from './TagBeingUpdated';
 export * from './TagCreationRequestObject';
 export * from './UpdateDesignRequest';

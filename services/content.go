@@ -101,15 +101,13 @@ func (s *ContentService) GetContent(ctx context.Context, req *protos.GetContentR
 func (s *ContentService) SetContent(ctx context.Context, req *protos.SetContentRequest) (*protos.SetContentResponse, error) {
 	designId := req.DesignId
 	sectionId := req.SectionId
-	contentProto := req.Content // Contains metadata like name, type, format
 
-	if designId == "" || sectionId == "" || contentProto == nil || contentProto.Name == "" {
+	if designId == "" || sectionId == "" || req.Name == "" {
 		return nil, status.Error(codes.InvalidArgument, "Design ID, Section ID, and Content with Name must be provided")
 	}
-	contentName := contentProto.Name
-	updateMask := req.UpdateMask
+	contentName := req.Name
 
-	slog.Info("SetContent Request", "designId", designId, "sectionId", sectionId, "name", contentName, "mask", updateMask)
+	slog.Info("SetContent Request", "designId", designId, "sectionId", sectionId, "name", contentName)
 
 	ownerId, err := s.EnsureLoggedIn(ctx)
 	if ENFORCE_LOGIN && err != nil {
@@ -158,16 +156,6 @@ func (s *ContentService) SetContent(ctx context.Context, req *protos.SetContentR
 		slog.Info("Successfully wrote content bytes", "path", contentPath, "size", len(req.ContentBytes))
 	}
 
-	// --- Handle Metadata Update (TBD - if storing Content metadata) ---
-	// Example: If Content metadata were stored in section's main.json:
-	// sectionMeta, err := s.designService.readSectionData(designId, sectionId)
-	// if err == nil {
-	//   updated := false
-	//   if sectionMeta.ContentMetadata == nil { sectionMeta.ContentMetadata = make(...) }
-	//   if mask includes "type" && contentProto.Type != ... { update; updated = true }
-	//   if mask includes "format" && contentProto.Format != ... { update; updated = true }
-	//   if updated { s.designService.writeSectionData(...) }
-	// } else { log error reading section meta }
 	metadataUpdated := false // Placeholder
 
 	// --- Update Timestamps ---
@@ -196,8 +184,6 @@ func (s *ContentService) SetContent(ctx context.Context, req *protos.SetContentR
 	// Return the metadata provided in the request (or read back if implemented)
 	finalContentProto := &protos.Content{
 		Name:      contentName,
-		Type:      contentProto.GetType(), // Use values from request proto
-		Format:    contentProto.GetFormat(),
 		UpdatedAt: tspb.New(now),
 		// CreatedAt needs proper tracking if important
 	}

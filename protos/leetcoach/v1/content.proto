@@ -1,4 +1,4 @@
-// protos/leetcoach/v1/content.proto
+// protos/leetcoach/v1/designs.proto
 syntax = "proto3";
 
 import "google/protobuf/field_mask.proto";
@@ -22,8 +22,8 @@ service ContentService {
   // Set or create a content piece's metadata (type/format) and/or its bytes.
   rpc SetContent(SetContentRequest) returns (SetContentResponse) {
     option (google.api.http) = {
-      patch: "/v1/designs/{design_id=*}/sections/{section_id=*}/content/{content.name=*}"
-      body: "*"
+      patch: "/v1/designs/{design_id=*}/sections/{section_id=*}/content/{name=*}"
+      body: "content_bytes"
     };
   };
 
@@ -74,14 +74,10 @@ message SetContentRequest {
   string section_id = 2;
 
   // Content fields to be patched based on the update_mask
-  Content content = 3;
+  string name = 3;
 
   // Optional: New content bytes.
   bytes content_bytes = 4;
-
-  // Mask specifying which fields are being updated.
-  // Valid paths: "content_type", "format", "content_bytes".
-  google.protobuf.FieldMask update_mask = 5;
 }
 
 /**
@@ -94,9 +90,6 @@ message SetContentResponse {
     }
   };
 
-  /**
-   * Content metadata being updated/set
-   */
   Content content = 1;
 }
 

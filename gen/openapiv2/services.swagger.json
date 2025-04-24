@@ -285,96 +285,6 @@
         ]
       }
     },
-    "/v1/designs/{designId}/sections/{sectionId}/content/{content.name}": {
-      "patch": {
-        "summary": "Set or create a content piece's metadata (type/format) and/or its bytes.",
-        "operationId": "ContentService_SetContent",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1SetContentResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "designId",
-            "in": "path",
-            "required": true,
-            "type": "string",
-            "pattern": "[^/]+"
-          },
-          {
-            "name": "sectionId",
-            "in": "path",
-            "required": true,
-            "type": "string",
-            "pattern": "[^/]+"
-          },
-          {
-            "name": "content.name",
-            "description": "Unique name of the content piece within the section",
-            "in": "path",
-            "required": true,
-            "type": "string",
-            "pattern": "[^/]+"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "properties": {
-                "content": {
-                  "type": "object",
-                  "properties": {
-                    "createdAt": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "updatedAt": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "type": {
-                      "type": "string",
-                      "description": "e.g., \"application/json\", \"text/html\" etc",
-                      "title": "*\nType of content being attached to this section.\nThis would determine what kind of media we are working with\neg e"
-                    },
-                    "format": {
-                      "type": "string",
-                      "description": "*\nFormat of the section.\n\ne.g., \"chartjs/json\", \"plotly/json\""
-                    }
-                  },
-                  "title": "Content fields to be patched based on the update_mask"
-                },
-                "contentBytes": {
-                  "type": "string",
-                  "format": "byte",
-                  "description": "Optional: New content bytes."
-                },
-                "updateMask": {
-                  "type": "string",
-                  "description": "Mask specifying which fields are being updated.\nValid paths: \"content_type\", \"format\", \"content_bytes\"."
-                }
-              },
-              "title": "SetContentRequest"
-            }
-          }
-        ],
-        "tags": [
-          "ContentService"
-        ]
-      }
-    },
     "/v1/designs/{designId}/sections/{sectionId}/content/{name}": {
       "get": {
         "summary": "Get a specific content piece's metadata and bytes.",
@@ -459,6 +369,61 @@
             "required": true,
             "type": "string",
             "pattern": "[^/]+"
+          }
+        ],
+        "tags": [
+          "ContentService"
+        ]
+      },
+      "patch": {
+        "summary": "Set or create a content piece's metadata (type/format) and/or its bytes.",
+        "operationId": "ContentService_SetContent",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SetContentResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "designId",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "pattern": "[^/]+"
+          },
+          {
+            "name": "sectionId",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "pattern": "[^/]+"
+          },
+          {
+            "name": "name",
+            "description": "Content fields to be patched based on the update_mask",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "pattern": "[^/]+"
+          },
+          {
+            "name": "contentBytes",
+            "description": "Optional: New content bytes.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "byte"
+            }
           }
         ],
         "tags": [
@@ -1530,8 +1495,7 @@
       "type": "object",
       "properties": {
         "content": {
-          "$ref": "#/definitions/v1Content",
-          "title": "*\nContent metadata being updated/set"
+          "$ref": "#/definitions/v1Content"
         }
       },
       "title": "SetContentResponse"

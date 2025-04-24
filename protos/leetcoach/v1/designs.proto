@@ -8,6 +8,7 @@ option go_package = "github.com/leetcoach/protos";
 package leetcoach.v1;
 
 import "leetcoach/v1/models.proto";
+import "leetcoach/v1/content.proto";
 import "google/api/annotations.proto";
 
 // Used for positioning new/moved sections
@@ -120,6 +121,15 @@ service DesignService {
       delete: "/v1/designs/{design_id}/sections/{section_id}"
     };
   }
+
+  /*
+  rpc SetContent(SetContentRequest) returns (SetContentResponse) {
+    option (google.api.http) = {
+      patch: "/v1/designs/{design_id=*}/sections/{section_id=*}/content/{name=*}"
+      body: "content_bytes"
+    };
+  };
+  */
 }
 
 /**

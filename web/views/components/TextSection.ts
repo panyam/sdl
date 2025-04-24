@@ -1,5 +1,6 @@
 // components/TextSection.ts
 
+import { ContentApi } from './Api'; // Import API client
 import { BaseSection } from './BaseSection';
 import { SectionData, SectionCallbacks, TextContent } from './types';
 
@@ -115,9 +116,24 @@ export class TextSection extends BaseSection {
         }
     }
 
+    protected override async refreshContentFromServer() {
+        const resp = await ContentApi.contentServiceGetContent({
+          designId: this.designId,
+          sectionId: this.sectionId,
+          name: "main",
+        })
+        this.textContent = atob(resp.contentBytes || "")
+    }
+
     public async handleSaveClick(): Promise<void> {
-        const content = this.getContentFromEditMode()
+        this.textContent = this.getContentFromEditMode()
         console.log(`Save button clicked or shortcut used for section ${this.data.id}.`);
+        const resp = await ContentApi.contentServiceSetContent({
+          designId: this.designId,
+          sectionId: this.sectionId,
+          name: "main",
+          contentBytes: btoa(this.textContent),
+        })
         this.switchToViewMode(true);
     }
 
