@@ -51,7 +51,7 @@
     </div>
 
     <!-- Table Container -->
-    <div class="bg-white dark:bg-gray-800 shadow sm:rounded-lg overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 shadow sm:rounded-lg">
         <div class="overflow-x-auto relative"> <!-- Relative positioning for indicator -->
              <!-- Loading Indicator -->
             <div id="list-loading-indicator" class="hidden htmx-indicator absolute inset-0 bg-gray-500/30 dark:bg-gray-900/50 flex items-center justify-center z-10">
@@ -99,7 +99,7 @@
                                <div class="py-1" role="menu" aria-orientation="vertical">
                                    <button class="action-delete block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-600" role="menuitem"
                                            hx-delete="/designs/{{ .Id }}"
-                                           hx-target="closest tr"
+                                           hx-target="body"
                                            hx-swap="outerHTML swap:200ms"
                                            hx-confirm="Are you sure you want to delete '{{ .Name }}'?"
                                            hx-indicator="#list-loading-indicator">

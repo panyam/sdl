@@ -2,7 +2,6 @@ package views
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 )
 
@@ -37,11 +36,6 @@ func (n *LCViews) setupDesignsMux() *http.ServeMux {
 		designId := r.PathValue("designId")
 		http.Redirect(w, r, fmt.Sprintf("/designs/new?copyFrom=%s", designId), http.StatusFound)
 	}) // .Methods("GET")
-	mux.HandleFunc("/{designId}", func(w http.ResponseWriter, r *http.Request) {
-		log.Println("=============")
-		log.Println("Catch all - should not be coming here", r.Header)
-		log.Println("=============")
-		http.Redirect(w, r, "/", http.StatusFound)
-	}) // TODO - .Methods("DELETE")
+	mux.HandleFunc("/{designId}", n.ViewRenderer(Copier(&DesignPage{}), ""))
 	return mux
 }
