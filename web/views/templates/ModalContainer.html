@@ -1,9 +1,5 @@
 <!-- templates/ModalContainer.html -->
 
-{{# include "LlmDialog.html" #}}
-{{# include "LlmResults.html" #}}
-{{# include "SectionTypeSelector.html" #}}
-
 {{ define "ModalContainer" }}
 <div id="modal-backdrop" class="fixed inset-0 bg-gray-500 bg-opacity-75 dark:bg-gray-900 dark:bg-opacity-80 transition-opacity"></div>
 
@@ -17,13 +13,6 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
-            
-            <!-- Modal content will be populated by one of these templates -->
-           <div style="display: none">
-            {{ template "LlmDialog" . }}
-            {{ template "LlmResults" . }}
-            {{ template "SectionTypeSelector" . }}
-           </div>
         </div>
     </div>
 </div>
