@@ -56,6 +56,13 @@ export interface SectionObjectContainingOnlyTheFieldsToBeUpdatedTheServerWillUse
     title?: string;
     /**
      * *
+     * A description of the section to help make sense of why this is here.
+     * @type {string}
+     * @memberof SectionObjectContainingOnlyTheFieldsToBeUpdatedTheServerWillUseTheUpdateMaskToKnowWhichFieldsFromThisSectionMessageToApplyToTheStoredSection
+     */
+    description?: string;
+    /**
+     * *
      * Order of the section in the list of sections.  This is a readonly field.
      * @type {number}
      * @memberof SectionObjectContainingOnlyTheFieldsToBeUpdatedTheServerWillUseTheUpdateMaskToKnowWhichFieldsFromThisSectionMessageToApplyToTheStoredSection
@@ -86,6 +93,7 @@ export function SectionObjectContainingOnlyTheFieldsToBeUpdatedTheServerWillUseT
         'updatedAt': json['updatedAt'] == null ? undefined : (new Date(json['updatedAt'])),
         'type': json['type'] == null ? undefined : V1SectionTypeFromJSON(json['type']),
         'title': json['title'] == null ? undefined : json['title'],
+        'description': json['description'] == null ? undefined : json['description'],
         'order': json['order'] == null ? undefined : json['order'],
     };
 }
@@ -105,6 +113,7 @@ export function SectionObjectContainingOnlyTheFieldsToBeUpdatedTheServerWillUseT
         'updatedAt': value['updatedAt'] == null ? undefined : ((value['updatedAt']).toISOString()),
         'type': V1SectionTypeToJSON(value['type']),
         'title': value['title'],
+        'description': value['description'],
         'order': value['order'],
     };
 }

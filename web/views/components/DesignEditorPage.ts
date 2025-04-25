@@ -81,43 +81,11 @@ class DesignEditorPage {
             saveButton.addEventListener('click', this.saveDocument.bind(this));
         }
 
-        document.addEventListener('click', (e: MouseEvent) => {
-            const target = e.target as HTMLElement;
-            const sectionTypeOption = target.closest('.section-type-option, button.section-type-option');
-
-            if (sectionTypeOption && this.modal?.getCurrentTemplate() === 'section-type-selector') {
-                this.handleSectionTypeSelectionFromModal(sectionTypeOption);
-            }
-        });
-
         const exportButton = document.querySelector('header button.bg-gray-200');
         if (exportButton) {
             exportButton.addEventListener('click', this.exportDocument.bind(this));
         }
     }
-
-     /**
-      * Handles the click on a section type button within the modal.
-      * Calls the SectionManager to initiate the API call and subsequent creation.
-      */
-     private handleSectionTypeSelectionFromModal(buttonElement: Element): void {
-         if (!this.sectionManager || !this.modal) return;
-
-         let sectionType: SectionType = 'text';
-         const typeText = buttonElement.querySelector('span')?.textContent?.trim().toLowerCase() || '';
-
-         if (typeText === 'drawing') sectionType = 'drawing';
-         else if (typeText === 'plot') sectionType = 'plot';
-
-         const modalData = this.modal.getCurrentData();
-         const relativeToId = modalData?.relativeToId || null;
-         const position = modalData?.position || 'after';
-
-         // SectionManager handles API call and creation, including calling setInitialContentAndRender
-         this.sectionManager.handleSectionTypeSelection(sectionType, relativeToId, position);
-
-         this.modal.hide();
-     }
 
     /** Load document data and set initial UI states */
     private loadInitialState(): void {

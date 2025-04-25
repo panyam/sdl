@@ -11,6 +11,7 @@ models/DesignServiceAddSectionRequest.ts
 models/DesignServiceAddSectionRequestSection.ts
 models/DesignServiceMoveSectionRequest.ts
 models/Leetcoachv1Tag.ts
+models/LlmServiceSuggestSectionsRequest.ts
 models/ProtobufAny.ts
 models/ProtobufNullValue.ts
 models/RpcStatus.ts
@@ -39,6 +40,8 @@ models/V1SectionType.ts
 models/V1SetContentResponse.ts
 models/V1SimpleLlmQueryRequest.ts
 models/V1SimpleLlmQueryResponse.ts
+models/V1SuggestSectionsResponse.ts
+models/V1SuggestedSection.ts
 models/V1UpdateDesignResponse.ts
 models/V1UpdateTagResponse.ts
 models/index.ts

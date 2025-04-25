@@ -15,21 +15,32 @@
 
 import * as runtime from '../runtime';
 import type {
+  LlmServiceSuggestSectionsRequest,
   RpcStatus,
   V1SimpleLlmQueryRequest,
   V1SimpleLlmQueryResponse,
+  V1SuggestSectionsResponse,
 } from '../models/index';
 import {
+    LlmServiceSuggestSectionsRequestFromJSON,
+    LlmServiceSuggestSectionsRequestToJSON,
     RpcStatusFromJSON,
     RpcStatusToJSON,
     V1SimpleLlmQueryRequestFromJSON,
     V1SimpleLlmQueryRequestToJSON,
     V1SimpleLlmQueryResponseFromJSON,
     V1SimpleLlmQueryResponseToJSON,
+    V1SuggestSectionsResponseFromJSON,
+    V1SuggestSectionsResponseToJSON,
 } from '../models/index';
 
 export interface LlmServiceSimpleLlmQueryRequest {
     body: V1SimpleLlmQueryRequest;
+}
+
+export interface LlmServiceSuggestSectionsOperationRequest {
+    designId: string;
+    body: LlmServiceSuggestSectionsRequest;
 }
 
 /**
@@ -70,6 +81,49 @@ export class LlmServiceApi extends runtime.BaseAPI {
      */
     async llmServiceSimpleLlmQuery(requestParameters: LlmServiceSimpleLlmQueryRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<V1SimpleLlmQueryResponse> {
         const response = await this.llmServiceSimpleLlmQueryRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * SuggestSections recommends relevant sections to add based on existing ones.
+     */
+    async llmServiceSuggestSectionsRaw(requestParameters: LlmServiceSuggestSectionsOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<V1SuggestSectionsResponse>> {
+        if (requestParameters['designId'] == null) {
+            throw new runtime.RequiredError(
+                'designId',
+                'Required parameter "designId" was null or undefined when calling llmServiceSuggestSections().'
+            );
+        }
+
+        if (requestParameters['body'] == null) {
+            throw new runtime.RequiredError(
+                'body',
+                'Required parameter "body" was null or undefined when calling llmServiceSuggestSections().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        const response = await this.request({
+            path: `/v1/designs/{designId}/sections:suggest`.replace(`{${"designId"}}`, encodeURIComponent(String(requestParameters['designId']))),
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: LlmServiceSuggestSectionsRequestToJSON(requestParameters['body']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => V1SuggestSectionsResponseFromJSON(jsonValue));
+    }
+
+    /**
+     * SuggestSections recommends relevant sections to add based on existing ones.
+     */
+    async llmServiceSuggestSections(requestParameters: LlmServiceSuggestSectionsOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<V1SuggestSectionsResponse> {
+        const response = await this.llmServiceSuggestSectionsRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

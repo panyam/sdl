@@ -60,6 +60,13 @@ export interface DesignServiceAddSectionRequestSection {
     title?: string;
     /**
      * *
+     * A description of the section to help make sense of why this is here.
+     * @type {string}
+     * @memberof DesignServiceAddSectionRequestSection
+     */
+    description?: string;
+    /**
+     * *
      * Order of the section in the list of sections.  This is a readonly field.
      * @type {number}
      * @memberof DesignServiceAddSectionRequestSection
@@ -91,6 +98,7 @@ export function DesignServiceAddSectionRequestSectionFromJSONTyped(json: any, ig
         'id': json['id'] == null ? undefined : json['id'],
         'type': json['type'] == null ? undefined : V1SectionTypeFromJSON(json['type']),
         'title': json['title'] == null ? undefined : json['title'],
+        'description': json['description'] == null ? undefined : json['description'],
         'order': json['order'] == null ? undefined : json['order'],
     };
 }
@@ -111,6 +119,7 @@ export function DesignServiceAddSectionRequestSectionToJSONTyped(value?: DesignS
         'id': value['id'],
         'type': V1SectionTypeToJSON(value['type']),
         'title': value['title'],
+        'description': value['description'],
         'order': value['order'],
     };
 }

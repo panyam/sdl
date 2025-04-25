@@ -7,8 +7,10 @@ import { DrawingSection } from './DrawingSection';
 import { PlotSection } from './PlotSection';
 import { SectionContent, DocumentSection, SectionType, TextContent, DrawingContent, PlotContent, SectionData, SectionCallbacks } from './types';
 import { TocItemInfo, TableOfContents } from './TableOfContents';
-import { V1Section, V1PositionType, /* other models if needed */ } from './apiclient'; // Import V1Section and V1PositionType
-import { DesignApi } from './Api'; // Import API client
+import { V1Section, V1PositionType, V1SuggestedSection } from './apiclient'; // Import V1Section and V1PositionType, LlmApi, V1SuggestedSection
+import { LlmApi, DesignApi } from './Api'; // Import API client
+import { ToastManager } from './ToastManager'; // Import ToastManager
+import { TemplateLoader } from './TemplateLoader'; // Import TemplateLoader
 import { createApiSectionUpdateObject, convertApiSectionToSectionData , mapFrontendSectionTypeToApi } from './converters'; // Import the update object creator
 
 
@@ -27,7 +29,12 @@ export class SectionManager {
     private emptyStateEl: HTMLElement | null;
     private fabAddSectionBtn: HTMLElement | null;
     private sectionTemplate: HTMLElement | null;
+    private toastManager: ToastManager; // <-- Declare toastManager
+    private templateLoader: TemplateLoader; // <-- Declare templateLoader
     private modal: Modal;
+
+    // Listener handle storage for suggestion modal
+    private modalClickListener: ((e: MouseEvent) => void) | null = null;
 
     // Reference to the external TOC component - set via method/constructor
     private tocComponent: TableOfContents | null = null;
@@ -71,6 +78,9 @@ export class SectionManager {
         this.fabAddSectionBtn = document.getElementById('fab-add-section-btn');
         this.sectionTemplate = document.getElementById('section-template');
         this.modal = Modal.getInstance();
+        this.toastManager = ToastManager.getInstance(); // <-- Initialize toastManager
+        this.templateLoader = new TemplateLoader(); // <-- Initialize templateLoader
+
 
         if (!this.sectionsContainer || !this.emptyStateEl || !this.fabAddSectionBtn || !this.sectionTemplate) {
             console.error("SectionManager: Could not find all required DOM elements. Check IDs.");
@@ -147,10 +157,79 @@ export class SectionManager {
     /** Open section type selector modal */
     public openSectionTypeSelector(relativeToId: string | null, position: 'before' | 'after' = 'after'): void {
         this.modal.show('section-type-selector', {
+            // Pass data needed for both standard selection and suggestion handling
             relativeToId: relativeToId || '',
             position: position
         });
+
+        // --- Attach Specific Listeners After Modal Shows ---
+        // We need to wait briefly for the modal content to be attached to the DOM
+        setTimeout(() => {
+            const modalContent = this.modal.getContentElement();
+            if (!modalContent) return;
+
+            // Remove previous listener if exists
+            if (this.modalClickListener) {
+                 modalContent.removeEventListener('click', this.modalClickListener);
+                 this.modalClickListener = null;
+            }
+
+            // Create and store the new listener
+            this.modalClickListener = (e: MouseEvent) => {
+                this.handleSectionTypeModalClick(e);
+            };
+            modalContent.addEventListener('click', this.modalClickListener);
+
+        }, 50); // Small delay
+
         console.log('SectionManager opening section type selector modal', { relativeToId, position });
+    }
+
+    /** Handles clicks *within* the section type selector modal */
+    private handleSectionTypeModalClick(e: MouseEvent): void {
+        const target = e.target as HTMLElement;
+        const modalContent = this.modal.getContentElement(); // Get current modal content
+        if (!modalContent || !modalContent.contains(target)) return; // Ensure click is inside
+
+        // 1. Standard Type Selection
+        const typeOption = target.closest('.section-type-option') as HTMLButtonElement | null;
+        if (typeOption && typeOption.dataset.sectionType) {
+            const type = typeOption.dataset.sectionType as SectionType;
+            const modalData = this.modal.getCurrentData();
+            this.handleSectionTypeSelection(type, modalData?.relativeToId || null, modalData?.position || 'after');
+            this.modal.hide();
+            return;
+        }
+
+        // 2. Suggest Sections Button
+        const suggestButton = target.closest('#suggest-sections-btn');
+        if (suggestButton) {
+            this.handleSuggestSectionsClick();
+            return;
+        }
+
+        // 3. Suggested Section Card Selection
+        const suggestedOption = target.closest('.suggested-section-option') as HTMLButtonElement | null;
+        if (suggestedOption && suggestedOption.dataset.action === 'create-suggested') {
+            // Look at the parent as the dataset seems to be on the button's parent instead of on the button
+            const title = suggestedOption.parentElement!.dataset.suggestedTitle;
+            const type = suggestedOption.parentElement!.dataset.suggestedType as SectionType; // Assume type is valid
+            if (title && type) {
+                const modalData = this.modal.getCurrentData();
+                this.handleSectionTypeSelection(type, modalData?.relativeToId || null, modalData?.position || 'after', title);
+                this.modal.hide();
+            } else {
+                 console.error("Clicked suggested section card missing title or type data", suggestedOption.dataset);
+            }
+            return;
+        }
+
+        // 4. Show Standard Types Button (after suggestions shown)
+        const showStandardButton = target.closest('#show-standard-types-btn');
+        if (showStandardButton) {
+            this.toggleSuggestionView(false); // Show standard types, hide suggestions
+            return;
+        }
     }
 
     /**
@@ -160,15 +239,17 @@ export class SectionManager {
      */
     public async handleSectionTypeSelection(
         type: SectionType,
-        relativeToId: string | null = null,
-        position: 'before' | 'after' = 'after'
+        relativeToId: string | null,
+        position: 'before' | 'after' = 'after',
+        title?: string
     ): Promise<void> {
          if (!this.currentDesignId) {
             console.error("Cannot add section: Design ID not set in SectionManager.");
             // toastManager.showToast("Error", "Cannot add section: Design ID missing.", "error");
             return;
         }
-        console.log(`User requested to add a '${type}' section ${position} ${relativeToId || 'the end'}`);
+        const finalTitle = title || SectionManager.getRandomTitle(type);
+        console.log(`User requested to add a '${type}' section titled "${finalTitle}" ${position} ${relativeToId || 'the end'}`);
 
         let apiPosition: V1PositionType = V1PositionType.PositionTypeEnd;
         if (relativeToId) {
@@ -177,8 +258,8 @@ export class SectionManager {
 
         const apiSectionPayload = {
              type: mapFrontendSectionTypeToApi(type),
-             title: SectionManager.getRandomTitle(type),
-             // ...mapFrontendContentToApiUpdate(type, this.getDefaultContent(type)),
+             title: finalTitle, // Use the determined title
+             // Content is now created by the backend based on type or template later
         };
 
         try {
@@ -198,7 +279,7 @@ export class SectionManager {
             newSectionData.designId = this.currentDesignId; // Ensure designId is set
 
             // Create the section instance and DOM shell (constructor shows loading initially)
-            const newSectionInstance = this.createSectionInternal(newSectionData, true); // Pass true for user action
+            const newSectionInstance = this.createSectionInternal(newSectionData, true); // Pass true for reorder/TOC update
 
             if (newSectionInstance) {
                 // --- Use the new method to render the initial content ---
@@ -224,6 +305,74 @@ export class SectionManager {
             // Consider checking error status code (e.g., 4xx vs 5xx) for different messages
             const errorMsg = error.message || (error.response ? await error.response.text() : 'Server Error');
             // toastManager.showToast("Error Adding Section", `Failed to add section: ${errorMsg}`, "error");
+        }
+    }
+
+    /** Handles the click on the "Suggest Sections" button in the modal */
+    private async handleSuggestSectionsClick(): Promise<void> {
+        if (!this.currentDesignId) {
+            console.error("Cannot suggest sections: Design ID not set.");
+            this.toastManager.showToast("Error", "Cannot suggest sections: Design ID missing.", "error");
+            return;
+        }
+
+        const modalContent = this.modal.getContentElement();
+        if (!modalContent) return;
+
+        const loadingIndicator = modalContent.querySelector('#suggest-loading-indicator');
+        const suggestionsContainer = modalContent.querySelector('#suggested-sections-container');
+        const standardOptions = modalContent.querySelector('#standard-type-options');
+        const suggestButton = modalContent.querySelector('#suggest-sections-btn');
+
+        if (!loadingIndicator || !suggestionsContainer || !standardOptions || !suggestButton) {
+            console.error("Suggest sections UI elements not found in modal.");
+            return;
+        }
+
+        // Show loading, hide standard options and suggest button
+        this.toggleSuggestionView(true, true);
+
+        const currentTitles = this.getTocItemsInfo().map(item => item.title);
+        console.log("Requesting section suggestions based on titles:", currentTitles);
+
+        try {
+            const response = await LlmApi.llmServiceSuggestSections({
+                designId: this.currentDesignId,
+                body: {
+                  existingSectionTitles: currentTitles
+                },
+            });
+            console.log("Received suggestions:", response.suggestions);
+
+            // Populate suggestions
+            suggestionsContainer.innerHTML = `<h4 class="text-md font-medium text-gray-700 dark:text-gray-300 mb-3">Suggested Sections:</h4>
+                                              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2"></div>
+                                              <button id="show-standard-types-btn" type="button" class="mt-4 text-sm text-blue-600 dark:text-blue-400 hover:underline">Show Standard Types</button>`; // Reset container
+            const grid = suggestionsContainer.querySelector('.grid');
+
+            if (response.suggestions && response.suggestions.length > 0 && grid) {
+                response.suggestions.forEach(suggestion => {
+                    const card = this.templateLoader.load('suggested-section-card');
+                    if (card) {
+                        card.querySelector('.suggested-section-title')!.textContent = suggestion.title || 'Untitled Suggestion';
+                        card.querySelector('.suggested-section-type')!.textContent = suggestion.type || 'text';
+                        card.querySelector('.suggested-section-description')!.textContent = suggestion.description || 'No description provided.';
+                        card.dataset.suggestedTitle = suggestion.title || '';
+                        card.dataset.suggestedType = suggestion.type || 'text';
+                        grid.appendChild(card);
+                    }
+                });
+            } else {
+                grid!.innerHTML = `<p class="text-sm text-gray-500 dark:text-gray-400 italic col-span-full">No suggestions available at this time.</p>`;
+            }
+
+            // Show suggestions, hide loading
+            this.toggleSuggestionView(true, false);
+
+        } catch (error: any) {
+            console.error("Error getting section suggestions:", error);
+            this.toastManager.showToast("Suggestion Error", `Failed to get suggestions: ${error.message || 'Server error'}`, "error");
+            this.toggleSuggestionView(false); // Show standard types again on error
         }
     }
 
@@ -311,6 +460,29 @@ export class SectionManager {
         }
 
         return sectionInstance;
+    }
+
+    /** Toggles the view inside the section type selector modal between standard types and suggestions */
+    private toggleSuggestionView(showSuggestions: boolean, isLoading: boolean = false): void {
+        const modalContent = this.modal.getContentElement();
+        if (!modalContent) return;
+
+        const loadingIndicator = modalContent.querySelector('#suggest-loading-indicator');
+        const suggestionsContainer = modalContent.querySelector('#suggested-sections-container');
+        const standardOptions = modalContent.querySelector('#standard-type-options');
+        const suggestButtonContainer = modalContent.querySelector('#suggest-sections-btn')?.parentElement; // Get the container div
+
+        loadingIndicator?.classList.toggle('hidden', !isLoading);
+
+        if (isLoading) {
+            suggestionsContainer?.classList.add('hidden');
+            standardOptions?.classList.add('hidden');
+            suggestButtonContainer?.classList.add('hidden');
+        } else {
+            suggestionsContainer?.classList.toggle('hidden', !showSuggestions);
+            standardOptions?.classList.toggle('hidden', showSuggestions);
+            suggestButtonContainer?.classList.toggle('hidden', showSuggestions); // Hide suggest button when suggestions are shown
+        }
     }
 
     /** Returns appropriate default content for a section type */

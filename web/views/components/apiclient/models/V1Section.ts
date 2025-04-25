@@ -67,6 +67,13 @@ export interface V1Section {
     title?: string;
     /**
      * *
+     * A description of the section to help make sense of why this is here.
+     * @type {string}
+     * @memberof V1Section
+     */
+    description?: string;
+    /**
+     * *
      * Order of the section in the list of sections.  This is a readonly field.
      * @type {number}
      * @memberof V1Section
@@ -99,6 +106,7 @@ export function V1SectionFromJSONTyped(json: any, ignoreDiscriminator: boolean):
         'designId': json['designId'] == null ? undefined : json['designId'],
         'type': json['type'] == null ? undefined : V1SectionTypeFromJSON(json['type']),
         'title': json['title'] == null ? undefined : json['title'],
+        'description': json['description'] == null ? undefined : json['description'],
         'order': json['order'] == null ? undefined : json['order'],
     };
 }
@@ -120,6 +128,7 @@ export function V1SectionToJSONTyped(value?: V1Section | null, ignoreDiscriminat
         'designId': value['designId'],
         'type': V1SectionTypeToJSON(value['type']),
         'title': value['title'],
+        'description': value['description'],
         'order': value['order'],
     };
 }
