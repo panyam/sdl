@@ -5,6 +5,7 @@ import { SectionData, SectionType, SectionContent, DocumentSection, TextContent,
 import { V1Section } from './apiclient'; // Import API Section type
 import { TemplateLoader } from './TemplateLoader'; // Import the converter
 import { ToastManager } from './ToastManager'; // Import the converter
+import { LlmApi } from './Api'; // Import the new LlmApi
 
 /**
  * Abstract base class for all document sections.
@@ -18,6 +19,7 @@ export abstract class BaseSection {
     protected modal: Modal;
     protected mode: 'view' | 'edit' = 'view';
     protected isLoading: boolean = false;
+    protected isLlmLoading: boolean = false; // Track LLM loading state
 
     // Common DOM elements
     protected sectionHeaderElement: HTMLElement | null;
@@ -53,7 +55,7 @@ export abstract class BaseSection {
         this.moveUpButton = this.element.querySelector('.section-move-up');
         this.moveDownButton = this.element.querySelector('.section-move-down');
         this.settingsButton = this.element.querySelector('.section-settings');
-        this.llmButton = this.element.querySelector('.section-ai');
+        this.llmButton = this.element.querySelector('.section-ai'); // Find the LLM button
         this.addBeforeButton = this.element.querySelector('.section-add-before');
         this.addAfterButton = this.element.querySelector('.section-add-after');
         this.fullscreenButton = this.element.querySelector('.section-fullscreen');
@@ -112,7 +114,7 @@ export abstract class BaseSection {
      public get designId(): string {
        return this.data.designId
      }
- 
+
      /** Enables the fullscreen button functionality for this section */
      protected enableFullscreen(): void {
          if (this.fullscreenButton) {
@@ -149,7 +151,6 @@ export abstract class BaseSection {
     protected bindCommonEvents(): void {
         // Title editing
         if (this.titleElement) {
-            // Ensure only one listener is attached if constructor is called multiple times (unlikely but safe)
             this.titleElement.removeEventListener('click', this.startTitleEdit);
             this.titleElement.addEventListener('click', this.startTitleEdit.bind(this));
         }
@@ -182,6 +183,9 @@ export abstract class BaseSection {
 
         // LLM button
         if (this.llmButton) {
+            // Remove potential previous listener to avoid duplicates if re-binding occurs
+            this.llmButton.removeEventListener('click', this.openLlmDialog);
+            // Bind the openLlmDialog method correctly
             this.llmButton.addEventListener('click', this.openLlmDialog.bind(this));
         }
 
@@ -408,20 +412,93 @@ export abstract class BaseSection {
 
     /** Opens the LLM dialog modal for this section */
     protected openLlmDialog(): void {
+        console.log(`LLM button clicked for section: ${this.data.id}`);
+        // Pass the submit handler bound to this instance
         this.modal.show('llm-dialog', {
             sectionId: this.data.id,
             sectionType: this.data.type,
-            sectionTitle: this.data.title
+            sectionTitle: this.data.title,
+            onSubmit: this.handleLlmDialogSubmit.bind(this) // Pass bound function
         });
 
         // Update the current section display in the LLM dialog (if modal content is ready)
         // Note: This might need a slight delay or callback if modal content isn't immediately available
+        // This part remains potentially fragile, depends on modal rendering timing.
         setTimeout(() => {
-            const currentSectionElement = document.getElementById('llm-current-section');
+            // Use querySelector *within the modal content* for robustness
+            const modalContent = this.modal.getContentElement();
+            const currentSectionElement = modalContent?.querySelector('#llm-current-section');
             if (currentSectionElement) {
                 currentSectionElement.textContent = this.data.title;
+            } else {
+                console.warn("Could not find #llm-current-section in modal content after showing.");
             }
-        }, 0);
+        }, 50); // Small delay
+    }
+
+    /** Handles the submission from the LLM dialog modal */
+    protected async handleLlmDialogSubmit(modalData: any): Promise<void> {
+        if (this.isLlmLoading) {
+            console.log("LLM query already in progress.");
+            return;
+        }
+        this.isLlmLoading = true;
+        console.log(`LLM dialog submitted for section ${this.data.id}`, modalData);
+        // TODO: Get actual prompt from modal UI later (Phase 2)
+        const hardcodedPrompt = `Explain the core concepts of system design suitable for a section titled "${this.data.title}". Keep it concise.`;
+
+        // Find the submit button in the dialog to show loading state
+        const dialogContent = this.modal.getContentElement();
+        const submitButton = dialogContent?.querySelector('button[data-modal-action="submit"]') as HTMLButtonElement | null;
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.textContent = 'Processing...';
+            // Optionally add a spinner icon
+        }
+
+        try {
+            const request = {
+                designId: this.data.designId,
+                sectionId: this.data.id,
+                prompt: hardcodedPrompt,
+            };
+            console.log("Sending LLM query request:", request);
+
+            const response = await LlmApi.llmServiceSimpleLlmQuery({body: request});
+            console.log("LLM query response:", response);
+
+            this.modal.hide(); // Hide the dialog modal
+
+            // Show results modal
+            const resultsModalContent = this.modal.show('llm-results', {
+                responseText: response.responseText,
+                // Add apply/revise callbacks later
+            });
+
+            // Populate the results content *after* the modal is shown
+            if (resultsModalContent) {
+                const contentArea = resultsModalContent.querySelector('#llm-results-content');
+                if (contentArea) {
+                    // Simple text display for now, can use Markdown parser later
+                    contentArea.textContent = response.responseText || "LLM returned no text.";
+                } else {
+                    console.error("Could not find #llm-results-content in results modal.");
+                }
+            }
+
+        } catch (error: any) {
+            console.error("Error calling LLM service:", error);
+            const errorMsg = error.message || (error.response ? await error.response.text() : 'Unknown LLM API error');
+            this.toastManager.showToast("LLM Error", `Failed to query LLM: ${errorMsg}`, "error");
+            this.modal.hide(); // Hide the dialog on error too
+        } finally {
+            this.isLlmLoading = false;
+            // Restore submit button state if it's still around (though modal hides)
+            if (submitButton) {
+                 submitButton.disabled = false;
+                 submitButton.textContent = 'Submit';
+            }
+        }
     }
 
     /**
@@ -587,10 +664,8 @@ export abstract class BaseSection {
 
     /** Reloads the preview content from the server. */
     protected async refreshContentFromServer(): Promise<void> {
-      // 
+      //
     }
-
-    // --- Public API ---
 
     /** Updates the displayed section number */
     public updateNumber(number: number): void {
@@ -619,13 +694,13 @@ export abstract class BaseSection {
 
      // --- Fullscreen State and Methods ---
      protected isFullscreen: boolean = false;
- 
+
      protected enterFullscreen(): void {
          // Use this.element as the fullscreen target
          if (this.isFullscreen || !this.element || !this.exitFullscreenButton) return;
          console.log(`Entering fullscreen for section ${this.data.id}`);
          this.isFullscreen = true;
- 
+
          // Add classes for styling
          // Use specific classes for easier removal and potential customization
          // Target the main element now
@@ -634,7 +709,7 @@ export abstract class BaseSection {
          this.element.classList.remove('mb-6'); // Ensure header/content stack vertically if needed
          this.contentContainer?.classList.add('flex-grow', 'overflow-auto'); // Make content area take remaining space and scroll internally
          document.body.classList.add('lc-fullscreen-active');
- 
+
          // Selectively hide header controls
          this.moveUpButton?.classList.add('hidden');
          this.moveDownButton?.classList.add('hidden');
@@ -644,22 +719,22 @@ export abstract class BaseSection {
          this.deleteButton?.classList.add('hidden');
          // Keep: Title, Number, Type Icon, Fullscreen, LLM
          this.exitFullscreenButton?.classList.remove('hidden'); // Show exit button
- 
+
          // Bind exit listeners
          this.exitFullscreenButton?.addEventListener('click', this.exitFullscreen.bind(this), { once: true });
          window.addEventListener('resize', this._handleResize.bind(this));
- 
+
          // Allow content to adjust size *after* container is fullscreen
          requestAnimationFrame(() => {
              this.resizeContentForFullscreen(true); // Notify subclass to resize content
          });
      }
- 
+
     protected exitFullscreen(): void {
       if (!this.isFullscreen || !this.element || !this.exitFullscreenButton) return;
       console.log(`Exiting fullscreen for section ${this.data.id}`);
       this.isFullscreen = false;
- 
+
       // Remove classes
       this.element.classList.remove('lc-section-fullscreen');
       this.element.classList.remove('flex', 'flex-col');
@@ -675,16 +750,16 @@ export abstract class BaseSection {
       this.addAfterButton?.classList.remove('hidden');
       this.settingsButton?.classList.remove('hidden');
       this.deleteButton?.classList.remove('hidden');
- 
+
       // Unbind listeners
       window.removeEventListener('resize', this._handleResize.bind(this));
- 
+
       // Allow content to adjust size *after* container is back to normal
       requestAnimationFrame(() => {
         this.resizeContentForFullscreen(false); // Notify subclass to resize content
       });
    }
- 
+
      // Bound listener function to ensure 'this' context and allow removal
      private _boundHandleKeyDown = this._handleKeyDown.bind(this);
      private _handleKeyDown(event: KeyboardEvent): void {
@@ -693,7 +768,7 @@ export abstract class BaseSection {
              this.exitFullscreen();
          }
      }
- 
+
      // Bound listener function
      private _boundHandleResize = this._handleResize.bind(this);
      private _handleResize(): void {
