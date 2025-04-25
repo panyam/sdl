@@ -7,11 +7,10 @@ require (
 	github.com/alexedwards/scs/v2 v2.8.0
 	github.com/fatih/color v1.18.0
 	github.com/felixge/httpsnoop v1.0.4
-	github.com/google/go-cmp v0.7.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.3
 	github.com/joho/godotenv v1.5.1
 	github.com/panyam/goutils v0.1.3
-	github.com/panyam/oneauth v0.0.9
+	github.com/panyam/oneauth v0.0.10
 	github.com/panyam/templar v0.0.17
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/oauth2 v0.27.0
@@ -58,7 +57,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/panyam/oneauth v0.0.9 => ./locallinks/oneauth/
+replace github.com/panyam/oneauth v0.0.10 => ./locallinks/oneauth/
 
 replace github.com/panyam/templar v0.0.17 => ./locallinks/templar/
 
