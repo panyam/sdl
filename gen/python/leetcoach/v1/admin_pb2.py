@@ -28,7 +28,7 @@ from leetcoach.v1 import models_pb2 as leetcoach_dot_v1_dot_models__pb2
 from google.api import annotations_pb2 as google_dot_api_dot_annotations__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x18leetcoach/v1/admin.proto\x12\x0cleetcoach.v1\x1a google/protobuf/field_mask.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\x1a\x19leetcoach/v1/models.proto\x1a\x1cgoogle/api/annotations.proto2\x0e\n\x0c\x41\x64minServiceB\x8c\x01\n\x10\x63om.leetcoach.v1B\nAdminProtoP\x01Z\x1bgithub.com/leetcoach/protos\xa2\x02\x03LXX\xaa\x02\x0cLeetcoach.V1\xca\x02\x0cLeetcoach\\V1\xe2\x02\x18Leetcoach\\V1\\GPBMetadata\xea\x02\rLeetcoach::V1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x18leetcoach/v1/admin.proto\x12\x0cleetcoach.v1\x1a google/protobuf/field_mask.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\x1a\x19leetcoach/v1/models.proto\x1a\x1cgoogle/api/annotations.proto\"\x12\n\x10TestAdminRequest\"\x13\n\x11TestAdminResponse2r\n\x0c\x41\x64minService\x12\x62\n\tTestAdmin\x12\x1e.leetcoach.v1.TestAdminRequest\x1a\x1f.leetcoach.v1.TestAdminResponse\"\x14\x82\xd3\xe4\x93\x02\x0e\"\t/v1/admin:\x01*B\x8c\x01\n\x10\x63om.leetcoach.v1B\nAdminProtoP\x01Z\x1bgithub.com/leetcoach/protos\xa2\x02\x03LXX\xaa\x02\x0cLeetcoach.V1\xca\x02\x0cLeetcoach\\V1\xe2\x02\x18Leetcoach\\V1\\GPBMetadata\xea\x02\rLeetcoach::V1b\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -36,6 +36,12 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'leetcoach.v1.admin_pb2', _g
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'\n\020com.leetcoach.v1B\nAdminProtoP\001Z\033github.com/leetcoach/protos\242\002\003LXX\252\002\014Leetcoach.V1\312\002\014Leetcoach\\V1\342\002\030Leetcoach\\V1\\GPBMetadata\352\002\rLeetcoach::V1'
-  _globals['_ADMINSERVICE']._serialized_start=181
-  _globals['_ADMINSERVICE']._serialized_end=195
+  _globals['_ADMINSERVICE'].methods_by_name['TestAdmin']._loaded_options = None
+  _globals['_ADMINSERVICE'].methods_by_name['TestAdmin']._serialized_options = b'\202\323\344\223\002\016\"\t/v1/admin:\001*'
+  _globals['_TESTADMINREQUEST']._serialized_start=181
+  _globals['_TESTADMINREQUEST']._serialized_end=199
+  _globals['_TESTADMINRESPONSE']._serialized_start=201
+  _globals['_TESTADMINRESPONSE']._serialized_end=220
+  _globals['_ADMINSERVICE']._serialized_start=222
+  _globals['_ADMINSERVICE']._serialized_end=336
 # @@protoc_insertion_point(module_scope)

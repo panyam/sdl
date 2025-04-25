@@ -6,10 +6,16 @@
   },
   "tags": [
     {
+      "name": "AdminService"
+    },
+    {
       "name": "ContentService"
     },
     {
       "name": "DesignService"
+    },
+    {
+      "name": "LlmService"
     },
     {
       "name": "TagService"
@@ -22,6 +28,38 @@
     "application/json"
   ],
   "paths": {
+    "/v1/admin": {
+      "post": {
+        "operationId": "AdminService_TestAdmin",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1TestAdminResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1TestAdminRequest"
+            }
+          }
+        ],
+        "tags": [
+          "AdminService"
+        ]
+      }
+    },
     "/v1/designs": {
       "get": {
         "summary": "*\nList all designs from a user.",
@@ -749,6 +787,39 @@
         ],
         "tags": [
           "DesignService"
+        ]
+      }
+    },
+    "/v1/llm/query": {
+      "post": {
+        "summary": "SimpleLlmQuery sends a basic prompt to the LLM.\nPrimarily for initial testing and simple use cases.",
+        "operationId": "LlmService_SimpleLlmQuery",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SimpleLlmQueryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1SimpleLlmQueryRequest"
+            }
+          }
+        ],
+        "tags": [
+          "LlmService"
         ]
       }
     },
@@ -1499,6 +1570,38 @@
         }
       },
       "title": "SetContentResponse"
+    },
+    "v1SimpleLlmQueryRequest": {
+      "type": "object",
+      "properties": {
+        "designId": {
+          "type": "string",
+          "title": "Optional: Context for the query"
+        },
+        "sectionId": {
+          "type": "string",
+          "title": "Optional: Context for the query"
+        },
+        "prompt": {
+          "type": "string",
+          "title": "The actual text prompt for the LLM"
+        }
+      }
+    },
+    "v1SimpleLlmQueryResponse": {
+      "type": "object",
+      "properties": {
+        "responseText": {
+          "type": "string",
+          "title": "The text response from the LLM"
+        }
+      }
+    },
+    "v1TestAdminRequest": {
+      "type": "object"
+    },
+    "v1TestAdminResponse": {
+      "type": "object"
     },
     "v1UpdateDesignResponse": {
       "type": "object",

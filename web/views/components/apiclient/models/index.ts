@@ -32,5 +32,7 @@ export * from './V1PositionType';
 export * from './V1Section';
 export * from './V1SectionType';
 export * from './V1SetContentResponse';
+export * from './V1SimpleLlmQueryRequest';
+export * from './V1SimpleLlmQueryResponse';
 export * from './V1UpdateDesignResponse';
 export * from './V1UpdateTagResponse';

@@ -7,7 +7,10 @@
 package protos
 
 import (
+	context "context"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -15,10 +18,15 @@ import (
 // Requires gRPC-Go v1.64.0 or later.
 const _ = grpc.SupportPackageIsVersion9
 
+const (
+	AdminService_TestAdmin_FullMethodName = "/leetcoach.v1.AdminService/TestAdmin"
+)
+
 // AdminServiceClient is the client API for AdminService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AdminServiceClient interface {
+	TestAdmin(ctx context.Context, in *TestAdminRequest, opts ...grpc.CallOption) (*TestAdminResponse, error)
 }
 
 type adminServiceClient struct {
@@ -29,10 +37,21 @@ func NewAdminServiceClient(cc grpc.ClientConnInterface) AdminServiceClient {
 	return &adminServiceClient{cc}
 }
 
+func (c *adminServiceClient) TestAdmin(ctx context.Context, in *TestAdminRequest, opts ...grpc.CallOption) (*TestAdminResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TestAdminResponse)
+	err := c.cc.Invoke(ctx, AdminService_TestAdmin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminServiceServer is the server API for AdminService service.
 // All implementations should embed UnimplementedAdminServiceServer
 // for forward compatibility.
 type AdminServiceServer interface {
+	TestAdmin(context.Context, *TestAdminRequest) (*TestAdminResponse, error)
 }
 
 // UnimplementedAdminServiceServer should be embedded to have
@@ -42,6 +61,9 @@ type AdminServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedAdminServiceServer struct{}
 
+func (UnimplementedAdminServiceServer) TestAdmin(context.Context, *TestAdminRequest) (*TestAdminResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TestAdmin not implemented")
+}
 func (UnimplementedAdminServiceServer) testEmbeddedByValue() {}
 
 // UnsafeAdminServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -62,13 +84,36 @@ func RegisterAdminServiceServer(s grpc.ServiceRegistrar, srv AdminServiceServer)
 	s.RegisterService(&AdminService_ServiceDesc, srv)
 }
 
+func _AdminService_TestAdmin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TestAdminRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).TestAdmin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_TestAdmin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).TestAdmin(ctx, req.(*TestAdminRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminService_ServiceDesc is the grpc.ServiceDesc for AdminService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var AdminService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "leetcoach.v1.AdminService",
 	HandlerType: (*AdminServiceServer)(nil),
-	Methods:     []grpc.MethodDesc{},
-	Streams:     []grpc.StreamDesc{},
-	Metadata:    "leetcoach/v1/admin.proto",
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "TestAdmin",
+			Handler:    _AdminService_TestAdmin_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "leetcoach/v1/admin.proto",
 }

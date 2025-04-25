@@ -3,12 +3,24 @@
 /* eslint-disable */
 // @ts-nocheck
 
+import { TestAdminRequest, TestAdminResponse } from "./admin_pb.js";
+import { MethodKind } from "@bufbuild/protobuf";
+
 /**
  * @generated from service leetcoach.v1.AdminService
  */
 export const AdminService = {
   typeName: "leetcoach.v1.AdminService",
   methods: {
+    /**
+     * @generated from rpc leetcoach.v1.AdminService.TestAdmin
+     */
+    testAdmin: {
+      name: "TestAdmin",
+      I: TestAdminRequest,
+      O: TestAdminResponse,
+      kind: MethodKind.Unary,
+    },
   }
 };
 

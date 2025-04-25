@@ -1,0 +1,32 @@
+// FILE: ./proto/leetcoach/v1/llm_service.proto
+syntax = "proto3";
+
+package leetcoach.v1;
+
+import "google/api/annotations.proto"; // For HTTP rules
+
+option go_package = "github.com/leetcoach/protos";
+
+// LlmService provides access to Large Language Model features.
+service LlmService {
+  // SimpleLlmQuery sends a basic prompt to the LLM.
+  // Primarily for initial testing and simple use cases.
+  rpc SimpleLlmQuery(SimpleLlmQueryRequest) returns (SimpleLlmQueryResponse) {
+    option (google.api.http) = {
+      post: "/v1/llm/query" // Define a RESTful endpoint
+      body: "*"
+    };
+  }
+
+  // Add more specific RPCs later (e.g., GenerateTextContent, ReviewTextContent)
+}
+
+message SimpleLlmQueryRequest {
+  string design_id = 1;  // Optional: Context for the query
+  string section_id = 2; // Optional: Context for the query
+  string prompt = 3;     // The actual text prompt for the LLM
+}
+
+message SimpleLlmQueryResponse {
+  string response_text = 1; // The text response from the LLM
+}

@@ -9,6 +9,7 @@ import (
 	"os"
 
 	v1 "github.com/panyam/leetcoach/gen/go/leetcoach/v1"
+	"github.com/panyam/leetcoach/services/llm"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
@@ -20,10 +21,22 @@ type Server struct {
 func (s *Server) Start(ctx context.Context, srvErr chan error, srvChan chan bool) error {
 	clients := NewClientMgr(s.Address) // Assuming ClientMgr is still needed, maybe for other services
 
+	// --- Create LLM Client ---
+	llmClient, err := llm.NewOpenAIClient() // Use the factory function
+	if err != nil {
+		// If LLM is critical, fail startup. If optional, log and continue.
+		// For now, let's treat it as critical.
+		slog.Error("Failed to initialize LLM client", "error", err)
+		return fmt.Errorf("failed to initialize LLM client: %w", err)
+	}
+	slog.Info("LLM Client initialized successfully")
+	// -------------------------
+
 	// Instantiate services
 	designSvc := NewDesignService(clients, "") // Provide base path if needed, empty uses default
 	contentSvc := NewContentService(designSvc) // ContentService needs DesignService (for paths/locks)
 	tagSvc := NewTagService(clients)           // Instantiate TagService
+	llmSvc := NewLlmService(llmClient)         // Instantiate LlmService, passing the client
 
 	server := grpc.NewServer(
 	// grpc.UnaryInterceptor(EnsureAccessToken), // Add interceptors if needed
@@ -33,6 +46,7 @@ func (s *Server) Start(ctx context.Context, srvErr chan error, srvChan chan bool
 	v1.RegisterContentServiceServer(server, contentSvc) // Register ContentService
 	v1.RegisterDesignServiceServer(server, designSvc)
 	v1.RegisterTagServiceServer(server, tagSvc) // Register TagService
+	v1.RegisterLlmServiceServer(server, llmSvc) // *** Register LlmService ***
 
 	if os.Getenv("LEETCOACH_ENV") == "dev" {
 		adminSvc := NewAdminService(clients) // Instantiate AdminService

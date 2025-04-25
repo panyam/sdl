@@ -1424,10 +1424,6 @@ select {
   top: 0.75rem;
 }
 
-.top-full {
-  top: 100%;
-}
-
 .z-10 {
   z-index: 10;
 }
@@ -1725,10 +1721,6 @@ select {
 
 .flex-grow {
   flex-grow: 1;
-}
-
-.origin-top-right {
-  transform-origin: top right;
 }
 
 .-translate-x-full {

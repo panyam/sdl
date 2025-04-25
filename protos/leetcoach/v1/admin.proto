@@ -9,5 +9,16 @@ import "leetcoach/v1/models.proto";
 import "google/api/annotations.proto";
 
 service AdminService {
+  rpc TestAdmin(TestAdminRequest) returns (TestAdminResponse) {
+    option (google.api.http) = {
+      post: "/v1/admin",
+      body: "*",
+    };
+  }
 }
 
+message TestAdminRequest {
+}
+
+message TestAdminResponse {
+}

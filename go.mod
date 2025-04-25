@@ -12,6 +12,7 @@ require (
 	github.com/panyam/goutils v0.1.3
 	github.com/panyam/oneauth v0.0.10
 	github.com/panyam/templar v0.0.17
+	github.com/sashabaranov/go-openai v1.38.2
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/oauth2 v0.27.0
 	golang.org/x/text v0.22.0

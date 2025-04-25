@@ -3,12 +3,24 @@
 /* eslint-disable */
 // @ts-nocheck
 
+import { TestAdminRequest, TestAdminResponse } from "./admin_pb.js";
+import { MethodKind } from "@bufbuild/protobuf";
+
 /**
  * @generated from service leetcoach.v1.AdminService
  */
 export declare const AdminService: {
   readonly typeName: "leetcoach.v1.AdminService",
   readonly methods: {
+    /**
+     * @generated from rpc leetcoach.v1.AdminService.TestAdmin
+     */
+    readonly testAdmin: {
+      readonly name: "TestAdmin",
+      readonly I: typeof TestAdminRequest,
+      readonly O: typeof TestAdminResponse,
+      readonly kind: MethodKind.Unary,
+    },
   }
 };
 

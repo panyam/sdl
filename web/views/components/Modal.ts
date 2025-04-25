@@ -17,10 +17,10 @@ export class Modal {
 
   private templateLoader: TemplateLoader;
 
-
-  // Current modal data
+  // Current modal data - including optional callbacks
   private currentTemplateId: string | null = null;
   private currentData: any = null;
+  private onSubmitCallback: ((modalData: any) => void) | null = null; // Store the callback
 
   /**
    * Private constructor for singleton pattern
@@ -74,22 +74,32 @@ export class Modal {
       }
     });
 
-    // Generic modal button handlers (delegated in HomePage.ts now, but keep Cancel here)
-    document.addEventListener('click', (e) => {
-        // Check if the click is inside *any* modal content first
-        const modalContent = this.getContentElement();
-        if (!modalContent || !modalContent.contains(e.target as Node)) {
-            return; // Click was outside the active modal content
-        }
+    // --- Event Delegation for Modal Actions ---
+    if (this.modalPanel) { // Listen on a persistent parent element
+        this.modalPanel.addEventListener('click', (e: MouseEvent) => {
+            const target = e.target as HTMLElement;
 
-        const target = e.target as HTMLElement;
+            // Handle generic close/cancel buttons
+            const closeButton = target.closest('button[id$="-cancel"], button[id$="-close"]');
+            if (closeButton) {
+                console.log(`Modal cancel/close button clicked: ${closeButton.id}`);
+                this.hide();
+                return; // Stop further processing
+            }
 
-        // Check for any button with an ID ending in "-cancel" *within the modal*
-        if (target.id && target.id.endsWith('-cancel')) {
-            console.log(`Modal cancel button clicked: ${target.id}`);
-            this.hide();
-        }
-    });
+            // Handle specific actions like submit
+            const actionButton = target.closest('button[data-modal-action]');
+            if (actionButton) {
+                const action = actionButton.getAttribute('data-modal-action');
+                console.log(`Modal action button clicked: ${action}`);
+
+                if (action === 'submit' && this.onSubmitCallback) {
+                    this.onSubmitCallback(this.currentData); // Call the stored callback
+                }
+                // Add more actions (e.g., 'apply', 'revise') later if needed
+            }
+        });
+    }
   }
 
   /**
@@ -103,12 +113,13 @@ export class Modal {
    * Show a modal with content from the specified template ID.
    * Uses TemplateLoader to get the content element.
    * @param templateId ID used in `data-template-id` attribute in TemplateRegistry.html
-   * @param data Optional data to pass to the modal
+   * @param data Optional data to pass to the modal. Can include callbacks like `onSubmit`.
+   * @returns The root HTMLElement of the loaded content, or null if failed.
    */
-  public show(templateId: string, data: any = null): void {
+  public show(templateId: string, data: any = null): HTMLElement | null {
     if (!this.modalContainer || !this.modalContent) {
         console.error("Modal container or content area not found.");
-        return;
+        return null;
     }
 
     // Use TemplateLoader to get the content element
@@ -120,12 +131,13 @@ export class Modal {
         // Still show the modal container so the error is visible
         this.modalContainer.classList.remove('hidden');
         setTimeout(() => this.modalContainer.classList.add('modal-active'), 10);
-        return;
+        return null; // Indicate failure
     }
 
     // Store current modal info
     this.currentTemplateId = templateId;
-    this.currentData = data;
+    this.currentData = data || {}; // Ensure data is an object
+    this.onSubmitCallback = data?.onSubmit || null; // Store the submit callback
 
     // Clear existing content
     this.modalContent.innerHTML = '';
@@ -133,10 +145,10 @@ export class Modal {
     // Add the loaded content element to the modal
     this.modalContent.appendChild(contentElement);
 
-    // Set data attributes for any data that needs to be accessed later
+    // Set data attributes for non-function data
     if (data) {
       Object.entries(data).forEach(([key, value]) => {
-        if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+        if (key !== 'onSubmit' && (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean')) {
           if (this.modalContent) this.modalContent.dataset[key] = String(value);
         }
       });
@@ -149,6 +161,8 @@ export class Modal {
     setTimeout(() => {
       this.modalContainer.classList.add('modal-active');
     }, 10); // Small delay ensures transition applies correctly
+
+    return contentElement; // Return the loaded element
   }
 
   /**
@@ -159,16 +173,17 @@ export class Modal {
 
     // Remove active class first (for animations)
     this.modalContainer.classList.remove('modal-active');
-    
+
     // Hide after a short delay
     setTimeout(() => {
       this.modalContainer.classList.add('hidden');
-      
+
       // Clear current modal info
       this.currentTemplateId = null;
       this.currentData = null;
+      this.onSubmitCallback = null; // Clear callback
       if(this.modalContent) this.modalContent.innerHTML = ''; // Clear content
-    }, 200);
+    }, 200); // Match typical transition duration
   }
 
   /**
@@ -193,15 +208,15 @@ export class Modal {
   }
 
   /**
-   * Update modal data
+   * Update modal data (excluding callbacks for now)
    */
   public updateData(newData: any): void {
     this.currentData = { ...this.currentData, ...newData };
-    
-    // Update data attributes
+
+    // Update data attributes for non-function data
     if (this.modalContent && newData) {
       Object.entries(newData).forEach(([key, value]) => {
-        if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+         if (key !== 'onSubmit' && (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean')) {
           if (this.modalContent) this.modalContent.dataset[key] = String(value);
         }
       });
@@ -215,6 +230,3 @@ export class Modal {
     return Modal.getInstance();
   }
 }
-
-// Initialize the component when the DOM is fully loaded
-// document.addEventListener('DOMContentLoaded', () => { Modal.init(); });
