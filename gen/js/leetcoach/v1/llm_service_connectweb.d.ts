@@ -5,7 +5,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { SimpleLlmQueryRequest, SimpleLlmQueryResponse } from "./llm_service_pb.js";
+import { SimpleLlmQueryRequest, SimpleLlmQueryResponse, SuggestSectionsRequest, SuggestSectionsResponse } from "./llm_service_pb.js";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -26,6 +26,17 @@ export declare const LlmService: {
       readonly name: "SimpleLlmQuery",
       readonly I: typeof SimpleLlmQueryRequest,
       readonly O: typeof SimpleLlmQueryResponse,
+      readonly kind: MethodKind.Unary,
+    },
+    /**
+     * SuggestSections recommends relevant sections to add based on existing ones.
+     *
+     * @generated from rpc leetcoach.v1.LlmService.SuggestSections
+     */
+    readonly suggestSections: {
+      readonly name: "SuggestSections",
+      readonly I: typeof SuggestSectionsRequest,
+      readonly O: typeof SuggestSectionsResponse,
       readonly kind: MethodKind.Unary,
     },
   }

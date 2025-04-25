@@ -21,7 +21,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	LlmService_SimpleLlmQuery_FullMethodName = "/leetcoach.v1.LlmService/SimpleLlmQuery"
+	LlmService_SimpleLlmQuery_FullMethodName  = "/leetcoach.v1.LlmService/SimpleLlmQuery"
+	LlmService_SuggestSections_FullMethodName = "/leetcoach.v1.LlmService/SuggestSections"
 )
 
 // LlmServiceClient is the client API for LlmService service.
@@ -33,6 +34,8 @@ type LlmServiceClient interface {
 	// SimpleLlmQuery sends a basic prompt to the LLM.
 	// Primarily for initial testing and simple use cases.
 	SimpleLlmQuery(ctx context.Context, in *SimpleLlmQueryRequest, opts ...grpc.CallOption) (*SimpleLlmQueryResponse, error)
+	// SuggestSections recommends relevant sections to add based on existing ones.
+	SuggestSections(ctx context.Context, in *SuggestSectionsRequest, opts ...grpc.CallOption) (*SuggestSectionsResponse, error)
 }
 
 type llmServiceClient struct {
@@ -53,6 +56,16 @@ func (c *llmServiceClient) SimpleLlmQuery(ctx context.Context, in *SimpleLlmQuer
 	return out, nil
 }
 
+func (c *llmServiceClient) SuggestSections(ctx context.Context, in *SuggestSectionsRequest, opts ...grpc.CallOption) (*SuggestSectionsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SuggestSectionsResponse)
+	err := c.cc.Invoke(ctx, LlmService_SuggestSections_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LlmServiceServer is the server API for LlmService service.
 // All implementations should embed UnimplementedLlmServiceServer
 // for forward compatibility.
@@ -62,6 +75,8 @@ type LlmServiceServer interface {
 	// SimpleLlmQuery sends a basic prompt to the LLM.
 	// Primarily for initial testing and simple use cases.
 	SimpleLlmQuery(context.Context, *SimpleLlmQueryRequest) (*SimpleLlmQueryResponse, error)
+	// SuggestSections recommends relevant sections to add based on existing ones.
+	SuggestSections(context.Context, *SuggestSectionsRequest) (*SuggestSectionsResponse, error)
 }
 
 // UnimplementedLlmServiceServer should be embedded to have
@@ -73,6 +88,9 @@ type UnimplementedLlmServiceServer struct{}
 
 func (UnimplementedLlmServiceServer) SimpleLlmQuery(context.Context, *SimpleLlmQueryRequest) (*SimpleLlmQueryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SimpleLlmQuery not implemented")
+}
+func (UnimplementedLlmServiceServer) SuggestSections(context.Context, *SuggestSectionsRequest) (*SuggestSectionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SuggestSections not implemented")
 }
 func (UnimplementedLlmServiceServer) testEmbeddedByValue() {}
 
@@ -112,6 +130,24 @@ func _LlmService_SimpleLlmQuery_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LlmService_SuggestSections_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SuggestSectionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LlmServiceServer).SuggestSections(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LlmService_SuggestSections_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LlmServiceServer).SuggestSections(ctx, req.(*SuggestSectionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // LlmService_ServiceDesc is the grpc.ServiceDesc for LlmService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -122,6 +158,10 @@ var LlmService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SimpleLlmQuery",
 			Handler:    _LlmService_SimpleLlmQuery_Handler,
+		},
+		{
+			MethodName: "SuggestSections",
+			Handler:    _LlmService_SuggestSections_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -4,6 +4,7 @@ syntax = "proto3";
 package leetcoach.v1;
 
 import "google/api/annotations.proto"; // For HTTP rules
+import "google/protobuf/struct.proto"; // Needed for SuggestSections
 
 option go_package = "github.com/leetcoach/protos";
 
@@ -18,7 +19,13 @@ service LlmService {
     };
   }
 
-  // Add more specific RPCs later (e.g., GenerateTextContent, ReviewTextContent)
+  // SuggestSections recommends relevant sections to add based on existing ones.
+  rpc SuggestSections(SuggestSectionsRequest) returns (SuggestSectionsResponse) {
+    option (google.api.http) = {
+      post: "/v1/designs/{design_id}/sections:suggest" // POST to a sub-resource style endpoint
+      body: "*"
+    };
+  }
 }
 
 message SimpleLlmQueryRequest {
@@ -29,4 +36,20 @@ message SimpleLlmQueryRequest {
 
 message SimpleLlmQueryResponse {
   string response_text = 1; // The text response from the LLM
+}
+
+
+message SuggestSectionsRequest {
+  string design_id = 1; // ID of the design to provide context
+  repeated string existing_section_titles = 2; // List of titles already present
+  // Optional: Add more context later if needed, like summaries
+}
+
+message SuggestedSection {
+  string title = 1;       // The suggested title for the new section
+  string type = 2;        // Suggested type ("text", "drawing", "plot")
+  string description = 3; // A brief description explaining the suggestion
+}
+message SuggestSectionsResponse {
+  repeated SuggestedSection suggestions = 1; // List of suggestions
 }

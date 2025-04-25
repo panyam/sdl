@@ -540,6 +540,11 @@ func (s *DesignService) AddSection(ctx context.Context, req *protos.AddSectionRe
 	newSectionData.DesignId = designId // Ensure design ID is set
 	newSectionData.CreatedAt = now
 	newSectionData.UpdatedAt = now
+	if providedTitle := sectionProto.GetTitle(); providedTitle != "" {
+		newSectionData.Title = providedTitle
+	} else if newSectionData.Title == "" { // Fallback to random only if proto title AND struct title are empty
+		newSectionData.Title = randomSectionTitle(newSectionData.Type) // Assuming a helper function like randomDesignName
+	}
 
 	// 4. Determine insertion index in metadata.SectionIds
 	insertIndex := len(metadata.SectionIds) // Default to end

@@ -63,6 +63,81 @@ export declare type SimpleLlmQueryResponse = Message<"leetcoach.v1.SimpleLlmQuer
 export declare const SimpleLlmQueryResponseSchema: GenMessage<SimpleLlmQueryResponse>;
 
 /**
+ * @generated from message leetcoach.v1.SuggestSectionsRequest
+ */
+export declare type SuggestSectionsRequest = Message<"leetcoach.v1.SuggestSectionsRequest"> & {
+  /**
+   * ID of the design to provide context
+   *
+   * @generated from field: string design_id = 1;
+   */
+  designId: string;
+
+  /**
+   * List of titles already present
+   *
+   * @generated from field: repeated string existing_section_titles = 2;
+   */
+  existingSectionTitles: string[];
+};
+
+/**
+ * Describes the message leetcoach.v1.SuggestSectionsRequest.
+ * Use `create(SuggestSectionsRequestSchema)` to create a new message.
+ */
+export declare const SuggestSectionsRequestSchema: GenMessage<SuggestSectionsRequest>;
+
+/**
+ * @generated from message leetcoach.v1.SuggestedSection
+ */
+export declare type SuggestedSection = Message<"leetcoach.v1.SuggestedSection"> & {
+  /**
+   * The suggested title for the new section
+   *
+   * @generated from field: string title = 1;
+   */
+  title: string;
+
+  /**
+   * Suggested type ("text", "drawing", "plot")
+   *
+   * @generated from field: string type = 2;
+   */
+  type: string;
+
+  /**
+   * A brief description explaining the suggestion
+   *
+   * @generated from field: string description = 3;
+   */
+  description: string;
+};
+
+/**
+ * Describes the message leetcoach.v1.SuggestedSection.
+ * Use `create(SuggestedSectionSchema)` to create a new message.
+ */
+export declare const SuggestedSectionSchema: GenMessage<SuggestedSection>;
+
+/**
+ * @generated from message leetcoach.v1.SuggestSectionsResponse
+ */
+export declare type SuggestSectionsResponse = Message<"leetcoach.v1.SuggestSectionsResponse"> & {
+  /**
+   * List of suggestions
+   *
+   * @generated from field: repeated leetcoach.v1.SuggestedSection suggestions = 1;
+   */
+  suggestions: SuggestedSection[];
+};
+
+/**
+ * Describes the message leetcoach.v1.SuggestSectionsResponse.
+ * Use `create(SuggestSectionsResponseSchema)` to create a new message.
+ */
+export declare const SuggestSectionsResponseSchema: GenMessage<SuggestSectionsResponse>;
+
+/**
  * LlmService provides access to Large Language Model features.
  *
  * @generated from service leetcoach.v1.LlmService
@@ -78,6 +153,16 @@ export declare const LlmService: GenService<{
     methodKind: "unary";
     input: typeof SimpleLlmQueryRequestSchema;
     output: typeof SimpleLlmQueryResponseSchema;
+  },
+  /**
+   * SuggestSections recommends relevant sections to add based on existing ones.
+   *
+   * @generated from rpc leetcoach.v1.LlmService.SuggestSections
+   */
+  suggestSections: {
+    methodKind: "unary";
+    input: typeof SuggestSectionsRequestSchema;
+    output: typeof SuggestSectionsResponseSchema;
   },
 }>;
 

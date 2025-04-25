@@ -23,9 +23,10 @@ _sym_db = _symbol_database.Default()
 
 
 from google.api import annotations_pb2 as google_dot_api_dot_annotations__pb2
+from google.protobuf import struct_pb2 as google_dot_protobuf_dot_struct__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1eleetcoach/v1/llm_service.proto\x12\x0cleetcoach.v1\x1a\x1cgoogle/api/annotations.proto\"k\n\x15SimpleLlmQueryRequest\x12\x1b\n\tdesign_id\x18\x01 \x01(\tR\x08\x64\x65signId\x12\x1d\n\nsection_id\x18\x02 \x01(\tR\tsectionId\x12\x16\n\x06prompt\x18\x03 \x01(\tR\x06prompt\"=\n\x16SimpleLlmQueryResponse\x12#\n\rresponse_text\x18\x01 \x01(\tR\x0cresponseText2\x83\x01\n\nLlmService\x12u\n\x0eSimpleLlmQuery\x12#.leetcoach.v1.SimpleLlmQueryRequest\x1a$.leetcoach.v1.SimpleLlmQueryResponse\"\x18\x82\xd3\xe4\x93\x02\x12\"\r/v1/llm/query:\x01*B\x91\x01\n\x10\x63om.leetcoach.v1B\x0fLlmServiceProtoP\x01Z\x1bgithub.com/leetcoach/protos\xa2\x02\x03LXX\xaa\x02\x0cLeetcoach.V1\xca\x02\x0cLeetcoach\\V1\xe2\x02\x18Leetcoach\\V1\\GPBMetadata\xea\x02\rLeetcoach::V1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1eleetcoach/v1/llm_service.proto\x12\x0cleetcoach.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1cgoogle/protobuf/struct.proto\"k\n\x15SimpleLlmQueryRequest\x12\x1b\n\tdesign_id\x18\x01 \x01(\tR\x08\x64\x65signId\x12\x1d\n\nsection_id\x18\x02 \x01(\tR\tsectionId\x12\x16\n\x06prompt\x18\x03 \x01(\tR\x06prompt\"=\n\x16SimpleLlmQueryResponse\x12#\n\rresponse_text\x18\x01 \x01(\tR\x0cresponseText\"m\n\x16SuggestSectionsRequest\x12\x1b\n\tdesign_id\x18\x01 \x01(\tR\x08\x64\x65signId\x12\x36\n\x17\x65xisting_section_titles\x18\x02 \x03(\tR\x15\x65xistingSectionTitles\"^\n\x10SuggestedSection\x12\x14\n\x05title\x18\x01 \x01(\tR\x05title\x12\x12\n\x04type\x18\x02 \x01(\tR\x04type\x12 \n\x0b\x64\x65scription\x18\x03 \x01(\tR\x0b\x64\x65scription\"[\n\x17SuggestSectionsResponse\x12@\n\x0bsuggestions\x18\x01 \x03(\x0b\x32\x1e.leetcoach.v1.SuggestedSectionR\x0bsuggestions2\x99\x02\n\nLlmService\x12u\n\x0eSimpleLlmQuery\x12#.leetcoach.v1.SimpleLlmQueryRequest\x1a$.leetcoach.v1.SimpleLlmQueryResponse\"\x18\x82\xd3\xe4\x93\x02\x12\"\r/v1/llm/query:\x01*\x12\x93\x01\n\x0fSuggestSections\x12$.leetcoach.v1.SuggestSectionsRequest\x1a%.leetcoach.v1.SuggestSectionsResponse\"3\x82\xd3\xe4\x93\x02-\"(/v1/designs/{design_id}/sections:suggest:\x01*B\x91\x01\n\x10\x63om.leetcoach.v1B\x0fLlmServiceProtoP\x01Z\x1bgithub.com/leetcoach/protos\xa2\x02\x03LXX\xaa\x02\x0cLeetcoach.V1\xca\x02\x0cLeetcoach\\V1\xe2\x02\x18Leetcoach\\V1\\GPBMetadata\xea\x02\rLeetcoach::V1b\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -35,10 +36,18 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._serialized_options = b'\n\020com.leetcoach.v1B\017LlmServiceProtoP\001Z\033github.com/leetcoach/protos\242\002\003LXX\252\002\014Leetcoach.V1\312\002\014Leetcoach\\V1\342\002\030Leetcoach\\V1\\GPBMetadata\352\002\rLeetcoach::V1'
   _globals['_LLMSERVICE'].methods_by_name['SimpleLlmQuery']._loaded_options = None
   _globals['_LLMSERVICE'].methods_by_name['SimpleLlmQuery']._serialized_options = b'\202\323\344\223\002\022\"\r/v1/llm/query:\001*'
-  _globals['_SIMPLELLMQUERYREQUEST']._serialized_start=78
-  _globals['_SIMPLELLMQUERYREQUEST']._serialized_end=185
-  _globals['_SIMPLELLMQUERYRESPONSE']._serialized_start=187
-  _globals['_SIMPLELLMQUERYRESPONSE']._serialized_end=248
-  _globals['_LLMSERVICE']._serialized_start=251
-  _globals['_LLMSERVICE']._serialized_end=382
+  _globals['_LLMSERVICE'].methods_by_name['SuggestSections']._loaded_options = None
+  _globals['_LLMSERVICE'].methods_by_name['SuggestSections']._serialized_options = b'\202\323\344\223\002-\"(/v1/designs/{design_id}/sections:suggest:\001*'
+  _globals['_SIMPLELLMQUERYREQUEST']._serialized_start=108
+  _globals['_SIMPLELLMQUERYREQUEST']._serialized_end=215
+  _globals['_SIMPLELLMQUERYRESPONSE']._serialized_start=217
+  _globals['_SIMPLELLMQUERYRESPONSE']._serialized_end=278
+  _globals['_SUGGESTSECTIONSREQUEST']._serialized_start=280
+  _globals['_SUGGESTSECTIONSREQUEST']._serialized_end=389
+  _globals['_SUGGESTEDSECTION']._serialized_start=391
+  _globals['_SUGGESTEDSECTION']._serialized_end=485
+  _globals['_SUGGESTSECTIONSRESPONSE']._serialized_start=487
+  _globals['_SUGGESTSECTIONSRESPONSE']._serialized_end=578
+  _globals['_LLMSERVICE']._serialized_start=581
+  _globals['_LLMSERVICE']._serialized_end=862
 # @@protoc_insertion_point(module_scope)

@@ -328,9 +328,17 @@ export declare type Section = Message<"leetcoach.v1.Section"> & {
 
   /**
    * *
+   * A description of the section to help make sense of why this is here.
+   *
+   * @generated from field: string description = 7;
+   */
+  description: string;
+
+  /**
+   * *
    * Order of the section in the list of sections.  This is a readonly field.
    *
-   * @generated from field: uint32 order = 7;
+   * @generated from field: uint32 order = 8;
    */
   order: number;
 };

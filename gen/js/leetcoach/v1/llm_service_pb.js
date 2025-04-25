@@ -6,12 +6,13 @@
 
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv1";
 import { file_google_api_annotations } from "../../google/api/annotations_pb";
+import { file_google_protobuf_struct } from "@bufbuild/protobuf/wkt";
 
 /**
  * Describes the file leetcoach/v1/llm_service.proto.
  */
 export const file_leetcoach_v1_llm_service = /*@__PURE__*/
-  fileDesc("Ch5sZWV0Y29hY2gvdjEvbGxtX3NlcnZpY2UucHJvdG8SDGxlZXRjb2FjaC52MSJOChVTaW1wbGVMbG1RdWVyeVJlcXVlc3QSEQoJZGVzaWduX2lkGAEgASgJEhIKCnNlY3Rpb25faWQYAiABKAkSDgoGcHJvbXB0GAMgASgJIi8KFlNpbXBsZUxsbVF1ZXJ5UmVzcG9uc2USFQoNcmVzcG9uc2VfdGV4dBgBIAEoCTKDAQoKTGxtU2VydmljZRJ1Cg5TaW1wbGVMbG1RdWVyeRIjLmxlZXRjb2FjaC52MS5TaW1wbGVMbG1RdWVyeVJlcXVlc3QaJC5sZWV0Y29hY2gudjEuU2ltcGxlTGxtUXVlcnlSZXNwb25zZSIYgtPkkwISOgEqIg0vdjEvbGxtL3F1ZXJ5QpEBChBjb20ubGVldGNvYWNoLnYxQg9MbG1TZXJ2aWNlUHJvdG9QAVobZ2l0aHViLmNvbS9sZWV0Y29hY2gvcHJvdG9zogIDTFhYqgIMTGVldGNvYWNoLlYxygIMTGVldGNvYWNoXFYx4gIYTGVldGNvYWNoXFYxXEdQQk1ldGFkYXRh6gINTGVldGNvYWNoOjpWMWIGcHJvdG8z", [file_google_api_annotations]);
+  fileDesc("Ch5sZWV0Y29hY2gvdjEvbGxtX3NlcnZpY2UucHJvdG8SDGxlZXRjb2FjaC52MSJOChVTaW1wbGVMbG1RdWVyeVJlcXVlc3QSEQoJZGVzaWduX2lkGAEgASgJEhIKCnNlY3Rpb25faWQYAiABKAkSDgoGcHJvbXB0GAMgASgJIi8KFlNpbXBsZUxsbVF1ZXJ5UmVzcG9uc2USFQoNcmVzcG9uc2VfdGV4dBgBIAEoCSJMChZTdWdnZXN0U2VjdGlvbnNSZXF1ZXN0EhEKCWRlc2lnbl9pZBgBIAEoCRIfChdleGlzdGluZ19zZWN0aW9uX3RpdGxlcxgCIAMoCSJEChBTdWdnZXN0ZWRTZWN0aW9uEg0KBXRpdGxlGAEgASgJEgwKBHR5cGUYAiABKAkSEwoLZGVzY3JpcHRpb24YAyABKAkiTgoXU3VnZ2VzdFNlY3Rpb25zUmVzcG9uc2USMwoLc3VnZ2VzdGlvbnMYASADKAsyHi5sZWV0Y29hY2gudjEuU3VnZ2VzdGVkU2VjdGlvbjKZAgoKTGxtU2VydmljZRJ1Cg5TaW1wbGVMbG1RdWVyeRIjLmxlZXRjb2FjaC52MS5TaW1wbGVMbG1RdWVyeVJlcXVlc3QaJC5sZWV0Y29hY2gudjEuU2ltcGxlTGxtUXVlcnlSZXNwb25zZSIYgtPkkwISOgEqIg0vdjEvbGxtL3F1ZXJ5EpMBCg9TdWdnZXN0U2VjdGlvbnMSJC5sZWV0Y29hY2gudjEuU3VnZ2VzdFNlY3Rpb25zUmVxdWVzdBolLmxlZXRjb2FjaC52MS5TdWdnZXN0U2VjdGlvbnNSZXNwb25zZSIzgtPkkwItOgEqIigvdjEvZGVzaWducy97ZGVzaWduX2lkfS9zZWN0aW9uczpzdWdnZXN0QpEBChBjb20ubGVldGNvYWNoLnYxQg9MbG1TZXJ2aWNlUHJvdG9QAVobZ2l0aHViLmNvbS9sZWV0Y29hY2gvcHJvdG9zogIDTFhYqgIMTGVldGNvYWNoLlYxygIMTGVldGNvYWNoXFYx4gIYTGVldGNvYWNoXFYxXEdQQk1ldGFkYXRh6gINTGVldGNvYWNoOjpWMWIGcHJvdG8z", [file_google_api_annotations, file_google_protobuf_struct]);
 
 /**
  * Describes the message leetcoach.v1.SimpleLlmQueryRequest.
@@ -26,6 +27,27 @@ export const SimpleLlmQueryRequestSchema = /*@__PURE__*/
  */
 export const SimpleLlmQueryResponseSchema = /*@__PURE__*/
   messageDesc(file_leetcoach_v1_llm_service, 1);
+
+/**
+ * Describes the message leetcoach.v1.SuggestSectionsRequest.
+ * Use `create(SuggestSectionsRequestSchema)` to create a new message.
+ */
+export const SuggestSectionsRequestSchema = /*@__PURE__*/
+  messageDesc(file_leetcoach_v1_llm_service, 2);
+
+/**
+ * Describes the message leetcoach.v1.SuggestedSection.
+ * Use `create(SuggestedSectionSchema)` to create a new message.
+ */
+export const SuggestedSectionSchema = /*@__PURE__*/
+  messageDesc(file_leetcoach_v1_llm_service, 3);
+
+/**
+ * Describes the message leetcoach.v1.SuggestSectionsResponse.
+ * Use `create(SuggestSectionsResponseSchema)` to create a new message.
+ */
+export const SuggestSectionsResponseSchema = /*@__PURE__*/
+  messageDesc(file_leetcoach_v1_llm_service, 4);
 
 /**
  * LlmService provides access to Large Language Model features.

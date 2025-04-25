@@ -20,6 +20,11 @@ class LlmServiceStub(object):
                 request_serializer=leetcoach_dot_v1_dot_llm__service__pb2.SimpleLlmQueryRequest.SerializeToString,
                 response_deserializer=leetcoach_dot_v1_dot_llm__service__pb2.SimpleLlmQueryResponse.FromString,
                 _registered_method=True)
+        self.SuggestSections = channel.unary_unary(
+                '/leetcoach.v1.LlmService/SuggestSections',
+                request_serializer=leetcoach_dot_v1_dot_llm__service__pb2.SuggestSectionsRequest.SerializeToString,
+                response_deserializer=leetcoach_dot_v1_dot_llm__service__pb2.SuggestSectionsResponse.FromString,
+                _registered_method=True)
 
 
 class LlmServiceServicer(object):
@@ -34,6 +39,13 @@ class LlmServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def SuggestSections(self, request, context):
+        """SuggestSections recommends relevant sections to add based on existing ones.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_LlmServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -41,6 +53,11 @@ def add_LlmServiceServicer_to_server(servicer, server):
                     servicer.SimpleLlmQuery,
                     request_deserializer=leetcoach_dot_v1_dot_llm__service__pb2.SimpleLlmQueryRequest.FromString,
                     response_serializer=leetcoach_dot_v1_dot_llm__service__pb2.SimpleLlmQueryResponse.SerializeToString,
+            ),
+            'SuggestSections': grpc.unary_unary_rpc_method_handler(
+                    servicer.SuggestSections,
+                    request_deserializer=leetcoach_dot_v1_dot_llm__service__pb2.SuggestSectionsRequest.FromString,
+                    response_serializer=leetcoach_dot_v1_dot_llm__service__pb2.SuggestSectionsResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -71,6 +88,33 @@ class LlmService(object):
             '/leetcoach.v1.LlmService/SimpleLlmQuery',
             leetcoach_dot_v1_dot_llm__service__pb2.SimpleLlmQueryRequest.SerializeToString,
             leetcoach_dot_v1_dot_llm__service__pb2.SimpleLlmQueryResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SuggestSections(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/leetcoach.v1.LlmService/SuggestSections',
+            leetcoach_dot_v1_dot_llm__service__pb2.SuggestSectionsRequest.SerializeToString,
+            leetcoach_dot_v1_dot_llm__service__pb2.SuggestSectionsResponse.FromString,
             options,
             channel_credentials,
             insecure,

@@ -150,9 +150,14 @@ message Section {
   string title = 6;
 
   /**
+   * A description of the section to help make sense of why this is here.
+   */
+  string description = 7;
+
+  /**
    * Order of the section in the list of sections.  This is a readonly field.
    */
-  uint32 order = 7;
+  uint32 order = 8;
 }
 
 /**

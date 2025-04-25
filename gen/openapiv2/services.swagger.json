@@ -523,6 +523,55 @@
         ]
       }
     },
+    "/v1/designs/{designId}/sections:suggest": {
+      "post": {
+        "summary": "SuggestSections recommends relevant sections to add based on existing ones.",
+        "operationId": "LlmService_SuggestSections",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SuggestSectionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "designId",
+            "description": "ID of the design to provide context",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "existingSectionTitles": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "List of titles already present"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "LlmService"
+        ]
+      }
+    },
     "/v1/designs/{id}": {
       "get": {
         "summary": "*\nGet a particular design",
@@ -650,6 +699,10 @@
                       "type": "string",
                       "description": "*\nTitle of this section."
                     },
+                    "description": {
+                      "type": "string",
+                      "description": "*\nA description of the section to help make sense of why this is here."
+                    },
                     "order": {
                       "type": "integer",
                       "format": "int64",
@@ -730,6 +783,10 @@
                     "title": {
                       "type": "string",
                       "description": "*\nTitle of this section."
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "*\nA description of the section to help make sense of why this is here."
                     },
                     "order": {
                       "type": "integer",
@@ -1545,6 +1602,10 @@
           "type": "string",
           "description": "*\nTitle of this section."
         },
+        "description": {
+          "type": "string",
+          "description": "*\nA description of the section to help make sense of why this is here."
+        },
         "order": {
           "type": "integer",
           "format": "int64",
@@ -1594,6 +1655,36 @@
         "responseText": {
           "type": "string",
           "title": "The text response from the LLM"
+        }
+      }
+    },
+    "v1SuggestSectionsResponse": {
+      "type": "object",
+      "properties": {
+        "suggestions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1SuggestedSection"
+          },
+          "title": "List of suggestions"
+        }
+      }
+    },
+    "v1SuggestedSection": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "title": "The suggested title for the new section"
+        },
+        "type": {
+          "type": "string",
+          "title": "Suggested type (\"text\", \"drawing\", \"plot\")"
+        },
+        "description": {
+          "type": "string",
+          "title": "A brief description explaining the suggestion"
         }
       }
     },
