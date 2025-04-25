@@ -1,4 +1,5 @@
 // components/Modal.ts
+import { TemplateLoader } from './TemplateLoader'; // Import TemplateLoader
 
 /**
  * Modal manager for the application
@@ -14,6 +15,9 @@ export class Modal {
   private modalContent: HTMLElement | null;
   private closeButton: HTMLElement | null;
 
+  private templateLoader: TemplateLoader;
+
+
   // Current modal data
   private currentTemplateId: string | null = null;
   private currentData: any = null;
@@ -28,6 +32,8 @@ export class Modal {
     this.modalPanel = document.getElementById('modal-panel');
     this.modalContent = document.getElementById('modal-content');
     this.closeButton = document.getElementById('modal-close');
+
+    this.templateLoader = new TemplateLoader();
 
     this.bindEvents();
   }
@@ -68,14 +74,21 @@ export class Modal {
       }
     });
 
-    // Generic modal button handlers
+    // Generic modal button handlers (delegated in HomePage.ts now, but keep Cancel here)
     document.addEventListener('click', (e) => {
-      const target = e.target as HTMLElement;
-      
-      // Handle cancel buttons by convention (id ending with "-cancel")
-      if (target.id && target.id.endsWith('-cancel')) {
-        this.hide();
-      }
+        // Check if the click is inside *any* modal content first
+        const modalContent = this.getContentElement();
+        if (!modalContent || !modalContent.contains(e.target as Node)) {
+            return; // Click was outside the active modal content
+        }
+
+        const target = e.target as HTMLElement;
+
+        // Check for any button with an ID ending in "-cancel" *within the modal*
+        if (target.id && target.id.endsWith('-cancel')) {
+            console.log(`Modal cancel button clicked: ${target.id}`);
+            this.hide();
+        }
     });
   }
 
@@ -87,54 +100,37 @@ export class Modal {
   }
 
   /**
-   * Show a modal with content from the specified template
-   * @param templateId ID of the template element
+   * Show a modal with content from the specified template ID.
+   * Uses TemplateLoader to get the content element.
+   * @param templateId ID used in `data-template-id` attribute in TemplateRegistry.html
    * @param data Optional data to pass to the modal
    */
   public show(templateId: string, data: any = null): void {
-    if (!this.modalContainer || !this.modalContent) return;
+    if (!this.modalContainer || !this.modalContent) {
+        console.error("Modal container or content area not found.");
+        return;
+    }
 
-    console.log(`Looking for template: ${templateId}-template`);
-    let templateElement = document.getElementById(`${templateId}-template`);
-    if (!templateElement) {
-      console.error(`Modal template not found: ${templateId}-template`);
-      console.log(`Available templates:`, Array.from(document.querySelectorAll('[id$="-template"]')).map(el => el.id));
-      // Check if we have a template registry to clone from
-      const templateRegistry = document.getElementById('template-registry');
-      if (templateRegistry) {
-         const registeredTemplate = templateRegistry.querySelector(`[data-template-id="${templateId}"]`);
-         if (registeredTemplate) {
-           console.log(`Found template in registry: ${templateId}`);
-           // Clone the template and add it to the body with the expected ID
-           const clonedTemplate = registeredTemplate.cloneNode(true) as HTMLElement;
-           clonedTemplate.id = `${templateId}-template`;
-           clonedTemplate.classList.add('hidden');
-           document.body.appendChild(clonedTemplate);
-
-           // Now try to get the template again
-           templateElement = document.getElementById(`${templateId}-template`);
-         }
-      }
-
-      if (!templateElement) {
-         return; // Still not found, exit
-      }
+    // Use TemplateLoader to get the content element
+    const contentElement = this.templateLoader.load(templateId);
+    if (!contentElement) {
+        console.error(`Modal content template not found or failed to load: ${templateId}`);
+        // Optional: Show an error message in the modal itself
+        this.modalContent.innerHTML = `<div class="p-6 text-red-600">Error: Could not load modal content ('${templateId}'). Check TemplateRegistry.html.</div>`;
+        // Still show the modal container so the error is visible
+        this.modalContainer.classList.remove('hidden');
+        setTimeout(() => this.modalContainer.classList.add('modal-active'), 10);
+        return;
     }
 
     // Store current modal info
-    // this.currentTemplateId = templateId;
-    this.currentTemplateId = templateId.replace('-template', '');
+    this.currentTemplateId = templateId;
     this.currentData = data;
 
     // Clear existing content
     this.modalContent.innerHTML = '';
 
-    // Clone template content
-    const contentElement = templateElement.cloneNode(true) as HTMLElement;
-    contentElement.classList.remove('hidden');
-    contentElement.id = templateId; // Remove the "-template" suffix
-
-    // Add content to modal
+    // Add the loaded content element to the modal
     this.modalContent.appendChild(contentElement);
 
     // Set data attributes for any data that needs to be accessed later
@@ -146,13 +142,13 @@ export class Modal {
       });
     }
 
-    // Show modal
+    // Show modal container
     this.modalContainer.classList.remove('hidden');
-    
-    // Trigger animations if needed
+
+    // Trigger animations if needed (add active class after a tick)
     setTimeout(() => {
       this.modalContainer.classList.add('modal-active');
-    }, 10);
+    }, 10); // Small delay ensures transition applies correctly
   }
 
   /**
@@ -171,6 +167,7 @@ export class Modal {
       // Clear current modal info
       this.currentTemplateId = null;
       this.currentData = null;
+      if(this.modalContent) this.modalContent.innerHTML = ''; // Clear content
     }, 200);
   }
 

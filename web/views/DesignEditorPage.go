@@ -50,9 +50,7 @@ func (v *DesignEditorPage) Load(r *http.Request, w http.ResponseWriter, vc *View
 		// create a new design
 		ctx := vc.ClientMgr.ClientContext(nil, loggedInUserId)
 		resp, err := client.CreateDesign(ctx, &protos.CreateDesignRequest{
-			Design: &protos.Design{
-				Name: "Untitled Design",
-			},
+			Design: &protos.Design{},
 		})
 		if err != nil {
 			log.Println("Error getting design: ", err)
