@@ -3,6 +3,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -17,21 +18,28 @@ import (
 // LlmService implements the gRPC service for LLM interactions.
 type LlmService struct {
 	protos.UnimplementedLlmServiceServer
-	BaseService               // Inherit base service helpers if needed (like EnsureLoggedIn)
-	llmClient   llm.LLMClient // Use the interface for testability
+	BaseService                 // Inherit base service helpers if needed (like EnsureLoggedIn)
+	llmClient   llm.LLMClient   // Use the interface for testability
+	designSvc   *DesignService  // Need DesignService for titles/metadata
+	contentSvc  *ContentService // Need ContentService for reading/writing content
 	// Add other dependencies like DesignService/ContentService later if needed
 }
 
 // NewLlmService creates a new instance of the LlmService.
-func NewLlmService(client llm.LLMClient) *LlmService {
+func NewLlmService(client llm.LLMClient, designSvc *DesignService, contentSvc *ContentService) *LlmService {
 	if client == nil {
-		// We could panic or return an error, but for now let's assume
-		// the caller handles client creation properly.
-		// In a real app, dependency injection framework would manage this.
 		slog.Warn("NewLlmService created with nil LLMClient")
 	}
+	if designSvc == nil {
+		slog.Warn("NewLlmService created with nil DesignService")
+	}
+	if contentSvc == nil {
+		slog.Warn("NewLlmService created with nil ContentService")
+	}
 	return &LlmService{
-		llmClient: client,
+		llmClient:  client,
+		designSvc:  designSvc,
+		contentSvc: contentSvc,
 	}
 }
 
@@ -155,4 +163,113 @@ func parseSuggestions(rawResponse string) []*protos.SuggestedSection {
 		}
 	}
 	return suggestions
+}
+
+// GenerateTextContent handles requests to generate content for a text section.
+func (s *LlmService) GenerateTextContent(ctx context.Context, req *protos.GenerateTextContentRequest) (*protos.GenerateTextContentResponse, error) {
+	designId := req.GetDesignId()
+	sectionId := req.GetSectionId()
+	slog.Info("Handling GenerateTextContent", "design_id", designId, "section_id", sectionId)
+
+	if s.llmClient == nil || s.designSvc == nil {
+		slog.Error("LLM or Design service is not initialized")
+		return nil, status.Error(codes.Internal, "LLM service dependencies not configured")
+	}
+
+	// TODO: Add permission check (can user access/edit this design?)
+
+	// Get section metadata (mainly for title)
+	sectionData, err := s.designSvc.readSectionData(designId, sectionId) // Use internal read method
+	if err != nil {
+		if errors.Is(err, ErrNoSuchEntity) {
+			return nil, status.Errorf(codes.NotFound, "Section '%s' not found in design '%s'", sectionId, designId)
+		}
+		slog.Error("Failed to read section data for GenerateTextContent", "design_id", designId, "section_id", sectionId, "error", err)
+		return nil, status.Error(codes.Internal, "Failed to read section metadata")
+	}
+
+	if sectionData.Type != "text" {
+		return nil, status.Errorf(codes.InvalidArgument, "GenerateTextContent only supports 'text' sections, found '%s'", sectionData.Type)
+	}
+
+	// Construct prompt
+	prompt := req.GetPromptOverride()
+	if prompt == "" {
+		// Default prompt using the section title
+		prompt = fmt.Sprintf("Generate the content for a system design document section titled '%s'. Focus on key concepts, potential trade-offs, and common patterns related to this topic. Format the output as simple HTML.", sectionData.Title)
+		// TODO: Add more sophisticated default prompts based on title patterns
+	}
+
+	// Call LLM
+	generatedText, err := s.llmClient.SimpleQuery(ctx, prompt)
+	if err != nil {
+		slog.Error("LLM query failed for GenerateTextContent", "error", err)
+		return nil, status.Error(codes.Internal, "Failed to generate content via LLM")
+	}
+
+	resp := &protos.GenerateTextContentResponse{
+		GeneratedText: generatedText,
+	}
+	slog.Info("GenerateTextContent successful")
+	return resp, nil
+}
+
+// ReviewTextContent handles requests to review existing text content.
+func (s *LlmService) ReviewTextContent(ctx context.Context, req *protos.ReviewTextContentRequest) (*protos.ReviewTextContentResponse, error) {
+	designId := req.GetDesignId()
+	sectionId := req.GetSectionId()
+	slog.Info("Handling ReviewTextContent", "design_id", designId, "section_id", sectionId)
+
+	if s.llmClient == nil || s.contentSvc == nil || s.designSvc == nil {
+		slog.Error("LLM, Content, or Design service is not initialized")
+		return nil, status.Error(codes.Internal, "LLM service dependencies not configured")
+	}
+
+	// TODO: Add permission check
+
+	// Get section metadata (for type check) - could combine with below read if needed
+	sectionData, err := s.designSvc.readSectionData(designId, sectionId)
+	if err != nil { // Handles NotFound
+		slog.Error("Failed to read section data for ReviewTextContent", "design_id", designId, "section_id", sectionId, "error", err)
+		return nil, status.Error(codes.Internal, "Failed to read section metadata")
+	}
+	if sectionData.Type != "text" {
+		return nil, status.Errorf(codes.InvalidArgument, "ReviewTextContent only supports 'text' sections, found '%s'", sectionData.Type)
+	}
+
+	// Get existing content
+	contentBytes, err := s.contentSvc.GetContentBytes(ctx, designId, sectionId, "main")
+	if err != nil && !errors.Is(err, ErrNoSuchEntity) { // Allow review even if content file doesn't exist yet
+		slog.Error("Failed to read section content for ReviewTextContent", "design_id", designId, "section_id", sectionId, "error", err)
+		return nil, status.Error(codes.Internal, "Failed to read existing section content")
+	}
+	existingContent := string(contentBytes) // Will be empty if file didn't exist
+
+	// Construct prompt
+	var prompt string
+	promptOverride := req.GetPromptOverride()
+
+	if promptOverride != "" {
+		// Use override as additional instructions within the standard review structure
+		prompt = fmt.Sprintf("You are a senior software engineer reviewing a system design document section titled '%s'. Please review the following content based on the specific instructions provided below.\n\nSection Content:\n---\n%s\n---\n\nReview Instructions:\n%s\n\nReview:", sectionData.Title, existingContent, promptOverride)
+	} else {
+		// Default review prompt
+		prompt = fmt.Sprintf("You are a senior software engineer reviewing a system design document section titled '%s'. Please review the following content for clarity, completeness, technical accuracy, potential missed edge cases, and overall quality. Provide constructive feedback.\n\nSection Content:\n---\n%s\n---\n\nReview:", sectionData.Title, existingContent)
+		if existingContent == "" {
+			prompt = fmt.Sprintf("The system design section titled '%s' is currently empty. What key points, trade-offs, or common patterns should be included in this section?", sectionData.Title)
+		}
+	}
+
+	// Call LLM
+	reviewText, err := s.llmClient.SimpleQuery(ctx, prompt)
+	if err != nil {
+		slog.Error("LLM query failed for ReviewTextContent", "error", err)
+		return nil, status.Error(codes.Internal, "Failed to get review via LLM")
+	}
+
+	resp := &protos.ReviewTextContentResponse{
+		ReviewText: reviewText,
+	}
+	slog.Info("ReviewTextContent successful")
+	return resp, nil
 }

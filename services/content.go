@@ -34,6 +34,29 @@ func NewContentService(ds *DesignService) *ContentService {
 	}
 }
 
+// GetContentBytes retrieves the raw bytes for a specific content name.
+// This is intended for internal use by other services within the same process.
+func (s *ContentService) GetContentBytes(ctx context.Context, designId, sectionId, contentName string) ([]byte, error) {
+	slog.Debug("Internal GetContentBytes called", "designId", designId, "sectionId", sectionId, "name", contentName)
+	contentPath := s.designService.getContentPath(designId, sectionId, contentName)
+	bytes, err := os.ReadFile(contentPath)
+
+	// Optional: Perform permission check using designSvc or context?
+	// For now, assume caller (LlmService) has already checked design-level permissions.
+
+	// Use the internal helper
+	if err != nil {
+		// Return NotFound specific error if applicable
+		if errors.Is(err, ErrNoSuchEntity) {
+			slog.Warn("Content not found via internal GetContentBytes", "designId", designId, "sectionId", sectionId, "name", contentName)
+			return nil, ErrNoSuchEntity
+		}
+		slog.Error("Internal GetContentBytes failed", "designId", designId, "sectionId", sectionId, "name", contentName, "error", err)
+		return nil, err // Return the underlying error
+	}
+	return bytes, nil
+}
+
 // --- ContentService RPC Implementations ---
 
 func (s *ContentService) GetContent(ctx context.Context, req *protos.GetContentRequest) (*protos.GetContentResponse, error) {
@@ -49,14 +72,9 @@ func (s *ContentService) GetContent(ctx context.Context, req *protos.GetContentR
 	// Could call designService.readDesignMetadata and check owner/visibility.
 
 	contentPath := s.designService.getContentPath(designId, sectionId, contentName)
-	contentBytes, err := os.ReadFile(contentPath)
+	contentBytes, err := s.GetContentBytes(ctx, designId, sectionId, contentName)
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			slog.Warn("Content file not found", "path", contentPath)
-			return nil, status.Errorf(codes.NotFound, "Content '%s' not found for section '%s/%s'", contentName, designId, sectionId)
-		}
-		slog.Error("Failed to read content file", "path", contentPath, "error", err)
-		return nil, status.Error(codes.Internal, "Failed to read content")
+		return nil, err
 	}
 
 	// TODO: Read content metadata (type, format) if stored separately (e.g., in main.json).

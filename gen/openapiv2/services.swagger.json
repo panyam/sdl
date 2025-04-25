@@ -469,6 +469,108 @@
         ]
       }
     },
+    "/v1/designs/{designId}/sections/{sectionId}/text:generate": {
+      "post": {
+        "summary": "GenerateTextContent attempts to generate content for a text section.",
+        "operationId": "LlmService_GenerateTextContent",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GenerateTextContentResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "designId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "sectionId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "promptOverride": {
+                  "type": "string",
+                  "description": "Optional: Provide a specific prompt or template identifier.\nIf empty, the service might use a default based on the section title.\n\nOptional: Flags for generation options (e.g., include best practices)\n map\u003cstring, bool\u003e options = 4;"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "LlmService"
+        ]
+      }
+    },
+    "/v1/designs/{designId}/sections/{sectionId}/text:review": {
+      "post": {
+        "summary": "ReviewTextContent asks the LLM to review existing text content.",
+        "operationId": "LlmService_ReviewTextContent",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ReviewTextContentResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "designId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "sectionId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "promptOverride": {
+                  "type": "string",
+                  "title": "Optional: Flags for review focus\nmap\u003cstring, bool\u003e options = 3;"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "LlmService"
+        ]
+      }
+    },
     "/v1/designs/{designId}/sections/{sectionId}:move": {
       "post": {
         "summary": "Moves a section within the Design's section_ids list\nWe could have done this via an UpdateDesign with the changed order but this is \nclearer and only needs to deal with the current (and target) section instead of\nneeding to know all sections for an update.",
@@ -1418,6 +1520,15 @@
         }
       }
     },
+    "v1GenerateTextContentResponse": {
+      "type": "object",
+      "properties": {
+        "generatedText": {
+          "type": "string",
+          "title": "The generated text content (likely HTML or Markdown)"
+        }
+      }
+    },
     "v1GetContentResponse": {
       "type": "object",
       "properties": {
@@ -1574,6 +1685,15 @@
       "default": "POSITION_TYPE_UNSPECIFIED",
       "description": "- POSITION_TYPE_BEFORE: Insert before the relative_section_id\n - POSITION_TYPE_AFTER: Insert after the relative_section_id\n - POSITION_TYPE_END: Append to the end of the design",
       "title": "Used for positioning new/moved sections"
+    },
+    "v1ReviewTextContentResponse": {
+      "type": "object",
+      "properties": {
+        "reviewText": {
+          "type": "string",
+          "title": "The LLM's review/critique comments"
+        }
+      }
     },
     "v1Section": {
       "type": "object",

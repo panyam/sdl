@@ -26,6 +26,23 @@ service LlmService {
       body: "*"
     };
   }
+
+
+  // GenerateTextContent attempts to generate content for a text section.
+  rpc GenerateTextContent(GenerateTextContentRequest) returns (GenerateTextContentResponse) {
+    option (google.api.http) = {
+      post: "/v1/designs/{design_id}/sections/{section_id}/text:generate"
+      body: "*"
+    };
+  }
+
+  // ReviewTextContent asks the LLM to review existing text content.
+  rpc ReviewTextContent(ReviewTextContentRequest) returns (ReviewTextContentResponse) {
+    option (google.api.http) = {
+      post: "/v1/designs/{design_id}/sections/{section_id}/text:review"
+      body: "*"
+    };
+  }
 }
 
 message SimpleLlmQueryRequest {
@@ -52,4 +69,31 @@ message SuggestedSection {
 }
 message SuggestSectionsResponse {
   repeated SuggestedSection suggestions = 1; // List of suggestions
+}
+
+
+message GenerateTextContentRequest {
+  string design_id = 1;
+  string section_id = 2;
+  // Optional: Provide a specific prompt or template identifier.
+  // If empty, the service might use a default based on the section title.
+  string prompt_override = 3;
+  // Optional: Flags for generation options (e.g., include best practices)
+  // map<string, bool> options = 4;
+}
+
+message GenerateTextContentResponse {
+  string generated_text = 1; // The generated text content (likely HTML or Markdown)
+}
+
+message ReviewTextContentRequest {
+  string design_id = 1;
+  string section_id = 2;
+  // Optional: Flags for review focus
+  // map<string, bool> options = 3;
+  string prompt_override = 4;
+}
+
+message ReviewTextContentResponse {
+  string review_text = 1; // The LLM's review/critique comments
 }

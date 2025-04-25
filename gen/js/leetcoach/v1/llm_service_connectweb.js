@@ -5,7 +5,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { SimpleLlmQueryRequest, SimpleLlmQueryResponse, SuggestSectionsRequest, SuggestSectionsResponse } from "./llm_service_pb.js";
+import { GenerateTextContentRequest, GenerateTextContentResponse, ReviewTextContentRequest, ReviewTextContentResponse, SimpleLlmQueryRequest, SimpleLlmQueryResponse, SuggestSectionsRequest, SuggestSectionsResponse } from "./llm_service_pb.js";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -37,6 +37,28 @@ export const LlmService = {
       name: "SuggestSections",
       I: SuggestSectionsRequest,
       O: SuggestSectionsResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * GenerateTextContent attempts to generate content for a text section.
+     *
+     * @generated from rpc leetcoach.v1.LlmService.GenerateTextContent
+     */
+    generateTextContent: {
+      name: "GenerateTextContent",
+      I: GenerateTextContentRequest,
+      O: GenerateTextContentResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * ReviewTextContent asks the LLM to review existing text content.
+     *
+     * @generated from rpc leetcoach.v1.LlmService.ReviewTextContent
+     */
+    reviewTextContent: {
+      name: "ReviewTextContent",
+      I: ReviewTextContentRequest,
+      O: ReviewTextContentResponse,
       kind: MethodKind.Unary,
     },
   }

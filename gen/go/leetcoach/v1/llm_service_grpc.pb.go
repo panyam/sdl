@@ -21,8 +21,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	LlmService_SimpleLlmQuery_FullMethodName  = "/leetcoach.v1.LlmService/SimpleLlmQuery"
-	LlmService_SuggestSections_FullMethodName = "/leetcoach.v1.LlmService/SuggestSections"
+	LlmService_SimpleLlmQuery_FullMethodName      = "/leetcoach.v1.LlmService/SimpleLlmQuery"
+	LlmService_SuggestSections_FullMethodName     = "/leetcoach.v1.LlmService/SuggestSections"
+	LlmService_GenerateTextContent_FullMethodName = "/leetcoach.v1.LlmService/GenerateTextContent"
+	LlmService_ReviewTextContent_FullMethodName   = "/leetcoach.v1.LlmService/ReviewTextContent"
 )
 
 // LlmServiceClient is the client API for LlmService service.
@@ -36,6 +38,10 @@ type LlmServiceClient interface {
 	SimpleLlmQuery(ctx context.Context, in *SimpleLlmQueryRequest, opts ...grpc.CallOption) (*SimpleLlmQueryResponse, error)
 	// SuggestSections recommends relevant sections to add based on existing ones.
 	SuggestSections(ctx context.Context, in *SuggestSectionsRequest, opts ...grpc.CallOption) (*SuggestSectionsResponse, error)
+	// GenerateTextContent attempts to generate content for a text section.
+	GenerateTextContent(ctx context.Context, in *GenerateTextContentRequest, opts ...grpc.CallOption) (*GenerateTextContentResponse, error)
+	// ReviewTextContent asks the LLM to review existing text content.
+	ReviewTextContent(ctx context.Context, in *ReviewTextContentRequest, opts ...grpc.CallOption) (*ReviewTextContentResponse, error)
 }
 
 type llmServiceClient struct {
@@ -66,6 +72,26 @@ func (c *llmServiceClient) SuggestSections(ctx context.Context, in *SuggestSecti
 	return out, nil
 }
 
+func (c *llmServiceClient) GenerateTextContent(ctx context.Context, in *GenerateTextContentRequest, opts ...grpc.CallOption) (*GenerateTextContentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GenerateTextContentResponse)
+	err := c.cc.Invoke(ctx, LlmService_GenerateTextContent_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *llmServiceClient) ReviewTextContent(ctx context.Context, in *ReviewTextContentRequest, opts ...grpc.CallOption) (*ReviewTextContentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReviewTextContentResponse)
+	err := c.cc.Invoke(ctx, LlmService_ReviewTextContent_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LlmServiceServer is the server API for LlmService service.
 // All implementations should embed UnimplementedLlmServiceServer
 // for forward compatibility.
@@ -77,6 +103,10 @@ type LlmServiceServer interface {
 	SimpleLlmQuery(context.Context, *SimpleLlmQueryRequest) (*SimpleLlmQueryResponse, error)
 	// SuggestSections recommends relevant sections to add based on existing ones.
 	SuggestSections(context.Context, *SuggestSectionsRequest) (*SuggestSectionsResponse, error)
+	// GenerateTextContent attempts to generate content for a text section.
+	GenerateTextContent(context.Context, *GenerateTextContentRequest) (*GenerateTextContentResponse, error)
+	// ReviewTextContent asks the LLM to review existing text content.
+	ReviewTextContent(context.Context, *ReviewTextContentRequest) (*ReviewTextContentResponse, error)
 }
 
 // UnimplementedLlmServiceServer should be embedded to have
@@ -91,6 +121,12 @@ func (UnimplementedLlmServiceServer) SimpleLlmQuery(context.Context, *SimpleLlmQ
 }
 func (UnimplementedLlmServiceServer) SuggestSections(context.Context, *SuggestSectionsRequest) (*SuggestSectionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SuggestSections not implemented")
+}
+func (UnimplementedLlmServiceServer) GenerateTextContent(context.Context, *GenerateTextContentRequest) (*GenerateTextContentResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GenerateTextContent not implemented")
+}
+func (UnimplementedLlmServiceServer) ReviewTextContent(context.Context, *ReviewTextContentRequest) (*ReviewTextContentResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReviewTextContent not implemented")
 }
 func (UnimplementedLlmServiceServer) testEmbeddedByValue() {}
 
@@ -148,6 +184,42 @@ func _LlmService_SuggestSections_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LlmService_GenerateTextContent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GenerateTextContentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LlmServiceServer).GenerateTextContent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LlmService_GenerateTextContent_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LlmServiceServer).GenerateTextContent(ctx, req.(*GenerateTextContentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LlmService_ReviewTextContent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReviewTextContentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LlmServiceServer).ReviewTextContent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LlmService_ReviewTextContent_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LlmServiceServer).ReviewTextContent(ctx, req.(*ReviewTextContentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // LlmService_ServiceDesc is the grpc.ServiceDesc for LlmService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -162,6 +234,14 @@ var LlmService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SuggestSections",
 			Handler:    _LlmService_SuggestSections_Handler,
+		},
+		{
+			MethodName: "GenerateTextContent",
+			Handler:    _LlmService_GenerateTextContent_Handler,
+		},
+		{
+			MethodName: "ReviewTextContent",
+			Handler:    _LlmService_ReviewTextContent_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

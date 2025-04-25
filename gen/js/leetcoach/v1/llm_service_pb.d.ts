@@ -138,6 +138,103 @@ export declare type SuggestSectionsResponse = Message<"leetcoach.v1.SuggestSecti
 export declare const SuggestSectionsResponseSchema: GenMessage<SuggestSectionsResponse>;
 
 /**
+ * @generated from message leetcoach.v1.GenerateTextContentRequest
+ */
+export declare type GenerateTextContentRequest = Message<"leetcoach.v1.GenerateTextContentRequest"> & {
+  /**
+   * @generated from field: string design_id = 1;
+   */
+  designId: string;
+
+  /**
+   * @generated from field: string section_id = 2;
+   */
+  sectionId: string;
+
+  /**
+   * Optional: Provide a specific prompt or template identifier.
+   * If empty, the service might use a default based on the section title.
+   *
+   * Optional: Flags for generation options (e.g., include best practices)
+   * map<string, bool> options = 4;
+   *
+   * @generated from field: string prompt_override = 3;
+   */
+  promptOverride: string;
+};
+
+/**
+ * Describes the message leetcoach.v1.GenerateTextContentRequest.
+ * Use `create(GenerateTextContentRequestSchema)` to create a new message.
+ */
+export declare const GenerateTextContentRequestSchema: GenMessage<GenerateTextContentRequest>;
+
+/**
+ * @generated from message leetcoach.v1.GenerateTextContentResponse
+ */
+export declare type GenerateTextContentResponse = Message<"leetcoach.v1.GenerateTextContentResponse"> & {
+  /**
+   * The generated text content (likely HTML or Markdown)
+   *
+   * @generated from field: string generated_text = 1;
+   */
+  generatedText: string;
+};
+
+/**
+ * Describes the message leetcoach.v1.GenerateTextContentResponse.
+ * Use `create(GenerateTextContentResponseSchema)` to create a new message.
+ */
+export declare const GenerateTextContentResponseSchema: GenMessage<GenerateTextContentResponse>;
+
+/**
+ * @generated from message leetcoach.v1.ReviewTextContentRequest
+ */
+export declare type ReviewTextContentRequest = Message<"leetcoach.v1.ReviewTextContentRequest"> & {
+  /**
+   * @generated from field: string design_id = 1;
+   */
+  designId: string;
+
+  /**
+   * @generated from field: string section_id = 2;
+   */
+  sectionId: string;
+
+  /**
+   * Optional: Flags for review focus
+   * map<string, bool> options = 3;
+   *
+   * @generated from field: string prompt_override = 4;
+   */
+  promptOverride: string;
+};
+
+/**
+ * Describes the message leetcoach.v1.ReviewTextContentRequest.
+ * Use `create(ReviewTextContentRequestSchema)` to create a new message.
+ */
+export declare const ReviewTextContentRequestSchema: GenMessage<ReviewTextContentRequest>;
+
+/**
+ * @generated from message leetcoach.v1.ReviewTextContentResponse
+ */
+export declare type ReviewTextContentResponse = Message<"leetcoach.v1.ReviewTextContentResponse"> & {
+  /**
+   * The LLM's review/critique comments
+   *
+   * @generated from field: string review_text = 1;
+   */
+  reviewText: string;
+};
+
+/**
+ * Describes the message leetcoach.v1.ReviewTextContentResponse.
+ * Use `create(ReviewTextContentResponseSchema)` to create a new message.
+ */
+export declare const ReviewTextContentResponseSchema: GenMessage<ReviewTextContentResponse>;
+
+/**
  * LlmService provides access to Large Language Model features.
  *
  * @generated from service leetcoach.v1.LlmService
@@ -163,6 +260,26 @@ export declare const LlmService: GenService<{
     methodKind: "unary";
     input: typeof SuggestSectionsRequestSchema;
     output: typeof SuggestSectionsResponseSchema;
+  },
+  /**
+   * GenerateTextContent attempts to generate content for a text section.
+   *
+   * @generated from rpc leetcoach.v1.LlmService.GenerateTextContent
+   */
+  generateTextContent: {
+    methodKind: "unary";
+    input: typeof GenerateTextContentRequestSchema;
+    output: typeof GenerateTextContentResponseSchema;
+  },
+  /**
+   * ReviewTextContent asks the LLM to review existing text content.
+   *
+   * @generated from rpc leetcoach.v1.LlmService.ReviewTextContent
+   */
+  reviewTextContent: {
+    methodKind: "unary";
+    input: typeof ReviewTextContentRequestSchema;
+    output: typeof ReviewTextContentResponseSchema;
   },
 }>;
 
