@@ -1,4 +1,4 @@
-package services
+package views
 
 import "math/rand"
 

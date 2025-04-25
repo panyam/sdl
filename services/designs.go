@@ -157,10 +157,6 @@ func (s *DesignService) CreateDesign(ctx context.Context, req *protos.CreateDesi
 		return nil, status.Error(codes.InvalidArgument, "Design payload cannot be nil")
 	}
 
-	if designProto.Name == "" {
-		designProto.Name = randomDesignName()
-	}
-
 	ownerId, err := s.EnsureLoggedIn(ctx)
 	if ENFORCE_LOGIN && err != nil {
 		slog.Error("Login enforcement failed", "error", err)

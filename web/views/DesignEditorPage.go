@@ -49,11 +49,14 @@ func (v *DesignEditorPage) Load(r *http.Request, w http.ResponseWriter, vc *View
 
 		// create a new design
 		ctx := vc.ClientMgr.ClientContext(nil, loggedInUserId)
+		v.Design = &protos.Design{
+			Name: randomDesignName(),
+		}
 		resp, err := client.CreateDesign(ctx, &protos.CreateDesignRequest{
-			Design: &protos.Design{},
+			Design: v.Design,
 		})
 		if err != nil {
-			log.Println("Error getting design: ", err)
+			log.Println("Error creating design: ", err)
 			return err, false
 		}
 		http.Redirect(w, r, fmt.Sprintf("/designs/%s/edit", resp.Design.Id), http.StatusFound)
