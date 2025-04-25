@@ -14,10 +14,44 @@
         Choose Section Type
       </h3>
     </div>
-    <!-- Section Type Options -->
-    <div class="p-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+
+    <!-- Loading Indicator (Initially Hidden) -->
+    <div
+      id="suggest-loading-indicator"
+      class="hidden p-6 text-center text-gray-500 dark:text-gray-400"
+    >
+      <svg
+        class="animate-spin h-6 w-6 mx-auto"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          class="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          stroke-width="4"
+        ></circle>
+        <path
+          class="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+        ></path>
+      </svg>
+      <p class="mt-2 text-sm">Thinking of suggestions...</p>
+    </div>
+
+    <!-- Standard Section Type Options -->
+    <div
+      id="standard-type-options"
+      class="p-6 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3"
+    >
+      <!-- Adjusted grid for smaller screens -->
       <!-- Text/Markdown Section -->
       <button
+        data-section-type="text"
         class="section-type-option flex flex-col items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
         <svg
@@ -44,6 +78,7 @@
 
       <!-- Drawing Section -->
       <button
+        data-section-type="drawing"
         class="section-type-option flex flex-col items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
         <svg
@@ -70,6 +105,7 @@
 
       <!-- Plot Section -->
       <button
+        data-section-type="plot"
         class="section-type-option flex flex-col items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
         <svg
@@ -92,6 +128,51 @@
         <span class="text-xs text-gray-500 dark:text-gray-400 text-center mt-1"
           >Charts and data visualizations</span
         >
+      </button>
+    </div>
+
+    <!-- Suggest Sections Button -->
+    <div class="p-6 pt-0 border-t border-gray-200 dark:border-gray-600">
+      <button
+        id="suggest-sections-btn"
+        type="button"
+        class="w-full mt-4 inline-flex items-center justify-center px-4 py-2 border border-dashed border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-300 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5 mr-2"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+          />
+        </svg>
+        Suggest Sections (AI)
+      </button>
+    </div>
+
+    <!-- Container for Suggested Sections (Initially Hidden) -->
+    <div
+      id="suggested-sections-container"
+      class="hidden p-6 border-t border-gray-200 dark:border-gray-600"
+    >
+      <h4 class="text-md font-medium text-gray-700 dark:text-gray-300 mb-3">
+        Suggested Sections:
+      </h4>
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <!-- Suggested section cards will be appended here -->
+      </div>
+      <button
+        id="show-standard-types-btn"
+        type="button"
+        class="mt-4 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+      >
+        Show Standard Types
       </button>
     </div>
 
@@ -485,6 +566,50 @@
       </div>
     </div>
   </div>
+
+  <!-- == Template for Suggested Section Card == -->
+  <div data-template-id="suggested-section-card">
+    <button
+      data-action="create-suggested"
+      data-suggested-title=""
+      data-suggested-type=""
+      class="suggested-section-option flex flex-col items-start text-left w-full p-4 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 transition-colors duration-150"
+    >
+      <div class="flex items-center mb-2">
+        <!-- Icon placeholder (could be dynamic based on type later) -->
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5 mr-2 text-blue-600 dark:text-blue-400 flex-shrink-0"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+          />
+        </svg>
+        <span
+          class="suggested-section-title text-sm font-medium text-gray-900 dark:text-white"
+        >
+          Suggested Title
+        </span>
+        <span
+          class="suggested-section-type ml-2 text-xs font-mono bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-1.5 py-0.5 rounded"
+        >
+          type
+        </span>
+      </div>
+      <span
+        class="suggested-section-description text-xs text-gray-500 dark:text-gray-400"
+      >
+        Suggestion description goes here.
+      </span>
+    </button>
+  </div>
+  <!-- == End Suggested Section Card Template == -->
 
   <!-- == NEW: Create Design Modal Template == -->
   <div data-template-id="create-design-modal">
