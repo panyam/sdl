@@ -467,7 +467,7 @@ export abstract class BaseSection {
             const response = await LlmApi.llmServiceSimpleLlmQuery({body: request});
             console.log("LLM query response:", response);
 
-            this.modal.hide(); // Hide the dialog modal
+            await this.modal.hide(); // Hide the dialog modal
 
             // Show results modal
             const resultsModalContent = this.modal.show('llm-results', {
@@ -490,14 +490,9 @@ export abstract class BaseSection {
             console.error("Error calling LLM service:", error);
             const errorMsg = error.message || (error.response ? await error.response.text() : 'Unknown LLM API error');
             this.toastManager.showToast("LLM Error", `Failed to query LLM: ${errorMsg}`, "error");
-            this.modal.hide(); // Hide the dialog on error too
+            await this.modal.hide(); // Hide the dialog on error too
         } finally {
             this.isLlmLoading = false;
-            // Restore submit button state if it's still around (though modal hides)
-            if (submitButton) {
-                 submitButton.disabled = false;
-                 submitButton.textContent = 'Submit';
-            }
         }
     }
 

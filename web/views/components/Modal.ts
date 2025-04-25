@@ -168,22 +168,25 @@ export class Modal {
   /**
    * Hide the modal
    */
-  public hide(): void {
-    if (!this.modalContainer) return;
+  public hide(): Promise<void> {
+    return new Promise((resolve) => {
+        if (!this.modalContainer) return;
 
-    // Remove active class first (for animations)
-    this.modalContainer.classList.remove('modal-active');
+        // Remove active class first (for animations)
+        this.modalContainer.classList.remove('modal-active');
 
-    // Hide after a short delay
-    setTimeout(() => {
-      this.modalContainer.classList.add('hidden');
+        // Hide after a short delay
+        setTimeout(() => {
+          this.modalContainer.classList.add('hidden');
 
-      // Clear current modal info
-      this.currentTemplateId = null;
-      this.currentData = null;
-      this.onSubmitCallback = null; // Clear callback
-      if(this.modalContent) this.modalContent.innerHTML = ''; // Clear content
-    }, 200); // Match typical transition duration
+          // Clear current modal info
+          this.currentTemplateId = null;
+          this.currentData = null;
+          this.onSubmitCallback = null; // Clear callback
+          if(this.modalContent) this.modalContent.innerHTML = ''; // Clear content
+          resolve();
+        }, 200); // Match typical transition duration
+    });
   }
 
   /**
