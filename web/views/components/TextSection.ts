@@ -330,7 +330,7 @@ export class TextSection extends BaseSection {
         console.log(`Switching ${this.data.id} to edit mode.`);
         if (this.loadTemplate('edit')) {
             this.populateEditContent(); // This will initialize TinyMCE
-            this.bindEditModeEvents();
+            // this.bindEditModeEvents();
         } else {
              console.error("Failed to load edit template for section", this.data.id);
              this.mode = 'view'; // Revert mode if template fails

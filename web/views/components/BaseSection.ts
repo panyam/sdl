@@ -40,6 +40,17 @@ export abstract class BaseSection {
     protected llmInteractionHandler: LlmInteractionHandler; // Add handler instance
     protected fullscreenHandler: FullscreenHandler | null = null; // Instance for fullscreen logic
 
+    protected allowEditOnClick: boolean = true; // Default: Allow switching to edit on view click
+ 
+    // Helper method to find elements within the section's root element
+    protected _findElement<T extends HTMLElement>(selector: string, required: boolean = true): T | null {
+        const element = this.element.querySelector<T>(selector);
+        if (!element && required) {
+            console.warn(`BaseSection ${this.sectionId}: Required element with selector "${selector}" not found.`);
+        }
+        return element;
+    }
+
     constructor(data: SectionData, element: HTMLElement, callbacks: SectionCallbacks = {}) {
         this.data = data;
         this.element = element;
@@ -49,26 +60,28 @@ export abstract class BaseSection {
         this.llmInteractionHandler = new LlmInteractionHandler(this.modal, this.toastManager); // Instantiate handler
 
         // Find common structural elements
-        this.sectionHeaderElement = this.element.querySelector('.section-header');
-        this.contentContainer = this.element.querySelector('.section-content');
-        this.titleElement = this.element.querySelector('.section-title');
-        this.typeIconElement = this.element.querySelector('.section-type-icon');
-        this.deleteButton = this.element.querySelector('.section-delete');
-        this.moveUpButton = this.element.querySelector('.section-move-up');
-        this.moveDownButton = this.element.querySelector('.section-move-down');
-        this.settingsButton = this.element.querySelector('.section-settings');
-        this.addBeforeButton = this.element.querySelector('.section-add-before');
-        this.addAfterButton = this.element.querySelector('.section-add-after');
-        this.fullscreenButton = this.element.querySelector('.section-fullscreen');
-        this.exitFullscreenButton = this.element.querySelector('.section-exit-fullscreen'); // Find it once in constructor
+        this.sectionHeaderElement = this._findElement('.section-header');
+        this.contentContainer = this._findElement('.section-content');
+        this.titleElement = this._findElement('.section-title');
+        this.typeIconElement = this._findElement('.section-type-icon');
+        // Find toolbar buttons (make finding optional as they might not always be present depending on state/template)
+        this.deleteButton = this._findElement('.section-delete', false);
+        this.moveUpButton = this._findElement('.section-move-up', false);
+        this.moveDownButton = this._findElement('.section-move-down', false);
+        this.settingsButton = this._findElement('.section-settings', false);
+        this.addBeforeButton = this._findElement('.section-add-before', false);
+        this.addAfterButton = this._findElement('.section-add-after', false);
+        this.fullscreenButton = this._findElement('.section-fullscreen', false);
+        this.exitFullscreenButton = this._findElement('.section-exit-fullscreen', false);
 
         if (!this.contentContainer) {
             console.error(`Section content container not found for section ID: ${this.data.id}`);
+            return;
         }
 
         this.updateDisplayTitle();
         this.updateTypeIcon();
-        this.bindCommonEvents();
+        this._bindEvents(); // Consolidated event binding
         this.initViewAndLoadingState();
 
         // Add instance to the element for easy access (e.g., retry button)
@@ -169,62 +182,56 @@ export abstract class BaseSection {
         }
     }
 
-    /** Binds events for common controls (delete, move, LLM, title editing etc.) */
-    protected bindCommonEvents(): void {
+    /** Binds events using delegation and direct assignment */
+    protected _bindEvents(): void {
         // Title editing
         if (this.titleElement) {
+            // Ensure previous listener is removed if re-binding happens
             this.titleElement.removeEventListener('click', this.startTitleEdit);
             this.titleElement.addEventListener('click', this.startTitleEdit.bind(this));
         }
 
-        // Delete button
-        if (this.deleteButton) {
-            this.deleteButton.addEventListener('click', () => {
+        // Use event delegation for button clicks within the section element
+        // We attach the listener to the root element `this.element`
+        this.element.onclick = (event: MouseEvent) => {
+            const target = event.target as HTMLElement;
+
+            // Find the closest button ancestor matching known action classes
+            const actionButton = target.closest<HTMLButtonElement>(
+                '.section-delete, .section-move-up, .section-move-down, .section-settings, .section-ai, .section-add-before, .section-add-after, .section-edit-trigger, .section-edit-save, .section-edit-cancel'
+            );
+
+            if (!actionButton) {
+                // If the click wasn't on a button, check if it was on the view content area (excluding explicit triggers)
+                if (this.mode === 'view' && target.closest('.section-view-content') && !target.closest('.section-edit-trigger')) {
+                    this.handleViewClick(); // Trigger edit on general view content click
+                }
+                return; // Click wasn't on a recognized interactive element
+            }
+
+            // Handle actions based on button class
+            if (actionButton.matches('.section-delete')) {
                 this.callbacks.onDelete?.(this.data.id);
-            });
-        }
-
-        // Move up button
-        if (this.moveUpButton) {
-            this.moveUpButton.addEventListener('click', () => {
+            } else if (actionButton.matches('.section-move-up')) {
                 this.callbacks.onMoveUp?.(this.data.id);
-            });
-        }
-
-        // Move down button
-        if (this.moveDownButton) {
-            this.moveDownButton.addEventListener('click', () => {
+            } else if (actionButton.matches('.section-move-down')) {
                 this.callbacks.onMoveDown?.(this.data.id);
-            });
-        }
-
-        // Settings button
-        if (this.settingsButton) {
-            this.settingsButton.addEventListener('click', this.openSettings.bind(this));
-        }
-
-        // --- LLM Button ---
-        const llmButton = this.element.querySelector<HTMLButtonElement>('.section-ai');
-        if (llmButton) {
-            llmButton.onclick = () => { // Assign onclick handler
-               this.llmInteractionHandler.showLlmDialog(this.data, this.getApplyCallback()); // Call handler
-            };
-        }
-
-        // Add Before button
-        if (this.addBeforeButton) {
-            this.addBeforeButton.addEventListener('click', () => {
-                console.log(`Add Before requested for section ${this.data.id}`);
+            } else if (actionButton.matches('.section-settings')) {
+                this.openSettings();
+            } else if (actionButton.matches('.section-ai')) {
+                this.llmInteractionHandler.showLlmDialog(this.data, this.getApplyCallback());
+            } else if (actionButton.matches('.section-add-before')) {
                 this.callbacks.onAddSectionRequest?.(this.data.id, 'before');
-            });
-        }
-
-        // Add After button
-        if (this.addAfterButton) {
-            this.addAfterButton.addEventListener('click', () => {
-                console.log(`Add After requested for section ${this.data.id}`);
+            } else if (actionButton.matches('.section-add-after')) {
                 this.callbacks.onAddSectionRequest?.(this.data.id, 'after');
-            });
+            } else if (actionButton.matches('.section-edit-trigger') && this.mode === 'view') {
+                 this.switchToEditMode();
+            } else if (actionButton.matches('.section-edit-save') && this.mode === 'edit') {
+                 this.handleSaveClick();
+            } else if (actionButton.matches('.section-edit-cancel') && this.mode === 'edit') {
+                 this.handleCancelClick();
+            }
+            // Note: Fullscreen button is handled separately by FullscreenHandler
         }
     }
 
@@ -490,7 +497,7 @@ export abstract class BaseSection {
         console.log(`Switching ${this.sectionId} to edit mode.`);
         if (this.loadTemplate('edit')) {
             this.populateEditContent(); // Initialize the editor with current this.data.content
-            this.bindEditModeEvents();
+            // this.bindEditModeEvents();
         } else {
              console.error("Failed to load edit template for section", this.sectionId);
              this.mode = 'view'; // Revert mode if template fails
@@ -499,21 +506,28 @@ export abstract class BaseSection {
 
     /**
      * By default binds a "section-edit-trigger" button click handler to switch to edit mode.
-     * Child sections can use other bindings.
+     * This method is now less critical due to event delegation in _bindEvents.
      */
     protected bindViewModeEvents(): void {
+      /*
         const editTrigger = this.contentContainer?.querySelector('.section-edit-trigger');
         if (editTrigger) {
              editTrigger.removeEventListener('click', this.handleViewClick); // Prevent multiple listeners
              editTrigger.addEventListener('click', this.handleViewClick.bind(this));
-        }
+        }*/
+       // Most button clicks are handled by delegation in _bindEvents.
+       // Specific view mode listeners (if any) that CANNOT be delegated go here.
+       // Example: Maybe hover effects that need direct element access.
     }
 
     /**
      * Called when the container is clicked in view mode.  By default switches to switch to edit mode.
      */
     protected handleViewClick(): void {
-        this.switchToEditMode();
+        if (this.mode === 'view' && this.allowEditOnClick) { // Double check mode before switching
+            this.switchToEditMode();
+            /*
+        }
     }
 
     protected bindEditModeEvents(): void {
@@ -527,6 +541,7 @@ export abstract class BaseSection {
         if (cancelButton) {
             cancelButton.removeEventListener('click', this.handleCancelClick);
             cancelButton.addEventListener('click', this.handleCancelClick.bind(this));
+           */
         }
     }
 
@@ -554,9 +569,13 @@ export abstract class BaseSection {
         // Clear previous content and append the new template
         this.contentContainer.innerHTML = '';
         if (templateRootElement) {
-          this.contentContainer.appendChild(templateRootElement);
+            this.contentContainer.appendChild(templateRootElement);
+            return true; // Return true on success
+        } else {
+            console.error(`Template not found or failed to load: ${templateId}`);
+            this.contentContainer.innerHTML = `<div class="p-4 text-red-500">Error loading template '${templateId}'</div>`;
+            return false; // Return false on failure
         }
-
         return true;
     }
 

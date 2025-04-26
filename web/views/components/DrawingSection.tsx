@@ -40,6 +40,7 @@ export class DrawingSection extends BaseSection {
         super(data, element, callbacks);
         // Ensure content is initialized as an object if not present
         this.drawingContent = { format: 'excalidraw/json', data: { elements: [], appState: {} } };
+        this.allowEditOnClick = false;
         this.enableFullscreen();
     }
 

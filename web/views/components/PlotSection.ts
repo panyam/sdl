@@ -17,6 +17,7 @@ export class PlotSection extends BaseSection {
          if (typeof this.plotContent !== 'object' || this.plotContent === null) {
             this.plotContent = { format: 'placeholder_plot', data: {} };
         }
+        this.allowEditOnClick = false;
         this.enableFullscreen();
     }
 
