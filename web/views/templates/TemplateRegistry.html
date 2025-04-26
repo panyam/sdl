@@ -1,3 +1,5 @@
+<!-- FILE: web/views/templates/TemplateRegistry.html -->
+
 <!-- Add this to index.html or create a new file -->
 <div
   id="template-registry"
@@ -204,18 +206,21 @@
 
     <!-- Tabs -->
     <div class="border-b border-gray-200 dark:border-gray-700">
-      <nav class="flex -mb-px">
+      <nav id="llm-dialog-tabs" class="flex -mb-px">
         <button
-          class="llm-tab llm-tab-generate border-blue-500 text-blue-600 dark:text-blue-400 dark:border-blue-400 whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm"
+          data-tab-target="#llm-generate-content"
+          class="llm-tab llm-tab-active border-blue-500 text-blue-600 dark:text-blue-400 dark:border-blue-400 whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm"
         >
           Generate
         </button>
         <button
-          class="llm-tab llm-tab-custom text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-500 whitespace-nowrap py-4 px-6 border-b-2 border-transparent font-medium text-sm"
+          data-tab-target="#llm-custom-content"
+          class="llm-tab text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-500 whitespace-nowrap py-4 px-6 border-b-2 border-transparent font-medium text-sm"
         >
           Custom
         </button>
         <button
+          data-tab-target="#llm-verify-content"
           class="llm-tab llm-tab-verify text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-500 whitespace-nowrap py-4 px-6 border-b-2 border-transparent font-medium text-sm"
         >
           Verify
@@ -236,7 +241,7 @@
     <!-- Content Area -->
     <div class="p-6">
       <!-- Generate Tab Content -->
-      <div id="llm-generate-content" class="llm-tab-content">
+      <div id="llm-generate-content" class="llm-tab-pane">
         <p class="text-sm text-gray-700 dark:text-gray-300 mb-4">
           Generate content for this section using a pre-defined prompt
         </p>
@@ -252,7 +257,8 @@
         </div>
 
         <!-- Options -->
-        <div class="mt-4">
+        <div class="mt-4 hidden">
+          <!-- Hide options for now -->
           <label class="inline-flex items-center">
             <input
               type="checkbox"
@@ -266,7 +272,7 @@
       </div>
 
       <!-- Custom Tab Content -->
-      <div id="llm-custom-content" class="llm-tab-content hidden">
+      <div id="llm-custom-content" class="llm-tab-pane hidden">
         <p class="text-sm text-gray-700 dark:text-gray-300 mb-4">
           Create your own prompt for the LLM
         </p>
@@ -286,7 +292,8 @@
         </div>
 
         <!-- Include Context Checkboxes -->
-        <div class="mt-4">
+        <div class="mt-4 hidden">
+          <!-- Hide context for now -->
           <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Include context from:
           </p>
@@ -315,7 +322,7 @@
       </div>
 
       <!-- Verify Tab Content -->
-      <div id="llm-verify-content" class="llm-tab-content hidden">
+      <div id="llm-verify-content" class="llm-tab-pane hidden">
         <p class="text-sm text-gray-700 dark:text-gray-300 mb-4">
           Verify and analyze the content of this section
         </p>
@@ -331,7 +338,8 @@
         </div>
 
         <!-- Options -->
-        <div class="mt-4">
+        <div class="mt-4 hidden">
+          <!-- Hide options for now -->
           <label class="inline-flex items-center">
             <input
               type="checkbox"
@@ -392,8 +400,17 @@
     <div
       class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 border-t border-gray-200 dark:border-gray-600"
     >
-      <!-- Add Apply/Revise later -->
-      <!-- <button id="llm-apply" type="button" ...>Apply to Section</button> -->
+      <!-- **** ADD Apply Button **** -->
+      <button
+        id="llm-results-apply"
+        type="button"
+        data-modal-action="apply"
+        class="hidden inline-flex w-full justify-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm"
+      >
+        Apply to Section
+      </button>
+      <!-- **** END **** -->
+
       <!-- <button id="llm-revise" type="button" ...>Revise Prompt</button> -->
       <!-- **** Ensure ID exists **** -->
       <button

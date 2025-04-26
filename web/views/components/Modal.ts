@@ -1,4 +1,4 @@
-// components/Modal.ts
+// web/views/components/Modal.ts
 import { TemplateLoader } from './TemplateLoader'; // Import TemplateLoader
 
 /**
@@ -21,6 +21,8 @@ export class Modal {
   private currentTemplateId: string | null = null;
   private currentData: any = null;
   private onSubmitCallback: ((modalData: any) => void) | null = null; // Store the callback
+  private onApplyCallback: ((modalData: any) => void) | null = null; // Store the Apply callback
+
 
   /**
    * Private constructor for singleton pattern
@@ -95,6 +97,9 @@ export class Modal {
 
                 if (action === 'submit' && this.onSubmitCallback) {
                     this.onSubmitCallback(this.currentData); // Call the stored callback
+                } else if (action === 'apply' && this.onApplyCallback) {
+                    this.onApplyCallback(this.currentData); // Call the Apply callback
+                    this.hide(); // Typically hide after applying
                 }
                 // Add more actions (e.g., 'apply', 'revise') later if needed
             }
@@ -138,6 +143,7 @@ export class Modal {
     this.currentTemplateId = templateId;
     this.currentData = data || {}; // Ensure data is an object
     this.onSubmitCallback = data?.onSubmit || null; // Store the submit callback
+    this.onApplyCallback = data?.onApply || null; // Store the apply callback
 
     // Clear existing content
     this.modalContent.innerHTML = '';
@@ -183,6 +189,7 @@ export class Modal {
           this.currentTemplateId = null;
           this.currentData = null;
           this.onSubmitCallback = null; // Clear callback
+          this.onApplyCallback = null; // Clear apply callback
           if(this.modalContent) this.modalContent.innerHTML = ''; // Clear content
           resolve();
         }, 200); // Match typical transition duration
@@ -218,7 +225,7 @@ export class Modal {
 
     // Update data attributes for non-function data
     if (this.modalContent && newData) {
-      Object.entries(newData).forEach(([key, value]) => {
+      Object.entries(newData).forEach(([key, value]) => { // Exclude callbacks when setting data attributes
          if (key !== 'onSubmit' && (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean')) {
           if (this.modalContent) this.modalContent.dataset[key] = String(value);
         }

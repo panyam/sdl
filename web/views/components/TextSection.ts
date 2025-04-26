@@ -1,4 +1,4 @@
-// components/TextSection.ts
+// web/views/components/TextSection.ts
 
 import { ContentApi } from './Api'; // Import API client
 import { BaseSection } from './BaseSection';
@@ -140,6 +140,23 @@ export class TextSection extends BaseSection {
           contentBytes: btoa(this.textContent),
         })
         this.switchToViewMode(true);
+    }
+
+    /**
+     * Applies the provided text content to the section.
+     * If in edit mode, updates the editor.
+     * If in view mode, updates the stored content and triggers a save.
+     * @param newContent The new HTML content string.
+     */
+    public applyGeneratedContent(newContent: string): void {
+        console.log(`Applying generated content to section ${this.data.id}`);
+        if (this.mode === 'edit' && this.editorInstance) {
+            this.editorInstance.setContent(newContent);
+            // Maybe mark as dirty or trigger save directly? For now, let user save.
+        } else {
+            this.textContent = newContent; // Update internal content store
+            this.handleSaveClick(); // Trigger API save and switch to view mode
+        }
     }
 
     /**
@@ -390,5 +407,11 @@ export class TextSection extends BaseSection {
             }
         }
         return ''; // Default to empty string if content is null or not a string
+    }
+
+    /** Provide the callback for applying LLM results */
+    protected override getApplyCallback(): ((generatedText: string) => void) | undefined {
+        // Return the specific method bound to this instance
+        return this.applyGeneratedContent.bind(this);
     }
 }

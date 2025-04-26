@@ -1,11 +1,11 @@
-// components/BaseSection.ts
+// web/views/components/BaseSection.ts
 
 import { Modal } from './Modal';
 import { SectionData, SectionType, SectionContent, DocumentSection, TextContent, DrawingContent, PlotContent, SectionCallbacks } from './types';
 import { V1Section } from './apiclient'; // Import API Section type
 import { TemplateLoader } from './TemplateLoader'; // Import the converter
 import { ToastManager } from './ToastManager'; // Import the converter
-import { LlmApi } from './Api'; // Import the new LlmApi
+import { LlmInteractionHandler } from './LlmInteractionHandler'; // Import the new handler
 
 /**
  * Abstract base class for all document sections.
@@ -19,7 +19,6 @@ export abstract class BaseSection {
     protected modal: Modal;
     protected mode: 'view' | 'edit' = 'view';
     protected isLoading: boolean = false;
-    protected isLlmLoading: boolean = false; // Track LLM loading state
 
     // Common DOM elements
     protected sectionHeaderElement: HTMLElement | null;
@@ -30,7 +29,6 @@ export abstract class BaseSection {
     protected moveUpButton: HTMLElement | null;
     protected moveDownButton: HTMLElement | null;
     protected settingsButton: HTMLElement | null;
-    protected llmButton: HTMLElement | null;
     protected addBeforeButton: HTMLElement | null;
     protected addAfterButton: HTMLElement | null;
     protected fullscreenButton: HTMLElement | null; // Moved from subclasses
@@ -38,6 +36,7 @@ export abstract class BaseSection {
 
     protected toastManager: ToastManager; // Add toast manager
     protected templateLoader = new TemplateLoader()
+    protected llmInteractionHandler: LlmInteractionHandler; // Add handler instance
 
     constructor(data: SectionData, element: HTMLElement, callbacks: SectionCallbacks = {}) {
         this.data = data;
@@ -45,6 +44,7 @@ export abstract class BaseSection {
         this.callbacks = callbacks;
         this.modal = Modal.getInstance();
         this.toastManager = ToastManager.getInstance();
+        this.llmInteractionHandler = new LlmInteractionHandler(this.modal, this.toastManager); // Instantiate handler
 
         // Find common structural elements
         this.sectionHeaderElement = this.element.querySelector('.section-header');
@@ -55,7 +55,6 @@ export abstract class BaseSection {
         this.moveUpButton = this.element.querySelector('.section-move-up');
         this.moveDownButton = this.element.querySelector('.section-move-down');
         this.settingsButton = this.element.querySelector('.section-settings');
-        this.llmButton = this.element.querySelector('.section-ai'); // Find the LLM button
         this.addBeforeButton = this.element.querySelector('.section-add-before');
         this.addAfterButton = this.element.querySelector('.section-add-after');
         this.fullscreenButton = this.element.querySelector('.section-fullscreen');
@@ -181,12 +180,12 @@ export abstract class BaseSection {
             this.settingsButton.addEventListener('click', this.openSettings.bind(this));
         }
 
-        // LLM button
-        if (this.llmButton) {
-            // Remove potential previous listener to avoid duplicates if re-binding occurs
-            this.llmButton.removeEventListener('click', this.openLlmDialog);
-            // Bind the openLlmDialog method correctly
-            this.llmButton.addEventListener('click', this.openLlmDialog.bind(this));
+        // --- LLM Button ---
+        const llmButton = this.element.querySelector<HTMLButtonElement>('.section-ai');
+        if (llmButton) {
+            llmButton.onclick = () => { // Assign onclick handler
+               this.llmInteractionHandler.showLlmDialog(this.data, this.getApplyCallback()); // Call handler
+            };
         }
 
         // Add Before button
@@ -410,91 +409,6 @@ export abstract class BaseSection {
         alert(`Settings for section: ${this.data.title} (ID: ${this.data.id})`);
     }
 
-    /** Opens the LLM dialog modal for this section */
-    protected openLlmDialog(): void {
-        console.log(`LLM button clicked for section: ${this.data.id}`);
-        // Pass the submit handler bound to this instance
-        this.modal.show('llm-dialog', {
-            sectionId: this.data.id,
-            sectionType: this.data.type,
-            sectionTitle: this.data.title,
-            onSubmit: this.handleLlmDialogSubmit.bind(this) // Pass bound function
-        });
-
-        // Update the current section display in the LLM dialog (if modal content is ready)
-        // Note: This might need a slight delay or callback if modal content isn't immediately available
-        // This part remains potentially fragile, depends on modal rendering timing.
-        setTimeout(() => {
-            // Use querySelector *within the modal content* for robustness
-            const modalContent = this.modal.getContentElement();
-            const currentSectionElement = modalContent?.querySelector('#llm-current-section');
-            if (currentSectionElement) {
-                currentSectionElement.textContent = this.data.title;
-            } else {
-                console.warn("Could not find #llm-current-section in modal content after showing.");
-            }
-        }, 50); // Small delay
-    }
-
-    /** Handles the submission from the LLM dialog modal */
-    protected async handleLlmDialogSubmit(modalData: any): Promise<void> {
-        if (this.isLlmLoading) {
-            console.log("LLM query already in progress.");
-            return;
-        }
-        this.isLlmLoading = true;
-        console.log(`LLM dialog submitted for section ${this.data.id}`, modalData);
-        // TODO: Get actual prompt from modal UI later (Phase 2)
-        const hardcodedPrompt = `Explain the core concepts of system design suitable for a section titled "${this.data.title}". Keep it concise.`;
-
-        // Find the submit button in the dialog to show loading state
-        const dialogContent = this.modal.getContentElement();
-        const submitButton = dialogContent?.querySelector('button[data-modal-action="submit"]') as HTMLButtonElement | null;
-        if (submitButton) {
-            submitButton.disabled = true;
-            submitButton.textContent = 'Processing...';
-            // Optionally add a spinner icon
-        }
-
-        try {
-            const request = {
-                designId: this.data.designId,
-                sectionId: this.data.id,
-                prompt: hardcodedPrompt,
-            };
-            console.log("Sending LLM query request:", request);
-
-            const response = await LlmApi.llmServiceSimpleLlmQuery({body: request});
-            console.log("LLM query response:", response);
-
-            await this.modal.hide(); // Hide the dialog modal
-
-            // Show results modal
-            const resultsModalContent = this.modal.show('llm-results', {
-                responseText: response.responseText,
-                // Add apply/revise callbacks later
-            });
-
-            // Populate the results content *after* the modal is shown
-            if (resultsModalContent) {
-                const contentArea = resultsModalContent.querySelector('#llm-results-content');
-                if (contentArea) {
-                    // Simple text display for now, can use Markdown parser later
-                    contentArea.textContent = response.responseText || "LLM returned no text.";
-                } else {
-                    console.error("Could not find #llm-results-content in results modal.");
-                }
-            }
-
-        } catch (error: any) {
-            console.error("Error calling LLM service:", error);
-            const errorMsg = error.message || (error.response ? await error.response.text() : 'Unknown LLM API error');
-            this.toastManager.showToast("LLM Error", `Failed to query LLM: ${errorMsg}`, "error");
-            await this.modal.hide(); // Hide the dialog on error too
-        } finally {
-            this.isLlmLoading = false;
-        }
-    }
 
     /**
      * Switches the section to View mode.
@@ -660,6 +574,14 @@ export abstract class BaseSection {
     /** Reloads the preview content from the server. */
     protected async refreshContentFromServer(): Promise<void> {
       //
+    }
+
+    /**
+     * Returns the callback function to apply LLM results to this specific section.
+     * Base implementation returns undefined. Subclasses override this.
+     */
+    protected getApplyCallback(): ((generatedText: string) => void) | undefined {
+        return undefined; // Base sections don't know how to apply text
     }
 
     /** Updates the displayed section number */
