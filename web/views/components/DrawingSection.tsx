@@ -2,7 +2,7 @@
 
 import { ContentApi } from './Api'; // Import API client
 import { BaseSection } from './BaseSection';
-import { SectionData, SectionCallbacks, DrawingContent, ExcalidrawSceneData } from './types';
+import { SectionContent, SectionData, SectionCallbacks, DrawingContent, ExcalidrawSceneData } from './types';
 
 // --- Excalidraw Integration ---
 import React from 'react';
@@ -300,4 +300,13 @@ export class DrawingSection extends BaseSection {
         //     this.drawingEditorInstance.resize(); // Call the library's specific resize/redraw method
         // }
     }
+
+     /** Implements the abstract method from BaseSection */
+     protected override updateInternalContent(newContent: SectionContent): void {
+         if (newContent && typeof newContent === 'object' && 'format' in newContent && 'data' in newContent) {
+             this.drawingContent = newContent as DrawingContent;
+         } else {
+              console.warn(`DrawingSection ${this.data.id}: Received invalid content during updateInternalContent`, newContent);
+         }
+     }
 }

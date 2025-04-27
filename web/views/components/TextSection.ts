@@ -2,7 +2,7 @@
 
 import { ContentApi } from './Api'; // Import API client
 import { BaseSection } from './BaseSection';
-import { SectionData, SectionCallbacks, TextContent } from './types';
+import { SectionData, SectionContent, SectionCallbacks, TextContent } from './types';
 
 // Import TinyMCE core, theme, icons, and model
 import tinymce, { Editor } from 'tinymce/tinymce';
@@ -413,5 +413,14 @@ export class TextSection extends BaseSection {
     protected override getApplyCallback(): ((generatedText: string) => void) | undefined {
         // Return the specific method bound to this instance
         return this.applyGeneratedContent.bind(this);
+    }
+
+    /** Implements the abstract method from BaseSection */
+    protected override updateInternalContent(newContent: SectionContent): void {
+        if (typeof newContent === 'string') {
+            this.textContent = newContent;
+        } else {
+            console.warn(`TextSection ${this.data.id}: Received non-string content during updateInternalContent`, newContent);
+        }
     }
 }

@@ -82,52 +82,55 @@ export abstract class BaseSection {
         this.updateDisplayTitle();
         this.updateTypeIcon();
         this._bindEvents(); // Consolidated event binding
-        this.initViewAndLoadingState();
+        this.initViewAndLoadingState(); // Initialize view
 
         // Add instance to the element for easy access (e.g., retry button)
         (this.element as any).componentInstance = this;
     }
-    
+
     /** Call this when the section element is removed from the DOM */
     public destroy(): void {
         this.fullscreenHandler?.destroy(); // Clean up fullscreen listeners
     }
 
-    protected initViewAndLoadingState() {
+    /** Initializes the section view and shows the loading state */
+    protected initViewAndLoadingState(): void {
         this.mode = 'view'; // Start in view mode
-        if (this.contentContainer) {
-            if (this.loadTemplate('view')) {
-                // Find the primary content area within the loaded view template
-                const viewContentArea = this.contentContainer.querySelector('.section-view-content');
-                if (viewContentArea) {
-                    // Set loading state *inside* the view template structure
-                    viewContentArea.innerHTML = `
-                        <div class="p-4 text-center text-gray-500 dark:text-gray-400 italic">
-                            Loading content...
-                        </div>`;
-                } else {
-                    // Fallback if the standard content class isn't found
-                    this.contentContainer.innerHTML = `
-                        <div class="p-4 text-center text-gray-500 dark:text-gray-400 italic">
-                            Loading content... (Template structure missing '.section-view-content')
-                        </div>`;
-                    console.warn(`Section ${this.sectionId}: View template loaded, but '.section-view-content' not found.`);
-                }
-                this.bindViewModeEvents(); // Bind events to the loaded view template
-            } else {
-                // Handle template loading failure immediately
-                this.contentContainer.innerHTML = `
-                    <div class="p-4 text-red-500 dark:text-red-400 text-center">
-                        Error: Could not load view template for type '${this.data.type}'.
-                    </div>`;
-                console.error(`Section ${this.sectionId}: Failed to load initial view template.`);
-            }
-        }
+        this._renderCurrentMode(true); // Render view mode with initial loading indicator
     }
 
-     public get sectionId(): string {
+    /** Renders the appropriate template and content based on the current mode */
+    protected _renderCurrentMode(initialLoad: boolean = false): void {
+        if (!this.contentContainer) {
+            console.error(`BaseSection ${this.sectionId}: Cannot render mode, content container missing.`);
+            return;
+        }
+
+        const success = this.loadTemplate(this.mode);
+        if (success) {
+            if (this.mode === 'view') {
+                if (initialLoad) {
+                    // Show loading message initially
+                     const viewContentArea = this.contentContainer.querySelector('.section-view-content');
+                     if (viewContentArea) {
+                         viewContentArea.innerHTML = `<div class="p-4 text-center text-gray-500 dark:text-gray-400 italic">Loading content...</div>`;
+                     } else {
+                         this.contentContainer.innerHTML = `<div class="p-4 text-red-500">Error: View content area missing.</div>`;
+                     }
+                } else {
+                    this.populateViewContent(); // Populate with actual content when not initial load
+                }
+                // No need for bindViewModeEvents with delegation covering triggers
+            } else { // 'edit' mode
+                this.populateEditContent();
+            }
+        }
+        // Errors handled within loadTemplate
+    }
+
+    public get sectionId(): string {
        return this.data.id
-     }
+    }
 
      public get designId(): string {
        return this.data.designId
@@ -347,26 +350,6 @@ export abstract class BaseSection {
          }
     }
 
-    /**
-     * Internal helper to load the view template and populate it.
-     * Assumes this.data.content is already set.
-     */
-    private renderViewMode(): void {
-        if (!this.contentContainer) return;
-
-        if (this.loadTemplate('view')) {
-            this.populateViewContent(); // Subclass implements this to render the actual content
-            this.bindViewModeEvents();
-            console.log(`Section ${this.sectionId}: View template loaded and populated.`);
-        } else {
-            console.error(`Section ${this.sectionId}: Failed to load view template.`);
-            this.contentContainer.innerHTML = `
-                <div class="p-4 text-red-500 dark:text-red-400 text-center">
-                    Error: Could not load view template.
-                </div>`;
-        }
-    }
-
     /** Handles the logic for editing the section title */
     protected startTitleEdit(e: Event): void {
         e.preventDefault();
@@ -446,30 +429,29 @@ export abstract class BaseSection {
      * Loads the appropriate view template from the registry.
      */
     public switchToViewMode(saveChanges: boolean): void {
-        // Step 5 will add the saving logic here using this.saveContent()
+        let savePromise: Promise<void> = Promise.resolve();
         if (this.mode === 'edit' && saveChanges) {
-            console.log(`switchToViewMode: Save requested for ${this.sectionId}. Saving logic TBD in Step 5.`);
-             // **** PLACEHOLDER for Step 5: Call this.saveContent() ****
-             const newContent = this.getContentFromEditMode();
-             console.log(`Section ${this.sectionId} content updated locally (API save TBD): `, newContent);
-
-            // Cleanup editor state *after* getting content, before rendering view
-            this.cleanupEditMode();
+            console.log(`switchToViewMode: Save requested for ${this.sectionId}.`);
+            // Trigger save; subclasses handle actual API call via handleSaveClick
+            savePromise = this.handleSaveClick();
         } else if (this.mode === 'edit' && !saveChanges) {
-             // Cleanup editor state if needed
+             console.log(`switchToViewMode: Cancelling edit for ${this.sectionId}.`);
              this.cleanupEditMode();
         }
 
-        this.mode = 'view';
-        console.log(`Switching ${this.sectionId} to view mode.`);
-        // Render the view using the current this.data.content
-        this.renderViewMode();
+        // Switch mode and render *after* save attempt completes (or if no save needed)
+        savePromise.then(() => {
+            this.mode = 'view';
+            console.log(`Switching ${this.sectionId} to view mode.`);
+            this._renderCurrentMode(); // Render the view template
+        }).catch(err => {
+            console.error(`Error during save for section ${this.sectionId}, staying in edit mode.`, err);
+            this.toastManager.showToast("Save Failed", `Could not save: ${err.message || 'Unknown error'}`, "error");
+        });
     }
 
-    // Add a cleanup method to be called before switching away from edit mode without saving
+    /** Cleans up resources used in edit mode (e.g., editors, listeners) */
     protected cleanupEditMode(): void {
-        // Base implementation does nothing. Subclasses (like DrawingSection)
-        // will override this to unmount React components, etc.
         console.log(`BaseSection ${this.sectionId}: Cleaning up edit mode.`);
     }
 
@@ -479,29 +461,13 @@ export abstract class BaseSection {
      */
     public switchToEditMode(): void {
         if (this.mode === 'edit') {
-            // If already in edit mode, maybe focus the editor?
             console.log(`Section ${this.sectionId}: Already in edit mode.`);
             return;
         }
 
-        // Optional: Check if content has been loaded successfully before allowing edit?
-        // if (this.data.content === undefined) { // Or check based on an error flag
-        //    console.warn(`Section ${this.sectionId}: Cannot switch to edit, content not loaded.`);
-        //    // Optionally trigger loadContent again or show a message
-        //    // await this.loadContent(); // Maybe retry load?
-        //    // if (this.data.content === undefined) return; // Exit if load failed again
-        //    return;
-        // }
-
         this.mode = 'edit';
         console.log(`Switching ${this.sectionId} to edit mode.`);
-        if (this.loadTemplate('edit')) {
-            this.populateEditContent(); // Initialize the editor with current this.data.content
-            // this.bindEditModeEvents();
-        } else {
-             console.error("Failed to load edit template for section", this.sectionId);
-             this.mode = 'view'; // Revert mode if template fails
-        }
+        this._renderCurrentMode(); // Render the edit template
     }
 
     /**
@@ -509,40 +475,12 @@ export abstract class BaseSection {
      * This method is now less critical due to event delegation in _bindEvents.
      */
     protected bindViewModeEvents(): void {
-      /*
-        const editTrigger = this.contentContainer?.querySelector('.section-edit-trigger');
-        if (editTrigger) {
-             editTrigger.removeEventListener('click', this.handleViewClick); // Prevent multiple listeners
-             editTrigger.addEventListener('click', this.handleViewClick.bind(this));
-        }*/
-       // Most button clicks are handled by delegation in _bindEvents.
-       // Specific view mode listeners (if any) that CANNOT be delegated go here.
-       // Example: Maybe hover effects that need direct element access.
     }
 
     /**
      * Called when the container is clicked in view mode.  By default switches to switch to edit mode.
      */
     protected handleViewClick(): void {
-        if (this.mode === 'view' && this.allowEditOnClick) { // Double check mode before switching
-            this.switchToEditMode();
-            /*
-        }
-    }
-
-    protected bindEditModeEvents(): void {
-        const saveButton = this.contentContainer?.querySelector('.section-edit-save');
-        const cancelButton = this.contentContainer?.querySelector('.section-edit-cancel');
-
-        if (saveButton) {
-            saveButton.removeEventListener('click', this.handleSaveClick);
-            saveButton.addEventListener('click', this.handleSaveClick.bind(this));
-        }
-        if (cancelButton) {
-            cancelButton.removeEventListener('click', this.handleCancelClick);
-            cancelButton.addEventListener('click', this.handleCancelClick.bind(this));
-           */
-        }
     }
 
     public async handleSaveClick(): Promise<void> {
@@ -617,6 +555,9 @@ export abstract class BaseSection {
     protected async refreshContentFromServer(): Promise<void> {
       //
     }
+
+     /** Updates the internal content state (e.g., this.textContent). To be implemented by subclasses. */
+    protected abstract updateInternalContent(newContent: SectionContent): void;
 
     /**
      * Returns the callback function to apply LLM results to this specific section.
