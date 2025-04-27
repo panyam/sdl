@@ -76,6 +76,9 @@ type Section struct {
 
 	// Title, format, content type
 	Title string `json:"title"`
+
+	GetAnswerPrompt    string `json:"-"`
+	VerifyAnswerPrompt string `json:"-"`
 }
 
 // NEW: Struct to represent Content metadata (can be stored in main.json or later elsewhere)

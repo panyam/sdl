@@ -89,12 +89,14 @@ func SectionToProto(input *Section) (out *protos.Section) {
 		return nil
 	}
 	out = &protos.Section{
-		CreatedAt: tspb.New(input.BaseModel.CreatedAt),
-		UpdatedAt: tspb.New(input.BaseModel.UpdatedAt),
-		Id:        input.Id,
-		DesignId:  input.DesignId,
-		Type:      SectionTypeFromString(input.Type), // Use helper
-		Title:     input.Title,
+		CreatedAt:          tspb.New(input.BaseModel.CreatedAt),
+		UpdatedAt:          tspb.New(input.BaseModel.UpdatedAt),
+		Id:                 input.Id,
+		DesignId:           input.DesignId,
+		Type:               SectionTypeFromString(input.Type), // Use helper
+		Title:              input.Title,
+		GetAnswerPrompt:    input.GetAnswerPrompt,    // Directly copy from struct field
+		VerifyAnswerPrompt: input.VerifyAnswerPrompt, // Directly copy from struct field
 	}
 	// Content oneof is intentionally NOT populated.
 	return out
@@ -116,6 +118,8 @@ func SectionFromProto(input *protos.Section) (out *Section) {
 		Title:    input.Title,
 		// Order is not stored in the service struct
 		// Content-related fields (ContentType, Format) from the proto are ignored here.
+		GetAnswerPrompt:    input.GetAnswerPrompt,    // Directly copy from struct field
+		VerifyAnswerPrompt: input.VerifyAnswerPrompt, // Directly copy from struct field
 	}
 	// Content field in the service struct is intentionally left nil/unset.
 	return

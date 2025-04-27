@@ -68,6 +68,19 @@ export interface SectionObjectContainingOnlyTheFieldsToBeUpdatedTheServerWillUse
      * @memberof SectionObjectContainingOnlyTheFieldsToBeUpdatedTheServerWillUseTheUpdateMaskToKnowWhichFieldsFromThisSectionMessageToApplyToTheStoredSection
      */
     order?: number;
+    /**
+     * *
+     * The current answer to get the answer for this section.
+     * @type {string}
+     * @memberof SectionObjectContainingOnlyTheFieldsToBeUpdatedTheServerWillUseTheUpdateMaskToKnowWhichFieldsFromThisSectionMessageToApplyToTheStoredSection
+     */
+    getAnswerPrompt?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof SectionObjectContainingOnlyTheFieldsToBeUpdatedTheServerWillUseTheUpdateMaskToKnowWhichFieldsFromThisSectionMessageToApplyToTheStoredSection
+     */
+    verifyAnswerPrompt?: string;
 }
 
 
@@ -95,6 +108,8 @@ export function SectionObjectContainingOnlyTheFieldsToBeUpdatedTheServerWillUseT
         'title': json['title'] == null ? undefined : json['title'],
         'description': json['description'] == null ? undefined : json['description'],
         'order': json['order'] == null ? undefined : json['order'],
+        'getAnswerPrompt': json['getAnswerPrompt'] == null ? undefined : json['getAnswerPrompt'],
+        'verifyAnswerPrompt': json['verifyAnswerPrompt'] == null ? undefined : json['verifyAnswerPrompt'],
     };
 }
 
@@ -115,6 +130,8 @@ export function SectionObjectContainingOnlyTheFieldsToBeUpdatedTheServerWillUseT
         'title': value['title'],
         'description': value['description'],
         'order': value['order'],
+        'getAnswerPrompt': value['getAnswerPrompt'],
+        'verifyAnswerPrompt': value['verifyAnswerPrompt'],
     };
 }
 

@@ -52,6 +52,18 @@ export interface DesignServiceAddSectionRequest {
      * @memberof DesignServiceAddSectionRequest
      */
     position?: V1PositionType;
+    /**
+     * 
+     * @type {string}
+     * @memberof DesignServiceAddSectionRequest
+     */
+    initialGetAnswerPrompt?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof DesignServiceAddSectionRequest
+     */
+    initialVerifyPrompt?: string;
 }
 
 
@@ -76,6 +88,8 @@ export function DesignServiceAddSectionRequestFromJSONTyped(json: any, ignoreDis
         'section': json['section'] == null ? undefined : DesignServiceAddSectionRequestSectionFromJSON(json['section']),
         'relativeSectionId': json['relativeSectionId'] == null ? undefined : json['relativeSectionId'],
         'position': json['position'] == null ? undefined : V1PositionTypeFromJSON(json['position']),
+        'initialGetAnswerPrompt': json['initialGetAnswerPrompt'] == null ? undefined : json['initialGetAnswerPrompt'],
+        'initialVerifyPrompt': json['initialVerifyPrompt'] == null ? undefined : json['initialVerifyPrompt'],
     };
 }
 
@@ -93,6 +107,8 @@ export function DesignServiceAddSectionRequestToJSONTyped(value?: DesignServiceA
         'section': DesignServiceAddSectionRequestSectionToJSON(value['section']),
         'relativeSectionId': value['relativeSectionId'],
         'position': V1PositionTypeToJSON(value['position']),
+        'initialGetAnswerPrompt': value['initialGetAnswerPrompt'],
+        'initialVerifyPrompt': value['initialVerifyPrompt'],
     };
 }
 

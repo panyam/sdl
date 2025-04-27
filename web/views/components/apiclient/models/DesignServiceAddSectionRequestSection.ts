@@ -72,6 +72,19 @@ export interface DesignServiceAddSectionRequestSection {
      * @memberof DesignServiceAddSectionRequestSection
      */
     order?: number;
+    /**
+     * *
+     * The current answer to get the answer for this section.
+     * @type {string}
+     * @memberof DesignServiceAddSectionRequestSection
+     */
+    getAnswerPrompt?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof DesignServiceAddSectionRequestSection
+     */
+    verifyAnswerPrompt?: string;
 }
 
 
@@ -100,6 +113,8 @@ export function DesignServiceAddSectionRequestSectionFromJSONTyped(json: any, ig
         'title': json['title'] == null ? undefined : json['title'],
         'description': json['description'] == null ? undefined : json['description'],
         'order': json['order'] == null ? undefined : json['order'],
+        'getAnswerPrompt': json['getAnswerPrompt'] == null ? undefined : json['getAnswerPrompt'],
+        'verifyAnswerPrompt': json['verifyAnswerPrompt'] == null ? undefined : json['verifyAnswerPrompt'],
     };
 }
 
@@ -121,6 +136,8 @@ export function DesignServiceAddSectionRequestSectionToJSONTyped(value?: DesignS
         'title': value['title'],
         'description': value['description'],
         'order': value['order'],
+        'getAnswerPrompt': value['getAnswerPrompt'],
+        'verifyAnswerPrompt': value['verifyAnswerPrompt'],
     };
 }
 

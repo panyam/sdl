@@ -295,6 +295,10 @@ message AddSectionRequest {
   Section section = 1;
   string relative_section_id = 2;
   PositionType position = 3;
+
+   // Optional: Initial prompt content to save if creating from suggestion/template
+   string initial_get_answer_prompt = 4;
+   string initial_verify_prompt = 5;
 }
 
 message GetSectionRequest {

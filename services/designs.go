@@ -110,6 +110,30 @@ func (s *DesignService) getSectionBasePath(designId, sectionId string) string {
 	return filepath.Join(s.getSectionsBasePath(designId), sectionId)
 }
 
+// Helper to get the path for a specific prompt file within a section dir
+func (s *DesignService) getSectionPromptPath(designId, sectionId, promptName string) (string, error) {
+	// Basic sanitization - ensure promptName is simple (e.g., "get_answer.md", "verify.md")
+	safePromptName := strings.ReplaceAll(promptName, "..", "") // Prevent directory traversal
+	safePromptName = strings.ReplaceAll(safePromptName, "/", "")
+	safePromptName = strings.ReplaceAll(safePromptName, "\\", "")
+	if safePromptName == "" {
+		return "", fmt.Errorf("invalid prompt name provided")
+	}
+	if !strings.HasSuffix(safePromptName, ".md") && !strings.HasSuffix(safePromptName, ".txt") {
+		// Enforce markdown/text extension for safety/clarity, adjust if needed
+		safePromptName += ".md"
+	}
+
+	promptsDir := filepath.Join(s.getSectionBasePath(designId, sectionId), "prompts")
+	// Ensure the prompts directory exists for the section
+	err := os.MkdirAll(promptsDir, 0755)
+	if err != nil && !errors.Is(err, os.ErrExist) {
+		slog.Error("Failed to create prompts directory", "path", promptsDir, "error", err)
+		return "", fmt.Errorf("failed to ensure prompts directory: %w", err)
+	}
+	return filepath.Join(promptsDir, safePromptName), nil
+}
+
 func (s *DesignService) getContentPath(designId, sectionId, contentName string) string {
 	safeName := strings.ReplaceAll(contentName, "..", "")
 	safeName = strings.ReplaceAll(safeName, "/", "")
@@ -118,6 +142,23 @@ func (s *DesignService) getContentPath(designId, sectionId, contentName string) 
 		safeName = "default"
 	}
 	return filepath.Join(s.getSectionBasePath(designId, sectionId), fmt.Sprintf("content.%s", safeName))
+}
+
+// Helper to read prompt file content
+func (s *DesignService) readPromptFile(designId, sectionId, promptName string) (string, error) {
+	promptPath, err := s.getSectionPromptPath(designId, sectionId, promptName)
+	if err != nil {
+		return "", err // Error getting path (e.g., bad name, couldn't create dir)
+	}
+	contentBytes, err := os.ReadFile(promptPath)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return "", ErrNoSuchEntity // Use specific error for not found
+		}
+		slog.Error("Failed to read prompt file", "path", promptPath, "error", err)
+		return "", fmt.Errorf("failed to read prompt file %s: %w", promptPath, err)
+	}
+	return string(contentBytes), nil
 }
 
 // Helper to read and unmarshal section metadata (main.json)
@@ -306,6 +347,15 @@ func (s *DesignService) GetDesign(ctx context.Context, req *protos.GetDesignRequ
 				continue
 			}
 
+			// --- Populate prompts by reading files ---
+			if getPrompt, errRead := s.readPromptFile(designId, sectionId, "get_answer.md"); errRead == nil {
+				sectionData.GetAnswerPrompt = getPrompt
+			} // Ignore ErrNoSuchEntity
+			if verifyPrompt, errRead := s.readPromptFile(designId, sectionId, "verify.md"); errRead == nil {
+				sectionData.VerifyAnswerPrompt = verifyPrompt
+			} // Ignore ErrNoSuchEntity
+			// ---------------------------------------
+
 			// Convert to proto
 			sectionProto := SectionToProto(sectionData)
 			// Set the order based on its index in the design's list
@@ -342,6 +392,15 @@ func (s *DesignService) GetSection(ctx context.Context, req *protos.GetSectionRe
 		slog.Error("Failed to read section data", "designId", designId, "sectionId", sectionId, "error", err)
 		return nil, status.Error(codes.Internal, "Failed to read section data")
 	}
+
+	// --- Populate prompts by reading files before converting ---
+	if getPrompt, errRead := s.readPromptFile(designId, sectionId, "get_answer.md"); errRead == nil {
+		sectionData.GetAnswerPrompt = getPrompt
+	} // Ignore ErrNoSuchEntity
+	if verifyPrompt, errRead := s.readPromptFile(designId, sectionId, "verify.md"); errRead == nil {
+		sectionData.VerifyAnswerPrompt = verifyPrompt
+	} // Ignore ErrNoSuchEntity
+	// ----------------------------------------------------------
 
 	// TODO: Add permission check - can the user view this design/section?
 
@@ -584,6 +643,22 @@ func (s *DesignService) AddSection(ctx context.Context, req *protos.AddSectionRe
 		return nil, status.Error(codes.Internal, "Failed to save section data")
 	}
 	slog.Info("Successfully wrote new section file", "path", sectionPath)
+
+	// --- Write Initial Prompts (if provided) ---
+	if req.InitialGetAnswerPrompt != "" {
+		err = s.writePromptFile(designId, newSectionId, "get_answer.md", req.InitialGetAnswerPrompt)
+		if err != nil {
+			slog.Error("Failed to write initial get_answer prompt", "designId", designId, "sectionId", newSectionId, "error", err)
+			// Decide: Fail the whole operation? Or just log warning? Let's log for now.
+		}
+	}
+	if req.InitialVerifyPrompt != "" {
+		err = s.writePromptFile(designId, newSectionId, "verify.md", req.InitialVerifyPrompt)
+		if err != nil {
+			slog.Error("Failed to write initial verify prompt", "designId", designId, "sectionId", newSectionId, "error", err)
+		}
+	}
+	// ------------------------------------------
 
 	// 6. Update and write design metadata
 	metadata.SectionIds = append(metadata.SectionIds[:insertIndex], append([]string{newSectionId}, metadata.SectionIds[insertIndex:]...)...)
@@ -1234,6 +1309,21 @@ func (s *DesignService) writeSectionData(designId, sectionId string, sectionData
 		return fmt.Errorf("failed to write section file %s: %w", sectionPath, err)
 	}
 	slog.Info("Successfully wrote section file", "path", sectionPath)
+	return nil
+}
+
+// Helper to write prompt file content
+func (s *DesignService) writePromptFile(designId, sectionId, promptName, content string) error {
+	promptPath, err := s.getSectionPromptPath(designId, sectionId, promptName)
+	if err != nil {
+		return err // Error getting path
+	}
+	err = os.WriteFile(promptPath, []byte(content), 0644)
+	if err != nil {
+		slog.Error("Failed to write prompt file", "path", promptPath, "error", err)
+		return fmt.Errorf("failed to write prompt file %s: %w", promptPath, err)
+	}
+	slog.Info("Successfully wrote prompt file", "path", promptPath)
 	return nil
 }
 

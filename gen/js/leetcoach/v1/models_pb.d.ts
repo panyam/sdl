@@ -341,6 +341,22 @@ export declare type Section = Message<"leetcoach.v1.Section"> & {
    * @generated from field: uint32 order = 8;
    */
   order: number;
+
+  /**
+   * *
+   * The current answer to get the answer for this section.
+   *
+   * @generated from field: string get_answer_prompt = 9;
+   */
+  getAnswerPrompt: string;
+
+  /**
+   * *
+   * Current prompt to verify a user-given answer for his section
+   *
+   * @generated from field: string verify_answer_prompt = 10;
+   */
+  verifyAnswerPrompt: string;
 };
 
 /**
@@ -408,14 +424,19 @@ export declare const ContentSchema: GenMessage<Content>;
  */
 export enum ContentState {
   /**
-   * @generated from enum value: CONTENT_STATE_CREATED = 0;
+   * @generated from enum value: CONTENT_STATE_UNSPECIFIED = 0;
    */
-  CREATED = 0,
+  UNSPECIFIED = 0,
 
   /**
-   * @generated from enum value: CONTENT_STATE_POPULATED = 1;
+   * @generated from enum value: CONTENT_STATE_CREATED = 1;
    */
-  POPULATED = 1,
+  CREATED = 1,
+
+  /**
+   * @generated from enum value: CONTENT_STATE_POPULATED = 2;
+   */
+  POPULATED = 2,
 }
 
 /**

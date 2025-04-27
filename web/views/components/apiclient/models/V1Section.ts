@@ -79,6 +79,19 @@ export interface V1Section {
      * @memberof V1Section
      */
     order?: number;
+    /**
+     * *
+     * The current answer to get the answer for this section.
+     * @type {string}
+     * @memberof V1Section
+     */
+    getAnswerPrompt?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof V1Section
+     */
+    verifyAnswerPrompt?: string;
 }
 
 
@@ -108,6 +121,8 @@ export function V1SectionFromJSONTyped(json: any, ignoreDiscriminator: boolean):
         'title': json['title'] == null ? undefined : json['title'],
         'description': json['description'] == null ? undefined : json['description'],
         'order': json['order'] == null ? undefined : json['order'],
+        'getAnswerPrompt': json['getAnswerPrompt'] == null ? undefined : json['getAnswerPrompt'],
+        'verifyAnswerPrompt': json['verifyAnswerPrompt'] == null ? undefined : json['verifyAnswerPrompt'],
     };
 }
 
@@ -130,6 +145,8 @@ export function V1SectionToJSONTyped(value?: V1Section | null, ignoreDiscriminat
         'title': value['title'],
         'description': value['description'],
         'order': value['order'],
+        'getAnswerPrompt': value['getAnswerPrompt'],
+        'verifyAnswerPrompt': value['verifyAnswerPrompt'],
     };
 }
 

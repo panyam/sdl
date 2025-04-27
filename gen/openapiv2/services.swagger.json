@@ -854,6 +854,14 @@
                       "type": "integer",
                       "format": "int64",
                       "description": "*\nOrder of the section in the list of sections.  This is a readonly field."
+                    },
+                    "getAnswerPrompt": {
+                      "type": "string",
+                      "description": "*\nThe current answer to get the answer for this section."
+                    },
+                    "verifyAnswerPrompt": {
+                      "type": "string",
+                      "title": "*\nCurrent prompt to verify a user-given answer for his section"
                     }
                   }
                 },
@@ -862,6 +870,13 @@
                 },
                 "position": {
                   "$ref": "#/definitions/v1PositionType"
+                },
+                "initialGetAnswerPrompt": {
+                  "type": "string",
+                  "title": "Optional: Initial prompt content to save if creating from suggestion/template"
+                },
+                "initialVerifyPrompt": {
+                  "type": "string"
                 }
               }
             }
@@ -939,6 +954,14 @@
                       "type": "integer",
                       "format": "int64",
                       "description": "*\nOrder of the section in the list of sections.  This is a readonly field."
+                    },
+                    "getAnswerPrompt": {
+                      "type": "string",
+                      "description": "*\nThe current answer to get the answer for this section."
+                    },
+                    "verifyAnswerPrompt": {
+                      "type": "string",
+                      "title": "*\nCurrent prompt to verify a user-given answer for his section"
                     }
                   },
                   "description": "Section object containing *only* the fields to be updated.\nThe server will use the update_mask to know which fields from\nthis 'section' message to apply to the stored section.",
@@ -1788,6 +1811,14 @@
           "type": "integer",
           "format": "int64",
           "description": "*\nOrder of the section in the list of sections.  This is a readonly field."
+        },
+        "getAnswerPrompt": {
+          "type": "string",
+          "description": "*\nThe current answer to get the answer for this section."
+        },
+        "verifyAnswerPrompt": {
+          "type": "string",
+          "title": "*\nCurrent prompt to verify a user-given answer for his section"
         }
       }
     },

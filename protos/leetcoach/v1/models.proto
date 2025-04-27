@@ -114,8 +114,9 @@ message Design {
 }
 
 enum ContentState {
-  CONTENT_STATE_CREATED = 0;
-  CONTENT_STATE_POPULATED = 1;
+  CONTENT_STATE_UNSPECIFIED = 0;
+  CONTENT_STATE_CREATED = 1;
+  CONTENT_STATE_POPULATED = 2;
 }
 
 enum SectionType {
@@ -158,6 +159,16 @@ message Section {
    * Order of the section in the list of sections.  This is a readonly field.
    */
   uint32 order = 8;
+
+  /**
+   * The current answer to get the answer for this section.
+   */
+  string get_answer_prompt = 9;
+
+  /**
+   * Current prompt to verify a user-given answer for his section
+   */
+  string verify_answer_prompt = 10;
 }
 
 /**

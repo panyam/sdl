@@ -344,6 +344,18 @@ export declare type AddSectionRequest = Message<"leetcoach.v1.AddSectionRequest"
    * @generated from field: leetcoach.v1.PositionType position = 3;
    */
   position: PositionType;
+
+  /**
+   * Optional: Initial prompt content to save if creating from suggestion/template
+   *
+   * @generated from field: string initial_get_answer_prompt = 4;
+   */
+  initialGetAnswerPrompt: string;
+
+  /**
+   * @generated from field: string initial_verify_prompt = 5;
+   */
+  initialVerifyPrompt: string;
 };
 
 /**
