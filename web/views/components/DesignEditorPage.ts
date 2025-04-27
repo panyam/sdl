@@ -143,7 +143,8 @@ class DesignEditorPage {
                 type: convertApiSectionToSectionData(apiSec).type, // Use converter for type mapping
                 title: apiSec.title || 'Untitled Section',
                 order: apiSec.order || 0,
-                content: null // Mark content as not loaded yet
+                getAnswerPrompt: apiSec.getAnswerPrompt || "",
+                verifyAnswerPrompt: apiSec.verifyAnswerPrompt || "",
             }));
 
             // Step 3: Initialize Section Shells using SectionManager

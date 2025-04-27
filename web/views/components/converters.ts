@@ -49,6 +49,8 @@ export function convertApiSectionToSectionData(apiSection: V1Section): SectionDa
         title: apiSection.title || `Untitled ${frontendType} Section`, // Provide default title
         // Use || 0 safely as order is number | undefined
         order: apiSection.order || 0, // Use order from API, default to 0 if undefined
+        getAnswerPrompt: apiSection.getAnswerPrompt || "",
+        verifyAnswerPrompt: apiSection.verifyAnswerPrompt || "",
     };
 }
 

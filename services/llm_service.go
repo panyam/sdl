@@ -94,7 +94,7 @@ func (s *LlmService) SuggestSections(ctx context.Context, req *protos.SuggestSec
 
 	// Construct the prompt
 	var promptBuilder strings.Builder
-	promptBuilder.WriteString("You are a helpful assistant for system design interviews.")
+	promptBuilder.WriteString("You are a helpful assistant for system design interviews.\n")
 	promptBuilder.WriteString("Given the following existing section titles in a system design document:\n")
 	if len(existingTitles) > 0 {
 		for _, title := range existingTitles {
@@ -103,10 +103,17 @@ func (s *LlmService) SuggestSections(ctx context.Context, req *protos.SuggestSec
 	} else {
 		promptBuilder.WriteString("(No sections added yet)\n")
 	}
-	promptBuilder.WriteString("\nSuggest 3 to 5 relevant sections to add next. For each suggestion, provide a concise Title, a Type (must be one of: text, drawing, plot), and a brief Description (1 sentence max).\n")
+	promptBuilder.WriteString("\nSuggest 3 to 5 relevant sections to add next. For each suggestion, provide:\n")
+	promptBuilder.WriteString("1. A concise Title.\n")
+	promptBuilder.WriteString("2. A Type (must be one of: text, drawing, plot).\n")
+	promptBuilder.WriteString("3. A brief Description (1 sentence max).\n")
+	promptBuilder.WriteString("4. A Get Answer Prompt: A detailed prompt the user can later give an LLM to generate the content for this section.\n")
+	promptBuilder.WriteString("5. A Verify Prompt: A detailed prompt the user can later give an LLM to review the content they wrote for this section.\n\n")
 	promptBuilder.WriteString("Format each suggestion exactly like this, separated by '---':\n")
 	promptBuilder.WriteString("Title: <Suggested Title>\n")
 	promptBuilder.WriteString("Type: <text|drawing|plot>\n")
+	promptBuilder.WriteString("Get Answer Prompt: <Prompt text for generation>\n")
+	promptBuilder.WriteString("Verify Prompt: <Prompt text for verification>\n")
 	promptBuilder.WriteString("Description: <Brief explanation>\n")
 	promptBuilder.WriteString("---\n") // Separator
 	promptBuilder.WriteString("Title: ...\nType: ...\nDescription: ...\n")
@@ -137,13 +144,13 @@ func (s *LlmService) SuggestSections(ctx context.Context, req *protos.SuggestSec
 // Helper to parse the structured LLM response
 func parseSuggestions(rawResponse string) []*protos.SuggestedSection {
 	var suggestions []*protos.SuggestedSection
-	parts := strings.Split(strings.TrimSpace(rawResponse), "---")
-	for _, part := range parts {
+	for part := range strings.SplitSeq(strings.TrimSpace(rawResponse), "---") {
 		suggestion := &protos.SuggestedSection{}
-		lines := strings.Split(strings.TrimSpace(part), "\n")
-		for _, line := range lines {
+		for line := range strings.SplitSeq(strings.TrimSpace(part), "\n") {
 			if strings.HasPrefix(line, "Title:") {
 				suggestion.Title = strings.TrimSpace(strings.TrimPrefix(line, "Title:"))
+			} else if strings.HasPrefix(line, "Get Answer Prompt:") { // Expecting these prefixes from LLM
+				suggestion.GetAnswerPrompt = strings.TrimSpace(strings.TrimPrefix(line, "Get Answer Prompt:"))
 			} else if strings.HasPrefix(line, "Type:") {
 				// Basic validation for type
 				typ := strings.TrimSpace(strings.TrimPrefix(line, "Type:"))
@@ -153,11 +160,13 @@ func parseSuggestions(rawResponse string) []*protos.SuggestedSection {
 					suggestion.Type = "text" // Default if invalid
 					slog.Warn("LLM suggested invalid type, defaulting to text", "invalid_type", typ)
 				}
+			} else if strings.HasPrefix(line, "Verify Prompt:") { // Expecting these prefixes from LLM
+				suggestion.VerifyAnswerPrompt = strings.TrimSpace(strings.TrimPrefix(line, "Verify Prompt:"))
 			} else if strings.HasPrefix(line, "Description:") {
 				suggestion.Description = strings.TrimSpace(strings.TrimPrefix(line, "Description:"))
 			}
 		}
-		// Only add if we got a title and type
+		// Only add if we got a title and type (prompts are optional but requested)
 		if suggestion.Title != "" && suggestion.Type != "" {
 			suggestions = append(suggestions, suggestion)
 		}
@@ -172,7 +181,7 @@ func (s *LlmService) GenerateTextContent(ctx context.Context, req *protos.Genera
 	slog.Info("Handling GenerateTextContent", "design_id", designId, "section_id", sectionId)
 
 	if s.llmClient == nil || s.designSvc == nil {
-		slog.Error("LLM or Design service is not initialized")
+		slog.Error("LLM or Design service dependency is nil in GenerateTextContent")
 		return nil, status.Error(codes.Internal, "LLM service dependencies not configured")
 	}
 
@@ -182,6 +191,7 @@ func (s *LlmService) GenerateTextContent(ctx context.Context, req *protos.Genera
 	sectionData, err := s.designSvc.readSectionData(designId, sectionId) // Use internal read method
 	if err != nil {
 		if errors.Is(err, ErrNoSuchEntity) {
+			slog.Warn("Section not found for GenerateTextContent", "design_id", designId, "section_id", sectionId)
 			return nil, status.Errorf(codes.NotFound, "Section '%s' not found in design '%s'", sectionId, designId)
 		}
 		slog.Error("Failed to read section data for GenerateTextContent", "design_id", designId, "section_id", sectionId, "error", err)
@@ -192,13 +202,19 @@ func (s *LlmService) GenerateTextContent(ctx context.Context, req *protos.Genera
 		return nil, status.Errorf(codes.InvalidArgument, "GenerateTextContent only supports 'text' sections, found '%s'", sectionData.Type)
 	}
 
-	// Construct prompt
-	prompt := req.GetPromptOverride()
-	if prompt == "" {
+	// --- Read prompt from file ---
+	prompt, err := s.designSvc.readPromptFile(designId, sectionId, "get_answer.md")
+	if err != nil && !errors.Is(err, ErrNoSuchEntity) {
+		// Log error reading but attempt fallback
+		slog.Error("Failed to read get_answer prompt file, using default", "design_id", designId, "section_id", sectionId, "error", err)
+	}
+
+	if err != nil || prompt == "" { // If file not found OR read error OR file empty
+		slog.Info("Get answer prompt file not found or empty, using default.", "design_id", designId, "section_id", sectionId)
 		// Default prompt using the section title
 		prompt = fmt.Sprintf("Generate concise HTML content for a system design document section titled '%s'. Focus on key concepts, potential trade-offs, and common patterns related to this topic. ONLY include relevant HTML tags like <p>, <ul>, <li>, <strong>, <h2>, <h3>. Do NOT include <html>, <head>, <body>, or <style> tags. Start the content directly, for example, with an <p> or a <h3> tag.", sectionData.Title)
-
-		// TODO: Add more sophisticated default prompts based on title patterns
+	} else {
+		slog.Debug("Using get_answer prompt read from file.", "design_id", designId, "section_id", sectionId)
 	}
 
 	// Call LLM
@@ -222,7 +238,7 @@ func (s *LlmService) ReviewTextContent(ctx context.Context, req *protos.ReviewTe
 	slog.Info("Handling ReviewTextContent", "design_id", designId, "section_id", sectionId)
 
 	if s.llmClient == nil || s.contentSvc == nil || s.designSvc == nil {
-		slog.Error("LLM, Content, or Design service is not initialized")
+		slog.Error("LLM, Content, or Design service dependency is nil in ReviewTextContent")
 		return nil, status.Error(codes.Internal, "LLM service dependencies not configured")
 	}
 
@@ -231,6 +247,10 @@ func (s *LlmService) ReviewTextContent(ctx context.Context, req *protos.ReviewTe
 	// Get section metadata (for type check) - could combine with below read if needed
 	sectionData, err := s.designSvc.readSectionData(designId, sectionId)
 	if err != nil { // Handles NotFound
+		if errors.Is(err, ErrNoSuchEntity) {
+			slog.Warn("Section not found for ReviewTextContent", "design_id", designId, "section_id", sectionId)
+			return nil, status.Errorf(codes.NotFound, "Section '%s' not found in design '%s'", sectionId, designId)
+		}
 		slog.Error("Failed to read section data for ReviewTextContent", "design_id", designId, "section_id", sectionId, "error", err)
 		return nil, status.Error(codes.Internal, "Failed to read section metadata")
 	}
@@ -246,15 +266,20 @@ func (s *LlmService) ReviewTextContent(ctx context.Context, req *protos.ReviewTe
 	}
 	existingContent := string(contentBytes) // Will be empty if file didn't exist
 
-	// Construct prompt
 	var prompt string
-	promptOverride := req.GetPromptOverride()
-
-	if promptOverride != "" {
-		// Use override as additional instructions within the standard review structure
-		prompt = fmt.Sprintf("You are a senior software engineer reviewing a system design document section titled '%s'. Please review the following content based on the specific instructions provided below.\n\nSection Content:\n---\n%s\n---\n\nReview Instructions:\n%s\n\nReview:", sectionData.Title, existingContent, promptOverride)
+	verifyPromptInstruction, err := s.designSvc.readPromptFile(designId, sectionId, "verify.md")
+	if err == nil && verifyPromptInstruction != "" {
+		slog.Debug("Using verify prompt read from file.", "design_id", designId, "section_id", sectionId)
+		// Use the prompt from the file as instructions
+		prompt = fmt.Sprintf("You are a senior software engineer reviewing a system design document section titled '%s'. Please review the following content based on the specific instructions provided below.\n\nSection Content:\n---\n%s\n---\n\nReview Instructions:\n%s\n\nReview:", sectionData.Title, existingContent, verifyPromptInstruction)
 	} else {
-		// Default review prompt
+		if !errors.Is(err, ErrNoSuchEntity) {
+			// Log error reading file, but proceed with default
+			slog.Error("Failed to read verify prompt file, using default", "design_id", designId, "section_id", sectionId, "error", err)
+		} else {
+			slog.Info("Verify prompt file not found or empty, using default.", "design_id", designId, "section_id", sectionId)
+		}
+		// Fallback to default review logic
 		prompt = fmt.Sprintf("You are a senior software engineer reviewing a system design document section titled '%s'. Please review the following content for clarity, completeness, technical accuracy, potential missed edge cases, and overall quality. Provide constructive feedback.\n\nSection Content:\n---\n%s\n---\n\nReview:", sectionData.Title, existingContent)
 		if existingContent == "" {
 			prompt = fmt.Sprintf("The system design section titled '%s' is currently empty. What key points, trade-offs, or common patterns should be included in this section?", sectionData.Title)
@@ -272,5 +297,64 @@ func (s *LlmService) ReviewTextContent(ctx context.Context, req *protos.ReviewTe
 		ReviewText: reviewText,
 	}
 	slog.Info("ReviewTextContent successful")
+	return resp, nil
+}
+
+// GenerateDefaultPrompts generates and saves standard prompts for a section.
+func (s *LlmService) GenerateDefaultPrompts(ctx context.Context, req *protos.GenerateDefaultPromptsRequest) (*protos.GenerateDefaultPromptsResponse, error) {
+	designId := req.GetDesignId()
+	sectionId := req.GetSectionId()
+	slog.Info("Handling GenerateDefaultPrompts", "design_id", designId, "section_id", sectionId)
+
+	if s.llmClient == nil || s.designSvc == nil {
+		slog.Error("LLM or Design service dependency is nil in GenerateDefaultPrompts")
+		return nil, status.Error(codes.Internal, "LLM service dependencies not configured")
+	}
+
+	// TODO: Permission check
+
+	// Get section title
+	sectionData, err := s.designSvc.readSectionData(designId, sectionId)
+	if err != nil { // Handles NotFound
+		slog.Error("Failed to read section data for GenerateDefaultPrompts", "design_id", designId, "section_id", sectionId, "error", err)
+		// Distinguish between not found and other errors for status code
+		if errors.Is(err, ErrNoSuchEntity) {
+			return nil, status.Errorf(codes.NotFound, "Section '%s' not found in design '%s'", sectionId, designId)
+		}
+		return nil, status.Error(codes.Internal, "Failed to read section metadata")
+	}
+
+	// Generate the prompts (using simple title-based logic for now, could use LLM later)
+	// TODO: Use LLM to generate *better* default prompts if desired.
+	defaultGetAnswerPrompt := fmt.Sprintf("Generate concise HTML content for a system design document section titled '%s'. Focus on key concepts, potential trade-offs, and common patterns related to this topic. ONLY include relevant HTML tags like <p>, <ul>, <li>, <strong>, <h2>, <h3>. Do NOT include <html>, <head>, <body>, or <style> tags. Start the content directly, for example, with an <p> or a <h3> tag.", sectionData.Title)
+	defaultVerifyPrompt := fmt.Sprintf("Review the content of the section '%s' for clarity, completeness, technical accuracy, missed edge cases, and overall quality. Provide constructive feedback.", sectionData.Title)
+
+	// Save the prompts to files
+	err = s.designSvc.writePromptFile(designId, sectionId, "get_answer.md", defaultGetAnswerPrompt)
+	if err != nil {
+		// Log error but try to save the other prompt
+		slog.Error("Failed to save generated get_answer.md prompt", "design_id", designId, "section_id", sectionId, "error", err)
+	}
+
+	errVerify := s.designSvc.writePromptFile(designId, sectionId, "verify.md", defaultVerifyPrompt)
+	if errVerify != nil {
+		slog.Error("Failed to save generated verify.md prompt", "design_id", designId, "section_id", sectionId, "error", errVerify)
+		// If the first one failed too, return a general error
+		if err != nil {
+			return nil, status.Error(codes.Internal, "Failed to save generated prompts")
+		}
+	}
+
+	// Return the generated prompts even if saving had issues (client can retry)
+	resp := &protos.GenerateDefaultPromptsResponse{
+		GetAnswerPrompt:    defaultGetAnswerPrompt,
+		VerifyAnswerPrompt: defaultVerifyPrompt,
+	}
+
+	if err != nil || errVerify != nil {
+		slog.Warn("GenerateDefaultPrompts completed but one or more prompt files failed to save.", "design_id", designId, "section_id", sectionId)
+	} else {
+		slog.Info("GenerateDefaultPrompts successful, prompts saved.", "design_id", designId, "section_id", sectionId)
+	}
 	return resp, nil
 }

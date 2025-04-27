@@ -59,6 +59,8 @@ export interface SectionData {
   title: string;
   // content?: TextContent | DrawingContent | PlotContent | null;
   order: number;
+  getAnswerPrompt: string;
+  verifyAnswerPrompt: string;
 }
 
 export interface SectionCallbacks {

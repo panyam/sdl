@@ -246,14 +246,29 @@
           Generate content for this section using a pre-defined prompt
         </p>
 
-        <div class="bg-gray-50 dark:bg-gray-700 rounded-md p-4 mb-4">
+        <div
+          class="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md p-3 mb-4"
+        >
+          <label
+            class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1"
+            >Current Prompt:</label
+          >
           <p
             id="llm-generate-prompt"
-            class="text-sm text-gray-600 dark:text-gray-400"
+            class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-mono text-xs"
           >
-            Generate requirements for a Twitter-like application, including
-            functional and non-functional requirements.
+            <!-- Prompt text will be loaded here -->
+            <span class="italic text-gray-400 dark:text-gray-500"
+              >Loading prompt...</span
+            >
           </p>
+          <button
+            id="llm-generate-default-prompt-btn"
+            type="button"
+            class="hidden mt-2 text-xs text-blue-600 dark:text-blue-400 hover:underline focus:outline-none"
+          >
+            Generate Default Prompt
+          </button>
         </div>
 
         <!-- Options -->
@@ -327,14 +342,29 @@
           Verify and analyze the content of this section
         </p>
 
-        <div class="bg-gray-50 dark:bg-gray-700 rounded-md p-4 mb-4">
+        <div
+          class="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md p-3 mb-4"
+        >
+          <label
+            class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1"
+            >Current Prompt:</label
+          >
           <p
             id="llm-verify-prompt"
-            class="text-sm text-gray-600 dark:text-gray-400"
+            class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-mono text-xs"
           >
-            Review the requirements for completeness, clarity, and alignment
-            with industry standards. Identify any missing critical requirements.
+            <!-- Prompt text will be loaded here -->
+            <span class="italic text-gray-400 dark:text-gray-500"
+              >Loading prompt...</span
+            >
           </p>
+          <button
+            id="llm-verify-default-prompt-btn"
+            type="button"
+            class="hidden mt-2 text-xs text-blue-600 dark:text-blue-400 hover:underline focus:outline-none"
+          >
+            Generate Default Prompt
+          </button>
         </div>
 
         <!-- Options -->
@@ -387,6 +417,7 @@
 
     <!-- Results Content -->
     <div class="p-6 max-h-[60vh] overflow-y-auto">
+      <!-- Add ID for results content area -->
       <div
         id="llm-results-content"
         class="prose dark:prose-invert max-w-none whitespace-pre-wrap"
@@ -399,8 +430,9 @@
     <!-- Footer with Actions -->
     <div
       class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 border-t border-gray-200 dark:border-gray-600"
+      id="llm-results-footer"
     >
-      <!-- **** ADD Apply Button **** -->
+      <!-- Apply Button (Initially hidden, shown by JS) -->
       <button
         id="llm-results-apply"
         type="button"

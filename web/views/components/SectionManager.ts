@@ -448,6 +448,8 @@ export class SectionManager {
              type: sectionData.type,
              title: sectionData.title,
              order: sectionData.order,
+             getAnswerPrompt: sectionData.getAnswerPrompt || "",
+             verifyAnswerPrompt: sectionData.verifyAnswerPrompt || "",
          });
 
         // Renumber and update TOC only if it's a user action causing immediate UI change.

@@ -7,7 +7,8 @@ import { SectionData } from './types';
 import {
     LlmServiceSimpleLlmQueryRequest,
     LlmServiceGenerateTextContentRequest,
-    LlmServiceReviewTextContentRequest
+    LlmServiceReviewTextContentRequest,
+    LlmServiceGenerateDefaultPromptsRequest // Import new request type
 } from './apiclient'; // Import request types if needed for clarity
 
 export class LlmInteractionHandler {
@@ -17,7 +18,7 @@ export class LlmInteractionHandler {
 
     // Store context while dialog is open
     private currentSectionData: SectionData | null = null;
-    private currentApplyCallback: ((text: string) => void) | null = null;
+    private currentApplyCallback: ((generatedText: string) => void) | null = null;
     private currentLlmResponseText: string | null = null;
 
     constructor(modal: Modal, toastManager: ToastManager) {
@@ -49,6 +50,7 @@ export class LlmInteractionHandler {
         const modalContentElement = this.modal.show('llm-dialog', {
             // Pass the handler's submit method as the modal's onSubmit callback
             onSubmit: this.handleDialogSubmit.bind(this)
+            // Pass other callbacks if needed, like onApply for the results modal later
         });
 
         // Configure UI after the modal template is loaded into the DOM
@@ -59,18 +61,22 @@ export class LlmInteractionHandler {
                  return;
             };
             this.updateCurrentSectionDisplay(modalContentElement, sectionData.title);
-            this.setupTabs(modalContentElement);
-            this.configureDialog(modalContentElement, sectionData);
+            this.setupTabsAndDefaultGenerationButtons(modalContentElement); // Combine setup
+            this.configureDialog(modalContentElement, sectionData); // Populate prompts initially
+             // Ensure initial tab state is correct
+            // Activate the generate tab by default
             // Ensure initial tab state is correct
             const initialActiveTab = modalContentElement.querySelector<HTMLButtonElement>('.llm-tab-generate');
              initialActiveTab?.click(); // Activate generate tab by default
         }, 50); // Delay to allow modal DOM rendering
     }
 
-    /** Sets up the tab switching behavior within the LLM dialog */
-    private setupTabs(modalContentElement: HTMLElement): void {
+    /** Sets up tabs and binds "Generate Default Prompt" buttons */
+    private setupTabsAndDefaultGenerationButtons(modalContentElement: HTMLElement): void {
         const tabs = modalContentElement.querySelectorAll<HTMLButtonElement>('.llm-tab');
         const panes = modalContentElement.querySelectorAll<HTMLElement>('.llm-tab-pane');
+        const generateDefaultBtn = modalContentElement.querySelector<HTMLButtonElement>('#llm-generate-default-prompt-btn');
+        const verifyDefaultBtn = modalContentElement.querySelector<HTMLButtonElement>('#llm-verify-default-prompt-btn');
 
         tabs.forEach(tab => {
             tab.onclick = () => { // Use onclick for simplicity
@@ -93,6 +99,14 @@ export class LlmInteractionHandler {
                 }
             };
         });
+
+        // Bind "Generate Default" buttons
+        if (generateDefaultBtn) {
+             generateDefaultBtn.onclick = () => this.handleGenerateDefaultPromptsClick();
+        }
+        if (verifyDefaultBtn) {
+             verifyDefaultBtn.onclick = () => this.handleGenerateDefaultPromptsClick();
+        }
     }
 
     /** Updates the display of the current section title in the LLM dialog */
@@ -110,22 +124,45 @@ export class LlmInteractionHandler {
         const generatePromptEl = modalContentElement.querySelector<HTMLElement>('#llm-generate-prompt');
         const verifyPromptEl = modalContentElement.querySelector<HTMLElement>('#llm-verify-prompt');
         const verifyTabButton = modalContentElement.querySelector<HTMLButtonElement>('.llm-tab-verify');
+        const generateDefaultBtn = modalContentElement.querySelector<HTMLButtonElement>('#llm-generate-default-prompt-btn');
+        const verifyDefaultBtn = modalContentElement.querySelector<HTMLButtonElement>('#llm-verify-default-prompt-btn');
 
         const isTextSection = sectionData.type === 'text';
-        verifyTabButton?.classList.toggle('hidden', !isTextSection); // Hide verify for non-text
+        verifyTabButton?.classList.toggle('hidden', !isTextSection);
 
+        // --- Populate Get Answer Prompt ---
+        if (generatePromptEl) {
+             if (sectionData.getAnswerPrompt) {
+                 generatePromptEl.textContent = sectionData.getAnswerPrompt;
+                 generateDefaultBtn?.classList.add('hidden'); // Hide button if prompt exists
+             } else {
+                 generatePromptEl.innerHTML = `<span class="italic text-gray-400 dark:text-gray-500">No specific prompt saved. Default will be used.</span>`;
+                 generateDefaultBtn?.classList.remove('hidden'); // Show button if no prompt
+             }
+        }
+
+        // --- Populate Verify Prompt ---
         if (isTextSection) {
-            if (generatePromptEl) generatePromptEl.textContent = `Generate content for a section titled "${sectionData.title}". Focus on key concepts, trade-offs, and common patterns. Format as simple HTML.`;
-            if (verifyPromptEl) verifyPromptEl.textContent = `Review the content of the section "${sectionData.title}" for clarity, completeness, technical accuracy, missed edge cases, and overall quality. Provide constructive feedback.`;
+            if (verifyPromptEl) {
+                if (sectionData.verifyAnswerPrompt) {
+                    verifyPromptEl.textContent = sectionData.verifyAnswerPrompt;
+                    verifyDefaultBtn?.classList.add('hidden'); // Hide button
+                } else {
+                    verifyPromptEl.innerHTML = `<span class="italic text-gray-400 dark:text-gray-500">No specific prompt saved. Default will be used.</span>`;
+                    verifyDefaultBtn?.classList.remove('hidden'); // Show button
+                }
+            }
         } else {
-            if (generatePromptEl) generatePromptEl.textContent = `Describe the key elements and relationships typically shown in a "${sectionData.title}" ${sectionData.type} diagram/plot.`;
-            if (verifyPromptEl) verifyPromptEl.textContent = `Review is currently only supported for Text sections.`; // Message when hidden
+            // Non-text sections don't use verify prompts yet
+            if (verifyPromptEl) verifyPromptEl.innerHTML = `<span class="italic text-gray-400 dark:text-gray-500">Verification only available for text sections.</span>`;
+            verifyDefaultBtn?.classList.add('hidden');
         }
     }
 
     /** Handles the submission logic when the dialog's submit button is clicked */
     private async handleDialogSubmit(): Promise<void> {
-        if (this.isLoading || !this.currentSectionData) {
+        const sectionData = this.currentSectionData; // Use stored data at the start
+        if (this.isLoading || !sectionData) {
             console.warn("LLM submit called while loading or without section data.");
             return;
         }
@@ -137,7 +174,6 @@ export class LlmInteractionHandler {
         }
 
         this.isLoading = true;
-        const sectionData = this.currentSectionData; // Use stored data
         console.log(`LLM dialog submit initiated for section ${sectionData.id}`);
 
         const activeTab = dialogContent.querySelector<HTMLButtonElement>('.llm-tab-active');
@@ -259,6 +295,50 @@ export class LlmInteractionHandler {
              }
         }
     }
+
+    /** Handles click on "Generate Default Prompt" buttons */
+    private async handleGenerateDefaultPromptsClick(): Promise<void> {
+      const sectionData = this.currentSectionData;
+      if (!sectionData) return;
+
+      const dialogContent = this.modal.getContentElement();
+      if (!dialogContent) return;
+
+      // Could show loading state on the button itself
+      const genBtn = dialogContent.querySelector<HTMLButtonElement>('#llm-generate-default-prompt-btn');
+      const verifyBtn = dialogContent.querySelector<HTMLButtonElement>('#llm-verify-default-prompt-btn');
+       if(genBtn) genBtn.disabled = true;
+      if(verifyBtn) verifyBtn.disabled = true;
+
+      console.log(`Requesting default prompts for section ${sectionData.id}`);
+      this.toastManager.showToast("Generating...", "Generating default prompts...", "info", 2000);
+
+      try {
+          const request: LlmServiceGenerateDefaultPromptsRequest = {
+              designId: sectionData.designId,
+              sectionId: sectionData.id,
+              body: {},
+          };
+          const response = await LlmApi.llmServiceGenerateDefaultPrompts(request);
+
+          // Update the internal sectionData (so dialog redisplay works if needed)
+          // This assumes SectionData has these fields populated by GetSection/GetDesign
+          sectionData.getAnswerPrompt = response.getAnswerPrompt || "";
+          sectionData.verifyAnswerPrompt = response.verifyAnswerPrompt || "";
+
+          // Update the displayed prompts in the current dialog
+          this.configureDialog(dialogContent, sectionData); // Re-run config to update display & hide buttons
+          this.toastManager.showToast("Success", "Default prompts generated and saved.", "success");
+        } catch (error: any) {
+          console.error("Error generating default prompts:", error);
+          this.toastManager.showToast("Error", `Failed to generate default prompts: ${error.message || 'Server error'}`, "error");
+        } finally {
+          // Re-enable buttons
+          if(genBtn) genBtn.disabled = false;
+          if(verifyBtn) verifyBtn.disabled = false;
+        }
+     }
+
 
     /**
      * Called by the results modal's Apply button click (via Modal.ts).
