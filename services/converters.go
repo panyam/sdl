@@ -95,6 +95,7 @@ func SectionToProto(input *Section) (out *protos.Section) {
 		DesignId:           input.DesignId,
 		Type:               SectionTypeFromString(input.Type), // Use helper
 		Title:              input.Title,
+		Description:        input.Description,
 		GetAnswerPrompt:    input.GetAnswerPrompt,    // Directly copy from struct field
 		VerifyAnswerPrompt: input.VerifyAnswerPrompt, // Directly copy from struct field
 	}
@@ -112,10 +113,11 @@ func SectionFromProto(input *protos.Section) (out *Section) {
 			CreatedAt: input.CreatedAt.AsTime(),
 			UpdatedAt: input.UpdatedAt.AsTime(),
 		},
-		Id:       input.Id,
-		DesignId: input.DesignId,
-		Type:     SectionTypeToString(input.Type), // Use helper
-		Title:    input.Title,
+		Id:          input.Id,
+		DesignId:    input.DesignId,
+		Type:        SectionTypeToString(input.Type), // Use helper
+		Title:       input.Title,
+		Description: input.Description,
 		// Order is not stored in the service struct
 		// Content-related fields (ContentType, Format) from the proto are ignored here.
 		GetAnswerPrompt:    input.GetAnswerPrompt,    // Directly copy from struct field

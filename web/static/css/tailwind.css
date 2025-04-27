@@ -1588,6 +1588,10 @@ select {
   height: 3.5rem;
 }
 
+.h-3 {
+  height: 0.75rem;
+}
+
 .h-4 {
   height: 1rem;
 }
@@ -1658,6 +1662,10 @@ select {
 
 .w-14 {
   width: 3.5rem;
+}
+
+.w-3 {
+  width: 0.75rem;
 }
 
 .w-4 {

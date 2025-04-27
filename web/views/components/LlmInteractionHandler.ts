@@ -2,14 +2,15 @@
 
 import { Modal } from './Modal';
 import { ToastManager } from './ToastManager';
-import { LlmApi } from './Api';
+import { DesignApi, LlmApi } from './Api'; // Import DesignApi
 import { SectionData } from './types';
 import {
     LlmServiceSimpleLlmQueryRequest,
     LlmServiceGenerateTextContentRequest,
     LlmServiceReviewTextContentRequest,
-    LlmServiceGenerateDefaultPromptsRequest // Import new request type
-} from './apiclient'; // Import request types if needed for clarity
+    LlmServiceGenerateDefaultPromptsRequest,
+    DesignServiceUpdateSectionRequest // Import update request type
+} from './apiclient'; // Import request types
 
 export class LlmInteractionHandler {
     private modal: Modal;
@@ -20,6 +21,10 @@ export class LlmInteractionHandler {
     private currentSectionData: SectionData | null = null;
     private currentApplyCallback: ((generatedText: string) => void) | null = null;
     private currentLlmResponseText: string | null = null;
+
+    // Store original prompts to detect edits
+    private originalGetAnswerPrompt: string = "";
+    private originalVerifyAnswerPrompt: string = "";
 
     constructor(modal: Modal, toastManager: ToastManager) {
         this.modal = modal;
@@ -38,60 +43,53 @@ export class LlmInteractionHandler {
         }
         if (this.isLoading) {
             console.warn("LLM Interaction already in progress.");
-            return; // Prevent opening multiple dialogs if already loading
+            return;
         }
         console.log(`Showing LLM dialog for section: ${sectionData.id}`);
 
-        // Store context for the duration the dialog is potentially open
         this.currentSectionData = sectionData;
+        // Store original prompts for comparison later
+        this.originalGetAnswerPrompt = sectionData.getAnswerPrompt || "";
+        this.originalVerifyAnswerPrompt = sectionData.verifyAnswerPrompt || "";
+
         this.currentApplyCallback = applyCallback || null;
-        this.currentLlmResponseText = null; // Reset previous response
+        this.currentLlmResponseText = null;
 
         const modalContentElement = this.modal.show('llm-dialog', {
-            // Pass the handler's submit method as the modal's onSubmit callback
             onSubmit: this.handleDialogSubmit.bind(this)
-            // Pass other callbacks if needed, like onApply for the results modal later
         });
 
-        // Configure UI after the modal template is loaded into the DOM
         setTimeout(() => {
             if (!modalContentElement) {
                  console.error("LLM Dialog template root element not found after show.");
-                 this.modal.hide(); // Hide if template loading failed
+                 this.modal.hide();
                  return;
             };
             this.updateCurrentSectionDisplay(modalContentElement, sectionData.title);
-            this.setupTabsAndDefaultGenerationButtons(modalContentElement); // Combine setup
-            this.configureDialog(modalContentElement, sectionData); // Populate prompts initially
+            this.setupTabsAndRefreshButtons(modalContentElement); // Renamed and updated
+            this.configureDialog(modalContentElement, sectionData);
              // Ensure initial tab state is correct
-            // Activate the generate tab by default
-            // Ensure initial tab state is correct
             const initialActiveTab = modalContentElement.querySelector<HTMLButtonElement>('.llm-tab-generate');
-             initialActiveTab?.click(); // Activate generate tab by default
-        }, 50); // Delay to allow modal DOM rendering
+             initialActiveTab?.click();
+        }, 50);
     }
 
-    /** Sets up tabs and binds "Generate Default Prompt" buttons */
-    private setupTabsAndDefaultGenerationButtons(modalContentElement: HTMLElement): void {
+    /** Sets up tabs and binds "Refresh Default Prompt" buttons */
+    private setupTabsAndRefreshButtons(modalContentElement: HTMLElement): void { // Renamed
         const tabs = modalContentElement.querySelectorAll<HTMLButtonElement>('.llm-tab');
         const panes = modalContentElement.querySelectorAll<HTMLElement>('.llm-tab-pane');
-        const generateDefaultBtn = modalContentElement.querySelector<HTMLButtonElement>('#llm-generate-default-prompt-btn');
-        const verifyDefaultBtn = modalContentElement.querySelector<HTMLButtonElement>('#llm-verify-default-prompt-btn');
+        const refreshGenerateBtn = modalContentElement.querySelector<HTMLButtonElement>('#llm-refresh-generate-prompt-btn'); // New ID
+        const refreshVerifyBtn = modalContentElement.querySelector<HTMLButtonElement>('#llm-refresh-verify-prompt-btn'); // New ID
 
         tabs.forEach(tab => {
             tab.onclick = () => { // Use onclick for simplicity
-                // Deactivate all tabs and panes
-                tabs.forEach(t => {
-                    t.classList.remove('llm-tab-active', 'border-blue-500', 'text-blue-600', 'dark:text-blue-400', 'dark:border-blue-400');
-                    t.classList.add('text-gray-500', 'hover:text-gray-700', 'dark:text-gray-400', 'dark:hover:text-gray-300', 'hover:border-gray-300', 'dark:hover:border-gray-500', 'border-transparent');
-                });
+                tabs.forEach(t => t.classList.remove('llm-tab-active', 'border-blue-500', 'text-blue-600', 'dark:text-blue-400', 'dark:border-blue-400'));
+                tabs.forEach(t => t.classList.add('text-gray-500', 'hover:text-gray-700', 'dark:text-gray-400', 'dark:hover:text-gray-300', 'hover:border-gray-300', 'dark:hover:border-gray-500', 'border-transparent'));
                 panes.forEach(p => p.classList.add('hidden'));
 
-                // Activate the clicked tab
                 tab.classList.add('llm-tab-active', 'border-blue-500', 'text-blue-600', 'dark:text-blue-400', 'dark:border-blue-400');
                 tab.classList.remove('text-gray-500', 'hover:text-gray-700', 'dark:text-gray-400', 'dark:hover:text-gray-300', 'hover:border-gray-300', 'dark:hover:border-gray-500', 'border-transparent');
 
-                // Show the corresponding pane
                 const targetPaneId = tab.dataset.tabTarget;
                 if (targetPaneId) {
                     const targetPane = modalContentElement.querySelector<HTMLElement>(targetPaneId);
@@ -100,125 +98,113 @@ export class LlmInteractionHandler {
             };
         });
 
-        // Bind "Generate Default" buttons
-        if (generateDefaultBtn) {
-             generateDefaultBtn.onclick = () => this.handleGenerateDefaultPromptsClick();
+        // Bind "Refresh Default" buttons
+        if (refreshGenerateBtn) {
+             refreshGenerateBtn.onclick = () => this.handleRefreshDefaultPromptClick('get_answer'); // Pass type
         }
-        if (verifyDefaultBtn) {
-             verifyDefaultBtn.onclick = () => this.handleGenerateDefaultPromptsClick();
+        if (refreshVerifyBtn) {
+             refreshVerifyBtn.onclick = () => this.handleRefreshDefaultPromptClick('verify_answer'); // Pass type
         }
     }
 
-    /** Updates the display of the current section title in the LLM dialog */
-    private updateCurrentSectionDisplay(modalContentElement: HTMLElement, sectionTitle: string): void {
-         const currentSectionElement = modalContentElement.querySelector<HTMLElement>('#llm-current-section');
-         if (currentSectionElement) {
-             currentSectionElement.textContent = sectionTitle;
-         } else {
-             console.warn("Could not find #llm-current-section in modal content after showing.");
-         }
-    }
-
-    /** Configures the LLM dialog based on the section type */
+    /** Configures the LLM dialog - Populates textareas */
     private configureDialog(modalContentElement: HTMLElement, sectionData: SectionData): void {
-        const generatePromptEl = modalContentElement.querySelector<HTMLElement>('#llm-generate-prompt');
-        const verifyPromptEl = modalContentElement.querySelector<HTMLElement>('#llm-verify-prompt');
+        const generatePromptInput = modalContentElement.querySelector<HTMLTextAreaElement>('#llm-generate-prompt-input'); // New ID
+        const verifyPromptInput = modalContentElement.querySelector<HTMLTextAreaElement>('#llm-verify-prompt-input'); // New ID
         const verifyTabButton = modalContentElement.querySelector<HTMLButtonElement>('.llm-tab-verify');
-        const generateDefaultBtn = modalContentElement.querySelector<HTMLButtonElement>('#llm-generate-default-prompt-btn');
-        const verifyDefaultBtn = modalContentElement.querySelector<HTMLButtonElement>('#llm-verify-default-prompt-btn');
 
         const isTextSection = sectionData.type === 'text';
         verifyTabButton?.classList.toggle('hidden', !isTextSection);
 
-        // --- Populate Get Answer Prompt ---
-        if (generatePromptEl) {
-             if (sectionData.getAnswerPrompt) {
-                 generatePromptEl.textContent = sectionData.getAnswerPrompt;
-                 generateDefaultBtn?.classList.add('hidden'); // Hide button if prompt exists
-             } else {
-                 generatePromptEl.innerHTML = `<span class="italic text-gray-400 dark:text-gray-500">No specific prompt saved. Default will be used.</span>`;
-                 generateDefaultBtn?.classList.remove('hidden'); // Show button if no prompt
-             }
+        // Populate Generate Prompt Textarea
+        if (generatePromptInput) {
+             generatePromptInput.value = sectionData.getAnswerPrompt || ""; // Use original value
         }
 
-        // --- Populate Verify Prompt ---
+        // Populate Verify Prompt Textarea
         if (isTextSection) {
-            if (verifyPromptEl) {
-                if (sectionData.verifyAnswerPrompt) {
-                    verifyPromptEl.textContent = sectionData.verifyAnswerPrompt;
-                    verifyDefaultBtn?.classList.add('hidden'); // Hide button
-                } else {
-                    verifyPromptEl.innerHTML = `<span class="italic text-gray-400 dark:text-gray-500">No specific prompt saved. Default will be used.</span>`;
-                    verifyDefaultBtn?.classList.remove('hidden'); // Show button
-                }
+            if (verifyPromptInput) {
+                 verifyPromptInput.value = sectionData.verifyAnswerPrompt || ""; // Use original value
+                 verifyPromptInput.disabled = false;
             }
         } else {
-            // Non-text sections don't use verify prompts yet
-            if (verifyPromptEl) verifyPromptEl.innerHTML = `<span class="italic text-gray-400 dark:text-gray-500">Verification only available for text sections.</span>`;
-            verifyDefaultBtn?.classList.add('hidden');
+            if (verifyPromptInput) {
+                verifyPromptInput.value = "Verification only available for text sections.";
+                verifyPromptInput.disabled = true; // Disable textarea if not applicable
+            }
         }
     }
 
-    /** Handles the submission logic when the dialog's submit button is clicked */
+
+    private updateCurrentSectionDisplay(modalContentElement: HTMLElement, sectionTitle: string): void {
+         const currentSectionElement = modalContentElement.querySelector<HTMLElement>('#llm-current-section');
+         if (currentSectionElement) currentSectionElement.textContent = sectionTitle;
+    }
+
+
+    /** Handles the submission logic: Saves edited prompts THEN runs LLM action */
     private async handleDialogSubmit(): Promise<void> {
-        const sectionData = this.currentSectionData; // Use stored data at the start
+        const sectionData = this.currentSectionData;
         if (this.isLoading || !sectionData) {
             console.warn("LLM submit called while loading or without section data.");
             return;
         }
 
-        const dialogContent = this.modal.getContentElement(); // Get modal content element early
+        const dialogContent = this.modal.getContentElement();
         if (!dialogContent) {
             console.error("LLM Dialog content element not found during submit.");
             return;
         }
 
         this.isLoading = true;
-        console.log(`LLM dialog submit initiated for section ${sectionData.id}`);
-
-        const activeTab = dialogContent.querySelector<HTMLButtonElement>('.llm-tab-active');
-        const activePaneId = activeTab?.dataset.tabTarget;
         const submitButton = dialogContent.querySelector<HTMLButtonElement>('button[data-modal-action="submit"]');
-
-        // Show loading state on button
-        if (submitButton) {
-            submitButton.disabled = true;
-            submitButton.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"> <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle> <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path> </svg> Processing...`;
-        }
-
-        let apiCall: Promise<any>;
-        let actionType: 'generate' | 'review' | 'custom' = 'custom';
-        // *** Define path parameters separately ***
-        const pathParams = {
-            designId: sectionData.designId,
-            sectionId: sectionData.id,
-        };
+        this.showLoadingOnButton(submitButton, true); // Show loading
 
         try {
-            // Determine which API call to make based on the active tab
+            // --- Step 1: Save any edited prompts ---
+            const activeTab = dialogContent.querySelector<HTMLButtonElement>('.llm-tab-active');
+            let promptSaveError = null;
+
+            if (activeTab?.dataset.tabTarget === '#llm-generate-content') {
+                const generatePromptInput = dialogContent.querySelector<HTMLTextAreaElement>('#llm-generate-prompt-input');
+                const currentPromptText = generatePromptInput?.value ?? ""; // Get current value
+                if (currentPromptText !== this.originalGetAnswerPrompt) { // Compare with original
+                    console.log("Generate prompt edited, saving...");
+                    promptSaveError = await this.savePromptUpdate('get_answer_prompt', currentPromptText);
+                }
+            } else if (activeTab?.dataset.tabTarget === '#llm-verify-content' && sectionData.type === 'text') {
+                const verifyPromptInput = dialogContent.querySelector<HTMLTextAreaElement>('#llm-verify-prompt-input');
+                const currentPromptText = verifyPromptInput?.value ?? "";
+                if (currentPromptText !== this.originalVerifyAnswerPrompt) {
+                    console.log("Verify prompt edited, saving...");
+                    promptSaveError = await this.savePromptUpdate('verify_answer_prompt', currentPromptText);
+                }
+            }
+             // No need to save for 'custom' tab
+
+            if (promptSaveError) {
+                 throw promptSaveError; // Stop if saving prompt failed
+            }
+             // --- End Step 1 ---
+
+
+            // --- Step 2: Perform the main LLM action ---
+            console.log(`LLM dialog submit initiated for section ${sectionData.id} - Action Phase`);
+            const activePaneId = activeTab?.dataset.tabTarget;
+            let apiCall: Promise<any>;
+            let actionType: 'generate' | 'review' | 'custom' = 'custom';
+            const pathParams = { designId: sectionData.designId, sectionId: sectionData.id };
+
             if (activePaneId === '#llm-generate-content') {
                 actionType = 'generate';
-                // *** Construct request object for the API client ***
-                const request = {
-                    ...pathParams, // Spread path params
-                    body: {        // Add body object
-                       // promptOverride: "...", // Get from UI if needed later
-                    }
-                };
+                const request = { ...pathParams, body: {} };
                 console.log("Calling GenerateTextContent API with request:", request);
-                apiCall = LlmApi.llmServiceGenerateTextContent(request); // Pass combined object
-
+                apiCall = LlmApi.llmServiceGenerateTextContent(request);
             } else if (activePaneId === '#llm-verify-content' && sectionData.type === 'text') {
                 actionType = 'review';
-                 // *** Construct request object for the API client ***
-                const request = {
-                    ...pathParams, // Spread path params
-                    body: {        // Add body object
-                        // promptOverride: "...", // Get from UI if needed later
-                    }
-                };
+                const request = { ...pathParams, body: {} };
                 console.log("Calling ReviewTextContent API with request:", request);
-                apiCall = LlmApi.llmServiceReviewTextContent(request); // Pass combined object
+                apiCall = LlmApi.llmServiceReviewTextContent(request);
             } else if (activePaneId === '#llm-custom-content') {
                 actionType = 'custom';
                 const customPromptInput = dialogContent.querySelector<HTMLTextAreaElement>('#custom-prompt');
@@ -227,132 +213,176 @@ export class LlmInteractionHandler {
                     this.toastManager.showToast("Input Error", "Please enter a custom prompt.", "warning");
                     throw new Error("Custom prompt empty");
                 }
-                // *** Construct request object for the API client ***
-                // SimpleLlmQuery might expect *all* args in body based on its POST /v1/llm/query definition
-                const request = {
-                    body: { // All fields inside body
-                        designId: sectionData.designId,
-                        sectionId: sectionData.id,
-                        prompt: customPrompt,
-                    }
-                };
+                const request = { body: { designId: sectionData.designId, sectionId: sectionData.id, prompt: customPrompt } };
                 console.log("Calling SimpleLlmQuery API (Custom) with request:", request);
-                apiCall = LlmApi.llmServiceSimpleLlmQuery(request); // Pass object with body
+                apiCall = LlmApi.llmServiceSimpleLlmQuery(request);
             } else {
                  throw new Error(`Invalid or unsupported LLM action for tab: ${activePaneId} and type: ${sectionData.type}`);
             }
 
-            console.log(`Calling LLM API (${actionType}) for section ${sectionData.id}`);
             const response = await apiCall;
             console.log("LLM API Response:", response);
+            this.currentLlmResponseText = response.generatedText || response.reviewText || response.responseText || null;
 
-            this.currentLlmResponseText = response.generatedText || response.reviewText || response.responseText || null; // Store response for potential apply
+             // --- End Step 2 ---
 
-            // Restore button before hiding modal
-            if (submitButton) {
-                submitButton.disabled = false;
-                submitButton.textContent = 'Submit';
-            }
+
+            // --- Step 3: Show results ---
+            this.showLoadingOnButton(submitButton, false); // Hide loading before showing results
             await this.modal.hide(); // Hide prompt dialog
 
-            // Prepare data for results modal
             let applyCallbackForResults: ((data: any) => void) | undefined = undefined;
             if (actionType === 'generate' && sectionData.type === 'text' && this.currentApplyCallback) {
-                // Pass *this* handler's apply method to the results modal
                 applyCallbackForResults = this.handleApplyLlmResult.bind(this);
             }
 
-            // Show results modal
-            const resultsModalContent = this.modal.show('llm-results', {
-                onApply: applyCallbackForResults // Pass the callback
-            });
-
-            // Populate results modal content after it's shown
+            const resultsModalContent = this.modal.show('llm-results', { onApply: applyCallbackForResults });
             if (resultsModalContent) {
-                setTimeout(() => { // Delay ensures elements are ready
+                setTimeout(() => {
                     const contentArea = resultsModalContent.querySelector<HTMLElement>('#llm-results-content');
                     if (contentArea) contentArea.textContent = this.currentLlmResponseText || "LLM returned no text.";
-
                     const applyButton = resultsModalContent.querySelector<HTMLButtonElement>('#llm-results-apply');
-                    if (applyButton) applyButton.classList.toggle('hidden', !applyCallbackForResults); // Show button only if callback exists
+                    if (applyButton) applyButton.classList.toggle('hidden', !applyCallbackForResults);
                 }, 50);
             }
+             // --- End Step 3 ---
 
         } catch (error: any) {
-            console.error("Error during LLM interaction:", error);
-            if (submitButton) { // Ensure button is reset on error
-                submitButton.disabled = false;
-                submitButton.textContent = 'Submit';
-            }
+            console.error("Error during LLM interaction (Submit):", error);
             const errorMsg = error.message || (error.response ? await error.response.text() : 'Unknown LLM API error');
             this.toastManager.showToast("LLM Error", `Failed: ${errorMsg}`, "error");
         } finally {
             this.isLoading = false;
-            // Ensure button is reset if error occurred before assignment
-             if (submitButton && submitButton.disabled) {
-                 submitButton.disabled = false;
-                 submitButton.textContent = 'Submit';
-             }
+            this.showLoadingOnButton(submitButton, false); // Ensure button is reset
         }
     }
 
-    /** Handles click on "Generate Default Prompt" buttons */
-    private async handleGenerateDefaultPromptsClick(): Promise<void> {
-      const sectionData = this.currentSectionData;
-      if (!sectionData) return;
 
-      const dialogContent = this.modal.getContentElement();
-      if (!dialogContent) return;
+     /** Handles click on "Refresh Default Prompt" buttons */
+     private async handleRefreshDefaultPromptClick(promptType: 'get_answer' | 'verify_answer'): Promise<void> {
+       const sectionData = this.currentSectionData;
+       if (!sectionData) return;
 
-      // Could show loading state on the button itself
-      const genBtn = dialogContent.querySelector<HTMLButtonElement>('#llm-generate-default-prompt-btn');
-      const verifyBtn = dialogContent.querySelector<HTMLButtonElement>('#llm-verify-default-prompt-btn');
-       if(genBtn) genBtn.disabled = true;
-      if(verifyBtn) verifyBtn.disabled = true;
+       const dialogContent = this.modal.getContentElement();
+       if (!dialogContent) return;
 
-      console.log(`Requesting default prompts for section ${sectionData.id}`);
-      this.toastManager.showToast("Generating...", "Generating default prompts...", "info", 2000);
+       // Determine which button and textarea to target
+       const isGetAnswer = promptType === 'get_answer';
+       const buttonId = isGetAnswer ? '#llm-refresh-generate-prompt-btn' : '#llm-refresh-verify-prompt-btn';
+       const textareaId = isGetAnswer ? '#llm-generate-prompt-input' : '#llm-verify-prompt-input';
+       const button = dialogContent.querySelector<HTMLButtonElement>(buttonId);
+       const textarea = dialogContent.querySelector<HTMLTextAreaElement>(textareaId);
 
-      try {
-          const request: LlmServiceGenerateDefaultPromptsRequest = {
-              designId: sectionData.designId,
-              sectionId: sectionData.id,
-              body: {},
-          };
-          const response = await LlmApi.llmServiceGenerateDefaultPrompts(request);
+       if (!button || !textarea) {
+         console.error(`Could not find button or textarea for prompt type: ${promptType}`);
+         return;
+       }
 
-          // Update the internal sectionData (so dialog redisplay works if needed)
-          // This assumes SectionData has these fields populated by GetSection/GetDesign
-          sectionData.getAnswerPrompt = response.getAnswerPrompt || "";
-          sectionData.verifyAnswerPrompt = response.verifyAnswerPrompt || "";
+       this.showLoadingOnButton(button, true, 'Refreshing...'); // Show loading on the specific button
+       this.toastManager.showToast("Generating...", "Generating default prompt...", "info", 2000);
 
-          // Update the displayed prompts in the current dialog
-          this.configureDialog(dialogContent, sectionData); // Re-run config to update display & hide buttons
-          this.toastManager.showToast("Success", "Default prompts generated and saved.", "success");
-        } catch (error: any) {
-          console.error("Error generating default prompts:", error);
-          this.toastManager.showToast("Error", `Failed to generate default prompts: ${error.message || 'Server error'}`, "error");
-        } finally {
-          // Re-enable buttons
-          if(genBtn) genBtn.disabled = false;
-          if(verifyBtn) verifyBtn.disabled = false;
+       try {
+           const request: LlmServiceGenerateDefaultPromptsRequest = {
+               designId: sectionData.designId,
+               sectionId: sectionData.id,
+               body: {},
+           };
+           const response = await LlmApi.llmServiceGenerateDefaultPrompts(request);
+
+           // Update the specific textarea and internal data
+           const newPrompt = isGetAnswer ? response.getAnswerPrompt : response.verifyAnswerPrompt;
+           textarea.value = newPrompt || "";
+
+           if (isGetAnswer) {
+                sectionData.getAnswerPrompt = newPrompt || "";
+                this.originalGetAnswerPrompt = newPrompt || ""; // Update original to prevent save on submit
+           } else {
+                sectionData.verifyAnswerPrompt = newPrompt || "";
+                this.originalVerifyAnswerPrompt = newPrompt || ""; // Update original
+           }
+
+           this.toastManager.showToast("Success", "Default prompt refreshed and saved.", "success");
+         } catch (error: any) {
+           console.error("Error refreshing default prompt:", error);
+           this.toastManager.showToast("Error", `Failed to refresh prompt: ${error.message || 'Server error'}`, "error");
+         } finally {
+           this.showLoadingOnButton(button, false); // Reset the specific button
+         }
+      }
+
+    /** Helper to save an updated prompt via API */
+    private async savePromptUpdate(maskPath: 'get_answer_prompt' | 'verify_answer_prompt', newValue: string): Promise<Error | null> {
+        if (!this.currentSectionData) {
+             const err = new Error("Cannot save prompt: Section data missing.");
+             console.error(err.message);
+             return err;
         }
+        const { designId, id: sectionId } = this.currentSectionData;
+
+        console.log(`Saving prompt update for ${maskPath}...`);
+        this.toastManager.showToast("Saving...", `Saving updated ${maskPath}...`, "info", 1500);
+
+        // Construct the request body correctly based on the maskPath
+        const sectionUpdatePayload: any = {};
+        if (maskPath === 'get_answer_prompt') {
+            sectionUpdatePayload.getAnswerPrompt = newValue;
+        } else if (maskPath === 'verify_answer_prompt') {
+             sectionUpdatePayload.verifyAnswerPrompt = newValue;
+        }
+
+        const request: DesignServiceUpdateSectionRequest = {
+            sectionDesignId: designId,
+            sectionId: sectionId,
+            body: {
+                section: sectionUpdatePayload, // Send only the field being updated
+                updateMask: maskPath,          // Specify the field in the mask
+            },
+        };
+
+        try {
+             await DesignApi.designServiceUpdateSection(request);
+             // Update internal state upon successful save
+            if (maskPath === 'get_answer_prompt') {
+                 this.currentSectionData.getAnswerPrompt = newValue;
+                 this.originalGetAnswerPrompt = newValue; // Update original after successful save
+            } else {
+                 this.currentSectionData.verifyAnswerPrompt = newValue;
+                 this.originalVerifyAnswerPrompt = newValue; // Update original
+            }
+             this.toastManager.showToast("Saved", "Prompt updated successfully.", "success", 1500);
+             return null; // Indicate success
+         } catch (error: any) {
+             console.error(`Error saving prompt ${maskPath}:`, error);
+             const errorMsg = error.message || (error.response ? await error.response.text() : 'Server error');
+             this.toastManager.showToast("Save Error", `Failed to save prompt: ${errorMsg}`, "error");
+             return new Error(`Failed to save prompt: ${errorMsg}`); // Return the error
+         }
      }
 
 
-    /**
-     * Called by the results modal's Apply button click (via Modal.ts).
-     * This method then calls the original callback provided by BaseSection/TextSection.
-     */
+     private showLoadingOnButton(button: HTMLButtonElement | null, isLoading: boolean, loadingText: string = "Processing...") {
+         if (!button) return;
+         if (isLoading) {
+             button.disabled = true;
+             button.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"> <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle> <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path> </svg> ${loadingText}`;
+         } else {
+             button.disabled = false;
+             // Restore original text - might need to store it if it's dynamic
+             if (button.id === 'llm-dialog-submit') button.textContent = 'Submit';
+             else if (button.id.startsWith('llm-refresh-')) button.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"> <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m-15.357-2A8.001 8.001 0 0119.418 15m0 0h-5" /> </svg> Refresh Default`;
+             else button.textContent = 'Submit'; // Default fallback
+         }
+     }
+
+
     private handleApplyLlmResult(): void {
         if (this.currentApplyCallback && this.currentLlmResponseText !== null) {
             console.log("LlmInteractionHandler: Applying result via stored callback...");
-            this.currentApplyCallback(this.currentLlmResponseText); // Call the original callback
+            this.currentApplyCallback(this.currentLlmResponseText);
         } else {
             console.error("Apply callback or LLM response text is missing.");
             this.toastManager.showToast("Error", "Could not apply result.", "error");
         }
-         // Clear stored response after apply attempt
          this.currentLlmResponseText = null;
     }
 }

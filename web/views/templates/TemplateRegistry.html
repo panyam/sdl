@@ -246,43 +246,42 @@
           Generate content for this section using a pre-defined prompt
         </p>
 
-        <div
-          class="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md p-3 mb-4"
-        >
-          <label
-            class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1"
-            >Current Prompt:</label
-          >
-          <p
-            id="llm-generate-prompt"
-            class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-mono text-xs"
-          >
-            <!-- Prompt text will be loaded here -->
-            <span class="italic text-gray-400 dark:text-gray-500"
-              >Loading prompt...</span
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label
+              for="llm-generate-prompt-input"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >Generation Prompt:</label
             >
-          </p>
-          <button
-            id="llm-generate-default-prompt-btn"
-            type="button"
-            class="hidden mt-2 text-xs text-blue-600 dark:text-blue-400 hover:underline focus:outline-none"
-          >
-            Generate Default Prompt
-          </button>
-        </div>
-
-        <!-- Options -->
-        <div class="mt-4 hidden">
-          <!-- Hide options for now -->
-          <label class="inline-flex items-center">
-            <input
-              type="checkbox"
-              class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600"
-            />
-            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300"
-              >Include industry best practices</span
+            <button
+              id="llm-refresh-generate-prompt-btn"
+              type="button"
+              class="text-xs text-blue-600 dark:text-blue-400 hover:underline focus:outline-none flex items-center"
+              title="Generate/refresh the default prompt for this section"
             >
-          </label>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-3 w-3 mr-1"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m-15.357-2A8.001 8.001 0 0119.418 15m0 0h-5"
+                />
+              </svg>
+              Refresh Default
+            </button>
+          </div>
+          <textarea
+            id="llm-generate-prompt-input"
+            rows="6"
+            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white sm:text-sm font-mono text-xs whitespace-pre-wrap"
+            placeholder="Enter or refresh the prompt to generate content..."
+          ></textarea>
         </div>
       </div>
 
@@ -341,44 +340,42 @@
         <p class="text-sm text-gray-700 dark:text-gray-300 mb-4">
           Verify and analyze the content of this section
         </p>
-
-        <div
-          class="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md p-3 mb-4"
-        >
-          <label
-            class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1"
-            >Current Prompt:</label
-          >
-          <p
-            id="llm-verify-prompt"
-            class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-mono text-xs"
-          >
-            <!-- Prompt text will be loaded here -->
-            <span class="italic text-gray-400 dark:text-gray-500"
-              >Loading prompt...</span
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label
+              for="llm-verify-prompt-input"
+              class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >Verification Prompt:</label
             >
-          </p>
-          <button
-            id="llm-verify-default-prompt-btn"
-            type="button"
-            class="hidden mt-2 text-xs text-blue-600 dark:text-blue-400 hover:underline focus:outline-none"
-          >
-            Generate Default Prompt
-          </button>
-        </div>
-
-        <!-- Options -->
-        <div class="mt-4 hidden">
-          <!-- Hide options for now -->
-          <label class="inline-flex items-center">
-            <input
-              type="checkbox"
-              class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600"
-            />
-            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300"
-              >Consider industry standard requirements</span
+            <button
+              id="llm-refresh-verify-prompt-btn"
+              type="button"
+              class="text-xs text-blue-600 dark:text-blue-400 hover:underline focus:outline-none flex items-center"
+              title="Generate/refresh the default prompt for reviewing this section"
             >
-          </label>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-3 w-3 mr-1"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m-15.357-2A8.001 8.001 0 0119.418 15m0 0h-5"
+                />
+              </svg>
+              Refresh Default
+            </button>
+          </div>
+          <textarea
+            id="llm-verify-prompt-input"
+            rows="6"
+            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white sm:text-sm font-mono text-xs whitespace-pre-wrap"
+            placeholder="Enter or refresh the prompt to verify content..."
+          ></textarea>
         </div>
       </div>
     </div>

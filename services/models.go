@@ -75,7 +75,8 @@ type Section struct {
 	// Order int `json:"order"` // Removed order from struct
 
 	// Title, format, content type
-	Title string `json:"title"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
 
 	GetAnswerPrompt    string `json:"-"`
 	VerifyAnswerPrompt string `json:"-"`
