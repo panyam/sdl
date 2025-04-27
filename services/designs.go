@@ -33,7 +33,8 @@ type DesignService struct {
 
 	// Configuration / State moved from globals
 	basePath string
-	mutexMap sync.Map // Mutex map keyed by design ID
+	store    *DesignStore // Add the store instance
+	mutexMap sync.Map     // Mutex map keyed by design ID
 }
 
 // --- NewDesignService Constructor ---
@@ -41,9 +42,16 @@ func NewDesignService(clients *ClientMgr, basePath string) *DesignService {
 	if basePath == "" {
 		basePath = defaultDesignsBasePath
 	}
+	store, err := NewDesignStore(basePath)
+	if err != nil {
+		// Fatal error if store cannot be initialized
+		log.Fatalf("Could not initialize DesignStore at '%s': %v", basePath, err)
+	}
+
 	out := &DesignService{
 		clients:  clients,
 		basePath: basePath,
+		store:    store, // Assign store
 	}
 	out.idgen = IDGen{
 		NextIDFunc: (&SimpleIDGen{}).NextID,
@@ -180,16 +188,6 @@ func (s *DesignService) readSectionData(designId, sectionId string) (*Section, e
 }
 
 // --- Static/Utility Helpers (can remain outside the struct or moved) ---
-
-// ensureDir doesn't depend on service state, can stay as utility
-func ensureDir(path string) error {
-	err := os.MkdirAll(path, 0755)
-	if err != nil && !errors.Is(err, os.ErrExist) {
-		slog.Error("Failed to create directory", "path", path, "error", err)
-		return err
-	}
-	return nil
-}
 
 func (s *DesignService) CreateDesign(ctx context.Context, req *protos.CreateDesignRequest) (resp *protos.CreateDesignResponse, err error) {
 	slog.Info("CreateDesign Request", "req", req)
