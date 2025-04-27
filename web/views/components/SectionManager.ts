@@ -212,8 +212,8 @@ export class SectionManager {
         const suggestedOption = target.closest('.suggested-section-option') as HTMLButtonElement | null;
         if (suggestedOption && suggestedOption.dataset.action === 'create-suggested') {
             // Look at the parent as the dataset seems to be on the button's parent instead of on the button
-            const title = suggestedOption.parentElement!.dataset.suggestedTitle;
-            const type = suggestedOption.parentElement!.dataset.suggestedType as SectionType; // Assume type is valid
+            const title = suggestedOption.dataset.suggestedTitle;
+            const type = suggestedOption.dataset.suggestedType as SectionType; // Assume type is valid
             if (title && type) {
                 const modalData = this.modal.getCurrentData();
                 this.handleSectionTypeSelection(type, modalData?.relativeToId || null, modalData?.position || 'after', title);
@@ -352,7 +352,7 @@ export class SectionManager {
 
             if (response.suggestions && response.suggestions.length > 0 && grid) {
                 response.suggestions.forEach(suggestion => {
-                    const card = this.templateLoader.load('suggested-section-card');
+                    const card = this.templateLoader.load('suggested-section-card')[0];
                     if (card) {
                         card.querySelector('.suggested-section-title')!.textContent = suggestion.title || 'Untitled Suggestion';
                         card.querySelector('.suggested-section-type')!.textContent = suggestion.type || 'text';

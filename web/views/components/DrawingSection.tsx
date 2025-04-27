@@ -111,7 +111,10 @@ export class DrawingSection extends BaseSection {
             this.reactRoot?.render(
               <Excalidraw 
                     theme = { isDarkMode ? 'dark' : 'light' }
-                    excalidrawAPI ={ (api: ExcalidrawApi) => { this.excalidrawAPI = api; } }
+                    excalidrawAPI ={ (api: ExcalidrawApi) => { 
+                      this.excalidrawAPI = api; 
+                      this.excalidrawAPI.scrollToContent(initialElements, { fitToContent: true })
+                    } }
                     onChange = { this.handleExcalidrawChange.bind(this) } // Debounced save or flag dirty state
                     initialData = { {
                         elements: initialElements,

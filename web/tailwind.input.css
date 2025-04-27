@@ -40,7 +40,7 @@
   /* Style the *entire section* element when in fullscreen */
   .lc-section-fullscreen {
     /* Make it cover the screen, add padding, and a slightly translucent background */
-    @apply fixed inset-0 z-50 bg-white/95 dark:bg-gray-800/95 p-6 overflow-auto backdrop-blur-sm mt-0;
+    @apply fixed inset-0 z-50 bg-white/95 dark:bg-gray-800/95 p-6 overflow-auto backdrop-blur-sm mt-0 h-screen;
 
     /* Add transition for potential smoothness (optional) */
     transition: all 0.3s ease-in-out;

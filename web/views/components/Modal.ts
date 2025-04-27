@@ -128,14 +128,13 @@ export class Modal {
     }
 
     // Use TemplateLoader to get the content element
-    const contentElement = this.templateLoader.load(templateId);
-    if (!contentElement) {
-        console.error(`Modal content template not found or failed to load: ${templateId}`);
-        // Optional: Show an error message in the modal itself
-        this.modalContent.innerHTML = `<div class="p-6 text-red-600">Error: Could not load modal content ('${templateId}'). Check TemplateRegistry.html.</div>`;
-        // Still show the modal container so the error is visible
-        this.modalContainer.classList.remove('hidden');
-        setTimeout(() => this.modalContainer.classList.add('modal-active'), 10);
+    // Load content directly into the modal content area
+    const success = this.templateLoader.loadInto(templateId, this.modalContent);
+    if (!success) {
+         // Error message is already placed into modalContent by loadInto on failure
+         // Ensure modal is still visible
+         this.modalContainer.classList.remove('hidden');
+         setTimeout(() => this.modalContainer.classList.add('modal-active'), 10);
         return null; // Indicate failure
     }
 
@@ -144,12 +143,6 @@ export class Modal {
     this.currentData = data || {}; // Ensure data is an object
     this.onSubmitCallback = data?.onSubmit || null; // Store the submit callback
     this.onApplyCallback = data?.onApply || null; // Store the apply callback
-
-    // Clear existing content
-    this.modalContent.innerHTML = '';
-
-    // Add the loaded content element to the modal
-    this.modalContent.appendChild(contentElement);
 
     // Set data attributes for non-function data
     if (data) {
@@ -168,7 +161,8 @@ export class Modal {
       this.modalContainer.classList.add('modal-active');
     }, 10); // Small delay ensures transition applies correctly
 
-    return contentElement; // Return the loaded element
+    const firstElement = this.modalContent?.firstElementChild as HTMLElement | null;
+    return firstElement;
   }
 
   /**

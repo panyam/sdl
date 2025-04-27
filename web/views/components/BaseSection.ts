@@ -502,19 +502,7 @@ export abstract class BaseSection {
     protected loadTemplate(mode: 'view' | 'edit'): boolean {
         if (!this.contentContainer) return false;
         const templateId = `${this.data.type}-section-${mode}`;
-        const templateRootElement = this.templateLoader.load(templateId)
-
-        // Clear previous content and append the new template
-        this.contentContainer.innerHTML = '';
-        if (templateRootElement) {
-            this.contentContainer.appendChild(templateRootElement);
-            return true; // Return true on success
-        } else {
-            console.error(`Template not found or failed to load: ${templateId}`);
-            this.contentContainer.innerHTML = `<div class="p-4 text-red-500">Error loading template '${templateId}'</div>`;
-            return false; // Return false on failure
-        }
-        return true;
+        return this.templateLoader.loadInto(templateId, this.contentContainer); // Use loadInto
     }
 
     /** Returns the (type) title for this section. */
@@ -533,9 +521,9 @@ export abstract class BaseSection {
       viewContentArea.innerHTML = ''; // Clear any loading message
       const mode = "view"
       const templateId = `${this.data.type}-section-${mode}`;
-      const template = this.templateLoader.load(templateId)
-      if (template) {
-        viewContentArea.innerHTML = template.innerHTML;
+      const clonedHtml = this.templateLoader.loadHtml(templateId)
+      if (clonedHtml) {
+        viewContentArea.innerHTML = clonedHtml;
       }
     }
 

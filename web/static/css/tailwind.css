@@ -1302,6 +1302,7 @@ select {
   inset: 0px;
   z-index: 50;
   margin-top: 0px;
+  height: 100vh;
   overflow: auto;
   background-color: rgb(255 255 255 / 0.95);
   padding: 1.5rem;
