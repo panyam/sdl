@@ -1,116 +1,109 @@
----
 
 **LeetCoach Project Summary (Folder-Based - Updated)**
 
 **1. Overview:**
 
-LeetCoach is a web application designed to help users prepare for system design interviews. Its core functionality involves creating, editing, and viewing multi-section "Design" documents. It supports different section types (Text, Drawing, Plot), user authentication (local & OAuth), utilizes a Go backend with a TypeScript/React frontend, and now incorporates LLM-based features for content suggestion and generation/review.
+LeetCoach is a web application designed to help users prepare for system design interviews. Its core functionality involves creating, editing, and viewing multi-section "Design" documents. It supports different section types (Text, Drawing, Plot), user authentication (local & OAuth), utilizes a Go backend with a TypeScript/React frontend, and incorporates LLM-based features for suggesting new sections and generating/reviewing section content using customizable prompts.
 
 **2. Root Directory (`./`)**
 
 *   **Purpose:** Contains the main application entry point, build configurations (implied `Makefile`), environment setup (including LLM API keys), core application orchestration, and top-level documentation.
 *   **Key Files:**
-    *   `main.go`: Main executable entry point. Handles environment loading (`godotenv` - now includes `OPENAI_API_KEY`, `OPENAI_MODEL`), flag parsing, and initialization of `App`. Sets up logging (`slog`, `dev.go`).
-    *   `app.go`: Defines the `App` struct responsible for managing and starting the different servers (gRPC, Web). Handles graceful shutdown signals.
+    *   `main.go`: Main executable entry point. Handles environment loading (`godotenv` - includes `OPENAI_API_KEY`, `OPENAI_MODEL`), flag parsing, initialization of `App`. Sets up logging (`slog`, `dev.go`).
+    *   `app.go`: Defines the `App` struct responsible for managing and starting servers (gRPC, Web). Handles graceful shutdown.
     *   `.env`, `.env.dev`: Environment variable files.
     *   `SUMMARY.md`: This detailed summary document.
-    *   `INSTRUCTIONS.md`: Development conventions and guidelines for the project.
-    *   `dev.go`: Development utilities, specifically a pretty-printer for `slog`.
+    *   `INSTRUCTIONS.md`: Development conventions.
+    *   `dev.go`: Development utilities (`slog` pretty-printer).
 
 **3. Services (`./services/`)**
 
-*   **Purpose:** Defines and implements the backend business logic via gRPC services. Handles data persistence, core operations, and LLM interactions.
+*   **Purpose:** Defines and implements backend business logic via gRPC services. Handles data persistence, core operations, and LLM interactions.
 *   **Key Files:**
-    *   `server.go`: Initializes and starts the gRPC server, registering all defined services (`DesignService`, `ContentService`, `TagService`, `AdminService`, `LlmService`). Instantiates and injects dependencies (e.g., `LLMClient`, `DesignService`, `ContentService` into `LlmService`).
-    *   `designs.go`: Implements `DesignService`. Manages Design metadata and Section metadata (ID, type, title). Uses the filesystem for persistence. Handles CRUD for designs and Add/Delete/Move/Title updates for sections. `AddSection` now accepts an optional `title`. Employs per-design mutexes. Contains helpers like `readDesignMetadata`, `writeDesignMetadata`, `readSectionData`, `writeSectionData`.
-    *   `content.go`: Implements `ContentService`. Manages section content bytes in the filesystem. Used by `LlmService` to retrieve content for review.
-    *   `tags.go`: Implements `TagService`. Manages tags via Datastore.
-    *   `auth.go`: Implements internal auth logic via Datastore.
+    *   `server.go`: Initializes and starts the gRPC server, registering all services (`DesignService`, `ContentService`, `TagService`, `AdminService`, `LlmService`). Instantiates and injects dependencies (e.g., `LLMClient`, `DesignService`, `ContentService` into `LlmService`).
+    *   `designs.go`: Implements `DesignService`. Manages Design metadata (filesystem `design.json`) and Section metadata (filesystem `sections/<id>/main.json`). Handles CRUD for designs and Add/Delete/Move/Title updates for sections. Crucially:
+        *   Contains helpers for prompt file paths (`getSectionPromptPath`), reading (`readPromptFile`), and writing (`writePromptFile`) within section directories (`sections/<id>/prompts/`).
+        *   `AddSection` accepts optional `initial_` prompts from the request and writes them to files.
+        *   `GetSection`/`GetDesign` read `main.json`, then attempt to read corresponding prompt files (`get_answer.md`, `verify.md`) and populate fields on the in-memory Go `Section` struct *before* conversion to Protobuf.
+    *   `content.go`: Implements `ContentService`. Manages section content bytes (`content.<name>`) in the filesystem. Used by `LlmService` to retrieve content for review.
+    *   `tags.go`: Implements `TagService` (Datastore).
+    *   `auth.go`: Implements internal auth logic (Datastore).
     *   `admin.go`: Implements `AdminService`.
-    *   `llm_service.go`: **(New)** Implements `LlmService`. Handles RPCs like `SimpleLlmQuery`, `SuggestSections`, `GenerateTextContent`, `ReviewTextContent`. Uses the `LLMClient` interface, interacts with `DesignService` (for titles) and `ContentService` (for content). Contains logic for constructing prompts and parsing LLM responses (e.g., `parseSuggestions`).
-    *   `models.go`: Defines Go structs (`Design`, `Section`, `ContentMetadata`, `Tag`, `User`, etc.).
-    *   `converters.go`: Helper functions for converting between Go structs and Protobuf messages.
-    *   `clientmgr.go`: Manages connections/clients for backend dependencies (Datastore).
-    *   `base.go`: Basic utilities (e.g., `EnsureLoggedIn`).
-    *   `gcds.go`: Generic Datastore wrapper.
-    *   `idgen.go`: Logic for generating unique IDs.
-    *   `constants.go`: Defines constants.
-    *   `designs_test.go`: Unit/integration tests for `DesignService`.
+    *   `llm_service.go`: Implements `LlmService`.
+        *   `SimpleLlmQuery`: Basic prompt execution.
+        *   `SuggestSections`: Generates Title, Type, Description, and default `GetAnswerPrompt`/`VerifyPrompt` text for new sections based on existing titles.
+        *   `GenerateTextContent`/`ReviewTextContent`: Reads the appropriate prompt (`get_answer.md`/`verify.md`) from the filesystem (via `DesignService` helpers). If the prompt file doesn't exist, generates a default prompt in memory based on the section title. Calls `LLMClient`.
+        *   `GenerateDefaultPrompts`: Generates default prompts based on title and *saves* them to the filesystem (`get_answer.md`, `verify.md`) via `DesignService` helpers.
+    *   `models.go`: Defines Go structs. `Section` struct now includes non-persistent `GetAnswerPrompt` and `VerifyAnswerPrompt` fields (marked `json:"-"`) used for temporary storage after reading files.
+    *   `converters.go`: Helper functions. `SectionToProto` now copies prompt fields directly from the Go struct (which were populated by the service reading files) to the proto message. No longer reads files itself.
+    *   `clientmgr.go`: Manages Datastore client connections.
+    *   `base.go`, `gcds.go`, `idgen.go`, `constants.go`: Utilities, Datastore wrapper, ID generation, constants.
+    *   `designs_test.go`: Tests for `DesignService`.
 
 **4. LLM Client (`./services/llm/`)**
 
 *   **Purpose:** Encapsulates interaction with external LLM APIs.
 *   **Key Files:**
-    *   `client.go`: **(New)** Defines the `LLMClient` interface (`SimpleQuery`). Provides an `openaiClient` implementation using `go-openai`, reading configuration (`OPENAI_API_KEY`, `OPENAI_MODEL`) from environment variables. Includes `MockLLMClient` for testing.
-    *   `client_test.go`: **(New)** Unit tests for client initialization and the mock client.
+    *   `client.go`: Defines `LLMClient` interface. Provides `openaiClient` implementation. Includes `MockLLMClient`.
+    *   `client_test.go`: Unit tests for client/mock.
 
 **5. Protobuf Definitions (`./proto/leetcoach/v1/`)**
 
-*   **Purpose:** Defines the gRPC service contracts and message structures.
+*   **Purpose:** Defines gRPC service contracts and messages.
 *   **Key Files:**
-    *   `llm_service.proto`: **(New)** Defines `LlmService` with RPCs (`SimpleLlmQuery`, `SuggestSections`, `GenerateTextContent`, `ReviewTextContent`) and corresponding request/response messages (including `SuggestedSection`). Includes HTTP gateway annotations.
-    *   `designs.proto`: Defines `DesignService` and related messages. `AddSectionRequest` now implicitly supports `title` via its `Section` field.
-    *   `content.proto`, `tags.proto`, `models.proto`: Define other services and common types.
+    *   `models.proto`: `Section` message now has `get_answer_prompt` and `verify_answer_prompt` (string, non-optional) to hold current prompt text read from files.
+    *   `designs.proto`: `AddSectionRequest` has optional `initial_get_answer_prompt`, `initial_verify_prompt` (strings).
+    *   `llm_service.proto`: `SuggestedSection` includes `get_answer_prompt`, `verify_answer_prompt`. Added `GenerateDefaultPrompts` RPC and messages.
 
 **6. Web Layer (`./web/`)**
 
-*   **Purpose:** Handles HTTP requests, serves frontend, API gateway, auth, sessions.
-*   **Key Files:**
-    *   `server.go`: Starts HTTP server, middleware (logging, CORS).
-    *   `app.go`: Defines `LCApp`, initializes session (`scs`), auth (`oneauth`), API (`LCApi`), Views (`LCViews`).
-    *   `api.go`: Implements `LCApi` (gRPC Gateway). Proxies REST requests to backend gRPC services. Injects `LoggedInUserId` into gRPC metadata. Registers `LlmService` handler. Includes improved error handling display.
-    *   `user.go`: Implements `oneauth.UserStore` bridge.
+*   **Purpose:** HTTP handling, API gateway, auth, sessions, SSR.
+*   **Key Files:** (Largely unchanged by recent prompt logic) `server.go`, `app.go`, `api.go`, `user.go`.
 
 **7. Server-Side Views & Logic (`./web/views/`)**
 
-*   **Purpose:** Server-side rendering using Go templates and data preparation logic.
-*   **Key Files:**
-    *   `main.go`: Initializes `LCViews`, template engine (`tmplr`), global functions, view routing.
-    *   `views.go`: Main view routing logic.
-    *   `HomePage.go`, `DesignEditorPage.go`, etc.: Page-specific Go structs and `Load` methods. (Largely unchanged by recent features).
+*   **Purpose:** SSR using Go templates.
+*   **Key Files:** (Largely unchanged by recent prompt logic) `main.go`, `views.go`, `HomePage.go`, `DesignEditorPage.go`, etc.
 
 **8. HTML Templates (`./web/views/templates/`)**
 
-*   **Purpose:** Go `html/template` files for SSR and client-side template definitions.
+*   **Purpose:** Go templates and client-side template definitions.
 *   **Key Files:**
-    *   `BasePage.html`: Main layout.
-    *   `HomePage.html`: Includes `DesignList.html`. Uses `create-design-modal`.
-    *   `DesignEditorPage.html`: Includes `TableOfContents.html`, `DocumentTitle.html`, `SectionsList.html`.
-    *   `TemplateRegistry.html`: **(Updated)** Crucial client-side templates:
-        *   `section-type-selector`: Now includes "Suggest Sections" button, suggestion container/card template, loading indicator.
-        *   `llm-dialog`: Includes tabs (Generate, Custom, Verify) and content panes.
-        *   `llm-results`: Includes content display area and conditional "Apply" button.
-        *   `text-section-view`, `text-section-edit`, `drawing-section-view`, `drawing-section-edit`, `plot-section-view`, `plot-section-edit`: Templates loaded by `BaseSection`.
-    *   `Section.html`: Defines the basic section structure including header controls (like `.section-ai` LLM button).
+    *   `TemplateRegistry.html`: **(Updated)**
+        *   `llm-dialog`: Displays the current prompt (fetched via `Section` proto) for Generate/Verify tabs. Includes "Generate Default Prompt" buttons, shown if the current prompt is empty. Tab setup remains.
+        *   `llm-results`: Includes conditional "Apply" button.
+        *   `section-type-selector`: Includes "Suggest Sections" flow elements.
+        *   Section view/edit templates remain.
+    *   Other templates (`BasePage.html`, `HomePage.html`, `Section.html`, etc.) largely unchanged.
 
 **9. Frontend Components (`./web/views/components/`)**
 
-*   **Purpose:** TypeScript code managing interactive frontend experience.
+*   **Purpose:** TypeScript managing interactive frontend UI.
 *   **Key Files:**
-    *   `BaseSection.ts`: **(Refactored)** Abstract base. No longer contains direct LLM or Fullscreen logic. Uses `_findElement` for DOM querying, `_bindEvents` for consolidated event handling (delegation). Instantiates `LlmInteractionHandler` and `FullscreenHandler`. Delegates LLM button click to handler. Provides abstract `resizeContentForFullscreen` and `updateInternalContent`, and `getApplyCallback`. Manages view/edit mode switching via `_renderCurrentMode`.
-    *   `TextSection.ts`: Concrete section using TinyMCE. Implements `updateInternalContent`, `applyGeneratedContent`, and overrides `getApplyCallback`.
-    *   `DrawingSection.tsx`: Concrete section using Excalidraw. Sets `allowEditOnClick = false`. Implements `updateInternalContent`.
-    *   `PlotSection.ts`: Concrete section placeholder. Sets `allowEditOnClick = false`. Implements `updateInternalContent`.
-    *   `LlmInteractionHandler.ts`: **(New)** Manages LLM dialog lifecycle: showing, tab setup/state, prompt construction (basic), calling appropriate `LlmApi` methods (`SimpleLlmQuery`, `GenerateTextContent`, `ReviewTextContent`), handling loading states, displaying results via `llm-results` modal, handling "Apply" callback flow.
-    *   `FullscreenHandler.ts`: **(New)** Manages fullscreen state (`isFullscreen`), DOM class manipulation (`lc-section-fullscreen`, etc.), event listeners (keydown, resize, button clicks), hides/shows toolbar buttons, calls `resizeCallback`. Has `destroy` method.
-    *   `SectionManager.ts`: Manages section collection (add, delete, move). Handles "Suggest Sections" button click in `section-type-selector` modal: calls `LlmApi.llmServiceSuggestSections`, renders suggestions using `suggested-section-card` template, handles suggested card clicks by calling `handleSectionTypeSelection` with title. `handleSectionTypeSelection` now passes title to `DesignApi.designServiceAddSection`.
-    *   `TemplateLoader.ts`: Utility class. Added `loadInto` helper method for loading template children directly into a target element.
-    *   `Modal.ts`: Singleton modal manager. Updated `show` to use `TemplateLoader.loadInto`. Handles `onSubmit` and `onApply` callbacks via `data-modal-action`.
-    *   `Api.ts`: Configures and exports API client instances, including `LlmApi`. Handles auth token injection.
-    *   `DesignEditorPage.ts`, `HomePage.ts`, `LoginPage.ts`, `DocumentTitle.ts`, `TableOfContents.ts`, `ToastManager.ts`, `ThemeManager.ts`: Other components managing specific page/UI logic.
-    *   `types.ts`, `converters.ts`: Core types and API/frontend type conversion utilities.
+    *   `BaseSection.ts`: **(Refactored)** Abstract base. Uses `LlmInteractionHandler` and `FullscreenHandler`. Consolidated event binding (`_bindEvents`) and element finding (`_findElement`). Manages view/edit modes via `_renderCurrentMode`. Abstract `updateInternalContent`, `getApplyCallback`.
+    *   `TextSection.ts`, `DrawingSection.tsx`, `PlotSection.ts`: Concrete subclasses implementing abstract methods from `BaseSection`. Text/Drawing set `allowEditOnClick = false`.
+    *   `LlmInteractionHandler.ts`: **(Updated)** Manages LLM dialog.
+        *   `showLlmDialog` receives full `sectionData` (including current prompts).
+        *   `configureDialog` displays current prompts or shows "Generate Default" button.
+        *   Binds and handles "Generate Default Prompts" button click (calls `GenerateDefaultPrompts` API, updates UI on success).
+        *   `handleDialogSubmit` calls appropriate backend RPC (Generate/Review/Custom); backend reads prompts from files for Generate/Review.
+        *   Manages results modal display and "Apply" callback.
+    *   `FullscreenHandler.ts`: Manages fullscreen logic.
+    *   `SectionManager.ts`: Handles "Suggest Sections" flow, passes `initial_` prompts to `AddSection` API when creating from suggestion.
+    *   `TemplateLoader.ts`: Added `loadInto` helper.
+    *   `Modal.ts`: Uses `loadInto`. Handles `onSubmit`/`onApply`.
+    *   `Api.ts`: Exports API clients.
+    *   Other components (`DesignEditorPage.ts`, etc.) largely unchanged by prompt logic.
 
 **10. Auto-Generated API Client (`./web/views/components/apiclient/`)**
 
-*   **Purpose:** TypeScript client library generated from OpenAPI spec (derived from gRPC Gateway).
-*   **Key Files:** Updated with `LlmServiceApi` and related request/response models.
+*   **Purpose:** Generated TypeScript client library.
+*   **Key Files:** Updated with latest proto changes (Section prompts, AddSection initial prompts, GenerateDefaultPrompts RPC).
 
 **11. Static Assets (`./web/static/`)**
 
-*   **Purpose:** Serves static files (CSS, JS bundles, images, libraries).
-*   **Key Files:**
-    *   `css/tailwind.css`: Compiled Tailwind CSS (includes fullscreen height fix).
-    *   `js/gen/`: Output directory for Webpack bundles.
+*   **Purpose:** Static files.
+*   **Key Files:** `tailwind.css` updated for fullscreen height.
 
 **12. Attic (`./.attic/`)**
 
@@ -118,8 +111,6 @@ LeetCoach is a web application designed to help users prepare for system design 
 
 **13. Key Data Flows (Updated):**
 
-*   **Authentication:** Unchanged.
-*   **Design Loading/Saving:** Unchanged core flow, but `handleSaveClick` in `TextSection` now also updates design timestamp.
-*   **New Design (Suggest):** "+" Button -> `SectionManager.openSectionTypeSelector` -> Modal shows -> Click "Suggest" -> `SectionManager.handleSuggestSectionsClick` -> `LlmApi.SuggestSections` -> Backend `LlmService.SuggestSections` -> LLM -> Response -> `SectionManager` renders suggestion cards -> Click Suggestion Card -> `SectionManager.handleSectionTypeSelection` (with title) -> `DesignApi.AddSection` -> Backend `DesignService.AddSection` (uses title).
-*   **LLM Interaction (Simple Query Example):** Section LLM Button -> `BaseSection._bindEvents` -> `LlmInteractionHandler.showLlmDialog` -> Modal shows (`llm-dialog`) -> User interacts (selects tab, enters prompt) -> Click Submit -> `Modal` calls `LlmInteractionHandler.handleDialogSubmit` -> `LlmInteractionHandler` determines action -> Calls appropriate `LlmApi` method (e.g., `SimpleLlmQuery`) -> Backend `LlmService` -> `llm.LLMClient` -> LLM -> Response -> `LlmInteractionHandler` hides dialog -> Shows `llm-results` modal -> (Optional Apply Click) -> `Modal` calls `LlmInteractionHandler.handleApplyLlmResult` -> Calls `TextSection.applyGeneratedContent`.
+*   **Suggest Sections:** Flow updated to include prompts in suggestions and pass initial prompts during `AddSection`.
+*   **LLM Interaction (Generate/Review):** Section LLM Button -> `LlmInteractionHandler.showLlmDialog` (passes section data with current prompts) -> Modal UI displays current prompt or "Generate Default" button -> (Optional: Click Generate Default -> `GenerateDefaultPrompts` API -> Backend saves files -> UI updates) -> Click Submit -> `LlmInteractionHandler.handleDialogSubmit` -> Calls `GenerateTextContent`/`ReviewTextContent` API -> Backend `LlmService` reads prompt *file*, executes -> Response -> Results Modal -> (Optional Apply).
 
