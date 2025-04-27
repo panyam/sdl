@@ -161,7 +161,7 @@ export class Modal {
       this.modalContainer.classList.add('modal-active');
     }, 10); // Small delay ensures transition applies correctly
 
-    const firstElement = this.modalContent?.firstElementChild as HTMLElement | null;
+    const firstElement = this.modalContent//?.firstElementChild as HTMLElement | null;
     return firstElement;
   }
 

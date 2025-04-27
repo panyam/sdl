@@ -481,6 +481,14 @@ export abstract class BaseSection {
      * Called when the container is clicked in view mode.  By default switches to switch to edit mode.
      */
     protected handleViewClick(): void {
+        console.log(`BaseSection ${this.sectionId}: handleViewClick called. Mode: ${this.mode}, AllowEditOnClick: ${this.allowEditOnClick}`); // DEBUG LOG
+        // Only switch if in view mode AND the flag allows it
+        if (this.mode === 'view' && this.allowEditOnClick) {
+             console.log(`BaseSection ${this.sectionId}: Handling view click, switching to edit.`);
+             this.switchToEditMode();
+        } else {
+             console.log(`BaseSection ${this.sectionId}: View click ignored or blocked.`); // DEBUG LOG
+        }
     }
 
     public async handleSaveClick(): Promise<void> {

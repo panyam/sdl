@@ -196,7 +196,8 @@ func (s *LlmService) GenerateTextContent(ctx context.Context, req *protos.Genera
 	prompt := req.GetPromptOverride()
 	if prompt == "" {
 		// Default prompt using the section title
-		prompt = fmt.Sprintf("Generate the content for a system design document section titled '%s'. Focus on key concepts, potential trade-offs, and common patterns related to this topic. Format the output as simple HTML.", sectionData.Title)
+		prompt = fmt.Sprintf("Generate concise HTML content for a system design document section titled '%s'. Focus on key concepts, potential trade-offs, and common patterns related to this topic. ONLY include relevant HTML tags like <p>, <ul>, <li>, <strong>, <h2>, <h3>. Do NOT include <html>, <head>, <body>, or <style> tags. Start the content directly, for example, with an <h1> or <p> tag.", sectionData.Title)
+
 		// TODO: Add more sophisticated default prompts based on title patterns
 	}
 

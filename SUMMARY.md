@@ -1,164 +1,125 @@
 ---
 
-**LeetCoach Project Summary (Folder-Based)**
+**LeetCoach Project Summary (Folder-Based - Updated)**
 
 **1. Overview:**
 
-LeetCoach is a web application designed to help users prepare for system design interviews. Its core functionality involves creating, editing, and viewing multi-section "Design" documents. It supports different section types (Text, Drawing, Plot), user authentication (local & OAuth), and utilizes a Go backend with a TypeScript/React frontend.
+LeetCoach is a web application designed to help users prepare for system design interviews. Its core functionality involves creating, editing, and viewing multi-section "Design" documents. It supports different section types (Text, Drawing, Plot), user authentication (local & OAuth), utilizes a Go backend with a TypeScript/React frontend, and now incorporates LLM-based features for content suggestion and generation/review.
 
 **2. Root Directory (`./`)**
 
-*   **Purpose:** Contains the main application entry point, build configurations (implied `Makefile`), environment setup, core application orchestration, and top-level documentation.
+*   **Purpose:** Contains the main application entry point, build configurations (implied `Makefile`), environment setup (including LLM API keys), core application orchestration, and top-level documentation.
 *   **Key Files:**
-    *   `main.go`: Main executable entry point. Handles environment loading (`godotenv`), flag parsing, and initialization of `App`. Sets up logging (`slog`, `dev.go`).
+    *   `main.go`: Main executable entry point. Handles environment loading (`godotenv` - now includes `OPENAI_API_KEY`, `OPENAI_MODEL`), flag parsing, and initialization of `App`. Sets up logging (`slog`, `dev.go`).
     *   `app.go`: Defines the `App` struct responsible for managing and starting the different servers (gRPC, Web). Handles graceful shutdown signals.
-    *   `.env`, `.env.dev`: Environment variable files (API keys, ports, etc.).
+    *   `.env`, `.env.dev`: Environment variable files.
     *   `SUMMARY.md`: This detailed summary document.
     *   `INSTRUCTIONS.md`: Development conventions and guidelines for the project.
     *   `dev.go`: Development utilities, specifically a pretty-printer for `slog`.
 
 **3. Services (`./services/`)**
 
-*   **Purpose:** Defines and implements the backend business logic via gRPC services. Handles data persistence and core operations.
+*   **Purpose:** Defines and implements the backend business logic via gRPC services. Handles data persistence, core operations, and LLM interactions.
 *   **Key Files:**
-    *   `server.go`: Initializes and starts the gRPC server, registering all defined services (`DesignService`, `ContentService`, `TagService`, `AdminService`).
-    *   `designs.go`: Implements `DesignService`. Manages Design metadata (name, owner, visibility, section order) and Section metadata (ID, type, title). Uses the filesystem for persistence (`<basePath>/<designId>/design.json`, `<basePath>/<designId>/sections/<sectionId>/main.json`). Handles CRUD for designs and Add/Delete/Move/Title updates for sections. Employs per-design mutexes (`sync.Map`) for concurrency control.
-    *   `content.go`: Implements `ContentService`. Manages the storage/retrieval of actual section content (raw bytes) in the filesystem (`<basePath>/<designId>/sections/<sectionId>/content.<name>`). Works closely with `DesignService` for path management and potentially uses the same mutexes.
-    *   `tags.go`: Implements `TagService`. Manages tags associated with designs. Uses Google Cloud Datastore via `ClientMgr`.
-    *   `auth.go`: Implements authentication-related logic (user creation/lookup on OAuth callback). Uses Datastore via `ClientMgr`. Not exposed as a direct gRPC service but used internally by the web layer.
-    *   `admin.go`: Implements `AdminService` (likely for development/debugging purposes).
-    *   `models.go`: Defines the Go structs (`Design`, `Section`, `ContentMetadata`, `Tag`, `User`, `Identity`, `Channel`, `AuthFlow`, `BaseModel`, `StringMapField`) used by the services, including Datastore tags.
-    *   `converters.go`: Contains helper functions to convert between Go service structs (`models.go`) and gRPC Protobuf message types (`*.pb.go`).
-    *   `clientmgr.go`: Manages connections/clients for backend dependencies, primarily Google Cloud Datastore. Provides typed `DataStore` wrappers (`TagDS`, `UserDS`, etc.). Also used by the web layer to interact with services.
-    *   `base.go`: Basic utilities for services, like extracting the logged-in user ID from gRPC context metadata.
-    *   `gcds.go`: Generic wrapper (`DataStore[T]`) for interacting with Google Cloud Datastore, simplifying common operations (Get, Save, Query, Delete). Defines `StringMapField` for flexible map storage.
-    *   `idgen.go` (Implied): Logic for generating unique IDs (used in `DesignService` for new designs/sections).
-    *   `constants.go`: Defines constants like default paths and feature flags (e.g., `ENFORCE_LOGIN`).
-    *   `designs_test.go`: Unit/integration tests specifically for the `DesignService`, focusing on filesystem interactions and metadata manipulation.
+    *   `server.go`: Initializes and starts the gRPC server, registering all defined services (`DesignService`, `ContentService`, `TagService`, `AdminService`, `LlmService`). Instantiates and injects dependencies (e.g., `LLMClient`, `DesignService`, `ContentService` into `LlmService`).
+    *   `designs.go`: Implements `DesignService`. Manages Design metadata and Section metadata (ID, type, title). Uses the filesystem for persistence. Handles CRUD for designs and Add/Delete/Move/Title updates for sections. `AddSection` now accepts an optional `title`. Employs per-design mutexes. Contains helpers like `readDesignMetadata`, `writeDesignMetadata`, `readSectionData`, `writeSectionData`.
+    *   `content.go`: Implements `ContentService`. Manages section content bytes in the filesystem. Used by `LlmService` to retrieve content for review.
+    *   `tags.go`: Implements `TagService`. Manages tags via Datastore.
+    *   `auth.go`: Implements internal auth logic via Datastore.
+    *   `admin.go`: Implements `AdminService`.
+    *   `llm_service.go`: **(New)** Implements `LlmService`. Handles RPCs like `SimpleLlmQuery`, `SuggestSections`, `GenerateTextContent`, `ReviewTextContent`. Uses the `LLMClient` interface, interacts with `DesignService` (for titles) and `ContentService` (for content). Contains logic for constructing prompts and parsing LLM responses (e.g., `parseSuggestions`).
+    *   `models.go`: Defines Go structs (`Design`, `Section`, `ContentMetadata`, `Tag`, `User`, etc.).
+    *   `converters.go`: Helper functions for converting between Go structs and Protobuf messages.
+    *   `clientmgr.go`: Manages connections/clients for backend dependencies (Datastore).
+    *   `base.go`: Basic utilities (e.g., `EnsureLoggedIn`).
+    *   `gcds.go`: Generic Datastore wrapper.
+    *   `idgen.go`: Logic for generating unique IDs.
+    *   `constants.go`: Defines constants.
+    *   `designs_test.go`: Unit/integration tests for `DesignService`.
 
-**4. Web Layer (`./web/`)**
+**4. LLM Client (`./services/llm/`)**
 
-*   **Purpose:** Handles HTTP requests, serves the frontend application, provides the API gateway, and manages user authentication and sessions.
+*   **Purpose:** Encapsulates interaction with external LLM APIs.
 *   **Key Files:**
-    *   `server.go`: Defines the `web.Server` struct, responsible for starting the main HTTP server. Includes middleware for logging (`withLogger`) and CORS (for development).
-    *   `app.go`: Defines `LCApp`, the core web application struct. Initializes session management (`scs`), authentication (`oneauth` with Google/GitHub/Local providers), API (`LCApi`), and Views (`LCViews`). Sets up routing for `/auth`, `/api`, `/static`, and `/`.
-    *   `api.go`: Implements the `LCApi` which sets up the gRPC Gateway (`runtime.ServeMux`). This gateway proxies RESTful JSON requests under `/api/v1/` to the backend gRPC services. Crucially, it injects the authenticated `LoggedInUserId` (obtained via `oneauth` middleware) into the outgoing gRPC metadata.
-    *   `user.go`: Implements the `oneauth.UserStore` interface for `LCApp`, bridging `oneauth` with the backend `AuthService` (via `ClientMgr`) to fetch/create users during login/callback flows. Includes mock user logic for testing.
+    *   `client.go`: **(New)** Defines the `LLMClient` interface (`SimpleQuery`). Provides an `openaiClient` implementation using `go-openai`, reading configuration (`OPENAI_API_KEY`, `OPENAI_MODEL`) from environment variables. Includes `MockLLMClient` for testing.
+    *   `client_test.go`: **(New)** Unit tests for client initialization and the mock client.
 
-**5. Server-Side Views & Logic (`./web/views/`)**
+**5. Protobuf Definitions (`./proto/leetcoach/v1/`)**
 
-*   **Purpose:** Handles the server-side rendering of HTML pages using Go templates and manages the logic for preparing data for these views.
+*   **Purpose:** Defines the gRPC service contracts and message structures.
 *   **Key Files:**
-    *   `main.go`: Initializes the `LCViews` handler and the `tmplr` template rendering engine. Defines global template functions. Sets up routing for view-related paths (`/`, `/designs/...`, `/login`, etc.).
-    *   `views.go`: Defines the main routing logic within the views layer, mapping URL paths to specific view handlers (e.g., `/` maps to `HomePage`).
-    *   `HomePage.go`, `DesignEditorPage.go`, `LoginPage.go`, `DesignViewerPage.go`, `DesignList.go`, etc.: Define the Go structs corresponding to each page template. Their `Load` methods fetch necessary data (e.g., designs from `DesignService` via `ClientMgr`) required by the template before rendering.
-    *   `Header.go`, `Paginator.go`: Reusable Go structs/logic for parts of views (like the header data or pagination calculations).
-    *   `GenericPage.go`, `BasePage.go`: Base structs providing common fields (like `Title`, `Header`) for page views.
+    *   `llm_service.proto`: **(New)** Defines `LlmService` with RPCs (`SimpleLlmQuery`, `SuggestSections`, `GenerateTextContent`, `ReviewTextContent`) and corresponding request/response messages (including `SuggestedSection`). Includes HTTP gateway annotations.
+    *   `designs.proto`: Defines `DesignService` and related messages. `AddSectionRequest` now implicitly supports `title` via its `Section` field.
+    *   `content.proto`, `tags.proto`, `models.proto`: Define other services and common types.
 
-**6. HTML Templates (`./web/views/templates/`)**
+**6. Web Layer (`./web/`)**
 
-*   **Purpose:** Contains the Go `html/template` files used for server-side rendering.
+*   **Purpose:** Handles HTTP requests, serves frontend, API gateway, auth, sessions.
 *   **Key Files:**
-    *   `BasePage.html`: The main layout template, includes header, modal container, toast container, and defines blocks (`BodySection`, `ExtraHeadSection`, etc.) for content injection.
-    *   `HomePage.html`: Template for the main design listing page. Includes `DesignList.html`.
-    *   `DesignEditorPage.html`: Template for the design editing interface. Includes `TableOfContents.html`, `DocumentTitle.html`, `SectionsList.html`. Defines `ExtraHeaderButtons` block.
-    *   `LoginPage.html`: Template for the login/signup page.
-    *   `Header.html`, `DesignList.html`, `TableOfContents.html`, `Section.html`, `DocumentTitle.html`, `SectionsList.html`: Component templates included within page templates.
-    *   `ModalContainer.html`, `ToastContainer.html`: Wrappers for modal and toast UI elements.
-    *   `TemplateRegistry.html`: **Crucial:** Contains *client-side* HTML templates (section view/edit modes, modals like `create-design-modal`, `section-type-selector`, `llm-dialog`) identified by `data-template-id`. These are cloned and used by frontend JavaScript (`TemplateLoader.ts`).
-    *   `LlmDialog.html`, `LlmResults.html`, `SectionTypeSelector.html`: Templates specifically for modals, included within `ModalContainer.html` and defined within `TemplateRegistry.html`.
+    *   `server.go`: Starts HTTP server, middleware (logging, CORS).
+    *   `app.go`: Defines `LCApp`, initializes session (`scs`), auth (`oneauth`), API (`LCApi`), Views (`LCViews`).
+    *   `api.go`: Implements `LCApi` (gRPC Gateway). Proxies REST requests to backend gRPC services. Injects `LoggedInUserId` into gRPC metadata. Registers `LlmService` handler. Includes improved error handling display.
+    *   `user.go`: Implements `oneauth.UserStore` bridge.
 
-**7. Frontend Components (`./web/views/components/`)**
+**7. Server-Side Views & Logic (`./web/views/`)**
 
-*   **Purpose:** Contains the TypeScript (and some React TSX) code that manages the interactive frontend experience, primarily on the Design Editor page.
+*   **Purpose:** Server-side rendering using Go templates and data preparation logic.
 *   **Key Files:**
-    *   `DesignEditorPage.ts`: Main orchestrator for the editor page (`/designs/{id}/edit`). Initializes all other components, loads initial design data (metadata via `DesignApi`), and triggers section content loading.
-    *   `HomePage.ts`: Manages logic for the listing page (`/`), specifically handling the "Create New" button click to show the `create-design-modal` and then redirecting based on user choice.
-    *   `LoginPage.ts`: Handles simple UI toggling between Sign In and Sign Up modes on the login page.
-    *   `SectionManager.ts`: Manages the collection of sections (add, delete, move, reorder). Interacts with `DesignService` for structural changes and updates the `TableOfContents`. No longer handles content loading/saving.
-    *   `BaseSection.ts`: Abstract base class for sections. Handles common UI (header, controls, title editing), view/edit mode switching via `TemplateLoader`, fullscreen toggling, and initiates content loading (`loadContent`) via `ContentService`. Provides hooks for subclasses.
-    *   `TextSection.ts`: Concrete section for rich text using TinyMCE. Implements content loading/saving (`refreshContentFromServer`, `handleSaveClick`) and editor initialization/destruction.
-    *   `DrawingSection.tsx`: Concrete section for diagrams using Excalidraw (via `ExcalidrawWrapper.tsx`). Implements content loading/saving (including SVG previews) and React component mounting/unmounting.
-    *   `PlotSection.ts`: Placeholder concrete section for plots.
-    *   `ExcalidrawWrapper.tsx`: React component specifically to wrap and manage the `@excalidraw/excalidraw` library instance.
-    *   `DocumentTitle.ts`: Manages the display and editing of the main Design title, interacts with `DesignService` for updates.
-    *   `TableOfContents.ts`: Renders and manages interactions with the sidebar Table of Contents.
-    *   `Modal.ts`: Singleton class to manage showing/hiding modal dialogs, loading content from `TemplateRegistry.html` via `TemplateLoader`.
-    *   `ToastManager.ts`: Singleton class to display brief notification messages.
-    *   `ThemeManager.ts`: Manages light/dark/system theme switching using `localStorage` and updates CSS classes on the `<html>` element. Notifies sections of changes.
-    *   `TemplateLoader.ts`: Utility class to load and clone HTML templates from the `#template-registry` div based on `data-template-id`.
-    *   `types.ts`: Defines core TypeScript interfaces and types used across frontend components (`SectionType`, `SectionData`, `DrawingContent`, etc.).
-    *   `converters.ts`: Frontend utility functions to map between API models (`V1Section`, `V1SectionType`) and frontend types (`SectionData`, `SectionType`).
-    *   `Api.ts`: Configures and exports instances of the auto-generated API clients (`DesignApi`, `ContentApi`, `TagApi`). Includes a `fetchApi` interceptor to automatically add the `Authorization: Bearer <token>` header by reading the `LeetCoachAuthToken` cookie.
-    *   `samples.ts`: Sample data for testing/prototyping.
+    *   `main.go`: Initializes `LCViews`, template engine (`tmplr`), global functions, view routing.
+    *   `views.go`: Main view routing logic.
+    *   `HomePage.go`, `DesignEditorPage.go`, etc.: Page-specific Go structs and `Load` methods. (Largely unchanged by recent features).
 
-**8. Auto-Generated API Client (`./web/views/components/apiclient/`)**
+**8. HTML Templates (`./web/views/templates/`)**
 
-*   **Purpose:** Contains the TypeScript client library automatically generated from the OpenAPI specification derived from the gRPC Gateway. Provides typed access to the backend API.
+*   **Purpose:** Go `html/template` files for SSR and client-side template definitions.
 *   **Key Files:**
-    *   `runtime.ts`: Core runtime logic for the generated client (fetch wrapper, request building, error handling).
-    *   `apis/`: Contains individual API client classes (`DesignServiceApi.ts`, `ContentServiceApi.ts`, `TagServiceApi.ts`).
-    *   `models/`: Contains TypeScript interfaces corresponding to the Protobuf messages used in the API requests and responses.
-    *   `index.ts`: Exports all APIs and models for easy importing.
+    *   `BasePage.html`: Main layout.
+    *   `HomePage.html`: Includes `DesignList.html`. Uses `create-design-modal`.
+    *   `DesignEditorPage.html`: Includes `TableOfContents.html`, `DocumentTitle.html`, `SectionsList.html`.
+    *   `TemplateRegistry.html`: **(Updated)** Crucial client-side templates:
+        *   `section-type-selector`: Now includes "Suggest Sections" button, suggestion container/card template, loading indicator.
+        *   `llm-dialog`: Includes tabs (Generate, Custom, Verify) and content panes.
+        *   `llm-results`: Includes content display area and conditional "Apply" button.
+        *   `text-section-view`, `text-section-edit`, `drawing-section-view`, `drawing-section-edit`, `plot-section-view`, `plot-section-edit`: Templates loaded by `BaseSection`.
+    *   `Section.html`: Defines the basic section structure including header controls (like `.section-ai` LLM button).
 
-**9. Static Assets (`./web/static/`)**
+**9. Frontend Components (`./web/views/components/`)**
 
-*   **Purpose:** Serves static files like CSS, bundled JavaScript, images, and third-party libraries (like TinyMCE assets).
-*   **Key Files (Examples):**
-    *   `css/tailwind.css`: Compiled Tailwind CSS.
-    *   `js/gen/`: Output directory for Webpack bundles (e.g., `HomePage.js`, `DesignEditorPage.js`).
-    *   `js/gen/tinymce/`: Static assets required by TinyMCE (skins, icons, etc.).
+*   **Purpose:** TypeScript code managing interactive frontend experience.
+*   **Key Files:**
+    *   `BaseSection.ts`: **(Refactored)** Abstract base. No longer contains direct LLM or Fullscreen logic. Uses `_findElement` for DOM querying, `_bindEvents` for consolidated event handling (delegation). Instantiates `LlmInteractionHandler` and `FullscreenHandler`. Delegates LLM button click to handler. Provides abstract `resizeContentForFullscreen` and `updateInternalContent`, and `getApplyCallback`. Manages view/edit mode switching via `_renderCurrentMode`.
+    *   `TextSection.ts`: Concrete section using TinyMCE. Implements `updateInternalContent`, `applyGeneratedContent`, and overrides `getApplyCallback`.
+    *   `DrawingSection.tsx`: Concrete section using Excalidraw. Sets `allowEditOnClick = false`. Implements `updateInternalContent`.
+    *   `PlotSection.ts`: Concrete section placeholder. Sets `allowEditOnClick = false`. Implements `updateInternalContent`.
+    *   `LlmInteractionHandler.ts`: **(New)** Manages LLM dialog lifecycle: showing, tab setup/state, prompt construction (basic), calling appropriate `LlmApi` methods (`SimpleLlmQuery`, `GenerateTextContent`, `ReviewTextContent`), handling loading states, displaying results via `llm-results` modal, handling "Apply" callback flow.
+    *   `FullscreenHandler.ts`: **(New)** Manages fullscreen state (`isFullscreen`), DOM class manipulation (`lc-section-fullscreen`, etc.), event listeners (keydown, resize, button clicks), hides/shows toolbar buttons, calls `resizeCallback`. Has `destroy` method.
+    *   `SectionManager.ts`: Manages section collection (add, delete, move). Handles "Suggest Sections" button click in `section-type-selector` modal: calls `LlmApi.llmServiceSuggestSections`, renders suggestions using `suggested-section-card` template, handles suggested card clicks by calling `handleSectionTypeSelection` with title. `handleSectionTypeSelection` now passes title to `DesignApi.designServiceAddSection`.
+    *   `TemplateLoader.ts`: Utility class. Added `loadInto` helper method for loading template children directly into a target element.
+    *   `Modal.ts`: Singleton modal manager. Updated `show` to use `TemplateLoader.loadInto`. Handles `onSubmit` and `onApply` callbacks via `data-modal-action`.
+    *   `Api.ts`: Configures and exports API client instances, including `LlmApi`. Handles auth token injection.
+    *   `DesignEditorPage.ts`, `HomePage.ts`, `LoginPage.ts`, `DocumentTitle.ts`, `TableOfContents.ts`, `ToastManager.ts`, `ThemeManager.ts`: Other components managing specific page/UI logic.
+    *   `types.ts`, `converters.ts`: Core types and API/frontend type conversion utilities.
 
-**10. Attic (`./.attic/`)**
+**10. Auto-Generated API Client (`./web/views/components/apiclient/`)**
 
-*   **Purpose:** Contains older or deprecated code that might be referenced later but is not currently active (e.g., previous implementations of drawing handling).
+*   **Purpose:** TypeScript client library generated from OpenAPI spec (derived from gRPC Gateway).
+*   **Key Files:** Updated with `LlmServiceApi` and related request/response models.
 
-**11. Key Data Flows:**
+**11. Static Assets (`./web/static/`)**
 
-*   **Authentication:** User logs in via Web UI -> Go `oneauth` handles flow -> Session/Cookie created -> Frontend reads cookie (`LeetCoachAuthToken`) -> `Api.ts` adds Bearer token to API calls -> `api.go` (Gateway) reads token/session -> Injects `LoggedInUserId` into gRPC metadata -> Backend services (`EnsureLoggedIn`) read metadata for authorization.
-*   **Design Loading:** Server renders `DesignEditorPage.html` with `DesignId` -> `DesignEditorPage.ts` calls `DesignApi.getDesign` (including metadata) -> `SectionManager` creates shells -> `DesignEditorPage.ts` iterates, calls `section.loadContent()` -> Each section calls `ContentApi.getContent` -> Renders view.
-*   **Content Saving:** User clicks save in section -> `SectionSubclass.handleSaveClick` -> Gets content from editor -> Calls `ContentApi.setContent` (for `main`, `light.svg`, etc.) -> Calls `switchToViewMode(true)`.
-*   **Metadata Saving:** Title edits call `DesignApi.updateDesign` or `DesignApi.updateSection`. Add/Delete/Move call corresponding `DesignApi` methods.
-*   **New Design (Current):** User clicks button -> `HomePage.ts` shows modal -> User clicks template/blank card -> `HomePage.ts` redirects browser to `/designs/new` or `/designs/new?templateId=...` -> `DesignEditorPage.go` handles `/designs/new`, calls backend `DesignService.CreateDesign` (template handling TBD), gets new ID -> Redirects to `/designs/{id}/edit`.
+*   **Purpose:** Serves static files (CSS, JS bundles, images, libraries).
+*   **Key Files:**
+    *   `css/tailwind.css`: Compiled Tailwind CSS (includes fullscreen height fix).
+    *   `js/gen/`: Output directory for Webpack bundles.
 
----
+**12. Attic (`./.attic/`)**
 
-**Prompt for Next LLM:**
+*   **Purpose:** Older/deprecated code.
 
-```
-You are an expert software developer tasked with continuing work on the LeetCoach web application. You have been provided with a detailed project summary organized by folder structure, outlining the technologies (Go, gRPC, gRPC-Gateway, Go Templates, HTMX, TypeScript, Tailwind CSS, React for Excalidraw), architecture, components, data persistence (filesystem, Datastore), and key data flows.
+**13. Key Data Flows (Updated):**
 
-**Context:** The project allows users to create multi-section system design documents. A recent refactor introduced a dedicated `ContentService` for handling raw section content, separating it from the `DesignService` which manages metadata. The current focus is on improving the "Create New Design" user experience.
+*   **Authentication:** Unchanged.
+*   **Design Loading/Saving:** Unchanged core flow, but `handleSaveClick` in `TextSection` now also updates design timestamp.
+*   **New Design (Suggest):** "+" Button -> `SectionManager.openSectionTypeSelector` -> Modal shows -> Click "Suggest" -> `SectionManager.handleSuggestSectionsClick` -> `LlmApi.SuggestSections` -> Backend `LlmService.SuggestSections` -> LLM -> Response -> `SectionManager` renders suggestion cards -> Click Suggestion Card -> `SectionManager.handleSectionTypeSelection` (with title) -> `DesignApi.AddSection` -> Backend `DesignService.AddSection` (uses title).
+*   **LLM Interaction (Simple Query Example):** Section LLM Button -> `BaseSection._bindEvents` -> `LlmInteractionHandler.showLlmDialog` -> Modal shows (`llm-dialog`) -> User interacts (selects tab, enters prompt) -> Click Submit -> `Modal` calls `LlmInteractionHandler.handleDialogSubmit` -> `LlmInteractionHandler` determines action -> Calls appropriate `LlmApi` method (e.g., `SimpleLlmQuery`) -> Backend `LlmService` -> `llm.LLMClient` -> LLM -> Response -> `LlmInteractionHandler` hides dialog -> Shows `llm-results` modal -> (Optional Apply Click) -> `Modal` calls `LlmInteractionHandler.handleApplyLlmResult` -> Calls `TextSection.applyGeneratedContent`.
 
-**Current Task State:**
-1.  A modal dialog (`create-design-modal`) has been added to the `TemplateRegistry.html`.
-2.  The "Create New" button on the `HomePage.html` (design listing) now triggers this modal via `HomePage.ts`.
-3.  When the user clicks an option (e.g., "Blank Design", "API Design Template") in the modal, `HomePage.ts` now performs a browser **redirect** to `/designs/new` (for blank) or `/designs/new?templateId={id}` (for templates).
-
-**Project Conventions (Review `INSTRUCTIONS.md` if necessary):**
-*   Frontend: Primarily TypeScript components (`./web/views/components/`), HTML templates (`./web/views/templates/`), Tailwind CSS. React/TSX only for specific libraries like Excalidraw. Client-side templates are stored in `TemplateRegistry.html` and loaded via `TemplateLoader.ts`. API interaction via auto-generated client in `apiclient/`.
-*   Backend: Go with gRPC services (`./services/`) exposed via gRPC-Gateway (`./web/api.go`). Server-side rendering via Go templates (`./web/views/`, `./web/views/templates/`). Filesystem for design/content persistence, Datastore for tags/auth.
-*   Work incrementally. Generate code changes for specific files. Explain your reasoning. Ask clarifying questions if the requirements or existing structure are unclear.
-
-**Your Next Task:**
-
-Modify the backend Go code to handle the `templateId` query parameter passed during the redirect to `/designs/new`.
-
-1.  **Modify `web/views/DesignEditorPage.go`:** In the `Load` method, when `v.DesignId == ""`, check `r.URL.Query().Get("templateId")`.
-2.  **Pass `templateId` to Backend:** Modify the call to `client.CreateDesign` within `DesignEditorPage.Load` to include the extracted `templateId`. This will require updating the `CreateDesignRequest` protobuf message and regenerating the Go/TS code.
-3.  **Modify `services/designs.go` (`CreateDesign`):**
-    *   Accept the `templateId` from the request.
-    *   If `templateId` is present:
-        *   **Define Template Structure:** Decide how templates will be represented (e.g., a Go struct defining sections, titles, initial content).
-        *   **Load Template Definition:** Implement logic to load the specified template definition (e.g., from embedded files, a dedicated `./data/templates` directory with JSON files).
-        *   **Apply Template:** Instead of creating just an empty design, create the `design.json` with the template's name/description and the list of section IDs defined in the template.
-        *   **Create Sections:** Loop through the sections defined in the template:
-            *   Generate section IDs.
-            *   Create the section subdirectories (`<basePath>/<designId>/sections/<sectionId>`).
-            *   Create the `main.json` file for each section with its metadata (type, title).
-            *   **Crucially:** Create the initial *content* files (e.g., `content.main`) within each section directory, populating them with the initial content specified in the template definition. This might involve writing default HTML, JSON, etc. based on the section type. Ensure content is stored correctly (e.g., base64 encoded if that's the standard for the `ContentService`, although `ContentService` deals with raw bytes, the template definition might store it as plain text initially).
-    *   If `templateId` is *not* present, execute the existing logic to create a blank design.
-4.  **Regenerate Protobuf Code:** After modifying `.proto` files, run the necessary `make proto` or protoc commands to update Go (`./gen/go`) and TypeScript (`./web/views/components/apiclient/`) code.
-
-Start by outlining the necessary Protobuf changes and then modify the Go code in `DesignEditorPage.go` and `services/designs.go`. Define a simple structure for the template definition (e.g., a map or struct in Go). For now, you can hardcode one or two simple template definitions directly in the `CreateDesign` function for testing, before implementing file loading.
-```
