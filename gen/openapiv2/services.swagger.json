@@ -469,6 +469,51 @@
         ]
       }
     },
+    "/v1/designs/{designId}/sections/{sectionId}/prompts:generateDefaults": {
+      "post": {
+        "summary": "GenerateDefaultPrompts generates and saves default prompts for a section.",
+        "operationId": "LlmService_GenerateDefaultPrompts",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GenerateDefaultPromptsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "designId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "sectionId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ],
+        "tags": [
+          "LlmService"
+        ]
+      }
+    },
     "/v1/designs/{designId}/sections/{sectionId}/text:generate": {
       "post": {
         "summary": "GenerateTextContent attempts to generate content for a text section.",
@@ -1520,6 +1565,19 @@
         }
       }
     },
+    "v1GenerateDefaultPromptsResponse": {
+      "type": "object",
+      "properties": {
+        "getAnswerPrompt": {
+          "type": "string",
+          "description": "The default prompt generated and saved for getting answers."
+        },
+        "verifyAnswerPrompt": {
+          "type": "string",
+          "description": "The default prompt generated and saved for verification."
+        }
+      }
+    },
     "v1GenerateTextContentResponse": {
       "type": "object",
       "properties": {
@@ -1805,6 +1863,14 @@
         "description": {
           "type": "string",
           "title": "A brief description explaining the suggestion"
+        },
+        "getAnswerPrompt": {
+          "type": "string",
+          "title": "Suggested prompt for generating content"
+        },
+        "verifyAnswerPrompt": {
+          "type": "string",
+          "title": "Suggested prompt for verifying content"
         }
       }
     },

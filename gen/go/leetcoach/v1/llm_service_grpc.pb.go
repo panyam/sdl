@@ -21,10 +21,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	LlmService_SimpleLlmQuery_FullMethodName      = "/leetcoach.v1.LlmService/SimpleLlmQuery"
-	LlmService_SuggestSections_FullMethodName     = "/leetcoach.v1.LlmService/SuggestSections"
-	LlmService_GenerateTextContent_FullMethodName = "/leetcoach.v1.LlmService/GenerateTextContent"
-	LlmService_ReviewTextContent_FullMethodName   = "/leetcoach.v1.LlmService/ReviewTextContent"
+	LlmService_SimpleLlmQuery_FullMethodName         = "/leetcoach.v1.LlmService/SimpleLlmQuery"
+	LlmService_SuggestSections_FullMethodName        = "/leetcoach.v1.LlmService/SuggestSections"
+	LlmService_GenerateTextContent_FullMethodName    = "/leetcoach.v1.LlmService/GenerateTextContent"
+	LlmService_ReviewTextContent_FullMethodName      = "/leetcoach.v1.LlmService/ReviewTextContent"
+	LlmService_GenerateDefaultPrompts_FullMethodName = "/leetcoach.v1.LlmService/GenerateDefaultPrompts"
 )
 
 // LlmServiceClient is the client API for LlmService service.
@@ -42,6 +43,8 @@ type LlmServiceClient interface {
 	GenerateTextContent(ctx context.Context, in *GenerateTextContentRequest, opts ...grpc.CallOption) (*GenerateTextContentResponse, error)
 	// ReviewTextContent asks the LLM to review existing text content.
 	ReviewTextContent(ctx context.Context, in *ReviewTextContentRequest, opts ...grpc.CallOption) (*ReviewTextContentResponse, error)
+	// GenerateDefaultPrompts generates and saves default prompts for a section.
+	GenerateDefaultPrompts(ctx context.Context, in *GenerateDefaultPromptsRequest, opts ...grpc.CallOption) (*GenerateDefaultPromptsResponse, error)
 }
 
 type llmServiceClient struct {
@@ -92,6 +95,16 @@ func (c *llmServiceClient) ReviewTextContent(ctx context.Context, in *ReviewText
 	return out, nil
 }
 
+func (c *llmServiceClient) GenerateDefaultPrompts(ctx context.Context, in *GenerateDefaultPromptsRequest, opts ...grpc.CallOption) (*GenerateDefaultPromptsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GenerateDefaultPromptsResponse)
+	err := c.cc.Invoke(ctx, LlmService_GenerateDefaultPrompts_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LlmServiceServer is the server API for LlmService service.
 // All implementations should embed UnimplementedLlmServiceServer
 // for forward compatibility.
@@ -107,6 +120,8 @@ type LlmServiceServer interface {
 	GenerateTextContent(context.Context, *GenerateTextContentRequest) (*GenerateTextContentResponse, error)
 	// ReviewTextContent asks the LLM to review existing text content.
 	ReviewTextContent(context.Context, *ReviewTextContentRequest) (*ReviewTextContentResponse, error)
+	// GenerateDefaultPrompts generates and saves default prompts for a section.
+	GenerateDefaultPrompts(context.Context, *GenerateDefaultPromptsRequest) (*GenerateDefaultPromptsResponse, error)
 }
 
 // UnimplementedLlmServiceServer should be embedded to have
@@ -127,6 +142,9 @@ func (UnimplementedLlmServiceServer) GenerateTextContent(context.Context, *Gener
 }
 func (UnimplementedLlmServiceServer) ReviewTextContent(context.Context, *ReviewTextContentRequest) (*ReviewTextContentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReviewTextContent not implemented")
+}
+func (UnimplementedLlmServiceServer) GenerateDefaultPrompts(context.Context, *GenerateDefaultPromptsRequest) (*GenerateDefaultPromptsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GenerateDefaultPrompts not implemented")
 }
 func (UnimplementedLlmServiceServer) testEmbeddedByValue() {}
 
@@ -220,6 +238,24 @@ func _LlmService_ReviewTextContent_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LlmService_GenerateDefaultPrompts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GenerateDefaultPromptsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LlmServiceServer).GenerateDefaultPrompts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LlmService_GenerateDefaultPrompts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LlmServiceServer).GenerateDefaultPrompts(ctx, req.(*GenerateDefaultPromptsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // LlmService_ServiceDesc is the grpc.ServiceDesc for LlmService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -242,6 +278,10 @@ var LlmService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReviewTextContent",
 			Handler:    _LlmService_ReviewTextContent_Handler,
+		},
+		{
+			MethodName: "GenerateDefaultPrompts",
+			Handler:    _LlmService_GenerateDefaultPrompts_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

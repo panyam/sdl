@@ -37,6 +37,18 @@ export interface V1SuggestedSection {
      * @memberof V1SuggestedSection
      */
     description?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof V1SuggestedSection
+     */
+    getAnswerPrompt?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof V1SuggestedSection
+     */
+    verifyAnswerPrompt?: string;
 }
 
 /**
@@ -59,6 +71,8 @@ export function V1SuggestedSectionFromJSONTyped(json: any, ignoreDiscriminator: 
         'title': json['title'] == null ? undefined : json['title'],
         'type': json['type'] == null ? undefined : json['type'],
         'description': json['description'] == null ? undefined : json['description'],
+        'getAnswerPrompt': json['getAnswerPrompt'] == null ? undefined : json['getAnswerPrompt'],
+        'verifyAnswerPrompt': json['verifyAnswerPrompt'] == null ? undefined : json['verifyAnswerPrompt'],
     };
 }
 
@@ -76,6 +90,8 @@ export function V1SuggestedSectionToJSONTyped(value?: V1SuggestedSection | null,
         'title': value['title'],
         'type': value['type'],
         'description': value['description'],
+        'getAnswerPrompt': value['getAnswerPrompt'],
+        'verifyAnswerPrompt': value['verifyAnswerPrompt'],
     };
 }
 

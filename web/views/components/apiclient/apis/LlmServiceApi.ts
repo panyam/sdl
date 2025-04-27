@@ -19,6 +19,7 @@ import type {
   LlmServiceReviewTextContentRequest,
   LlmServiceSuggestSectionsRequest,
   RpcStatus,
+  V1GenerateDefaultPromptsResponse,
   V1GenerateTextContentResponse,
   V1ReviewTextContentResponse,
   V1SimpleLlmQueryRequest,
@@ -34,6 +35,8 @@ import {
     LlmServiceSuggestSectionsRequestToJSON,
     RpcStatusFromJSON,
     RpcStatusToJSON,
+    V1GenerateDefaultPromptsResponseFromJSON,
+    V1GenerateDefaultPromptsResponseToJSON,
     V1GenerateTextContentResponseFromJSON,
     V1GenerateTextContentResponseToJSON,
     V1ReviewTextContentResponseFromJSON,
@@ -45,6 +48,12 @@ import {
     V1SuggestSectionsResponseFromJSON,
     V1SuggestSectionsResponseToJSON,
 } from '../models/index';
+
+export interface LlmServiceGenerateDefaultPromptsRequest {
+    designId: string;
+    sectionId: string;
+    body: object;
+}
 
 export interface LlmServiceGenerateTextContentOperationRequest {
     designId: string;
@@ -71,6 +80,56 @@ export interface LlmServiceSuggestSectionsOperationRequest {
  * 
  */
 export class LlmServiceApi extends runtime.BaseAPI {
+
+    /**
+     * GenerateDefaultPrompts generates and saves default prompts for a section.
+     */
+    async llmServiceGenerateDefaultPromptsRaw(requestParameters: LlmServiceGenerateDefaultPromptsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<V1GenerateDefaultPromptsResponse>> {
+        if (requestParameters['designId'] == null) {
+            throw new runtime.RequiredError(
+                'designId',
+                'Required parameter "designId" was null or undefined when calling llmServiceGenerateDefaultPrompts().'
+            );
+        }
+
+        if (requestParameters['sectionId'] == null) {
+            throw new runtime.RequiredError(
+                'sectionId',
+                'Required parameter "sectionId" was null or undefined when calling llmServiceGenerateDefaultPrompts().'
+            );
+        }
+
+        if (requestParameters['body'] == null) {
+            throw new runtime.RequiredError(
+                'body',
+                'Required parameter "body" was null or undefined when calling llmServiceGenerateDefaultPrompts().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        const response = await this.request({
+            path: `/v1/designs/{designId}/sections/{sectionId}/prompts:generateDefaults`.replace(`{${"designId"}}`, encodeURIComponent(String(requestParameters['designId']))).replace(`{${"sectionId"}}`, encodeURIComponent(String(requestParameters['sectionId']))),
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: requestParameters['body'] as any,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => V1GenerateDefaultPromptsResponseFromJSON(jsonValue));
+    }
+
+    /**
+     * GenerateDefaultPrompts generates and saves default prompts for a section.
+     */
+    async llmServiceGenerateDefaultPrompts(requestParameters: LlmServiceGenerateDefaultPromptsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<V1GenerateDefaultPromptsResponse> {
+        const response = await this.llmServiceGenerateDefaultPromptsRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
 
     /**
      * GenerateTextContent attempts to generate content for a text section.

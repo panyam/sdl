@@ -43,6 +43,14 @@ service LlmService {
       body: "*"
     };
   }
+
+  // GenerateDefaultPrompts generates and saves default prompts for a section.
+  rpc GenerateDefaultPrompts(GenerateDefaultPromptsRequest) returns (GenerateDefaultPromptsResponse) {
+    option (google.api.http) = {
+      post: "/v1/designs/{design_id}/sections/{section_id}/prompts:generateDefaults" // New endpoint
+      body: "*" // Empty body, IDs are in path
+    };
+  }
 }
 
 message SimpleLlmQueryRequest {
@@ -66,6 +74,8 @@ message SuggestedSection {
   string title = 1;       // The suggested title for the new section
   string type = 2;        // Suggested type ("text", "drawing", "plot")
   string description = 3; // A brief description explaining the suggestion
+  string get_answer_prompt = 4;  // Suggested prompt for generating content
+  string verify_answer_prompt = 5; // Suggested prompt for verifying content
 }
 message SuggestSectionsResponse {
   repeated SuggestedSection suggestions = 1; // List of suggestions
@@ -96,4 +106,14 @@ message ReviewTextContentRequest {
 
 message ReviewTextContentResponse {
   string review_text = 1; // The LLM's review/critique comments
+}
+
+message GenerateDefaultPromptsRequest {
+  string design_id = 1;
+  string section_id = 2;
+}
+
+message GenerateDefaultPromptsResponse {
+  string get_answer_prompt = 1;  // The default prompt generated and saved for getting answers.
+  string verify_answer_prompt = 2; // The default prompt generated and saved for verification.
 }

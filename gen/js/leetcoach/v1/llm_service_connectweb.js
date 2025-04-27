@@ -5,7 +5,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { GenerateTextContentRequest, GenerateTextContentResponse, ReviewTextContentRequest, ReviewTextContentResponse, SimpleLlmQueryRequest, SimpleLlmQueryResponse, SuggestSectionsRequest, SuggestSectionsResponse } from "./llm_service_pb.js";
+import { GenerateDefaultPromptsRequest, GenerateDefaultPromptsResponse, GenerateTextContentRequest, GenerateTextContentResponse, ReviewTextContentRequest, ReviewTextContentResponse, SimpleLlmQueryRequest, SimpleLlmQueryResponse, SuggestSectionsRequest, SuggestSectionsResponse } from "./llm_service_pb.js";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -59,6 +59,17 @@ export const LlmService = {
       name: "ReviewTextContent",
       I: ReviewTextContentRequest,
       O: ReviewTextContentResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * GenerateDefaultPrompts generates and saves default prompts for a section.
+     *
+     * @generated from rpc leetcoach.v1.LlmService.GenerateDefaultPrompts
+     */
+    generateDefaultPrompts: {
+      name: "GenerateDefaultPrompts",
+      I: GenerateDefaultPromptsRequest,
+      O: GenerateDefaultPromptsResponse,
       kind: MethodKind.Unary,
     },
   }

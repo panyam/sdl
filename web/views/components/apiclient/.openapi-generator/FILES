@@ -27,6 +27,7 @@ models/V1CreateDesignRequest.ts
 models/V1CreateDesignResponse.ts
 models/V1CreateTagResponse.ts
 models/V1Design.ts
+models/V1GenerateDefaultPromptsResponse.ts
 models/V1GenerateTextContentResponse.ts
 models/V1GetContentResponse.ts
 models/V1GetDesignResponse.ts

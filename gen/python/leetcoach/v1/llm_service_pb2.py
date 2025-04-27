@@ -26,7 +26,7 @@ from google.api import annotations_pb2 as google_dot_api_dot_annotations__pb2
 from google.protobuf import struct_pb2 as google_dot_protobuf_dot_struct__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1eleetcoach/v1/llm_service.proto\x12\x0cleetcoach.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1cgoogle/protobuf/struct.proto\"k\n\x15SimpleLlmQueryRequest\x12\x1b\n\tdesign_id\x18\x01 \x01(\tR\x08\x64\x65signId\x12\x1d\n\nsection_id\x18\x02 \x01(\tR\tsectionId\x12\x16\n\x06prompt\x18\x03 \x01(\tR\x06prompt\"=\n\x16SimpleLlmQueryResponse\x12#\n\rresponse_text\x18\x01 \x01(\tR\x0cresponseText\"m\n\x16SuggestSectionsRequest\x12\x1b\n\tdesign_id\x18\x01 \x01(\tR\x08\x64\x65signId\x12\x36\n\x17\x65xisting_section_titles\x18\x02 \x03(\tR\x15\x65xistingSectionTitles\"^\n\x10SuggestedSection\x12\x14\n\x05title\x18\x01 \x01(\tR\x05title\x12\x12\n\x04type\x18\x02 \x01(\tR\x04type\x12 \n\x0b\x64\x65scription\x18\x03 \x01(\tR\x0b\x64\x65scription\"[\n\x17SuggestSectionsResponse\x12@\n\x0bsuggestions\x18\x01 \x03(\x0b\x32\x1e.leetcoach.v1.SuggestedSectionR\x0bsuggestions\"\x81\x01\n\x1aGenerateTextContentRequest\x12\x1b\n\tdesign_id\x18\x01 \x01(\tR\x08\x64\x65signId\x12\x1d\n\nsection_id\x18\x02 \x01(\tR\tsectionId\x12\'\n\x0fprompt_override\x18\x03 \x01(\tR\x0epromptOverride\"D\n\x1bGenerateTextContentResponse\x12%\n\x0egenerated_text\x18\x01 \x01(\tR\rgeneratedText\"\x7f\n\x18ReviewTextContentRequest\x12\x1b\n\tdesign_id\x18\x01 \x01(\tR\x08\x64\x65signId\x12\x1d\n\nsection_id\x18\x02 \x01(\tR\tsectionId\x12\'\n\x0fprompt_override\x18\x04 \x01(\tR\x0epromptOverride\"<\n\x19ReviewTextContentResponse\x12\x1f\n\x0breview_text\x18\x01 \x01(\tR\nreviewText2\xfb\x04\n\nLlmService\x12u\n\x0eSimpleLlmQuery\x12#.leetcoach.v1.SimpleLlmQueryRequest\x1a$.leetcoach.v1.SimpleLlmQueryResponse\"\x18\x82\xd3\xe4\x93\x02\x12\"\r/v1/llm/query:\x01*\x12\x93\x01\n\x0fSuggestSections\x12$.leetcoach.v1.SuggestSectionsRequest\x1a%.leetcoach.v1.SuggestSectionsResponse\"3\x82\xd3\xe4\x93\x02-\"(/v1/designs/{design_id}/sections:suggest:\x01*\x12\xb2\x01\n\x13GenerateTextContent\x12(.leetcoach.v1.GenerateTextContentRequest\x1a).leetcoach.v1.GenerateTextContentResponse\"F\x82\xd3\xe4\x93\x02@\";/v1/designs/{design_id}/sections/{section_id}/text:generate:\x01*\x12\xaa\x01\n\x11ReviewTextContent\x12&.leetcoach.v1.ReviewTextContentRequest\x1a\'.leetcoach.v1.ReviewTextContentResponse\"D\x82\xd3\xe4\x93\x02>\"9/v1/designs/{design_id}/sections/{section_id}/text:review:\x01*B\x91\x01\n\x10\x63om.leetcoach.v1B\x0fLlmServiceProtoP\x01Z\x1bgithub.com/leetcoach/protos\xa2\x02\x03LXX\xaa\x02\x0cLeetcoach.V1\xca\x02\x0cLeetcoach\\V1\xe2\x02\x18Leetcoach\\V1\\GPBMetadata\xea\x02\rLeetcoach::V1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1eleetcoach/v1/llm_service.proto\x12\x0cleetcoach.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1cgoogle/protobuf/struct.proto\"k\n\x15SimpleLlmQueryRequest\x12\x1b\n\tdesign_id\x18\x01 \x01(\tR\x08\x64\x65signId\x12\x1d\n\nsection_id\x18\x02 \x01(\tR\tsectionId\x12\x16\n\x06prompt\x18\x03 \x01(\tR\x06prompt\"=\n\x16SimpleLlmQueryResponse\x12#\n\rresponse_text\x18\x01 \x01(\tR\x0cresponseText\"m\n\x16SuggestSectionsRequest\x12\x1b\n\tdesign_id\x18\x01 \x01(\tR\x08\x64\x65signId\x12\x36\n\x17\x65xisting_section_titles\x18\x02 \x03(\tR\x15\x65xistingSectionTitles\"\xbc\x01\n\x10SuggestedSection\x12\x14\n\x05title\x18\x01 \x01(\tR\x05title\x12\x12\n\x04type\x18\x02 \x01(\tR\x04type\x12 \n\x0b\x64\x65scription\x18\x03 \x01(\tR\x0b\x64\x65scription\x12*\n\x11get_answer_prompt\x18\x04 \x01(\tR\x0fgetAnswerPrompt\x12\x30\n\x14verify_answer_prompt\x18\x05 \x01(\tR\x12verifyAnswerPrompt\"[\n\x17SuggestSectionsResponse\x12@\n\x0bsuggestions\x18\x01 \x03(\x0b\x32\x1e.leetcoach.v1.SuggestedSectionR\x0bsuggestions\"\x81\x01\n\x1aGenerateTextContentRequest\x12\x1b\n\tdesign_id\x18\x01 \x01(\tR\x08\x64\x65signId\x12\x1d\n\nsection_id\x18\x02 \x01(\tR\tsectionId\x12\'\n\x0fprompt_override\x18\x03 \x01(\tR\x0epromptOverride\"D\n\x1bGenerateTextContentResponse\x12%\n\x0egenerated_text\x18\x01 \x01(\tR\rgeneratedText\"\x7f\n\x18ReviewTextContentRequest\x12\x1b\n\tdesign_id\x18\x01 \x01(\tR\x08\x64\x65signId\x12\x1d\n\nsection_id\x18\x02 \x01(\tR\tsectionId\x12\'\n\x0fprompt_override\x18\x04 \x01(\tR\x0epromptOverride\"<\n\x19ReviewTextContentResponse\x12\x1f\n\x0breview_text\x18\x01 \x01(\tR\nreviewText\"[\n\x1dGenerateDefaultPromptsRequest\x12\x1b\n\tdesign_id\x18\x01 \x01(\tR\x08\x64\x65signId\x12\x1d\n\nsection_id\x18\x02 \x01(\tR\tsectionId\"~\n\x1eGenerateDefaultPromptsResponse\x12*\n\x11get_answer_prompt\x18\x01 \x01(\tR\x0fgetAnswerPrompt\x12\x30\n\x14verify_answer_prompt\x18\x02 \x01(\tR\x12verifyAnswerPrompt2\xc4\x06\n\nLlmService\x12u\n\x0eSimpleLlmQuery\x12#.leetcoach.v1.SimpleLlmQueryRequest\x1a$.leetcoach.v1.SimpleLlmQueryResponse\"\x18\x82\xd3\xe4\x93\x02\x12\"\r/v1/llm/query:\x01*\x12\x93\x01\n\x0fSuggestSections\x12$.leetcoach.v1.SuggestSectionsRequest\x1a%.leetcoach.v1.SuggestSectionsResponse\"3\x82\xd3\xe4\x93\x02-\"(/v1/designs/{design_id}/sections:suggest:\x01*\x12\xb2\x01\n\x13GenerateTextContent\x12(.leetcoach.v1.GenerateTextContentRequest\x1a).leetcoach.v1.GenerateTextContentResponse\"F\x82\xd3\xe4\x93\x02@\";/v1/designs/{design_id}/sections/{section_id}/text:generate:\x01*\x12\xaa\x01\n\x11ReviewTextContent\x12&.leetcoach.v1.ReviewTextContentRequest\x1a\'.leetcoach.v1.ReviewTextContentResponse\"D\x82\xd3\xe4\x93\x02>\"9/v1/designs/{design_id}/sections/{section_id}/text:review:\x01*\x12\xc6\x01\n\x16GenerateDefaultPrompts\x12+.leetcoach.v1.GenerateDefaultPromptsRequest\x1a,.leetcoach.v1.GenerateDefaultPromptsResponse\"Q\x82\xd3\xe4\x93\x02K\"F/v1/designs/{design_id}/sections/{section_id}/prompts:generateDefaults:\x01*B\x91\x01\n\x10\x63om.leetcoach.v1B\x0fLlmServiceProtoP\x01Z\x1bgithub.com/leetcoach/protos\xa2\x02\x03LXX\xaa\x02\x0cLeetcoach.V1\xca\x02\x0cLeetcoach\\V1\xe2\x02\x18Leetcoach\\V1\\GPBMetadata\xea\x02\rLeetcoach::V1b\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -42,24 +42,30 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_LLMSERVICE'].methods_by_name['GenerateTextContent']._serialized_options = b'\202\323\344\223\002@\";/v1/designs/{design_id}/sections/{section_id}/text:generate:\001*'
   _globals['_LLMSERVICE'].methods_by_name['ReviewTextContent']._loaded_options = None
   _globals['_LLMSERVICE'].methods_by_name['ReviewTextContent']._serialized_options = b'\202\323\344\223\002>\"9/v1/designs/{design_id}/sections/{section_id}/text:review:\001*'
+  _globals['_LLMSERVICE'].methods_by_name['GenerateDefaultPrompts']._loaded_options = None
+  _globals['_LLMSERVICE'].methods_by_name['GenerateDefaultPrompts']._serialized_options = b'\202\323\344\223\002K\"F/v1/designs/{design_id}/sections/{section_id}/prompts:generateDefaults:\001*'
   _globals['_SIMPLELLMQUERYREQUEST']._serialized_start=108
   _globals['_SIMPLELLMQUERYREQUEST']._serialized_end=215
   _globals['_SIMPLELLMQUERYRESPONSE']._serialized_start=217
   _globals['_SIMPLELLMQUERYRESPONSE']._serialized_end=278
   _globals['_SUGGESTSECTIONSREQUEST']._serialized_start=280
   _globals['_SUGGESTSECTIONSREQUEST']._serialized_end=389
-  _globals['_SUGGESTEDSECTION']._serialized_start=391
-  _globals['_SUGGESTEDSECTION']._serialized_end=485
-  _globals['_SUGGESTSECTIONSRESPONSE']._serialized_start=487
-  _globals['_SUGGESTSECTIONSRESPONSE']._serialized_end=578
-  _globals['_GENERATETEXTCONTENTREQUEST']._serialized_start=581
-  _globals['_GENERATETEXTCONTENTREQUEST']._serialized_end=710
-  _globals['_GENERATETEXTCONTENTRESPONSE']._serialized_start=712
-  _globals['_GENERATETEXTCONTENTRESPONSE']._serialized_end=780
-  _globals['_REVIEWTEXTCONTENTREQUEST']._serialized_start=782
-  _globals['_REVIEWTEXTCONTENTREQUEST']._serialized_end=909
-  _globals['_REVIEWTEXTCONTENTRESPONSE']._serialized_start=911
-  _globals['_REVIEWTEXTCONTENTRESPONSE']._serialized_end=971
-  _globals['_LLMSERVICE']._serialized_start=974
-  _globals['_LLMSERVICE']._serialized_end=1609
+  _globals['_SUGGESTEDSECTION']._serialized_start=392
+  _globals['_SUGGESTEDSECTION']._serialized_end=580
+  _globals['_SUGGESTSECTIONSRESPONSE']._serialized_start=582
+  _globals['_SUGGESTSECTIONSRESPONSE']._serialized_end=673
+  _globals['_GENERATETEXTCONTENTREQUEST']._serialized_start=676
+  _globals['_GENERATETEXTCONTENTREQUEST']._serialized_end=805
+  _globals['_GENERATETEXTCONTENTRESPONSE']._serialized_start=807
+  _globals['_GENERATETEXTCONTENTRESPONSE']._serialized_end=875
+  _globals['_REVIEWTEXTCONTENTREQUEST']._serialized_start=877
+  _globals['_REVIEWTEXTCONTENTREQUEST']._serialized_end=1004
+  _globals['_REVIEWTEXTCONTENTRESPONSE']._serialized_start=1006
+  _globals['_REVIEWTEXTCONTENTRESPONSE']._serialized_end=1066
+  _globals['_GENERATEDEFAULTPROMPTSREQUEST']._serialized_start=1068
+  _globals['_GENERATEDEFAULTPROMPTSREQUEST']._serialized_end=1159
+  _globals['_GENERATEDEFAULTPROMPTSRESPONSE']._serialized_start=1161
+  _globals['_GENERATEDEFAULTPROMPTSRESPONSE']._serialized_end=1287
+  _globals['_LLMSERVICE']._serialized_start=1290
+  _globals['_LLMSERVICE']._serialized_end=2126
 # @@protoc_insertion_point(module_scope)

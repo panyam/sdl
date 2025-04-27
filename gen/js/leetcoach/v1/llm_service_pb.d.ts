@@ -111,6 +111,20 @@ export declare type SuggestedSection = Message<"leetcoach.v1.SuggestedSection"> 
    * @generated from field: string description = 3;
    */
   description: string;
+
+  /**
+   * Suggested prompt for generating content
+   *
+   * @generated from field: string get_answer_prompt = 4;
+   */
+  getAnswerPrompt: string;
+
+  /**
+   * Suggested prompt for verifying content
+   *
+   * @generated from field: string verify_answer_prompt = 5;
+   */
+  verifyAnswerPrompt: string;
 };
 
 /**
@@ -235,6 +249,52 @@ export declare type ReviewTextContentResponse = Message<"leetcoach.v1.ReviewText
 export declare const ReviewTextContentResponseSchema: GenMessage<ReviewTextContentResponse>;
 
 /**
+ * @generated from message leetcoach.v1.GenerateDefaultPromptsRequest
+ */
+export declare type GenerateDefaultPromptsRequest = Message<"leetcoach.v1.GenerateDefaultPromptsRequest"> & {
+  /**
+   * @generated from field: string design_id = 1;
+   */
+  designId: string;
+
+  /**
+   * @generated from field: string section_id = 2;
+   */
+  sectionId: string;
+};
+
+/**
+ * Describes the message leetcoach.v1.GenerateDefaultPromptsRequest.
+ * Use `create(GenerateDefaultPromptsRequestSchema)` to create a new message.
+ */
+export declare const GenerateDefaultPromptsRequestSchema: GenMessage<GenerateDefaultPromptsRequest>;
+
+/**
+ * @generated from message leetcoach.v1.GenerateDefaultPromptsResponse
+ */
+export declare type GenerateDefaultPromptsResponse = Message<"leetcoach.v1.GenerateDefaultPromptsResponse"> & {
+  /**
+   * The default prompt generated and saved for getting answers.
+   *
+   * @generated from field: string get_answer_prompt = 1;
+   */
+  getAnswerPrompt: string;
+
+  /**
+   * The default prompt generated and saved for verification.
+   *
+   * @generated from field: string verify_answer_prompt = 2;
+   */
+  verifyAnswerPrompt: string;
+};
+
+/**
+ * Describes the message leetcoach.v1.GenerateDefaultPromptsResponse.
+ * Use `create(GenerateDefaultPromptsResponseSchema)` to create a new message.
+ */
+export declare const GenerateDefaultPromptsResponseSchema: GenMessage<GenerateDefaultPromptsResponse>;
+
+/**
  * LlmService provides access to Large Language Model features.
  *
  * @generated from service leetcoach.v1.LlmService
@@ -280,6 +340,16 @@ export declare const LlmService: GenService<{
     methodKind: "unary";
     input: typeof ReviewTextContentRequestSchema;
     output: typeof ReviewTextContentResponseSchema;
+  },
+  /**
+   * GenerateDefaultPrompts generates and saves default prompts for a section.
+   *
+   * @generated from rpc leetcoach.v1.LlmService.GenerateDefaultPrompts
+   */
+  generateDefaultPrompts: {
+    methodKind: "unary";
+    input: typeof GenerateDefaultPromptsRequestSchema;
+    output: typeof GenerateDefaultPromptsResponseSchema;
   },
 }>;
 

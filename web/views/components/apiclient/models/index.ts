@@ -22,6 +22,7 @@ export * from './V1CreateDesignRequest';
 export * from './V1CreateDesignResponse';
 export * from './V1CreateTagResponse';
 export * from './V1Design';
+export * from './V1GenerateDefaultPromptsResponse';
 export * from './V1GenerateTextContentResponse';
 export * from './V1GetContentResponse';
 export * from './V1GetDesignResponse';

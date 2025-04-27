@@ -35,6 +35,11 @@ class LlmServiceStub(object):
                 request_serializer=leetcoach_dot_v1_dot_llm__service__pb2.ReviewTextContentRequest.SerializeToString,
                 response_deserializer=leetcoach_dot_v1_dot_llm__service__pb2.ReviewTextContentResponse.FromString,
                 _registered_method=True)
+        self.GenerateDefaultPrompts = channel.unary_unary(
+                '/leetcoach.v1.LlmService/GenerateDefaultPrompts',
+                request_serializer=leetcoach_dot_v1_dot_llm__service__pb2.GenerateDefaultPromptsRequest.SerializeToString,
+                response_deserializer=leetcoach_dot_v1_dot_llm__service__pb2.GenerateDefaultPromptsResponse.FromString,
+                _registered_method=True)
 
 
 class LlmServiceServicer(object):
@@ -70,6 +75,13 @@ class LlmServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GenerateDefaultPrompts(self, request, context):
+        """GenerateDefaultPrompts generates and saves default prompts for a section.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_LlmServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -92,6 +104,11 @@ def add_LlmServiceServicer_to_server(servicer, server):
                     servicer.ReviewTextContent,
                     request_deserializer=leetcoach_dot_v1_dot_llm__service__pb2.ReviewTextContentRequest.FromString,
                     response_serializer=leetcoach_dot_v1_dot_llm__service__pb2.ReviewTextContentResponse.SerializeToString,
+            ),
+            'GenerateDefaultPrompts': grpc.unary_unary_rpc_method_handler(
+                    servicer.GenerateDefaultPrompts,
+                    request_deserializer=leetcoach_dot_v1_dot_llm__service__pb2.GenerateDefaultPromptsRequest.FromString,
+                    response_serializer=leetcoach_dot_v1_dot_llm__service__pb2.GenerateDefaultPromptsResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -203,6 +220,33 @@ class LlmService(object):
             '/leetcoach.v1.LlmService/ReviewTextContent',
             leetcoach_dot_v1_dot_llm__service__pb2.ReviewTextContentRequest.SerializeToString,
             leetcoach_dot_v1_dot_llm__service__pb2.ReviewTextContentResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GenerateDefaultPrompts(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/leetcoach.v1.LlmService/GenerateDefaultPrompts',
+            leetcoach_dot_v1_dot_llm__service__pb2.GenerateDefaultPromptsRequest.SerializeToString,
+            leetcoach_dot_v1_dot_llm__service__pb2.GenerateDefaultPromptsResponse.FromString,
             options,
             channel_credentials,
             insecure,
