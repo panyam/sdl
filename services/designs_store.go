@@ -295,6 +295,26 @@ func (ds *DesignStore) DeleteSection(designId, sectionId string) error {
 	return nil
 }
 
+func (ds *DesignStore) ListDesignIDs() ([]string, error) {
+	entries, err := os.ReadDir(ds.basePath)
+	if err != nil {
+		slog.Error("Failed to read base designs directory", "path", ds.basePath, "error", err)
+		return nil, fmt.Errorf("failed to list design directories: %w", err)
+	}
+
+	var ids []string
+	for _, entry := range entries {
+		// Only include directories, skip files like .DS_Store etc.
+		if entry.IsDir() {
+			// Basic check: skip dotfiles/dirs if desired
+			if !strings.HasPrefix(entry.Name(), ".") {
+				ids = append(ids, entry.Name())
+			}
+		}
+	}
+	return ids, nil
+}
+
 // Creates a directory if it doesn't exist.
 func ensureDir(path string) error {
 	err := os.MkdirAll(path, 0755)
