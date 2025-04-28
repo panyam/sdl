@@ -27,7 +27,7 @@ func (i *Index) NumPages() uint {
 }
 
 func (i *Index) Init() {
-	i.Disk.Init()
+	i.Disk.Init("ssd")
 	i.PageSize = 1024 * 1024
 	// Number of entries = 1M in this heapfile as a default
 	i.NumRecords = 1000000
