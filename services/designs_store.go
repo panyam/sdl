@@ -20,14 +20,21 @@ type DesignStore struct {
 
 // NewDesignStore creates a new filesystem store for designs.
 func NewDesignStore(basePath string) (*DesignStore, error) {
-	if basePath == "" {
-		basePath = defaultDesignsBasePath
+	resolvedPath := basePath
+	if resolvedPath == "" {
+		resolvedPath = defaultDesignsBasePath
 	}
-	if err := ensureDir(basePath); err != nil { // Use local ensureDir helper
-		return nil, fmt.Errorf("could not create base designs directory '%s': %w", basePath, err)
+	absPath, err := filepath.Abs(resolvedPath)
+	if err != nil {
+		slog.Error("Failed to resolve absolute path", "path", resolvedPath, "error", err)
+		return nil, fmt.Errorf("could not resolve base designs path '%s': %w", resolvedPath, err)
+	}
+	resolvedPath = absPath
+	if err := ensureDir(resolvedPath); err != nil { // Use local ensureDir helper
+		return nil, fmt.Errorf("could not create base designs directory '%s': %w", resolvedPath, err)
 	}
 	return &DesignStore{
-		basePath: basePath,
+		basePath: resolvedPath,
 	}, nil
 }
 
@@ -58,6 +65,10 @@ func (ds *DesignStore) getSectionDataPath(designId, sectionId string) string {
 
 // Gets the path for a specific prompt file within a section directory.
 func (ds *DesignStore) getSectionPromptPath(designId, sectionId, promptName string) (string, error) {
+	if strings.TrimSpace(promptName) == "" {
+		slog.Warn("Prompt name provided is empty or whitespace, returning error")
+		return "", fmt.Errorf("invalid prompt name provided: cannot be empty")
+	}
 	safePromptName := sanitizeFilename(promptName)
 	if safePromptName == "" {
 		return "", fmt.Errorf("invalid prompt name provided")

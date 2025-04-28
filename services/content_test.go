@@ -68,11 +68,13 @@ func TestSetContent(t *testing.T) {
 
 		resp, err := contentService.SetContent(ctx, req)
 		require.NoError(t, err)
-		require.NotNil(t, resp)
-		require.NotNil(t, resp.Content)
+		require.NotNil(t, resp, "Response should not be nil")
+		require.NotNil(t, resp.Content, "Response Content proto should not be nil")
 		assert.Equal(t, contentName, resp.Content.Name)
-		assert.Equal(t, "text/html", resp.Content.Type) // Type from request proto
 		assert.NotNil(t, resp.Content.UpdatedAt)
+
+		assert.Empty(t, resp.Content.Type, "ContentType is not expected in the SetContentResponse currently")
+		assert.Empty(t, resp.Content.Format, "Format is not expected in the SetContentResponse currently")
 
 		// Verify file content
 		readBytes, errRead := readContentDirectly(t, tempDir, designId, sectionId, contentName)

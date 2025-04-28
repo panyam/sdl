@@ -4,6 +4,8 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
+	"log"
 	"log/slog"
 	"os"
 	"strings"
@@ -34,27 +36,18 @@ func NewContentService(ds *DesignService) *ContentService {
 	}
 }
 
-// GetContentBytes retrieves the raw bytes for a specific content name.
-// This is intended for internal use by other services within the same process.
 func (s *ContentService) GetContentBytes(ctx context.Context, designId, sectionId, contentName string) ([]byte, error) {
-	slog.Debug("Internal GetContentBytes called", "designId", designId, "sectionId", sectionId, "name", contentName)
-	contentPath := s.designService.getContentPath(designId, sectionId, contentName)
-	bytes, err := os.ReadFile(contentPath)
-
-	// Optional: Perform permission check using designSvc or context?
-	// For now, assume caller (LlmService) has already checked design-level permissions.
-
-	// Use the internal helper
+	// TODO: Consider adding permission check here too?
+	contentPath := s.designService.store.GetContentPath(designId, sectionId, contentName) // Delegate path logic
+	contentBytes, err := os.ReadFile(contentPath)
 	if err != nil {
-		// Return NotFound specific error if applicable
-		if errors.Is(err, ErrNoSuchEntity) {
-			slog.Warn("Content not found via internal GetContentBytes", "designId", designId, "sectionId", sectionId, "name", contentName)
-			return nil, ErrNoSuchEntity
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, ErrNoSuchEntity // Return specific error
 		}
-		slog.Error("Internal GetContentBytes failed", "designId", designId, "sectionId", sectionId, "name", contentName, "error", err)
-		return nil, err // Return the underlying error
+		slog.Error("Internal GetContentBytes failed", "path", contentPath, "error", err)
+		return nil, fmt.Errorf("failed to read content bytes: %w", err) // Internal error
 	}
-	return bytes, nil
+	return contentBytes, nil
 }
 
 // --- ContentService RPC Implementations ---
@@ -64,6 +57,7 @@ func (s *ContentService) GetContent(ctx context.Context, req *protos.GetContentR
 	sectionId := req.SectionId
 	contentName := req.Name
 	if designId == "" || sectionId == "" || contentName == "" {
+		log.Println("Here...... invalid code: ", codes.InvalidArgument)
 		return nil, status.Error(codes.InvalidArgument, "Design ID, Section ID, and Content Name must be provided")
 	}
 	slog.Info("GetContent Request", "designId", designId, "sectionId", sectionId, "name", contentName)
@@ -74,6 +68,12 @@ func (s *ContentService) GetContent(ctx context.Context, req *protos.GetContentR
 	contentPath := s.designService.getContentPath(designId, sectionId, contentName)
 	contentBytes, err := s.GetContentBytes(ctx, designId, sectionId, contentName)
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) || errors.Is(err, ErrNoSuchEntity) {
+			slog.Warn("Content file not found", "path", contentPath)
+			return nil, status.Errorf(codes.NotFound, "Content '%s' not found for section '%s/%s'", contentName, designId, sectionId)
+		}
+		st, _ := status.FromError(err)
+		log.Println("final found code: ", err, st.Code())
 		return nil, err
 	}
 
