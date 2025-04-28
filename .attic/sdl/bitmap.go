@@ -99,11 +99,14 @@ func (bmi *BitmapIndex) Find() *Outcomes[AccessResult] {
 	if numResultRecords == 0 && bmi.QuerySelectivity > 0 && bmi.NumRecords > 0 {
 		numResultRecords = 1 // Process at least one record if selectivity > 0
 	}
-	// Cost = Num Result Records * RecordProcessingTime (CPU per record)
-	resultProcessingCost := Map(&bmi.RecordProcessingTime, func(p Duration) AccessResult {
-		// Calculate total processing time for all result records
-		totalProcTime := float64(numResultRecords) * p
-		// Assume processing itself succeeds if prior steps succeeded
+	// Need to map from RecordProcessingTime (Outcomes[Duration]) to total time
+	resultProcessingDurationOutcomes := Map(&bmi.RecordProcessingTime, func(p Duration) Duration {
+		return float64(numResultRecords) * p
+	})
+	// Ensure And func is set if needed later (though not strictly needed for Map here)
+	// resultProcessingDurationOutcomes.And = func(a,b Duration) Duration { return a+b }
+	// Now Map the total duration Outcomes to AccessResult Outcomes
+	resultProcessingCost := Map(resultProcessingDurationOutcomes, func(totalProcTime Duration) AccessResult {
 		return AccessResult{true, totalProcTime}
 	})
 
@@ -113,7 +116,11 @@ func (bmi *BitmapIndex) Find() *Outcomes[AccessResult] {
 
 	// 5. Apply Reduction
 	successes, failures := combinedCost.Split(AccessResult.IsSuccess)
-	trimmer := TrimToSize(100, bmi.MaxOutcomeLen)
+	maxLen := bmi.MaxOutcomeLen
+	if maxLen <= 0 {
+		maxLen = 5
+	} // Default if not set
+	trimmer := TrimToSize(100, maxLen)
 	trimmedSuccesses := trimmer(successes)
 	trimmedFailures := trimmer(failures)
 	finalOutcomes := (&Outcomes[AccessResult]{}).Append(trimmedSuccesses, trimmedFailures)
@@ -126,9 +133,13 @@ func (bmi *BitmapIndex) modifyBitmapCost() *Outcomes[AccessResult] {
 	readCost := bmi.Disk.Read()
 
 	// 2. Cost to modify in memory (CPU) - related to RecordProcessingTime
-	modifyCpuCost := Map(&bmi.RecordProcessingTime, func(p Duration) AccessResult {
-		// Assume modification involves a few steps
-		return AccessResult{true, p * 3.0}
+	// --- FIX: Create pointer for temporary outcomes ---
+	modifyCpuDurationOutcomes := Map(&bmi.RecordProcessingTime, func(p Duration) Duration {
+		return p * 3.0 // Assume modification involves a few steps
+	})
+	// modifyCpuDurationOutcomes.And = func(a,b Duration) Duration { return a+b } // If needed
+	modifyCpuCost := Map(modifyCpuDurationOutcomes, func(d Duration) AccessResult {
+		return AccessResult{true, d}
 	})
 
 	// 3. Cost to write back modified bitmap(s) - assume 1 write typically
@@ -148,7 +159,11 @@ func (bmi *BitmapIndex) modifyBitmapCost() *Outcomes[AccessResult] {
 
 	// 6. Reduction
 	successes, failures := amplifiedCost.Split(AccessResult.IsSuccess)
-	trimmer := TrimToSize(100, bmi.MaxOutcomeLen)
+	maxLen := bmi.MaxOutcomeLen
+	if maxLen <= 0 {
+		maxLen = 5
+	}
+	trimmer := TrimToSize(100, maxLen)
 	trimmedSuccesses := trimmer(successes)
 	trimmedFailures := trimmer(failures)
 	finalOutcomes := (&Outcomes[AccessResult]{}).Append(trimmedSuccesses, trimmedFailures)
