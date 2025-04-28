@@ -1,180 +1,197 @@
 package sdl
 
 import (
-	"sync" // Import sync package for Mutex later if needed
+	// "log"
+	"fmt"
+	"math"
+	"sync"
+	// Assuming M/M/c helper functions (factorial, calculateP0, calculateLq etc.) from queue.go are accessible
+	// If not, they need to be moved to a common utility package or duplicated.
+	// For now, assume they are accessible (e.g., in the same package or imported).
 )
 
-// AcquireAttemptResult represents the outcome of trying to acquire a resource.
+// AcquireAttemptResult is no longer needed, Acquire returns AccessResult directly
+/*
 type AcquireAttemptResult struct {
-	Success bool          // True if acquired, False otherwise
-	Pool    *ResourcePool // Pointer back to the pool (needed for Release)
-	// Latency Duration // Could add latency later for queuing
+	Success bool
+	Pool    *ResourcePool
 }
+*/
 
 // ResourcePool models a pool of limited, identical resources (e.g., connections, threads).
+// Uses M/M/c analytical model to estimate queueing delay when pool is full.
 type ResourcePool struct {
 	Name string // Optional identifier
-	Size uint   // Maximum number of concurrent users/holders
-	Used uint   // Current number of resources in use
+	Size uint   // Maximum number of concurrent users/holders (c)
+	Used uint   // Current number of resources in use (State!)
 
-	// Mutex for protecting access to Used count in future concurrent simulations
-	// For now, operations are assumed sequential within a simulation run.
-	mu sync.Mutex // Not strictly needed yet, but good practice to include
+	// --- Configuration for Queuing Model ---
+	// Assumed average arrival rate of requests needing this resource (items/sec)
+	ArrivalRate float64 // λ (lambda)
+	// Assumed average time a resource is held once acquired (service time, seconds/item)
+	AvgHoldTime float64 // Ts = 1/μ
 
-	// Pre-calculated outcomes for Acquire (success/failure)
-	// These need to be generated dynamically based on current state (Used vs Size)
-	// acquireSuccessOutcome *Outcomes[AcquireAttemptResult]
-	// acquireFailureOutcome *Outcomes[AcquireAttemptResult]
+	// --- Derived M/M/c Values ---
+	serviceRate  float64 // μ (mu) = 1 / AvgHoldTime
+	offeredLoad  float64 // a = λ / μ
+	utilization  float64 // ρ (rho) = a / c
+	isStable     bool    // rho < 1
+	avgWaitTimeQ float64 // Average M/M/c waiting time (Wq) when queuing is necessary
+
+	mu sync.Mutex
 }
 
 // Init initializes the ResourcePool.
-func (rp *ResourcePool) Init(name string, size uint) *ResourcePool {
+func (rp *ResourcePool) Init(name string, size uint, lambda float64, ts float64) *ResourcePool {
 	rp.Name = name
 	if size == 0 {
-		// log.Printf("Warning: ResourcePool '%s' initialized with size 0. No resources can ever be acquired.", name)
-		size = 0 // Ensure it's explicitly zero
+		size = 1 /* Avoid division by zero, maybe log warning */
 	}
 	rp.Size = size
-	rp.Used = 0 // Start empty
+	rp.Used = 0
 
-	// Note: Outcomes cannot be fully pre-calculated as they depend on dynamic state 'Used'.
-	// We will generate them on the fly in Acquire().
+	// --- Validate and Store Config ---
+	if lambda <= 0 {
+		lambda = 1e-9
+	}
+	if ts <= 0 {
+		ts = 1e-9
+	}
+	rp.ArrivalRate = lambda
+	rp.AvgHoldTime = ts
+
+	// --- Calculate Derived M/M/c Metrics ---
+	rp.serviceRate = 1.0 / rp.AvgHoldTime              // mu = 1 / Ts
+	rp.offeredLoad = rp.ArrivalRate / rp.serviceRate   // a = lambda / mu
+	rp.utilization = rp.offeredLoad / float64(rp.Size) // rho = a / c
+	rp.isStable = rp.utilization < 1.0
+
+	// Calculate M/M/c average wait time Wq (assuming infinite queue K for simplicity here)
+	// We need P0 and Lq for M/M/c (infinite K version)
+	if rp.isStable {
+		// Calculate P0 for M/M/c (infinite K)
+		sum1 := 0.0
+		for n := uint(0); n < rp.Size; n++ {
+			sum1 += math.Pow(rp.offeredLoad, float64(n)) / factorial(n)
+		}
+		termC := math.Pow(rp.offeredLoad, float64(rp.Size)) / factorial(rp.Size)
+		p0_inf := 1.0 / (sum1 + termC*(1.0/(1.0-rp.utilization)))
+
+		// Calculate Lq for M/M/c (infinite K)
+		lq_inf := p0_inf * (math.Pow(rp.offeredLoad, float64(rp.Size)) * rp.utilization) / (factorial(rp.Size) * math.Pow(1.0-rp.utilization, 2))
+
+		// Calculate Wq using Little's Law (Wq = Lq / lambda) - lambda_eff = lambda here
+		if rp.ArrivalRate > 1e-9 && !math.IsInf(lq_inf, 0) && !math.IsNaN(lq_inf) && lq_inf >= 0 {
+			rp.avgWaitTimeQ = lq_inf / rp.ArrivalRate
+		} else {
+			rp.avgWaitTimeQ = 0
+		}
+	} else {
+		// Unstable case for infinite queue
+		rp.avgWaitTimeQ = math.Inf(1)
+	}
+	if rp.avgWaitTimeQ < 0 {
+		rp.avgWaitTimeQ = 0
+	} // Ensure non-negative
+
+	// log.Printf("ResourcePool '%s' Init: Size=%d, lambda=%.2f, Ts=%.4f, mu=%.2f, a=%.3f, rho=%.3f, Wq=%.6f",
+	//      rp.Name, rp.Size, rp.ArrivalRate, rp.AvgHoldTime, rp.serviceRate, rp.offeredLoad, rp.utilization, rp.avgWaitTimeQ)
 
 	return rp
 }
 
 // NewResourcePool creates and initializes a new ResourcePool component.
-func NewResourcePool(name string, size uint) *ResourcePool {
+func NewResourcePool(name string, size uint, arrivalRate float64, avgHoldTime float64) *ResourcePool {
 	rp := &ResourcePool{}
-	return rp.Init(name, size)
+	return rp.Init(name, size, arrivalRate, avgHoldTime)
 }
 
 // Acquire attempts to acquire one resource from the pool.
-// Returns an Outcome distribution representing immediate success or failure.
-func (rp *ResourcePool) Acquire() *Outcomes[AcquireAttemptResult] {
-	// --- CRITICAL: State Management ---
-	// In a real concurrent simulator, this section needs locking.
-	// For sequential simulation via And/If composition, this direct state
-	// modification is problematic because the state change needs to persist
-	// across the different outcome paths generated by And/If.
-	//
-	// WORKAROUND (for sequential simulation):
-	// We return an outcome that REPRESENTS the probability of success/failure
-	// based on the state *at the time of the call*, but we DON'T modify
-	// rp.Used here directly. The modification must happen conceptually *after*
-	// a successful outcome is chosen AND before the work using the resource starts.
-	// This is HARD to enforce with current combinators.
-	//
-	// --- SIMPLIFIED MODEL (Ignoring state persistence issue for now): ---
-	// Generate outcomes based on current state, assume sequential execution handles it.
-
-	rp.mu.Lock() // Lock even for sequential, good practice
-	canAcquire := rp.Used < rp.Size
-	// Note: We are NOT changing rp.Used here in this simplified model yet.
+// Returns Outcomes[AccessResult]:
+// - Success=true, Latency=0: Acquired immediately.
+// - Success=true, Latency=WaitTimeDist: Acquired after queuing delay.
+// - Success=false, Latency=0: Rejected (if modelled, not currently implemented).
+func (rp *ResourcePool) Acquire() *Outcomes[AccessResult] {
+	rp.mu.Lock()
+	needsQueueing := rp.Used >= rp.Size
+	// Simulate potential state change for caller's benefit if needed? Risky.
+	// For now, decision is based purely on state *before* this call.
 	rp.mu.Unlock()
 
-	outcomes := &Outcomes[AcquireAttemptResult]{
-		// Define an And function if needed for composing AcquireAttemptResult later
-		And: func(a, b AcquireAttemptResult) AcquireAttemptResult {
-			// If either acquire failed, the combined result is failure.
-			// If both succeeded, it's success. Pool context would be from 'a'.
-			return AcquireAttemptResult{Success: a.Success && b.Success, Pool: a.Pool}
-		},
-	}
+	outcomes := &Outcomes[AccessResult]{And: AndAccessResults}
 
-	if canAcquire {
-		// Success: Acquired the resource immediately
-		outcomes.Add(1.0, AcquireAttemptResult{
+	if !needsQueueing {
+		// --- Resource Available ---
+		// Success: Acquired immediately with zero latency.
+		outcomes.Add(1.0, AccessResult{
 			Success: true,
-			Pool:    rp,
-			// Latency: 0 (or very small CPU cost?)
+			Latency: 0, // Or small CPU cost? Assume 0 for now.
 		})
-		// log.Printf("Pool '%s': Acquire SUCCESS (Used=%d, Size=%d)", rp.Name, rp.Used, rp.Size) // Debugging (state before acquire)
+		// NOTE: State rp.Used is NOT incremented here in the pure model.
+		// The caller or simulation loop would need to handle this.
+		// log.Printf("Pool '%s': Acquire IMMEDIATE SUCCESS (Used=%d, Size=%d)", rp.Name, rp.Used, rp.Size) // Debugging state *before* hypothetical acquire
 
 	} else {
-		// Failure: Pool is full
-		outcomes.Add(1.0, AcquireAttemptResult{
-			Success: false,
-			Pool:    rp,
-			// Latency: 0 (immediate rejection)
-		})
-		// log.Printf("Pool '%s': Acquire FAILURE (Used=%d, Size=%d)", rp.Name, rp.Used, rp.Size) // Debugging
+		// --- Resource Busy - Must Queue ---
+		avgWaitTime := rp.avgWaitTimeQ // Use pre-calculated Wq
+
+		if math.IsInf(avgWaitTime, 1) || avgWaitTime > 3600.0*24 {
+			// Unstable or excessively long wait - model as rejection?
+			// For now, let's return failure if Wq is "infinite".
+			// log.Printf("Pool '%s': Acquire FAILURE (infinite Wq) (Used=%d, Size=%d)", rp.Name, rp.Used, rp.Size)
+			outcomes.Add(1.0, AccessResult{Success: false, Latency: 0})
+
+		} else if avgWaitTime < 1e-9 {
+			// Wait time is negligible, treat as immediate success.
+			// This can happen if rho is very low but pool is momentarily full.
+			// log.Printf("Pool '%s': Acquire QUEUED but Wq ~ 0 (Used=%d, Size=%d)", rp.Name, rp.Used, rp.Size)
+			outcomes.Add(1.0, AccessResult{Success: true, Latency: 0})
+
+		} else {
+			// Stable queue, positive wait time. Generate wait time distribution.
+			// log.Printf("Pool '%s': Acquire QUEUED (Wq=%.6f) (Used=%d, Size=%d)", rp.Name, avgWaitTime, rp.Used, rp.Size)
+
+			// Approximate distribution using exponential percentiles scaled by calculated Wq
+			numBuckets := 5 // Keep consistent with Queue implementation
+			totalProb := 1.0
+			percentiles := []float64{0.10, 0.30, 0.50, 0.70, 0.90}
+			bucketWeights := []float64{0.20, 0.20, 0.20, 0.20, 0.20} // Should sum to 1.0
+
+			if len(percentiles) != numBuckets || len(bucketWeights) != numBuckets {
+				panic(fmt.Sprintf("ResourcePool '%s': Mismatch in percentile/weight array lengths for Acquire", rp.Name))
+			}
+
+			for i := 0; i < numBuckets; i++ {
+				p := percentiles[i]
+				waitTime := 0.0
+				if p < 0.999999 && avgWaitTime > 1e-12 {
+					waitTime = -avgWaitTime * math.Log(1.0-p)
+				} else if p >= 0.999999 {
+					waitTime = avgWaitTime * 5 // Approximation for P99+
+				}
+
+				if waitTime < 0 {
+					waitTime = 0
+				}
+				outcomes.Add(bucketWeights[i]*totalProb, AccessResult{
+					Success: true, // Acquired *after* waiting
+					Latency: waitTime,
+				})
+			}
+		}
+		// NOTE: State rp.Used is NOT incremented here.
 	}
 
 	return outcomes
 }
 
-// Release returns one resource to the pool.
-// This is modelled as an instantaneous operation.
-// !! IMPORTANT !! This method directly modifies state. In a proper simulation
-// using the Outcomes model, Release should ideally be triggered *by* an outcome
-// from the preceding operation, not called directly like this after an And/If chain.
+// Release returns one resource to the pool. (Direct state modification - limitation)
 func (rp *ResourcePool) Release() {
 	rp.mu.Lock()
 	defer rp.mu.Unlock()
-
 	if rp.Used > 0 {
 		rp.Used--
-		// log.Printf("Pool '%s': Released resource (Used=%d, Size=%d)", rp.Name, rp.Used, rp.Size) // Debugging
 	} else {
 		// log.Printf("Warning: Pool '%s': Release called when Used count is zero.", rp.Name)
 	}
 }
-
-// --- How to USE ResourcePool with current Outcomes model (Conceptual) ---
-/*
-func ExampleOperationUsingPool(pool *ResourcePool, work func() *Outcomes[AccessResult]) *Outcomes[AccessResult] {
-
-    acquireOutcome := pool.Acquire() // Get {Success:bool, Pool:*ResourcePool} outcomes
-
-    // If acquire SUCCEEDS, then perform work AND THEN release.
-    // If acquire FAILS, return failure immediately.
-
-    // This requires careful composition:
-    finalOutcome := acquireOutcome.If(
-        func(aq AcquireAttemptResult) bool { return aq.Success }, // Condition: Acquired successfully?
-        // THEN branch (Acquire Succeeded):
-        And(
-            work(), // Perform the actual work, get its AccessResult outcomes
-            // ??? How to trigger Release reliably AFTER work is done for EACH work outcome ???
-            // This is the tricky part. We need to combine the work outcome with the Release action.
-            // Maybe the reducer modifies the pool state? Risky.
-            // Maybe Map work outcomes to a new type that includes release intent?
-            Map(work(), func(workResult AccessResult) AccessResult {
-                 // !!! This is where the state needs update !!! conceptually release here.
-                 // pool.Release() // <<<<<<<<< Cannot safely call stateful method here in pure model
-                 return workResult // Return original work result
-            }),
-            AndAccessResults, // Placeholder reducer
-        ),
-        // OTHERWISE branch (Acquire Failed):
-        // Map the AcquireAttemptResult failure to an AccessResult failure.
-        Map(acquireOutcome, // Need to filter for failures here? Split might be better.
-            func(aq AcquireAttemptResult) AccessResult {
-                if !aq.Success {
-                    return AccessResult{Success: false, Latency: 0} // Immediate failure from pool rejection
-                }
-                // This path shouldn't be taken if condition was aq.Success==true
-                // Return some default or error state?
-                return AccessResult{Success: false, Latency: 0} // Default failure
-            }),
-        AndAccessResults, // Placeholder reducer
-    )
-
-    // The above 'If' structure doesn't correctly handle the stateful Release.
-    // A more simulationist approach might be needed for proper state handling.
-
-    // --- SIMPLER but less accurate model for now: ---
-    // Assume Acquire gives AccessResult (Success=Acquired, Latency=QueueTime=0 for now)
-    // Assume Release happens magically.
-    simpleAcquire := Map(pool.Acquire(), func(aq AcquireAttemptResult) AccessResult {
-         // Map Acquire failure to AccessResult failure
-         return AccessResult{ Success: aq.Success, Latency: 0 }
-    })
-
-    // Combine Acquire -> Work. Release is ignored in this simplified flow.
-    result := And(simpleAcquire, work(), AndAccessResults)
-    return result
-}
-
-*/
