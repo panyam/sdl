@@ -1,293 +1,144 @@
 package sdl
 
 import (
+	"fmt"
 	"math"
 	// "log"
 )
 
-// Queue models a basic FIFO queue with analytical waiting time estimation.
+// Queue models a basic FIFO queuing system using analytical approximations (M/M/1).
 type Queue struct {
 	Name string
 
-	// --- Queue Parameters (for Analytical Modelling) ---
+	// --- Configuration ---
+	// Assumed average arrival rate (items per second). Used for calculations.
+	ArrivalRate float64 // λ (lambda)
 
-	// AvgArrivalRate (lambda): Average number of items arriving per unit time (e.g., items/second).
-	// This needs to be configured or estimated by the user based on expected load.
-	AvgArrivalRate float64
+	// Assumed average service time (seconds per item). Used for calculations.
+	// This could potentially be derived from the MeanLatency of the component
+	// that processes items dequeued from this queue.
+	AvgServiceTime float64 // Ts = 1/μ
 
-	// AvgServiceRate (mu): Average number of items the *single server* processing items
-	// from this queue can handle per unit time (e.g., items/second).
-	// This is often derived from 1 / MeanLatency of the servicing component.
-	AvgServiceRate float64
+	// Optional: Max Queue Length (0 for unbounded)
+	// MaxLength uint64 // TODO: Implement logic for bounded queues later
 
-	// NumberOfServers (c): For M/M/c model - how many parallel servers process items
-	// from this queue. Defaults to 1 for M/M/1.
-	NumberOfServers int
-
-	// Optional: MaxQueueSize (K): For bounded queue models (M/M/1/K). 0 means infinite.
-	MaxQueueSize uint
-
-	// --- Latency/Failure of Queue Operations Themselves ---
-	EnqueueLatency  Outcomes[Duration] // Latency to simply add an item
-	EnqueueFailProb float64            // Probability enqueue fails (e.g., if bounded queue is full)
-	DequeueLatency  Outcomes[Duration] // Latency of the dequeue operation itself (finding item)
-
-	// Failure of queue mechanism itself (distinct from enqueue full / dequeue empty)
-	QueueFailProb    float64
-	QueueFailLatency Outcomes[Duration]
-
-	// --- Precomputed? ---
-	// Enqueue outcomes can be precomputed. Dequeue needs dynamic wait time.
-	enqueueOutcomes *Outcomes[AccessResult]
+	// Internal derived values
+	serviceRate float64 // μ (mu) = 1 / AvgServiceTime
+	utilization float64 // ρ (rho) = λ / μ
+	isStable    bool
 }
 
 // Init initializes the Queue component.
-func (q *Queue) Init() *Queue {
-	q.Name = "Queue" // Default name
+// Requires average arrival rate (lambda, items/sec) and average service time (Ts, seconds/item).
+func (q *Queue) Init(name string, lambda float64, ts float64) *Queue {
+	q.Name = name
 
-	// Default Rates (User MUST configure these for meaningful results)
-	q.AvgArrivalRate = 100.0 // Default: 100 items/sec
-	q.AvgServiceRate = 110.0 // Default: Service slightly faster than arrival
-	q.NumberOfServers = 1    // Default: Single server model (M/M/1)
+	if lambda <= 0 {
+		// log.Printf("Warning: Queue '%s' initialized with non-positive arrival rate (%.2f). Assuming near-zero.", name, lambda)
+		lambda = 1e-9 // Use a very small positive number
+	}
+	if ts <= 0 {
+		// log.Printf("Warning: Queue '%s' initialized with non-positive service time (%.4f). Assuming near-zero.", name, ts)
+		ts = 1e-9 // Use a very small positive number
+	}
 
-	q.MaxQueueSize = 0 // Default: Infinite queue
+	q.ArrivalRate = lambda
+	q.AvgServiceTime = ts
+	q.serviceRate = 1.0 / q.AvgServiceTime        // mu = 1 / Ts
+	q.utilization = q.ArrivalRate / q.serviceRate // rho = lambda / mu
+	q.isStable = q.utilization < 1.0
 
-	// Default latencies for queue operations
-	q.EnqueueLatency.Add(1.0, Nanos(50)) // Fast enqueue
-	q.EnqueueLatency.And = func(a, b Duration) Duration { return a + b }
-	q.EnqueueFailProb = 0.0 // Assume enqueue to infinite queue doesn't fail
+	if !q.isStable {
+		// log.Printf("Warning: Queue '%s' is unstable (Utilization rho = %.3f >= 1.0). Waiting times will be infinite.", name, q.utilization)
+	}
 
-	q.DequeueLatency.Add(1.0, Nanos(50)) // Fast dequeue op
-	q.DequeueLatency.And = func(a, b Duration) Duration { return a + b }
-
-	q.QueueFailProb = 0.0001               // 0.01% chance queue mechanism fails
-	q.QueueFailLatency.Add(1.0, Millis(5)) // Failure detected relatively quickly
-	q.QueueFailLatency.And = func(a, b Duration) Duration { return a + b }
-
-	q.calculateEnqueueOutcomes()
+	// Note: Enqueue/Dequeue outcomes depend on these parameters, calculated on the fly.
 
 	return q
 }
 
-// NewQueue creates and initializes a new Queue component with defaults.
-func NewQueue() *Queue {
+// NewQueue creates and initializes a new Queue component.
+func NewQueue(name string, arrivalRate float64, avgServiceTime float64) *Queue {
 	q := &Queue{}
-	return q.Init()
-}
-
-// ConfigureRates allows setting the key analytical parameters.
-func (q *Queue) ConfigureRates(arrivalRate, serviceRate float64, numServers int) *Queue {
-	if arrivalRate >= 0 {
-		q.AvgArrivalRate = arrivalRate
-	}
-	if serviceRate > 0 {
-		q.AvgServiceRate = serviceRate
-	} // Must be > 0
-	if numServers > 0 {
-		q.NumberOfServers = numServers
-	} else {
-		q.NumberOfServers = 1
-	}
-	// Note: Changing rates might invalidate cached outcomes if we cached Dequeue later
-	return q
-}
-
-// calculateEnqueueOutcomes generates the outcomes for trying to enqueue.
-func (q *Queue) calculateEnqueueOutcomes() {
-	outcomes := &Outcomes[AccessResult]{And: AndAccessResults}
-	totalProb := 1.0
-
-	// --- Queue Mechanism Failure ---
-	failProb := q.QueueFailProb
-	if failProb > 1e-9 {
-		for _, bucket := range q.QueueFailLatency.Buckets {
-			prob := failProb * (bucket.Weight / q.QueueFailLatency.TotalWeight())
-			if prob > 1e-9 {
-				outcomes.Add(prob, AccessResult{false, bucket.Value})
-			}
-		}
-		totalProb -= failProb
-	}
-
-	// --- Enqueue Full Failure (Only for bounded queues - simplified for now) ---
-	if q.MaxQueueSize > 0 {
-		enqueueFailProb := q.EnqueueFailProb * totalProb // Effective probability
-		// Need a model here based on AvgArrivalRate, AvgServiceRate, MaxQueueSize
-		// Simplified: Use configured EnqueueFailProb directly for now.
-		if q.MaxQueueSize > 0 && enqueueFailProb > 1e-9 {
-			// Use QueueFailLatency for now, could define separate EnqueueFailLatency
-			for _, bucket := range q.QueueFailLatency.Buckets {
-				prob := enqueueFailProb * (bucket.Weight / q.QueueFailLatency.TotalWeight())
-				if prob > 1e-9 {
-					outcomes.Add(prob, AccessResult{false, bucket.Value})
-				}
-			}
-			totalProb -= enqueueFailProb
-		}
-	}
-
-	// --- Enqueue Success ---
-	successProb := totalProb
-	if successProb > 1e-9 {
-		for _, bucket := range q.EnqueueLatency.Buckets {
-			prob := successProb * (bucket.Weight / q.EnqueueLatency.TotalWeight())
-			if prob > 1e-9 {
-				outcomes.Add(prob, AccessResult{true, bucket.Value})
-			}
-		}
-	}
-	q.enqueueOutcomes = outcomes
+	return q.Init(name, arrivalRate, avgServiceTime)
 }
 
 // Enqueue simulates adding an item to the queue.
-// Returns outcomes for the enqueue operation itself (fast).
+// For an unbounded M/M/1 queue, enqueue itself is typically modelled as near-instantaneous.
+// Failures could occur if the queue had a max length (TODO).
 func (q *Queue) Enqueue() *Outcomes[AccessResult] {
-	if q.enqueueOutcomes == nil {
-		q.calculateEnqueueOutcomes()
-	}
-	return q.enqueueOutcomes
-}
-
-// Dequeue simulates removing an item from the queue.
-// Returns Outcomes[Duration] representing the *WAITING TIME* in the queue,
-// calculated using analytical models (M/M/c currently).
-// Returns nil or specific error outcome if queue is determined to be unstable.
-func (q *Queue) Dequeue() *Outcomes[Duration] {
-	outcomes := &Outcomes[Duration]{And: func(a, b Duration) Duration { return a + b }}
-
-	lambda := q.AvgArrivalRate
-	mu := q.AvgServiceRate
-	c := float64(q.NumberOfServers)
-	uint_c := uint64(q.NumberOfServers) // Need uint for factorial helper
-
-	if mu <= 0 {
-		return outcomes
-	} // Invalid service rate
-
-	rho := lambda / (c * mu) // Utilization per server
-
-	if rho >= 1.0 {
-		return outcomes
-	} // Unstable queue
-
-	// --- Calculate M/M/c Waiting Time (Wq) ---
-
-	// Calculate P0 (Probability of 0 customers in system)
-	sumTerm := 0.0
-	for k := 0; k < q.NumberOfServers; k++ { // Iterate up to c-1
-		fact_k := factorial(uint64(k))
-		if math.IsInf(fact_k, 1) { /* Handle potential overflow */
-			return outcomes
-		}
-		sumTerm += math.Pow(lambda/mu, float64(k)) / fact_k
-	}
-
-	fact_c := factorial(uint_c)
-	if math.IsInf(fact_c, 1) { /* Handle potential overflow */
-		return outcomes
-	}
-
-	lastTermNum := math.Pow(lambda/mu, c)
-	lastTermDenom := fact_c * (1.0 - rho)
-	if math.Abs(lastTermDenom) < 1e-12 { /* Handle potential division by zero */
-		return outcomes
-	} // Should not happen if rho < 1
-
-	p0 := 1.0 / (sumTerm + (lastTermNum / lastTermDenom))
-	if math.IsNaN(p0) || math.IsInf(p0, 0) || p0 < 0 { /* Handle invalid P0 calculation */
-		return outcomes
-	}
-
-	// Calculate Average Queue Length (Lq)
-	lq_numerator := (p0 * math.Pow(lambda/mu, c) * rho)
-	lq_denominator := (fact_c * math.Pow(1.0-rho, 2))
-	if math.Abs(lq_denominator) < 1e-12 { /* Handle potential division by zero */
-		return outcomes
-	}
-	lq := lq_numerator / lq_denominator
-
-	// Calculate Average Waiting Time in Queue (Wq) using Little's Law (Lq = lambda * Wq)
-	wq := 0.0
-	if lambda > 1e-9 {
-		wq = lq / lambda
-	}
-	if wq < 0 {
-		wq = 0
-	} // Waiting time cannot be negative
-
-	// --- Model Waiting Time Distribution (Exponential Approximation) ---
-	numWaitBuckets := 20
-	maxWaitTimeFactor := 5.0
-	expRate := c*mu - lambda // Rate parameter for exponential distribution
-
-	if wq < 1e-12 || expRate <= 0 { // Handle Wq=0 or invalid rate
-		outcomes.Add(1.0, 0.0)
-		return outcomes
-	}
-
-	maxT := maxWaitTimeFactor * wq
-	timeStep := maxT / float64(numWaitBuckets)
-	cumulativeProb := 0.0
-
-	for i := 0; i < numWaitBuckets; i++ {
-		t_start := float64(i) * timeStep
-		t_end := float64(i+1) * timeStep
-		if i == numWaitBuckets-1 {
-			t_end = math.Inf(1)
-		}
-
-		prob_end := 1.0
-		if !math.IsInf(t_end, 1) {
-			prob_end = 1.0 - math.Exp(-expRate*t_end)
-		}
-		prob_start := 1.0 - math.Exp(-expRate*t_start)
-		bucketProb := prob_end - prob_start
-
-		bucketLatency := t_start + timeStep*0.5
-		if math.IsInf(t_end, 1) {
-			bucketLatency = t_start + 1.0/expRate
-		}
-		if bucketLatency < 0 {
-			bucketLatency = 0
-		} // Ensure non-negative
-
-		if bucketProb > 1e-9 {
-			outcomes.Add(bucketProb, bucketLatency)
-			cumulativeProb += bucketProb
-		}
-	}
-
-	// Renormalize
-	if cumulativeProb > 1e-9 {
-		renormFactor := 1.0 / cumulativeProb
-		for i := range outcomes.Buckets {
-			outcomes.Buckets[i].Weight *= renormFactor
-		}
-	} else if outcomes.Len() == 0 { // If no buckets added, add zero wait time
-		outcomes.Add(1.0, 0.0)
-	}
-
+	// Simple model: Enqueue is fast and always succeeds (for unbounded queue)
+	outcomes := &Outcomes[AccessResult]{And: AndAccessResults}
+	// Small CPU cost for enqueue logic?
+	enqueueLatency := Nanos(10)
+	outcomes.Add(1.0, AccessResult{Success: true, Latency: enqueueLatency})
 	return outcomes
 }
 
-// --- Add Factorial Helper Function ---
-// Calculates factorial(n) for non-negative integers.
-// Returns 1 for factorial(0).
-// Handles potential overflow by returning +Inf if result exceeds float64 max,
-// although unlikely for typical 'c' values in M/M/c.
-func factorial(n uint64) float64 {
-	if n == 0 {
-		return 1.0
+// Dequeue simulates removing an item from the queue and returns the *waiting time* spent in the queue.
+// Uses M/M/1 analytical approximation.
+func (q *Queue) Dequeue() *Outcomes[Duration] {
+	outcomes := &Outcomes[Duration]{
+		And: func(a, b Duration) Duration { return a + b }, // Duration outcomes sum up
 	}
-	if n > 170 { // Factorial(171) exceeds float64 max
-		return math.Inf(1)
+
+	if !q.isStable {
+		// Queue is unstable, waiting time is theoretically infinite.
+		// How to represent this? Return a huge duration? Special error value?
+		// Let's return a large duration indicating instability.
+		infiniteWait := 3600.0 * 24 // 1 day in seconds - effectively infinite
+		outcomes.Add(1.0, infiniteWait)
+		// log.Printf("Queue '%s': Dequeue returning infinite wait due to instability (rho=%.3f)", q.Name, q.utilization)
+		return outcomes
 	}
-	result := 1.0
-	for i := uint64(2); i <= n; i++ {
-		result *= float64(i)
-		if math.IsInf(result, 1) { // Check for overflow during calculation
-			return math.Inf(1)
+
+	if q.utilization < 1e-9 {
+		// If utilization is virtually zero, waiting time is zero.
+		outcomes.Add(1.0, 0.0)
+		return outcomes
+	}
+
+	// Calculate average waiting time in queue (Wq) using M/M/1 formula
+	// Wq = Ts * ρ / (1 - ρ)
+	avgWaitTime := q.AvgServiceTime * q.utilization / (1.0 - q.utilization)
+
+	// The M/M/1 waiting time distribution is also exponential (with parameter mu*(1-rho)).
+	// To represent this with discrete buckets:
+	// We can create buckets representing percentiles of the exponential distribution.
+	// CDF: P(Wait <= t) = 1 - exp(-t / Wq_avg)  =>  t = -Wq_avg * ln(1 - P)
+	// P = probability (e.g., 0.5 for median, 0.9 for P90)
+
+	numBuckets := 5 // Number of buckets to approximate the distribution
+	totalProb := 1.0
+
+	// Add buckets for P10, P30, P50, P70, P90 (or similar percentiles)
+	percentiles := []float64{0.10, 0.30, 0.50, 0.70, 0.90}
+	bucketWeights := []float64{0.20, 0.20, 0.20, 0.20, 0.20} // Equal weight per quantile range
+
+	if len(percentiles) != numBuckets || len(bucketWeights) != numBuckets {
+		panic(fmt.Sprintf("Queue '%s': Mismatch in percentile/weight array lengths", q.Name))
+	}
+
+	for i := 0; i < numBuckets; i++ {
+		p := percentiles[i]
+		// Calculate the waiting time corresponding to this percentile
+		// Use the middle of the quantile range for representative latency?
+		// E.g., for 0-20%, use P10. For 20-40%, use P30.
+		waitTime := 0.0
+		// Avoid log(0) by using 1-p, ensure p is not exactly 1.0
+		if p < 0.999999 {
+			waitTime = -avgWaitTime * math.Log(1.0-p)
+		} else {
+			// For high percentiles, use a large multiple of avgWaitTime
+			waitTime = avgWaitTime * 5 // Approximation for P99+
 		}
+
+		if waitTime < 0 {
+			waitTime = 0
+		} // Ensure non-negative
+
+		outcomes.Add(bucketWeights[i]*totalProb, waitTime)
 	}
-	return result
+
+	return outcomes
 }

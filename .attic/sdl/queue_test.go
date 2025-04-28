@@ -1,176 +1,163 @@
 package sdl
 
 import (
-	"math"
 	"testing"
 	// Ensure metrics helpers are accessible
 )
 
-func TestQueue_Init_Defaults(t *testing.T) {
-	q := NewQueue()
-	if q.AvgArrivalRate <= 0 || q.AvgServiceRate <= 0 {
-		t.Error("Default rates should be positive")
+func TestQueue_Init_Stable(t *testing.T) {
+	// lambda < mu (arrival rate < service rate)
+	q := NewQueue("StableQ", 9.0, 0.1) // 9 items/sec arrive, 0.1 sec/item service (mu=10)
+	if !q.isStable {
+		t.Error("Queue should be stable (rho < 1)")
 	}
-	if q.AvgArrivalRate >= q.AvgServiceRate {
-		t.Error("Default service rate should be > arrival rate for stability")
-	}
-	if q.NumberOfServers != 1 {
-		t.Error("Default number of servers should be 1")
-	}
-	if q.enqueueOutcomes == nil || q.enqueueOutcomes.Len() == 0 {
-		t.Fatal("Enqueue outcomes not calculated")
+	if !approxEqualTest(q.utilization, 0.9, 1e-9) {
+		t.Errorf("Expected rho=0.9, got %.3f", q.utilization)
 	}
 }
 
-func TestQueue_ConfigureRates(t *testing.T) {
-	q := NewQueue().ConfigureRates(50.0, 100.0, 2)
-	if q.AvgArrivalRate != 50.0 {
-		t.Error("Arrival rate mismatch")
+func TestQueue_Init_Unstable(t *testing.T) {
+	// lambda = mu
+	qEq := NewQueue("UnstableQ1", 10.0, 0.1) // lambda=10, mu=10
+	if qEq.isStable {
+		t.Error("Queue should be unstable (rho = 1)")
 	}
-	if q.AvgServiceRate != 100.0 {
-		t.Error("Service rate mismatch")
+	if !approxEqualTest(qEq.utilization, 1.0, 1e-9) {
+		t.Errorf("Expected rho=1.0, got %.3f", qEq.utilization)
 	}
-	if q.NumberOfServers != 2 {
-		t.Error("Num servers mismatch")
+
+	// lambda > mu
+	qGt := NewQueue("UnstableQ2", 11.0, 0.1) // lambda=11, mu=10
+	if qGt.isStable {
+		t.Error("Queue should be unstable (rho > 1)")
+	}
+	if !(qGt.utilization > 1.0) {
+		t.Errorf("Expected rho > 1.0, got %.3f", qGt.utilization)
 	}
 }
 
 func TestQueue_Enqueue(t *testing.T) {
-	q := NewQueue()
-	q.QueueFailProb = 0.01       // 1% fail prob
-	q.EnqueueFailProb = 0.05     // Not really used yet for infinite queue
-	q.MaxQueueSize = 10          // Make it bounded for testing EnqueueFailProb concept
-	q.calculateEnqueueOutcomes() // Recalculate with new probs
-
+	q := NewQueue("TestQ", 5, 0.1)
 	outcomes := q.Enqueue()
+
+	if outcomes == nil || outcomes.Len() != 1 {
+		t.Fatal("Enqueue should return single outcome")
+	}
+	res := outcomes.Buckets[0].Value
+	if !res.Success {
+		t.Error("Enqueue Success should be true")
+	}
+	// Check latency is very small
+	if res.Latency > Millis(0.1) {
+		t.Errorf("Enqueue latency %.6f seems too high", res.Latency)
+	}
+}
+
+func TestQueue_Dequeue_Stable(t *testing.T) {
+	// lambda = 9, Ts = 0.1 => mu = 10, rho = 0.9
+	// Wq = Ts * rho / (1 - rho) = 0.1 * 0.9 / (1 - 0.9) = 0.09 / 0.1 = 0.9 seconds
+	q := NewQueue("StableQ", 9.0, 0.1)
+	outcomes := q.Dequeue()
+
 	if outcomes == nil || outcomes.Len() == 0 {
-		t.Fatal("Enqueue returned nil/empty")
+		t.Fatal("Dequeue returned nil/empty outcomes")
 	}
 
-	avail := Availability(outcomes) // Success = successfully enqueued
-	t.Logf("Enqueue Avail: %.4f", avail)
-
-	// Expected success = (1 - QueueFailProb) * (1 - EnqueueFailProb) -- if fail probs independent
-	// Current simple model only uses QueueFailProb for infinite queue.
-	// If MaxQueueSize > 0, it uses EnqueueFailProb but needs proper calculation based on state.
-	// Let's just check against QueueFailProb for now.
-	expectedAvail := 1.0 - q.QueueFailProb
-	if !approxEqualTest(avail, expectedAvail, 1e-9) {
-		t.Errorf("Enqueue availability mismatch: expected %.4f, got %.4f", expectedAvail, avail)
+	// Calculate expected average wait time
+	expectedAvgWq := 0.9
+	// Calculate average from the returned distribution
+	totalW := 0.0
+	weightedSumW := 0.0
+	minW := 99999.0
+	maxW := 0.0
+	for _, b := range outcomes.Buckets {
+		totalW += b.Weight
+		weightedSumW += b.Weight * b.Value
+		if b.Value < minW {
+			minW = b.Value
+		}
+		if b.Value > maxW {
+			maxW = b.Value
+		}
 	}
-}
+	calculatedAvgWq := weightedSumW / totalW
 
-func TestQueue_Dequeue_Stable_MM1(t *testing.T) {
-	lambda := 8.0                                 // items/sec
-	mu := 10.0                                    // items/sec
-	q := NewQueue().ConfigureRates(lambda, mu, 1) // M/M/1
+	t.Logf("Stable Dequeue: Expected Wq=%.3fs, Calculated Avg Wq=%.3fs (Min=%.3fs, Max=%.3fs, Buckets=%d)",
+		expectedAvgWq, calculatedAvgWq, minW, maxW, outcomes.Len())
 
-	waitOutcomes := q.Dequeue()
-	if waitOutcomes == nil || waitOutcomes.Len() == 0 {
-		t.Fatal("Dequeue (stable) returned nil/empty")
+	// Check if calculated average is close to theoretical M/M/1 average
+	if !approxEqualTest(calculatedAvgWq, expectedAvgWq, expectedAvgWq*0.3) { // Allow 30% tolerance due to bucketing
+		t.Errorf("Calculated average wait time %.3fs differs significantly from theoretical %.3fs", calculatedAvgWq, expectedAvgWq)
 	}
-
-	// Calculate expected average wait Wq for M/M/1: lambda / (mu * (mu - lambda))
-	rho := lambda / mu
-	expectedWq := lambda / (mu * (mu - lambda))
-	if rho >= 1.0 {
-		t.Fatal("Test setup error: queue should be stable")
-	}
-
-	// Calculate mean latency from the returned outcomes distribution
-	// Need Map to AccessResult temporarily for MeanLatency helper
-	waitAccessOutcomes := Map(waitOutcomes, func(d Duration) AccessResult { return AccessResult{true, d} })
-	calculatedMeanWait := MeanLatency(waitAccessOutcomes)
-
-	t.Logf("Dequeue M/M/1 (rho=%.2f): Expected Wq=%.6fs, Calculated Mean Wait=%.6fs (Buckets: %d)", rho, expectedWq, calculatedMeanWait, waitOutcomes.Len())
-
-	// Check if calculated mean is reasonably close to theoretical Wq
-	if !approxEqualTest(calculatedMeanWait, expectedWq, expectedWq*0.2) { // Allow 20% tolerance due to exponential approximation
-		t.Errorf("Mean waiting time mismatch: expected %.6f, got %.6f", expectedWq, calculatedMeanWait)
-	}
-
-	// Check if P99 is significantly higher than mean for exponential
-	p99Wait := PercentileLatency(waitAccessOutcomes, 0.99)
-	t.Logf("Dequeue M/M/1 P99 Wait: %.6fs", p99Wait)
-	if p99Wait < calculatedMeanWait*2.0 { // P99 of exponential should be >> mean
-		t.Errorf("P99 Wait (%.6f) seems too low compared to mean (%.6f)", p99Wait, calculatedMeanWait)
-	}
-
-}
-
-func TestQueue_Dequeue_Stable_MMc(t *testing.T) {
-	lambda := 16.0 // items/sec
-	mu := 10.0     // items/sec per server
-	c := 2         // servers
-	// rho = 16 / (2*10) = 0.8 < 1.0 -> Stable
-	q := NewQueue().ConfigureRates(lambda, mu, c) // M/M/2
-
-	waitOutcomes := q.Dequeue()
-	if waitOutcomes == nil || waitOutcomes.Len() == 0 {
-		t.Fatal("Dequeue (M/M/c stable) returned nil/empty")
-	}
-
-	// Calculate expected average wait Wq for M/M/c (using formulas from Dequeue)
-	rho := lambda / (float64(c) * mu)
-	sumTerm := 0.0
-	for k := 0; k < c; k++ {
-		sumTerm += math.Pow(lambda/mu, float64(k)) / factorial(uint64(k))
-	}
-	lastTermNum := math.Pow(lambda/mu, float64(c))
-	lastTermDenom := factorial(uint64(c)) * (1.0 - rho)
-	p0 := 1.0 / (sumTerm + (lastTermNum / lastTermDenom))
-	lq := (p0 * math.Pow(lambda/mu, float64(c)) * rho) / (factorial(uint64(c)) * math.Pow(1.0-rho, 2))
-	expectedWq := 0.0
-	if lambda > 1e-9 {
-		expectedWq = lq / lambda
-	}
-
-	waitAccessOutcomes := Map(waitOutcomes, func(d Duration) AccessResult { return AccessResult{true, d} })
-	calculatedMeanWait := MeanLatency(waitAccessOutcomes)
-
-	t.Logf("Dequeue M/M/c (rho=%.2f, c=%d): Expected Wq=%.6fs, Calculated Mean Wait=%.6fs (Buckets: %d)", rho, c, expectedWq, calculatedMeanWait, waitOutcomes.Len())
-
-	if !approxEqualTest(calculatedMeanWait, expectedWq, expectedWq*0.2) { // Allow 20% tolerance
-		t.Errorf("M/M/c Mean waiting time mismatch: expected %.6f, got %.6f", expectedWq, calculatedMeanWait)
+	// Check if bucket count matches expectation
+	if outcomes.Len() != 5 {
+		t.Errorf("Expected 5 buckets for wait time distribution, got %d", outcomes.Len())
 	}
 }
 
 func TestQueue_Dequeue_Unstable(t *testing.T) {
-	lambda := 12.0                                // items/sec
-	mu := 10.0                                    // items/sec
-	q := NewQueue().ConfigureRates(lambda, mu, 1) // M/M/1, rho = 1.2 -> Unstable
+	q := NewQueue("UnstableQ", 10.0, 0.1) // rho = 1.0
+	outcomes := q.Dequeue()
 
-	waitOutcomes := q.Dequeue()
+	if outcomes == nil || outcomes.Len() != 1 {
+		t.Fatal("Unstable Dequeue should return single outcome")
+	}
+	waitTime := outcomes.Buckets[0].Value
 
-	// Expect empty outcomes for unstable queue
-	if waitOutcomes == nil {
-		t.Fatal("Dequeue(unstable) returned nil, expected empty Outcomes")
+	t.Logf("Unstable Dequeue: WaitTime=%.3fs", waitTime)
+
+	// Expect a very large wait time
+	if waitTime < 3600.0 { // Less than an hour
+		t.Errorf("Unstable queue wait time %.3f is unexpectedly low", waitTime)
 	}
-	if waitOutcomes.Len() != 0 {
-		t.Errorf("Dequeue(unstable) should return empty outcomes, got %d buckets", waitOutcomes.Len())
-	}
-	t.Logf("Dequeue M/M/1 (rho=%.2f): Returned %d buckets as expected for unstable queue.", lambda/mu, waitOutcomes.Len())
 }
 
-func TestQueue_Dequeue_NoLoad(t *testing.T) {
-	lambda := 0.0                                 // items/sec
-	mu := 10.0                                    // items/sec
-	q := NewQueue().ConfigureRates(lambda, mu, 1) // M/M/1, rho = 0
-
-	waitOutcomes := q.Dequeue()
-	if waitOutcomes == nil || waitOutcomes.Len() == 0 {
-		t.Fatal("Dequeue (no load) returned nil/empty")
+func TestQueue_Dequeue_LowUtilization(t *testing.T) {
+	q := NewQueue("LowUtilQ", 0.1, 0.1)               // rho = 0.01
+	if !(q.utilization < 1e-9 || q.utilization > 0) { // Make sure utilization is calculated correctly
+		t.Logf("Low Utilization is %.4f", q.utilization) // Log actual value if needed
+		// This utilization IS small but > 1e-9, so it WILL go through the bucketing logic.
+		// The test assumption that it returns 1 bucket was wrong IF utilization isn't EXACTLY zero.
+		// Let's test the *result* instead of the bucket count if utilization is low but non-zero.
 	}
 
-	waitAccessOutcomes := Map(waitOutcomes, func(d Duration) AccessResult { return AccessResult{true, d} })
-	calculatedMeanWait := MeanLatency(waitAccessOutcomes)
-	t.Logf("Dequeue M/M/1 (rho=0): Mean Wait=%.6fs (Buckets: %d)", calculatedMeanWait, waitOutcomes.Len())
+	outcomes := q.Dequeue()
 
-	// Expect zero wait time
-	if !approxEqualTest(calculatedMeanWait, 0.0, 1e-9) {
-		t.Errorf("Mean waiting time mismatch: expected 0.0, got %.6f", calculatedMeanWait)
+	if outcomes == nil || outcomes.Len() == 0 {
+		t.Fatal("Low utilization Dequeue returned nil or empty")
 	}
-	if waitOutcomes.Len() != 1 {
-		t.Errorf("Expected 1 bucket for zero wait time, got %d", waitOutcomes.Len())
+
+	// Calculate average wait time from the outcomes
+	totalW := 0.0
+	weightedSumW := 0.0
+	for _, b := range outcomes.Buckets {
+		totalW += b.Weight
+		weightedSumW += b.Weight * b.Value
+	}
+	calculatedAvgWq := 0.0
+	if totalW > 1e-9 {
+		calculatedAvgWq = weightedSumW / totalW
+	}
+
+	// Theoretical Wq = Ts * rho / (1 - rho) = 0.1 * 0.01 / (1 - 0.01) = 0.001 / 0.99 = ~0.00101
+	expectedAvgWq := q.AvgServiceTime * q.utilization / (1.0 - q.utilization)
+
+	t.Logf("Low Util Dequeue: Expected AvgWq ~ %.6fs, Calculated AvgWq=%.6fs (Buckets: %d)", expectedAvgWq, calculatedAvgWq, outcomes.Len())
+
+	// For very low utilization, the average wait time should be very close to zero.
+	if !approxEqualTest(calculatedAvgWq, 0.0, 1e-3) { // Allow up to 1ms tolerance
+		t.Errorf("Low utilization queue average wait time %.6fs should be very near zero", calculatedAvgWq)
+	}
+
+	// Test the near-zero utilization case specifically
+	qZero := NewQueue("ZeroUtilQ", 1e-10, 0.1) // rho near zero
+	outcomesZero := qZero.Dequeue()
+	if outcomesZero == nil || outcomesZero.Len() != 1 {
+		// This case SHOULD hit the optimization and return 1 bucket
+		t.Fatalf("Near-zero utilization Dequeue should return single outcome, got %d", outcomesZero.Len())
+	}
+	waitTimeZero := outcomesZero.Buckets[0].Value
+	if !approxEqualTest(waitTimeZero, 0.0, 1e-9) {
+		t.Errorf("Near-zero utilization queue wait time %.3f should be zero", waitTimeZero)
 	}
 }
