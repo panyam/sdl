@@ -42,7 +42,7 @@ func (s *Server) Start(ctx context.Context, srvErr chan error, srvChan chan bool
 	designSvc := NewDesignService(clients, "")   // Provide base path if needed, empty uses default
 	contentSvc := NewContentService(designStore) // ContentService needs DesignService (for paths/locks)
 	tagSvc := NewTagService(clients)             // Instantiate TagService
-	llmSvc := NewLlmService(llmClient, designSvc, contentSvc)
+	llmSvc := NewLlmService(llmClient, designStore, contentSvc)
 
 	server := grpc.NewServer(
 	// grpc.UnaryInterceptor(EnsureAccessToken), // Add interceptors if needed
