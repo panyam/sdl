@@ -2,131 +2,226 @@ package sdl
 
 import (
 	"math"
+	// "log"
 )
 
 // BTreeIndex represents a clustered B-Tree index structure
 type BTreeIndex struct {
-	Index
+	Index // Embed base Index
 
-	// Occupancy (between 0 and 1) - usually leave room in leaf pages
-	// so that inserts/deletes Do not need complete shifts
-	Occupancy float64
+	// BTree Specific Parameters
+	Occupancy  float64 // Target page occupancy (0 to 1.0)
+	NodeFanout int     // Max keys/pointers per node (order)
 
-	// Fanout factor at each node - determines tree height (eg Log NumPages base F)
-	NodeFanout int
+	// Average number of extra Read/Write pairs incurred due to split propagation on Insert
+	AvgSplitPropCost float64
+	// Average number of extra Read/Write pairs incurred due to merge/redistribute on Delete
+	AvgMergePropCost float64
 }
 
+func NewBTreeIndex() *BTreeIndex {
+	out := &BTreeIndex{}
+	return out.Init()
+}
+
+// Init initializes the BTreeIndex with defaults.
 func (bt *BTreeIndex) Init() *BTreeIndex {
 	bt.Index.Init()
-	bt.NodeFanout = 5 // Default capacity
-	bt.Occupancy = 0.67
+	bt.NodeFanout = 100       // Default fanout (e.g., for 8KB pages, ~100 keys/pointers)
+	bt.Occupancy = 0.67       // Default occupancy (B-Trees aim for >50%)
+	bt.AvgSplitPropCost = 0.1 // Default: Avg 0.1 extra R/W pairs per insert (low split chance)
+	bt.AvgMergePropCost = 0.1 // Default: Avg 0.1 extra R/W pairs per delete (low merge chance)
 	return bt
 }
 
-// RecordsPerPage returns how many records fit in a page
+// RecordsPerPage estimates how many records fit in a leaf page based on occupancy.
+// Note: Inner nodes store keys/pointers, leaf nodes store records. This calculation
+// is more relevant for leaf capacity. Fanout determines inner node capacity.
 func (bt *BTreeIndex) RecordsPerPage() uint64 {
-	return uint64(bt.Occupancy * float64(bt.PageSize/uint64(bt.RecordSize)))
+	if bt.RecordSize == 0 {
+		return 0
+	}
+	// Use PageSize and RecordSize from embedded Index
+	recordsFit := float64(bt.PageSize / uint64(bt.RecordSize))
+	return uint64(bt.Occupancy * recordsFit)
 }
 
+// Height estimates the height of the B-Tree.
 func (bt *BTreeIndex) Height() int {
-	// Fanout factor at each node - determines tree height (eg Log NumPages base F)
-	return int(math.Log(float64(bt.NumPages())) / math.Log(float64(bt.NodeFanout)))
+	numPages := float64(bt.NumPages()) // Total pages needed for NumRecords
+	fanout := float64(bt.NodeFanout)
+	if numPages <= 1.0 || fanout <= 1.0 {
+		return 1 // Min height is 1 (root only)
+	}
+	// Height = log_fanout(NumPages)
+	h := math.Log(numPages) / math.Log(fanout)
+	return int(math.Ceil(h)) + 1 // Add 1 for leaf level, ceiling for integer height
 }
 
+// --- Refined Find ---
+// Find searches for a key in the B-Tree. Traverses from root to leaf.
+func (bt *BTreeIndex) Find() *Outcomes[AccessResult] {
+	height := bt.Height()
+	if height <= 0 {
+		height = 1
+	}
+
+	// Cost of searching within a node (log2 of fanout * processing time)
+	log2Fanout := math.Log2(float64(bt.NodeFanout))
+	if log2Fanout < 1 {
+		log2Fanout = 1
+	} // Min 1 comparison
+	nodeSearchCpuCost := Map(&bt.RecordProcessingTime, func(p Duration) AccessResult {
+		// Assume search within node always succeeds in finding path/record
+		return AccessResult{true, p * log2Fanout}
+	})
+
+	// Start with zero cost outcome
+	currentTotalCost := &Outcomes[AccessResult]{And: AndAccessResults}
+	currentTotalCost.Add(1.0, AccessResult{true, 0}) // Initial state: success, zero latency
+
+	// Traverse levels: For each level (including root and leaf), read page + search node
+	for i := 0; i < height; i++ {
+		levelCost := And(bt.Disk.Read(), nodeSearchCpuCost, AndAccessResults)
+		currentTotalCost = And(currentTotalCost, levelCost, AndAccessResults)
+
+		// Optional: Apply reduction within the loop if height is large
+		if i > 0 && i%3 == 0 { // Reduce every few levels
+			successes, failures := currentTotalCost.Split(AccessResult.IsSuccess)
+			maxLen := bt.MaxOutcomeLen
+			if maxLen <= 0 {
+				maxLen = 5
+			}
+			trimmer := TrimToSize(100, maxLen) // Uses Merge+Interpolate
+			trimmedSuccesses := trimmer(successes)
+			trimmedFailures := trimmer(failures)
+			currentTotalCost = (&Outcomes[AccessResult]{}).Append(trimmedSuccesses, trimmedFailures)
+		}
+	}
+
+	// Final reduction outside loop
+	successes, failures := currentTotalCost.Split(AccessResult.IsSuccess)
+	maxLen := bt.MaxOutcomeLen
+	if maxLen <= 0 {
+		maxLen = 5
+	}
+	trimmer := TrimToSize(100, maxLen)
+	trimmedSuccesses := trimmer(successes)
+	trimmedFailures := trimmer(failures)
+	finalOutcomes := (&Outcomes[AccessResult]{}).Append(trimmedSuccesses, trimmedFailures)
+
+	return finalOutcomes
+}
+
+// --- Refined Insert ---
+// Insert adds a new key to the B-Tree.
+func (bt *BTreeIndex) Insert() *Outcomes[AccessResult] {
+	// 1. Find the leaf node (cost includes reads + node searches)
+	findCost := bt.Find()
+
+	// 2. Modify leaf node (CPU)
+	modifyLeafCpuCost := Map(&bt.RecordProcessingTime, func(p Duration) AccessResult {
+		return AccessResult{true, p}
+	})
+
+	// 3. Write the modified leaf node back to disk
+	writeLeafCost := bt.Disk.Write()
+
+	// 4. Cost of potential split propagation (Avg extra R/W pairs)
+	// Create cost of one Read+Write pair
+	readWritePairCost := And(bt.Disk.Read(), bt.Disk.Write(), AndAccessResults)
+	// Scale the latency by the average number of extra pairs needed
+	avgPropCostOutcomes := Map(readWritePairCost, func(ar AccessResult) AccessResult {
+		if ar.Success {
+			ar.Latency *= bt.AvgSplitPropCost
+		} else {
+			// If the R/W pair failed, the propagation cost is effectively zero latency, but retains failure status?
+			// Or assume propagation failure means overall insert failure? Let's assume failure propagates.
+			ar.Latency = 0 // Failure happens, latency contribution is negligible
+		}
+		return ar
+	})
+
+	// Combine costs: Find -> Modify CPU -> Write Leaf -> Avg Propagation Cost
+	step1 := findCost
+	step2 := And(step1, modifyLeafCpuCost, AndAccessResults)
+	step3 := And(step2, writeLeafCost, AndAccessResults)
+	finalCost := And(step3, avgPropCostOutcomes, AndAccessResults)
+
+	// Apply Reduction
+	successes, failures := finalCost.Split(AccessResult.IsSuccess)
+	maxLen := bt.MaxOutcomeLen
+	if maxLen <= 0 {
+		maxLen = 5
+	}
+	trimmer := TrimToSize(100, maxLen)
+	trimmedSuccesses := trimmer(successes)
+	trimmedFailures := trimmer(failures)
+	finalOutcomes := (&Outcomes[AccessResult]{}).Append(trimmedSuccesses, trimmedFailures)
+
+	return finalOutcomes
+}
+
+// --- Refined Delete ---
+// Delete removes a key from the B-Tree.
+func (bt *BTreeIndex) Delete() *Outcomes[AccessResult] {
+	// Structure is very similar to Insert, just uses AvgMergePropCost
+
+	// 1. Find the leaf node
+	findCost := bt.Find()
+
+	// 2. Modify leaf node (CPU)
+	modifyLeafCpuCost := Map(&bt.RecordProcessingTime, func(p Duration) AccessResult {
+		return AccessResult{true, p}
+	})
+
+	// 3. Write the modified leaf node back to disk
+	writeLeafCost := bt.Disk.Write()
+
+	// 4. Cost of potential merge/redistribution propagation (Avg extra R/W pairs)
+	readWritePairCost := And(bt.Disk.Read(), bt.Disk.Write(), AndAccessResults)
+	avgPropCostOutcomes := Map(readWritePairCost, func(ar AccessResult) AccessResult {
+		if ar.Success {
+			ar.Latency *= bt.AvgMergePropCost // Use Merge cost factor
+		} else {
+			ar.Latency = 0 // Failure happens, latency contribution is negligible
+		}
+		return ar
+	})
+
+	// Combine costs: Find -> Modify CPU -> Write Leaf -> Avg Propagation Cost
+	step1 := findCost
+	step2 := And(step1, modifyLeafCpuCost, AndAccessResults)
+	step3 := And(step2, writeLeafCost, AndAccessResults)
+	finalCost := And(step3, avgPropCostOutcomes, AndAccessResults)
+
+	// Apply Reduction
+	successes, failures := finalCost.Split(AccessResult.IsSuccess)
+	maxLen := bt.MaxOutcomeLen
+	if maxLen <= 0 {
+		maxLen = 5
+	}
+	trimmer := TrimToSize(100, maxLen)
+	trimmedSuccesses := trimmer(successes)
+	trimmedFailures := trimmer(failures)
+	finalOutcomes := (&Outcomes[AccessResult]{}).Append(trimmedSuccesses, trimmedFailures)
+
+	return finalOutcomes
+}
+
+// --- Deprecated Scan Method ---
+// Scan is less relevant for BTree primary key index; use Find or range scans (future).
+// If needed, it would iterate through leaf pages sequentially.
+/*
+func (h *BTreeIndex) Scan() (out *Outcomes[AccessResult]) { ... }
+*/
+
+// NumLeafPages - estimation might be useful internally but less so for external user.
+/*
 func (bt *BTreeIndex) NumLeafPages() uint {
-	return uint(float64(bt.NumPages()) / bt.Occupancy)
+	recordsPerPage := bt.RecordsPerPage()
+	if recordsPerPage == 0 { return 1 } // Avoid division by zero
+    numRequired := float64(bt.NumRecords) / float64(recordsPerPage)
+	return uint(math.Ceil(numRequired))
 }
-
-// Visits every page - for a scanning through all entries
-func (h *BTreeIndex) Scan() (out *Outcomes[AccessResult]) {
-	// Get the disk read's outcomes and we can reuse them each time
-	out = h.Disk.Read()
-
-	// Read all leaf pages but only process available records
-	for range h.NumLeafPages() {
-		// Do another read and append
-		// TODO - Right now we are not taking into account the 1/NumPages chance that we can stop
-		successes, failures := out.If(AccessResult.IsSuccess,
-			And(h.Disk.Read(), &h.RecordProcessingTime, func(a AccessResult, latency Duration) AccessResult {
-				return AccessResult{a.Success, a.Latency + (Duration(h.RecordsPerPage()) * latency)}
-			}),
-			nil,
-			AndAccessResults).Split(AccessResult.IsSuccess)
-
-		// Trim if need be
-		successes = TrimToSize(100, h.MaxOutcomeLen)(successes)
-		failures = TrimToSize(100, h.MaxOutcomeLen)(failures)
-		out = successes.Append(failures)
-	}
-	return out
-}
-
-// Find searches for a key in the B-Tree
-func (bt *BTreeIndex) Find() (out *Outcomes[AccessResult]) {
-	// For a find operation, we need log_m(N) disk reads in the worst case
-	// where m is the node capacity and N is the number of keys
-
-	// Need to
-	pagesLeft := bt.NumLeafPages()
-	log2R := math.Log(float64(bt.RecordsPerPage()))
-	for pagesLeft > 0 {
-		pagesLeft /= uint(bt.NodeFanout)
-
-		// Read the page, and process records in the page
-		out = out.If(AccessResult.IsSuccess,
-			And(bt.Disk.Read(), &bt.RecordProcessingTime, func(a AccessResult, latency Duration) AccessResult {
-				return AccessResult{a.Success, a.Latency + (log2R * latency)}
-			}),
-			nil,
-			AndAccessResults)
-
-		// Trim if need be
-		successes, failures := out.Split(AccessResult.IsSuccess)
-		successes = TrimToSize(100, bt.MaxOutcomeLen)(successes)
-		failures = TrimToSize(100, bt.MaxOutcomeLen)(failures)
-
-		out = successes.Append(failures)
-	}
-
-	// Combine with failures
-	return out
-}
-
-// Insert adds a new key to the B-Tree
-func (bt *BTreeIndex) Insert() (out *Outcomes[AccessResult]) {
-	// For an insert, we need to:
-	// 1. Traverse to the leaf node (log_m(N) disk reads)
-	// 2. Insert the key
-	// 3. Potentially split and propagate up (worst case: height additional writes)
-
-	// 1. First write the record to the final page
-	out = bt.Disk.Read()
-
-	out = out.If(AccessResult.IsSuccess,
-		And(bt.Disk.Read(), &bt.RecordProcessingTime, AccessResult.AddLatency),
-		nil,
-		AndAccessResults)
-
-	// Then update index pages - same complexity as Find
-	out = out.If(AccessResult.IsSuccess, bt.Find(), nil, AndAccessResults)
-
-	// And write back
-	out = out.If(AccessResult.IsSuccess, bt.Disk.Write(), nil, AndAccessResults)
-
-	// Trim if need be
-	/*
-		successes, failures := out.Split(AccessResult.IsSuccess)
-		successes = TrimToSize(100, bt.MaxOutcomeLen)(successes)
-		failures = TrimToSize(100, bt.MaxOutcomeLen)(failures)
-	*/
-
-	// Combine with failures
-	return out
-}
-
-// Delete removes a key from the B-Tree
-func (bt *BTreeIndex) Delete() (out *Outcomes[AccessResult]) {
-	// Similar to Insert
-	// TODO - Not quite but will finetune later
-	return bt.Insert()
-}
+*/
