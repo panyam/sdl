@@ -43,6 +43,7 @@ func (i *Index) Init() {
 func TrimToSize(lenTrigger, maxLen int) (out func(*Outcomes[AccessResult]) *Outcomes[AccessResult]) {
 	return func(group *Outcomes[AccessResult]) *Outcomes[AccessResult] {
 		if group.Len() > lenTrigger {
+			// Sort by Latency ONLY - Doesn't group Success/Failure first!
 			sort.Slice(group.Buckets, func(i, j int) bool {
 				return group.Buckets[i].Value.Latency < group.Buckets[j].Value.Latency
 			})
