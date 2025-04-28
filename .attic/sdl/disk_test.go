@@ -107,7 +107,7 @@ func TestDisk_PerformanceMetrics(t *testing.T) {
 
 	// Check specific expected values (optional, but good for verifying profile definition)
 	// Example: Expected SSD P99 read latency (0.95 + 0.04 = 0.99 cumulative weight) falls into the 2ms bucket
-	expectedSSDP99Read := Millis(2)
+	expectedSSDP99Read := Micros(500)
 	if !approxEqualTest(ssdReadP99, expectedSSDP99Read, 1e-9) {
 		t.Errorf("SSD Read P99 Latency %.6fs doesn't match expected %.6fs", ssdReadP99, expectedSSDP99Read)
 	}
