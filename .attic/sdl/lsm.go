@@ -6,6 +6,24 @@ import (
 	// "math" // If needed later
 )
 
+/*
+Core Concepts:
+
+1. Writes (Ingest): Typically very fast. Data is written sequentially to an in-memory structure (memtable) and often appended to a Write-Ahead Log (WAL) on persistent storage (disk).
+2. Memtable Flush: When the memtable fills up, it's flushed to disk as an immutable "Sorted String Table" (SSTable) file at Level 0 (L0). This involves a potentially larger disk write.
+3. Reads: More complex. To find a key, the query must check:
+	* The current memtable (in memory - fast).
+	* Potentially multiple SSTables at L0 (in memory via bloom filters/index blocks, or requiring disk reads). L0 files can overlap in key ranges.
+	* SSTables at deeper levels (L1, L2, ... Ln). Files at these levels typically do not overlap within the level. Reading might involve checking bloom filters/index blocks per level and potentially reading data blocks from disk for the relevant SSTable. Reads might hit data cached in OS page cache or block cache.
+	* Deletes are often handled via "tombstone" markers, adding complexity to reads.
+4. Compactions: Background processes that merge SSTables from one level to the next (e.g., L0 -> L1, L1 -> L2).
+	* Reads SSTables from level i.
+	* Writes new, larger, non-overlapping SSTables to level i+1.
+	* Crucially, compactions consume disk I/O and CPU, potentially impacting foreground read/write latencies (Write/Read Amplification).
+
+We will use a simplified model for this and wont implement SSTables or memtable flushes precisely but capture the probabilisitc performance impact of these operations.
+*/
+
 // LSMTree represents a Log-Structured Merge Tree index structure.
 type LSMTree struct {
 	Index // Embed base index properties (Disk, PageSize, RecordSize etc.)

@@ -23,7 +23,7 @@ func TestLSMTree_Write_Read_Metrics(t *testing.T) {
 	lsm := NewLSMTree()
 
 	// Configure disk to be SSD for faster base operations
-	lsm.Disk.Init(ProfileSSD)
+	lsm.Disk.Init()
 	lsm.MaxOutcomeLen = 15 // Allow more outcomes for testing
 
 	// --- Test Write ---
