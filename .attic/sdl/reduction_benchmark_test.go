@@ -274,104 +274,6 @@ func TestReductionAccuracy_AccessResult(t *testing.T) {
 	}
 }
 
-func TestReductionAccuracy_AccessResult_Old(t *testing.T) {
-	t.Logf("Setting up large AccessResult outcomes for accuracy check...")
-	base := &Outcomes[AccessResult]{}
-	base.Add(80, AccessResult{true, Millis(1)})
-	base.Add(15, AccessResult{true, Millis(10)})
-	base.Add(3, AccessResult{false, Millis(5)})
-	base.Add(2, AccessResult{true, Millis(100)})
-	depth := 7
-	largeOutcomes := createLargeAccessResultOutcomes(base, depth, 0, 0)
-	t.Logf("Setup complete. Outcome size: %d buckets", largeOutcomes.Len())
-
-	if largeOutcomes.Len() == 0 {
-		t.Skip("Skipping accuracy test as generated outcomes are empty.")
-		return
-	}
-
-	// --- Calculate Original Metrics ---
-	origAvail := Availability(largeOutcomes)
-	origMean := MeanLatency(largeOutcomes)
-	origP50 := PercentileLatency(largeOutcomes, 0.50)
-	origP99 := PercentileLatency(largeOutcomes, 0.99)
-	t.Logf("Original Metrics: Avail=%.4f, Mean=%.6fs, P50=%.6fs, P99=%.6fs", origAvail, origMean, origP50, origP99)
-
-	// --- Apply Reductions ---
-	targetBuckets := 10
-
-	// 1. Test direct AdaptiveReduce (which now uses WeightBased significance internally)
-	reducedAdaptive := ReduceAccessResultsPercentileAnchor(largeOutcomes, targetBuckets)
-
-	// 2. Test MergeAdjacent (use 5% threshold)
-	// Need to sort for MergeAdjacent
-	sort.SliceStable(largeOutcomes.Buckets, func(i, j int) bool {
-		bi, bj := largeOutcomes.Buckets[i].Value, largeOutcomes.Buckets[j].Value
-		if bi.Success != bj.Success {
-			return !bi.Success
-		}
-		return bi.Latency < bj.Latency
-	})
-	reducedMerged := MergeAdjacentAccessResults(largeOutcomes, 0.05) // Test with 5% threshold
-
-	// 3. Test TrimToSize (which internally uses Merge w/ 5% and Adaptive w/ WeightBased)
-	lenTrigger := 100 // Same trigger
-	maxLen := 10      // Same max length
-	trimmer := TrimToSize(lenTrigger, maxLen)
-	// Need to split -> trim -> append because TrimToSize works on success/failure groups
-	successes, failures := largeOutcomes.Split(AccessResult.IsSuccess) // Use original large set
-	trimmedSuccesses := trimmer(successes)
-	trimmedFailures := trimmer(failures)
-	reducedTrimmed := trimmedSuccesses.Append(trimmedFailures) // Renamed from 'final'
-
-	// --- Calculate Reduced Metrics ---
-	t.Logf("--- Using WeightBased Significance for Adaptive ---")
-	if reducedAdaptive != nil {
-		adapAvail := Availability(reducedAdaptive)
-		adapMean := MeanLatency(reducedAdaptive)
-		adapP50 := PercentileLatency(reducedAdaptive, 0.50)
-		adapP99 := PercentileLatency(reducedAdaptive, 0.99)
-		t.Logf("Adaptive Reduced (%d buckets): Avail=%.4f (%.2f%%), Mean=%.6fs (%.2f%%), P50=%.6fs (%.2f%%), P99=%.6fs (%.2f%%)",
-			reducedAdaptive.Len(),
-			adapAvail, percentDiff(origAvail, adapAvail),
-			adapMean, percentDiff(origMean, adapMean),
-			adapP50, percentDiff(origP50, adapP50),
-			adapP99, percentDiff(origP99, adapP99))
-	} else {
-		t.Logf("Adaptive Reduced: Result was nil")
-	}
-
-	if reducedMerged != nil {
-		mergedAvail := Availability(reducedMerged)
-		mergedMean := MeanLatency(reducedMerged)
-		mergedP50 := PercentileLatency(reducedMerged, 0.50)
-		mergedP99 := PercentileLatency(reducedMerged, 0.99)
-		t.Logf("Merged Adjacent (5%% thresh) (%d buckets): Avail=%.4f (%.2f%%), Mean=%.6fs (%.2f%%), P50=%.6fs (%.2f%%), P99=%.6fs (%.2f%%)",
-			reducedMerged.Len(),
-			mergedAvail, percentDiff(origAvail, mergedAvail),
-			mergedMean, percentDiff(origMean, mergedMean),
-			mergedP50, percentDiff(origP50, mergedP50),
-			mergedP99, percentDiff(origP99, mergedP99))
-	} else {
-		t.Logf("Merged Adjacent: Result was nil")
-	}
-
-	if reducedTrimmed != nil {
-		trimAvail := Availability(reducedTrimmed)
-		trimMean := MeanLatency(reducedTrimmed)
-		trimP50 := PercentileLatency(reducedTrimmed, 0.50)
-		trimP99 := PercentileLatency(reducedTrimmed, 0.99)
-		t.Logf("TrimToSize (Merge 5%% + Adaptive WB) (%d buckets): Avail=%.4f (%.2f%%), Mean=%.6fs (%.2f%%), P50=%.6fs (%.2f%%), P99=%.6fs (%.2f%%)",
-			reducedTrimmed.Len(),
-			trimAvail, percentDiff(origAvail, trimAvail),
-			trimMean, percentDiff(origMean, trimMean),
-			trimP50, percentDiff(origP50, trimP50),
-			trimP99, percentDiff(origP99, trimP99))
-	} else {
-		t.Logf("TrimToSize: Result was nil")
-	}
-}
-
 // Helper for percentage difference
 func percentDiff(original, current float64) float64 {
 	if original == 0 {
@@ -392,4 +294,82 @@ func percentDiff(original, current float64) float64 {
 		return 999999.9
 	}
 	return math.Abs((current-original)/original) * 100.0
+}
+
+func TestReductionAccuracy_RangedResult(t *testing.T) {
+	t.Logf("Setting up large RangedResult outcomes for accuracy check...")
+	base := &Outcomes[RangedResult]{}
+	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+	for i := 0; i < 5; i++ {
+		success := rng.Float64() < 0.95
+		minLat := Millis(rng.Float64() * 5)
+		modeLat := minLat + Millis(rng.Float64()*10)
+		maxLat := modeLat + Millis(rng.Float64()*15)
+		weight := rng.Float64()*20 + 1
+		base.Add(weight, RangedResult{success, minLat, modeLat, maxLat})
+	}
+	// Use same depth as benchmark for consistency
+	depth := 6
+	largeOutcomes := createLargeRangedResultOutcomes(base, depth)
+	t.Logf("Setup complete. Ranged Outcome size: %d buckets", largeOutcomes.Len())
+
+	if largeOutcomes == nil || largeOutcomes.Len() == 0 {
+		t.Skip("Skipping accuracy test as generated Ranged outcomes are empty.")
+		return
+	}
+
+	// --- Calculate Original Metrics (Using ModeLatency) ---
+	origAvail := Availability(largeOutcomes)
+	origMeanMode := MeanLatency(largeOutcomes)            // Mean of Mode Latencies
+	origP50Mode := PercentileLatency(largeOutcomes, 0.50) // P50 of Mode Latencies
+	origP99Mode := PercentileLatency(largeOutcomes, 0.99) // P99 of Mode Latencies
+	// We could calculate metrics for Min/Max latency too if needed
+	t.Logf("Original Metrics (Mode): Avail=%.4f, Mean=%.6fs, P50=%.6fs, P99=%.6fs", origAvail, origMeanMode, origP50Mode, origP99Mode)
+
+	// --- Apply Reductions ---
+	mergeThresholds := []float64{0.90, 0.50} // Test high and medium overlap merge
+	trimTrigger := 100                       // Trigger merge if > 100
+	trimMaxLen := 15                         // Target size after interpolation
+	trimMergeOverlap := 0.90                 // Use high overlap for merge step in Trim
+
+	t.Logf("--- RangedResult Accuracy Results ---")
+	// Test MergeOverlapping directly
+	for _, overlapThreshold := range mergeThresholds {
+		largeOutcomesCopy := largeOutcomes.Copy()
+		reducedMerged := MergeOverlappingRangedResults(largeOutcomesCopy, overlapThreshold) // Original map-based
+		if reducedMerged != nil {
+			// ... log merge results ...
+			mergedAvail := Availability(reducedMerged)
+			mergedMeanMode := MeanLatency(reducedMerged)
+			mergedP50Mode := PercentileLatency(reducedMerged, 0.50)
+			mergedP99Mode := PercentileLatency(reducedMerged, 0.99)
+			t.Logf("Merged Overlapping (%.1f%% ovlp) (%d buckets): Avail=%.4f (%.2f%%), MeanMode=%.6fs (%.2f%%), P50Mode=%.6fs (%.2f%%), P99Mode=%.6fs (%.2f%%)",
+				overlapThreshold*100.0, reducedMerged.Len(), mergedAvail, percentDiff(origAvail, mergedAvail), mergedMeanMode, percentDiff(origMeanMode, mergedMeanMode), mergedP50Mode, percentDiff(origP50Mode, mergedP50Mode), mergedP99Mode, percentDiff(origP99Mode, mergedP99Mode))
+		} else {
+			t.Logf("Merged Overlapping (%.1f%% ovlp): Result was nil", overlapThreshold*100.0)
+		}
+	}
+
+	// Test TrimToSizeRanged (Merge high overlap + Interpolate)
+	trimmer := TrimToSizeRanged(trimTrigger, trimMaxLen, trimMergeOverlap)
+	largeOutcomesCopyTrim := largeOutcomes.Copy()
+	successes, failures := largeOutcomesCopyTrim.Split(RangedResult.IsSuccess)
+	trimmedSuccesses := trimmer(successes)
+	trimmedFailures := trimmer(failures) // Assume failures might also need trimming
+	reducedTrimmed := (&Outcomes[RangedResult]{}).Append(trimmedSuccesses, trimmedFailures)
+
+	if reducedTrimmed != nil {
+		trimAvail := Availability(reducedTrimmed)
+		trimMeanMode := MeanLatency(reducedTrimmed)
+		trimP50Mode := PercentileLatency(reducedTrimmed, 0.50)
+		trimP99Mode := PercentileLatency(reducedTrimmed, 0.99)
+		t.Logf("TrimToSizeRanged (Merge %.1f%% + Interp) (%d buckets): Avail=%.4f (%.2f%%), MeanMode=%.6fs (%.2f%%), P50Mode=%.6fs (%.2f%%), P99Mode=%.6fs (%.2f%%)",
+			trimMergeOverlap*100.0, reducedTrimmed.Len(),
+			trimAvail, percentDiff(origAvail, trimAvail),
+			trimMeanMode, percentDiff(origMeanMode, trimMeanMode),
+			trimP50Mode, percentDiff(origP50Mode, trimP50Mode),
+			trimP99Mode, percentDiff(origP99Mode, trimP99Mode))
+	} else {
+		t.Logf("TrimToSizeRanged: Result was nil")
+	}
 }
