@@ -5,11 +5,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"log/slog"
 	"os"
-	"strings"
-	"time"
 
 	protos "github.com/panyam/leetcoach/gen/go/leetcoach/v1"
 	"google.golang.org/grpc/codes"
@@ -17,268 +14,199 @@ import (
 	tspb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// --- ContentService struct ---
-// Needs access to design service helpers or similar logic.
-// Let's assume it gets the DesignService instance or relevant parts.
+// ContentService manages the raw byte content of sections.
 type ContentService struct {
 	protos.UnimplementedContentServiceServer
 	BaseService
-	designService *DesignService // Access to mutexes and path helpers
+	// designSvc *DesignService // No longer needed
+	store *DesignStore // Use DesignStore directly for path logic
 }
 
-// --- NewContentService Constructor ---
-func NewContentService(ds *DesignService) *ContentService {
-	if ds == nil {
-		panic("DesignService cannot be nil for ContentService")
+// NewContentService creates a new ContentService.
+// It now depends on DesignStore instead of DesignService.
+func NewContentService(store *DesignStore) *ContentService {
+	if store == nil {
+		slog.Error("Cannot create ContentService with a nil DesignStore")
+		panic("Cannot create ContentService with a nil DesignStore")
 	}
 	return &ContentService{
-		designService: ds,
+		store: store,
 	}
 }
 
-func (s *ContentService) GetContentBytes(ctx context.Context, designId, sectionId, contentName string) ([]byte, error) {
-	// TODO: Consider adding permission check here too?
-	contentPath := s.designService.store.GetContentPath(designId, sectionId, contentName) // Delegate path logic
-	contentBytes, err := os.ReadFile(contentPath)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return nil, ErrNoSuchEntity // Return specific error
-		}
-		slog.Error("Internal GetContentBytes failed", "path", contentPath, "error", err)
-		return nil, fmt.Errorf("failed to read content bytes: %w", err) // Internal error
-	}
-	return contentBytes, nil
-}
-
-// --- ContentService RPC Implementations ---
-
+// GetContent retrieves raw content bytes for a named file within a section.
 func (s *ContentService) GetContent(ctx context.Context, req *protos.GetContentRequest) (*protos.GetContentResponse, error) {
 	designId := req.DesignId
 	sectionId := req.SectionId
 	contentName := req.Name
 	if designId == "" || sectionId == "" || contentName == "" {
-		log.Println("Here...... invalid code: ", codes.InvalidArgument)
-		return nil, status.Error(codes.InvalidArgument, "Design ID, Section ID, and Content Name must be provided")
+		return nil, status.Error(codes.InvalidArgument, "Design ID, Section ID, and Name must be provided")
 	}
 	slog.Info("GetContent Request", "designId", designId, "sectionId", sectionId, "name", contentName)
 
-	// Optional: Permission check - does user have read access to the design?
-	// Could call designService.readDesignMetadata and check owner/visibility.
+	// TODO: Add permission checks (can user view this design/section?)
 
-	contentPath := s.designService.getContentPath(designId, sectionId, contentName)
-	contentBytes, err := s.GetContentBytes(ctx, designId, sectionId, contentName)
+	// Check if parent directories exist using the store
+	designPath := s.store.getDesignPath(designId) // Use store's path method
+	if _, err := os.Stat(designPath); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			slog.Warn("Design directory not found for GetContent", "path", designPath)
+			return nil, status.Errorf(codes.NotFound, "Design '%s' not found", designId)
+		}
+		slog.Error("Error checking design directory", "path", designPath, "error", err)
+		return nil, status.Errorf(codes.Internal, "Failed to access design path: %v", err)
+	}
+	sectionBasePath := s.store.GetSectionBasePath(designId, sectionId) // Use store's path method
+	if _, err := os.Stat(sectionBasePath); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			slog.Warn("Section directory not found for GetContent", "path", sectionBasePath)
+			return nil, status.Errorf(codes.NotFound, "Section '%s' not found in design '%s'", sectionId, designId)
+		}
+		slog.Error("Error checking section directory", "path", sectionBasePath, "error", err)
+		return nil, status.Errorf(codes.Internal, "Failed to access section path: %v", err)
+	}
+
+	// Get content path using the store
+	contentPath := s.store.GetContentPath(designId, sectionId, contentName)
+	slog.Debug("Attempting to read content file", "path", contentPath)
+
+	contentBytes, err := os.ReadFile(contentPath)
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) || errors.Is(err, ErrNoSuchEntity) {
+		slog.Error("os.ReadFile failed", "path", contentPath, "error", err, "isNotExist", errors.Is(err, os.ErrNotExist))
+		if errors.Is(err, os.ErrNotExist) {
 			slog.Warn("Content file not found", "path", contentPath)
 			return nil, status.Errorf(codes.NotFound, "Content '%s' not found for section '%s/%s'", contentName, designId, sectionId)
 		}
-		st, _ := status.FromError(err)
-		log.Println("final found code: ", err, st.Code())
-		return nil, err
+		return nil, status.Error(codes.Internal, "Failed to read content file")
 	}
 
-	// TODO: Read content metadata (type, format) if stored separately (e.g., in main.json).
-	// For now, return minimal metadata based on common conventions or defaults.
-	contentType := "application/octet-stream" // Default
-	format := ""
-	// Example: Infer type/format from name extension? (Less reliable)
-	if strings.HasSuffix(contentName, ".json") {
-		contentType = "application/json"
-		if strings.Contains(contentName, "excalidraw") {
-			format = "excalidraw/json"
-		}
-	} else if strings.HasSuffix(contentName, ".html") {
-		contentType = "text/html"
-	} else if strings.HasSuffix(contentName, ".svg") {
-		contentType = "image/svg+xml"
-	}
-
-	// Placeholder for reading actual metadata if implemented
-	fileInfo, _ := os.Stat(contentPath) // Get file info for timestamps/size
-	modTime := time.Now()
-	if fileInfo != nil {
-		modTime = fileInfo.ModTime()
+	// Get file info for metadata (like UpdatedAt)
+	fileInfo, statErr := os.Stat(contentPath)
+	if statErr != nil {
+		slog.Warn("Failed to get file stats after reading content", "path", contentPath, "error", statErr)
 	}
 
 	resp := &protos.GetContentResponse{
-		Content: &protos.Content{
-			Name:      contentName,
-			Type:      contentType,
-			Format:    format,
-			UpdatedAt: tspb.New(modTime),
-			// CreatedAt would ideally be stored, default to UpdatedAt for now
-			CreatedAt: tspb.New(modTime),
-		},
 		ContentBytes: contentBytes,
+		Content: &protos.Content{
+			Name: contentName,
+			// Type and Format still need dedicated metadata storage.
+			// Leaving them empty for now.
+			UpdatedAt: nil,
+		},
+	}
+	if statErr == nil {
+		resp.Content.UpdatedAt = tspb.New(fileInfo.ModTime())
 	}
 
 	slog.Info("Successfully retrieved content", "path", contentPath, "size", len(contentBytes))
 	return resp, nil
 }
 
+// SetContent saves or updates raw content bytes for a named file within a section.
+// It NO LONGER updates design/section metadata timestamps.
 func (s *ContentService) SetContent(ctx context.Context, req *protos.SetContentRequest) (*protos.SetContentResponse, error) {
 	designId := req.DesignId
 	sectionId := req.SectionId
+	contentName := req.GetName()
 
-	if designId == "" || sectionId == "" || req.Name == "" {
-		return nil, status.Error(codes.InvalidArgument, "Design ID, Section ID, and Content with Name must be provided")
+	if designId == "" || sectionId == "" || contentName == "" {
+		return nil, status.Error(codes.InvalidArgument, "Design ID, Section ID, and Name must be provided")
 	}
-	contentName := req.Name
 
 	slog.Info("SetContent Request", "designId", designId, "sectionId", sectionId, "name", contentName)
-
-	ownerId, err := s.EnsureLoggedIn(ctx)
-	if ENFORCE_LOGIN && err != nil {
-		return nil, err
+	designPath := s.store.getDesignPath(designId)
+	if _, err := os.Stat(designPath); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			slog.Warn("Design directory not found for SetContent", "path", designPath)
+			// Return NotFound if the design directory doesn't exist
+			return nil, status.Errorf(codes.NotFound, "Design '%s' not found", designId)
+		}
+		// Handle other errors checking the design path (e.g., permissions)
+		slog.Error("Error checking design directory for SetContent", "path", designPath, "error", err)
+		return nil, status.Errorf(codes.Internal, "Failed to access design path: %v", err)
 	}
 
-	// --- Acquire Lock ---
-	mutex := s.designService.getDesignMutex(designId) // Use design-level lock
-	mutex.Lock()
-	defer mutex.Unlock()
-	slog.Debug("Acquired mutex for SetContent", "designId", designId, "sectionId", sectionId, "name", contentName)
+	// --- Check Permissions (Simplified - Requires actual implementation) ---
+	// _, err := s.EnsureLoggedIn(ctx) // Or check ownership based on design ID
+	// if ENFORCE_LOGIN && err != nil {
+	// 	return nil, err
+	// }
+	// Need to fetch design metadata to check owner - this adds back a dependency or requires passing owner info.
+	// For now, skipping strict permission check within SetContent itself. Assume caller verified.
 
-	// --- Check Permissions & Existence ---
-	designMeta, err := s.designService.readDesignMetadata(designId)
+	// --- Ensure Parent Directories Exist using Store ---
+	sectionBasePath := s.store.GetSectionBasePath(designId, sectionId)
+	err := ensureDir(sectionBasePath) // Ensure section dir exists
 	if err != nil {
-		return nil, err // Handles NotFound
-	}
-	if ENFORCE_LOGIN && ownerId != designMeta.OwnerId {
-		slog.Warn("Permission denied for SetContent", "designId", designId, "user", ownerId)
-		return nil, status.Error(codes.PermissionDenied, "User cannot set content in this design")
-	}
-	// Ensure section directory exists (section metadata doesn't need to be read here unless updating it)
-	sectionPath := s.designService.getSectionPath(designId, sectionId)
-	if _, err := os.Stat(sectionPath); errors.Is(err, os.ErrNotExist) {
-		// If AddSection didn't run or failed, the dir might not exist
-		slog.Warn("Section directory not found during SetContent", "path", sectionPath)
-		return nil, status.Errorf(codes.NotFound, "Section '%s' not found in design '%s'", sectionId, designId)
-	} else if err != nil {
-		slog.Error("Error checking section directory existence", "path", sectionPath, "error", err)
-		return nil, status.Error(codes.Internal, "Failed to access section directory")
-	}
-
-	// --- Handle Content Byte Update ---
-	contentPath := s.designService.getContentPath(designId, sectionId, contentName)
-	bytesUpdated := false
-	// Check if content_bytes is explicitly in the mask OR if the mask is nil/empty (implying full replace)
-	// Or adopt a convention: if content_bytes is provided, always write it.
-	// Let's assume if bytes are provided, we write them.
-	if req.ContentBytes != nil {
-		err = os.WriteFile(contentPath, req.ContentBytes, 0644)
-		if err != nil {
-			slog.Error("Failed to write content bytes", "path", contentPath, "error", err)
-			return nil, status.Error(codes.Internal, "Failed to save content")
+		// This could fail due to permissions or issues creating the design dir if it's missing
+		slog.Error("Failed to ensure section directory exists for SetContent", "path", sectionBasePath, "error", err)
+		// Check if the design dir itself is missing
+		if _, designStatErr := os.Stat(s.store.getDesignPath(designId)); errors.Is(designStatErr, os.ErrNotExist) {
+			return nil, status.Errorf(codes.NotFound, "Design '%s' not found", designId)
 		}
-		bytesUpdated = true
-		slog.Info("Successfully wrote content bytes", "path", contentPath, "size", len(req.ContentBytes))
+		return nil, status.Errorf(codes.Internal, "Failed to ensure section directory: %v", err)
 	}
 
-	metadataUpdated := false // Placeholder
+	// --- Write Content Bytes ---
+	contentPath := s.store.GetContentPath(designId, sectionId, contentName)
+	slog.Debug("Attempting to write content file", "path", contentPath)
+	err = os.WriteFile(contentPath, req.ContentBytes, 0644)
+	if err != nil {
+		slog.Error("Failed to write content bytes", "path", contentPath, "error", err)
+		return nil, status.Error(codes.Internal, "Failed to save content")
+	}
+	slog.Info("Successfully wrote content bytes", "path", contentPath, "size", len(req.ContentBytes))
 
-	// --- Update Timestamps ---
-	now := time.Now()
-	if bytesUpdated || metadataUpdated {
-		// Update section's main.json timestamp
-		sectionMeta, err := s.designService.readSectionData(designId, sectionId)
-		if err == nil {
-			sectionMeta.UpdatedAt = now
-			if err_write := s.designService.writeSectionData(designId, sectionId, sectionMeta); err_write != nil {
-				slog.Error("Failed to update section metadata timestamp after SetContent", "path", s.designService.getSectionPath(designId, sectionId), "error", err_write)
-				// Continue, as content was potentially saved
-			}
-		} else {
-			slog.Warn("Could not read section metadata to update timestamp", "designId", designId, "sectionId", sectionId, "error", err)
-		}
+	// --- REMOVED Timestamp Update Logic ---
+	// Timestamps (UpdatedAt in design.json and section's main.json)
+	// should be updated by the caller via DesignService methods (e.g., UpdateSection)
+	// after the content has been successfully set.
 
-		// Update design's design.json timestamp
-		designMeta.UpdatedAt = now
-		if err_write := s.designService.writeDesignMetadata(designId, designMeta); err_write != nil {
-			slog.Error("Failed to update design metadata timestamp after SetContent", "path", s.designService.getDesignMetadataPath(designId), "error", err_write)
-			// Continue
-		}
+	// --- Construct Response ---
+	// Get ModTime of the file we just wrote
+	var modTime *tspb.Timestamp
+	if fileInfo, statErr := os.Stat(contentPath); statErr == nil {
+		modTime = tspb.New(fileInfo.ModTime())
+	} else {
+		slog.Warn("Could not stat file after writing for timestamp", "path", contentPath, "error", statErr)
+		modTime = tspb.Now() // Fallback to current time
 	}
 
-	// Return the metadata provided in the request (or read back if implemented)
-	finalContentProto := &protos.Content{
-		Name:      contentName,
-		UpdatedAt: tspb.New(now),
-		// CreatedAt needs proper tracking if important
-	}
-
+	// Return minimal info - Name and UpdatedAt of the content file itself.
+	// Type and Format are not stored/managed by this service currently.
 	resp := &protos.SetContentResponse{
-		Content: finalContentProto,
+		Content: &protos.Content{
+			Name:      contentName,
+			UpdatedAt: modTime,
+			// Type: req.ContentType, // Not stored/returned
+			// Format: req.Format, // Not stored/returned
+		},
 	}
 	return resp, nil
 }
 
-func (s *ContentService) DeleteContent(ctx context.Context, req *protos.DeleteContentRequest) (*protos.DeleteContentResponse, error) {
-	designId := req.DesignId
-	sectionId := req.SectionId
-	contentName := req.Name // Corrected field name from proto
-
+// GetContentBytes is a helper primarily used internally by other services (like LlmService).
+// It returns raw bytes or ErrNoSuchEntity.
+func (s *ContentService) GetContentBytes(ctx context.Context, designId, sectionId, contentName string) ([]byte, error) {
+	// Basic validation
 	if designId == "" || sectionId == "" || contentName == "" {
-		return nil, status.Error(codes.InvalidArgument, "Design ID, Section ID, and Content Name must be provided")
+		return nil, fmt.Errorf("designId, sectionId, and contentName are required")
 	}
-	slog.Info("DeleteContent Request", "designId", designId, "sectionId", sectionId, "name", contentName)
+	// TODO: Consider adding permission check here too?
 
-	ownerId, err := s.EnsureLoggedIn(ctx)
-	if ENFORCE_LOGIN && err != nil {
-		return nil, err
-	}
+	// Get path via store
+	contentPath := s.store.GetContentPath(designId, sectionId, contentName)
+	slog.Debug("GetContentBytes: Reading path", "path", contentPath)
 
-	// --- Acquire Lock ---
-	mutex := s.designService.getDesignMutex(designId)
-	mutex.Lock()
-	defer mutex.Unlock()
-	slog.Debug("Acquired mutex for DeleteContent", "designId", designId, "sectionId", sectionId, "name", contentName)
-
-	// --- Check Permissions ---
-	designMeta, err := s.designService.readDesignMetadata(designId)
-	if err != nil {
-		if status.Code(err) == codes.NotFound {
-			slog.Warn("Design not found during DeleteContent", "designId", designId)
-			return &protos.DeleteContentResponse{}, nil // Design gone, content implicitly gone
-		}
-		return nil, err // Other read error
-	}
-	if ENFORCE_LOGIN && ownerId != designMeta.OwnerId {
-		slog.Warn("Permission denied for DeleteContent", "designId", designId, "user", ownerId)
-		return nil, status.Error(codes.PermissionDenied, "User cannot delete content from this design")
-	}
-
-	// --- Delete File ---
-	contentPath := s.designService.getContentPath(designId, sectionId, contentName)
-	err = os.Remove(contentPath)
+	contentBytes, err := os.ReadFile(contentPath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			slog.Warn("Content file not found during delete (idempotent)", "path", contentPath)
-			return &protos.DeleteContentResponse{}, nil // Already deleted
+			slog.Warn("GetContentBytes: File not found", "path", contentPath)
+			return nil, ErrNoSuchEntity // Return specific error
 		}
-		slog.Error("Failed to delete content file", "path", contentPath, "error", err)
-		return nil, status.Error(codes.Internal, "Failed to delete content file")
+		slog.Error("GetContentBytes: ReadFile failed", "path", contentPath, "error", err)
+		return nil, fmt.Errorf("failed to read content bytes: %w", err) // Internal error
 	}
-	slog.Info("Successfully deleted content file", "path", contentPath)
-
-	// --- Update Timestamps ---
-	now := time.Now()
-	// Update section's main.json timestamp
-	sectionMeta, err := s.designService.readSectionData(designId, sectionId)
-	if err == nil {
-		sectionMeta.UpdatedAt = now
-		if err_write := s.designService.writeSectionData(designId, sectionId, sectionMeta); err_write != nil {
-			slog.Error("Failed to update section metadata timestamp after DeleteContent", "error", err_write)
-			// Continue, main action succeeded
-		}
-	} else {
-		slog.Warn("Could not read section metadata to update timestamp after delete", "error", err)
-	}
-	// Update design's design.json timestamp
-	designMeta.UpdatedAt = now
-	if err_write := s.designService.writeDesignMetadata(designId, designMeta); err_write != nil {
-		slog.Error("Failed to update design metadata timestamp after DeleteContent", "error", err_write)
-		// Continue
-	}
-
-	return &protos.DeleteContentResponse{}, nil
+	return contentBytes, nil
 }

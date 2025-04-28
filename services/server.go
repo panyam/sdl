@@ -30,12 +30,18 @@ func (s *Server) Start(ctx context.Context, srvErr chan error, srvChan chan bool
 		return fmt.Errorf("failed to initialize LLM client: %w", err)
 	}
 	slog.Info("LLM Client initialized successfully")
-	// -------------------------
+
+	designStore, err := NewDesignStore("")
+	if err != nil {
+		slog.Error("Failed to initialize DesignStore", "error", err)
+		return fmt.Errorf("failed to initialize DesignStore: %w", err)
+	}
+	slog.Info("DesignStore initialized successfully", "basePath", designStore.basePath) // Log the resolved path
 
 	// Instantiate services
-	designSvc := NewDesignService(clients, "") // Provide base path if needed, empty uses default
-	contentSvc := NewContentService(designSvc) // ContentService needs DesignService (for paths/locks)
-	tagSvc := NewTagService(clients)           // Instantiate TagService
+	designSvc := NewDesignService(clients, "")   // Provide base path if needed, empty uses default
+	contentSvc := NewContentService(designStore) // ContentService needs DesignService (for paths/locks)
+	tagSvc := NewTagService(clients)             // Instantiate TagService
 	llmSvc := NewLlmService(llmClient, designSvc, contentSvc)
 
 	server := grpc.NewServer(

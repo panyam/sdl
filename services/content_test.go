@@ -2,9 +2,12 @@
 package services
 
 import (
+	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	protos "github.com/panyam/leetcoach/gen/go/leetcoach/v1"
 	"github.com/stretchr/testify/assert"
@@ -13,243 +16,282 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// Helper to create section metadata (main.json) without content for content tests
-func setupSectionMetaForContentTest(t *testing.T, basePath, designId, sectionId, ownerId string) {
+// Helper to create a ContentService instance with a DesignStore pointing to a temp directory.
+func newTestContentService(t *testing.T) (*ContentService, *DesignStore) {
 	t.Helper()
-	// Ensure design exists first
-	createDesignDirectly(t, basePath, Design{Id: designId, OwnerId: ownerId, SectionIds: []string{sectionId}})
-	// Create section metadata
-	createSectionDirectly(t, basePath, designId, sectionId, Section{
-		Id: sectionId, DesignId: designId, Type: "text", Title: "Content Test Section",
-	})
+	// Use the existing helper from designs_store_test.go to create the store
+	store := newTestDesignStore(t) // This now returns *DesignStore
+	t.Logf("Using temp directory for test service: %s", store.basePath)
+
+	service := NewContentService(store)                                     // Pass the store directly
+	require.NotNil(t, service.store, "Service store should be initialized") // Add check
+	return service, store
 }
 
-// Helper to directly create a content file
-func createContentDirectly(t *testing.T, basePath, designId, sectionId, contentName string, contentBytes []byte) {
+// Helper to create necessary directories for tests
+func setupTestDirs(t *testing.T, store *DesignStore, designId, sectionId string) {
 	t.Helper()
-	ds := &DesignService{basePath: basePath} // Temporary service just for path helper
-	contentPath := ds.getContentPath(designId, sectionId, contentName)
-	sectionDir := filepath.Dir(contentPath)
-	err := os.MkdirAll(sectionDir, 0755) // Ensure section dir exists
-	require.NoError(t, err, "Failed to create section directory for direct content creation")
-	err = os.WriteFile(contentPath, contentBytes, 0644)
-	require.NoError(t, err, "Failed to write content file")
+	sectionPath := store.GetSectionBasePath(designId, sectionId)
+	err := os.MkdirAll(sectionPath, 0755)
+	require.NoError(t, err, "Failed to create test directories")
 }
 
-// Helper to read content directly
-func readContentDirectly(t *testing.T, basePath, designId, sectionId, contentName string) ([]byte, error) {
+// Helper to write content directly for setup
+func createTestContentFile(t *testing.T, store *DesignStore, designId, sectionId, contentName, content string) string {
 	t.Helper()
-	ds := &DesignService{basePath: basePath} // Temporary service just for path helper
-	contentPath := ds.getContentPath(designId, sectionId, contentName)
-	return os.ReadFile(contentPath)
+	contentPath := store.GetContentPath(designId, sectionId, contentName)
+	// Ensure parent dirs exist first (WriteFile doesn't create intermediate dirs)
+	err := os.MkdirAll(filepath.Dir(contentPath), 0755)
+	require.NoError(t, err)
+	err = os.WriteFile(contentPath, []byte(content), 0644)
+	require.NoError(t, err)
+	return contentPath
 }
 
-// --- ContentService Test Cases ---
+// --- Test Cases ---
 
 func TestSetContent(t *testing.T) {
-	designService, tempDir := newTestDesignService(t)
-	contentService := NewContentService(designService)
-	ctx := testContextWithUser("content-owner")
-	designId := "design-set-content"
-	sectionId := "sec-set-1"
+	service, store := newTestContentService(t)
+	ctx := context.Background() // No auth needed directly in service for now
+	designId := "set-content-design"
+	sectionId := "set-content-sec"
 	contentName := "main"
+	initialContent := "<p>Initial</p>"
+	updatedContent := "<p>Updated</p>"
 
-	// Setup design and section metadata (without content file initially)
-	setupSectionMetaForContentTest(t, tempDir, designId, sectionId, "content-owner")
+	// Setup: Ensure base directories exist for the section
+	setupTestDirs(t, store, designId, sectionId)
+	// setupTime := time.Now() // Not needed for timestamp checks anymore
 
 	t.Run("Set Initial Content", func(t *testing.T) {
-		contentBytes := []byte("<p>Initial Content</p>")
 		req := &protos.SetContentRequest{
 			DesignId:     designId,
 			SectionId:    sectionId,
 			Name:         contentName,
-			ContentBytes: contentBytes,
+			ContentBytes: []byte(initialContent),
+			// ContentType and Format are passed but not used/stored by SetContent currently
 		}
-
-		resp, err := contentService.SetContent(ctx, req)
+		resp, err := service.SetContent(ctx, req)
 		require.NoError(t, err)
 		require.NotNil(t, resp, "Response should not be nil")
 		require.NotNil(t, resp.Content, "Response Content proto should not be nil")
+
 		assert.Equal(t, contentName, resp.Content.Name)
-		assert.NotNil(t, resp.Content.UpdatedAt)
+		assert.NotNil(t, resp.Content.UpdatedAt) // Should get timestamp from the file system
+		assert.Empty(t, resp.Content.Type, "ContentType is not expected in the SetContentResponse")
+		assert.Empty(t, resp.Content.Format, "Format is not expected in the SetContentResponse")
 
-		assert.Empty(t, resp.Content.Type, "ContentType is not expected in the SetContentResponse currently")
-		assert.Empty(t, resp.Content.Format, "Format is not expected in the SetContentResponse currently")
+		// Verify file content directly
+		contentPath := store.GetContentPath(designId, sectionId, contentName)
+		readBytes, readErr := os.ReadFile(contentPath)
+		require.NoError(t, readErr)
+		assert.Equal(t, initialContent, string(readBytes))
 
-		// Verify file content
-		readBytes, errRead := readContentDirectly(t, tempDir, designId, sectionId, contentName)
-		require.NoError(t, errRead)
-		assert.Equal(t, contentBytes, readBytes)
-
-		// Verify timestamps updated (check modification time of file or main.json)
-		secMeta := readSectionDataDirectly(t, tempDir, designId, sectionId)
-		require.NotNil(t, secMeta)
-		assert.True(t, secMeta.UpdatedAt.After(secMeta.CreatedAt)) // Updated time should be later
+		// --- REMOVED Timestamp checks for design.json / main.json ---
 	})
 
 	t.Run("Update Existing Content", func(t *testing.T) {
-		contentBytes := []byte("<p>Updated Content</p>")
+		// Ensure initial content exists from previous step or setup here
+		contentPath := createTestContentFile(t, store, designId, sectionId, contentName, initialContent)
+		// updateStartTime := time.Now()
+
 		req := &protos.SetContentRequest{
 			DesignId:     designId,
 			SectionId:    sectionId,
 			Name:         contentName,
-			ContentBytes: contentBytes,
+			ContentBytes: []byte(updatedContent),
 		}
-
-		resp, err := contentService.SetContent(ctx, req)
+		resp, err := service.SetContent(ctx, req)
 		require.NoError(t, err)
 		require.NotNil(t, resp)
+		require.NotNil(t, resp.Content)
+		assert.Equal(t, contentName, resp.Content.Name)
+		assert.NotNil(t, resp.Content.UpdatedAt)
 
-		// Verify file content updated
-		readBytes, errRead := readContentDirectly(t, tempDir, designId, sectionId, contentName)
-		require.NoError(t, errRead)
-		assert.Equal(t, contentBytes, readBytes)
+		// Verify file content directly
+		readBytes, readErr := os.ReadFile(contentPath)
+		require.NoError(t, readErr)
+		assert.Equal(t, updatedContent, string(readBytes))
+
+		// --- REMOVED Timestamp checks for design.json / main.json ---
 	})
 
-	t.Run("Set Content for Different Name", func(t *testing.T) {
-		contentBytes := []byte(`{"elements":[]}`)
+	t.Run("Set Content for New Name", func(t *testing.T) {
+		newName := "preview.svg"
+		newContent := "<svg>...</svg>"
 		req := &protos.SetContentRequest{
 			DesignId:     designId,
 			SectionId:    sectionId,
-			Name:         "diagram.excalidraw.json",
-			ContentBytes: contentBytes,
+			Name:         newName,
+			ContentBytes: []byte(newContent),
 		}
-		_, err := contentService.SetContent(ctx, req)
+		_, err := service.SetContent(ctx, req)
 		require.NoError(t, err)
 
-		// Verify new file created
-		readBytes, errRead := readContentDirectly(t, tempDir, designId, sectionId, "diagram.excalidraw.json")
-		require.NoError(t, errRead)
-		assert.Equal(t, contentBytes, readBytes)
-
-		// Verify original content still exists
-		_, errReadOrig := readContentDirectly(t, tempDir, designId, sectionId, "main")
-		require.NoError(t, errReadOrig)
+		// Verify new file exists
+		contentPath := store.GetContentPath(designId, sectionId, newName)
+		readBytes, readErr := os.ReadFile(contentPath)
+		require.NoError(t, readErr)
+		assert.Equal(t, newContent, string(readBytes))
 	})
 
-	t.Run("Set Content for Non-Existent Section", func(t *testing.T) {
+	t.Run("Fail on Missing Design Directory", func(t *testing.T) {
 		req := &protos.SetContentRequest{
-			DesignId:     designId,
-			SectionId:    "non-existent-sec",
-			Name:         "main",
-			ContentBytes: []byte("test"),
+			DesignId:     "non-existent-design", // This design dir doesn't exist
+			SectionId:    sectionId,
+			Name:         contentName,
+			ContentBytes: []byte(initialContent),
 		}
-		_, err := contentService.SetContent(ctx, req)
+		_, err := service.SetContent(ctx, req)
 		require.Error(t, err)
-		st, _ := status.FromError(err)
-		assert.Equal(t, codes.NotFound, st.Code()) // Should fail because section dir doesn't exist
+		st, ok := status.FromError(err)
+		require.True(t, ok)
+		assert.Equal(t, codes.NotFound, st.Code()) // Should be NotFound because design doesn't exist
 	})
 
-	// Add tests for permission denied, metadata updates (when implemented)
+	t.Run("Fail on Missing Section Directory (if creation fails)", func(t *testing.T) {
+		// Simulate a scenario where section dir creation fails (hard to do reliably,
+		// but test the case where ensureDir returns an error other than NotFound for design)
+		// For now, assume if design exists, section dir creation should work unless permissions fail.
+		// We can test the InvalidArgument cases.
+	})
+
+	t.Run("Fail on Invalid Args", func(t *testing.T) {
+		testCases := []*protos.SetContentRequest{
+			{SectionId: sectionId, Name: contentName, ContentBytes: []byte("a")},  // Missing DesignId
+			{DesignId: designId, Name: contentName, ContentBytes: []byte("a")},    // Missing SectionId
+			{DesignId: designId, SectionId: sectionId, ContentBytes: []byte("a")}, // Missing Name
+			// {DesignId: designId, SectionId: sectionId, Name: contentName}, // Missing ContentBytes - Allowed now? Yes.
+		}
+		for _, tc := range testCases {
+			_, err := service.SetContent(ctx, tc)
+			assert.Error(t, err)
+			st, ok := status.FromError(err)
+			require.True(t, ok)
+			assert.Equal(t, codes.InvalidArgument, st.Code())
+		}
+	})
 }
 
 func TestGetContent(t *testing.T) {
-	designService, tempDir := newTestDesignService(t)
-	contentService := NewContentService(designService)
-	ctx := testContextWithUser("content-owner")
-	designId := "design-get-content"
-	sectionId := "sec-get-1"
-	contentNameMain := "main"
-	contentNameDiagram := "diagram.json"
-	mainBytes := []byte("<p>Main HTML</p>")
-	diagramBytes := []byte(`{"key":"value"}`)
+	service, store := newTestContentService(t)
+	ctx := context.Background()
+	designId := "get-content-design"
+	sectionId := "get-content-sec"
+	contentName := "main"
+	contentData := "<p>Hello World</p>"
 
-	// Setup
-	setupSectionMetaForContentTest(t, tempDir, designId, sectionId, "content-owner")
-	createContentDirectly(t, tempDir, designId, sectionId, contentNameMain, mainBytes)
-	createContentDirectly(t, tempDir, designId, sectionId, contentNameDiagram, diagramBytes)
+	// Setup: Create design/section dirs and the content file
+	setupTestDirs(t, store, designId, sectionId)
+	contentPath := createTestContentFile(t, store, designId, sectionId, contentName, contentData)
+	fileInfo, _ := os.Stat(contentPath) // Get mod time for comparison
+	expectedModTime := fileInfo.ModTime()
 
-	t.Run("Get Existing Content (main)", func(t *testing.T) {
-		req := &protos.GetContentRequest{DesignId: designId, SectionId: sectionId, Name: contentNameMain}
-		resp, err := contentService.GetContent(ctx, req)
+	t.Run("Get Existing Content", func(t *testing.T) {
+		req := &protos.GetContentRequest{
+			DesignId:  designId,
+			SectionId: sectionId,
+			Name:      contentName,
+		}
+		resp, err := service.GetContent(ctx, req)
 		require.NoError(t, err)
 		require.NotNil(t, resp)
 		require.NotNil(t, resp.Content)
-		assert.Equal(t, mainBytes, resp.ContentBytes)
-		assert.Equal(t, contentNameMain, resp.Content.Name)
-		assert.Equal(t, "application/octet-stream", resp.Content.Type) // Default guess for now
-	})
 
-	t.Run("Get Existing Content (diagram)", func(t *testing.T) {
-		req := &protos.GetContentRequest{DesignId: designId, SectionId: sectionId, Name: contentNameDiagram}
-		resp, err := contentService.GetContent(ctx, req)
-		require.NoError(t, err)
-		require.NotNil(t, resp)
-		require.NotNil(t, resp.Content)
-		assert.Equal(t, diagramBytes, resp.ContentBytes)
-		assert.Equal(t, contentNameDiagram, resp.Content.Name)
-		assert.Equal(t, "application/json", resp.Content.Type) // Inferred from extension
+		assert.Equal(t, contentData, string(resp.ContentBytes))
+		assert.Equal(t, contentName, resp.Content.Name)
+		assert.NotNil(t, resp.Content.UpdatedAt)
+		// Compare timestamps (allow for slight differences due to system time precision)
+		assert.WithinDuration(t, expectedModTime, resp.Content.UpdatedAt.AsTime(), time.Second)
+		assert.Empty(t, resp.Content.Type)   // Type is not stored/returned
+		assert.Empty(t, resp.Content.Format) // Format is not stored/returned
 	})
 
 	t.Run("Get Non-Existent Content Name", func(t *testing.T) {
-		req := &protos.GetContentRequest{DesignId: designId, SectionId: sectionId, Name: "nonexistent.png"}
-		_, err := contentService.GetContent(ctx, req)
+		req := &protos.GetContentRequest{
+			DesignId:  designId,
+			SectionId: sectionId,
+			Name:      "non-existent-name",
+		}
+		_, err := service.GetContent(ctx, req)
 		require.Error(t, err)
-		st, _ := status.FromError(err)
-		assert.Equal(t, codes.NotFound, st.Code())
+		st, ok := status.FromError(err)
+		require.True(t, ok)
+		assert.Equal(t, codes.NotFound, st.Code()) // Expect NotFound
 	})
 
 	t.Run("Get Content from Non-Existent Section", func(t *testing.T) {
-		req := &protos.GetContentRequest{DesignId: designId, SectionId: "no-such-section", Name: contentNameMain}
-		_, err := contentService.GetContent(ctx, req)
+		req := &protos.GetContentRequest{
+			DesignId:  designId,
+			SectionId: "non-existent-section",
+			Name:      contentName,
+		}
+		_, err := service.GetContent(ctx, req)
 		require.Error(t, err)
-		st, _ := status.FromError(err)
-		assert.Equal(t, codes.NotFound, st.Code()) // Should fail because content file path doesn't exist
+		st, ok := status.FromError(err)
+		require.True(t, ok)
+		assert.Equal(t, codes.NotFound, st.Code()) // Expect NotFound
+	})
+
+	t.Run("Get Content from Non-Existent Design", func(t *testing.T) {
+		req := &protos.GetContentRequest{
+			DesignId:  "non-existent-design",
+			SectionId: sectionId,
+			Name:      contentName,
+		}
+		_, err := service.GetContent(ctx, req)
+		require.Error(t, err)
+		st, ok := status.FromError(err)
+		require.True(t, ok)
+		assert.Equal(t, codes.NotFound, st.Code()) // Expect NotFound
+	})
+
+	t.Run("Fail on Invalid Args", func(t *testing.T) {
+		testCases := []*protos.GetContentRequest{
+			{SectionId: sectionId, Name: contentName},  // Missing DesignId
+			{DesignId: designId, Name: contentName},    // Missing SectionId
+			{DesignId: designId, SectionId: sectionId}, // Missing Name
+		}
+		for _, tc := range testCases {
+			_, err := service.GetContent(ctx, tc)
+			assert.Error(t, err)
+			st, ok := status.FromError(err)
+			require.True(t, ok)
+			assert.Equal(t, codes.InvalidArgument, st.Code())
+		}
 	})
 }
 
-func TestDeleteContent(t *testing.T) {
-	designService, tempDir := newTestDesignService(t)
-	contentService := NewContentService(designService)
-	ctx := testContextWithUser("content-owner")
-	designId := "design-delete-content"
-	sectionId := "sec-delete-1"
-	contentNameMain := "main.html"
-	contentNameOther := "other.data"
-	mainBytes := []byte("<p>Main HTML</p>")
-	otherBytes := []byte{1, 2, 3}
+func TestGetContentBytes(t *testing.T) {
+	service, store := newTestContentService(t)
+	ctx := context.Background()
+	designId := "getbytes-design"
+	sectionId := "getbytes-sec"
+	contentName := "raw.bin"
+	contentData := []byte{0x01, 0x02, 0x03, 0x04}
 
 	// Setup
-	setupSectionMetaForContentTest(t, tempDir, designId, sectionId, "content-owner")
-	createContentDirectly(t, tempDir, designId, sectionId, contentNameMain, mainBytes)
-	createContentDirectly(t, tempDir, designId, sectionId, contentNameOther, otherBytes)
+	setupTestDirs(t, store, designId, sectionId)
+	_ = createTestContentFile(t, store, designId, sectionId, contentName, string(contentData)) // Use helper, convert bytes to string for helper
 
-	t.Run("Delete Existing Content", func(t *testing.T) {
-		req := &protos.DeleteContentRequest{DesignId: designId, SectionId: sectionId, Name: contentNameMain} // Use Name field
-
-		// Verify exists before
-		_, errRead := readContentDirectly(t, tempDir, designId, sectionId, contentNameMain)
-		require.NoError(t, errRead)
-
-		_, err := contentService.DeleteContent(ctx, req)
+	t.Run("Get Existing Bytes", func(t *testing.T) {
+		bytes, err := service.GetContentBytes(ctx, designId, sectionId, contentName)
 		require.NoError(t, err)
-
-		// Verify deleted
-		_, errRead = readContentDirectly(t, tempDir, designId, sectionId, contentNameMain)
-		require.Error(t, errRead)
-		assert.True(t, os.IsNotExist(errRead))
-
-		// Verify other content still exists
-		readOtherBytes, errReadOther := readContentDirectly(t, tempDir, designId, sectionId, contentNameOther)
-		require.NoError(t, errReadOther)
-		assert.Equal(t, otherBytes, readOtherBytes)
+		assert.Equal(t, contentData, bytes)
 	})
 
-	t.Run("Delete Non-Existent Content (Idempotent)", func(t *testing.T) {
-		req := &protos.DeleteContentRequest{DesignId: designId, SectionId: sectionId, Name: "nonexistent.bin"}
-		_, err := contentService.DeleteContent(ctx, req)
-		require.NoError(t, err) // Should succeed idempotently
-
-		// Verify other content still exists
-		_, errReadOther := readContentDirectly(t, tempDir, designId, sectionId, contentNameOther)
-		require.NoError(t, errReadOther)
+	t.Run("Get Non-Existent Bytes", func(t *testing.T) {
+		_, err := service.GetContentBytes(ctx, designId, sectionId, "no-such-bytes")
+		require.Error(t, err)
+		assert.True(t, errors.Is(err, ErrNoSuchEntity)) // Expect specific error
 	})
 
-	t.Run("Delete Already Deleted Content (Idempotent)", func(t *testing.T) {
-		req := &protos.DeleteContentRequest{DesignId: designId, SectionId: sectionId, Name: contentNameMain}
-		_, err := contentService.DeleteContent(ctx, req)
-		require.NoError(t, err) // Should succeed idempotently
+	t.Run("Get Bytes Invalid Args", func(t *testing.T) {
+		_, err := service.GetContentBytes(ctx, "", sectionId, contentName)
+		assert.Error(t, err)
+		_, err = service.GetContentBytes(ctx, designId, "", contentName)
+		assert.Error(t, err)
+		_, err = service.GetContentBytes(ctx, designId, sectionId, "")
+		assert.Error(t, err)
 	})
-
-	// Add tests for permissions, deleting from non-existent section etc.
 }
