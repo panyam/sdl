@@ -1,7 +1,5 @@
 package sdl
 
-import "sort"
-
 // An index on a disk
 type Index struct {
 	// How many entries are already in this heapfile
@@ -39,17 +37,4 @@ func (i *Index) Init() {
 }
 
 // func (i *Index) ReadNPages(numPages, numRecordsToProcess int) *Outcomes[V] { return nil }
-
-func TrimToSize(lenTrigger, maxLen int) (out func(*Outcomes[AccessResult]) *Outcomes[AccessResult]) {
-	return func(group *Outcomes[AccessResult]) *Outcomes[AccessResult] {
-		if group.Len() > lenTrigger {
-			// Sort by Latency ONLY - Doesn't group Success/Failure first!
-			sort.Slice(group.Buckets, func(i, j int) bool {
-				return group.Buckets[i].Value.Latency < group.Buckets[j].Value.Latency
-			})
-			group = MergeAdjacentAccessResults(group, 0.8)
-			group = ReduceAccessResults(group, maxLen)
-		}
-		return group
-	}
-}
+// Update TrimToSize to ensure sorting happens before MergeAdjacent

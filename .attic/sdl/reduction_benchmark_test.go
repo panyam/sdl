@@ -196,6 +196,92 @@ func TestReductionAccuracy_AccessResult(t *testing.T) {
 	base.Add(3, AccessResult{false, Millis(5)})
 	base.Add(2, AccessResult{true, Millis(100)})
 	depth := 7
+	// Generate the full distribution WITHOUT any intermediate trimming
+	largeOutcomes := createLargeAccessResultOutcomes(base, depth, 0, 0)
+	t.Logf("Setup complete. Outcome size: %d buckets", largeOutcomes.Len())
+
+	if largeOutcomes == nil || largeOutcomes.Len() == 0 {
+		t.Skip("Skipping accuracy test as generated outcomes are empty.")
+		return
+	}
+
+	// --- Calculate Original Metrics ---
+	origAvail := Availability(largeOutcomes)
+	origMean := MeanLatency(largeOutcomes)
+	origP50 := PercentileLatency(largeOutcomes, 0.50)
+	origP99 := PercentileLatency(largeOutcomes, 0.99)
+	t.Logf("Original Metrics: Avail=%.4f, Mean=%.6fs, P50=%.6fs, P99=%.6fs", origAvail, origMean, origP50, origP99)
+
+	// --- Apply Reductions ---
+	targetBuckets := 10 // This is the final maxLen for TrimToSize
+
+	// 1. Test MergeAdjacent only (use 5% threshold)
+	// Need a copy because sorting modifies the slice underlying the buckets
+	largeOutcomesCopy1 := largeOutcomes.Copy()
+	sort.SliceStable(largeOutcomesCopy1.Buckets, func(i, j int) bool {
+		bi, bj := largeOutcomesCopy1.Buckets[i].Value, largeOutcomesCopy1.Buckets[j].Value
+		if bi.Success != bj.Success {
+			return !bi.Success
+		}
+		return bi.Latency < bj.Latency
+	})
+	reducedMerged := MergeAdjacentAccessResults(largeOutcomesCopy1, 0.05)
+
+	// 2. Test TrimToSize (Merge 5% + Interpolate to targetBuckets)
+	lenTrigger := 100                         // Trigger merge if > 100
+	maxLen := targetBuckets                   // Interpolate down to this count if needed
+	trimmer := TrimToSize(lenTrigger, maxLen) // This now uses Interpolate internally
+
+	// Need a fresh copy for TrimToSize as it modifies input via sort
+	largeOutcomesCopy2 := largeOutcomes.Copy()
+	// TrimToSize operates on success/failure groups separately
+	successes, failures := largeOutcomesCopy2.Split(AccessResult.IsSuccess)
+	trimmedSuccesses := trimmer(successes) // trimmer sorts, merges, interpolates
+	trimmedFailures := trimmer(failures)   // trimmer sorts, merges, interpolates
+	reducedTrimmed := (&Outcomes[AccessResult]{}).Append(trimmedSuccesses, trimmedFailures)
+
+	// --- Calculate Reduced Metrics ---
+	t.Logf("--- Accuracy Results ---")
+
+	if reducedMerged != nil {
+		mergedAvail := Availability(reducedMerged)
+		mergedMean := MeanLatency(reducedMerged)
+		mergedP50 := PercentileLatency(reducedMerged, 0.50)
+		mergedP99 := PercentileLatency(reducedMerged, 0.99)
+		t.Logf("Merged Adjacent (5%% thresh) (%d buckets): Avail=%.4f (%.2f%%), Mean=%.6fs (%.2f%%), P50=%.6fs (%.2f%%), P99=%.6fs (%.2f%%)",
+			reducedMerged.Len(),
+			mergedAvail, percentDiff(origAvail, mergedAvail),
+			mergedMean, percentDiff(origMean, mergedMean),
+			mergedP50, percentDiff(origP50, mergedP50),
+			mergedP99, percentDiff(origP99, mergedP99))
+	} else {
+		t.Logf("Merged Adjacent: Result was nil")
+	}
+
+	if reducedTrimmed != nil {
+		trimAvail := Availability(reducedTrimmed)
+		trimMean := MeanLatency(reducedTrimmed)
+		trimP50 := PercentileLatency(reducedTrimmed, 0.50)
+		trimP99 := PercentileLatency(reducedTrimmed, 0.99)
+		t.Logf("TrimToSize (Merge 5%% + Interpolate) (%d buckets): Avail=%.4f (%.2f%%), Mean=%.6fs (%.2f%%), P50=%.6fs (%.2f%%), P99=%.6fs (%.2f%%)",
+			reducedTrimmed.Len(),
+			trimAvail, percentDiff(origAvail, trimAvail),
+			trimMean, percentDiff(origMean, trimMean),
+			trimP50, percentDiff(origP50, trimP50),
+			trimP99, percentDiff(origP99, trimP99))
+	} else {
+		t.Logf("TrimToSize: Result was nil")
+	}
+}
+
+func TestReductionAccuracy_AccessResult_Old(t *testing.T) {
+	t.Logf("Setting up large AccessResult outcomes for accuracy check...")
+	base := &Outcomes[AccessResult]{}
+	base.Add(80, AccessResult{true, Millis(1)})
+	base.Add(15, AccessResult{true, Millis(10)})
+	base.Add(3, AccessResult{false, Millis(5)})
+	base.Add(2, AccessResult{true, Millis(100)})
+	depth := 7
 	largeOutcomes := createLargeAccessResultOutcomes(base, depth, 0, 0)
 	t.Logf("Setup complete. Outcome size: %d buckets", largeOutcomes.Len())
 
@@ -213,8 +299,11 @@ func TestReductionAccuracy_AccessResult(t *testing.T) {
 
 	// --- Apply Reductions ---
 	targetBuckets := 10
-	reducedAdaptive := ReduceAccessResults(largeOutcomes, targetBuckets)
 
+	// 1. Test direct AdaptiveReduce (which now uses WeightBased significance internally)
+	reducedAdaptive := ReduceAccessResultsPercentileAnchor(largeOutcomes, targetBuckets)
+
+	// 2. Test MergeAdjacent (use 5% threshold)
 	// Need to sort for MergeAdjacent
 	sort.SliceStable(largeOutcomes.Buckets, func(i, j int) bool {
 		bi, bj := largeOutcomes.Buckets[i].Value, largeOutcomes.Buckets[j].Value
@@ -223,11 +312,20 @@ func TestReductionAccuracy_AccessResult(t *testing.T) {
 		}
 		return bi.Latency < bj.Latency
 	})
-	reducedMerged := MergeAdjacentAccessResults(largeOutcomes, 0.8)
-	// Typically Merge is followed by AdaptiveReduce for size control
-	reducedMergedThenAdaptive := ReduceAccessResults(reducedMerged, targetBuckets)
+	reducedMerged := MergeAdjacentAccessResults(largeOutcomes, 0.05) // Test with 5% threshold
+
+	// 3. Test TrimToSize (which internally uses Merge w/ 5% and Adaptive w/ WeightBased)
+	lenTrigger := 100 // Same trigger
+	maxLen := 10      // Same max length
+	trimmer := TrimToSize(lenTrigger, maxLen)
+	// Need to split -> trim -> append because TrimToSize works on success/failure groups
+	successes, failures := largeOutcomes.Split(AccessResult.IsSuccess) // Use original large set
+	trimmedSuccesses := trimmer(successes)
+	trimmedFailures := trimmer(failures)
+	reducedTrimmed := trimmedSuccesses.Append(trimmedFailures) // Renamed from 'final'
 
 	// --- Calculate Reduced Metrics ---
+	t.Logf("--- Using WeightBased Significance for Adaptive ---")
 	if reducedAdaptive != nil {
 		adapAvail := Availability(reducedAdaptive)
 		adapMean := MeanLatency(reducedAdaptive)
@@ -239,6 +337,8 @@ func TestReductionAccuracy_AccessResult(t *testing.T) {
 			adapMean, percentDiff(origMean, adapMean),
 			adapP50, percentDiff(origP50, adapP50),
 			adapP99, percentDiff(origP99, adapP99))
+	} else {
+		t.Logf("Adaptive Reduced: Result was nil")
 	}
 
 	if reducedMerged != nil {
@@ -246,25 +346,29 @@ func TestReductionAccuracy_AccessResult(t *testing.T) {
 		mergedMean := MeanLatency(reducedMerged)
 		mergedP50 := PercentileLatency(reducedMerged, 0.50)
 		mergedP99 := PercentileLatency(reducedMerged, 0.99)
-		t.Logf("Merged Adjacent (%d buckets): Avail=%.4f (%.2f%%), Mean=%.6fs (%.2f%%), P50=%.6fs (%.2f%%), P99=%.6fs (%.2f%%)",
+		t.Logf("Merged Adjacent (5%% thresh) (%d buckets): Avail=%.4f (%.2f%%), Mean=%.6fs (%.2f%%), P50=%.6fs (%.2f%%), P99=%.6fs (%.2f%%)",
 			reducedMerged.Len(),
 			mergedAvail, percentDiff(origAvail, mergedAvail),
 			mergedMean, percentDiff(origMean, mergedMean),
 			mergedP50, percentDiff(origP50, mergedP50),
 			mergedP99, percentDiff(origP99, mergedP99))
+	} else {
+		t.Logf("Merged Adjacent: Result was nil")
 	}
 
-	if reducedMergedThenAdaptive != nil {
-		combAvail := Availability(reducedMergedThenAdaptive)
-		combMean := MeanLatency(reducedMergedThenAdaptive)
-		combP50 := PercentileLatency(reducedMergedThenAdaptive, 0.50)
-		combP99 := PercentileLatency(reducedMergedThenAdaptive, 0.99)
-		t.Logf("Merged+Adaptive (%d buckets): Avail=%.4f (%.2f%%), Mean=%.6fs (%.2f%%), P50=%.6fs (%.2f%%), P99=%.6fs (%.2f%%)",
-			reducedMergedThenAdaptive.Len(),
-			combAvail, percentDiff(origAvail, combAvail),
-			combMean, percentDiff(origMean, combMean),
-			combP50, percentDiff(origP50, combP50),
-			combP99, percentDiff(origP99, combP99))
+	if reducedTrimmed != nil {
+		trimAvail := Availability(reducedTrimmed)
+		trimMean := MeanLatency(reducedTrimmed)
+		trimP50 := PercentileLatency(reducedTrimmed, 0.50)
+		trimP99 := PercentileLatency(reducedTrimmed, 0.99)
+		t.Logf("TrimToSize (Merge 5%% + Adaptive WB) (%d buckets): Avail=%.4f (%.2f%%), Mean=%.6fs (%.2f%%), P50=%.6fs (%.2f%%), P99=%.6fs (%.2f%%)",
+			reducedTrimmed.Len(),
+			trimAvail, percentDiff(origAvail, trimAvail),
+			trimMean, percentDiff(origMean, trimMean),
+			trimP50, percentDiff(origP50, trimP50),
+			trimP99, percentDiff(origP99, trimP99))
+	} else {
+		t.Logf("TrimToSize: Result was nil")
 	}
 }
 
@@ -274,7 +378,18 @@ func percentDiff(original, current float64) float64 {
 		if current == 0 {
 			return 0.0
 		}
-		return math.Inf(1) // Or NaN? Indicate undefined change from zero
+		// Use a large number to indicate significant change from zero, avoid NaN/Inf if possible
+		if math.Abs(current) > 1e-12 {
+			return 999999.9
+		}
+		return 0.0
+	}
+	// Avoid division by very small original value leading to huge percentages for tiny changes
+	if math.Abs(original) < 1e-12 {
+		if math.Abs(current) < 1e-12 {
+			return 0.0
+		}
+		return 999999.9
 	}
 	return math.Abs((current-original)/original) * 100.0
 }
