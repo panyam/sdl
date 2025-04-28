@@ -5,9 +5,9 @@ import (
 	// Ensure metrics helpers are accessible
 )
 
-func TestQueue_Init_Stable(t *testing.T) {
+func TestMM1Queue_Init_Stable(t *testing.T) {
 	// lambda < mu (arrival rate < service rate)
-	q := NewQueue("StableQ", 9.0, 0.1) // 9 items/sec arrive, 0.1 sec/item service (mu=10)
+	q := NewMM1Queue("StableQ", 9.0, 0.1) // 9 items/sec arrive, 0.1 sec/item service (mu=10)
 	if !q.isStable {
 		t.Error("Queue should be stable (rho < 1)")
 	}
@@ -16,9 +16,9 @@ func TestQueue_Init_Stable(t *testing.T) {
 	}
 }
 
-func TestQueue_Init_Unstable(t *testing.T) {
+func TestMM1Queue_Init_Unstable(t *testing.T) {
 	// lambda = mu
-	qEq := NewQueue("UnstableQ1", 10.0, 0.1) // lambda=10, mu=10
+	qEq := NewMM1Queue("UnstableQ1", 10.0, 0.1) // lambda=10, mu=10
 	if qEq.isStable {
 		t.Error("Queue should be unstable (rho = 1)")
 	}
@@ -27,7 +27,7 @@ func TestQueue_Init_Unstable(t *testing.T) {
 	}
 
 	// lambda > mu
-	qGt := NewQueue("UnstableQ2", 11.0, 0.1) // lambda=11, mu=10
+	qGt := NewMM1Queue("UnstableQ2", 11.0, 0.1) // lambda=11, mu=10
 	if qGt.isStable {
 		t.Error("Queue should be unstable (rho > 1)")
 	}
@@ -36,8 +36,8 @@ func TestQueue_Init_Unstable(t *testing.T) {
 	}
 }
 
-func TestQueue_Enqueue(t *testing.T) {
-	q := NewQueue("TestQ", 5, 0.1)
+func TestMM1Queue_Enqueue(t *testing.T) {
+	q := NewMM1Queue("TestQ", 5, 0.1)
 	outcomes := q.Enqueue()
 
 	if outcomes == nil || outcomes.Len() != 1 {
@@ -53,10 +53,10 @@ func TestQueue_Enqueue(t *testing.T) {
 	}
 }
 
-func TestQueue_Dequeue_Stable(t *testing.T) {
+func TestMM1Queue_Dequeue_Stable(t *testing.T) {
 	// lambda = 9, Ts = 0.1 => mu = 10, rho = 0.9
 	// Wq = Ts * rho / (1 - rho) = 0.1 * 0.9 / (1 - 0.9) = 0.09 / 0.1 = 0.9 seconds
-	q := NewQueue("StableQ", 9.0, 0.1)
+	q := NewMM1Queue("StableQ", 9.0, 0.1)
 	outcomes := q.Dequeue()
 
 	if outcomes == nil || outcomes.Len() == 0 {
@@ -95,8 +95,8 @@ func TestQueue_Dequeue_Stable(t *testing.T) {
 	}
 }
 
-func TestQueue_Dequeue_Unstable(t *testing.T) {
-	q := NewQueue("UnstableQ", 10.0, 0.1) // rho = 1.0
+func TestMM1Queue_Dequeue_Unstable(t *testing.T) {
+	q := NewMM1Queue("UnstableQ", 10.0, 0.1) // rho = 1.0
 	outcomes := q.Dequeue()
 
 	if outcomes == nil || outcomes.Len() != 1 {
@@ -112,8 +112,8 @@ func TestQueue_Dequeue_Unstable(t *testing.T) {
 	}
 }
 
-func TestQueue_Dequeue_LowUtilization(t *testing.T) {
-	q := NewQueue("LowUtilQ", 0.1, 0.1)               // rho = 0.01
+func TestMM1Queue_Dequeue_LowUtilization(t *testing.T) {
+	q := NewMM1Queue("LowUtilQ", 0.1, 0.1)            // rho = 0.01
 	if !(q.utilization < 1e-9 || q.utilization > 0) { // Make sure utilization is calculated correctly
 		t.Logf("Low Utilization is %.4f", q.utilization) // Log actual value if needed
 		// This utilization IS small but > 1e-9, so it WILL go through the bucketing logic.
@@ -150,7 +150,7 @@ func TestQueue_Dequeue_LowUtilization(t *testing.T) {
 	}
 
 	// Test the near-zero utilization case specifically
-	qZero := NewQueue("ZeroUtilQ", 1e-10, 0.1) // rho near zero
+	qZero := NewMM1Queue("ZeroUtilQ", 1e-10, 0.1) // rho near zero
 	outcomesZero := qZero.Dequeue()
 	if outcomesZero == nil || outcomesZero.Len() != 1 {
 		// This case SHOULD hit the optimization and return 1 bucket

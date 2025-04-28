@@ -7,7 +7,7 @@ import (
 )
 
 // Queue models a basic FIFO queuing system using analytical approximations (M/M/1).
-type Queue struct {
+type MM1Queue struct {
 	Name string
 
 	// --- Configuration ---
@@ -30,7 +30,7 @@ type Queue struct {
 
 // Init initializes the Queue component.
 // Requires average arrival rate (lambda, items/sec) and average service time (Ts, seconds/item).
-func (q *Queue) Init(name string, lambda float64, ts float64) *Queue {
+func (q *MM1Queue) Init(name string, lambda float64, ts float64) *MM1Queue {
 	q.Name = name
 
 	if lambda <= 0 {
@@ -57,16 +57,16 @@ func (q *Queue) Init(name string, lambda float64, ts float64) *Queue {
 	return q
 }
 
-// NewQueue creates and initializes a new Queue component.
-func NewQueue(name string, arrivalRate float64, avgServiceTime float64) *Queue {
-	q := &Queue{}
+// NewMM1Queue creates and initializes a new Queue component.
+func NewMM1Queue(name string, arrivalRate float64, avgServiceTime float64) *MM1Queue {
+	q := &MM1Queue{}
 	return q.Init(name, arrivalRate, avgServiceTime)
 }
 
 // Enqueue simulates adding an item to the queue.
 // For an unbounded M/M/1 queue, enqueue itself is typically modelled as near-instantaneous.
 // Failures could occur if the queue had a max length (TODO).
-func (q *Queue) Enqueue() *Outcomes[AccessResult] {
+func (q *MM1Queue) Enqueue() *Outcomes[AccessResult] {
 	// Simple model: Enqueue is fast and always succeeds (for unbounded queue)
 	outcomes := &Outcomes[AccessResult]{And: AndAccessResults}
 	// Small CPU cost for enqueue logic?
@@ -77,7 +77,7 @@ func (q *Queue) Enqueue() *Outcomes[AccessResult] {
 
 // Dequeue simulates removing an item from the queue and returns the *waiting time* spent in the queue.
 // Uses M/M/1 analytical approximation.
-func (q *Queue) Dequeue() *Outcomes[Duration] {
+func (q *MM1Queue) Dequeue() *Outcomes[Duration] {
 	outcomes := &Outcomes[Duration]{
 		And: func(a, b Duration) Duration { return a + b }, // Duration outcomes sum up
 	}
