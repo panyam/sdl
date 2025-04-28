@@ -30,9 +30,11 @@ func AndRangedResults(a RangedResult, b RangedResult) RangedResult {
 	}
 }
 
-func (r RangedResult) IsSuccess() bool {
-	return r.Success
-}
+// Ensure RangedResult implements Metricable (using ModeLatency for point estimate)
+// Note: This is an approximation for RangedResult. More sophisticated
+// range-based metrics could be added later.
+func (r RangedResult) IsSuccess() bool       { return r.Success }
+func (rr RangedResult) GetLatency() Duration { return rr.ModeLatency }
 
 func (r *RangedResult) Range() float64 {
 	return float64(r.MaxLatency - r.MinLatency)

@@ -14,9 +14,9 @@ func AndAccessResults(a AccessResult, b AccessResult) AccessResult {
 	return AccessResult{a.Success && b.Success, a.Latency + b.Latency}
 }
 
-func (a AccessResult) IsSuccess() bool {
-	return a.Success
-}
+// Ensure AccessResult implements Metricable
+func (a AccessResult) IsSuccess() bool       { return a.Success }
+func (ar AccessResult) GetLatency() Duration { return ar.Latency }
 
 func (a AccessResult) AddLatency(latency Duration) AccessResult {
 	return AccessResult{a.Success, a.Latency + latency}
