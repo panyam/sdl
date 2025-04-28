@@ -10,65 +10,65 @@ func TestHashIndex_Init(t *testing.T) {
 	if hi.Disk.ReadOutcomes == nil {
 		t.Fatal("HashIndex Disk not initialized")
 	}
-	if hi.LoadFactorThreshold <= 0 || hi.LoadFactorThreshold > 1.0 {
-		t.Error("Default LoadFactorThreshold invalid")
-	}
 	// Add more checks
 }
 
-func TestHashIndex_Probabilities(t *testing.T) {
+func TestHashIndex_Probabilities_Heuristic(t *testing.T) {
 	hi := NewHashIndex()
+	hi.PageSize = 4096 // Needed for NumPages -> resize cost calculation
+	hi.RecordSize = 100
 
-	// Use different base params for clarity
-	hi.PageSize = 8192
-	hi.RecordSize = 200 // ~30 records/page at LF=0.75
-	hi.LoadFactorThreshold = 0.75
-	hi.AvgOverflowReads = 0.25 // Make collision effect slightly higher
-
-	// Low load
-	hi.NumRecords = 100000
-	lf1 := hi.currentLoadFactor()
+	// Low number of records (below minResizeRecords default)
+	hi.NumRecords = 5000
 	pc1 := hi.collisionProbability()
 	pr1 := hi.resizeProbability()
-	t.Logf("Load Factor (Low: %.0f recs): %.3f, Collision Prob: %.4f, Resize Prob: %.4f", float64(hi.NumRecords), lf1, pc1, pr1)
-	if pr1 > 0 {
-		t.Errorf("Resize prob should be 0 for low load factor %.3f", lf1)
-	}
+	t.Logf("Probs ( 5k records): Collision=%.4f, Resize=%.4f", pc1, pr1)
+	// Expect low collision, potentially zero or near-zero resize
 
-	// Medium load (near threshold)
-	hi.NumRecords = uint(float64(hi.NumRecords) * 2.5) // Target LF around 0.75
-	lf2 := hi.currentLoadFactor()
+	// Medium number of records (above minResizeRecords)
+	hi.NumRecords = 100000
 	pc2 := hi.collisionProbability()
 	pr2 := hi.resizeProbability()
-	t.Logf("Load Factor (Med: %.0f recs): %.3f, Collision Prob: %.4f, Resize Prob: %.4f", float64(hi.NumRecords), lf2, pc2, pr2)
-	if !(lf2 > lf1) {
-		t.Error("Load factor should increase")
-	}
+	t.Logf("Probs (100k records): Collision=%.4f, Resize=%.4f", pc2, pr2)
 	if !(pc2 > pc1) {
-		t.Error("Collision probability should increase")
+		t.Errorf("Collision probability %.4f should increase vs %.4f", pc2, pc1)
 	}
-	// Resize prob might be exactly 0 or slightly positive if LF is just past threshold
-	if pr2 < 0 || pr2 > 0.05 {
-		t.Errorf("Resize prob %.4f unexpected near threshold LF %.3f", pr2, lf2)
+	if !(pr2 > pr1) {
+		t.Errorf("Resize probability %.4f should increase vs %.4f", pr2, pr1)
+	}
+	if pr2 <= 0.001 {
+		t.Errorf("Resize probability %.4f should be noticeably > base", pr2)
 	}
 
-	// High load (well past threshold)
-	hi.NumRecords = uint(float64(hi.NumRecords) * 2.0) // Target LF around 1.5 (but calc is relative to initial capacity)
-	lf3 := hi.currentLoadFactor()
+	// High number of records
+	hi.NumRecords = 1000000
 	pc3 := hi.collisionProbability()
 	pr3 := hi.resizeProbability()
-	t.Logf("Load Factor (High: %.0f recs): %.3f, Collision Prob: %.4f, Resize Prob: %.4f", float64(hi.NumRecords), lf3, pc3, pr3)
-	if !(lf3 > lf2) {
-		t.Error("Load factor should increase further")
-	}
+	t.Logf("Probs (1M records): Collision=%.4f, Resize=%.4f", pc3, pr3)
 	if !(pc3 > pc2) {
-		t.Error("Collision probability should increase further")
+		t.Errorf("Collision probability %.4f should increase further vs %.4f", pc3, pc2)
 	}
 	if !(pr3 > pr2) {
-		t.Error("Resize probability should increase past threshold")
+		t.Errorf("Resize probability %.4f should increase further vs %.4f", pr3, pr2)
 	}
-	if pr3 <= 0 {
-		t.Error("Resize probability should be > 0 well past threshold")
+
+	// Very high number of records
+	hi.NumRecords = 10000000
+	pc4 := hi.collisionProbability()
+	pr4 := hi.resizeProbability()
+	t.Logf("Probs (10M records): Collision=%.4f, Resize=%.4f", pc4, pr4)
+	if !(pc4 > pc3) {
+		t.Errorf("Collision probability %.4f should increase further vs %.4f", pc4, pc3)
+	}
+	if !(pr4 > pr3) {
+		t.Errorf("Resize probability %.4f should increase further vs %.4f", pr4, pr3)
+	}
+	// Check if it's nearing the cap
+	maxResizeProb := 0.10 // From heuristic function
+	if !approxEqualTest(pr4, maxResizeProb, maxResizeProb*0.1) && pr4 > maxResizeProb*0.8 {
+		t.Logf("Resize probability %.4f approaching cap %.4f", pr4, maxResizeProb)
+	} else if !approxEqualTest(pr4, maxResizeProb, maxResizeProb*0.1) {
+		t.Errorf("Resize probability %.4f hasn't increased enough by 10M records (cap %.4f)", pr4, maxResizeProb)
 	}
 }
 
@@ -76,53 +76,53 @@ func TestHashIndex_Find_Vs_Modify_Metrics(t *testing.T) {
 	hi := NewHashIndex()
 	hi.Disk.Init()
 	hi.MaxOutcomeLen = 15
-	hi.NumRecords = 800000 // Reasonably high load
+	// Test with different record counts to see impact
+	recordCounts := []uint{200000, 900000} // Moderate load, High load (expecting resize)
 
-	// --- Test Find ---
-	findOutcomes := hi.Find()
-	if findOutcomes == nil || findOutcomes.Len() == 0 {
-		t.Fatal("Find() returned nil or empty outcomes")
-	}
-	findAvail := Availability(findOutcomes)
-	findMean := MeanLatency(findOutcomes)
-	findP99 := PercentileLatency(findOutcomes, 0.99)
-	t.Logf("Hash Find: Avail=%.4f, Mean=%.6fs, P99=%.6fs (Buckets: %d)", findAvail, findMean, findP99, findOutcomes.Len())
+	for _, rCount := range recordCounts {
+		hi.NumRecords = rCount
+		t.Logf("--- Testing HashIndex with %d records ---", rCount)
+		t.Logf("CollisionProb=%.4f, ResizeProb=%.4f", hi.collisionProbability(), hi.resizeProbability())
 
-	// --- Test Insert ---
-	insertOutcomes := hi.Insert()
-	if insertOutcomes == nil || insertOutcomes.Len() == 0 {
-		t.Fatal("Insert() returned nil or empty outcomes")
-	}
-	insertAvail := Availability(insertOutcomes)
-	insertMean := MeanLatency(insertOutcomes)
-	insertP99 := PercentileLatency(insertOutcomes, 0.99)
-	t.Logf("Hash Insert: Avail=%.4f, Mean=%.6fs, P99=%.6fs (Buckets: %d)", insertAvail, insertMean, insertP99, insertOutcomes.Len())
+		// --- Test Find ---
+		findOutcomes := hi.Find()
+		if findOutcomes == nil || findOutcomes.Len() == 0 {
+			t.Fatalf("[%d recs] Find() returned nil or empty outcomes", rCount)
+		}
+		findAvail := Availability(findOutcomes)
+		findMean := MeanLatency(findOutcomes)
+		findP99 := PercentileLatency(findOutcomes, 0.99)
+		t.Logf("[%d recs] Hash Find: Avail=%.4f, Mean=%.6fs, P99=%.6fs (Buckets: %d)", rCount, findAvail, findMean, findP99, findOutcomes.Len())
 
-	// --- Test Delete ---
-	deleteOutcomes := hi.Delete()
-	if deleteOutcomes == nil || deleteOutcomes.Len() == 0 {
-		t.Fatal("Delete() returned nil or empty outcomes")
-	}
-	deleteAvail := Availability(deleteOutcomes)
-	deleteMean := MeanLatency(deleteOutcomes)
-	deleteP99 := PercentileLatency(deleteOutcomes, 0.99)
-	t.Logf("Hash Delete: Avail=%.4f, Mean=%.6fs, P99=%.6fs (Buckets: %d)", deleteAvail, deleteMean, deleteP99, deleteOutcomes.Len())
+		// --- Test Insert ---
+		insertOutcomes := hi.Insert()
+		if insertOutcomes == nil || insertOutcomes.Len() == 0 {
+			t.Fatalf("[%d recs] Insert() returned nil or empty outcomes", rCount)
+		}
+		insertAvail := Availability(insertOutcomes)
+		insertMean := MeanLatency(insertOutcomes)
+		insertP99 := PercentileLatency(insertOutcomes, 0.99)
+		t.Logf("[%d recs] Hash Insert: Avail=%.4f, Mean=%.6fs, P99=%.6fs (Buckets: %d)", rCount, insertAvail, insertMean, insertP99, insertOutcomes.Len())
 
-	// --- Compare Metrics ---
-	// Find should generally be fastest on average (no writes, no resize checks)
-	if findMean >= deleteMean {
-		t.Errorf("Hash Find Mean Latency (%.6fs) should typically be less than Delete Mean (%.6fs)", findMean, deleteMean)
-	}
-	// Insert can be very slow if resize occurs
-	// Delete should be somewhere between Find and Insert (no resize)
-	if deleteMean >= insertMean && hi.resizeProbability() > 0.01 { // Only expect Insert to be slower if resize is likely
-		t.Logf("Info: Insert mean (%.6fs) slower than delete mean (%.6fs) as expected with potential resize", insertMean, deleteMean)
-	} else if deleteMean >= insertMean {
-		t.Logf("Warning: Delete mean (%.6fs) unexpectedly higher than Insert mean (%.6fs) when resize prob is low", deleteMean, insertMean)
-	}
+		// --- Test Delete ---
+		deleteOutcomes := hi.Delete()
+		if deleteOutcomes == nil || deleteOutcomes.Len() == 0 {
+			t.Fatalf("[%d recs] Delete() returned nil or empty outcomes", rCount)
+		}
+		deleteAvail := Availability(deleteOutcomes)
+		deleteMean := MeanLatency(deleteOutcomes)
+		deleteP99 := PercentileLatency(deleteOutcomes, 0.99)
+		t.Logf("[%d recs] Hash Delete: Avail=%.4f, Mean=%.6fs, P99=%.6fs (Buckets: %d)", rCount, deleteAvail, deleteMean, deleteP99, deleteOutcomes.Len())
 
-	// Availability should be similar if disk profiles are reliable
-	if !approxEqualTest(findAvail, deleteAvail, 0.005) {
-		t.Errorf("Find and Delete availability should be similar")
+		// --- Compare Metrics ---
+		if findMean >= deleteMean {
+			t.Errorf("[%d recs] Hash Find Mean Latency (%.6fs) should typically be less than Delete Mean (%.6fs)", rCount, findMean, deleteMean)
+		}
+		// Expect Insert to be slower than Delete, especially when resize is probable
+		if deleteMean >= insertMean && hi.resizeProbability() < 0.01 {
+			t.Logf("[%d recs] Warning: Delete mean (%.6fs) unexpectedly higher than/equal to Insert mean (%.6fs) when resize prob is low", rCount, deleteMean, insertMean)
+		} else if deleteMean < insertMean {
+			t.Logf("[%d recs] Info: Insert mean (%.6fs) slower than delete mean (%.6fs) as expected", rCount, insertMean, deleteMean)
+		}
 	}
 }

@@ -2,8 +2,6 @@ package sdl
 
 import (
 	"math"
-	"math/rand"
-	"time"
 )
 
 // HashIndex represents a hash-based index structure (e.g., static, extendible, linear)
@@ -11,12 +9,12 @@ type HashIndex struct {
 	Index // Embed base Index
 
 	// Hash Specific Parameters
-	LoadFactorThreshold float64 // Load factor above which resizes become likely
-	AvgOverflowReads    float64 // Average extra reads on collision/overflow
-	ResizeCostFactor    float64 // Multiplier for disk R/W during a resize operation
+	// LoadFactorThreshold float64 // Load factor above which resizes become likely
+	AvgOverflowReads float64 // Average extra reads on collision/overflow
+	ResizeCostFactor float64 // Multiplier for disk R/W during a resize operation
 
 	// Internal state / derived values
-	rng *rand.Rand
+	// rng *rand.Rand
 	// numBuckets uint // Could explicitly track number of buckets if needed
 }
 
@@ -29,11 +27,33 @@ func NewHashIndex() *HashIndex {
 // Init initializes the HashIndex with defaults.
 func (h *HashIndex) Init() *HashIndex {
 	h.Index.Init()
-	h.LoadFactorThreshold = 0.75 // Typical threshold for resizing
-	h.AvgOverflowReads = 0.2     // Default: 20% chance of needing 1 extra read on avg
-	h.ResizeCostFactor = 1.5     // Default: Resize costs 1.5x a full scan/write
-	h.rng = rand.New(rand.NewSource(time.Now().UnixNano()))
+	// h.LoadFactorThreshold = 0.75 // Typical threshold for resizing
+	h.AvgOverflowReads = 0.2 // Default: 20% chance of needing 1 extra read on avg
+	h.ResizeCostFactor = 1.5 // Default: Resize costs 1.5x a full scan/write
+	// h.rng = rand.New(rand.NewSource(time.Now().UnixNano()))
 	return h
+}
+
+// Probability of collision needing overflow access
+func (h *HashIndex) collisionProbability() float64 {
+	// Heuristic: Increases slowly with log of NumRecords.
+	// Adjust constants based on desired sensitivity.
+	if h.NumRecords == 0 {
+		return 0
+	}
+	logRecords := math.Log10(float64(h.NumRecords)) // Base 10 log
+	// Example scaling: Starts low, reaches ~20% around 1M records?
+	// prob = (logRecords / 6.0) * h.AvgOverflowReads
+	// Let's make it increase faster initially
+	prob := (logRecords / 7.0) * (logRecords / 7.0) * h.AvgOverflowReads // Quadratic scaling with log(N)
+
+	if prob > 1.0 {
+		prob = 1.0
+	}
+	if prob < 0 {
+		prob = 0
+	}
+	return prob
 }
 
 // Calculates current approximate load factor
@@ -78,40 +98,36 @@ func (h *HashIndex) currentLoadFactor() float64 {
 	return float64(h.NumRecords) / numSlotsEstimate
 }
 
-// Probability of collision needing overflow access
-func (h *HashIndex) collisionProbability() float64 {
-	// Heuristic: Increases as load factor approaches 1.0
-	loadFactor := h.currentLoadFactor()
-	// Simple quadratic scaling - adjust as needed
-	prob := math.Pow(loadFactor, 2) * h.AvgOverflowReads
-	if prob > 1.0 {
-		prob = 1.0
+// Probability of needing a resize on insert
+func (h *HashIndex) resizeProbability() float64 {
+	// Heuristic: Negligible chance for small N, then increases slowly with log(N),
+	// representing the *chance* that an insert pushes it over a threshold.
+	minResizeRecords := 10000.0 // Don't consider resize below this many records
+
+	if float64(h.NumRecords) < minResizeRecords {
+		return 0.0001 // Very small base chance even for small tables? Or 0?
 	}
+
+	// Scale probability based on log10 of records *beyond* the minimum
+	logScale := math.Log10(float64(h.NumRecords) / minResizeRecords) // How many orders of magnitude bigger are we?
+
+	// Example scaling: Max probability of ~10% resize chance for a given insert?
+	// Let's say prob reaches 10% when logScale = 3 (1000x min = 10M records)
+	maxProb := 0.10
+	scaleFactor := 3.0
+	prob := (logScale / scaleFactor) * maxProb
+
+	// Add a small base probability
+	prob += 0.001
+
+	if prob > maxProb {
+		prob = maxProb
+	} // Cap the max probability
 	if prob < 0 {
 		prob = 0
 	}
-	return prob
-}
 
-// Probability of needing a resize on insert
-func (h *HashIndex) resizeProbability() float64 {
-	loadFactor := h.currentLoadFactor()
-	if loadFactor > h.LoadFactorThreshold {
-		// Probability increases sharply after threshold
-		// Simple linear increase from 0% at threshold to 100% at 1.0 load factor?
-		if h.LoadFactorThreshold >= 1.0 {
-			return 0
-		} // Avoid division by zero
-		prob := (loadFactor - h.LoadFactorThreshold) / (1.0 - h.LoadFactorThreshold)
-		if prob > 1.0 {
-			prob = 1.0
-		}
-		if prob < 0 {
-			prob = 0
-		}
-		return prob * 0.1 // Make resize less frequent (e.g., 10% chance even if LF=1.0)
-	}
-	return 0.0
+	return prob
 }
 
 // --- Refined Find ---
@@ -179,52 +195,15 @@ func (h *HashIndex) Find() *Outcomes[AccessResult] {
 // --- Refined Insert ---
 // Insert adds a new key to the hash index.
 func (h *HashIndex) Insert() *Outcomes[AccessResult] {
-	// 1. Find cost (Hash CPU + Read Primary + Prob Overflow Read)
-	// Note: Find already includes reduction. Let's calculate base cost without reduction first.
-	// Calculate Hash + Read Primary only first
-	hashCpuCost := Map(&h.RecordProcessingTime, func(p Duration) AccessResult { return AccessResult{true, p * 0.5} })
-	readPrimaryCost := h.Disk.Read()
-	findBaseCost := And(hashCpuCost, readPrimaryCost, AndAccessResults)
+	// ... (Calculate findTotalReadCost as before using collisionProbability) ...
+	findTotalReadCost := h.Find() // Or recalculate parts if needed
 
-	// Add cost of reading overflow pages probabilistically (if collision)
-	pCollision := h.collisionProbability()
-	overflowReadCostBase := h.Disk.Read()
-	overflowReadCost := Map(overflowReadCostBase, func(ar AccessResult) AccessResult {
-		if ar.Success {
-			ar.Latency *= h.AvgOverflowReads
-		} else {
-			ar.Latency = 0
-		}
-		return ar
-	})
-	// Combine base read + potential overflow read cost
-	findTotalReadCost := &Outcomes[AccessResult]{And: findBaseCost.And}
-	for _, bucket := range findBaseCost.Buckets {
-		noOverflowProb := bucket.Weight * (1.0 - pCollision)
-		if noOverflowProb > 1e-9 {
-			findTotalReadCost.Add(noOverflowProb, bucket.Value)
-		}
-		overflowProbBase := bucket.Weight * pCollision
-		if overflowProbBase > 1e-9 {
-			combinedOverflow := And((&Outcomes[AccessResult]{}).Add(1.0, bucket.Value), overflowReadCost, AndAccessResults)
-			for _, ovfBucket := range combinedOverflow.Buckets {
-				findTotalReadCost.Add(overflowProbBase*ovfBucket.Weight, ovfBucket.Value)
-			}
-		}
-	}
-
-	// 2. Modify page/slot (CPU cost)
-	modifyCpuCost := Map(&h.RecordProcessingTime, func(p Duration) AccessResult {
-		return AccessResult{true, p}
-	})
-
-	// 3. Write data to the page (Primary or Overflow)
-	// Assume 1 write covers the necessary update.
+	// ... (ModifyCPU and WriteCost as before) ...
+	modifyCpuCost := Map(&h.RecordProcessingTime, func(p Duration) AccessResult { return AccessResult{true, p} })
 	writeCost := h.Disk.Write()
 
-	// 4. Cost of potential resize operation
-	pResize := h.resizeProbability()
-	// Simplified resize cost: NumPages * Factor * (Read+Write) - very expensive
+	// --- Cost of potential resize operation ---
+	pResize := h.resizeProbability() // Uses the new heuristic
 	numPages := float64(h.NumPages())
 	if numPages == 0 {
 		numPages = 1
@@ -235,27 +214,23 @@ func (h *HashIndex) Insert() *Outcomes[AccessResult] {
 			ar.Latency *= numPages * h.ResizeCostFactor
 		} else {
 			ar.Latency = 0
-		} // Assume resize failure is catastrophic but quick? Or part of main path failure?
+		}
 		return ar
 	})
 
 	// --- Combine ---
-	// Cost without resize: FindRead -> ModifyCPU -> WriteData
 	costPath1 := And(findTotalReadCost, modifyCpuCost, AndAccessResults)
 	costPath1 = And(costPath1, writeCost, AndAccessResults)
 
-	// Add resize cost probabilistically
+	// Add resize cost probabilistically (logic remains the same)
 	finalCost := &Outcomes[AccessResult]{And: costPath1.And}
 	for _, bucket := range costPath1.Buckets {
-		// Path without resize
 		noResizeProb := bucket.Weight * (1.0 - pResize)
 		if noResizeProb > 1e-9 {
 			finalCost.Add(noResizeProb, bucket.Value)
 		}
-		// Path with resize
 		resizeProbBase := bucket.Weight * pResize
 		if resizeProbBase > 1e-9 {
-			// Combine non-resize path outcome with resize cost outcome
 			combinedResize := And((&Outcomes[AccessResult]{}).Add(1.0, bucket.Value), resizeCost, AndAccessResults)
 			for _, resizeBucket := range combinedResize.Buckets {
 				finalCost.Add(resizeProbBase*resizeBucket.Weight, resizeBucket.Value)
@@ -263,7 +238,7 @@ func (h *HashIndex) Insert() *Outcomes[AccessResult] {
 		}
 	}
 
-	// Apply Reduction
+	// --- Reduction --- (Remains the same)
 	successes, failures := finalCost.Split(AccessResult.IsSuccess)
 	maxLen := h.MaxOutcomeLen
 	if maxLen <= 0 {
