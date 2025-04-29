@@ -12,16 +12,18 @@ import (
 	// For now, assume they are accessible (e.g., in the same package or imported).
 )
 
-// AcquireAttemptResult is no longer needed, Acquire returns sc.AccessResult directly
-/*
-type AcquireAttemptResult struct {
-	Success bool
-	Pool    *ResourcePool
-}
-*/
-
-// ResourcePool models a pool of limited, identical resources (e.g., connections, threads).
-// Uses M/M/c analytical model to estimate queueing delay when pool is full.
+// ResourcePool models a pool of limited, identical resources (e.g., connections, threads, GPUs).
+// It uses the M/M/c analytical queuing model to estimate the average steady-state
+// waiting time (Wq) when the pool is fully utilized, based on configured average
+// arrival and service rates.
+//
+// Limitations:
+//   - Analytical Model: Provides steady-state average queueing delay (Wq). It does not
+//     capture the variance or impact of bursty arrivals as a discrete-event simulation would.
+//     Best used for capacity planning and understanding average performance under sustained load.
+//   - State Handling: Acquire calculates Wq based on configured rates, not the instantaneous
+//     `Used` count. `Release` directly modifies state, creating a slight asymmetry.
+//   - Cold Starts: Does not model system warm-up or initially empty queues.
 type ResourcePool struct {
 	Name string // Optional identifier
 	Size uint   // Maximum number of concurrent users/holders (c)
@@ -29,9 +31,9 @@ type ResourcePool struct {
 
 	// --- Configuration for Queuing Model ---
 	// Assumed average arrival rate of requests needing this resource (items/sec)
-	ArrivalRate float64 // λ (lambda)
+	ArrivalRate float64 // λ (lambda) - Represents the rate at which requests arrive *at the pool*.
 	// Assumed average time a resource is held once acquired (service time, seconds/item)
-	AvgHoldTime float64 // Ts = 1/μ
+	AvgHoldTime float64 // Ts = 1/μ - Represents the average duration a resource is held.
 
 	// --- Derived M/M/c Values ---
 	serviceRate  float64 // μ (mu) = 1 / AvgHoldTime
@@ -110,9 +112,15 @@ func NewResourcePool(name string, size uint, arrivalRate float64, avgHoldTime fl
 
 // Acquire attempts to acquire one resource from the pool.
 // Returns Outcomes[sc.AccessResult]:
-// - Success=true, Latency=0: Acquired immediately.
-// - Success=true, Latency=WaitTimeDist: Acquired after queuing delay.
+// - Success=true, Latency=0: Acquired immediately (pool not fully utilized on average).
+// - Success=true, Latency=WaitTimeDist: Acquired after queuing delay (pool fully utilized on average).
 // - Success=false, Latency=0: Rejected (if modelled, not currently implemented).
+//
+// Note on Analytical Model:
+// The decision to queue and the calculated WaitTimeDist are based on the M/M/c model
+// using the configured average ArrivalRate and AvgHoldTime to determine steady-state
+// utilization (rho) and average wait time (Wq). It does not use the instantaneous
+// value of the `Used` field at the time of the call to determine queueing.
 func (rp *ResourcePool) Acquire() *Outcomes[sc.AccessResult] {
 	rp.mu.Lock()
 	needsQueueing := rp.Used >= rp.Size
@@ -188,6 +196,9 @@ func (rp *ResourcePool) Acquire() *Outcomes[sc.AccessResult] {
 }
 
 // Release returns one resource to the pool. (Direct state modification - limitation)
+//
+// Limitation: This directly modifies the `Used` count, which is not fully utilized
+// by the analytical `Acquire` method for queueing calculations.
 func (rp *ResourcePool) Release() {
 	rp.mu.Lock()
 	defer rp.mu.Unlock()

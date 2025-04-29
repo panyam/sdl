@@ -10,6 +10,13 @@ import (
 )
 
 // Helper function to set up the system
+// setupGpuSystem wires together the components for a single AppServer instance
+// interacting with a GPU pool.
+//
+// Limitations:
+//   - Single App Server: Models the performance path for one server instance.
+//     Total system throughput requires external extrapolation (NumServers * PerServerCapacity).
+//   - Steady State: Represents average performance after warm-up, not initial requests.
 func setupGpuSystem(t *testing.T, gpuPoolSize int, appArrivalRate float64) *AppServer {
 	const batchSize = 100 // Fixed batch size
 
@@ -58,6 +65,7 @@ func setupGpuSystem(t *testing.T, gpuPoolSize int, appArrivalRate float64) *AppS
 }
 
 // analyzeSystem performs the setup, analysis, and assertion for a given config
+// Note: The results reflect steady-state analytical approximations.
 func analyzeSystem(t *testing.T, gpuPoolSize int, appArrivalRate float64, p99SLOMillis float64) {
 	t.Helper()
 	// --- Setup ---
@@ -120,6 +128,9 @@ func TestGpuCaller_HighLoad(t *testing.T) {
 }
 
 // --- Test Scenarios ---
+// These scenarios test the system model under different configurations.
+// The accuracy depends on the analytical models used (M/M/c for pool,
+// average wait for batcher) and the realism of the defined GPU work profile.
 func TestGpuCaller_Scenarios(t *testing.T) {
 	// Base SLO
 	const p99SLO = 500.0 // ms

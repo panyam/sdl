@@ -60,12 +60,19 @@ func (p *GpuBatchProcessor) ProcessBatch(batchSize uint) *sdl.Outcomes[sdl.Acces
 	// 4. Apply reduction to manage outcome complexity
 	//    Split -> Trim -> Append pattern
 	successes, failures := combined.Split(sdl.AccessResult.IsSuccess)
-	trimmedSuccesses := p.ReductionTrimmer(successes)
-	trimmedFailures := p.ReductionTrimmer(failures) // Apply to failures too
+	// Ensure ReductionTrimmer is initialized (defensive)
+	trimmer := p.ReductionTrimmer
+	if trimmer == nil {
+		trimmer = sdl.TrimToSize(p.ReductionTrigger, p.ReductionTarget)
+	}
+	trimmedSuccesses := trimmer(successes)
+	trimmedFailures := trimmer(failures) // Apply to failures too
 	finalOutcome := (&sdl.Outcomes[sdl.AccessResult]{And: combined.And}).Append(trimmedSuccesses, trimmedFailures)
 
 	// Note: ResourcePool.Release is not explicitly called here. The analytical model
 	// uses the AvgHoldTime (derived from workOutcome mean) to calculate contention.
-
+	// Note: Network latency between AppServer and GPU Pool is not explicitly
+	// included here. It's assumed to be negligible or part of the GpuWorkProfile.
+	// For higher fidelity, add explicit NetworkLink steps before/after workOutcome.
 	return finalOutcome
 }
