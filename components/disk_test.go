@@ -72,10 +72,10 @@ func TestDisk_PerformanceMetrics(t *testing.T) {
 	ssdReadExpectations := []sc.Expectation{
 		sc.ExpectAvailability(sc.EQ, 0.998),
 		sc.ExpectMeanLatency(sc.LT, sc.Millis(0.2)), // Expect very fast mean
-		sc.ExpectP99(sc.EQ, sc.Millis(2.0)),         // SSD P99 is 2ms in definition
+		sc.ExpectP99(sc.EQ, sc.Millis(0.5)),         // SSD P99 is 0.5ms in definition
 	}
 	ssdReadAnalysis := sc.Analyze("SSD Read", func() *sc.Outcomes[sc.AccessResult] { return ssdReadOutcomes }, ssdReadExpectations...)
-	ssdReadAnalysis.LogResults(t)
+	ssdReadAnalysis.Assert(t)
 
 	// --- Analyze SSD Write ---
 	ssdWriteOutcomes := ssd.Write()
@@ -88,10 +88,10 @@ func TestDisk_PerformanceMetrics(t *testing.T) {
 	ssdWriteExpectations := []sc.Expectation{
 		sc.ExpectAvailability(sc.EQ, 0.998),
 		sc.ExpectMeanLatency(sc.LT, sc.Millis(0.3)),
-		sc.ExpectP99(sc.EQ, sc.Millis(5.0)), // SSD P99 Write is 5ms
+		sc.ExpectP99(sc.EQ, sc.Millis(0.8)), // SSD P99 Write is .8ms
 	}
 	ssdWriteAnalysis := sc.Analyze("SSD Write", func() *sc.Outcomes[sc.AccessResult] { return ssdWriteOutcomes }, ssdWriteExpectations...)
-	ssdWriteAnalysis.LogResults(t)
+	ssdWriteAnalysis.Assert(t)
 
 	// --- Analyze HDD Read ---
 	hddReadOutcomes := hdd.Read()
@@ -107,7 +107,7 @@ func TestDisk_PerformanceMetrics(t *testing.T) {
 		sc.ExpectP99(sc.EQ, sc.Millis(100.0)), // HDD P99 Read is 100ms
 	}
 	hddReadAnalysis := sc.Analyze("HDD Read", func() *sc.Outcomes[sc.AccessResult] { return hddReadOutcomes }, hddReadExpectations...)
-	hddReadAnalysis.LogResults(t)
+	hddReadAnalysis.Assert(t)
 
 	// --- Analyze HDD Write ---
 	hddWriteOutcomes := hdd.Write()
@@ -123,7 +123,7 @@ func TestDisk_PerformanceMetrics(t *testing.T) {
 		sc.ExpectP99(sc.EQ, sc.Millis(150.0)), // HDD P99 Write is 150ms
 	}
 	hddWriteAnalysis := sc.Analyze("HDD Write", func() *sc.Outcomes[sc.AccessResult] { return hddWriteOutcomes }, hddWriteExpectations...)
-	hddWriteAnalysis.LogResults(t)
+	hddWriteAnalysis.Assert(t)
 
 	// --- Keep Manual Assertions ---
 	if ssdReadMean >= hddReadMean {
@@ -173,7 +173,7 @@ func TestDisk_ReadProcessWrite(t *testing.T) {
 		sc.ExpectMeanLatency(sc.LTE, expectedMean*1.1),
 	}
 	rpwAnalysis := sc.Analyze("SSD ReadProcessWrite", func() *sc.Outcomes[sc.AccessResult] { return rpwOutcomes }, rpwExpectations...)
-	rpwAnalysis.LogResults(t)
+	rpwAnalysis.Assert(t)
 
 	// Keep Manual Assertions
 	if !approxEqualTest(rpwAvail, expectedAvail, 0.001) {

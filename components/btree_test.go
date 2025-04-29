@@ -95,7 +95,7 @@ func TestBTreeIndex_Operations_Metrics(t *testing.T) {
 		sc.ExpectMeanLatency(sc.LT, singleReadMean*float64(height)*2.0),  // Expect mean < double base reads
 	}
 	findAnalysis := sc.Analyze("BTree Find", func() *sc.Outcomes[sc.AccessResult] { return findOutcomes }, findExpectations...)
-	findAnalysis.LogResults(t)
+	findAnalysis.Assert(t)
 
 	// Plausibility check (manual)
 	if findMean < singleReadMean*float64(height)*0.8 {
@@ -121,7 +121,7 @@ func TestBTreeIndex_Operations_Metrics(t *testing.T) {
 		sc.ExpectMeanLatency(sc.GTE, findMean), // Insert >= Find
 	}
 	insertAnalysis := sc.Analyze("BTree Insert", func() *sc.Outcomes[sc.AccessResult] { return insertOutcomes }, insertExpectations...)
-	insertAnalysis.LogResults(t)
+	insertAnalysis.Assert(t)
 
 	// Plausibility check (manual)
 	if insertMean <= findMean {
@@ -144,7 +144,7 @@ func TestBTreeIndex_Operations_Metrics(t *testing.T) {
 		sc.ExpectMeanLatency(sc.GTE, findMean), // Delete >= Find
 	}
 	deleteAnalysis := sc.Analyze("BTree Delete", func() *sc.Outcomes[sc.AccessResult] { return deleteOutcomes }, deleteExpectations...)
-	deleteAnalysis.LogResults(t)
+	deleteAnalysis.Assert(t)
 
 	// Plausibility checks (manual)
 	if !approxEqualTest(insertMean, deleteMean, insertMean*0.2) {

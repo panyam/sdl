@@ -1,12 +1,14 @@
+// components/lsm_test.go
 package components
 
 import (
+	// Added
 	"testing"
 
 	sc "github.com/panyam/leetcoach/sdl/core"
-	// Ensure metrics helpers are accessible
 )
 
+// Test Init remains the same...
 func TestLSMTree_Init(t *testing.T) {
 	lsm := NewLSMTree()
 	if lsm.Disk.ReadOutcomes == nil { // Check inherited Disk init
@@ -18,37 +20,38 @@ func TestLSMTree_Init(t *testing.T) {
 	if lsm.MemtableHitProb < 0 || lsm.MemtableHitProb > 1.0 {
 		t.Error("Invalid MemtableHitProb")
 	}
-	// Add more checks for other default parameters
 }
 
 func TestLSMTree_Write_Read_Metrics(t *testing.T) {
 	lsm := NewLSMTree()
-
-	// Configure disk to be SSD for faster base operations
-	lsm.Disk.Init()
-	lsm.MaxOutcomeLen = 15 // Allow more outcomes for testing
+	lsm.Disk.Init() // Use default SSD
+	lsm.MaxOutcomeLen = 15
 
 	// --- Test Write ---
 	writeOutcomes := lsm.Write()
 	if writeOutcomes == nil || writeOutcomes.Len() == 0 {
 		t.Fatal("Write() returned nil or empty outcomes")
 	}
-
+	// Manual
 	writeAvail := sc.Availability(writeOutcomes)
 	writeMean := sc.MeanLatency(writeOutcomes)
 	writeP99 := sc.PercentileLatency(writeOutcomes, 0.99)
+	t.Logf("Manual Log - LSM Write: Avail=%.4f, Mean=%.6fs, P99=%.6fs (Buckets: %d)", writeAvail, writeMean, writeP99, writeOutcomes.Len())
+	// Analyze
+	writeExpectations := []sc.Expectation{
+		sc.ExpectAvailability(sc.GTE, 0.99),                            // Expect high avail
+		sc.ExpectMeanLatency(sc.GTE, sc.MeanLatency(lsm.Disk.Write())), // Mean >= base disk write
+	}
+	writeAnalysis := sc.Analyze("LSM Write", func() *sc.Outcomes[sc.AccessResult] { return writeOutcomes }, writeExpectations...)
+	writeAnalysis.LogResults(t)
 
-	t.Logf("LSM Write: Avail=%.4f, Mean=%.6fs, P99=%.6fs (Buckets: %d)", writeAvail, writeMean, writeP99, writeOutcomes.Len())
-
-	// Plausibility checks for Write (relative to base SSD write)
+	// Manual checks
 	baseWriteMean := sc.MeanLatency(lsm.Disk.Write())
 	if writeMean < baseWriteMean {
-		t.Errorf("LSM Write mean latency (%.6fs) should not be less than base disk write mean (%.6fs)", writeMean, baseWriteMean)
+		t.Errorf("Manual Check - LSM Write mean latency (%.6fs) should not be less than base disk write mean (%.6fs)", writeMean, baseWriteMean)
 	}
-	// Expected availability should be slightly lower due to compaction etc if modelled perfectly,
-	// but current model preserves base success status mostly. Check it's high.
 	if writeAvail < 0.99 {
-		t.Errorf("LSM Write availability (%.4f) seems too low", writeAvail)
+		t.Errorf("Manual Check - LSM Write availability (%.4f) seems too low", writeAvail)
 	}
 
 	// --- Test Read ---
@@ -56,25 +59,30 @@ func TestLSMTree_Write_Read_Metrics(t *testing.T) {
 	if readOutcomes == nil || readOutcomes.Len() == 0 {
 		t.Fatal("Read() returned nil or empty outcomes")
 	}
-
+	// Manual
 	readAvail := sc.Availability(readOutcomes)
 	readMean := sc.MeanLatency(readOutcomes)
 	readP50 := sc.PercentileLatency(readOutcomes, 0.50)
 	readP99 := sc.PercentileLatency(readOutcomes, 0.99)
+	t.Logf("Manual Log - LSM Read : Avail=%.4f, Mean=%.6fs, P50=%.6fs, P99=%.6fs (Buckets: %d)", readAvail, readMean, readP50, readP99, readOutcomes.Len())
+	// Analyze
+	readExpectations := []sc.Expectation{
+		sc.ExpectAvailability(sc.GTE, 0.99),
+		sc.ExpectMeanLatency(sc.GTE, sc.MeanLatency(lsm.Disk.Read())*0.5), // Read can be faster than single disk read if high memtable hit
+		sc.ExpectP99(sc.GT, sc.Millis(0)),                                 // P99 should be positive
+	}
+	readAnalysis := sc.Analyze("LSM Read", func() *sc.Outcomes[sc.AccessResult] { return readOutcomes }, readExpectations...)
+	readAnalysis.LogResults(t)
 
-	t.Logf("LSM Read : Avail=%.4f, Mean=%.6fs, P50=%.6fs, P99=%.6fs (Buckets: %d)", readAvail, readMean, readP50, readP99, readOutcomes.Len())
-
-	// Plausibility checks for Read (relative to base SSD read)
+	// Manual checks
 	baseReadMean := sc.MeanLatency(lsm.Disk.Read())
-	// LSM read involves multiple steps, should be slower than single disk read on average
-	if readMean < baseReadMean && lsm.MemtableHitProb < 0.99 { // Only expect faster if memtable hit rate is extremely high
-		t.Errorf("LSM Read mean latency (%.6fs) is unexpectedly lower than base disk read mean (%.6fs)", readMean, baseReadMean)
+	if readMean < baseReadMean && lsm.MemtableHitProb < 0.99 {
+		t.Errorf("Manual Check - LSM Read mean latency (%.6fs) is unexpectedly lower than base disk read mean (%.6fs)", readMean, baseReadMean)
 	}
 	if readAvail < 0.99 {
-		t.Errorf("LSM Read availability (%.4f) seems too low", readAvail)
+		t.Errorf("Manual Check - LSM Read availability (%.4f) seems too low", readAvail)
 	}
-	// P50 vs P99: Expect some difference due to different read paths
-	if approxEqualTest(readP50, readP99, 1e-6) && lsm.MemtableHitProb < 0.9 { // If P50=P99, distribution might be too narrow unless high hit rate
-		t.Logf("Warning: LSM Read P50 and P99 are very close (P50=%.6f, P99=%.6f)", readP50, readP99)
+	if approxEqualTest(readP50, readP99, 1e-6) && lsm.MemtableHitProb < 0.9 {
+		t.Logf("Manual Check Warning: LSM Read P50 and P99 are very close (P50=%.6f, P99=%.6f)", readP50, readP99)
 	}
 }

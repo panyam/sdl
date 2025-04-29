@@ -47,7 +47,7 @@ func TestBitmapIndex_Find_Vs_Modify_Metrics(t *testing.T) {
 		sc.ExpectMeanLatency(sc.LT, sc.Millis(10)), // Find should be fast
 	}
 	findAnalysis := sc.Analyze("Bitmap Find", func() *sc.Outcomes[sc.AccessResult] { return findOutcomes }, findExpectations...)
-	findAnalysis.LogResults(t)
+	findAnalysis.Assert(t)
 
 	// Plausibility check (manual)
 	if findAvail < 0.99 {
@@ -70,7 +70,7 @@ func TestBitmapIndex_Find_Vs_Modify_Metrics(t *testing.T) {
 		sc.ExpectMeanLatency(sc.GTE, findMean), // Insert > Find
 	}
 	insertAnalysis := sc.Analyze("Bitmap Insert", func() *sc.Outcomes[sc.AccessResult] { return insertOutcomes }, insertExpectations...)
-	insertAnalysis.LogResults(t)
+	insertAnalysis.Assert(t)
 
 	// Plausibility checks (manual)
 	if insertAvail < 0.99 {

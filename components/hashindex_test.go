@@ -87,7 +87,7 @@ func TestHashIndex_Find_Vs_Modify_Metrics(t *testing.T) {
 		t.Logf("CollisionProb=%.4f, ResizeProb=%.4f", hi.collisionProbability(), hi.resizeProbability())
 
 		// Define some basic expectations for Analyze (can be refined)
-		// Note: We won't use Assert() here, just LogResults() for comparison
+		// Note: We won't use Assert() here, just Assert() for comparison
 		findExpectations := []sc.Expectation{
 			sc.ExpectAvailability(sc.GTE, 0.99), // Expect high availability
 			sc.ExpectP99(sc.LT, 1.0),            // Expect P99 < 1 second (loose check)
@@ -111,10 +111,10 @@ func TestHashIndex_Find_Vs_Modify_Metrics(t *testing.T) {
 		findMean := sc.MeanLatency(findOutcomes)
 		findP99 := sc.PercentileLatency(findOutcomes, 0.99)
 		t.Logf("[%d recs] Manual Log - Hash Find: Avail=%.4f, Mean=%.6fs, P99=%.6fs (Buckets: %d)", rCount, findAvail, findMean, findP99, findOutcomes.Len())
-		// Use Analyze and LogResults
+		// Use Analyze and Assert
 		findAnalysisName := fmt.Sprintf("Hash Find (%d recs)", rCount)
 		findAnalysisResult := sc.Analyze(findAnalysisName, func() *sc.Outcomes[sc.AccessResult] { return findOutcomes }, findExpectations...)
-		findAnalysisResult.LogResults(t) // Log results from Analyze
+		findAnalysisResult.Assert(t) // Log results from Analyze
 
 		// --- Test Insert ---
 		insertOutcomes := hi.Insert()
@@ -126,10 +126,10 @@ func TestHashIndex_Find_Vs_Modify_Metrics(t *testing.T) {
 		insertMean := sc.MeanLatency(insertOutcomes)
 		insertP99 := sc.PercentileLatency(insertOutcomes, 0.99)
 		t.Logf("[%d recs] Manual Log - Hash Insert: Avail=%.4f, Mean=%.6fs, P99=%.6fs (Buckets: %d)", rCount, insertAvail, insertMean, insertP99, insertOutcomes.Len())
-		// Use Analyze and LogResults
+		// Use Analyze and Assert
 		insertAnalysisName := fmt.Sprintf("Hash Insert (%d recs)", rCount)
 		insertAnalysisResult := sc.Analyze(insertAnalysisName, func() *sc.Outcomes[sc.AccessResult] { return insertOutcomes }, insertExpectations...)
-		insertAnalysisResult.LogResults(t) // Log results from Analyze
+		insertAnalysisResult.Assert(t) // Log results from Analyze
 
 		// --- Test Delete ---
 		deleteOutcomes := hi.Delete()
@@ -141,10 +141,10 @@ func TestHashIndex_Find_Vs_Modify_Metrics(t *testing.T) {
 		deleteMean := sc.MeanLatency(deleteOutcomes)
 		deleteP99 := sc.PercentileLatency(deleteOutcomes, 0.99)
 		t.Logf("[%d recs] Manual Log - Hash Delete: Avail=%.4f, Mean=%.6fs, P99=%.6fs (Buckets: %d)", rCount, deleteAvail, deleteMean, deleteP99, deleteOutcomes.Len())
-		// Use Analyze and LogResults
+		// Use Analyze and Assert
 		deleteAnalysisName := fmt.Sprintf("Hash Delete (%d recs)", rCount)
 		deleteAnalysisResult := sc.Analyze(deleteAnalysisName, func() *sc.Outcomes[sc.AccessResult] { return deleteOutcomes }, deleteExpectations...)
-		deleteAnalysisResult.LogResults(t) // Log results from Analyze
+		deleteAnalysisResult.Assert(t) // Log results from Analyze
 
 		// --- Keep Manual Compare Metrics ---
 		if findMean >= deleteMean {
