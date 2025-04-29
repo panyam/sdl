@@ -24,6 +24,13 @@ const (
 )
 
 // Batcher collects items and processes them based on a policy.
+// approximations to model the average waiting time for batch formation.
+//
+// Limitations:
+//   - Wait Time Approximation: Uses analytical formulas (e.g., (N-1)/(2*lambda) for SizeBased,
+//     T/2 for TimeBased) to estimate average wait time. Does not capture the full variance
+//     or impact of non-Poisson arrival patterns.
+//   - Cold Starts: Represents steady-state behavior, doesn't model initially empty batches.
 type Batcher struct {
 	Name string
 
@@ -69,7 +76,7 @@ func (b *Batcher) Init(name string, policy BatchingPolicy, batchSize uint, timeo
 
 	switch b.Policy {
 	case SizeBased:
-		if b.ArrivalRate > 1e-9 && b.BatchSize > 1 {
+		if b.ArrivalRate > 1e-9 && b.BatchSize >= 1 {
 			b.avgWaitTime = float64(b.BatchSize-1) / (2.0 * b.ArrivalRate)
 		}
 		// avgBatchSize remains b.BatchSize
@@ -115,6 +122,9 @@ func NewBatcher(name string, policy BatchingPolicy, batchSize uint, timeout Dura
 // including waiting time for batch formation and the outcome of the downstream batch processing.
 func (b *Batcher) Submit() *Outcomes[sc.AccessResult] {
 	// 1. Model Waiting Time for Batch Formation (uses pre-calculated avgWaitTime)
+	//    Note: This uses an analytical approximation for the average wait time and
+	//    approximates the distribution around that average. It doesn't track
+	//    individual arrivals or the current batch fill level.
 	waitOutcomes := &Outcomes[Duration]{And: func(a, b Duration) Duration { return a + b }}
 	avgWait := b.avgWaitTime
 	if avgWait < 1e-9 {

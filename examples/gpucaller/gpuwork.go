@@ -5,9 +5,15 @@ import (
 	sdl "github.com/panyam/leetcoach/sdl/core"
 )
 
-// DefineGPUWorkProfile creates an Outcomes distribution representing the
+// DefineGPUWorkProfile creates an assumed Outcomes distribution representing the
 // performance of processing one batch of 100 requests on a single GPU.
 // It targets a P90 latency of <= 100ms.
+//
+// Limitation: The accuracy of the overall simulation depends significantly on how
+// well this assumed profile matches the real-world performance characteristics
+// (mean, variance, tail behavior, failure modes) of the GPU batch processing.
+// Consider deriving this profile from actual measurements or using distribution
+// helpers (when available) based on known percentiles for better accuracy.
 func DefineGPUWorkProfile() *sdl.Outcomes[sdl.AccessResult] {
 	profile := &sdl.Outcomes[sdl.AccessResult]{And: sdl.AndAccessResults}
 
