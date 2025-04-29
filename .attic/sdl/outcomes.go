@@ -2,6 +2,7 @@ package sdl
 
 import (
 	"log"
+	"math/rand"
 )
 
 type Outcome = any
@@ -220,4 +221,58 @@ func And[V Outcome, U Outcome, Z Outcome](this *Outcomes[V], that *Outcomes[U], 
 		}
 	}
 	return
+}
+
+// Sample draws a single random sample from the outcome distribution based on bucket weights.
+// It returns the value V from the selected bucket.
+// The caller should provide a properly seeded rand.Rand source.
+// Returns the zero value of V and false if outcomes are nil, empty, or have zero total weight.
+func (o *Outcomes[V]) Sample(rng *rand.Rand) (result V, ok bool) {
+	if o == nil || o.Len() == 0 || rng == nil {
+		// Cannot sample from nil or empty distribution, or without RNG
+		ok = false
+		return // Returns zero value for V
+	}
+
+	totalWeight := o.TotalWeight()
+	if totalWeight <= 1e-12 { // Consider total weight effectively zero
+		// Cannot sample if total weight is zero
+		ok = false
+		return // Returns zero value for V
+	}
+
+	// Generate a random float64 between 0.0 and totalWeight
+	target := rng.Float64() * totalWeight
+
+	cumulativeWeight := 0.0
+	for _, bucket := range o.Buckets {
+		cumulativeWeight += bucket.Weight
+		if cumulativeWeight >= target {
+			result = bucket.Value // Found the bucket
+			ok = true
+			return
+		}
+	}
+
+	// Should not be reached if totalWeight > 0, but as a fallback,
+	// return the last bucket's value if floating point issues occur.
+	// Check Len again just in case.
+	if o.Len() > 0 {
+		result = o.Buckets[o.Len()-1].Value
+		ok = true
+		return
+	}
+
+	// Should be truly unreachable now
+	ok = false
+	return
+}
+
+// GetValue returns the value if there's exactly one bucket, otherwise returns zero value.
+// Useful for deterministic outcomes. Returns value and true if single bucket, else zero value and false.
+func (o *Outcomes[V]) GetValue() (result V, ok bool) {
+	if o != nil && o.Len() == 1 {
+		return o.Buckets[0].Value, true
+	}
+	return // zero value, false
 }

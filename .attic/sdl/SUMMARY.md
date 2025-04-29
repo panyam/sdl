@@ -1,180 +1,138 @@
-## SDL Project Summary & Onboarding Guide
+
+## SDL Project Summary & Onboarding Guide (Organized by Proposed Folders)
 
 **1. Vision & Goal:**
 
-*   **Purpose:** The SDL (System Design Language) library aims to model and simulate the performance characteristics (latency, availability, error rates) of distributed system components.
-*   **Use Cases:**
-    *   Allow developers/designers to define system architectures (databases, caches, APIs, etc.).
-    *   Simulate the probabilistic outcomes of operations (e.g., database reads, API calls) without executing real code.
-    *   Analyze end-to-end system performance, SLOs (Service Level Objectives), and bottlenecks based on component interactions.
-    *   Enable interactive "what-if" analysis by changing component parameters (e.g., disk type, network latency, cache size) and observing the impact on overall system behavior (visualized via plots).
-    *   Potential for educational tools or gamified system design challenges ("Design a system that meets X Availability and Y P99 Latency").
+*   **Purpose:** The SDL (System Design Language) library aims to model and simulate the performance characteristics (latency, availability, error rates) of distributed system components using analytical models and probabilistic composition rather than full discrete-event simulation.
+*   **Use Cases:** Enable rapid "what-if" analysis of system designs, bottleneck identification, SLO evaluation, interactive performance exploration, and potentially educational tools by modelling component interactions and their probabilistic outcomes.
 
-**2. Core Concepts:**
+**2. Overall Architecture:**
 
-*   **`Outcomes[V any]`:** The central data structure representing a probability distribution of possible results for an operation.
-    *   It holds a slice of `Bucket[V]`, where each bucket has a `Weight` (probability/frequency) and a `Value V` (the specific outcome).
-    *   Uses Go generics (`V any`) for flexibility, allowing distributions of different outcome types.
-*   **Composition:** Simulating system interactions by combining `Outcomes`:
-    *   **`And(o1, o2, reducer)`:** Models sequential operations. Calculates the Cartesian product of outcomes from `o1` and `o2`, combining weights and values using a `reducer` function. *Crucially, this leads to combinatorial explosion of buckets.*
-    *   **`If(cond, then, otherwise, reducer)`:** Models conditional logic based on the outcome of a preceding step.
-    *   **`Map(o, mapper)`:** Transforms outcome values within a distribution.
-*   **Outcome Types:** Concrete types representing results:
-    *   **`AccessResult`:** Simple `{ Success bool; Latency Duration }`.
-    *   **`RangedResult`:** More detailed `{ Success bool; MinLatency, ModeLatency, MaxLatency Duration }`.
-    *   Other types (like `Duration`, `int`, `string`) can exist during intermediate steps.
-*   **Metric Calculation:**
-    *   `Metricable` interface: Defines `IsSuccess()` and `GetLatency()` methods.
-    *   Helper functions (`Availability`, `MeanLatency`, `PercentileLatency`) operate on `Outcomes[V]` where `V` implements `Metricable`, providing compile-time safety. These are located in `metrics.go`.
-*   **Reduction (Complexity Management):** Essential for managing the combinatorial explosion from `And`. Various strategies exist to reduce the number of buckets while trying to preserve key distributional characteristics.
+*   The core simulation engine relies on composing `Outcomes` distributions.
+*   Component models (primitives, storage, etc.) define their performance profiles as `Outcomes`.
+*   Operations are modelled by combining `Outcomes` using operators (`And`, `If`, `Map`).
+*   Complexity (combinatorial explosion) is managed via reduction strategies (Merge+Interpolate).
+*   State evolution is handled externally by modifying component parameters between simulation runs, not automatically within operations.
+*   Future Goal (Phase 4): Implement a user-friendly DSL to define components and orchestrate simulations, translating DSL definitions into calls to this Go library.
 
-**3. Key Components (Current):**
+**3. Code Structure & Package Overview:**
 
-*   **Primitives:**
-    *   `Disk`: Models disk I/O with basic configurable `ReadOutcomes` and `WriteOutcomes` (currently `AccessResult` based).
-*   **Base Types:**
-    *   `Index`: Embeddable struct holding common properties for on-disk data structures (`NumRecords`, `RecordSize`, `PageSize`, `Disk` dependency, `RecordProcessingTime`, `MaxOutcomeLen` for trimming).
-*   **Storage Models:** Implementations of data structures built using `Index` and `Outcomes` composition:
-    *   `HeapFile`
-    *   `BTreeIndex`
-    *   `HashIndex`
-    *   `SortedFile`
-    *   *(These models are currently simplified approximations)*.
+**(Proposed Folder Structure)**
 
-**4. Current Status & Recent Work (Reduction Refinement - End of Phase 1, Step 2):**
+*   **`sdl/` (Root)**
+    *   `go.mod`, `go.sum`: Go module definitions.
+    *   `README.md`: Project overview, usage examples. (To be created/updated)
 
-*   The core `Outcomes` distribution and composition logic (`And`, `If`, `Map`) is implemented.
-*   Basic components (`Disk`, `Index`, several storage models) exist.
-*   **Extensive work was just completed on refining bucket reduction strategies:**
-    *   **`AdaptiveReduce`:** Found to be either too slow (RangedResult) or inaccurate (AccessResult) with tested significance functions. It's currently **not recommended** for use.
-    *   **`AccessResult` Reduction Strategy:**
-        *   Use `MergeAdjacentAccessResults` (with a small relative latency threshold, e.g., 5%) for initial, accurate reduction.
-        *   Follow with `InterpolateAccessResults` to deterministically reduce to a specific `maxLen` while preserving distribution shape well.
-        *   This logic is encapsulated in `TrimToSize`.
-    *   **`RangedResult` Reduction Strategy:**
-        *   Use `MergeOverlappingRangedResults` (map-based version, with a high overlap threshold, e.g., 90%) for initial, fast reduction.
-        *   Follow with `InterpolateRangedResults` to reduce to `maxLen`.
-        *   This logic is encapsulated in `TrimToSizeRanged`.
-*   Metric calculation helpers (`Availability`, `MeanLatency`, `PercentileLatency`) are available.
-*   Benchmarks and accuracy tests exist for reduction strategies.
+*   **`sdl/core/`**
+    *   **Purpose:** Contains the absolute fundamental, generic types and operations for probabilistic distributions, independent of specific result types or components.
+    *   **Key Files:**
+        *   `outcomes.go`: Defines `Bucket[V]` and the core `Outcomes[V any]` struct. Includes fundamental methods like `Add`, `Len`, `TotalWeight`, `Copy`, `Split`, `Partition`, `ScaleWeights`, `GetValue`, and the generic `Sample(rng *rand.Rand)`. Defines generic operators `And`, `If`, `Map`.
+        *   `duration.go`: Defines `Duration` type (`float64`) and time unit helpers (`Millis`, `Nanos`, etc.).
+        *   `metricable.go`: Defines the `Metricable` interface (`IsSuccess() bool`, `GetLatency() Duration`) used by metric calculations.
+        *   `reducers.go`: *(Potential)* Could hold the generic base logic for reduction strategies like `AdaptiveReduce` if it were reused (currently not recommended). Interpolation logic might live here or in result-specific packages.
 
-**5. Known Issues & Limitations:**
+*   **`sdl/results/`**
+    *   **Purpose:** Defines concrete result types (`V`) that can be used within `Outcomes[V]`, along with type-specific helper functions and reduction strategies.
+    *   **Key Files:**
+        *   `access_result.go`: Defines `AccessResult{Success, Latency}`, its `GetLatency()` (for `Metricable`), and the specific `AndAccessResults` reducer.
+        *   `ranged_result.go`: Defines `RangedResult{Success, Min, Mode, Max}`, its `GetLatency()` (using Mode), `AndRangedResults`, `Overlap()`, `DistTo()`.
+        *   `access_result_reducers.go`: Implements `MergeAdjacentAccessResults`, `InterpolateAccessResults`, and the composite `TrimToSize`.
+        *   `ranged_result_reducers.go`: Implements `MergeOverlappingRangedResults` (map-based), `InterpolateRangedResults`, the composite `TrimToSizeRanged`, and potentially `RangedResultSignificance` (though adaptive is currently unused).
+        *   `converters.go`: Contains `ConvertToRanged`, `ConvertToAccess`, and `SampleWithinRange`.
 
-*   **RangedResult Merge Memory:** `MergeOverlappingRangedResults` (map-based) still uses significant memory (~20MB/78k allocs for ~78k input buckets in benchmarks).
-*   **Model Fidelity:** Current component models (Disk, Indexes) are simplified and lack features like caching, detailed B-Tree costs, LSM specifics, concurrency effects etc.
-*   **Concurrency/Asynchrony:** No built-in support for modelling parallel execution, queues, asynchronous callbacks, batching, or resource contention (Phase 2/3 goal).
-*   **DSL Disconnect:** The high-level declarative System Design Language (envisioned in `sdl.go` and markdown) is not yet implemented or connected to the simulation engine. Modelling requires writing Go code using `And`/`If`.
-*   **State Evolution:** The library primarily models single operations based on initial state; modelling how system state *changes* over time (affecting future performance) is not yet supported.
+*   **`sdl/metrics/`**
+    *   **Purpose:** Provides functions to analyze and calculate standard performance metrics from `Outcomes` distributions.
+    *   **Key Files:**
+        *   `metrics.go`: Implements generic helper functions `Availability[V Metricable]`, `MeanLatency[V Metricable]`, `PercentileLatency[V Metricable]`.
 
-**6. Code Structure (Current):**
+*   **`sdl/primitives/`**
+    *   **Purpose:** Defines basic, often indivisible building block components.
+    *   **Key Files:**
+        *   `disk.go`: Defines `Disk` struct, `ProfileSSD`, `ProfileHDD`, `Init()`, `Read()`, `Write()`, `ReadProcessWrite()`. Returns `Outcomes[AccessResult]`.
+        *   `network.go`: Defines `NetworkLink` struct, `Init()`, `Transfer()`. Models latency, jitter (via multiple buckets), and loss. Returns `Outcomes[AccessResult]`.
+        *   `queue.go`: Defines `Queue` struct (M/M/c/K analytical model), `Init()`, `Enqueue()` (returns `AccessResult` with Success=Blocked?), `Dequeue()` (returns `Outcomes[Duration]` representing wait time).
+        *   `resourcepool.go`: Defines `ResourcePool` struct (M/M/c analytical model), `Init()`, `Acquire()` (takes `lambda`, returns `AccessResult` including wait time), `Release()` (direct state change - known limitation).
 
-*   All Go files currently reside in a single top-level `sdl` folder.
+*   **`sdl/storage/`**
+    *   **Purpose:** Defines more complex components, often representing data storage and indexing structures, built using primitives and core types.
+    *   **Key Files:**
+        *   `index.go`: Defines the base `Index` struct (embeds `Disk`, holds `NumRecords`, `RecordSize`, `PageSize`, `MaxOutcomeLen`, `RecordProcessingTime`).
+        *   `heapfile.go`: `HeapFile` implementation.
+        *   `btree.go`: Refined `BTreeIndex` implementation.
+        *   `hashindex.go`: Refined `HashIndex` implementation (heuristic probabilities).
+        *   `sortedfile.go`: `SortedFile` implementation.
+        *   `lsm.go`: Simplified `LSMTree` implementation.
+        *   `bitmap.go`: Simplified `BitmapIndex` implementation.
+        *   `cache.go`: `Cache` component implementation (standalone component approach).
 
-**7. Roadmap Recap:**
+*   **`sdl/dsl/` (Future - Phase 4)**
+    *   **Purpose:** Will contain the parser, interpreter, Abstract Syntax Tree (AST) nodes, and runtime environment for the user-facing System Design Language.
 
-*   **Phase 1 (Partially Complete):** Solidify Core & Enhance Primitives.
-    *   ✅ Basic Validation Hooks (Metrics).
-    *   ✅ Benchmark & Refine Reduction Strategies.
-    *   *Next:* Enhance `Disk` (SSD/HDD).
-    *   *Next:* Add `NetworkLink`.
-    *   *Next:* (Optional) Improve Outcome Type (Retries).
-*   **Phase 2:** Expand Component Models & Basic Concurrency (More indexes, Caching, `ParallelAnd`, Resource Pools).
-*   **Phase 3:** Advanced Concurrency, Queuing & State (Queues, Async, Batching, State Evolution).
-*   **Phase 4:** Usability & System Composition (DSL Implementation, Visualization, Component Library, Examples).
-*   **Phase 5:** Refinement & Ecosystem (Optimization, Validation, Docs, Community).
+*   **`sdl/examples/` (Future - Phase 4/5)**
+    *   **Purpose:** Will contain complete examples demonstrating how to define systems using the DSL (or Go API) and analyze them.
 
----
+**4. Current Status:**
 
-**Proposed Code Organization:**
+*   Phase 1 (Core & Primitives) and Phase 2 (Component Models & Basic Concurrency concepts) are largely complete, focusing on analytical modelling. Phase 3 (Advanced Concurrency/Queuing/State) was partially addressed by adding analytical Queue/Pool models.
+*   Core `Outcomes` system with composition operators (`And`, `If`, `Map`) is stable.
+*   Effective reduction strategies (Merge+Interpolate via `TrimToSize`/`TrimToSizeRanged`) are implemented and tested for `AccessResult` and `RangedResult`.
+*   A good suite of primitive (`Disk`, `NetworkLink`, `Queue`, `ResourcePool`) and storage (`HeapFile`, `BTree`, `Hash`, `SortedFile`, `LSM`, `Bitmap`, `Cache`) components exist, modelled primarily using `Outcomes[AccessResult]` and analytical approximations.
+*   Metric calculation and sampling capabilities are available.
+*   **Known Limitations:** Accurate modelling of stateful interactions (esp. `ResourcePool.Release`), complex asynchronous patterns, and time-based batching variance remains challenging without moving towards DES. The current models favour analytical speed over detailed simulation accuracy in these areas.
 
-To improve maintainability and avoid future circular dependencies as the project grows, consider restructuring into sub-packages:
+**5. Next Steps (Phase 4):**
 
-```
-sdl/
-├── core/                 # Fundamental types & logic (NOT specific components)
-│   ├── outcomes.go         # Outcomes[V], Bucket[V] definitions
-│   ├── duration.go         # Duration type, helpers (Millis, etc.)
-│   ├── metricable.go       # Metricable interface definition
-│   └── reducers.go         # Generic reduction logic (e.g., AdaptiveReduce base, Interpolation base?)
-│
-├── results/              # Concrete outcome types + their specific reducers/helpers
-│   ├── access_result.go    # AccessResult definition, GetLatency, AndAccessResults
-│   ├── ranged_result.go    # RangedResult definition, GetLatency, AndRangedResults, Overlap, DistTo
-│   ├── access_result_reducers.go # MergeAdjacent, InterpolateAccess, TrimToSize
-│   └── ranged_result_reducers.go # MergeOverlapping, InterpolateRanged, TrimToSizeRanged, RangedSignificance (if kept)
-│
-├── metrics/              # Metric calculation logic
-│   └── metrics.go          # Availability, MeanLatency, PercentileLatency functions
-│
-├── primitives/           # Basic, indivisible components
-│   ├── disk.go             # Disk struct, Init, Read, Write profiles (SSD/HDD)
-│   └── network.go          # (Future) NetworkLink struct, latency, loss models
-│
-├── storage/              # More complex storage components/data structures
-│   ├── index.go            # Base Index struct definition
-│   ├── heapfile.go         # HeapFile implementation
-│   ├── btree.go            # BTreeIndex implementation
-│   ├── hashindex.go        # HashIndex implementation
-│   ├── sortedfile.go       # SortedFile implementation
-│   └── lsm.go              # (Future) LSM Tree implementation
-│
-├── dsl/                  # (Future) DSL parser, interpreter, AST nodes
-│   └── ...
-│
-├── examples/             # (Future) Usage examples showing composition
-│   └── ...
-│
-└── go.mod                # Go module definition
-└── go.sum
-└── (Other top-level files like README.md, LICENSE)
-```
-
-**Benefits:**
-
-*   Clear separation of concerns.
-*   Dependencies flow logically (e.g., `storage` depends on `primitives`, `results`, `core`; `results` depends on `core`). Reduces likelihood of circular imports.
-*   Easier navigation and contribution.
-
-**Action:** This refactoring can be done incrementally, perhaps starting by moving `core` and `results` types first.
+*   Focus on **Usability & System Composition**.
+*   **Primary Task:** Implement the DSL parser and interpreter.
+*   Other Tasks: Visualization hooks, build a component library (pre-defined compositions), create full system examples.
 
 ---
 
-**Prompt for Next LLM Task:**
+**Prompt for Next LLM Task (Phase 4 - DSL Implementation):**
 
 ```text
 **Project Context:**
 
-You are continuing development on the SDL (System Design Language) Go library. This library simulates the performance (latency, availability) of system components using probabilistic `Outcomes` distributions. Key concepts include:
-- `Outcomes[V any]`: Represents a probability distribution (slice of `Bucket[V]`).
-- `AccessResult`, `RangedResult`: Concrete outcome types.
-- Composition: `And` (sequential), `If` (conditional) combine `Outcomes`.
-- Reduction: Strategies are needed to manage the combinatorial explosion from `And`. Recent work established the following preferred reduction strategies:
-    - For `Outcomes[AccessResult]`: Use `TrimToSize` (located in `sdl/results/access_result_reducers.go`) which first calls `MergeAdjacentAccessResults` (low relative threshold) then `InterpolateAccessResults` to reach a target bucket count (`maxLen`).
-    - For `Outcomes[RangedResult]`: Use `TrimToSizeRanged` (located in `sdl/results/ranged_result_reducers.go`) which first calls `MergeOverlappingRangedResults` (map-based, high overlap threshold) then `InterpolateRangedResults` to reach `maxLen`.
-    - `AdaptiveReduce` is generally avoided due to performance/accuracy issues found previously.
-- Components: `Disk`, `Index`, `HeapFile`, `BTreeIndex`, etc. model system parts.
-- Metrics: Helper functions (`Availability`, `MeanLatency`, `PercentileLatency` in `sdl/metrics/metrics.go`) analyze results.
-- Code Structure: Currently flat (`sdl/`), but a proposed structure (core/, results/, primitives/, storage/, metrics/) exists (see summary above for details).
+You are continuing development on the SDL (System Design Language) Go library. This library enables performance modelling (latency, availability) of system components using probabilistic `Outcomes` distributions and analytical approximations, avoiding full discrete-event simulation for speed.
 
-**Current Status:**
+**Current State:**
+- The core Go library (organized conceptually into `core`, `results`, `metrics`, `primitives`, `storage` packages) provides:
+    - `Outcomes[V any]` for probability distributions.
+    - Composition operators (`And`, `If`, `Map`).
+    - Result types (`AccessResult`, `RangedResult`) and converters.
+    - Robust reduction strategies (`TrimToSize`, `TrimToSizeRanged` using Merge+Interpolate).
+    - Metric calculations (`Availability`, `MeanLatency`, `PercentileLatency`).
+    - Sampling (`Sample`, `SampleWithinRange`).
+    - A suite of component models (`Disk`, `NetworkLink`, `Queue`, `ResourcePool`, `Cache`, `LSMTree`, `BTreeIndex`, `HashIndex`, `BitmapIndex`, etc.) primarily using `Outcomes[AccessResult]`.
+- State evolution is handled externally by configuring component parameters between simulation runs. Complex async/stateful interactions have known limitations in the analytical model.
+- The project documentation includes a detailed summary outlining the vision, concepts, components, status, and proposed code organization.
 
-Phase 1, Step 2 (Reduction Refinement) is complete. The chosen reduction strategies are implemented and tested for accuracy.
+**Phase 4 Goal:** Focus on Usability & System Composition.
 
-**Next Task (Phase 1, Step 3): Enhance Disk Primitive**
+**Next Task (Phase 4, Task 1): Design and Start Implementing the DSL**
 
-Your task is to enhance the existing `Disk` primitive component (currently in `sdl/disk.go`) to model different disk types, specifically SSDs and HDDs, with distinct performance profiles.
+Your primary task is to **design the syntax for the user-facing System Design Language (SDL DSL)** and begin implementing the **parser** for it using a suitable Go parsing library (e.g., `participle`, `goyacc`, or even standard library tools if simple enough).
 
 **Requirements:**
 
-1.  **Modify `Disk` Struct:** Add a field to the `Disk` struct (e.g., `Type string` or `Profile DiskProfile`) to indicate whether it represents an "SSD" or an "HDD".
-2.  **Update `Disk.Init()`:** Modify the `Init` method (or create new constructors like `NewSSD()`, `NewHDD()`) to accept the disk type and initialize `ReadOutcomes` and `WriteOutcomes` with appropriate, distinct latency/error distributions for SSDs vs HDDs.
-    *   **SSD Profile:** Should generally have lower latency (e.g., mostly sub-millisecond reads/writes), tighter distribution (less variance), potentially lower failure rates, but maybe different failure modes.
-    *   **HDD Profile:** Should have higher average latency (e.g., several milliseconds), wider distribution (more variability, maybe a distinct "slow tail"), potentially different read vs. write speeds, and distinct failure characteristics (maybe higher chance of slow operations vs. outright failure compared to SSD). Use `AccessResult` for the outcomes for now. Define reasonable, distinct probability buckets for each profile.
-3.  **Unit Tests:** Add new tests (e.g., in `sdl/primitives/disk_test.go` if reorganizing, or `sdl/disk_test.go` if not) specifically for the `Disk` component. These tests should:
-    *   Create instances of SSD and HDD disks.
-    *   Verify that their initialized `ReadOutcomes` and `WriteOutcomes` differ significantly and plausibly reflect SSD vs HDD characteristics (e.g., check mean latency, P99 latency, availability using the metric helpers).
-4.  **Code Style:** Follow existing Go conventions and patterns used in the codebase (e.g., `Init` method returning receiver).
-5.  **Code Location:** Place the modified `Disk` code and new tests in the appropriate location. If following the proposed reorganization, use `sdl/primitives/disk.go` and `sdl/primitives/disk_test.go`. If keeping the flat structure, update `sdl/disk.go` and `sdl/disk_test.go`. *(Assume flat structure for now unless instructed otherwise)*.
+1.  **DSL Syntax Design:**
+    *   Define a clear, intuitive, text-based syntax for users to:
+        *   **Declare Components:** Define new component types (e.g., `component MyDatabase { ... }`).
+        *   **Define Parameters:** Specify configurable parameters within components (e.g., `diskProfile: string = "SSD"; poolSize: int = 10`). Include support for basic types (string, int, float, bool).
+        *   **Define Dependencies:** Declare instances of other components used internally (e.g., `cache: RedisCache; db: PostgresDB`).
+        *   **Define Operations:** Declare methods/operations the component provides (e.g., `operation ReadUser(userId: string): Outcomes<UserResult> { ... }`). Specify input parameters and the *type* of `Outcomes` returned (e.g., `Outcomes<AccessResult>`, `Outcomes<Duration>`).
+        *   **Define Operation Logic:** Specify the sequence of internal calls and compositions within an operation using a syntax that maps clearly to the underlying Go library operators (`And`, `If`, `Map`, calls to dependent components). Consider syntax for sequential calls, basic conditionals (if/else based on outcome properties like `Success`), mapping results, and potentially loops (e.g., `for i := 0; i < height; i++`).
+        *   **Instantiate Components:** Create instances of defined components (e.g., `myDB: MyDatabase = { poolSize: 20 }`).
+        *   **Orchestrate Analysis:** Define entry points or scenarios to trigger analysis (e.g., `analyze myDB.ReadUser("user123")`).
+    *   **Reference Existing Ideas:** Refer to the high-level DSL ideas previously mentioned in the project documentation (e.g., the Database/ApiServer example) but refine and formalize the syntax.
+    *   **Keep it Simple Initially:** Focus on core functionality; advanced features like complex types, modules, or imports can come later.
 
-**Focus:** Implement only the Disk enhancement described above. Do not refactor the entire codebase structure in this step unless specifically asked.
-```
+2.  **Parser Implementation (Initial):**
+    *   Choose a suitable Go parsing library/technique. `participle` is often good for defining grammar directly in Go structs.
+    *   Define the Abstract Syntax Tree (AST) node types in Go structs corresponding to the designed DSL syntax (e.g., `ComponentDecl`, `ParamDecl`, `OperationDef`, `CallExpr`, `SequenceExpr`, `IfExpr`).
+    *   Implement the parser that takes DSL text as input and produces an AST.
+    *   Add basic unit tests for the parser, verifying that simple DSL snippets parse correctly into the expected AST structure. Handle syntax errors gracefully.
+
+**Focus:** Design a workable initial DSL syntax and implement the parser to generate an AST. **Do not implement the interpreter/evaluator** that executes the AST yet. That will be the subsequent step.
+
+**Deliverable:** Go code for the AST node definitions and the parser implementation, along with basic parser tests. Documentation/examples of the designed DSL syntax.
