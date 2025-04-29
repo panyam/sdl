@@ -4,3 +4,11 @@ watch:
 
 run:
 	go test
+
+test:
+	go test ./...
+
+bench:
+	cd core && go test -bench=Benchmark -benchmem
+
+testall: test bench

@@ -24,37 +24,31 @@
     *   `README.md`: Project overview, usage examples. (To be created/updated)
 
 *   **`sdl/core/`**
-    *   **Purpose:** Contains the absolute fundamental, generic types and operations for probabilistic distributions, independent of specific result types or components.
+    *   **Core Files:** Contains the absolute fundamental, generic types and operations for probabilistic distributions, independent of specific result types or components.
     *   **Key Files:**
         *   `outcomes.go`: Defines `Bucket[V]` and the core `Outcomes[V any]` struct. Includes fundamental methods like `Add`, `Len`, `TotalWeight`, `Copy`, `Split`, `Partition`, `ScaleWeights`, `GetValue`, and the generic `Sample(rng *rand.Rand)`. Defines generic operators `And`, `If`, `Map`.
         *   `duration.go`: Defines `Duration` type (`float64`) and time unit helpers (`Millis`, `Nanos`, etc.).
         *   `metricable.go`: Defines the `Metricable` interface (`IsSuccess() bool`, `GetLatency() Duration`) used by metric calculations.
         *   `reducers.go`: *(Potential)* Could hold the generic base logic for reduction strategies like `AdaptiveReduce` if it were reused (currently not recommended). Interpolation logic might live here or in result-specific packages.
-
-*   **`sdl/results/`**
-    *   **Purpose:** Defines concrete result types (`V`) that can be used within `Outcomes[V]`, along with type-specific helper functions and reduction strategies.
+    *   **Results:** Defines concrete result types (`V`) that can be used within `Outcomes[V]`, along with type-specific helper functions and reduction strategies.
     *   **Key Files:**
         *   `access_result.go`: Defines `AccessResult{Success, Latency}`, its `GetLatency()` (for `Metricable`), and the specific `AndAccessResults` reducer.
         *   `ranged_result.go`: Defines `RangedResult{Success, Min, Mode, Max}`, its `GetLatency()` (using Mode), `AndRangedResults`, `Overlap()`, `DistTo()`.
         *   `access_result_reducers.go`: Implements `MergeAdjacentAccessResults`, `InterpolateAccessResults`, and the composite `TrimToSize`.
         *   `ranged_result_reducers.go`: Implements `MergeOverlappingRangedResults` (map-based), `InterpolateRangedResults`, the composite `TrimToSizeRanged`, and potentially `RangedResultSignificance` (though adaptive is currently unused).
         *   `converters.go`: Contains `ConvertToRanged`, `ConvertToAccess`, and `SampleWithinRange`.
-
-*   **`sdl/metrics/`**
-    *   **Purpose:** Provides functions to analyze and calculate standard performance metrics from `Outcomes` distributions.
+    *   **Metrics:** Provides functions to analyze and calculate standard performance metrics from `Outcomes` distributions.
     *   **Key Files:**
         *   `metrics.go`: Implements generic helper functions `Availability[V Metricable]`, `MeanLatency[V Metricable]`, `PercentileLatency[V Metricable]`.
 
-*   **`sdl/primitives/`**
-    *   **Purpose:** Defines basic, often indivisible building block components.
+*   **`sdl/components/`**
+    *   **Primitives:** Defines basic, often indivisible building block components.
     *   **Key Files:**
         *   `disk.go`: Defines `Disk` struct, `ProfileSSD`, `ProfileHDD`, `Init()`, `Read()`, `Write()`, `ReadProcessWrite()`. Returns `Outcomes[AccessResult]`.
         *   `network.go`: Defines `NetworkLink` struct, `Init()`, `Transfer()`. Models latency, jitter (via multiple buckets), and loss. Returns `Outcomes[AccessResult]`.
         *   `queue.go`: Defines `Queue` struct (M/M/c/K analytical model), `Init()`, `Enqueue()` (returns `AccessResult` with Success=Blocked?), `Dequeue()` (returns `Outcomes[Duration]` representing wait time).
         *   `resourcepool.go`: Defines `ResourcePool` struct (M/M/c analytical model), `Init()`, `Acquire()` (takes `lambda`, returns `AccessResult` including wait time), `Release()` (direct state change - known limitation).
-
-*   **`sdl/storage/`**
-    *   **Purpose:** Defines more complex components, often representing data storage and indexing structures, built using primitives and core types.
+    *   **Storage:** Defines more complex components, often representing data storage and indexing structures, built using primitives and core types.
     *   **Key Files:**
         *   `index.go`: Defines the base `Index` struct (embeds `Disk`, holds `NumRecords`, `RecordSize`, `PageSize`, `MaxOutcomeLen`, `RecordProcessingTime`).
         *   `heapfile.go`: `HeapFile` implementation.
