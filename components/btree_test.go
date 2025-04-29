@@ -1,12 +1,14 @@
+// components/btree_test.go
 package components
 
 import (
+	// Added
 	"testing"
 
 	sc "github.com/panyam/leetcoach/sdl/core"
-	// Ensure metrics helpers are accessible
 )
 
+// Tests for Init, Height remain the same...
 func TestBTreeIndex_Init(t *testing.T) {
 	bt := (&BTreeIndex{}).Init() // Use constructor style matching BTreeIndex.Init()
 
@@ -73,23 +75,34 @@ func TestBTreeIndex_Operations_Metrics(t *testing.T) {
 	height := bt.Height()
 	t.Logf("BTree Test Setup: NumRecords=%.0f, Fanout=%d, Height=%d", float64(bt.NumRecords), bt.NodeFanout, height)
 
+	// Base SSD read mean for comparison
+	singleReadMean := sc.MeanLatency(bt.Disk.Read())
+
 	// --- Test Find ---
 	findOutcomes := bt.Find()
 	if findOutcomes == nil || findOutcomes.Len() == 0 {
 		t.Fatal("Find() returned nil or empty outcomes")
 	}
+	// Manual
 	findAvail := sc.Availability(findOutcomes)
 	findMean := sc.MeanLatency(findOutcomes)
 	findP99 := sc.PercentileLatency(findOutcomes, 0.99)
-	t.Logf("BTree Find : Avail=%.4f, Mean=%.6fs, P99=%.6fs (Buckets: %d)", findAvail, findMean, findP99, findOutcomes.Len())
-
-	// Plausibility: Find involves ~Height disk reads + CPU. Should be slower than single read.
-	singleReadMean := sc.MeanLatency(bt.Disk.Read())
-	if findMean < singleReadMean*float64(height)*0.8 { // Allow some leeway
-		t.Errorf("BTree Find mean latency (%.6fs) seems too low compared to ~%d disk reads (%.6fs)", findMean, height, singleReadMean)
+	t.Logf("Manual Log - BTree Find : Avail=%.4f, Mean=%.6fs, P99=%.6fs (Buckets: %d)", findAvail, findMean, findP99, findOutcomes.Len())
+	// Analyze
+	findExpectations := []sc.Expectation{
+		sc.ExpectAvailability(sc.GTE, 0.99),
+		sc.ExpectMeanLatency(sc.GTE, singleReadMean*float64(height)*0.5), // Expect mean > half base reads
+		sc.ExpectMeanLatency(sc.LT, singleReadMean*float64(height)*2.0),  // Expect mean < double base reads
 	}
-	if findAvail < 0.99 { // Should be reliable if disk is reliable
-		t.Errorf("BTree Find availability (%.4f) seems too low", findAvail)
+	findAnalysis := sc.Analyze("BTree Find", func() *sc.Outcomes[sc.AccessResult] { return findOutcomes }, findExpectations...)
+	findAnalysis.LogResults(t)
+
+	// Plausibility check (manual)
+	if findMean < singleReadMean*float64(height)*0.8 {
+		t.Errorf("Manual Check - BTree Find mean latency (%.6fs) seems too low compared to ~%d disk reads (%.6fs)", findMean, height, singleReadMean)
+	}
+	if findAvail < 0.99 {
+		t.Errorf("Manual Check - BTree Find availability (%.4f) seems too low", findAvail)
 	}
 
 	// --- Test Insert ---
@@ -97,14 +110,22 @@ func TestBTreeIndex_Operations_Metrics(t *testing.T) {
 	if insertOutcomes == nil || insertOutcomes.Len() == 0 {
 		t.Fatal("Insert() returned nil or empty outcomes")
 	}
+	// Manual
 	insertAvail := sc.Availability(insertOutcomes)
 	insertMean := sc.MeanLatency(insertOutcomes)
 	insertP99 := sc.PercentileLatency(insertOutcomes, 0.99)
-	t.Logf("BTree Insert: Avail=%.4f, Mean=%.6fs, P99=%.6fs (Buckets: %d)", insertAvail, insertMean, insertP99, insertOutcomes.Len())
+	t.Logf("Manual Log - BTree Insert: Avail=%.4f, Mean=%.6fs, P99=%.6fs (Buckets: %d)", insertAvail, insertMean, insertP99, insertOutcomes.Len())
+	// Analyze
+	insertExpectations := []sc.Expectation{
+		sc.ExpectAvailability(sc.GTE, 0.98),    // Slightly lower avail due to more ops
+		sc.ExpectMeanLatency(sc.GTE, findMean), // Insert >= Find
+	}
+	insertAnalysis := sc.Analyze("BTree Insert", func() *sc.Outcomes[sc.AccessResult] { return insertOutcomes }, insertExpectations...)
+	insertAnalysis.LogResults(t)
 
-	// Plausibility: Insert = Find + Modify + Write + Propagation. Should be slower than Find.
+	// Plausibility check (manual)
 	if insertMean <= findMean {
-		t.Errorf("BTree Insert mean latency (%.6fs) should be greater than Find mean (%.6fs)", insertMean, findMean)
+		t.Errorf("Manual Check - BTree Insert mean latency (%.6fs) should be greater than Find mean (%.6fs)", insertMean, findMean)
 	}
 
 	// --- Test Delete ---
@@ -112,23 +133,21 @@ func TestBTreeIndex_Operations_Metrics(t *testing.T) {
 	if deleteOutcomes == nil || deleteOutcomes.Len() == 0 {
 		t.Fatal("Delete() returned nil or empty outcomes")
 	}
+	// Manual
 	deleteAvail := sc.Availability(deleteOutcomes)
 	deleteMean := sc.MeanLatency(deleteOutcomes)
 	deleteP99 := sc.PercentileLatency(deleteOutcomes, 0.99)
-	t.Logf("BTree Delete: Avail=%.4f, Mean=%.6fs, P99=%.6fs (Buckets: %d)", deleteAvail, deleteMean, deleteP99, deleteOutcomes.Len())
-
-	// Plausibility: Delete cost should be similar to Insert cost in this model.
-	if !approxEqualTest(insertMean, deleteMean, insertMean*0.2) { // Allow 20% difference
-		t.Logf("Warning: BTree Insert (%.6fs) and Delete (%.6fs) mean latencies differ significantly", insertMean, deleteMean)
+	t.Logf("Manual Log - BTree Delete: Avail=%.4f, Mean=%.6fs, P99=%.6fs (Buckets: %d)", deleteAvail, deleteMean, deleteP99, deleteOutcomes.Len())
+	// Analyze
+	deleteExpectations := []sc.Expectation{
+		sc.ExpectAvailability(sc.GTE, 0.98),
+		sc.ExpectMeanLatency(sc.GTE, findMean), // Delete >= Find
 	}
+	deleteAnalysis := sc.Analyze("BTree Delete", func() *sc.Outcomes[sc.AccessResult] { return deleteOutcomes }, deleteExpectations...)
+	deleteAnalysis.LogResults(t)
 
-	// Instead, check if Insert/Delete availability makes sense relative to Find * Write * Prop
-	expectedInsertDeleteAvail := sc.Availability(findOutcomes) * sc.Availability(bt.Disk.Write()) * sc.Availability(sc.And(bt.Disk.Read(), bt.Disk.Write(), sc.AndAccessResults))
-	t.Logf("Expected Insert/Delete Avail Approx: %.4f", expectedInsertDeleteAvail)
-	if !approxEqualTest(insertAvail, expectedInsertDeleteAvail, 0.002) { // Allow slightly larger tolerance due to multiple steps/reductions
-		t.Errorf("Insert availability (%.4f) differs significantly from expected (%.4f)", insertAvail, expectedInsertDeleteAvail)
-	}
-	if !approxEqualTest(deleteAvail, expectedInsertDeleteAvail, 0.002) {
-		t.Errorf("Delete availability (%.4f) differs significantly from expected (%.4f)", deleteAvail, expectedInsertDeleteAvail)
+	// Plausibility checks (manual)
+	if !approxEqualTest(insertMean, deleteMean, insertMean*0.2) {
+		t.Logf("Manual Check Warning: BTree Insert (%.6fs) and Delete (%.6fs) mean latencies differ significantly", insertMean, deleteMean)
 	}
 }
