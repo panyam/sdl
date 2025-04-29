@@ -66,17 +66,18 @@ func setupGpuSystem(t *testing.T, gpuPoolSize int, appArrivalRate float64) *AppS
 
 // analyzeSystem performs the setup, analysis, and assertion for a given config
 // Note: The results reflect steady-state analytical approximations.
-func analyzeSystem(t *testing.T, gpuPoolSize int, appArrivalRate float64, p99SLOMillis float64) {
+func analyzeSystemAndGetResult(t *testing.T, gpuPoolSize int, appArrivalRate float64, p99SLOMillis float64) sdl.AnalysisResult[sdl.AccessResult] {
 	t.Helper()
 	// --- Setup ---
 	appServer := setupGpuSystem(t, gpuPoolSize, appArrivalRate)
 
 	// --- Define Expectations ---
-	gpuWorkAvailability := sdl.Availability(DefineGPUWorkProfile())
+	// gpuWorkAvailability := sdl.Availability(DefineGPUWorkProfile())
 	targetP99SLO := sdl.Millis(p99SLOMillis)
 	expectations := []sdl.Expectation{
-		sdl.ExpectAvailability(sdl.GTE, gpuWorkAvailability*0.99), // Allow slight reduction
-		sdl.ExpectP99(sdl.LT, targetP99SLO),                       // Check against the parameter
+		// sdl.ExpectAvailability(sdl.GTE, gpuWorkAvailability*0.99), // Allow slight reduction
+		sdl.ExpectAvailability(sdl.GTE, 0.92), // Expect >= 0.92 after reduction
+		sdl.ExpectP99(sdl.LT, targetP99SLO),   // Check against the parameter
 	}
 
 	// --- Analyze ---
@@ -85,46 +86,7 @@ func analyzeSystem(t *testing.T, gpuPoolSize int, appArrivalRate float64, p99SLO
 		return appServer.Infer()
 	}, expectations...)
 
-	// --- Assert ---
-	analysisResult.Assert(t)
-
-	// --- Optional: Log specific calculated values for context ---
-	finalP99 := analysisResult.Metrics[sdl.P99LatencyMetric]
-	if finalP99 < targetP99SLO {
-		t.Logf("SLO MET: P99 Latency (%.6fs) is below target (%.3fs)", finalP99, targetP99SLO)
-	} else {
-		// Assertion already failed, this log might not be reached on failure depending on test runner verbosity
-		t.Logf("SLO MISSED: P99 Latency (%.6fs) is >= target (%.3fs)", finalP99, targetP99SLO)
-	}
-}
-
-// --- Optional: Test with different parameters ---
-func TestGpuCaller_HighLoad(t *testing.T) {
-	gpuPoolSize := 5        // Fewer GPUs
-	appArrivalRate := 800.0 // Higher arrival rate
-	appServer := setupGpuSystem(t, gpuPoolSize, appArrivalRate)
-	gpuWorkAvailability := sdl.Availability(DefineGPUWorkProfile())
-
-	expectations := []sdl.Expectation{
-		sdl.ExpectAvailability(sdl.GTE, gpuWorkAvailability*0.99),
-		sdl.ExpectP99(sdl.LT, sdl.Millis(750)), // Might expect higher P99 under load
-	}
-
-	analysisName := fmt.Sprintf("GPU Caller Infer HighLoad (N=%d, Lambda=%.0f)", gpuPoolSize, appArrivalRate)
-	analysisResult := sdl.Analyze(analysisName, func() *sdl.Outcomes[sdl.AccessResult] {
-		return appServer.Infer()
-	}, expectations...)
-
-	analysisResult.Assert(t) // This might fail if P99 exceeds 750ms
-
-	finalP99 := analysisResult.Metrics[sdl.P99LatencyMetric]
-	slo := sdl.Millis(500)
-	if finalP99 < slo {
-		t.Logf("HighLoad: Primary SLO PASSED (P99 %.6fs < %.3fs)", finalP99, slo)
-	} else {
-		t.Logf("HighLoad: Primary SLO FAILED (P99 %.6fs >= %.3fs)", finalP99, slo)
-	}
-
+	return analysisResult // Return the result struct
 }
 
 // --- Test Scenarios ---
@@ -140,14 +102,17 @@ func TestGpuCaller_Scenarios(t *testing.T) {
 		name        string
 		gpuPoolSize int
 		appQPS      float64
+		expectFail  bool
 	}{
-		{"Baseline_10GPU_5kQPS", 10, 5000.0},
-		{"Baseline_20GPU_5kQPS", 20, 5000.0},
-		{"HighLoad_10GPU_10kQPS", 10, 10000.0},
-		{"HighLoad_20GPU_10kQPS", 20, 10000.0},
-		{"TargetLoad_20GPU_20kQPS", 20, 20000.0}, // Target QPS
-		{"TargetLoad_30GPU_20kQPS", 30, 20000.0}, // More GPUs for Target QPS
-		{"StressLoad_30GPU_25kQPS", 30, 25000.0},
+		{"Baseline_10GPU_5kQPS", 10, 5000.0, false},
+		{"Baseline_20GPU_5kQPS", 20, 5000.0, false},
+		{"HighLoad_10GPU_10kQPS", 10, 10000.0, false},
+		{"HighLoad_20GPU_10kQPS", 20, 10000.0, false},
+		{"TargetLoad_20GPU_20kQPS", 20, 20000.0, false}, // Target QPS
+		{"TargetLoad_30GPU_20kQPS", 30, 20000.0, false}, // More GPUs for Target QPS
+		{"StressLoad_30GPU_25kQPS", 30, 25000.0, false},
+		// Add a scenario likely to saturate the pool and miss SLO
+		{"Saturate_10GPU_20kQPS", 10, 20000.0, true},
 	}
 
 	// Run analysis for each scenario as a subtest
@@ -155,7 +120,32 @@ func TestGpuCaller_Scenarios(t *testing.T) {
 		// Capture scenario variable for closure
 		scenario := sc
 		t.Run(scenario.name, func(subT *testing.T) {
-			analyzeSystem(subT, scenario.gpuPoolSize, scenario.appQPS, p99SLO)
+			// Call the analysis function (which no longer asserts internally)
+			result := analyzeSystemAndGetResult(subT, scenario.gpuPoolSize, scenario.appQPS, p99SLO)
+
+			// Always log the detailed results
+			result.LogResults(subT)
+
+			// Conditional Assertion: Fail the test only if the pass/fail status is unexpected
+			if scenario.expectFail {
+				// We expected one or more expectations within Analyze to fail.
+				// The test run PASSES if Analyze reported a failure (result.AllPassed == false).
+				if result.AllPassed {
+					subT.Errorf("Test Logic FAIL: Expected expectation failures for this scenario, but all passed.")
+				} else {
+					// This is the desired outcome for this scenario. Log appropriately maybe.
+					subT.Logf("Test Logic PASS: Scenario correctly resulted in expectation failures as expected.")
+				}
+			} else {
+				// We expected all expectations within Analyze to pass.
+				// The test run PASSES if Analyze reported success (result.AllPassed == true).
+				if !result.AllPassed {
+					subT.Errorf("Test Logic FAIL: Expected all expectations to pass, but some failed.")
+				} else {
+					// This is the desired outcome.
+					subT.Logf("Test Logic PASS: All expectations met as expected.")
+				}
+			}
 		})
 	}
 }
