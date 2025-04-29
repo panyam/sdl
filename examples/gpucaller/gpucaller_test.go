@@ -57,23 +57,18 @@ func setupGpuSystem(t *testing.T, gpuPoolSize int, appArrivalRate float64) *AppS
 	return appServer
 }
 
-// End-to-End Test
-func TestGpuCaller_EndToEnd(t *testing.T) {
-	// --- Simulation Parameters ---
-	gpuPoolSize := 10       // Number of GPUs (N)
-	appArrivalRate := 500.0 // Requests per second arriving at this app server (L_app)
-
+// analyzeSystem performs the setup, analysis, and assertion for a given config
+func analyzeSystem(t *testing.T, gpuPoolSize int, appArrivalRate float64, p99SLOMillis float64) {
+	t.Helper()
 	// --- Setup ---
 	appServer := setupGpuSystem(t, gpuPoolSize, appArrivalRate)
 
 	// --- Define Expectations ---
-	// End-to-end SLO: P99 <= 500ms
-	// Availability should be high, dominated by GPU work profile availability
 	gpuWorkAvailability := sdl.Availability(DefineGPUWorkProfile())
-
+	targetP99SLO := sdl.Millis(p99SLOMillis)
 	expectations := []sdl.Expectation{
 		sdl.ExpectAvailability(sdl.GTE, gpuWorkAvailability*0.99), // Allow slight reduction
-		sdl.ExpectP99(sdl.LT, sdl.Millis(500)),                    // The primary SLO
+		sdl.ExpectP99(sdl.LT, targetP99SLO),                       // Check against the parameter
 	}
 
 	// --- Analyze ---
@@ -87,11 +82,11 @@ func TestGpuCaller_EndToEnd(t *testing.T) {
 
 	// --- Optional: Log specific calculated values for context ---
 	finalP99 := analysisResult.Metrics[sdl.P99LatencyMetric]
-	slo := sdl.Millis(500)
-	if finalP99 < slo {
-		t.Logf("SLO PASSED: P99 Latency (%.6fs) is below target (%.3fs)", finalP99, slo)
+	if finalP99 < targetP99SLO {
+		t.Logf("SLO MET: P99 Latency (%.6fs) is below target (%.3fs)", finalP99, targetP99SLO)
 	} else {
-		t.Logf("SLO FAILED: P99 Latency (%.6fs) is >= target (%.3fs)", finalP99, slo)
+		// Assertion already failed, this log might not be reached on failure depending on test runner verbosity
+		t.Logf("SLO MISSED: P99 Latency (%.6fs) is >= target (%.3fs)", finalP99, targetP99SLO)
 	}
 }
 
@@ -122,4 +117,34 @@ func TestGpuCaller_HighLoad(t *testing.T) {
 		t.Logf("HighLoad: Primary SLO FAILED (P99 %.6fs >= %.3fs)", finalP99, slo)
 	}
 
+}
+
+// --- Test Scenarios ---
+func TestGpuCaller_Scenarios(t *testing.T) {
+	// Base SLO
+	const p99SLO = 500.0 // ms
+
+	// Define scenarios to test
+	scenarios := []struct {
+		name        string
+		gpuPoolSize int
+		appQPS      float64
+	}{
+		{"Baseline_10GPU_5kQPS", 10, 5000.0},
+		{"Baseline_20GPU_5kQPS", 20, 5000.0},
+		{"HighLoad_10GPU_10kQPS", 10, 10000.0},
+		{"HighLoad_20GPU_10kQPS", 20, 10000.0},
+		{"TargetLoad_20GPU_20kQPS", 20, 20000.0}, // Target QPS
+		{"TargetLoad_30GPU_20kQPS", 30, 20000.0}, // More GPUs for Target QPS
+		{"StressLoad_30GPU_25kQPS", 30, 25000.0},
+	}
+
+	// Run analysis for each scenario as a subtest
+	for _, sc := range scenarios {
+		// Capture scenario variable for closure
+		scenario := sc
+		t.Run(scenario.name, func(subT *testing.T) {
+			analyzeSystem(subT, scenario.gpuPoolSize, scenario.appQPS, p99SLO)
+		})
+	}
 }
