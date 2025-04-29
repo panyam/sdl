@@ -142,7 +142,10 @@ func (bs *BitlyService) Redirect(shortCode string, lambda float64 /* unused for 
 		})
 
 	// Combine results from both paths
-	combinedRedirectOutcomes := (&sdl.Outcomes[sdl.AccessResult]{}).Append(finalHits, finalMissPathOutcomes)
+	// Initialize empty with the correct reducer, then append results from the two paths
+	combinedRedirectOutcomes := &sdl.Outcomes[sdl.AccessResult]{And: sdl.AndAccessResults} // Ensure the final combined outcome has the correct 'And' func if it were used later
+	combinedRedirectOutcomes.Append(finalHits)
+	combinedRedirectOutcomes.Append(finalMissPathOutcomes)
 
 	// Apply Reduction
 	maxLen := 10 // TODO: Get from config?
