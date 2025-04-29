@@ -1,130 +1,138 @@
 
-**LeetCoach Project Summary **
+## SDL Project Summary & Onboarding Guide (Organized by Proposed Folders)
 
-**1. Overview:**
+**1. Vision & Goal:**
 
-LeetCoach is a web application aimed at assisting users in preparing for system design interviews. It enables the creation, editing, and viewing of multi-section "Design" documents. Supported section types include Text (TinyMCE), Drawing (Excalidraw), and Plot (JSON config). The application features user authentication (local & OAuth via `oneauth`), a Go backend utilizing gRPC services, and a TypeScript frontend without a major framework (except for Excalidraw). It leverages LLM capabilities (via OpenAI) for suggesting sections, generating/reviewing content using customizable prompts stored on the filesystem, and generating default prompts. Persistence uses a hybrid approach: filesystem for core design/section data managed by `DesignStore`, and Google Cloud Datastore for users, tags, and auth entities.
+*   **Purpose:** The SDL (System Design Language) library aims to model and simulate the performance characteristics (latency, availability, error rates) of distributed system components using analytical models and probabilistic composition rather than full discrete-event simulation.
+*   **Use Cases:** Enable rapid "what-if" analysis of system designs, bottleneck identification, SLO evaluation, interactive performance exploration, and potentially educational tools by modelling component interactions and their probabilistic outcomes.
 
-**2. Root Directory (`./`)**
+**2. Overall Architecture:**
 
-*   **Purpose:** Contains the main application entry point, build configurations (implied `Makefile`), environment setup (including `OPENAI_API_KEY`, `OPENAI_MODEL`), core application orchestration (`App`), logging setup, and top-level documentation.
-*   **Key Files:**
-    *   `main.go`: Main executable entry point. Loads environment (`godotenv`), parses flags, initializes `App`, sets up logging (`slog`, `dev.go`).
-    *   `app.go`: Defines the `App` struct, responsible for managing and starting gRPC and Web servers, handling graceful shutdown.
-    *   `.env`, `.env.dev`: Environment variable files (contains API keys, ports, etc.).
-    *   `SUMMARY.md`: This detailed summary document.
-    *   `INSTRUCTIONS.md`: Development conventions (TypeScript, Go templates, Tailwind, no major JS framework).
-    *   `dev.go`: Development utilities (`slog` pretty-printer).
+*   The core simulation engine relies on composing `Outcomes` distributions.
+*   Component models (primitives, storage, etc.) define their performance profiles as `Outcomes`.
+*   Operations are modelled by combining `Outcomes` using operators (`And`, `If`, `Map`).
+*   Complexity (combinatorial explosion) is managed via reduction strategies (Merge+Interpolate).
+*   State evolution is handled externally by modifying component parameters between simulation runs, not automatically within operations.
+*   Future Goal (Phase 4): Implement a user-friendly DSL to define components and orchestrate simulations, translating DSL definitions into calls to this Go library.
 
-**3. Services (`./services/`)**
+**3. Code Structure & Package Overview:**
 
-*   **Purpose:** Defines and implements backend business logic via gRPC. Handles data persistence logic (filesystem via `DesignStore`, Datastore via `ClientMgr`), core operations, and LLM interactions.
-*   **Key Files:**
-    *   `server.go`: Initializes and starts the gRPC server. **Instantiates `DesignStore`** and injects it where needed (`DesignService`, `ContentService`, `LlmService`). Instantiates `LLMClient` and injects it into `LlmService`. Registers all gRPC services.
-    *   `designs_store.go`: **(New/Refactored)** Encapsulates ALL filesystem interactions for designs, sections, prompts, and content paths. Provides methods like `Read/WriteDesignMetadata`, `Read/WriteSectionData`, `Read/WritePromptFile`, `GetContentPath`, `DeleteDesign`, `DeleteSection`, `ListDesignIDs`. Ensures directories exist. Handles filename sanitization. Used by `DesignService`, `ContentService`, and `LlmService`.
-    *   `designs.go`: **(Refactored)** Implements `DesignService`. Manages Design/Section *metadata manipulation* (e.g., adding/removing section IDs in `Design.SectionIds`). **Delegates all filesystem I/O (read/write/delete metadata, path generation) to `DesignStore`.** Handles logic for adding/deleting/moving sections *within the design's list*. Reads initial prompts from request during `AddSection` and writes them via `DesignStore`. Reads prompts via `DesignStore` for `GetDesign`/`GetSection` to populate transient fields on Go structs.
-    *   `content.go`: **(Refactored)** Implements `ContentService`. Manages section *content bytes* (e.g., `content.main`, `content.light.svg`). **Delegates path logic to `DesignStore`.** Reads/writes content files. **Does NOT update metadata timestamps.**
-    *   `llm_service.go`: **(Refactored)** Implements `LlmService`. Orchestrates LLM calls. **Reads section/design metadata and prompt files directly via `DesignStore`.** Reads content bytes via `ContentService`. Writes default prompts via `DesignStore` (`GenerateDefaultPrompts`). Uses the injected `LLMClient`.
-    *   `tags.go`: Implements `TagService` interacting with Datastore via `ClientMgr`.
-    *   `auth.go`: Implements internal user/identity/channel logic for authentication, interacting with Datastore via `ClientMgr`.
-    *   `admin.go`: Implements `AdminService` (dev environment).
-    *   `models.go`: Defines Go structs (e.g., `Design`, `Section`, `User`, `Tag`). `Section` struct includes non-persistent `GetAnswerPrompt`, `VerifyAnswerPrompt` fields (`json:"-"`) populated during reads.
-    *   `converters.go`: Helper functions for converting between Go structs and Protobuf messages. `SectionToProto` copies prompt fields from the Go struct.
-    *   `clientmgr.go`: Manages Google Cloud **Datastore** client connections and provides typed `DataStore` wrappers.
-    *   `base.go`, `gcds.go`, `idgen.go`, `constants.go`: Base service utilities, Datastore wrapper logic, ID generation (filesystem based for designs/sections), constants (e.g., `defaultDesignsBasePath`).
-    *   `designs_test.go`, `designs_store_test.go`, `content_test.go`: Unit tests for services and the store.
+**(Proposed Folder Structure)**
 
-**4. LLM Client (`./services/llm/`)**
+*   **`sdl/` (Root)**
+    *   `go.mod`, `go.sum`: Go module definitions.
+    *   `README.md`: Project overview, usage examples. (To be created/updated)
 
-*   **Purpose:** Provides an abstraction layer over specific LLM API interactions (currently OpenAI).
-*   **Key Files:**
-    *   `client.go`: Defines `LLMClient` interface, `openaiClient` implementation using `go-openai`, and `MockLLMClient` for testing. Reads API key/model from environment variables.
-    *   `client_test.go`: Unit tests for the client/mock.
+*   **`sdl/core/`**
+    *   **Purpose:** Contains the absolute fundamental, generic types and operations for probabilistic distributions, independent of specific result types or components.
+    *   **Key Files:**
+        *   `outcomes.go`: Defines `Bucket[V]` and the core `Outcomes[V any]` struct. Includes fundamental methods like `Add`, `Len`, `TotalWeight`, `Copy`, `Split`, `Partition`, `ScaleWeights`, `GetValue`, and the generic `Sample(rng *rand.Rand)`. Defines generic operators `And`, `If`, `Map`.
+        *   `duration.go`: Defines `Duration` type (`float64`) and time unit helpers (`Millis`, `Nanos`, etc.).
+        *   `metricable.go`: Defines the `Metricable` interface (`IsSuccess() bool`, `GetLatency() Duration`) used by metric calculations.
+        *   `reducers.go`: *(Potential)* Could hold the generic base logic for reduction strategies like `AdaptiveReduce` if it were reused (currently not recommended). Interpolation logic might live here or in result-specific packages.
 
-**5. Protobuf Definitions (`./proto/leetcoach/v1/`)**
+*   **`sdl/results/`**
+    *   **Purpose:** Defines concrete result types (`V`) that can be used within `Outcomes[V]`, along with type-specific helper functions and reduction strategies.
+    *   **Key Files:**
+        *   `access_result.go`: Defines `AccessResult{Success, Latency}`, its `GetLatency()` (for `Metricable`), and the specific `AndAccessResults` reducer.
+        *   `ranged_result.go`: Defines `RangedResult{Success, Min, Mode, Max}`, its `GetLatency()` (using Mode), `AndRangedResults`, `Overlap()`, `DistTo()`.
+        *   `access_result_reducers.go`: Implements `MergeAdjacentAccessResults`, `InterpolateAccessResults`, and the composite `TrimToSize`.
+        *   `ranged_result_reducers.go`: Implements `MergeOverlappingRangedResults` (map-based), `InterpolateRangedResults`, the composite `TrimToSizeRanged`, and potentially `RangedResultSignificance` (though adaptive is currently unused).
+        *   `converters.go`: Contains `ConvertToRanged`, `ConvertToAccess`, and `SampleWithinRange`.
 
-*   **Purpose:** Defines the gRPC service contracts (RPC methods) and message structures used for communication between frontend gateway and backend services.
-*   **Key Files:**
-    *   `models.proto`: Defines messages like `Design`, `Section` (includes `get_answer_prompt`, `verify_answer_prompt` strings).
-    *   `designs.proto`: Defines `DesignService` RPCs (`CreateDesign`, `GetDesign`, `UpdateDesign`, `DeleteDesign`, `AddSection`, `UpdateSection`, `DeleteSection`, `MoveSection`). `AddSectionRequest` includes optional initial prompt strings.
-    *   `content.proto`: Defines `ContentService` RPCs (`GetContent`, `SetContent`).
-    *   `llm_service.proto`: Defines `LlmService` RPCs (`SimpleLlmQuery`, `SuggestSections`, `GenerateTextContent`, `ReviewTextContent`, `GenerateDefaultPrompts`). Includes `SuggestedSection` message with prompt fields.
-    *   `tag_service.proto`, `admin_service.proto`: Service definitions for tags and admin functions.
+*   **`sdl/metrics/`**
+    *   **Purpose:** Provides functions to analyze and calculate standard performance metrics from `Outcomes` distributions.
+    *   **Key Files:**
+        *   `metrics.go`: Implements generic helper functions `Availability[V Metricable]`, `MeanLatency[V Metricable]`, `PercentileLatency[V Metricable]`.
 
-**6. Web Layer (`./web/`)**
+*   **`sdl/primitives/`**
+    *   **Purpose:** Defines basic, often indivisible building block components.
+    *   **Key Files:**
+        *   `disk.go`: Defines `Disk` struct, `ProfileSSD`, `ProfileHDD`, `Init()`, `Read()`, `Write()`, `ReadProcessWrite()`. Returns `Outcomes[AccessResult]`.
+        *   `network.go`: Defines `NetworkLink` struct, `Init()`, `Transfer()`. Models latency, jitter (via multiple buckets), and loss. Returns `Outcomes[AccessResult]`.
+        *   `queue.go`: Defines `Queue` struct (M/M/c/K analytical model), `Init()`, `Enqueue()` (returns `AccessResult` with Success=Blocked?), `Dequeue()` (returns `Outcomes[Duration]` representing wait time).
+        *   `resourcepool.go`: Defines `ResourcePool` struct (M/M/c analytical model), `Init()`, `Acquire()` (takes `lambda`, returns `AccessResult` including wait time), `Release()` (direct state change - known limitation).
 
-*   **Purpose:** Handles incoming HTTP requests, serves static assets, acts as the API gateway (gRPC-Gateway), manages user sessions and authentication flows.
-*   **Key Files:**
-    *   `server.go`: Starts the main HTTP web server, applies middleware (logging, CORS for dev).
-    *   `app.go`: Defines `LCApp`. Initializes web application components: `scs` for sessions, `oneauth` for authentication handlers (local, Google, GitHub), `LCApi` (gRPC gateway), `LCViews` (template rendering). Connects `oneauth` to user storage logic.
-    *   `api.go`: Configures and runs the `grpc-gateway`. Includes middleware to extract the logged-in user ID from the session and inject it into the outgoing gRPC metadata for backend services. Implements custom error handling for gateway responses.
-    *   `user.go`: Implements the `oneauth.UserStore` interface, providing methods (`GetUserByID`, `EnsureAuthUser`, `ValidateUsernamePassword`) for `oneauth` to interact with the backend `AuthService` (via `ClientMgr`) or mock users.
+*   **`sdl/storage/`**
+    *   **Purpose:** Defines more complex components, often representing data storage and indexing structures, built using primitives and core types.
+    *   **Key Files:**
+        *   `index.go`: Defines the base `Index` struct (embeds `Disk`, holds `NumRecords`, `RecordSize`, `PageSize`, `MaxOutcomeLen`, `RecordProcessingTime`).
+        *   `heapfile.go`: `HeapFile` implementation.
+        *   `btree.go`: Refined `BTreeIndex` implementation.
+        *   `hashindex.go`: Refined `HashIndex` implementation (heuristic probabilities).
+        *   `sortedfile.go`: `SortedFile` implementation.
+        *   `lsm.go`: Simplified `LSMTree` implementation.
+        *   `bitmap.go`: Simplified `BitmapIndex` implementation.
+        *   `cache.go`: `Cache` component implementation (standalone component approach).
 
-**7. Server-Side Views & Logic (`./web/views/`)**
+*   **`sdl/dsl/` (Future - Phase 4)**
+    *   **Purpose:** Will contain the parser, interpreter, Abstract Syntax Tree (AST) nodes, and runtime environment for the user-facing System Design Language.
 
-*   **Purpose:** Defines Go structs representing page data and handles the logic for loading data required by server-side rendered Go templates. Manages the template rendering pipeline.
-*   **Key Files:**
-    *   `main.go`: Defines `ViewContext`, `View` interface, `ViewRenderer` function. Initializes the `templar` template engine, loads templates from `./web/views/templates`, defines shared template functions.
-    *   `views.go`: Sets up HTTP routes for different pages (e.g., "/", "/login", "/designs/{id}/edit"), mapping them to specific `View` implementations and template files.
-    *   `HomePage.go`, `DesignEditorPage.go`, `DesignViewerPage.go`, `LoginPage.go`, `Header.go`, `DesignList.go`, `Paginator.go`: Define structs holding data for specific pages/components (e.g., `HomePage` holds `Header` and `DesignListView`). Implement the `Load` method to fetch necessary data from backend services (via `ClientMgr`) based on the request.
-    *   `utils.go`: Helper functions (e.g., `randomDesignName`).
+*   **`sdl/examples/` (Future - Phase 4/5)**
+    *   **Purpose:** Will contain complete examples demonstrating how to define systems using the DSL (or Go API) and analyze them.
 
-**8. HTML Templates (`./web/views/templates/`)**
+**4. Current Status:**
 
-*   **Purpose:** Contains Go HTML templates (`*.html`) for server-side rendering and the client-side template registry. Uses Tailwind CSS classes for styling.
-*   **Key Files:**
-    *   `BasePage.html`: Defines the main HTML document structure (`<html>`, `<head>`, `<body>`). Includes placeholders for header, body content, modals (`ModalContainer`), toasts (`ToastContainer`), and JavaScript includes. Sets up basic dark mode handling.
-    *   `Header.html`: Template for the top navigation bar, including logo, site name, theme toggle button, mobile menu button, and placeholder for extra buttons.
-    *   `ModalContainer.html`, `ToastContainer.html`: Define the structure for modal and toast UI elements.
-    *   `TemplateRegistry.html`: **Crucial for client-side UI.** Contains definitions for dynamically loaded components:
-        *   `llm-dialog`: LLM interaction modal with tabs (Generate, Custom, Verify), prompt textareas, "Refresh Default" buttons.
-        *   `llm-results`: Modal to display LLM responses, with conditional "Apply" button.
-        *   `section-type-selector`: Modal for choosing new section types (Text, Draw, Plot) and includes the "Suggest Sections" flow elements.
-        *   `suggested-section-card`: Template for displaying an LLM-suggested section.
-        *   `create-design-modal`: Modal for starting a new design (Blank or from template).
-        *   Section View/Edit Templates (`text-section-view`, `text-section-edit`, `drawing-section-view`, etc.): HTML structure for displaying or editing the content of each section type.
-    *   `Section.html`: Template for the wrapper around a single section, including header (number, title, type icon), controls (move, delete, add, settings, LLM, fullscreen), and the content area.
-    *   `HomePage.html`, `DesignEditorPage.html`, `LoginPage.html`, `DesignList.html`, `TableOfContents.html`, `DocumentTitle.html`: Page-specific templates composing smaller components.
+*   Phase 1 (Core & Primitives) and Phase 2 (Component Models & Basic Concurrency concepts) are largely complete, focusing on analytical modelling. Phase 3 (Advanced Concurrency/Queuing/State) was partially addressed by adding analytical Queue/Pool models.
+*   Core `Outcomes` system with composition operators (`And`, `If`, `Map`) is stable.
+*   Effective reduction strategies (Merge+Interpolate via `TrimToSize`/`TrimToSizeRanged`) are implemented and tested for `AccessResult` and `RangedResult`.
+*   A good suite of primitive (`Disk`, `NetworkLink`, `Queue`, `ResourcePool`) and storage (`HeapFile`, `BTree`, `Hash`, `SortedFile`, `LSM`, `Bitmap`, `Cache`) components exist, modelled primarily using `Outcomes[AccessResult]` and analytical approximations.
+*   Metric calculation and sampling capabilities are available.
+*   **Known Limitations:** Accurate modelling of stateful interactions (esp. `ResourcePool.Release`), complex asynchronous patterns, and time-based batching variance remains challenging without moving towards DES. The current models favour analytical speed over detailed simulation accuracy in these areas.
 
-**9. Frontend Components (`./web/views/components/`)**
+**5. Next Steps (Phase 4):**
 
-*   **Purpose:** TypeScript classes responsible for managing the interactive UI, handling user events, making API calls to the gRPC-Gateway, and manipulating the DOM based on templates loaded from `TemplateRegistry.html`.
-*   **Key Files:**
-    *   `Api.ts`: Configures and exports instances of the auto-generated API clients (`DesignApi`, `ContentApi`, `LlmApi`), including setting the base path (`/api`) and adding an interceptor to inject authentication tokens.
-    *   `BaseSection.ts`: Abstract base class for sections. Handles view/edit mode switching, loading templates, common controls (title edit, LLM button, fullscreen via `FullscreenHandler`), event binding. Defines abstract methods for subclasses.
-    *   `TextSection.ts`, `DrawingSection.tsx`, `PlotSection.ts`: Concrete implementations of `BaseSection`.
-        *   `TextSection`: Integrates with TinyMCE for rich text editing, handles content saving/loading via `ContentApi`. Provides `applyGeneratedContent` callback for LLM results.
-        *   `DrawingSection`: Integrates with Excalidraw (using React/ReactDOM), handles saving/loading drawing data (`main` JSON) and SVG previews (`light.svg`, `dark.svg`) via `ContentApi`. Handles theme changes for Excalidraw.
-        *   `PlotSection`: Provides basic view/edit for plot configuration (JSON textarea).
-    *   `SectionManager.ts`: Manages the collection of `BaseSection` instances on the editor page. Handles adding sections (calls `DesignApi.addSection`), deleting sections (`DesignApi.deleteSection`), moving sections (`DesignApi.moveSection`). Orchestrates the "Suggest Sections" flow (`LlmApi.suggestSections`). Updates the `TableOfContents`.
-    *   `LlmInteractionHandler.ts`: Manages the LLM modal (`llm-dialog`, `llm-results`). Handles submitting requests to `LlmApi` (`GenerateTextContent`, `ReviewTextContent`, `SimpleLlmQuery`, `GenerateDefaultPrompts`). Handles saving edited prompts via `DesignApi.updateSection`.
-    *   `DesignEditorPage.ts`: Entry point for the editor page. Initializes all managers (`ThemeManager`, `Modal`, `ToastManager`, `DocumentTitle`, `SectionManager`, `TableOfContents`). Handles the initial loading of design data (`DesignApi.getDesign`) and coordinates the loading of section content.
-    *   `HomePage.ts`: Entry point for the design list page. Handles the "Create New" modal (`create-design-modal`).
-    *   `LoginPage.ts`: Handles the logic for the login/signup form toggle.
-    *   `TableOfContents.ts`: Manages the TOC sidebar UI, updates based on `SectionManager`, handles scrolling, mobile drawer.
-    *   `DocumentTitle.ts`: Handles inline editing of the design title and calls `DesignApi.updateDesign`.
-    *   `Modal.ts`: Singleton manager for showing/hiding modals based on templates from `TemplateRegistry.html`. Handles `onSubmit`/`onApply` callbacks.
-    *   `ToastManager.ts`: Singleton manager for displaying toast notifications.
-    *   `ThemeManager.ts`: Manages light/dark/system theme switching and updates relevant UI elements (like toggle button icon). Notifies sections of theme changes.
-    *   `TemplateLoader.ts`: Utility for loading HTML content from `TemplateRegistry.html`.
-    *   `FullscreenHandler.ts`: Manages entering/exiting fullscreen mode for sections.
-    *   `converters.ts`: Utility functions for mapping between API enums/structs and frontend types (e.g., `V1SectionType` <-> `SectionType`).
-    *   `types.ts`: Defines core TypeScript interfaces and types used across frontend components (`SectionData`, `SectionContent`, `SectionType`, etc.).
+*   Focus on **Usability & System Composition**.
+*   **Primary Task:** Implement the DSL parser and interpreter.
+*   Other Tasks: Visualization hooks, build a component library (pre-defined compositions), create full system examples.
 
-**10. Auto-Generated API Client (`./web/views/components/apiclient/`)**
+---
 
-*   **Purpose:** Contains the TypeScript client library automatically generated from the Protobuf definitions (likely using `openapi-generator` with the gRPC-Gateway output). Provides typed methods for calling the backend API.
-*   **Key Files:** Generated files reflecting the gRPC service definitions.
+**Prompt for Next LLM Task (Phase 4 - DSL Implementation):**
 
-**11. Static Assets (`./web/static/`)**
+```text
+**Project Context:**
 
-*   **Purpose:** Stores static files served directly by the web server.
-*   **Key Files:**
-    *   `css/tailwind.css`: Compiled Tailwind CSS output.
-    *   `js/gen/`: Location for bundled JavaScript from TypeScript components (implied by `INSTRUCTIONS.md`) and potentially third-party JS assets like TinyMCE skins/plugins.
-    *   Images, icons, fonts if any.
+You are continuing development on the SDL (System Design Language) Go library. This library enables performance modelling (latency, availability) of system components using probabilistic `Outcomes` distributions and analytical approximations, avoiding full discrete-event simulation for speed.
 
-**12. Attic (`./.attic/`)**
+**Current State:**
+- The core Go library (organized conceptually into `core`, `results`, `metrics`, `primitives`, `storage` packages) provides:
+    - `Outcomes[V any]` for probability distributions.
+    - Composition operators (`And`, `If`, `Map`).
+    - Result types (`AccessResult`, `RangedResult`) and converters.
+    - Robust reduction strategies (`TrimToSize`, `TrimToSizeRanged` using Merge+Interpolate).
+    - Metric calculations (`Availability`, `MeanLatency`, `PercentileLatency`).
+    - Sampling (`Sample`, `SampleWithinRange`).
+    - A suite of component models (`Disk`, `NetworkLink`, `Queue`, `ResourcePool`, `Cache`, `LSMTree`, `BTreeIndex`, `HashIndex`, `BitmapIndex`, etc.) primarily using `Outcomes[AccessResult]`.
+- State evolution is handled externally by configuring component parameters between simulation runs. Complex async/stateful interactions have known limitations in the analytical model.
+- The project documentation includes a detailed summary outlining the vision, concepts, components, status, and proposed code organization.
 
-*   **Purpose:** Contains older or deprecated code for reference, not actively used.
+**Phase 4 Goal:** Focus on Usability & System Composition.
 
+**Next Task (Phase 4, Task 1): Design and Start Implementing the DSL**
+
+Your primary task is to **design the syntax for the user-facing System Design Language (SDL DSL)** and begin implementing the **parser** for it using a suitable Go parsing library (e.g., `participle`, `goyacc`, or even standard library tools if simple enough).
+
+**Requirements:**
+
+1.  **DSL Syntax Design:**
+    *   Define a clear, intuitive, text-based syntax for users to:
+        *   **Declare Components:** Define new component types (e.g., `component MyDatabase { ... }`).
+        *   **Define Parameters:** Specify configurable parameters within components (e.g., `diskProfile: string = "SSD"; poolSize: int = 10`). Include support for basic types (string, int, float, bool).
+        *   **Define Dependencies:** Declare instances of other components used internally (e.g., `cache: RedisCache; db: PostgresDB`).
+        *   **Define Operations:** Declare methods/operations the component provides (e.g., `operation ReadUser(userId: string): Outcomes<UserResult> { ... }`). Specify input parameters and the *type* of `Outcomes` returned (e.g., `Outcomes<AccessResult>`, `Outcomes<Duration>`).
+        *   **Define Operation Logic:** Specify the sequence of internal calls and compositions within an operation using a syntax that maps clearly to the underlying Go library operators (`And`, `If`, `Map`, calls to dependent components). Consider syntax for sequential calls, basic conditionals (if/else based on outcome properties like `Success`), mapping results, and potentially loops (e.g., `for i := 0; i < height; i++`).
+        *   **Instantiate Components:** Create instances of defined components (e.g., `myDB: MyDatabase = { poolSize: 20 }`).
+        *   **Orchestrate Analysis:** Define entry points or scenarios to trigger analysis (e.g., `analyze myDB.ReadUser("user123")`).
+    *   **Reference Existing Ideas:** Refer to the high-level DSL ideas previously mentioned in the project documentation (e.g., the Database/ApiServer example) but refine and formalize the syntax.
+    *   **Keep it Simple Initially:** Focus on core functionality; advanced features like complex types, modules, or imports can come later.
+
+2.  **Parser Implementation (Initial):**
+    *   Choose a suitable Go parsing library/technique. `participle` is often good for defining grammar directly in Go structs.
+    *   Define the Abstract Syntax Tree (AST) node types in Go structs corresponding to the designed DSL syntax (e.g., `ComponentDecl`, `ParamDecl`, `OperationDef`, `CallExpr`, `SequenceExpr`, `IfExpr`).
+    *   Implement the parser that takes DSL text as input and produces an AST.
+    *   Add basic unit tests for the parser, verifying that simple DSL snippets parse correctly into the expected AST structure. Handle syntax errors gracefully.
+
+**Focus:** Design a workable initial DSL syntax and implement the parser to generate an AST. **Do not implement the interpreter/evaluator** that executes the AST yet. That will be the subsequent step.
+
+**Deliverable:** Go code for the AST node definitions and the parser implementation, along with basic parser tests. Documentation/examples of the designed DSL syntax.
