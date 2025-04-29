@@ -1,105 +1,134 @@
+// sdl/components/resourcepool.go
 package components
 
 import (
-	// "log"
 	"fmt"
 	"math"
-	"sync"
+
+	// No longer need "sync"
 
 	sc "github.com/panyam/leetcoach/sdl/core"
-	// Assuming M/M/c helper functions (factorial, calculateP0, calculateLq etc.) from queue.go are accessible
-	// If not, they need to be moved to a common utility package or duplicated.
-	// For now, assume they are accessible (e.g., in the same package or imported).
 )
 
-// ResourcePool models a pool of limited, identical resources (e.g., connections, threads, GPUs).
-// It uses the M/M/c analytical queuing model to estimate the average steady-state
-// waiting time (Wq) when the pool is fully utilized, based on configured average
-// arrival and service rates.
+// ResourcePool models a pool of limited, identical resources using the M/M/c
+// analytical queuing model to predict average steady-state waiting time (Wq).
+// It is a stateless component configured with size, average arrival rate,
+// and average hold time. Its methods predict steady-state performance
+// based solely on these initial configuration parameters.
 //
 // Limitations:
 //   - Analytical Model: Provides steady-state average queueing delay (Wq). It does not
-//     capture the variance or impact of bursty arrivals as a discrete-event simulation would.
-//     Best used for capacity planning and understanding average performance under sustained load.
-//   - State Handling: Acquire calculates Wq based on configured rates, not the instantaneous
-//     `Used` count. `Release` directly modifies state, creating a slight asymmetry.
+//     capture the variance from bursty arrivals or non-Poisson processes like DES would.
+//   - Configuration Driven: Behavior depends entirely on the configured rates; it does
+//     not dynamically adapt to observed load or previous calls within a simulation run.
 //   - Cold Starts: Does not model system warm-up or initially empty queues.
+//   - Stateless: Does not track the instantaneous number of used resources. Acquire/Release
+//     semantics are purely statistical based on configured rates.
 type ResourcePool struct {
-	Name string // Optional identifier
-	Size uint   // Maximum number of concurrent users/holders (c)
-	Used uint   // Current number of resources in use (State!)
+	Name string
+	Size uint // Maximum number of concurrent users/holders (c)
+	// Removed: Used uint
+	// Removed: mu sync.Mutex
 
 	// --- Configuration for Queuing Model ---
-	// Assumed average arrival rate of requests needing this resource (items/sec)
-	ArrivalRate float64 // λ (lambda) - Represents the rate at which requests arrive *at the pool*.
-	// Assumed average time a resource is held once acquired (service time, seconds/item)
-	AvgHoldTime float64 // Ts = 1/μ - Represents the average duration a resource is held.
+	ArrivalRate float64 // λ: Average rate requests for this pool arrive (items/sec)
+	AvgHoldTime float64 // Ts: Average time resource is held once acquired (seconds/item)
 
-	// --- Derived M/M/c Values ---
-	serviceRate  float64 // μ (mu) = 1 / AvgHoldTime
+	// --- Derived M/M/c Values (Calculated in Init) ---
+	serviceRate  float64 // μ = 1 / AvgHoldTime
 	offeredLoad  float64 // a = λ / μ
-	utilization  float64 // ρ (rho) = a / c
+	utilization  float64 // ρ = a / c
 	isStable     bool    // rho < 1
-	avgWaitTimeQ float64 // Average M/M/c waiting time (Wq) when queuing is necessary
-
-	mu sync.Mutex
+	avgWaitTimeQ float64 // Average M/M/c waiting time (Wq)
 }
 
-// Init initializes the ResourcePool.
+// Init initializes the ResourcePool, calculating steady-state M/M/c metrics.
 func (rp *ResourcePool) Init(name string, size uint, lambda float64, ts float64) *ResourcePool {
 	rp.Name = name
 	if size == 0 {
-		size = 1 /* Avoid division by zero, maybe log warning */
+		// log.Printf("Warning: ResourcePool '%s' initialized with size=0. Using size=1.", name)
+		size = 1
 	}
 	rp.Size = size
-	rp.Used = 0
 
-	// --- Validate and Store Config ---
+	// Validate and Store Config
 	if lambda <= 0 {
+		// log.Printf("Warning: ResourcePool '%s' initialized with lambda <= 0 (%.3f). Using small positive.", name, lambda)
 		lambda = 1e-9
 	}
 	if ts <= 0 {
+		// log.Printf("Warning: ResourcePool '%s' initialized with AvgHoldTime <= 0 (%.6f). Using small positive.", name, ts)
 		ts = 1e-9
 	}
 	rp.ArrivalRate = lambda
 	rp.AvgHoldTime = ts
 
-	// --- Calculate Derived M/M/c Metrics ---
+	// Calculate Derived M/M/c Metrics
 	rp.serviceRate = 1.0 / rp.AvgHoldTime              // mu = 1 / Ts
 	rp.offeredLoad = rp.ArrivalRate / rp.serviceRate   // a = lambda / mu
 	rp.utilization = rp.offeredLoad / float64(rp.Size) // rho = a / c
 	rp.isStable = rp.utilization < 1.0
 
-	// Calculate M/M/c average wait time Wq (assuming infinite queue K for simplicity here)
-	// We need P0 and Lq for M/M/c (infinite K version)
-	if rp.isStable {
-		// Calculate P0 for M/M/c (infinite K)
+	// Calculate M/M/c average wait time Wq (assuming infinite queue K for simplicity)
+	rp.avgWaitTimeQ = 0 // Default to 0
+	if rp.utilization >= 1.0 {
+		// Unstable case
+		rp.avgWaitTimeQ = math.Inf(1)
+	} else if rp.utilization > 1e-12 { // Avoid calculations if load is effectively zero
+		// Stable case, calculate P0 and Lq for M/M/c (infinite K)
 		sum1 := 0.0
 		for n := uint(0); n < rp.Size; n++ {
-			sum1 += math.Pow(rp.offeredLoad, float64(n)) / factorial(n)
+			termN := math.Pow(rp.offeredLoad, float64(n)) / factorial(n)
+			// Check for potential overflow/Inf in termN if offeredLoad is very large
+			if math.IsInf(termN, 0) || math.IsNaN(termN) {
+				// log.Printf("Warning: Term overflow in P0 calc for ResourcePool '%s'. OfferedLoad likely too high.", rp.Name)
+				rp.avgWaitTimeQ = math.Inf(1) // Treat as unstable if terms overflow
+				goto EndWqCalc                // Skip rest of calc
+			}
+			sum1 += termN
 		}
 		termC := math.Pow(rp.offeredLoad, float64(rp.Size)) / factorial(rp.Size)
-		p0_inf := 1.0 / (sum1 + termC*(1.0/(1.0-rp.utilization)))
+		if math.IsInf(termC, 0) || math.IsNaN(termC) {
+			// log.Printf("Warning: TermC overflow in P0 calc for ResourcePool '%s'. OfferedLoad likely too high.", rp.Name)
+			rp.avgWaitTimeQ = math.Inf(1)
+			goto EndWqCalc
+		}
+
+		p0_inf_denominator := sum1 + termC*(1.0/(1.0-rp.utilization))
+		if p0_inf_denominator <= 1e-12 || math.IsInf(p0_inf_denominator, 0) || math.IsNaN(p0_inf_denominator) {
+			// Denominator is effectively zero or Inf, implies instability or P0 near zero
+			// Wq could be Inf or 0 depending on exact limit, assume Inf if unstable was missed
+			if !rp.isStable {
+				rp.avgWaitTimeQ = math.Inf(1)
+			} // Otherwise remains 0, which is likely correct if P0 is ~0
+			goto EndWqCalc
+		}
+		p0_inf := 1.0 / p0_inf_denominator
 
 		// Calculate Lq for M/M/c (infinite K)
-		lq_inf := p0_inf * (math.Pow(rp.offeredLoad, float64(rp.Size)) * rp.utilization) / (factorial(rp.Size) * math.Pow(1.0-rp.utilization, 2))
+		lq_inf_numerator := p0_inf * termC * rp.utilization
+		lq_inf_denominator := math.Pow(1.0-rp.utilization, 2)
 
-		// Calculate Wq using Little's Law (Wq = Lq / lambda) - lambda_eff = lambda here
+		if lq_inf_denominator <= 1e-12 || math.IsInf(lq_inf_numerator, 0) || math.IsNaN(lq_inf_numerator) {
+			// Problem calculating Lq, implies instability or extreme values
+			if !rp.isStable {
+				rp.avgWaitTimeQ = math.Inf(1)
+			} // Otherwise remains 0
+			goto EndWqCalc
+		}
+		lq_inf := lq_inf_numerator / lq_inf_denominator
+
+		// Calculate Wq using Little's Law (Wq = Lq / lambda)
 		if rp.ArrivalRate > 1e-9 && !math.IsInf(lq_inf, 0) && !math.IsNaN(lq_inf) && lq_inf >= 0 {
 			rp.avgWaitTimeQ = lq_inf / rp.ArrivalRate
-		} else {
-			rp.avgWaitTimeQ = 0
 		}
-	} else {
-		// Unstable case for infinite queue
-		rp.avgWaitTimeQ = math.Inf(1)
+		// If Lq or lambda is zero/Inf/NaN, avgWaitTimeQ defaults to 0, which is correct.
 	}
-	if rp.avgWaitTimeQ < 0 {
-		rp.avgWaitTimeQ = 0
-	} // Ensure non-negative
 
-	// log.Printf("ResourcePool '%s' Init: Size=%d, lambda=%.2f, Ts=%.4f, mu=%.2f, a=%.3f, rho=%.3f, Wq=%.6f",
-	//      rp.Name, rp.Size, rp.ArrivalRate, rp.AvgHoldTime, rp.serviceRate, rp.offeredLoad, rp.utilization, rp.avgWaitTimeQ)
+EndWqCalc:
+	if rp.avgWaitTimeQ < 0 { // Should not happen, but safety check
+		rp.avgWaitTimeQ = 0
+	}
 
 	return rp
 }
@@ -110,101 +139,53 @@ func NewResourcePool(name string, size uint, arrivalRate float64, avgHoldTime fl
 	return rp.Init(name, size, arrivalRate, avgHoldTime)
 }
 
-// Acquire attempts to acquire one resource from the pool.
+// Acquire predicts the outcome of attempting to acquire one resource from the pool
+// based on the steady-state M/M/c analysis performed during Init.
 // Returns Outcomes[sc.AccessResult]:
-// - Success=true, Latency=0: Acquired immediately (pool not fully utilized on average).
-// - Success=true, Latency=WaitTimeDist: Acquired after queuing delay (pool fully utilized on average).
-// - Success=false, Latency=0: Rejected (if modelled, not currently implemented).
-//
-// Note on Analytical Model:
-// The decision to queue and the calculated WaitTimeDist are based on the M/M/c model
-// using the configured average ArrivalRate and AvgHoldTime to determine steady-state
-// utilization (rho) and average wait time (Wq). It does not use the instantaneous
-// value of the `Used` field at the time of the call to determine queueing.
+// - Success=true, Latency=0: Acquired immediately (pool underutilized on average, Wq ~ 0).
+// - Success=true, Latency=WaitTimeDist: Acquired after average queuing delay Wq (pool utilized on average).
+// - Success=false, Latency=0: Rejected (pool unstable, Wq is infinite).
 func (rp *ResourcePool) Acquire() *Outcomes[sc.AccessResult] {
-	rp.mu.Lock()
-	needsQueueing := rp.Used >= rp.Size
-	// Simulate potential state change for caller's benefit if needed? Risky.
-	// For now, decision is based purely on state *before* this call.
-	rp.mu.Unlock()
 
 	outcomes := &Outcomes[sc.AccessResult]{And: sc.AndAccessResults}
+	avgWaitTime := rp.avgWaitTimeQ // Use pre-calculated Wq from Init
 
-	if !needsQueueing {
-		// --- Resource Available ---
-		// Success: Acquired immediately with zero latency.
-		outcomes.Add(1.0, sc.AccessResult{
-			Success: true,
-			Latency: 0, // Or small CPU cost? Assume 0 for now.
-		})
-		// NOTE: State rp.Used is NOT incremented here in the pure model.
-		// The caller or simulation loop would need to handle this.
-		// log.Printf("Pool '%s': Acquire IMMEDIATE SUCCESS (Used=%d, Size=%d)", rp.Name, rp.Used, rp.Size) // Debugging state *before* hypothetical acquire
-
+	if math.IsInf(avgWaitTime, 1) || avgWaitTime > 3600.0*24 { // Treat effectively infinite waits as rejection
+		// Unstable (rho >= 1) -> Reject
+		outcomes.Add(1.0, sc.AccessResult{Success: false, Latency: 0})
+	} else if avgWaitTime < 1e-9 {
+		// Stable (rho < 1) and Negligible Wait -> Immediate Success
+		outcomes.Add(1.0, sc.AccessResult{Success: true, Latency: 0})
 	} else {
-		// --- Resource Busy - Must Queue ---
-		avgWaitTime := rp.avgWaitTimeQ // Use pre-calculated Wq
+		// Stable (rho < 1), Positive Wait -> Generate Wait Distribution
+		// Approximate distribution using exponential percentiles scaled by calculated Wq
+		numBuckets := 5 // Number of buckets to approximate the distribution
+		totalProb := 1.0
+		percentiles := []float64{0.10, 0.30, 0.50, 0.70, 0.90}
+		bucketWeights := []float64{0.20, 0.20, 0.20, 0.20, 0.20} // Should sum to 1.0
 
-		if math.IsInf(avgWaitTime, 1) || avgWaitTime > 3600.0*24 {
-			// Unstable or excessively long wait - model as rejection?
-			// For now, let's return failure if Wq is "infinite".
-			// log.Printf("Pool '%s': Acquire FAILURE (infinite Wq) (Used=%d, Size=%d)", rp.Name, rp.Used, rp.Size)
-			outcomes.Add(1.0, sc.AccessResult{Success: false, Latency: 0})
-
-		} else if avgWaitTime < 1e-9 {
-			// Wait time is negligible, treat as immediate success.
-			// This can happen if rho is very low but pool is momentarily full.
-			// log.Printf("Pool '%s': Acquire QUEUED but Wq ~ 0 (Used=%d, Size=%d)", rp.Name, rp.Used, rp.Size)
-			outcomes.Add(1.0, sc.AccessResult{Success: true, Latency: 0})
-
-		} else {
-			// Stable queue, positive wait time. Generate wait time distribution.
-			// log.Printf("Pool '%s': Acquire QUEUED (Wq=%.6f) (Used=%d, Size=%d)", rp.Name, avgWaitTime, rp.Used, rp.Size)
-
-			// Approximate distribution using exponential percentiles scaled by calculated Wq
-			numBuckets := 5 // Keep consistent with Queue implementation
-			totalProb := 1.0
-			percentiles := []float64{0.10, 0.30, 0.50, 0.70, 0.90}
-			bucketWeights := []float64{0.20, 0.20, 0.20, 0.20, 0.20} // Should sum to 1.0
-
-			if len(percentiles) != numBuckets || len(bucketWeights) != numBuckets {
-				panic(fmt.Sprintf("ResourcePool '%s': Mismatch in percentile/weight array lengths for Acquire", rp.Name))
-			}
-
-			for i := 0; i < numBuckets; i++ {
-				p := percentiles[i]
-				waitTime := 0.0
-				if p < 0.999999 && avgWaitTime > 1e-12 {
-					waitTime = -avgWaitTime * math.Log(1.0-p)
-				} else if p >= 0.999999 {
-					waitTime = avgWaitTime * 5 // Approximation for P99+
-				}
-
-				if waitTime < 0 {
-					waitTime = 0
-				}
-				outcomes.Add(bucketWeights[i]*totalProb, sc.AccessResult{
-					Success: true, // Acquired *after* waiting
-					Latency: waitTime,
-				})
-			}
+		if len(percentiles) != numBuckets || len(bucketWeights) != numBuckets {
+			panic(fmt.Sprintf("ResourcePool '%s': Mismatch in percentile/weight array lengths for Acquire", rp.Name))
 		}
-		// NOTE: State rp.Used is NOT incremented here.
-	}
 
+		for i := 0; i < numBuckets; i++ {
+			p := percentiles[i]
+			waitTime := 0.0
+			// Use average wait time Wq here for exponential distribution parameterization
+			if p < 0.999999 && avgWaitTime > 1e-12 { // Avoid log(0) and ensure Wq is positive
+				waitTime = -avgWaitTime * math.Log(1.0-p)
+			} else if p >= 0.999999 {
+				waitTime = avgWaitTime * 7 // Approximation for P99+, increased multiplier slightly
+			}
+
+			if waitTime < 0 {
+				waitTime = 0
+			}
+			outcomes.Add(bucketWeights[i]*totalProb, sc.AccessResult{
+				Success: true, // Acquired *after* waiting
+				Latency: waitTime,
+			})
+		}
+	}
 	return outcomes
-}
-
-// Release returns one resource to the pool. (Direct state modification - limitation)
-//
-// Limitation: This directly modifies the `Used` count, which is not fully utilized
-// by the analytical `Acquire` method for queueing calculations.
-func (rp *ResourcePool) Release() {
-	rp.mu.Lock()
-	defer rp.mu.Unlock()
-	if rp.Used > 0 {
-		rp.Used--
-	} else {
-		// log.Printf("Warning: Pool '%s': Release called when Used count is zero.", rp.Name)
-	}
 }
