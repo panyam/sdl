@@ -956,3 +956,94 @@ func TestInterpreter_Eval_CallExpr_NonDeterministicArg(t *testing.T) {
 
 // TODO: Add test for IfStmt without Else branch.
 // TODO: Add test for IfStmt where condition is myVar.Success (requires evalMemberAccess)
+
+// --- Test Top Level Driver (Phase X / now) ---
+
+func TestInterpreter_RunDSL_SimpleSystem(t *testing.T) {
+	// Manually construct AST for:
+	// system "TestSys" {
+	//   instance d1: Disk = { ProfileName = "SSD" };
+	//   analyze readPerf = d1.Read();
+	//   analyze writePerf = d1.Write();
+	// }
+
+	systemAST := &SystemDecl{
+		Name: "TestSys",
+		Body: []Node{ // Use Node interface
+			&InstanceDecl{
+				Name:          "d1",
+				ComponentType: "Disk", // Matches name registered in registerBuiltinComponents
+				Params: []*ParamAssignment{ // Use ParamAssignment slice
+					{Name: "ProfileName", Value: &LiteralExpr{Kind: "STRING", Value: "SSD"}},
+				},
+			},
+			&AnalyzeDecl{
+				Name: "readPerf",
+				Target: &CallExpr{
+					Function: &MemberAccessExpr{Receiver: &IdentifierExpr{Name: "d1"}, Member: "Read"},
+					Args:     []Expr{},
+				},
+			},
+			&AnalyzeDecl{
+				Name: "writePerf",
+				Target: &CallExpr{
+					Function: &MemberAccessExpr{Receiver: &IdentifierExpr{Name: "d1"}, Member: "Write"},
+					Args:     []Expr{},
+				},
+			},
+		},
+	}
+
+	results, err := RunDSL(systemAST)
+	if err != nil {
+		t.Fatalf("RunDSL failed: %v", err)
+	}
+
+	if len(results) != 2 {
+		t.Fatalf("Expected 2 analysis results, got %d", len(results))
+	}
+
+	// Check Read Result
+	readResult, okRead := results["readPerf"]
+	if !okRead {
+		t.Fatal("Analysis result wrapper 'readPerf' not found")
+	}
+	if readResult.Error != nil {
+		t.Errorf("readPerf analysis failed: %v", readResult.Error)
+	}
+	if !readResult.AnalysisPerformed {
+		t.Error("readPerf analysis was not performed (or metrics failed)")
+	}
+	if _, ok := readResult.Outcome.(*core.Outcomes[core.AccessResult]); !ok {
+		t.Errorf("readPerf outcome has wrong type: %T", readResult.Outcome)
+	}
+	if len(readResult.Metrics) < 4 {
+		t.Errorf("Expected at least 4 metrics for readPerf, got %d", len(readResult.Metrics))
+	}
+	// Use core.MetricType constants as keys
+	if readResult.Metrics[core.AvailabilityMetric] <= 0.9 || readResult.Metrics[core.AvailabilityMetric] > 1.0 {
+		t.Errorf("readPerf availability %.4f seems wrong", readResult.Metrics[core.AvailabilityMetric])
+	}
+
+	// Check Write Result (basic checks using wrapper fields)
+	writeResult, okWrite := results["writePerf"]
+	if !okWrite {
+		t.Fatal("Analysis result wrapper 'writePerf' not found")
+	}
+	if writeResult.Error != nil {
+		t.Errorf("writePerf analysis failed: %v", writeResult.Error)
+	}
+	if !writeResult.AnalysisPerformed {
+		t.Error("writePerf analysis was not performed")
+	}
+	// Check outcome type
+	if _, ok := writeResult.Outcome.(*core.Outcomes[core.AccessResult]); !ok {
+		t.Errorf("writePerf outcome has wrong type: %T", writeResult.Outcome)
+	}
+	if len(writeResult.Metrics) < 4 {
+		t.Errorf("Expected at least 4 metrics for writePerf, got %d", len(writeResult.Metrics))
+	}
+
+	t.Logf("RunDSL Test Read Metrics: %v", readResult.Metrics)
+	t.Logf("RunDSL Test Write Metrics: %v", writeResult.Metrics)
+}

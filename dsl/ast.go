@@ -253,3 +253,102 @@ type IfStmt struct {
 
 func (i *IfStmt) stmtNode()      {}
 func (i *IfStmt) String() string { return fmt.Sprintf("if (%s) { ... } else { ... }", i.Condition) }
+
+// --- Top Level Declaration Nodes ---
+
+// File represents the top-level node of a parsed DSL file.
+type File struct {
+	NodeInfo
+	Declarations []Node // Can contain ComponentDecl, SystemDecl, OptionsDecl etc.
+}
+
+func (f *File) String() string { return "File{...declarations...}" }
+
+// ComponentDecl represents a component definition block.
+type ComponentDecl struct {
+	NodeInfo
+	Name string
+	Body []Node // Contains ParamDecl, UsesDecl, OperationDef etc.
+}
+
+func (c *ComponentDecl) String() string { return fmt.Sprintf("component %q { ... }", c.Name) }
+
+// ParamDecl represents a parameter definition within a component.
+type ParamDecl struct {
+	NodeInfo
+	Name         string
+	Type         string // e.g., "int", "string", "duration", "float"
+	DefaultValue Expr   // Optional default value expression
+}
+
+func (p *ParamDecl) String() string { return fmt.Sprintf("param %s: %s", p.Name, p.Type) }
+
+// UsesDecl represents a dependency declaration within a component.
+type UsesDecl struct {
+	NodeInfo
+	Name          string
+	ComponentType string // The type of the component being used
+}
+
+func (u *UsesDecl) String() string { return fmt.Sprintf("uses %s: %s", u.Name, u.ComponentType) }
+
+// OperationDef represents an operation definition within a component.
+type OperationDef struct {
+	NodeInfo
+	Name       string
+	Parameters []*ParamDecl // Signature parameters
+	ReturnType string       // e.g., "AccessResult", "Duration", "bool"
+	Body       *BlockStmt   // The actual logic block
+}
+
+func (o *OperationDef) String() string {
+	return fmt.Sprintf("operation %s(...) : %s { ... }", o.Name, o.ReturnType)
+}
+
+// SystemDecl represents a system definition block.
+type SystemDecl struct {
+	NodeInfo
+	Name string
+	Body []Node // Contains InstanceDecl, AnalyzeDecl etc.
+}
+
+func (s *SystemDecl) String() string { return fmt.Sprintf("system %q { ... }", s.Name) }
+
+// InstanceDecl represents a component instance declaration within a system.
+type InstanceDecl struct {
+	NodeInfo
+	Name          string
+	ComponentType string             // Name of the component definition (built-in or user-defined)
+	Params        []*ParamAssignment // Parameter overrides for this instance
+}
+
+func (i *InstanceDecl) String() string {
+	return fmt.Sprintf("instance %s: %s = { ... }", i.Name, i.ComponentType)
+}
+
+// ParamAssignment represents setting a parameter value in an InstanceDecl.
+type ParamAssignment struct {
+	NodeInfo
+	Name  string
+	Value Expr // The value assigned to the parameter
+}
+
+func (p *ParamAssignment) String() string { return fmt.Sprintf("%s = %s", p.Name, p.Value) }
+
+// AnalyzeDecl represents an analysis target within a system.
+type AnalyzeDecl struct {
+	NodeInfo
+	Name   string
+	Target Expr // The expression (usually a method call) to evaluate and analyze
+	// TODO: Add 'Expect' clauses later
+}
+
+func (a *AnalyzeDecl) String() string { return fmt.Sprintf("analyze %s = %s", a.Name, a.Target) }
+
+// OptionsDecl represents an options block (syntax placeholder)
+type OptionsDecl struct {
+	NodeInfo
+	// Define fields for options later
+}
+
+func (o *OptionsDecl) String() string { return "options { ... }" }

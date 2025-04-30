@@ -134,9 +134,13 @@ func (i *Interpreter) Eval(node Node) (any, error) {
 	case *BlockStmt:
 		// When Eval is called directly on a BlockStmt (e.g., top level),
 		// there is no initial context from an outer structure like IfStmt.
+		// evalBlockStmt now returns the result directly, doesn't leave on stack implicitly
 		blockResult, evalErr := i.evalBlockStmt(n, i.env, nil) // Pass nil context
-		i.push(blockResult)                                    // Push the final result of the block evaluation
-		err = evalErr                                          // Assign any error from the block execution
+		// Only push if no error and result is non-nil (avoids pushing nil return signal value)
+		if evalErr == nil && blockResult != nil {
+			i.push(blockResult) // Push the final result of the block evaluation
+		}
+		err = evalErr // Assign any error from the block execution
 	case *AssignmentStmt:
 		err = i.evalAssignmentStmt(n)
 	case *ReturnStmt:
@@ -187,7 +191,7 @@ func (i *Interpreter) ClearStack() {
 
 // --- Combination & Reduction Helper ---
 
-// combineOutcomesAndReduce takes two outcome objects, determines
+// combineAndReduceImplicit takes two outcome objects, determines
 // the correct sequential reducer from the registry, calls core.And (via the registered func),
 // applies reduction if necessary, and returns the final combined outcome.
 func (i *Interpreter) combineOutcomesAndReduce(leftOutcome, rightOutcome any) (any, error) {
