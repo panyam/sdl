@@ -818,17 +818,9 @@ func TestInterpreter_Eval_IfStmt_AccessResultSuccess(t *testing.T) {
 	interp.Env().Set("mock", mockComp)
 
 	// AST for: if condVar.Success { mock.OpSuccess() } else { mock.OpFailure() }
-	// NOTE: We need to implement MemberAccess evaluation for .Success first.
-	// For now, let's assume the condition *itself* yields the outcome to split.
-	// This test will likely FAIL until MemberAccess is smarter.
-	// --- TEMPORARY WORKAROUND: Use a boolean outcome directly ---
-	condBoolOutcome := (&core.Outcomes[bool]{And: func(a, b bool) bool { return a && b }}).
-		Add(0.8, true).Add(0.2, false)
-	interp.Env().Set("condBool", condBoolOutcome)
 
 	ifStmt := &IfStmt{
-		// Condition: &MemberAccessExpr{Receiver: &IdentifierExpr{Name: "condVar"}, Member: "Success"}, // Needs evalMemberAccess
-		Condition: &IdentifierExpr{Name: "condBool"}, // WORKAROUND
+		Condition: &MemberAccessExpr{Receiver: &IdentifierExpr{Name: "condVar"}, Member: "Success"}, // Use the member access
 		Then: &BlockStmt{Statements: []Stmt{
 			&ExprStmt{Expression: call(member(ident("mock"), "OpSuccess"))},
 		}},
@@ -840,10 +832,6 @@ func TestInterpreter_Eval_IfStmt_AccessResultSuccess(t *testing.T) {
 	// Eval the If statement - result pushed onto stack
 	err := interp.evalIfStmt(ifStmt) // Use specific eval for testing
 	if err != nil {
-		// If this fails with ErrInvalidConditionType, it's because evalMemberAccess isn't implemented yet.
-		if errors.Is(err, ErrInvalidConditionType) || errors.Is(err, ErrMethodNotFound) { // Also skip if member access fails
-			t.Skipf("Skipping IfStmt test: Requires evalMemberAccess for '.Success' field access (%v)", err)
-		}
 		t.Fatalf("evalIfStmt failed: %v", err)
 	}
 

@@ -25,11 +25,12 @@ type Outcomes[V Outcome] struct {
 }
 
 func (o *Outcomes[V]) Copy() *Outcomes[V] {
-	out := Outcomes[V]{}
-	for _, bucket := range o.Buckets {
-		out.Buckets = append(out.Buckets, bucket)
+	if o == nil {
+		return nil
 	}
-	return &out
+	out := &Outcomes[V]{And: o.And, Buckets: make([]Bucket[V], len(o.Buckets), cap(o.Buckets))}
+	copy(out.Buckets, o.Buckets)
+	return out
 }
 
 func (o *Outcomes[V]) Len() int {
@@ -290,6 +291,7 @@ func (o *Outcomes[V]) ScaleWeights(factor float64) {
 		return
 	}
 	if factor < 0 {
+		// For probability scaling negative doesnt make sense
 		factor = 0
 	} // Cannot have negative weights
 	for i := range o.Buckets {

@@ -126,7 +126,7 @@ func (i *Interpreter) Eval(node Node) (any, error) {
 	case *MemberAccessExpr:
 		// Member access is often handled *within* evalCallExpr,
 		// but we might need a stub if it can be evaluated alone.
-		err = ErrNotImplemented // Placeholder
+		err = i.evalMemberAccessExpr(n) // <-- Call the actual implementation
 	case *RepeatExpr:
 		err = i.evalRepeatExpr(n)
 

@@ -239,7 +239,7 @@ func (i *Interpreter) evalIfStmt(stmt *IfStmt) error {
 	// the DSL structure enforces `if someOutcome { ... }` where someOutcome is bool.
 	// --- Let's refine: Assume Eval(stmt.Condition) pushes the relevant OUTCOME to split ---
 	// This implies `evalMemberAccess` for `.Success` should push the receiver's outcome.
-	// We will need to implement `evalMemberAccess` later to handle this properly.
+	// Now that evalMemberAccess is implemented, this assumption should hold.
 	// For *this phase*, let's assume `conditionOutcomeRaw` IS the outcome distribution to split.
 
 	splitPredicate, err := selectSplitPredicate(stmt.Condition, conditionOutcomeRaw)
@@ -265,7 +265,7 @@ func (i *Interpreter) evalIfStmt(stmt *IfStmt) error {
 		thenInputOutcome, elseInputOutcome = condOutcome.Split(specificPredicate)
 	// Add cases for other splittable types (e.g., RangedResult if needed)
 	default:
-		return fmt.Errorf("%w: cannot split type %T", ErrConditionSplitFailed, conditionOutcomeRaw)
+		return fmt.Errorf("%w: cannot split outcome of type %T based on condition %q", ErrConditionSplitFailed, conditionOutcomeRaw, stmt.Condition.String())
 	}
 
 	// 3. Evaluate Then Branch
@@ -324,8 +324,10 @@ func (i *Interpreter) evalIfStmt(stmt *IfStmt) error {
 	}
 
 	// 5. Combine Results using Append
-	// Need to handle type compatibility and nil branches.
 	var finalCombinedOutcome any
+
+	// --- DEBUG ---
+	fmt.Printf("DEBUG evalIfStmt Combine: ThenResult=%T, ElseResult=%T\n", thenBranchResultOutcome, elseBranchResultOutcome)
 
 	// Use type assertions and core.Append
 	switch tb := thenBranchResultOutcome.(type) {
