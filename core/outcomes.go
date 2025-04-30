@@ -7,6 +7,13 @@ import (
 
 type Outcome = any
 
+type OutcomeContainer interface {
+	Len() int
+
+	// TotalWeight returns the sum of weights of all buckets.
+	TotalWeight() float64
+}
+
 type Bucket[V Outcome] struct {
 	Weight float64
 	Value  V
