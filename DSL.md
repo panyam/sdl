@@ -13,8 +13,8 @@
 *   **Go Library:** Component methods (`disk.Read`, `cache.Write`, etc.) **always** return `Outcomes[V]` (e.g., `Outcomes[AccessResult]`, `Outcomes[Duration]`). The core engine explicitly manipulates these distributions.
 *   **DSL Syntax:**
     *   Operation signatures omit the `Outcomes<>` wrapper for brevity (e.g., `operation Read(): AccessResult`).
-    *   Operation logic primarily manipulates variables that *conceptually* hold concrete types, but the interpreter maps these to the underlying `Outcomes` objects.
-*   **Interpreter Role:** Translate the cleaner DSL syntax into explicit calls to the Go library's `Outcomes` manipulation functions (`And`, `If`, `Map`, `Split`, `Append`, `Trim...`), managing the composition of distributions behind the scenes.
+    *   Operation logic primarily manipulates variables that *conceptually* hold concrete types, but the vm maps these to the underlying `Outcomes` objects.
+*   **VM Role:** Translate the cleaner DSL syntax into explicit calls to the Go library's `Outcomes` manipulation functions (`And`, `If`, `Map`, `Split`, `Append`, `Trim...`), managing the composition of distributions behind the scenes.
 
 **3. Proposed DSL Syntax (Based on HCL-like Structure + Script-like Logic):**
 
@@ -28,10 +28,10 @@
     *   `operation name(params): ReturnValueType { ... }` (e.g., `AccessResult`, `Duration`, `bool`)
 *   **Operation Logic Block (`{ ... }`):**
     *   **Implicit `self`:** Unqualified calls (`cache.Read()`) refer to component's dependencies.
-    *   **Assignment:** `var = component.Operation(args)` (Interpreter stores resulting `Outcomes` object in `var`).
-    *   **Sequential Composition (Implicit `And`):** `a = Op1(); b = Op2(); return b;` -> Interpreter generates `And(Op1_Outcomes, Op2_Outcomes, ...)`. Needs default reducer logic based on types. Result of sequence is outcome of last step's composition.
-    *   **Conditional (`If`):** `if var.Success { <then_block> } else { <else_block> }`. Interpreter translates to logic using `Split` on `var`'s `Outcomes` based on the `.Success` field (or other boolean field), evaluates branches with split distributions, and combines results (`Append`) adding conditional check latency.
-    *   **Return:** `return var` (Interpreter returns the `Outcomes` object associated with `var`). If returning a literal, interpreter wraps it in a deterministic `Outcomes` distribution.
+    *   **Assignment:** `var = component.Operation(args)` (VM stores resulting `Outcomes` object in `var`).
+    *   **Sequential Composition (Implicit `And`):** `a = Op1(); b = Op2(); return b;` -> VM generates `And(Op1_Outcomes, Op2_Outcomes, ...)`. Needs default reducer logic based on types. Result of sequence is outcome of last step's composition.
+    *   **Conditional (`If`):** `if var.Success { <then_block> } else { <else_block> }`. VM translates to logic using `Split` on `var`'s `Outcomes` based on the `.Success` field (or other boolean field), evaluates branches with split distributions, and combines results (`Append`) adding conditional check latency.
+    *   **Return:** `return var` (VM returns the `Outcomes` object associated with `var`). If returning a literal, vm wraps it in a deterministic `Outcomes` distribution.
     *   **Map (Future):** May need explicit `Map(var, func...)` syntax.
     *   **Value Access:** **Disallowed for now.** Logic cannot directly access fields like `var.Latency` or use non-boolean fields in conditions. Focus is on composing the `Outcomes` containers based on boolean success/failure paths.
     *   **Randomness:** No explicit `rand()` in DSL. Probability originates from components' `dist { ... }` blocks (if that syntax is adopted for primitives) or from the composition of `Outcomes`.
@@ -39,9 +39,9 @@
     *   `instanceName: ComponentType = { paramOverrides... };` (Overrides use literals or references to other instances).
     *   `analyze analysisName = instance.Operation(args);` (Triggers simulation/analysis of the target operation call).
     *   *(Future):* `expect` clauses for SLO checks. Context blocks for scenario parameters.
-*   **Parameter Passing:** Methods *can* take parameters (e.g., `Acquire(lambda float64)`). The interpreter handles passing arguments during calls.
+*   **Parameter Passing:** Methods *can* take parameters (e.g., `Acquire(lambda float64)`). The vm handles passing arguments during calls.
 
-**4. Interpreter Design & Challenges:**
+**4. VM Design & Challenges:**
 
 *   **AST:** Requires nodes for all DSL constructs (Components, Params, Uses, Ops, Systems, Instances, Analyses, Options, Statements: Assign, If, Return, Call; Expressions: MemberAccess, Call, Literal, Identifier). (AST draft defined previously).
 *   **Environment/Symbol Table:** Manages scopes and maps names to runtime objects (Go components, `Outcomes` objects).
@@ -56,8 +56,8 @@
 **5. Next Steps (Phase 4):**
 
 1.  **Implement Parser:** Choose a library (e.g., `participle`) and implement the parser in `sdl/dsl/parser.go` to generate the AST defined in `sdl/dsl/ast.go` based on the Hybrid DSL grammar. Include basic parser tests.
-2.  **Implement Interpreter:** Create the interpreter (`sdl/dsl/interpreter.go`) that walks the AST, manages the environment, evaluates expressions/statements, and orchestrates calls to the core SDL Go library functions to execute the simulation logic and produce final `Outcomes`. Start with core features (sequence, assignment, calls, basic `if`).
-3.  **Integration & Testing:** Test the interpreter with simple DSL examples parsed into ASTs.
+2.  **Implement VM:** Create the vm (`sdl/dsl/vm.go`) that walks the AST, manages the environment, evaluates expressions/statements, and orchestrates calls to the core SDL Go library functions to execute the simulation logic and produce final `Outcomes`. Start with core features (sequence, assignment, calls, basic `if`).
+3.  **Integration & Testing:** Test the vm with simple DSL examples parsed into ASTs.
 4.  **Refine & Extend:** Add support for more complex expressions, mapping, potentially looping, scenario context, `expect` clauses, etc.
 
 This summary captures the refined DSL direction, emphasizing usability while grounding the execution in the existing Go library's explicit `Outcomes` manipulation.
@@ -75,26 +75,26 @@ The `analyze` block in the DSL aims to **automate and standardize this process**
 
 **Mapping `analyze` to the Go Library:**
 
-The `analyze analysisName = instance.Operation(args);` syntax in the DSL maps to the following actions performed by the **Interpreter**:
+The `analyze analysisName = instance.Operation(args);` syntax in the DSL maps to the following actions performed by the **VM**:
 
 1.  **Trigger Simulation (`instance.Operation(args)` evaluation):**
     *   This part maps directly to **calling the corresponding Go method** on the target component instance (e.g., `theService` instance's `Redirect` method).
-    *   The interpreter performs all the necessary composition (`And`, `If`, `Map`, `Trim...`) by calling the Go library functions as it evaluates the operation's logic defined in the DSL.
+    *   The vm performs all the necessary composition (`And`, `If`, `Map`, `Trim...`) by calling the Go library functions as it evaluates the operation's logic defined in the DSL.
     *   The **final result** of evaluating this expression is the `*Outcomes[V]` object returned by the top-level Go method call (e.g., the `*Outcomes[AccessResult]` from `bs.Redirect`).
 
 2.  **Store Result:**
-    *   The interpreter stores the resulting `*Outcomes[V]` object, associating it with the `analysisName` (e.g., "Redirect"). This makes the result available for potential later inspection or use in `expect` clauses.
+    *   The vm stores the resulting `*Outcomes[V]` object, associating it with the `analysisName` (e.g., "Redirect"). This makes the result available for potential later inspection or use in `expect` clauses.
 
-3.  **Implicit Metric Calculation & Output (Interpreter Feature):**
-    *   This part **doesn't map to a single Go library function** but is a feature of the **DSL interpreter itself**.
-    *   After obtaining the `*Outcomes[V]` result for an `analyze` block, the interpreter automatically calls the Go library's metric functions:
+3.  **Implicit Metric Calculation & Output (VM Feature):**
+    *   This part **doesn't map to a single Go library function** but is a feature of the **DSL vm itself**.
+    *   After obtaining the `*Outcomes[V]` result for an `analyze` block, the vm automatically calls the Go library's metric functions:
         *   It checks if the result type `V` implements `Metricable` (using type switching/reflection).
         *   If yes, it calls `metrics.Availability(resultOutcomes)`, `metrics.MeanLatency(resultOutcomes)`, `metrics.PercentileLatency(resultOutcomes, 0.50)`, `metrics.PercentileLatency(resultOutcomes, 0.99)`, etc.
         *   It then formats and prints these calculated metrics to the user's console or another output stream.
 
-4.  **`expect` Clause Evaluation (Optional Interpreter Feature):**
+4.  **`expect` Clause Evaluation (Optional VM Feature):**
     *   If `expect Target.P99 < 0.100` syntax is added:
-        *   The interpreter parses this check associated with the `analyze` block.
+        *   The vm parses this check associated with the `analyze` block.
         *   After getting `resultOutcomes` for `Target`, it calculates the specific metric (`PercentileLatency(resultOutcomes, 0.99)`).
         *   It compares the calculated value to the threshold (0.100).
         *   It reports "PASS" or "FAIL" for the expectation. This also uses the Go `metrics` library functions.
@@ -102,7 +102,7 @@ The `analyze analysisName = instance.Operation(args);` syntax in the DSL maps to
 **In Summary:**
 
 *   The **expression part** of `analyze` (`instance.Operation(args)`) directly maps to **executing the simulation logic** by calling the Go component methods and composition functions.
-*   The **analysis/reporting part** (calculating and displaying metrics, evaluating `expect` clauses) maps to the **interpreter automatically calling functions from the `sdl/metrics/` package** on the resulting `Outcomes` object.
+*   The **analysis/reporting part** (calculating and displaying metrics, evaluating `expect` clauses) maps to the **vm automatically calling functions from the `sdl/metrics/` package** on the resulting `Outcomes` object.
 
 The `analyze` block essentially bundles the Go library execution trigger and the standard metric reporting into a convenient DSL construct. It makes running standard performance analyses declarative within the system definition.
 
@@ -118,8 +118,8 @@ Here's how the UX feedback loop could evolve, integrating visualization derived 
 
 *   User defines the system in DSL (components, params, wiring).
 *   User defines an `analyze` block targeting a key operation (e.g., `analyze ReadPerf = service.ReadUser("id")`).
-*   Interpreter runs the analysis by composing `Outcomes` via the Go library.
-*   Interpreter calculates and displays basic metrics from the final `Outcomes[AccessResult]` distribution:
+*   VM runs the analysis by composing `Outcomes` via the Go library.
+*   VM calculates and displays basic metrics from the final `Outcomes[AccessResult]` distribution:
     *   Availability: `Availability(ReadPerf)` -> e.g., 0.9995
     *   Mean Latency: `MeanLatency(ReadPerf)` -> e.g., 0.015s (15ms)
     *   P50 Latency: `PercentileLatency(ReadPerf, 0.50)` -> e.g., 0.008s (8ms)
@@ -128,7 +128,7 @@ Here's how the UX feedback loop could evolve, integrating visualization derived 
 
 **2. Enhanced UX - Visualization & Load Extrapolation (Post-Analysis):**
 
-After the core analysis provides the `Outcomes` distribution for the single operation, the interpreter or a separate visualization tool could offer:
+After the core analysis provides the `Outcomes` distribution for the single operation, the vm or a separate visualization tool could offer:
 
 *   **A. Latency Distribution Plot (Histogram/CDF):**
     *   **How:** Generate this directly from the final `Outcomes[AccessResult]` distribution. Iterate through the buckets (`Weight`, `Latency`).
@@ -167,7 +167,7 @@ After the core analysis provides the `Outcomes` distribution for the single oper
 
 *   The core Go library needs the `Sample()` and `ConvertToRanged`/`SampleWithinRange` functions (which we added).
 *   The `sdl/metrics` package might need functions to generate data suitable for plotting (e.g., return histogram bins/counts, or CDF points).
-*   The **Interpreter** (or a wrapper tool around it) becomes responsible for:
+*   The **VM** (or a wrapper tool around it) becomes responsible for:
     *   Running the core analysis.
     *   Generating data for the Latency Distribution Plot (A).
     *   Prompting for target QPS.
@@ -182,17 +182,17 @@ This layered approach provides increasing levels of insight: starting with the c
 
 ## DSL Challenges
 
-Addressing the interpreter's core challenges *before* locking down the parser/AST makes a lot of sense.
-If the interpreter logic fundamentally changes how we need to structure or represent things, it's better to know that *before* building the parser around potentially flawed assumptions.
+Addressing the vm's core challenges *before* locking down the parser/AST makes a lot of sense.
+If the vm logic fundamentally changes how we need to structure or represent things, it's better to know that *before* building the parser around potentially flawed assumptions.
 
-**Interpreter Challenges & Potential Solutions for Hybrid DSL with Explicit Outcome<T> in Go and implicit in DSL:**
+**VM Challenges & Potential Solutions for Hybrid DSL with Explicit Outcome<T> in Go and implicit in DSL:**
 
 1.  **Mapping DSL Logic to `Outcomes` Composition:** This is the central challenge. How do `if`, sequence, and variable usage in the DSL translate to `And`, `If`, `Map`, `Split`, `Append` calls on `Outcomes` objects?
 
-    *   **Challenge:** A simple DSL sequence `a = Op1(); b = Op2(); return b` needs to become roughly `And(Op1Outcomes, Op2Outcomes, DefaultReducer)`. An `if a.Success { OpT() } else { OpF() }` needs to become something involving `Split(a_Outcomes)`, `And(success_split, OpT_Outcomes)`, `And(failure_split, OpF_Outcomes)`, and `Append`. The interpreter needs to manage this translation.
+    *   **Challenge:** A simple DSL sequence `a = Op1(); b = Op2(); return b` needs to become roughly `And(Op1Outcomes, Op2Outcomes, DefaultReducer)`. An `if a.Success { OpT() } else { OpF() }` needs to become something involving `Split(a_Outcomes)`, `And(success_split, OpT_Outcomes)`, `And(failure_split, OpF_Outcomes)`, and `Append`. The vm needs to manage this translation.
     *   **Solution Approach:**
-        *   **Environment Holds `Outcomes`:** When `a = Op1()` is evaluated, the interpreter stores the `*Outcomes[T]` returned by the Go `Op1` method in the environment, associated with the name `a`.
-        *   **Sequential `And`:** The interpreter maintains a "current accumulated outcome" for the execution block. When it evaluates the next statement (`b = Op2()`), it fetches the required inputs (if any) from the environment, evaluates `Op2()` to get `Op2_Outcomes`, and then calls the Go `sdl.And(currentOutcome, Op2_Outcomes, selectReducer(...))` function. The result becomes the new `currentOutcome`.
+        *   **Environment Holds `Outcomes`:** When `a = Op1()` is evaluated, the vm stores the `*Outcomes[T]` returned by the Go `Op1` method in the environment, associated with the name `a`.
+        *   **Sequential `And`:** The vm maintains a "current accumulated outcome" for the execution block. When it evaluates the next statement (`b = Op2()`), it fetches the required inputs (if any) from the environment, evaluates `Op2()` to get `Op2_Outcomes`, and then calls the Go `sdl.And(currentOutcome, Op2_Outcomes, selectReducer(...))` function. The result becomes the new `currentOutcome`.
         *   **`If` Statement:** This is the most complex. When evaluating `if condExpr { ThenStmts } else { ElseStmts }`:
             1.  Evaluate `condExpr`. This involves getting the `*Outcomes[V]` associated with the variable in the condition (e.g., `a` in `a.Success`).
             2.  **Split Distribution:** Call `a_Outcomes.Split(func(v V) bool { return v.Success /* or other field */ })` to get `successOutcomes` and `failureOutcomes`.
@@ -202,19 +202,19 @@ If the interpreter logic fundamentally changes how we need to structure or repre
             6.  **Latency:** The latency of evaluating the *condition* itself (if non-negligible, e.g., if `condExpr` was an operation call) needs to be added to *both* `thenResultOutcomes` and `elseResultOutcomes` *before* appending. This requires careful management during the recursive calls.
         *   **`Return` Statement:** Evaluate the return expression to get `retOutcomes` and signal this as the result of the current operation block evaluation.
 
-2.  **Handling Different `Outcomes[V]` Types:** How does the interpreter know which reducer to use for `And` or how to `Split` based on `if x.SomeField` when `x` could be `Outcomes[AccessResult]`, `Outcomes[Duration]`, `Outcomes[bool]` etc.?
+2.  **Handling Different `Outcomes[V]` Types:** How does the vm know which reducer to use for `And` or how to `Split` based on `if x.SomeField` when `x` could be `Outcomes[AccessResult]`, `Outcomes[Duration]`, `Outcomes[bool]` etc.?
 
-    *   **Challenge:** The Go library relies on type information for selecting reducers (`AndAccessResults`, `AndRangedResults`) and predicates for `Split`. The interpreter operates on AST nodes and runtime values (which will be `interface{}` holding `*Outcomes[?]`).
+    *   **Challenge:** The Go library relies on type information for selecting reducers (`AndAccessResults`, `AndRangedResults`) and predicates for `Split`. The vm operates on AST nodes and runtime values (which will be `any` holding `*Outcomes[?]`).
     *   **Solution Approaches:**
-        *   **Runtime Type Reflection/Switches:** The interpreter's `And` or `If` logic uses Go's type reflection (`reflect` package) or type switches on the actual `*Outcomes[V]` objects held in the environment to determine the types `V` involved and select the appropriate Go library reducer function or build the correct `Split` predicate. This can be slow and complex.
-        *   **AST Type Information:** Enhance the AST/parsing phase to include resolved type information. When parsing `a = Op1()`, store the fact that `a` has type `Outcomes[AccessResult]`. The interpreter then uses this stored type info to select Go functions without runtime reflection. Requires a type-checking/resolution phase after parsing.
-        *   **Interface-Based:** Define interfaces for common operations needed by the interpreter (e.g., `SplittableBySuccess`, `Mappable`, `CombineableWith`). The Go `Outcomes[V]` methods or associated helper functions would implement these. The interpreter calls methods via these interfaces. This requires careful interface design.
+        *   **Runtime Type Reflection/Switches:** The vm's `And` or `If` logic uses Go's type reflection (`reflect` package) or type switches on the actual `*Outcomes[V]` objects held in the environment to determine the types `V` involved and select the appropriate Go library reducer function or build the correct `Split` predicate. This can be slow and complex.
+        *   **AST Type Information:** Enhance the AST/parsing phase to include resolved type information. When parsing `a = Op1()`, store the fact that `a` has type `Outcomes[AccessResult]`. The vm then uses this stored type info to select Go functions without runtime reflection. Requires a type-checking/resolution phase after parsing.
+        *   **Interface-Based:** Define interfaces for common operations needed by the vm (e.g., `SplittableBySuccess`, `Mappable`, `CombineableWith`). The Go `Outcomes[V]` methods or associated helper functions would implement these. The vm calls methods via these interfaces. This requires careful interface design.
         *   **Recommendation:** Start with **Runtime Type Switches** as it's often the most direct way in Go, accepting the potential performance cost. If it becomes a bottleneck, move to AST Type Information.
 
 3.  **Accessing Fields within `Outcomes` (e.g., `if cacheRead.Success`):**
 
-    *   **Challenge:** `cacheRead` in the interpreter holds `*Outcomes[AccessResult]`. The DSL condition `.Success` refers to a field *inside* the `AccessResult` values within the distribution's buckets.
-    *   **Solution Approach:** The interpreter's `eval` for `IfStmt` (and potentially other expressions accessing fields) needs to understand this. When it evaluates `cacheRead.Success`, it doesn't return a single bool. Instead, it triggers the **Split** operation on the `cacheRead` `Outcomes` object, using a predicate based on the accessed field (`func(v AccessResult) bool { return v.Success }`). The `If` evaluation then proceeds with the two resulting distributions as described in point 1. Accessing non-boolean fields (e.g., `cacheRead.Latency`) directly in expressions is problematic and should likely be disallowed initially unless within a `Map` construct.
+    *   **Challenge:** `cacheRead` in the vm holds `*Outcomes[AccessResult]`. The DSL condition `.Success` refers to a field *inside* the `AccessResult` values within the distribution's buckets.
+    *   **Solution Approach:** The vm's `eval` for `IfStmt` (and potentially other expressions accessing fields) needs to understand this. When it evaluates `cacheRead.Success`, it doesn't return a single bool. Instead, it triggers the **Split** operation on the `cacheRead` `Outcomes` object, using a predicate based on the accessed field (`func(v AccessResult) bool { return v.Success }`). The `If` evaluation then proceeds with the two resulting distributions as described in point 1. Accessing non-boolean fields (e.g., `cacheRead.Latency`) directly in expressions is problematic and should likely be disallowed initially unless within a `Map` construct.
 
 4.  **Value Passing / Accessing Inner Values (e.g., using generated ID):**
 
@@ -228,7 +228,7 @@ If the interpreter logic fundamentally changes how we need to structure or repre
 
     *   **Challenge:** When and how to apply `TrimToSize` / `TrimToSizeRanged`?
     *   **Solution Approach:**
-        *   The interpreter, after key composition steps (end of an `And` sequence, after combining `If/Else` branches, before `Return`), checks the `Len()` of the resulting `Outcomes` object.
+        *   The vm, after key composition steps (end of an `And` sequence, after combining `If/Else` branches, before `Return`), checks the `Len()` of the resulting `Outcomes` object.
         *   It fetches the relevant `MaxOutcomeLen` value from the current component's `options` or global `options`.
         *   If `Len() > MaxOutcomeLen`, it uses runtime type switching/reflection to determine the type `V` and calls the appropriate Go library function (`TrimToSize` for `AccessResult`, `TrimToSizeRanged` for `RangedResult`, etc.).
 
@@ -237,9 +237,9 @@ If the interpreter logic fundamentally changes how we need to structure or repre
     *   **Challenge:** How does `myQueue.Dequeue()` get the `lambda`/`Ts` it needs if they aren't stored in the `Queue` struct itself (because they are scenario-dependent)?
     *   **Solution Approach (Matching Recommendation):** The Go methods for `Queue.Dequeue` and `Pool.Acquire` *must* take the necessary rates (`lambda`, `Ts` or `avgHoldTime`) as **arguments**.
         *   **DSL:** `qWait = myQ.Dequeue(lambda=currentLambda, avgServiceTime=workerTs)` or `acquired = myPool.Acquire(lambda=currentLambda)`.
-        *   **Interpreter:** When evaluating these calls, it needs to find the values for `currentLambda`, `workerTs` etc., from the current execution environment (which might have received them as parameters to the operation or from a scenario context block).
+        *   **VM:** When evaluating these calls, it needs to find the values for `currentLambda`, `workerTs` etc., from the current execution environment (which might have received them as parameters to the operation or from a scenario context block).
 
-**Revised Interpreter Plan:**
+**Revised VM Plan:**
 
 *   Focus on the **Hybrid DSL** execution model.
 *   Use **runtime type switches/reflection** initially to handle different `Outcomes[V]` types and select appropriate Go library functions (reducers, trimmers).
@@ -247,6 +247,6 @@ If the interpreter logic fundamentally changes how we need to structure or repre
 *   Implement **`If Stmt` by using `Split`** based on the condition field, recursively evaluating branches with the split outcomes, and appending results (adding condition latency).
 *   **Disallow direct value access** from `Outcomes` variables in expressions (except for boolean fields used in `If`).
 *   Implement **implicit reduction** after composition steps based on `options`.
-*   Ensure methods like `Queue.Dequeue` and `Pool.Acquire` take necessary **rate parameters as arguments** in their Go signatures, and the DSL syntax/interpreter supports passing these arguments.
+*   Ensure methods like `Queue.Dequeue` and `Pool.Acquire` take necessary **rate parameters as arguments** in their Go signatures, and the DSL syntax/vm supports passing these arguments.
 
-This plan addresses the core challenges while staying aligned with the explicit `Outcomes` manipulation in the Go library and avoiding the full complexity of the "Implicit Outcomes" VM. It defines a clear path for the interpreter's responsibilities.
+This plan addresses the core challenges while staying aligned with the explicit `Outcomes` manipulation in the Go library and avoiding the full complexity of the "Implicit Outcomes" VM. It defines a clear path for the vm's responsibilities.

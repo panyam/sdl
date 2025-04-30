@@ -23,7 +23,7 @@ This package provides concrete implementations of common distributed system comp
     *   Contains parallel structures for each component (e.g., `decl.Disk`, `decl.BTreeIndex`).
     *   These structs hold configuration parameters, often as `dsl.Expr` types.
     *   They provide methods (`ReadAST`, `FindAST`, etc.) that **generate Abstract Syntax Trees (ASTs)** defined in `sdl/dsl/ast.go`, representing the intended operation logic rather than executing it directly.
-    *   This layer separates the *definition* of component interactions from their *execution* (which is handled by the `sdl/dsl` interpreter). Includes `components_test.go` verifying AST generation.
+    *   This layer separates the *definition* of component interactions from their *execution* (which is handled by the `sdl/dsl` vm). Includes `components_test.go` verifying AST generation.
 6.  **Testing:**
     *   Component tests (`*_test.go`) consistently use the `core.Analyze` primitive with relevant expectations (`ExpectAvailability`, `ExpectP99`, etc.) and assertions (`Assert`, `AssertFailure`) to verify the correctness and plausibility of the component models.
 

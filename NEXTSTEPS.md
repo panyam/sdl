@@ -1,10 +1,10 @@
 # SDL Project - Next Steps
 
-**Overall Goal:** Complete the initial functional version of the DSL Interpreter/VM and the DSL Parser, enabling users to define, simulate, and analyze simple systems declaratively.
+**Overall Goal:** Complete the initial functional version of the DSL VM/VM and the DSL Parser, enabling users to define, simulate, and analyze simple systems declaratively.
 
 **Phase 4: DSL Implementation (Continued)**
 
-**A. Complete Core Interpreter Functionality:**
+**A. Complete Core VM Functionality:**
 
 1.  **`ParallelExpr` Evaluator:**
     *   Implement `evalParallelExpr`.
