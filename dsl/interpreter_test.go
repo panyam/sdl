@@ -3,6 +3,8 @@ package dsl
 
 import (
 	"errors"
+	"fmt"
+	"math"
 	"testing"
 
 	"github.com/panyam/leetcoach/sdl/components"
@@ -546,6 +548,83 @@ func TestInterpreter_Eval_CallExpr_RecursiveAST(t *testing.T) {
 		t.Errorf("Expected recursive call to yield SSD Read profile, got different object")
 	}
 }
+
+// --- Test RepeatExpr (Sequential - Phase 6) ---
+
+func TestInterpreter_Eval_RepeatExpr_Sequential(t *testing.T) {
+	interp := NewInterpreter(10)  // Reduce aggressively for testing
+	registerTestDiskFuncs(interp) // GetDiskReadProfile returns *Outcomes[AccessResult]
+
+	// AST for repeat(GetDiskReadProfile(), 3, Sequential)
+	repeatCount := int64(3)
+	repeatExpr := &RepeatExpr{
+		Input: &InternalCallExpr{FuncName: "GetDiskReadProfile"},
+		Count: &LiteralExpr{Kind: "INT", Value: fmt.Sprintf("%d", repeatCount)}, // Count must be deterministic Outcomes[int64]
+		Mode:  Sequential,
+	}
+
+	_, err := interp.Eval(repeatExpr)
+	if err != nil {
+		t.Fatalf("Eval(RepeatExpr) failed: %v", err)
+	}
+
+	result, err := interp.GetFinalResult()
+	if err != nil {
+		t.Fatalf("GetFinalResult failed: %v", err)
+	}
+
+	outcome, ok := result.(*core.Outcomes[core.AccessResult])
+	if !ok {
+		t.Fatalf("Expected result type *core.Outcomes[AccessResult], got %T", result)
+	}
+
+	// Check length (should be <= 2 * maxLen due to split/trim)
+	maxExpectedLen := 2 * interp.maxOutcomeLen
+	if outcome.Len() > maxExpectedLen {
+		t.Errorf("Expected outcome length <= %d after reduction, got %d", maxExpectedLen, outcome.Len())
+	}
+	if outcome.Len() == 0 {
+		t.Error("Repeat result outcome should not be empty")
+	}
+
+	// Check latency ~ 3 * single read latency
+	singleReadOutcome := components.NewDisk("").Read()
+	expectedMean := core.MeanLatency(singleReadOutcome) * float64(repeatCount)
+	actualMean := core.MeanLatency(outcome)
+	// Allow larger tolerance due to potential repeated reduction
+	if !core.ApproxEq(actualMean, expectedMean, expectedMean*0.25) {
+		t.Errorf("Mean latency %.6f differs significantly from expected sum %.6f (Count: %d)", actualMean, expectedMean, repeatCount)
+	}
+
+	// Check availability approx = single avail ^ count
+	expectedAvail := math.Pow(core.Availability(singleReadOutcome), float64(repeatCount))
+	actualAvail := core.Availability(outcome)
+	if !core.ApproxEq(actualAvail, expectedAvail, 0.01) { // Allow 1% tolerance
+		t.Errorf("Availability %.6f differs significantly from expected %.6f (Count: %d)", actualAvail, expectedAvail, repeatCount)
+	}
+
+	t.Logf("RepeatExpr Test (Count=%d): Final Len=%d, Mean Latency=%.6fs (Expected ~%.6fs), Avail=%.6f (Expected ~%.6f)",
+		repeatCount, outcome.Len(), actualMean, expectedMean, actualAvail, expectedAvail)
+}
+
+func TestInterpreter_Eval_RepeatExpr_InvalidCount(t *testing.T) {
+	interp := NewInterpreter(10)
+	// AST for repeat(GetDiskReadProfile(), -1, Sequential)
+	repeatExpr := &RepeatExpr{
+		Input: &InternalCallExpr{FuncName: "GetDiskReadProfile"},
+		Count: &LiteralExpr{Kind: "INT", Value: "-1"},
+		Mode:  Sequential,
+	}
+	_, err := interp.Eval(repeatExpr)
+	if err == nil {
+		t.Fatal("Eval(RepeatExpr) should fail for negative count")
+	}
+	if !errors.Is(err, ErrInvalidRepeatCount) {
+		t.Errorf("Expected ErrInvalidRepeatCount, got %v", err)
+	}
+}
+
+// TODO: Add test for RepeatExpr Count=0
 
 // TODO: Add a test that explicitly triggers reduction.
 // This might require setting maxOutcomeLen very low (e.g., 2) and using

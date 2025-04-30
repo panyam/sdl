@@ -113,7 +113,16 @@ func (i *Interpreter) Eval(node Node) (any, error) {
 		err = ErrNotImplemented // Placeholder
 	case *RepeatExpr:
 		err = i.evalRepeatExpr(n)
-	// ... other node types ...
+
+	// --- Statement Nodes ---
+	case *BlockStmt:
+		_, err = i.evalBlockStmt(n, i.env) // Eval block in current env
+	case *AssignmentStmt:
+		err = i.evalAssignmentStmt(n)
+	case *ReturnStmt:
+		err = i.evalReturnStmt(n) // Return signals via special error/value
+	case *ExprStmt:
+		err = i.evalExprStmt(n)
 
 	default:
 		return nil, fmt.Errorf("Eval not implemented for node type %T", node)
@@ -152,11 +161,24 @@ func (i *Interpreter) ClearStack() {
 	i.stack = i.stack[:0]
 }
 
-// --- Placeholder Eval methods (will be implemented in separate files/phases) ---
+// Add stubs for other eval functions as needed...
 
-func (i *Interpreter) evalRepeatExpr(expr *RepeatExpr) error {
-	// To be implemented in Phase 6
-	return fmt.Errorf("evalRepeatExpr %w", ErrNotImplemented)
+func (i *Interpreter) evalBlockStmt(block *BlockStmt, env *Environment) (interface{}, error) {
+	// To be implemented in Phase 7 (likely in eval_stmt.go)
+	return nil, fmt.Errorf("evalBlockStmt %w", ErrNotImplemented)
 }
 
-// Add stubs for other eval functions as needed...
+func (i *Interpreter) evalAssignmentStmt(stmt *AssignmentStmt) error {
+	// To be implemented in Phase 7 (likely in eval_stmt.go)
+	return fmt.Errorf("evalAssignmentStmt %w", ErrNotImplemented)
+}
+
+func (i *Interpreter) evalReturnStmt(stmt *ReturnStmt) error {
+	// To be implemented in Phase 7 (likely in eval_stmt.go)
+	return fmt.Errorf("evalReturnStmt %w", ErrNotImplemented)
+}
+
+func (i *Interpreter) evalExprStmt(stmt *ExprStmt) error {
+	// To be implemented in Phase 7 (likely in eval_stmt.go)
+	return fmt.Errorf("evalExprStmt %w", ErrNotImplemented)
+}

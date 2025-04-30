@@ -192,3 +192,53 @@ func (e ExecutionMode) String() string {
 	}
 	return "Sequential"
 }
+
+// --- Statement Nodes ---
+
+// Stmt interface
+type Stmt interface {
+	Node
+	stmtNode()
+}
+
+// OperationDef represents the definition of a component operation (signature + body)
+// Note: Signature parsing might happen earlier, this focuses on the body.
+// We might just need a BlockStmt for the body itself. Let's use BlockStmt.
+
+// BlockStmt represents a sequence of statements { stmt1; stmt2; ... }
+type BlockStmt struct {
+	NodeInfo
+	Statements []Stmt
+}
+
+func (b *BlockStmt) stmtNode()      {}
+func (b *BlockStmt) String() string { return "{ ...statements... }" } // Simplified
+
+// AssignmentStmt represents var = expr
+type AssignmentStmt struct {
+	NodeInfo
+	Variable *IdentifierExpr // The variable being assigned to
+	Value    Expr            // The expression evaluating to the value (an Outcome)
+}
+
+func (a *AssignmentStmt) stmtNode()      {}
+func (a *AssignmentStmt) String() string { return fmt.Sprintf("%s = %s", a.Variable, a.Value) }
+
+// ReturnStmt represents return expr
+type ReturnStmt struct {
+	NodeInfo
+	ReturnValue Expr // The expression evaluating to the return value (an Outcome)
+}
+
+func (r *ReturnStmt) stmtNode()      {}
+func (r *ReturnStmt) String() string { return fmt.Sprintf("return %s", r.ReturnValue) }
+
+// ExprStmt allows an expression to be used as a statement (e.g., a function call for side effects)
+// In our case, it's primarily for executing an operation whose outcome becomes the implicit next step.
+type ExprStmt struct {
+	NodeInfo
+	Expression Expr
+}
+
+func (e *ExprStmt) stmtNode()      {}
+func (e *ExprStmt) String() string { return e.Expression.String() }
