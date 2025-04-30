@@ -106,13 +106,28 @@ func (i *Interpreter) evalAndExpr(expr *AndExpr) error {
 		return fmt.Errorf("stack underflow after evaluating AND operands (L:%v, R:%v)", lErr, rErr)
 	}
 
-	// 4. Select Reducer based on types
-	// --- Using basic type switch for common cases ---
+	// 4. Combine using the helper
+	combinedResult, err := i.combineOutcomesAndReduce(leftOutcome, rightOutcome)
+	if err != nil {
+		return err // Propagate combination error
+	}
+
+	// 5. Push final result
+	i.push(combinedResult)
+	return nil
+}
+
+// combineOutcomesAndReduce takes two outcome objects (popped from stack), determines
+// the correct sequential reducer, calls core.And, applies reduction, and returns the result.
+func (i *Interpreter) combineOutcomesAndReduce(leftOutcome, rightOutcome any) (any, error) {
 	var combinedOutcome any // Use any to hold the result
 	var reductionNeeded bool = false
+	var inputLenForLog int = 0 // For logging reduction
 
+	// --- Type switching for combination (similar to previous evalAndExpr logic) ---
 	switch lo := leftOutcome.(type) {
 	case *core.Outcomes[core.AccessResult]:
+		inputLenForLog = lo.Len() // Approx length before combine
 		switch ro := rightOutcome.(type) {
 		case *core.Outcomes[core.AccessResult]:
 			reducer := core.AndAccessResults
@@ -120,19 +135,21 @@ func (i *Interpreter) evalAndExpr(expr *AndExpr) error {
 			combinedOutcome = combined            // Store the specific type
 			reductionNeeded = combined.Len() > i.maxOutcomeLen
 		case *core.Outcomes[core.Duration]: // Handle AccessResult + Duration
+			inputLenForLog += ro.Len()
 			reducer := func(a core.AccessResult, b core.Duration) core.AccessResult {
-				// Combine: Add duration latency, success depends on original AccessResult
 				return core.AccessResult{Success: a.Success, Latency: a.Latency + b}
 			}
 			combined := core.And(lo, ro, reducer)
 			combinedOutcome = combined
 			reductionNeeded = combined.Len() > i.maxOutcomeLen
 		default:
-			return fmt.Errorf("%w: cannot AND %T with %T", ErrTypeMismatch, lo, ro)
+			return nil, fmt.Errorf("%w: cannot AND %T with %T", ErrTypeMismatch, lo, ro)
 		}
 	case *core.Outcomes[core.Duration]:
+		inputLenForLog = lo.Len()
 		switch ro := rightOutcome.(type) {
 		case *core.Outcomes[core.AccessResult]: // Handle Duration + AccessResult
+			inputLenForLog += ro.Len()
 			reducer := func(a core.Duration, b core.AccessResult) core.AccessResult {
 				return core.AccessResult{Success: b.Success, Latency: a + b.Latency}
 			}
@@ -143,43 +160,33 @@ func (i *Interpreter) evalAndExpr(expr *AndExpr) error {
 			reducer := func(a core.Duration, b core.Duration) core.Duration { return a + b }
 			combined := core.And(lo, ro, reducer)
 			combinedOutcome = combined
-			// Reduction for Duration outcomes? Maybe not needed or defined differently.
-			reductionNeeded = false // Assume no trimming for duration for now
+			reductionNeeded = false // No trimming for Duration assumed
 		default:
-			return fmt.Errorf("%w: cannot AND %T with %T", ErrTypeMismatch, lo, ro)
+			return nil, fmt.Errorf("%w: cannot AND %T with %T", ErrTypeMismatch, lo, ro)
 		}
-	// Add more cases for RangedResult, etc.
+		// Add more cases for RangedResult, etc.
 	default:
-		return fmt.Errorf("%w: cannot AND %T with %T", ErrUnsupportedType, leftOutcome, rightOutcome)
+		return nil, fmt.Errorf("%w: cannot AND %T with %T", ErrUnsupportedType, leftOutcome, rightOutcome)
 	}
 
-	// 5. Apply Reduction if needed
+	// --- Apply Reduction if needed ---
 	if reductionNeeded {
-		// --- Apply specific reduction based on the combined type ---
+		trimmedOutcome := combinedOutcome // Start with the combined outcome
 		switch co := combinedOutcome.(type) {
 		case *core.Outcomes[core.AccessResult]:
-			// Use the appropriate reduction strategy from core
-			// TrimToSize returns a function, we need to call it
 			trimmerFuncGen := core.TrimToSize(i.maxOutcomeLen+50, i.maxOutcomeLen)
-			// The trimmerFuncGen expects a group (success/failure). We need to split.
 			successes, failures := co.Split(core.AccessResult.IsSuccess)
 			trimmedSuccesses := trimmerFuncGen(successes)
-			trimmedFailures := trimmerFuncGen(failures) // Apply to failures too
-			// Re-combine
+			trimmedFailures := trimmerFuncGen(failures)
 			finalTrimmed := (&core.Outcomes[core.AccessResult]{And: co.And}).Append(trimmedSuccesses, trimmedFailures)
-			combinedOutcome = finalTrimmed                                                 // Update the outcome to be pushed
+			trimmedOutcome = finalTrimmed                                                  // Update the outcome
 			fmt.Printf("Applied TrimToSize, len %d -> %d\n", co.Len(), finalTrimmed.Len()) // Debug log
 		// Add cases for other types that need trimming (e.g., RangedResult)
-		// case *core.Outcomes[core.RangedResult]:
-		// trimmerFuncGen := core.TrimToSizeRanged(i.maxOutcomeLen+50, i.maxOutcomeLen, 0.9) // Example threshold
-		// ... split, trim, append ...
 		default:
 			// Type doesn't have a defined trimmer, or reduction wasn't deemed necessary earlier
-			// Do nothing or log a warning
 		}
+		combinedOutcome = trimmedOutcome // Use the (potentially) trimmed result
 	}
 
-	// 6. Push final result
-	i.push(combinedOutcome)
-	return nil
+	return combinedOutcome, nil // Return the final result
 }

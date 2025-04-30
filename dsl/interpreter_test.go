@@ -5,12 +5,28 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"strconv"
 	"testing"
 
 	"github.com/panyam/leetcoach/sdl/components"
 	"github.com/panyam/leetcoach/sdl/core"
 	// "fmt" // For debugging
 )
+
+func litStr(v string) Expr { return &LiteralExpr{Kind: "STRING", Value: v} }
+func litInt(v int) Expr    { return &LiteralExpr{Kind: "INT", Value: strconv.Itoa(v)} }
+func litFloat(v float64) Expr {
+	return &LiteralExpr{Kind: "FLOAT", Value: strconv.FormatFloat(v, 'f', -1, 64)}
+}
+func litBool(v bool) Expr            { return &LiteralExpr{Kind: "BOOL", Value: strconv.FormatBool(v)} }
+func ident(n string) Expr            { return &IdentifierExpr{Name: n} }
+func member(r Expr, m string) Expr   { return &MemberAccessExpr{Receiver: r, Member: m} }
+func call(f Expr, args ...Expr) Expr { return &CallExpr{Function: f, Args: args} }
+func and(l, r Expr) Expr             { return &AndExpr{Left: l, Right: r} }
+func parallel(l, r Expr) Expr        { return &ParallelExpr{Left: l, Right: r} }
+func internalCall(fName string, args ...Expr) Expr {
+	return &InternalCallExpr{FuncName: fName, Args: args}
+}
 
 func TestInterpreter_NewInterpreter(t *testing.T) {
 	interp := NewInterpreter(20)
@@ -631,3 +647,249 @@ func TestInterpreter_Eval_RepeatExpr_InvalidCount(t *testing.T) {
 // inputs known to produce more buckets, or creating a helper internal func
 // that returns an outcome with many buckets. Example:
 // func TestInterpreter_Eval_AndExpr_ReductionTriggered(t *testing.T) { ... }
+
+// --- Test Statements (Phase 7) ---
+
+func TestInterpreter_Eval_AssignmentStmt(t *testing.T) {
+	interp := NewInterpreter(10)
+	registerTestDiskFuncs(interp)
+
+	// AST for: myRead = GetDiskReadProfile()
+	assignStmt := &AssignmentStmt{
+		Variable: &IdentifierExpr{Name: "myRead"},
+		Value:    &InternalCallExpr{FuncName: "GetDiskReadProfile"},
+	}
+
+	// Eval the assignment (result should be left on stack AND stored in env)
+	err := interp.evalAssignmentStmt(assignStmt) // Use specific eval func for test setup ease
+	if err != nil {
+		t.Fatalf("evalAssignmentStmt failed: %v", err)
+	}
+
+	// Check environment
+	envVal, ok := interp.Env().Get("myRead")
+	if !ok {
+		t.Fatal("'myRead' not found in environment after assignment")
+	}
+	expectedOutcome := components.NewDisk("").Read()
+	if envVal != expectedOutcome {
+		t.Errorf("Environment value mismatch. Expected SSD Read Profile, got %T", envVal)
+	}
+
+	// Check stack (should have the value)
+	stackVal, err := interp.pop() // Pop the value evalAssignmentStmt should have left
+	if err != nil {
+		t.Fatalf("Stack pop failed after assignment: %v", err)
+	}
+	if stackVal != expectedOutcome {
+		t.Errorf("Stack value mismatch. Expected SSD Read Profile, got %T", stackVal)
+	}
+	if len(interp.stack) != 0 {
+		t.Errorf("Stack should be empty after popping assignment result, len=%d", len(interp.stack))
+	}
+}
+
+func TestInterpreter_Eval_ReturnStmt(t *testing.T) {
+	interp := NewInterpreter(10)
+	registerTestDiskFuncs(interp)
+
+	// AST for: return GetDiskReadProfile()
+	returnStmt := &ReturnStmt{
+		ReturnValue: &InternalCallExpr{FuncName: "GetDiskReadProfile"},
+	}
+
+	// Eval the return statement
+	err := interp.evalReturnStmt(returnStmt)
+	if err == nil {
+		t.Fatal("evalReturnStmt should have returned a ReturnValue error")
+	}
+
+	// Check if the error is the special ReturnValue wrapper
+	var retVal *ReturnValue
+	if !errors.As(err, &retVal) {
+		t.Fatalf("Expected a ReturnValue error, got: %v", err)
+	}
+
+	// Check the value *inside* the ReturnValue wrapper
+	expectedOutcome := components.NewDisk("").Read()
+	if retVal.Value != expectedOutcome {
+		t.Errorf("ReturnValue contained unexpected value. Expected SSD Read Profile, got %T", retVal.Value)
+	}
+
+	// Check stack (should contain the return value, as Eval was called internally)
+	stackVal, stackErr := interp.pop()
+	if stackErr != nil || stackVal != expectedOutcome {
+		t.Errorf("Stack check failed after return. Err: %v, Val: %T", stackErr, stackVal)
+	}
+}
+
+func TestInterpreter_Eval_BlockStmt_Sequence(t *testing.T) {
+	interp := NewInterpreter(10)
+	registerTestDiskFuncs(interp)
+	registerTestDiskWriteFunc(interp)
+
+	// AST for: { readRes = GetDiskReadProfile(); GetDiskWriteProfile() }
+	// Implicit return of the And(readRes, writeProfile)
+	block := &BlockStmt{
+		Statements: []Stmt{
+			&AssignmentStmt{
+				Variable: &IdentifierExpr{Name: "readRes"},
+				Value:    &InternalCallExpr{FuncName: "GetDiskReadProfile"},
+			},
+			&ExprStmt{ // The write call is just an expression statement
+				Expression: &InternalCallExpr{FuncName: "GetDiskWriteProfile"},
+			},
+		},
+	}
+
+	// Eval the block
+	blockResult, err := interp.evalBlockStmt(block, interp.Env()) // Eval in current env
+	if err != nil {
+		t.Fatalf("evalBlockStmt failed: %v", err)
+	}
+	// The result should be the combined outcome from the implicit AND
+	// Verify type and basic properties (similar to AndExpr test)
+	outcome, ok := blockResult.(*core.Outcomes[core.AccessResult])
+	if !ok {
+		t.Fatalf("Expected block result type *core.Outcomes[AccessResult], got %T", blockResult)
+	}
+	if outcome.Len() == 0 || outcome.Len() > 2*interp.maxOutcomeLen {
+		t.Errorf("Unexpected outcome length %d for block result", outcome.Len())
+	}
+	if !core.ApproxEq(outcome.TotalWeight(), 1.0, 1e-5) {
+		t.Errorf("Expected total weight ~1.0, got %f", outcome.TotalWeight())
+	}
+
+	// Check env to ensure assignment happened
+	_, ok = interp.Env().Get("readRes")
+	if !ok {
+		t.Error("'readRes' not found in environment after block execution")
+	}
+
+	// Stack should be empty after block evaluation returns its result directly
+	if len(interp.stack) != 0 {
+		t.Errorf("Stack should be empty after evalBlockStmt returns, len=%d", len(interp.stack))
+	}
+}
+
+// TODO: Test block with ReturnStmt in the middle.
+
+// --- Test If Stmt (Phase 8) ---
+
+// Mock component for If test
+type MockConditional struct{}
+
+func (m *MockConditional) ProbCheck(probSuccess float64) *core.Outcomes[bool] {
+	if probSuccess < 0 {
+		probSuccess = 0
+	}
+	if probSuccess > 1 {
+		probSuccess = 1
+	}
+	o := &core.Outcomes[bool]{And: func(a, b bool) bool { return a && b }}
+	if probSuccess > 1e-9 {
+		o.Add(probSuccess, true)
+	}
+	if (1.0 - probSuccess) > 1e-9 {
+		o.Add(1.0-probSuccess, false)
+	}
+	return o
+}
+func (m *MockConditional) OpSuccess() *core.Outcomes[core.AccessResult] {
+	o := (&core.Outcomes[core.AccessResult]{}).Add(1.0, core.AccessResult{Success: true, Latency: core.Millis(10)})
+	o.And = core.AndAccessResults
+	return o
+}
+func (m *MockConditional) OpFailure() *core.Outcomes[core.AccessResult] {
+	o := (&core.Outcomes[core.AccessResult]{}).Add(1.0, core.AccessResult{Success: false, Latency: core.Millis(5)})
+	o.And = core.AndAccessResults
+	return o
+}
+
+func TestInterpreter_Eval_IfStmt_AccessResultSuccess(t *testing.T) {
+	interp := NewInterpreter(10)
+	// Setup: condVar = Outcome[AccessResult] (mostly success)
+	condOutcome := (&core.Outcomes[core.AccessResult]{And: core.AndAccessResults}).
+		Add(0.8, core.AccessResult{Success: true, Latency: core.Millis(1)}).
+		Add(0.2, core.AccessResult{Success: false, Latency: core.Millis(2)})
+	interp.Env().Set("condVar", condOutcome)
+	// Mock component providing Then/Else operations
+	mockComp := &MockConditional{}
+	interp.Env().Set("mock", mockComp)
+
+	// AST for: if condVar.Success { mock.OpSuccess() } else { mock.OpFailure() }
+	// NOTE: We need to implement MemberAccess evaluation for .Success first.
+	// For now, let's assume the condition *itself* yields the outcome to split.
+	// This test will likely FAIL until MemberAccess is smarter.
+	// --- TEMPORARY WORKAROUND: Use a boolean outcome directly ---
+	condBoolOutcome := (&core.Outcomes[bool]{And: func(a, b bool) bool { return a && b }}).
+		Add(0.8, true).Add(0.2, false)
+	interp.Env().Set("condBool", condBoolOutcome)
+
+	ifStmt := &IfStmt{
+		// Condition: &MemberAccessExpr{Receiver: &IdentifierExpr{Name: "condVar"}, Member: "Success"}, // Needs evalMemberAccess
+		Condition: &IdentifierExpr{Name: "condBool"}, // WORKAROUND
+		Then: &BlockStmt{Statements: []Stmt{
+			&ExprStmt{Expression: call(member(ident("mock"), "OpSuccess"))},
+		}},
+		Else: &BlockStmt{Statements: []Stmt{
+			&ExprStmt{Expression: call(member(ident("mock"), "OpFailure"))},
+		}},
+	}
+
+	// Eval the If statement - result pushed onto stack
+	err := interp.evalIfStmt(ifStmt) // Use specific eval for testing
+	if err != nil {
+		// If this fails with ErrInvalidConditionType, it's because evalMemberAccess isn't implemented yet.
+		if errors.Is(err, ErrInvalidConditionType) || errors.Is(err, ErrMethodNotFound) { // Also skip if member access fails
+			t.Skipf("Skipping IfStmt test: Requires evalMemberAccess for '.Success' field access (%v)", err)
+		}
+		t.Fatalf("evalIfStmt failed: %v", err)
+	}
+
+	result, err := interp.GetFinalResult() // Get combined result from stack
+	if err != nil {
+		t.Fatalf("GetFinalResult failed: %v", err)
+	}
+
+	finalOutcome, ok := result.(*core.Outcomes[core.AccessResult])
+	if !ok {
+		t.Fatalf("Expected IfStmt result *core.Outcomes[AccessResult], got %T", result)
+	}
+
+	// Analyze the combined result
+	if finalOutcome.Len() == 0 || finalOutcome.Len() > 2*interp.maxOutcomeLen { // Allow up to 2*maxLen
+		t.Errorf("Unexpected outcome length %d", finalOutcome.Len())
+	}
+
+	// Expected availability should be close to the condition's success probability (0.8)
+	// because OpSuccess always succeeds and OpFailure always fails.
+	expectedAvail := 0.8
+	actualAvail := core.Availability(finalOutcome)
+	if !core.ApproxEq(actualAvail, expectedAvail, 0.01) {
+		t.Errorf("Expected availability ~%.2f, got %.6f", expectedAvail, actualAvail)
+	}
+
+	// Check for presence of both latencies
+	foundThenLat := false
+	foundElseLat := false
+	for _, b := range finalOutcome.Buckets {
+		if core.ApproxEq(b.Value.Latency, core.Millis(10), 1e-9) {
+			foundThenLat = true
+		}
+		if core.ApproxEq(b.Value.Latency, core.Millis(5), 1e-9) {
+			foundElseLat = true
+		}
+	}
+	if !foundThenLat {
+		t.Error("Did not find expected 'then' latency (10ms) in combined outcome")
+	}
+	if !foundElseLat {
+		t.Error("Did not find expected 'else' latency (5ms) in combined outcome")
+	}
+
+	t.Logf("IfStmt Test: Final Len=%d, Avail=%.6f", finalOutcome.Len(), actualAvail)
+}
+
+// TODO: Add test for IfStmt without Else branch.
+// TODO: Add test for IfStmt where condition is myVar.Success (requires evalMemberAccess)

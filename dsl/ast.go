@@ -242,3 +242,14 @@ type ExprStmt struct {
 
 func (e *ExprStmt) stmtNode()      {}
 func (e *ExprStmt) String() string { return e.Expression.String() }
+
+// IfStmt represents if (condition) { then_block } else { else_block }
+type IfStmt struct {
+	NodeInfo
+	Condition Expr
+	Then      *BlockStmt // Then Branch
+	Else      *BlockStmt // Else Branch (Optional, can be nil)
+}
+
+func (i *IfStmt) stmtNode()      {}
+func (i *IfStmt) String() string { return fmt.Sprintf("if (%s) { ... } else { ... }", i.Condition) }
