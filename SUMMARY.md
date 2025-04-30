@@ -2,86 +2,121 @@
 
 **1. Vision & Goal:**
 
-*   **Purpose:** The SDL (System Design Language) library aims to model and simulate the performance characteristics (latency, availability, error rates) of distributed system components using analytical models and probabilistic composition rather than full discrete-event simulation.
-*   **Use Cases:** Enable rapid "what-if" analysis of system designs, bottleneck identification, SLO evaluation, interactive performance exploration, and potentially educational tools by modelling component interactions and their probabilistic outcomes.
+*   **Purpose:** The SDL (System Design Language) library models and analyzes the performance characteristics (latency, availability) of distributed system components using **analytical models** and **probabilistic composition**, prioritizing speed for interactive "what-if" analysis over detailed Discrete Event Simulation (DES).
+*   **Use Cases:** Enable rapid analysis of system designs, bottleneck identification, SLO evaluation, performance exploration, and potentially educational tools.
 
 **2. Overall Architecture:**
 
-*   The core simulation engine relies on composing `Outcomes` distributions.
-*   Component models (primitives, storage, etc.) define their performance profiles as `Outcomes`.
-*   Operations are modelled by combining `Outcomes` using operators (`And`, `If`, `Map`, `Split`, `Append`).
-*   Complexity (combinatorial explosion) is managed via reduction strategies (Merge+Interpolate/Anchor).
-*   **Stateless Analytical Core:** Components like `ResourcePool` now operate based on configured steady-state rates, improving analytical consistency but not modeling instantaneous state or bursts. State evolution in a system context is handled externally by modifying component parameters between simulation runs.
-*   Future Goal (Phase 4): Implement a user-friendly DSL to define components and orchestrate simulations, translating DSL definitions into calls to this Go library.
+*   **Probabilistic Core:** Relies on composing `Outcomes[V]` distributions defined in `sdl/core`.
+*   **Analytical Components:** Models (`sdl/components`) define performance profiles as `Outcomes` based on configuration and analytical formulas (e.g., M/M/c for queues/pools).
+*   **Stateless Core:** Key components like `ResourcePool` are now stateless, relying purely on configuration parameters (`lambda`, `Ts`, `Size`) for steady-state predictions, enhancing analytical consistency. State evolution is handled externally between analysis runs.
+*   **Composition:** Operations are modelled by composing `Outcomes` using operators (`And`, `Map`, `Split`, `Append`) defined in `sdl/core`.
+*   **Complexity Management:** Combinatorial explosion is managed via reduction strategies (`TrimToSize`, `TrimToSizeRanged`) combining merging and interpolation/anchoring, implemented alongside result types (`simpleresult.go`, `rangedresult.go`).
+*   **Declarative Layer (`sdl/decl`):** A new layer defines component configurations and methods (`*AST()`) that generate Abstract Syntax Trees (ASTs) representing the intended computation, separating definition from execution.
+*   **Future Execution:** A DSL Interpreter/VM (`sdl/dsl`) will execute these ASTs, orchestrating calls to the `sdl/core` primitives, managing type-specific logic, and applying intermediate reduction.
 
 **3. Code Structure & Package Overview:**
-
-**(Proposed Folder Structure)**
 
 *   **`sdl/` (Root)**
     *   `go.mod`, `go.sum`: Go module definitions.
     *   `Makefile`: Build/test/watch commands.
-    *   `DSL.md`, `ROADMAP.MD`: Design notes and future plans for the DSL.
+    *   `DSL.md`, `ROADMAP.MD`: Design notes and future plans for the DSL and VM/Interpreter.
     *   `SUMMARY.md`: (This document) Project overview.
     *   *(Future)* `README.md`: High-level project description and usage examples.
 
-*   **`sdl/core/`**: Contains the absolute fundamental, generic types and operations for probabilistic distributions and analysis, independent of specific result types or components.
-    *   **Key Files & Concepts:**
-        *   `outcomes.go`: Defines `Bucket[V]` and the core `Outcomes[V any]` struct. Includes fundamental methods like `Add`, `Len`, `TotalWeight`, `Copy`, `Split`, `Partition`, `ScaleWeights`, `GetValue`, and the generic `Sample(rng *rand.Rand)`. Defines generic operators `And`, `If`, `Map`.
-        *   `utils.go`: Defines `Duration` type (`float64`) and time unit helpers (`Millis`, `Nanos`, etc.), `approxEqualTest`.
-        *   `metricable.go` (conceptual): Defines the `Metricable` interface (`IsSuccess() bool`, `GetLatency() Duration`) used by metric calculations.
-        *   `converters.go`: Contains `ConvertToRanged`, `ConvertToAccess`, and `SampleWithinRange`.
-        *   `reducer.go`: Defines generic `AdaptiveReduce` (currently less used) and related types. Core reduction *strategies* are often implemented alongside their specific result types.
-        *   `distributions.go`: **(Recent Work)** Implements distribution generation helpers, notably `NewDistributionFromPercentiles` which creates an `Outcomes` profile from percentile data (e.g., P50, P90, P99) and failure rates. Includes `distributions_test.go`.
-        *   `analyzer.go`: **(Recent Work)** Implements the **stateless `Analyze` primitive**. Takes a simulation function and expectations, returns an `AnalysisResult` struct containing calculated metrics and expectation check outcomes. Includes helper types (`MetricType`, `OperatorType`, `Expectation`) and result reporting/assertion methods (`LogResults`, `Assert`, `AssertFailure`). This standardizes test result verification. Includes `analyzer_test.go`.
+*   **`sdl/core/`**: Fundamental, generic types and operations for probabilistic distributions and analysis.
+    *   `outcomes.go`: `Bucket[V]`, `Outcomes[V any]`, core methods (`Add`, `Len`, `TotalWeight`, `Copy`, `Split`, `Partition`, `ScaleWeights`, `GetValue`, `Sample`). Generic operators `And`, `Map`. (Missing `Filter`, `Repeat`, `FanoutAnd`).
+    *   `utils.go`: `Duration`, time unit helpers, `approxEqualTest`.
+    *   `metricable.go` (conceptual): `Metricable` interface.
+    *   `converters.go`: `ConvertToRanged`, `ConvertToAccess`, `SampleWithinRange`.
+    *   `reducer.go`: Generic `AdaptiveReduce` base. Specific strategies are in result type files.
+    *   `distributions.go`: **(New)** `NewDistributionFromPercentiles` helper. Includes `distributions_test.go`.
+    *   `analyzer.go`: **(New/Refactored)** **Stateless `Analyze` primitive**, `AnalysisResult`, `Expectation` types, `Assert`/`AssertFailure`/`LogResults` helpers. Standardizes testing. Includes `analyzer_test.go`.
+    *   `simpleresult.go`: `AccessResult`, `AndAccessResults`, `MergeAdjacent...`, `Reduce...PercentileAnchor`, `TrimToSize`. Includes `_test.go`.
+    *   `rangedresult.go`: `RangedResult`, `AndRangedResults`, `MergeOverlapping...`, `Interpolate...`, `TrimToSizeRanged`. Includes `_test.go`.
+    *   `metrics.go`: Generic `Availability`, `MeanLatency`, `PercentileLatency`. Includes `metrics_test.go`.
 
-*   **`sdl/core/results/` (Conceptual - files currently live directly in `core/`)**: Defines concrete result types (`V`) that can be used within `Outcomes[V]`, along with type-specific helper functions and reduction strategies.
-    *   **Key Files & Concepts:**
-        *   `simpleresult.go`: Defines `AccessResult{Success, Latency}`, its methods (`IsSuccess`, `GetLatency`), `AndAccessResults`, `MergeAdjacentAccessResults`, `ReduceAccessResultsPercentileAnchor`, and the composite `TrimToSize`.
-        *   `rangedresult.go`: Defines `RangedResult{Success, Min, Mode, Max}`, its methods (`IsSuccess`, `GetLatency` via Mode), `AndRangedResults`, `Overlap()`, `MergeOverlappingRangedResults` (map-based), `InterpolateRangedResults`, and the composite `TrimToSizeRanged`.
-        *   Associated `_test.go` files verify converters and reduction strategies.
+*   **`sdl/components/`**: Concrete system building block components using `sdl/core`.
+    *   `aliases.go`: Type aliases (`Duration`, `Outcomes`).
+    *   **Primitives:** `disk.go`, `network.go`, `queue.go` (M/M/c/K), `resourcepool.go` (**Stateless**, M/M/c).
+    *   **Storage:** `cache.go`, `index.go`, `btree.go`, `hashindex.go`, `lsm.go`, `bitmap.go`, `heapfile.go`, `sortedfile.go`.
+    *   **Orchestration:** `batcher.go`.
+    *   `*_test.go`: Component tests consistently use `core.Analyze(...).Assert()` for verification.
 
-*   **`sdl/core/metrics/` (Conceptual - files currently live directly in `core/`)**: Provides functions to analyze and calculate standard performance metrics from `Outcomes` distributions.
-    *   **Key Files & Concepts:**
-        *   `metrics.go`: Implements generic helper functions `Availability[V Metricable]`, `MeanLatency[V Metricable]`, `PercentileLatency[V Metricable]`.
-        *   `metrics_test.go`: Verifies the metric calculations for different result types and edge cases.
+*   **`sdl/components/decl/` (New Package):** Defines declarative component representations generating ASTs.
+    *   Defines declarative structs (e.g., `decl.Disk`, `decl.BTreeIndex`) holding configuration (`ast.Expr` where needed) and methods (`*AST()`) that construct and return `ast.Expr` trees representing operations. Covers all components previously in `sdl/components` with similar file structures.
+    *   `components_test.go`: Tests verify that the `*AST()` methods generate the correct Expr nodes.
 
-*   **`sdl/components/`**: Defines concrete system building block components, leveraging the `core` library.
-    *   **Key Files & Concepts:**
-        *   `aliases.go`: Provides convenient type aliases (`Duration`, `Outcomes`) for use within the components package.
-        *   **Primitives:** `disk.go` (SSD/HDD profiles), `network.go` (latency, jitter, loss), `queue.go` (M/M/c/K analytical model), `resourcepool.go` (**Now Stateless:** Uses M/M/c analytical model based *only* on configured rates `lambda`, `Ts`, `Size`; `Used` state and `Release` method removed).
-        *   **Storage:** `cache.go` (hit/miss logic), `index.go` (base struct), `btree.go`, `hashindex.go` (heuristic probabilities), `lsm.go` (simplified model), `bitmap.go`, `heapfile.go`, `sortedfile.go`.
-        *   **Orchestration:** `batcher.go` (size/time based batching using analytical wait time approx).
-        *   Associated `_test.go` files verify component logic and performance characteristics, **now consistently using the `core.Analyze` primitive** (`result.Assert()`, `result.AssertFailure()`) for standardized assertions.
-
-*   **`sdl/examples/`**: Contains examples demonstrating how to wire components together to model a system using the Go API.
-    *   **Key Files & Concepts:**
-        *   `bitly/`: Models a URL shortener (`IDGenerator`, `Cache`, `DatabaseComponent`, `BitlyService`). Tests use `Analyze(...).Assert()`.
-        *   `gpucaller/`: **(Recent Work)** Models an App Server using a Batcher to interact with a pool of GPU resources (`AppServer`, `Batcher`, `GpuBatchProcessor`, `ResourcePool`). Demonstrates parameter sweeping in tests (`TestGpuCaller_Scenarios`) using the stateless `ResourcePool` and `Analyze`.
+*   **`sdl/examples/`**: Examples using the Go API (or potentially `sdl/decl` + VM later).
+    *   `bitly/`: URL shortener model (`IDGenerator`, `Cache`, `DatabaseComponent`, `BitlyService`). Tests use `Analyze`.
+    *   `gpucaller/`: Models GPU processing pool (`AppServer`, `Batcher`, `GpuBatchProcessor`, stateless `ResourcePool`). Tests demonstrate parameter sweeping with `Analyze`.
 
 *   **`sdl/dsl/` (Future - Phase 4)**
-    *   **Purpose:** Will contain the parser, interpreter, Abstract Syntax Tree (AST) nodes, and runtime environment for the user-facing System Design Language.
+    *   **Purpose:** Will contain the **DSL Interpreter/VM**, parser (if needed separately from AST generation), environment management, and potentially the user-facing DSL parser entry point.
+    *   `ast/ast.go`: Defines AST node types (`LiteralExpr`, `CallExpr`, `AndExpr`, `ParallelExpr`, `InternalCallExpr`, `RepeatExpr`, `FanoutExpr`, etc.) with `String()` methods.
 
 **4. Current Status & Recent Work Summary:**
 
-*   The core Go library providing the probabilistic modelling engine (`Outcomes`, composition, reduction, metrics) and a suite of component models is stable and well-tested.
+*   The core analytical library (`sdl/core`, `sdl/components`) is functionally complete for modelling steady-state performance via probabilistic composition. Key components are stateless and rate-driven. Standardized testing via `core.Analyze` is implemented.
 *   **Recent Work:**
-    *   Refactored `core.Analyze` into a stateless primitive returning `AnalysisResult`, separating analysis execution from test assertion. Added `Assert`/`AssertFailure` helpers.
-    *   Updated all component tests (`sdl/components/*_test.go`) and examples tests (`sdl/examples/*/*_test.go`) to use the new `Analyze(...).Assert()` pattern for standardized verification.
-    *   Added `core.NewDistributionFromPercentiles` helper function to create `Outcomes` distributions from percentile data, with tests.
-    *   Refactored `components.ResourcePool` to be fully stateless and analytical, removing the `Used` field and `Release` method, aligning it with its M/M/c steady-state model. Updated its tests.
-    *   Created the `sdl/examples/gpucaller` example demonstrating `Batcher` and the stateless `ResourcePool`.
+    *   Refactored `Analyze` to be stateless.
+    *   Added `NewDistributionFromPercentiles`.
+    *   Refactored `ResourcePool` to be stateless.
+    *   Updated all tests to use `Analyze(...).Assert()`.
+    *   Created the `gpucaller` example.
+    *   Created the **`sdl/decl` package** with AST nodes and declarative component versions (`*AST()` methods) generating these ASTs. Added tests for this layer.
 *   **Known Limitations (Explicitly Acknowledged):**
-    *   **Analytical vs. DES:** The library models *steady-state averages*. It doesn't capture transient dynamics (bursts, precise queue buildup/drain) like DES. Use for capacity planning and average performance analysis.
-    *   **Stateless `ResourcePool`:** Cannot model instantaneous contention based on exact usage; relies purely on configured average rates (`lambda`, `Ts`).
-    *   **Profile Accuracy:** Simulation accuracy depends on realistic `Outcomes` profiles (esp. for components like the GPU defined by SLOs). Use real data or `NewDistributionFromPercentiles`.
-    *   **Batcher/Queue Approximations:** Use analytical formulas for average wait times.
-    *   **Cold Starts:** Steady-state models don't represent initial empty system state.
-    *   **Scaling/Topology:** Models focus on single-instance paths. Extrapolate total throughput externally using parameter sweeping to find per-instance capacity.
-    *   **Implicit Network:** Add `NetworkLink` explicitly for higher fidelity.
+    *   **Analytical Steady-State:** Models average performance, not transient bursts/dynamics.
+    *   **Stateless Components:** `ResourcePool` relies purely on configured rates.
+    *   **Profile Accuracy:** Depends on realistic input `Outcomes` distributions.
+    *   **Approximations:** Batcher wait time, parallel execution (`Repeat`/`FanoutAnd` logic needed).
+    *   **Cold Starts/Scaling/Network:** Not inherently modeled, require external handling or explicit components.
+    *   **Missing Core Primitives:** `Filter`, `Repeat`, `FanoutAnd` needed for advanced patterns.
 
 **5. Next Steps (Phase 4):**
 
-*   Focus on **Usability & System Composition** via the DSL.
-*   **Primary Task:** Implement the DSL parser and interpreter as outlined in `DSL.md` and `ROADMAP.MD`, translating DSL constructs into calls to this refined Go library.
+*   Focus on **Usability & System Composition** via the DSL and its execution engine.
+*   **Primary Task:** Implement the **DSL Interpreter/VM** (`sdl/dsl/interpreter.go` or `vm.go`) that executes the ASTs generated by `sdl/decl`.
 
+---
+
+**Next Steps (Phase 4 - DSL Interpreter/VM):**
+
+**Project Context:**
+
+You are continuing development on the SDL (System Design Language) Go library. This library models steady-state system performance using probabilistic `Outcomes` distributions and analytical components (`sdl/core`, `sdl/components`). It prioritizes analytical speed over discrete-event simulation. Key components (`ResourcePool`) are now stateless and rate-driven. A standardized testing primitive (`core.Analyze`) is used extensively.
+
+**Current State:**
+- A new declarative layer (`sdl/decl`) has been implemented.
+    - `sdl/decl/ast/ast.go` defines AST nodes (`LiteralExpr`, `IdentifierExpr`, `CallExpr`, `AndExpr`, `ParallelExpr`, `InternalCallExpr`, `RepeatExpr`, `FanoutExpr`, etc.).
+    - `sdl/decl/components.go` defines declarative component structs holding configuration and methods (`*AST()`) that generate these `ast.Expr` trees, representing operations rather than executing them directly. Tests verify correct AST generation.
+- The core library (`sdl/core`) provides the building blocks: `Outcomes[V]`, composition functions (`And`, `Map`, `Split`), result types (`AccessResult`), reduction (`TrimToSize`), metrics (`Availability`, etc.), and distribution helpers (`NewDistributionFromPercentiles`).
+- Known limitations (steady-state focus, stateless pool, parallel composition approximations, missing `Filter`/`Repeat`/`FanoutAnd` primitives) are documented. Design documents (`DSL.md`, `ROADMAP.MD`) outline the overall plan.
+
+**Phase 4 Goal:** Focus on Usability & System Composition.
+
+**Next Task (Phase 4, Task 2): Implement the DSL Interpreter / VM**
+
+Your primary task is to **implement the initial version of the interpreter/VM** that can execute the Abstract Syntax Trees (ASTs) generated by the `sdl/decl` package. This VM will orchestrate calls to the `sdl/core` library functions to perform the actual probabilistic calculations.
+
+**Requirements:**
+
+1.  **Location:** Implement the core interpreter logic likely in `sdl/dsl/interpreter.go` (or `vm.go`).
+2.  **Input:** The interpreter should take an `ast.Expr` as input (typically the target expression from an `analyze` block or a component operation's body).
+3.  **Execution Model:** Implement a **stack-based execution model**. Expressions are evaluated, pushing their results (primarily `*core.Outcomes[V]` objects) onto the VM stack. Operators consume operands from the stack and push results back.
+4.  **Environment:** Implement a basic environment (symbol table) for resolving identifiers (`ast.IdentifierExpr`) to runtime values (e.g., component instances created during system setup, intermediate results stored in variables). Handle basic scoping if necessary later.
+5.  **Instruction Handlers (Eval Logic):** Implement evaluation logic for key AST nodes:
+    *   **`ast.LiteralExpr`:** Parse value, wrap in a deterministic `*core.Outcomes[T]`, push onto stack.
+    *   **`ast.IdentifierExpr`:** Look up name in environment, push value onto stack.
+    *   **`ast.CallExpr`:** Evaluate function expression, evaluate args, resolve Go method/function, call it (it might return `*core.Outcomes[V]` directly or another `ast.Expr` to evaluate recursively), push result. Handle calls to `sdl/decl` component `*AST()` methods by recursively evaluating the returned AST.
+    *   **`ast.MemberAccessExpr`:** Evaluate receiver, use member name for method lookup (in `CallExpr`) or potentially field access later.
+    *   **`ast.AndExpr`:** Evaluate `Left`, evaluate `Right`. Pop both results (`*Outcomes[V1]`, `*Outcomes[V2]`). **Inspect types V1/V2** (using type assertions/reflection initially). Select appropriate **sequential reducer** (e.g., `core.AndAccessResults`). Call `core.And(LeftResult, RightResult, reducer)`. **Apply intermediate trimming** based on context/options. Push result.
+    *   **`ast.ParallelExpr`:** Similar to `AndExpr`, but select/implement a **parallel reducer** (approximate: Max Latency, AND Success for known types). Call `core.And` with this parallel reducer. Apply trimming. Push result.
+    *   **`ast.InternalCallExpr`:** Lookup `FuncName` in a registry of internal VM helper functions (e.g., `GetDiskReadProfile`, `CalculateBTreeHeight`, `ScaleLatency`). Evaluate args, execute the helper Go function, push result.
+6.  **Intermediate Trimming:** Implement logic within the VM handlers for composition operators (`AndExpr`, `ParallelExpr`, `RepeatExpr`, `FanoutExpr`) to check the length of the resulting `Outcomes` object and apply the appropriate `core.TrimToSize` (or similar) function if it exceeds a configured threshold (`MaxOutcomeLen` from options/context). Type inspection is needed here too.
+7.  **Type Handling:** The VM *must* handle type heterogeneity. Use type assertions (`switch v := value.(type)`) or reflection (`reflect` package) on the `*core.Outcomes[V]` objects popped from the stack to determine the underlying type `V` when selecting reducers, trimmers, or specific logic.
+8.  **Initial Focus:** Implement handlers for `LiteralExpr`, `IdentifierExpr`, `CallExpr` (calling simple Go funcs returning `Outcomes`), `AndExpr`, and `InternalCallExpr` (with a few basic helpers like `GetDiskReadProfile`). Implement the basic stack machine loop and intermediate trimming after `AndExpr`.
+
+**Do Not Implement Yet:** `RepeatExpr`, `FanoutExpr`, `SwitchExpr`, `FilterExpr`, complex environment scoping, full DSL parsing integration (assume AST input is given).
+
+**Deliverable:** Go code for the initial stack-based VM/Interpreter (`interpreter.go` and supporting types/environment struct). Include basic tests (`interpreter_test.go`) that construct simple ASTs manually and verify the interpreter produces the expected final `*core.Outcomes[V]` result on the stack (check `Len()`, `TotalWeight()`, maybe `Availability()` if applicable).
