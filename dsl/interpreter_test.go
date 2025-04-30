@@ -879,5 +879,80 @@ func TestInterpreter_Eval_IfStmt_AccessResultSuccess(t *testing.T) {
 	t.Logf("IfStmt Test: Final Len=%d, Avail=%.6f", finalOutcome.Len(), actualAvail)
 }
 
+// --- Test CallExpr with Arguments (Phase 9 / now) ---
+
+func TestInterpreter_Eval_CallExpr_DiskReadProcessWrite(t *testing.T) {
+	interp := NewInterpreter(15)
+	// Env setup
+	disk := components.NewDisk("ssd_rpw")
+	interp.Env().Set("myDiskRPW", disk)
+	// Processing time outcome (must be deterministic for arg)
+	procTimeVal := core.Millis(2) // 2ms
+	procTimeOutcome := (&core.Outcomes[core.Duration]{}).Add(1.0, procTimeVal)
+	interp.Env().Set("processingDuration", procTimeOutcome) // Store the outcome
+
+	// AST for myDiskRPW.ReadProcessWrite(processingDuration)
+	call := &CallExpr{
+		Function: &MemberAccessExpr{
+			Receiver: &IdentifierExpr{Name: "myDiskRPW"},
+			Member:   "ReadProcessWrite",
+		},
+		Args: []Expr{
+			&IdentifierExpr{Name: "processingDuration"}, // Pass the outcome variable
+		},
+	}
+
+	_, err := interp.Eval(call)
+	if err != nil {
+		t.Fatalf("Eval(CallExpr Disk.ReadProcessWrite) failed: %v", err)
+	}
+
+	result, err := interp.GetFinalResult()
+	if err != nil {
+		t.Fatalf("GetFinalResult failed: %v", err)
+	}
+
+	outcome, ok := result.(*core.Outcomes[core.AccessResult])
+	if !ok {
+		t.Fatalf("Expected result type *core.Outcomes[AccessResult], got %T", result)
+	}
+
+	// Check combined result (approx)
+	baseRead := disk.Read()
+	baseWrite := disk.Write()
+	expectedMean := core.MeanLatency(baseRead) + core.MeanLatency(baseWrite) + procTimeVal
+	actualMean := core.MeanLatency(outcome)
+	if !core.ApproxEq(actualMean, expectedMean, expectedMean*0.15) { // Allow tolerance
+		t.Errorf("RPW Mean Latency %.6f differs from expected %.6f", actualMean, expectedMean)
+	}
+	expectedAvail := core.Availability(baseRead) * core.Availability(baseWrite)
+	actualAvail := core.Availability(outcome)
+	if !core.ApproxEq(actualAvail, expectedAvail, 0.001) {
+		t.Errorf("RPW Availability %.6f differs from expected %.6f", actualAvail, expectedAvail)
+	}
+}
+
+func TestInterpreter_Eval_CallExpr_NonDeterministicArg(t *testing.T) {
+	interp := NewInterpreter(15)
+	disk := components.NewDisk("ssd_rpw_err")
+	interp.Env().Set("myDiskErr", disk)
+	// Non-deterministic outcome for argument
+	nonDetOutcome := (&core.Outcomes[core.Duration]{}).Add(0.5, core.Millis(1)).Add(0.5, core.Millis(3))
+	interp.Env().Set("nonDetDuration", nonDetOutcome)
+
+	// AST for myDiskErr.ReadProcessWrite(nonDetDuration)
+	call := &CallExpr{
+		Function: &MemberAccessExpr{Receiver: &IdentifierExpr{Name: "myDiskErr"}, Member: "ReadProcessWrite"},
+		Args:     []Expr{&IdentifierExpr{Name: "nonDetDuration"}},
+	}
+	_, err := interp.Eval(call)
+	if err == nil {
+		t.Fatal("Eval call with non-deterministic argument should have failed")
+	}
+	if !errors.Is(err, ErrInvalidArgument) {
+		t.Errorf("Expected ErrInvalidArgument for non-deterministic arg, got: %v", err)
+	}
+}
+
 // TODO: Add test for IfStmt without Else branch.
 // TODO: Add test for IfStmt where condition is myVar.Success (requires evalMemberAccess)

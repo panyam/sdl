@@ -40,7 +40,7 @@ func (i *Interpreter) evalCallExpr(expr *CallExpr) error {
 	}
 
 	// --- Evaluate Arguments ---
-	evaluatedArgs := make([]interface{}, len(expr.Args))
+	evaluatedArgs := make([]any, len(expr.Args))
 	argVals := make([]reflect.Value, len(expr.Args)) // For reflect.Call
 
 	for idx, argExpr := range expr.Args {
@@ -58,8 +58,8 @@ func (i *Interpreter) evalCallExpr(expr *CallExpr) error {
 			return fmt.Errorf("stack underflow retrieving arg %d for method call '%s': %w", j, memExpr.Member, err)
 		}
 		// TODO: Type checking/conversion needed here if methods expect specific Go types
-		// For now, assume args are passed as interface{} and method handles them, or
-		// assume methods take `interface{}` or `reflect.Value`. Simpler: assume no args for now.
+		// Store the raw any value for now. We will convert/check below.
+		// Wrap in reflect.Value later after potential conversion.
 		evaluatedArgs[j] = argValRaw
 		// Wrap in reflect.Value for calling via reflection
 		argVals[j] = reflect.ValueOf(argValRaw)
@@ -82,10 +82,46 @@ func (i *Interpreter) evalCallExpr(expr *CallExpr) error {
 		return fmt.Errorf("%w: receiver type %T has no method '%s'", ErrMethodNotFound, receiverObjRaw, methodName)
 	}
 
-	// --- Argument Count/Type Check (Basic) ---
+	// --- Argument Count/Type Check & Conversion ---
 	methodType := methodVal.Type()
 	if methodType.NumIn() != len(argVals) {
 		return fmt.Errorf("%w: method '%s' expects %d arguments, got %d", ErrInvalidArgument, methodName, methodType.NumIn(), len(argVals))
+	}
+
+	// Prepare converted reflect.Value arguments
+	convertedArgVals := make([]reflect.Value, len(evaluatedArgs))
+
+	for j, argRaw := range evaluatedArgs {
+		expectedGoType := methodType.In(j) // The Go type the method expects
+
+		// Argument MUST be a deterministic outcome
+		// We need a way to call GetValue generically. Use reflection.
+		argOutcomeVal := reflect.ValueOf(argRaw) // Value of the *core.Outcomes[T]
+		if argOutcomeVal.Kind() != reflect.Ptr || !argOutcomeVal.MethodByName("GetValue").IsValid() {
+			return fmt.Errorf("%w: argument %d for method '%s' is not a valid Outcome object (%T)", ErrInvalidArgument, j, methodName, argRaw)
+		}
+
+		// Call GetValue() using reflection -> returns []interface{ Value, bool }
+		getValueResults := argOutcomeVal.MethodByName("GetValue").Call(nil)
+		if len(getValueResults) != 2 || !getValueResults[1].Bool() {
+			return fmt.Errorf("%w: argument %d for method '%s' must be deterministic (single outcome bucket)", ErrInvalidArgument, j, methodName)
+		}
+		deterministicVal := getValueResults[0].Interface() // The actual inner value (e.g., int64, float64)
+
+		// --- Type Conversion ---
+		actualValReflect := reflect.ValueOf(deterministicVal)
+		if !actualValReflect.Type().AssignableTo(expectedGoType) {
+			// Attempt basic conversions (e.g., int64 -> uint, float64 -> core.Duration)
+			if actualValReflect.Type().ConvertibleTo(expectedGoType) {
+				convertedValReflect := actualValReflect.Convert(expectedGoType)
+				convertedArgVals[j] = convertedValReflect
+			} else {
+				return fmt.Errorf("%w: cannot convert argument %d for method '%s' from type %T to expected type %s", ErrInvalidArgument, j, methodName, deterministicVal, expectedGoType.String())
+			}
+		} else {
+			// Types are assignable, use the value directly
+			convertedArgVals[j] = actualValReflect
+		}
 	}
 	// TODO: Add more detailed argument type checking if needed. For now, rely on reflect.Call panicking or method handling.
 
@@ -100,7 +136,7 @@ func (i *Interpreter) evalCallExpr(expr *CallExpr) error {
 				err = fmt.Errorf("panic during method call '%s': %v", methodName, r)
 			}
 		}()
-		returnVals = methodVal.Call(argVals)
+		returnVals = methodVal.Call(convertedArgVals) // Use converted arguments
 	}()
 	if err != nil { // Check if panic occurred
 		return err
@@ -112,7 +148,7 @@ func (i *Interpreter) evalCallExpr(expr *CallExpr) error {
 		return fmt.Errorf("%w: method '%s' did not return exactly one value (got %d)", ErrInvalidReturn, methodName, len(returnVals))
 	}
 
-	returnValue := returnVals[0].Interface() // Get the interface{} value back from reflect.Value
+	returnValue := returnVals[0].Interface() // Get the any value back from reflect.Value
 
 	// Check if the return value is an AST node to be evaluated further (Phase 5)
 	// or an Outcome object to be pushed (this phase).
