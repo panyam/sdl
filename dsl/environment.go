@@ -6,13 +6,13 @@ import "fmt"
 // Environment holds the runtime values for identifiers (variables, functions, components).
 // Supports basic scoping via the 'outer' environment.
 type Environment struct {
-	store map[string]interface{}
+	store map[string]any
 	outer *Environment
 }
 
 // NewEnvironment creates a fresh top-level environment.
 func NewEnvironment() *Environment {
-	s := make(map[string]interface{})
+	s := make(map[string]any)
 	return &Environment{store: s, outer: nil}
 }
 
@@ -26,7 +26,7 @@ func NewEnclosedEnvironment(outer *Environment) *Environment {
 
 // Get retrieves a value by name. It checks the current environment first,
 // then recursively checks outer environments.
-func (e *Environment) Get(name string) (interface{}, bool) {
+func (e *Environment) Get(name string) (any, bool) {
 	obj, ok := e.store[name]
 	if !ok && e.outer != nil {
 		// Not found here, try the outer scope
@@ -37,7 +37,7 @@ func (e *Environment) Get(name string) (interface{}, bool) {
 
 // Set defines or updates a value in the *current* environment.
 // It does not modify outer environments.
-func (e *Environment) Set(name string, value interface{}) {
+func (e *Environment) Set(name string, value any) {
 	e.store[name] = value
 }
 

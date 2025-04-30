@@ -1,4 +1,4 @@
-// sdl/dsl/interpreter_test.go
+// sdl/dsl/vm_test.go
 package dsl
 
 import (
@@ -28,46 +28,46 @@ func internalCall(fName string, args ...Expr) Expr {
 	return &InternalCallExpr{FuncName: fName, Args: args}
 }
 
-func TestInterpreter_NewInterpreter(t *testing.T) {
-	interp := NewInterpreter(20)
-	if interp == nil {
-		t.Fatal("NewInterpreter returned nil")
+func TestVM_NewVM(t *testing.T) {
+	v := NewVM(20)
+	if v == nil {
+		t.Fatal("NewVM returned nil")
 	}
-	if interp.stack == nil {
-		t.Error("Interpreter stack is nil")
+	if v.stack == nil {
+		t.Error("VM stack is nil")
 	}
-	if len(interp.stack) != 0 {
-		t.Errorf("Expected initial stack length 0, got %d", len(interp.stack))
+	if len(v.stack) != 0 {
+		t.Errorf("Expected initial stack length 0, got %d", len(v.stack))
 	}
-	if interp.env == nil {
-		t.Error("Interpreter environment is nil")
+	if v.env == nil {
+		t.Error("VM environment is nil")
 	}
-	if len(interp.env.store) != 0 {
+	if len(v.env.store) != 0 {
 		t.Error("Expected initial environment store to be empty")
 	}
-	if interp.internalFuncs == nil {
-		t.Error("Interpreter internalFuncs map is nil")
+	if v.internalFuncs == nil {
+		t.Error("VM internalFuncs map is nil")
 	}
-	if len(interp.internalFuncs) != 0 {
+	if len(v.internalFuncs) != 0 {
 		t.Error("Expected initial internalFuncs map to be empty")
 	}
-	if interp.maxOutcomeLen != 20 {
-		t.Errorf("Expected maxOutcomeLen 20, got %d", interp.maxOutcomeLen)
+	if v.maxOutcomeLen != 20 {
+		t.Errorf("Expected maxOutcomeLen 20, got %d", v.maxOutcomeLen)
 	}
 }
 
 // --- Test Literals (Phase 1) ---
 
-func TestInterpreter_Eval_LiteralInt(t *testing.T) {
-	interp := NewInterpreter(10)
+func TestVM_Eval_LiteralInt(t *testing.T) {
+	v := NewVM(10)
 	literal := &LiteralExpr{Kind: "INT", Value: "42"}
 
-	_, err := interp.Eval(literal)
+	_, err := v.Eval(literal)
 	if err != nil {
 		t.Fatalf("Eval(LiteralInt) failed: %v", err)
 	}
 
-	result, err := interp.GetFinalResult()
+	result, err := v.GetFinalResult()
 	if err != nil {
 		t.Fatalf("GetFinalResult failed: %v", err)
 	}
@@ -86,15 +86,15 @@ func TestInterpreter_Eval_LiteralInt(t *testing.T) {
 	}
 }
 
-func TestInterpreter_Eval_LiteralFloat(t *testing.T) {
-	interp := NewInterpreter(10)
+func TestVM_Eval_LiteralFloat(t *testing.T) {
+	v := NewVM(10)
 	literal := &LiteralExpr{Kind: "FLOAT", Value: "3.14"}
 
-	_, err := interp.Eval(literal)
+	_, err := v.Eval(literal)
 	if err != nil {
 		t.Fatalf("Eval(LiteralFloat) failed: %v", err)
 	}
-	result, err := interp.GetFinalResult()
+	result, err := v.GetFinalResult()
 	if err != nil {
 		t.Fatalf("GetFinalResult failed: %v", err)
 	}
@@ -111,15 +111,15 @@ func TestInterpreter_Eval_LiteralFloat(t *testing.T) {
 	}
 }
 
-func TestInterpreter_Eval_LiteralString(t *testing.T) {
-	interp := NewInterpreter(10)
+func TestVM_Eval_LiteralString(t *testing.T) {
+	v := NewVM(10)
 	literal := &LiteralExpr{Kind: "STRING", Value: "hello"} // Note: No quotes in Value field
 
-	_, err := interp.Eval(literal)
+	_, err := v.Eval(literal)
 	if err != nil {
 		t.Fatalf("Eval(LiteralString) failed: %v", err)
 	}
-	result, err := interp.GetFinalResult()
+	result, err := v.GetFinalResult()
 	if err != nil {
 		t.Fatalf("GetFinalResult failed: %v", err)
 	}
@@ -136,15 +136,15 @@ func TestInterpreter_Eval_LiteralString(t *testing.T) {
 	}
 }
 
-func TestInterpreter_Eval_LiteralBool(t *testing.T) {
-	interp := NewInterpreter(10)
+func TestVM_Eval_LiteralBool(t *testing.T) {
+	v := NewVM(10)
 	literal := &LiteralExpr{Kind: "BOOL", Value: "true"}
 
-	_, err := interp.Eval(literal)
+	_, err := v.Eval(literal)
 	if err != nil {
 		t.Fatalf("Eval(LiteralBool) failed: %v", err)
 	}
-	result, err := interp.GetFinalResult()
+	result, err := v.GetFinalResult()
 	if err != nil {
 		t.Fatalf("GetFinalResult failed: %v", err)
 	}
@@ -180,19 +180,19 @@ func TestEnvironment_SetGet(t *testing.T) {
 
 // --- Test Identifier & Internal Calls (Phase 2) ---
 
-func TestInterpreter_Eval_Identifier(t *testing.T) {
-	interp := NewInterpreter(10)
+func TestVM_Eval_Identifier(t *testing.T) {
+	v := NewVM(10)
 	// Setup environment
 	testOutcome := (&core.Outcomes[int64]{}).Add(1.0, 99)
-	interp.Env().Set("myVar", testOutcome)
+	v.Env().Set("myVar", testOutcome)
 
 	ident := &IdentifierExpr{Name: "myVar"}
-	_, err := interp.Eval(ident)
+	_, err := v.Eval(ident)
 	if err != nil {
 		t.Fatalf("Eval(IdentifierExpr) failed: %v", err)
 	}
 
-	result, err := interp.GetFinalResult()
+	result, err := v.GetFinalResult()
 	if err != nil {
 		t.Fatalf("GetFinalResult failed: %v", err)
 	}
@@ -202,11 +202,11 @@ func TestInterpreter_Eval_Identifier(t *testing.T) {
 	}
 }
 
-func TestInterpreter_Eval_Identifier_NotFound(t *testing.T) {
-	interp := NewInterpreter(10)
+func TestVM_Eval_Identifier_NotFound(t *testing.T) {
+	v := NewVM(10)
 	ident := &IdentifierExpr{Name: "missingVar"}
 
-	_, err := interp.Eval(ident)
+	_, err := v.Eval(ident)
 	if err == nil {
 		t.Fatal("Eval(IdentifierExpr) should have failed for missing variable")
 	}
@@ -218,11 +218,11 @@ func TestInterpreter_Eval_Identifier_NotFound(t *testing.T) {
 }
 
 // Helper function to register a dummy SSD read profile getter
-func registerTestDiskFuncs(interp *Interpreter) {
+func registerTestDiskFuncs(v *VM) {
 	// Ensure Disk component is initialized to provide the outcomes
 	ssd := components.NewDisk("TestSSD") // Uses SSD profile by default
 
-	interp.RegisterInternalFunc("GetDiskReadProfile", func(i *Interpreter, args []any) (any, error) {
+	v.RegisterInternalFunc("GetDiskReadProfile", func(v *VM, args []any) (any, error) {
 		// Expects one string arg: profile name (we ignore it here for simplicity)
 		// if len(args) != 1 { return nil, fmt.Errorf("GetDiskReadProfile expects 1 arg") }
 		// _, ok := args[0].(string); if !ok { return nil, fmt.Errorf("arg 0 must be string profile name") }
@@ -231,19 +231,19 @@ func registerTestDiskFuncs(interp *Interpreter) {
 	})
 }
 
-func TestInterpreter_Eval_InternalCall(t *testing.T) {
-	interp := NewInterpreter(10)
+func TestVM_Eval_InternalCall(t *testing.T) {
+	v := NewVM(10)
 	registerTestDiskFuncs(interp)
 
 	// AST for Internal.GetDiskReadProfile("SSD") - Args aren't used yet by dummy func
 	call := &InternalCallExpr{FuncName: "GetDiskReadProfile", Args: []Expr{&LiteralExpr{Kind: "STRING", Value: "SSD"}}}
 
-	_, err := interp.Eval(call)
+	_, err := v.Eval(call)
 	if err != nil {
 		t.Fatalf("Eval(InternalCallExpr) failed: %v", err)
 	}
 
-	result, err := interp.GetFinalResult()
+	result, err := v.GetFinalResult()
 	if err != nil {
 		t.Fatalf("GetFinalResult failed: %v", err)
 	}
@@ -255,10 +255,10 @@ func TestInterpreter_Eval_InternalCall(t *testing.T) {
 	}
 }
 
-func TestInterpreter_Eval_InternalCall_NotFound(t *testing.T) {
-	interp := NewInterpreter(10)
+func TestVM_Eval_InternalCall_NotFound(t *testing.T) {
+	v := NewVM(10)
 	call := &InternalCallExpr{FuncName: "NoSuchFunction"}
-	_, err := interp.Eval(call)
+	_, err := v.Eval(call)
 	if err == nil {
 		t.Fatal("Eval(InternalCallExpr) should fail for unregistered function")
 	}
@@ -306,63 +306,63 @@ func TestEnvironment_Scoping(t *testing.T) {
 	}
 }
 
-func TestInterpreter_Stack(t *testing.T) {
-	interp := NewInterpreter(10)
+func TestVM_Stack(t *testing.T) {
+	v := NewVM(10)
 
-	_, err := interp.pop()
+	_, err := v.pop()
 	if err == nil || err != ErrStackUnderflow {
 		t.Errorf("Expected ErrStackUnderflow on empty pop, got %v", err)
 	}
 
-	interp.push(1)
-	interp.push("two")
+	v.push(1)
+	v.push("two")
 
-	if len(interp.stack) != 2 {
-		t.Fatalf("Expected stack length 2, got %d", len(interp.stack))
+	if len(v.stack) != 2 {
+		t.Fatalf("Expected stack length 2, got %d", len(v.stack))
 	}
 
-	top, ok := interp.peek()
+	top, ok := v.peek()
 	if !ok || top != "two" {
 		t.Errorf("Peek failed: expected 'two', got %v (%t)", top, ok)
 	}
 
-	val2, err2 := interp.pop()
+	val2, err2 := v.pop()
 	if err2 != nil {
 		t.Fatalf("Error popping 'two': %v", err2)
 	}
 	if val2 != "two" {
 		t.Errorf("Expected popped value 'two', got %v", val2)
 	}
-	if len(interp.stack) != 1 {
-		t.Errorf("Expected stack length 1 after pop, got %d", len(interp.stack))
+	if len(v.stack) != 1 {
+		t.Errorf("Expected stack length 1 after pop, got %d", len(v.stack))
 	}
 
-	val1, err1 := interp.pop()
+	val1, err1 := v.pop()
 	if err1 != nil {
 		t.Fatalf("Error popping 1: %v", err1)
 	}
 	if val1 != 1 {
 		t.Errorf("Expected popped value 1, got %v", val1)
 	}
-	if len(interp.stack) != 0 {
-		t.Errorf("Expected stack length 0 after popping all, got %d", len(interp.stack))
+	if len(v.stack) != 0 {
+		t.Errorf("Expected stack length 0 after popping all, got %d", len(v.stack))
 	}
 
-	_, errEmpty := interp.pop()
+	_, errEmpty := v.pop()
 	if errEmpty == nil || errEmpty != ErrStackUnderflow {
 		t.Errorf("Expected ErrStackUnderflow on final empty pop, got %v", errEmpty)
 	}
 }
 
-func TestInterpreter_RegisterInternalFunc(t *testing.T) {
-	interp := NewInterpreter(10)
-	testFunc := func(i *Interpreter, args []any) (any, error) {
+func TestVM_RegisterInternalFunc(t *testing.T) {
+	v := NewVM(10)
+	testFunc := func(v *VM, args []any) (any, error) {
 		return "test success", nil
 	}
 
-	interp.RegisterInternalFunc("myTestFunc", testFunc)
+	v.RegisterInternalFunc("myTestFunc", testFunc)
 
-	fn, ok := interp.internalFuncs["myTestFunc"]
+	fn, ok := v.internalFuncs["myTestFunc"]
 	if !ok {
 		t.Fatal("Failed to register internal function")
 	}
@@ -373,11 +373,11 @@ func TestInterpreter_RegisterInternalFunc(t *testing.T) {
 	// but checking presence and non-nil is a good start.
 }
 
-func TestInterpreter_Eval_Stub(t *testing.T) {
-	interp := NewInterpreter(10)
+func TestVM_Eval_Stub(t *testing.T) {
+	v := NewVM(10)
 	// Use an AST node for which Eval is not implemented yet
 	node := &MemberAccessExpr{}
-	_, err := interp.Eval(node)
+	_, err := v.Eval(node)
 	if err == nil {
 		t.Error("Expected an error for unimplemented node type")
 	}
@@ -391,11 +391,11 @@ func TestInterpreter_Eval_Stub(t *testing.T) {
 // --- Test AndExpr & Reduction (Phase 3) ---
 // --- Test CallExpr (Method Calls - Phase 4) ---
 
-func TestInterpreter_Eval_CallExpr_DiskRead(t *testing.T) {
-	interp := NewInterpreter(10)
+func TestVM_Eval_CallExpr_DiskRead(t *testing.T) {
+	v := NewVM(10)
 	// Setup environment with a disk instance
 	disk := components.NewDisk("ssd1") // Uses SSD profile
-	interp.Env().Set("myDisk", disk)
+	v.Env().Set("myDisk", disk)
 
 	// AST for myDisk.Read()
 	call := &CallExpr{
@@ -406,12 +406,12 @@ func TestInterpreter_Eval_CallExpr_DiskRead(t *testing.T) {
 		Args: []Expr{}, // No arguments for Read()
 	}
 
-	_, err := interp.Eval(call)
+	_, err := v.Eval(call)
 	if err != nil {
 		t.Fatalf("Eval(CallExpr Disk.Read) failed: %v", err)
 	}
 
-	result, err := interp.GetFinalResult()
+	result, err := v.GetFinalResult()
 	if err != nil {
 		t.Fatalf("GetFinalResult failed: %v", err)
 	}
@@ -423,10 +423,10 @@ func TestInterpreter_Eval_CallExpr_DiskRead(t *testing.T) {
 	}
 }
 
-func TestInterpreter_Eval_CallExpr_MethodNotFound(t *testing.T) {
-	interp := NewInterpreter(10)
+func TestVM_Eval_CallExpr_MethodNotFound(t *testing.T) {
+	v := NewVM(10)
 	disk := components.NewDisk("ssd1")
-	interp.Env().Set("myDisk", disk)
+	v.Env().Set("myDisk", disk)
 
 	// AST for myDisk.NoSuchMethod()
 	call := &CallExpr{
@@ -437,7 +437,7 @@ func TestInterpreter_Eval_CallExpr_MethodNotFound(t *testing.T) {
 		Args: []Expr{},
 	}
 
-	_, err := interp.Eval(call)
+	_, err := v.Eval(call)
 	if err == nil {
 		t.Fatal("Eval(CallExpr) should have failed for non-existent method")
 	}
@@ -450,15 +450,15 @@ func TestInterpreter_Eval_CallExpr_MethodNotFound(t *testing.T) {
 // TODO: Add tests for CallExpr calling methods that return ast.Node (Phase 5).
 
 // Helper to register SSD Write profile getter
-func registerTestDiskWriteFunc(interp *Interpreter) {
+func registerTestDiskWriteFunc(v *VM) {
 	ssd := components.NewDisk("TestSSD")
-	interp.RegisterInternalFunc("GetDiskWriteProfile", func(i *Interpreter, args []any) (any, error) {
+	v.RegisterInternalFunc("GetDiskWriteProfile", func(v *VM, args []any) (any, error) {
 		return ssd.Write(), nil
 	})
 }
 
-func TestInterpreter_Eval_AndExpr_AccessResult(t *testing.T) {
-	interp := NewInterpreter(10)      // Max 10 buckets
+func TestVM_Eval_AndExpr_AccessResult(t *testing.T) {
+	v := NewVM(10)                    // Max 10 buckets
 	registerTestDiskFuncs(interp)     // Registers GetDiskReadProfile
 	registerTestDiskWriteFunc(interp) // Registers GetDiskWriteProfile
 
@@ -467,12 +467,12 @@ func TestInterpreter_Eval_AndExpr_AccessResult(t *testing.T) {
 	writeCall := &InternalCallExpr{FuncName: "GetDiskWriteProfile"}
 	andExpr := &AndExpr{Left: readCall, Right: writeCall}
 
-	_, err := interp.Eval(andExpr)
+	_, err := v.Eval(andExpr)
 	if err != nil {
 		t.Fatalf("Eval(AndExpr) failed: %v", err)
 	}
 
-	result, err := interp.GetFinalResult()
+	result, err := v.GetFinalResult()
 	if err != nil {
 		t.Fatalf("GetFinalResult failed: %v", err)
 	}
@@ -491,7 +491,7 @@ func TestInterpreter_Eval_AndExpr_AccessResult(t *testing.T) {
 		t.Errorf("Expected total weight ~1.0, got %f", outcome.TotalWeight())
 	}
 	// After splitting, trimming each part to maxLen, and appending, the max possible is 2*maxLen
-	maxExpectedLen := 2 * interp.maxOutcomeLen
+	maxExpectedLen := 2 * v.maxOutcomeLen
 	if outcome.Len() > maxExpectedLen {
 		t.Errorf("Expected outcome length <= %d (2 * maxLen) after reduction, got %d", maxExpectedLen, outcome.Len())
 	}
@@ -508,8 +508,8 @@ func TestInterpreter_Eval_AndExpr_AccessResult(t *testing.T) {
 	t.Logf("AndExpr Test: Final Len=%d, Mean Latency=%.6fs (Expected Sum ~%.6fs)", outcome.Len(), actualMean, expectedMean)
 }
 
-func TestInterpreter_Eval_AndExpr_TypeMismatch(t *testing.T) {
-	interp := NewInterpreter(10)
+func TestVM_Eval_AndExpr_TypeMismatch(t *testing.T) {
+	v := NewVM(10)
 	registerTestDiskFuncs(interp) // GetDiskReadProfile returns *Outcomes[AccessResult]
 
 	// AST for GetDiskReadProfile() THEN 123
@@ -517,7 +517,7 @@ func TestInterpreter_Eval_AndExpr_TypeMismatch(t *testing.T) {
 	literalInt := &LiteralExpr{Kind: "INT", Value: "123"}
 	andExpr := &AndExpr{Left: readCall, Right: literalInt}
 
-	_, err := interp.Eval(andExpr)
+	_, err := v.Eval(andExpr)
 	if err == nil {
 		t.Fatalf("Eval(AndExpr) should have failed for type mismatch")
 	}
@@ -527,15 +527,15 @@ func TestInterpreter_Eval_AndExpr_TypeMismatch(t *testing.T) {
 	}
 }
 
-func TestInterpreter_Eval_CallExpr_RecursiveAST(t *testing.T) {
-	interp := NewInterpreter(10)
+func TestVM_Eval_CallExpr_RecursiveAST(t *testing.T) {
+	v := NewVM(10)
 	registerTestDiskFuncs(interp) // Need GetDiskReadProfile internal func
 
 	// Setup environment with a *declarative* disk instance
 	// The actual Go disk component isn't directly needed in the env,
 	// as the call resolves to the Disk.Read() method which returns an AST.
 	declDisk := NewDisk("ssd_decl", "SSD")
-	interp.Env().Set("myDeclDisk", declDisk)
+	v.Env().Set("myDeclDisk", declDisk)
 
 	// AST for myDeclDisk.Read()
 	call := &CallExpr{
@@ -546,12 +546,12 @@ func TestInterpreter_Eval_CallExpr_RecursiveAST(t *testing.T) {
 		Args: []Expr{},
 	}
 
-	_, err := interp.Eval(call) // This should trigger recursive evaluation
+	_, err := v.Eval(call) // This should trigger recursive evaluation
 	if err != nil {
 		t.Fatalf("Eval(CallExpr Disk.Read) failed: %v", err)
 	}
 
-	result, err := interp.GetFinalResult()
+	result, err := v.GetFinalResult()
 	if err != nil {
 		t.Fatalf("GetFinalResult failed after recursive eval: %v", err)
 	}
@@ -567,8 +567,8 @@ func TestInterpreter_Eval_CallExpr_RecursiveAST(t *testing.T) {
 
 // --- Test RepeatExpr (Sequential - Phase 6) ---
 
-func TestInterpreter_Eval_RepeatExpr_Sequential(t *testing.T) {
-	interp := NewInterpreter(10)  // Reduce aggressively for testing
+func TestVM_Eval_RepeatExpr_Sequential(t *testing.T) {
+	v := NewVM(10)                // Reduce aggressively for testing
 	registerTestDiskFuncs(interp) // GetDiskReadProfile returns *Outcomes[AccessResult]
 
 	// AST for repeat(GetDiskReadProfile(), 3, Sequential)
@@ -579,12 +579,12 @@ func TestInterpreter_Eval_RepeatExpr_Sequential(t *testing.T) {
 		Mode:  Sequential,
 	}
 
-	_, err := interp.Eval(repeatExpr)
+	_, err := v.Eval(repeatExpr)
 	if err != nil {
 		t.Fatalf("Eval(RepeatExpr) failed: %v", err)
 	}
 
-	result, err := interp.GetFinalResult()
+	result, err := v.GetFinalResult()
 	if err != nil {
 		t.Fatalf("GetFinalResult failed: %v", err)
 	}
@@ -595,7 +595,7 @@ func TestInterpreter_Eval_RepeatExpr_Sequential(t *testing.T) {
 	}
 
 	// Check length (should be <= 2 * maxLen due to split/trim)
-	maxExpectedLen := 2 * interp.maxOutcomeLen
+	maxExpectedLen := 2 * v.maxOutcomeLen
 	if outcome.Len() > maxExpectedLen {
 		t.Errorf("Expected outcome length <= %d after reduction, got %d", maxExpectedLen, outcome.Len())
 	}
@@ -623,15 +623,15 @@ func TestInterpreter_Eval_RepeatExpr_Sequential(t *testing.T) {
 		repeatCount, outcome.Len(), actualMean, expectedMean, actualAvail, expectedAvail)
 }
 
-func TestInterpreter_Eval_RepeatExpr_InvalidCount(t *testing.T) {
-	interp := NewInterpreter(10)
+func TestVM_Eval_RepeatExpr_InvalidCount(t *testing.T) {
+	v := NewVM(10)
 	// AST for repeat(GetDiskReadProfile(), -1, Sequential)
 	repeatExpr := &RepeatExpr{
 		Input: &InternalCallExpr{FuncName: "GetDiskReadProfile"},
 		Count: &LiteralExpr{Kind: "INT", Value: "-1"},
 		Mode:  Sequential,
 	}
-	_, err := interp.Eval(repeatExpr)
+	_, err := v.Eval(repeatExpr)
 	if err == nil {
 		t.Fatal("Eval(RepeatExpr) should fail for negative count")
 	}
@@ -646,12 +646,12 @@ func TestInterpreter_Eval_RepeatExpr_InvalidCount(t *testing.T) {
 // This might require setting maxOutcomeLen very low (e.g., 2) and using
 // inputs known to produce more buckets, or creating a helper internal func
 // that returns an outcome with many buckets. Example:
-// func TestInterpreter_Eval_AndExpr_ReductionTriggered(t *testing.T) { ... }
+// func TestVM_Eval_AndExpr_ReductionTriggered(t *testing.T) { ... }
 
 // --- Test Statements (Phase 7) ---
 
-func TestInterpreter_Eval_AssignmentStmt(t *testing.T) {
-	interp := NewInterpreter(10)
+func TestVM_Eval_AssignmentStmt(t *testing.T) {
+	v := NewVM(10)
 	registerTestDiskFuncs(interp)
 
 	// AST for: myRead = GetDiskReadProfile()
@@ -661,13 +661,13 @@ func TestInterpreter_Eval_AssignmentStmt(t *testing.T) {
 	}
 
 	// Eval the assignment (result should be left on stack AND stored in env)
-	err := interp.evalAssignmentStmt(assignStmt) // Use specific eval func for test setup ease
+	err := v.evalAssignmentStmt(assignStmt) // Use specific eval func for test setup ease
 	if err != nil {
 		t.Fatalf("evalAssignmentStmt failed: %v", err)
 	}
 
 	// Check environment
-	envVal, ok := interp.Env().Get("myRead")
+	envVal, ok := v.Env().Get("myRead")
 	if !ok {
 		t.Fatal("'myRead' not found in environment after assignment")
 	}
@@ -677,20 +677,20 @@ func TestInterpreter_Eval_AssignmentStmt(t *testing.T) {
 	}
 
 	// Check stack (should have the value)
-	stackVal, err := interp.pop() // Pop the value evalAssignmentStmt should have left
+	stackVal, err := v.pop() // Pop the value evalAssignmentStmt should have left
 	if err != nil {
 		t.Fatalf("Stack pop failed after assignment: %v", err)
 	}
 	if stackVal != expectedOutcome {
 		t.Errorf("Stack value mismatch. Expected SSD Read Profile, got %T", stackVal)
 	}
-	if len(interp.stack) != 0 {
-		t.Errorf("Stack should be empty after popping assignment result, len=%d", len(interp.stack))
+	if len(v.stack) != 0 {
+		t.Errorf("Stack should be empty after popping assignment result, len=%d", len(v.stack))
 	}
 }
 
-func TestInterpreter_Eval_ReturnStmt(t *testing.T) {
-	interp := NewInterpreter(10)
+func TestVM_Eval_ReturnStmt(t *testing.T) {
+	v := NewVM(10)
 	registerTestDiskFuncs(interp)
 
 	// AST for: return GetDiskReadProfile()
@@ -699,7 +699,7 @@ func TestInterpreter_Eval_ReturnStmt(t *testing.T) {
 	}
 
 	// Eval the return statement
-	err := interp.evalReturnStmt(returnStmt)
+	err := v.evalReturnStmt(returnStmt)
 	if err == nil {
 		t.Fatal("evalReturnStmt should have returned a ReturnValue error")
 	}
@@ -717,14 +717,14 @@ func TestInterpreter_Eval_ReturnStmt(t *testing.T) {
 	}
 
 	// Check stack (should contain the return value, as Eval was called internally)
-	stackVal, stackErr := interp.pop()
+	stackVal, stackErr := v.pop()
 	if stackErr != nil || stackVal != expectedOutcome {
 		t.Errorf("Stack check failed after return. Err: %v, Val: %T", stackErr, stackVal)
 	}
 }
 
-func TestInterpreter_Eval_BlockStmt_Sequence(t *testing.T) {
-	interp := NewInterpreter(10)
+func TestVM_Eval_BlockStmt_Sequence(t *testing.T) {
+	v := NewVM(10)
 	registerTestDiskFuncs(interp)
 	registerTestDiskWriteFunc(interp)
 
@@ -743,7 +743,7 @@ func TestInterpreter_Eval_BlockStmt_Sequence(t *testing.T) {
 	}
 
 	// Eval the block
-	blockResult, err := interp.evalBlockStmt(block, interp.Env(), nil) // Eval in current env
+	blockResult, err := v.evalBlockStmt(block, v.Env(), nil) // Eval in current env
 	if err != nil {
 		t.Fatalf("evalBlockStmt failed: %v", err)
 	}
@@ -753,7 +753,7 @@ func TestInterpreter_Eval_BlockStmt_Sequence(t *testing.T) {
 	if !ok {
 		t.Fatalf("Expected block result type *core.Outcomes[AccessResult], got %T", blockResult)
 	}
-	if outcome.Len() == 0 || outcome.Len() > 2*interp.maxOutcomeLen {
+	if outcome.Len() == 0 || outcome.Len() > 2*v.maxOutcomeLen {
 		t.Errorf("Unexpected outcome length %d for block result", outcome.Len())
 	}
 	if !core.ApproxEq(outcome.TotalWeight(), 1.0, 1e-5) {
@@ -761,14 +761,14 @@ func TestInterpreter_Eval_BlockStmt_Sequence(t *testing.T) {
 	}
 
 	// Check env to ensure assignment happened
-	_, ok = interp.Env().Get("readRes")
+	_, ok = v.Env().Get("readRes")
 	if !ok {
 		t.Error("'readRes' not found in environment after block execution")
 	}
 
 	// Stack should be empty after block evaluation returns its result directly
-	if len(interp.stack) != 0 {
-		t.Errorf("Stack should be empty after evalBlockStmt returns, len=%d", len(interp.stack))
+	if len(v.stack) != 0 {
+		t.Errorf("Stack should be empty after evalBlockStmt returns, len=%d", len(v.stack))
 	}
 }
 
@@ -806,16 +806,16 @@ func (m *MockConditional) OpFailure() *core.Outcomes[core.AccessResult] {
 	return o
 }
 
-func TestInterpreter_Eval_IfStmt_AccessResultSuccess(t *testing.T) {
-	interp := NewInterpreter(10)
+func TestVM_Eval_IfStmt_AccessResultSuccess(t *testing.T) {
+	v := NewVM(10)
 	// Setup: condVar = Outcome[AccessResult] (mostly success)
 	condOutcome := (&core.Outcomes[core.AccessResult]{And: core.AndAccessResults}).
 		Add(0.8, core.AccessResult{Success: true, Latency: core.Millis(1)}).
 		Add(0.2, core.AccessResult{Success: false, Latency: core.Millis(2)})
-	interp.Env().Set("condVar", condOutcome)
+	v.Env().Set("condVar", condOutcome)
 	// Mock component providing Then/Else operations
 	mockComp := &MockConditional{}
-	interp.Env().Set("mock", mockComp)
+	v.Env().Set("mock", mockComp)
 
 	// AST for: if condVar.Success { mock.OpSuccess() } else { mock.OpFailure() }
 
@@ -830,12 +830,12 @@ func TestInterpreter_Eval_IfStmt_AccessResultSuccess(t *testing.T) {
 	}
 
 	// Eval the If statement - result pushed onto stack
-	err := interp.evalIfStmt(ifStmt) // Use specific eval for testing
+	err := v.evalIfStmt(ifStmt) // Use specific eval for testing
 	if err != nil {
 		t.Fatalf("evalIfStmt failed: %v", err)
 	}
 
-	result, err := interp.GetFinalResult() // Get combined result from stack
+	result, err := v.GetFinalResult() // Get combined result from stack
 	if err != nil {
 		t.Fatalf("GetFinalResult failed: %v", err)
 	}
@@ -846,7 +846,7 @@ func TestInterpreter_Eval_IfStmt_AccessResultSuccess(t *testing.T) {
 	}
 
 	// Analyze the combined result
-	if finalOutcome.Len() == 0 || finalOutcome.Len() > 2*interp.maxOutcomeLen { // Allow up to 2*maxLen
+	if finalOutcome.Len() == 0 || finalOutcome.Len() > 2*v.maxOutcomeLen { // Allow up to 2*maxLen
 		t.Errorf("Unexpected outcome length %d", finalOutcome.Len())
 	}
 
@@ -881,15 +881,15 @@ func TestInterpreter_Eval_IfStmt_AccessResultSuccess(t *testing.T) {
 
 // --- Test CallExpr with Arguments (Phase 9 / now) ---
 
-func TestInterpreter_Eval_CallExpr_DiskReadProcessWrite(t *testing.T) {
-	interp := NewInterpreter(15)
+func TestVM_Eval_CallExpr_DiskReadProcessWrite(t *testing.T) {
+	v := NewVM(15)
 	// Env setup
 	disk := components.NewDisk("ssd_rpw")
-	interp.Env().Set("myDiskRPW", disk)
+	v.Env().Set("myDiskRPW", disk)
 	// Processing time outcome (must be deterministic for arg)
 	procTimeVal := core.Millis(2) // 2ms
 	procTimeOutcome := (&core.Outcomes[core.Duration]{}).Add(1.0, procTimeVal)
-	interp.Env().Set("processingDuration", procTimeOutcome) // Store the outcome
+	v.Env().Set("processingDuration", procTimeOutcome) // Store the outcome
 
 	// AST for myDiskRPW.ReadProcessWrite(processingDuration)
 	call := &CallExpr{
@@ -902,12 +902,12 @@ func TestInterpreter_Eval_CallExpr_DiskReadProcessWrite(t *testing.T) {
 		},
 	}
 
-	_, err := interp.Eval(call)
+	_, err := v.Eval(call)
 	if err != nil {
 		t.Fatalf("Eval(CallExpr Disk.ReadProcessWrite) failed: %v", err)
 	}
 
-	result, err := interp.GetFinalResult()
+	result, err := v.GetFinalResult()
 	if err != nil {
 		t.Fatalf("GetFinalResult failed: %v", err)
 	}
@@ -932,20 +932,20 @@ func TestInterpreter_Eval_CallExpr_DiskReadProcessWrite(t *testing.T) {
 	}
 }
 
-func TestInterpreter_Eval_CallExpr_NonDeterministicArg(t *testing.T) {
-	interp := NewInterpreter(15)
+func TestVM_Eval_CallExpr_NonDeterministicArg(t *testing.T) {
+	v := NewVM(15)
 	disk := components.NewDisk("ssd_rpw_err")
-	interp.Env().Set("myDiskErr", disk)
+	v.Env().Set("myDiskErr", disk)
 	// Non-deterministic outcome for argument
 	nonDetOutcome := (&core.Outcomes[core.Duration]{}).Add(0.5, core.Millis(1)).Add(0.5, core.Millis(3))
-	interp.Env().Set("nonDetDuration", nonDetOutcome)
+	v.Env().Set("nonDetDuration", nonDetOutcome)
 
 	// AST for myDiskErr.ReadProcessWrite(nonDetDuration)
 	call := &CallExpr{
 		Function: &MemberAccessExpr{Receiver: &IdentifierExpr{Name: "myDiskErr"}, Member: "ReadProcessWrite"},
 		Args:     []Expr{&IdentifierExpr{Name: "nonDetDuration"}},
 	}
-	_, err := interp.Eval(call)
+	_, err := v.Eval(call)
 	if err == nil {
 		t.Fatal("Eval call with non-deterministic argument should have failed")
 	}
@@ -959,7 +959,7 @@ func TestInterpreter_Eval_CallExpr_NonDeterministicArg(t *testing.T) {
 
 // --- Test Top Level Driver (Phase X / now) ---
 
-func TestInterpreter_RunDSL_SimpleSystem(t *testing.T) {
+func TestVM_RunDSL_SimpleSystem(t *testing.T) {
 	// Manually construct AST for:
 	// system "TestSys" {
 	//   instance d1: Disk = { ProfileName = "SSD" };

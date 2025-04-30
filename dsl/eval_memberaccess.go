@@ -18,13 +18,13 @@ var (
 // The 'evalIfStmt' function then uses this object along with the knowledge
 // that '.Success' was accessed to perform the correct split.
 // Other member accesses are currently unsupported.
-func (i *Interpreter) evalMemberAccessExpr(expr *MemberAccessExpr) error {
+func (v *VM) evalMemberAccessExpr(expr *MemberAccessExpr) error {
 	// 1. Evaluate the Receiver expression
-	_, err := i.Eval(expr.Receiver)
+	_, err := v.Eval(expr.Receiver)
 	if err != nil {
 		return fmt.Errorf("error evaluating receiver for member access '%s': %w", expr.Member, err)
 	}
-	receiverOutcomeRaw, err := i.pop() // Pop the receiver's outcome object
+	receiverOutcomeRaw, err := v.pop() // Pop the receiver's outcome object
 	if err != nil {
 		return fmt.Errorf("stack error retrieving receiver for member access '%s': %w", expr.Member, err)
 	}
@@ -52,7 +52,7 @@ func (i *Interpreter) evalMemberAccessExpr(expr *MemberAccessExpr) error {
 		// For '.Success', push the *original receiver outcome* back onto the stack.
 		// evalIfStmt will use this object and the knowledge that '.Success' was the member
 		// to select the correct splitting predicate.
-		i.push(receiverOutcomeRaw)
+		v.push(receiverOutcomeRaw)
 		return nil
 
 		// TODO: Add cases for other potential member accesses if needed later
@@ -66,7 +66,7 @@ func (i *Interpreter) evalMemberAccessExpr(expr *MemberAccessExpr) error {
 	default:
 		// Unsupported member
 		// Pop the receiver outcome we evaluated, as it's not used
-		// _, _ = i.pop() // Already popped above
+		// _, _ = v.pop() // Already popped above
 		return fmt.Errorf("%w: '%s' on type %T", ErrUnsupportedMember, expr.Member, receiverOutcomeRaw)
 	}
 }

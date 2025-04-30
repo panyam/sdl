@@ -18,7 +18,7 @@ var (
 
 // evalCallExpr handles evaluating function/method calls.
 // Currently focuses on method calls like `instance.Method(args...)`.
-func (i *Interpreter) evalCallExpr(expr *CallExpr) error {
+func (v *VM) evalCallExpr(expr *CallExpr) error {
 	// --- Evaluate Function Expression ---
 	// For now, we primarily support MemberAccessExpr as the function (method calls)
 	// e.g., myDisk.Read() -> Function is MemberAccessExpr{Receiver: Ident{myDisk}, Member: "Read"}
@@ -30,11 +30,11 @@ func (i *Interpreter) evalCallExpr(expr *CallExpr) error {
 
 	// --- Evaluate Receiver ---
 	// Evaluate the expression that yields the object instance (e.g., the IdentifierExpr "myDisk")
-	_, err := i.Eval(memExpr.Receiver)
+	_, err := v.Eval(memExpr.Receiver)
 	if err != nil {
 		return fmt.Errorf("error evaluating receiver for method call '%s': %w", memExpr.Member, err)
 	}
-	receiverObjRaw, err := i.pop() // Pop the evaluated receiver object
+	receiverObjRaw, err := v.pop() // Pop the evaluated receiver object
 	if err != nil {
 		return fmt.Errorf("stack error retrieving receiver for method call '%s': %w", memExpr.Member, err)
 	}
@@ -44,16 +44,16 @@ func (i *Interpreter) evalCallExpr(expr *CallExpr) error {
 	argVals := make([]reflect.Value, len(expr.Args)) // For reflect.Call
 
 	for idx, argExpr := range expr.Args {
-		_, err := i.Eval(argExpr) // Results pushed onto stack
+		_, err := v.Eval(argExpr) // Results pushed onto stack
 		if err != nil {
 			// Clean up stack from receiver + previous args before returning
-			// i.stack = i.stack[:len(i.stack)-idx] // Remove args evaluated so far
+			// v.stack = v.stack[:len(v.stack)-idx] // Remove args evaluated so far
 			return fmt.Errorf("error evaluating arg %d for method call '%s': %w", idx, memExpr.Member, err)
 		}
 	}
 	// Pop evaluated args (in reverse)
 	for j := len(expr.Args) - 1; j >= 0; j-- {
-		argValRaw, err := i.pop()
+		argValRaw, err := v.pop()
 		if err != nil {
 			return fmt.Errorf("stack underflow retrieving arg %d for method call '%s': %w", j, memExpr.Member, err)
 		}
@@ -156,7 +156,7 @@ func (i *Interpreter) evalCallExpr(expr *CallExpr) error {
 	case Node: // Check if it implements our AST Node interface
 		// --- Phase 5 Logic ---
 		// Recursively evaluate the AST node returned by the Go method
-		_, evalErr := i.Eval(ret)
+		_, evalErr := v.Eval(ret)
 		if evalErr != nil {
 			return fmt.Errorf("error evaluating AST returned by method '%s': %w", methodName, evalErr)
 		}
@@ -168,7 +168,7 @@ func (i *Interpreter) evalCallExpr(expr *CallExpr) error {
 		*core.Outcomes[string],
 		*core.Outcomes[bool]:
 		// This is a final outcome object, push it directly
-		i.push(ret)
+		v.push(ret)
 	default:
 		// Check dynamically if it's *any* *core.Outcomes[T] using reflection
 		retType := reflect.TypeOf(ret)
@@ -178,7 +178,7 @@ func (i *Interpreter) evalCallExpr(expr *CallExpr) error {
 			retType.Elem().PkgPath() == "github.com/panyam/leetcoach/sdl/core" // Check package path
 
 		if isOutcome {
-			i.push(ret) // Push the generic *core.Outcomes[?]
+			v.push(ret) // Push the generic *core.Outcomes[?]
 		} else {
 			return fmt.Errorf("%w: method '%s' returned unexpected type %T (expected *core.Outcomes[V] or ast.Node)", ErrInvalidReturn, methodName, ret)
 		}

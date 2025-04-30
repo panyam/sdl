@@ -14,7 +14,7 @@ var (
 )
 
 // evalRepeatExpr handles repeating the evaluation of an expression sequentially.
-func (i *Interpreter) evalRepeatExpr(expr *RepeatExpr) error {
+func (v *VM) evalRepeatExpr(expr *RepeatExpr) error {
 	// --- Validate Mode ---
 	if expr.Mode != Sequential {
 		// TODO: Implement Parallel mode later
@@ -22,11 +22,11 @@ func (i *Interpreter) evalRepeatExpr(expr *RepeatExpr) error {
 	}
 
 	// --- Evaluate Count ---
-	_, err := i.Eval(expr.Count)
+	_, err := v.Eval(expr.Count)
 	if err != nil {
 		return fmt.Errorf("error evaluating repeat count: %w", err)
 	}
-	countOutcomeRaw, err := i.pop()
+	countOutcomeRaw, err := v.pop()
 	if err != nil {
 		return fmt.Errorf("stack error getting repeat count: %w", err)
 	}
@@ -49,14 +49,14 @@ func (i *Interpreter) evalRepeatExpr(expr *RepeatExpr) error {
 		// This might need refinement depending on how Repeat is used.
 		identity := (&core.Outcomes[core.AccessResult]{}).Add(1.0, core.AccessResult{Success: true, Latency: 0})
 		identity.And = core.AndAccessResults // Need to set reducer
-		i.push(identity)
+		v.push(identity)
 		return nil
 	}
 
 	// --- Execute Loop ---
 	// 1. Evaluate the Input expression ONCE to determine the type and get the base outcome for the first iteration.
 	//    This is crucial for establishing the "identity" element and the type for combination.
-	_, err = i.Eval(expr.Input)
+	_, err = v.Eval(expr.Input)
 	if err != nil {
 		return fmt.Errorf("error evaluating input expression for repeat: %w", err)
 	}
@@ -66,30 +66,30 @@ func (i *Interpreter) evalRepeatExpr(expr *RepeatExpr) error {
 	// 2. Loop for remaining iterations (count - 1)
 	for k := int64(1); k < count; k++ {
 		// Get the accumulated result from the previous iteration
-		accumulatedOutcome, err := i.pop()
+		accumulatedOutcome, err := v.pop()
 		if err != nil {
 			return fmt.Errorf("stack error retrieving accumulated result in repeat loop (iter %d): %w", k, err)
 		}
 
 		// Evaluate the input expression AGAIN for this iteration
-		_, err = i.Eval(expr.Input)
+		_, err = v.Eval(expr.Input)
 		if err != nil {
 			// Need to push back accumulatedOutcome before returning? Or is stack state invalid now? Assume invalid.
 			return fmt.Errorf("error evaluating input expression in repeat loop (iter %d): %w", k, err)
 		}
-		currentIterationOutcome, err := i.pop()
+		currentIterationOutcome, err := v.pop()
 		if err != nil {
 			return fmt.Errorf("stack error retrieving current iteration result in repeat loop (iter %d): %w", k, err)
 		}
 
 		// Combine `accumulatedOutcome` THEN `currentIterationOutcome`
-		combinedResult, err := i.combineOutcomesAndReduce(accumulatedOutcome, currentIterationOutcome)
+		combinedResult, err := v.combineOutcomesAndReduce(accumulatedOutcome, currentIterationOutcome)
 		if err != nil {
 			return fmt.Errorf("repeat combination failed (iter %d): %w", k, err)
 		}
 
 		// Push the result of this iteration back onto the stack for the next loop
-		i.push(combinedResult)
+		v.push(combinedResult)
 	}
 
 	// The final accumulated result is left on the stack after the loop finishes.

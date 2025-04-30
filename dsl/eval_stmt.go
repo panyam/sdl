@@ -27,12 +27,12 @@ func (rv *ReturnValue) Error() string {
 // evalBlockStmt executes a sequence of statements within a given environment.
 // It handles the implicit sequential 'And' composition.
 // Returns the outcome of the *last* executed statement/expression in the block.
-func (i *Interpreter) evalBlockStmt(block *BlockStmt, env *Environment, initialContext interface{}) (any, error) {
+func (v *VM) evalBlockStmt(block *BlockStmt, env *Environment, initialContext any) (any, error) {
 	// Use a new environment enclosed by the current one if needed for scoping?
 	// For now, execute in the provided environment.
-	// previousEnv := i.env
-	// i.env = env // Or NewEnclosedEnvironment(env)? Let's use current for simplicity first.
-	// defer func() { i.env = previousEnv }() // Restore env
+	// previousEnv := v.env
+	// v.env = env // Or NewEnclosedEnvironment(env)? Let's use current for simplicity first.
+	// defer func() { v.env = previousEnv }() // Restore env
 	var blockResult = initialContext            // Start with the provided context
 	isFirstStatement := (initialContext == nil) // Only true if no context was given
 
@@ -44,20 +44,20 @@ func (i *Interpreter) evalBlockStmt(block *BlockStmt, env *Environment, initialC
 		// Evaluate the statement
 		switch s := stmt.(type) {
 		case *AssignmentStmt:
-			evalErr = i.evalAssignmentStmt(s)
+			evalErr = v.evalAssignmentStmt(s)
 			if evalErr == nil {
 				// Assignment result is stored in env, pop it from stack for composition chain
-				currentStmtOutcome, evalErr = i.pop() // Value is left on stack by evalAssignmentStmt's Eval call
+				currentStmtOutcome, evalErr = v.pop() // Value is left on stack by evalAssignmentStmt's Eval call
 			}
 		case *ExprStmt:
 			// Evaluate the expression, result is left on stack
-			_, evalErr = i.Eval(s.Expression)
+			_, evalErr = v.Eval(s.Expression)
 			if evalErr == nil {
-				currentStmtOutcome, evalErr = i.pop() // Pop the result
+				currentStmtOutcome, evalErr = v.pop() // Pop the result
 			}
 		case *ReturnStmt:
 			// Evaluate the return expression
-			evalErr = i.evalReturnStmt(s) // evalReturnStmt pushes result and returns ReturnValue error wrapper
+			evalErr = v.evalReturnStmt(s) // evalReturnStmt pushes result and returns ReturnValue error wrapper
 			// Error handling below will catch the ReturnValue signal
 		// TODO: Add IfStmt, other statement types later
 		default:
@@ -100,7 +100,7 @@ func (i *Interpreter) evalBlockStmt(block *BlockStmt, env *Environment, initialC
 
 			// Combine previous blockResult THEN currentStmtOutcome
 			// Call helper to combine and reduce
-			combinedResult, err := i.combineOutcomesAndReduce(blockResult, currentStmtOutcome)
+			combinedResult, err := v.combineOutcomesAndReduce(blockResult, currentStmtOutcome)
 			if err != nil {
 				return nil, fmt.Errorf("implicit AND failed in block: %w", err)
 			}
@@ -127,37 +127,37 @@ func (i *Interpreter) evalBlockStmt(block *BlockStmt, env *Environment, initialC
 // evalAssignmentStmt evaluates the RHS expression, stores the resulting
 // Outcome object in the environment under the variable name, and leaves the
 // result on the stack (for potential use in implicit AND).
-func (i *Interpreter) evalAssignmentStmt(stmt *AssignmentStmt) error {
+func (v *VM) evalAssignmentStmt(stmt *AssignmentStmt) error {
 	// Evaluate the RHS expression
-	_, err := i.Eval(stmt.Value)
+	_, err := v.Eval(stmt.Value)
 	if err != nil {
 		return fmt.Errorf("error evaluating assignment value for '%s': %w", stmt.Variable.Name, err)
 	}
 
 	// Peek the result from the stack (don't pop yet, needed for implicit AND)
-	valueOutcome, ok := i.peek()
+	valueOutcome, ok := v.peek()
 	if !ok {
 		// Should not happen if Eval succeeded without error
 		return fmt.Errorf("stack empty after evaluating assignment value for '%s'", stmt.Variable.Name)
 	}
 
 	// Store the value (the Outcome object) in the environment
-	i.env.Set(stmt.Variable.Name, valueOutcome)
+	v.env.Set(stmt.Variable.Name, valueOutcome)
 
 	return nil
 }
 
 // evalReturnStmt evaluates the return expression, pushes the result onto the stack,
 // and returns a special ReturnValue error wrapper containing the result.
-func (i *Interpreter) evalReturnStmt(stmt *ReturnStmt) error {
+func (v *VM) evalReturnStmt(stmt *ReturnStmt) error {
 	// Evaluate the return value expression
-	_, err := i.Eval(stmt.ReturnValue)
+	_, err := v.Eval(stmt.ReturnValue)
 	if err != nil {
 		return fmt.Errorf("error evaluating return value: %w", err)
 	}
 
 	// Get the result from the stack
-	retValOutcome, ok := i.peek() // Peek, don't pop, the Eval caller will handle it
+	retValOutcome, ok := v.peek() // Peek, don't pop, the Eval caller will handle it
 	if !ok {
 		// Should not happen if Eval succeeded without error
 		return fmt.Errorf("stack empty after evaluating return value")
@@ -169,9 +169,9 @@ func (i *Interpreter) evalReturnStmt(stmt *ReturnStmt) error {
 
 // evalExprStmt evaluates an expression statement. The result is pushed onto the stack
 // and becomes the input for the next step in implicit sequential composition.
-func (i *Interpreter) evalExprStmt(stmt *ExprStmt) error {
+func (v *VM) evalExprStmt(stmt *ExprStmt) error {
 	// Evaluate the expression, result is left on stack
-	_, err := i.Eval(stmt.Expression)
+	_, err := v.Eval(stmt.Expression)
 	if err != nil {
 		return fmt.Errorf("error evaluating expression statement: %w", err)
 	}
@@ -218,14 +218,14 @@ func selectSplitPredicate(conditionExpr Expr, conditionOutcome any) (func(v any)
 // It evaluates the condition, splits the relevant outcome distribution,
 // evaluates the 'then' and 'else' branches with the split distributions,
 // and appends the results.
-func (i *Interpreter) evalIfStmt(stmt *IfStmt) error {
+func (v *VM) evalIfStmt(stmt *IfStmt) error {
 
 	// 1. Evaluate the Condition Expression
-	_, err := i.Eval(stmt.Condition)
+	_, err := v.Eval(stmt.Condition)
 	if err != nil {
 		return fmt.Errorf("error evaluating if condition: %w", err)
 	}
-	conditionOutcomeRaw, err := i.pop() // Pop the result of the condition expression
+	conditionOutcomeRaw, err := v.pop() // Pop the result of the condition expression
 	if err != nil {
 		return fmt.Errorf("stack error getting if condition result: %w", err)
 	}
@@ -284,7 +284,7 @@ func (i *Interpreter) evalIfStmt(stmt *IfStmt) error {
 	}
 	if thenIsContainer && thenOutcomeContainer != nil && thenOutcomeContainer.Len() > 0 { // Check validity and length via interface
 		// --- Pass context as argument, DON'T PUSH ---
-		thenBranchResultOutcome, thenErr = i.evalBlockStmt(stmt.Then, i.env, thenInputOutcome) // Pass context
+		thenBranchResultOutcome, thenErr = v.evalBlockStmt(stmt.Then, v.env, thenInputOutcome) // Pass context
 		if thenErr != nil && !errors.Is(thenErr, ErrReturnSignal) {                            // Handle errors (ignore Return signal here)
 			return fmt.Errorf("error in 'then' branch: %w", thenErr)
 		}
@@ -309,7 +309,7 @@ func (i *Interpreter) evalIfStmt(stmt *IfStmt) error {
 	var elseErr error
 	if stmt.Else != nil && elseIsContainer && elseOutcomeContainer != nil && elseOutcomeContainer.Len() > 0 { // Check validity and length
 		// --- Pass context as argument, DON'T PUSH ---
-		elseBranchResultOutcome, elseErr = i.evalBlockStmt(stmt.Else, i.env, elseInputOutcome)
+		elseBranchResultOutcome, elseErr = v.evalBlockStmt(stmt.Else, v.env, elseInputOutcome)
 		// NOTE: evalBlockStmt should NOT leave its result on the stack. It returns it.
 		if elseErr != nil && !errors.Is(elseErr, ErrReturnSignal) {
 			return fmt.Errorf("error in 'else' branch: %w", elseErr)
@@ -361,10 +361,10 @@ func (i *Interpreter) evalIfStmt(stmt *IfStmt) error {
 	}
 
 	// --- Sanity Check: Ensure stack is empty before pushing final result ---
-	if len(i.stack) != 0 {
-		fmt.Printf("WARNING: Stack not empty before final push in evalIfStmt. Len=%d. Contents: %s\n", len(i.stack), i.stackString())
+	if len(v.stack) != 0 {
+		fmt.Printf("WARNING: Stack not empty before final push in evalIfStmt. Len=%d. Contents: %s\n", len(v.stack), v.stackString())
 		// Optionally clear it? This might hide the real bug.
-		// i.ClearStack()
+		// v.ClearStack()
 	}
 
 	// 6. Push the final combined result onto the stack
@@ -374,115 +374,41 @@ func (i *Interpreter) evalIfStmt(stmt *IfStmt) error {
 		// If an if/else results in no possible outcomes, maybe that's okay?
 		// Let's push nil for now, caller needs to handle.
 		fmt.Println("Warning: IfStmt resulted in nil combined outcome.")
-		i.push(nil) // Or push an empty outcome of a default type?
+		v.push(nil) // Or push an empty outcome of a default type?
 	} else {
-		i.push(finalCombinedOutcome)
+		v.push(finalCombinedOutcome)
 	}
 
 	// TODO: Apply reduction to the final combined outcome? Yes.
 	// Need to pop, check type, trim, push back.
 	if finalCombinedOutcome != nil {
-		finalPopped, _ := i.pop() // Pop the combined result we just pushed
+		finalPopped, _ := v.pop() // Pop the combined result we just pushed
 		reductionNeeded := false
 		// Check length based on type
 		switch fc := finalPopped.(type) {
 		case *core.Outcomes[core.AccessResult]:
-			reductionNeeded = fc.Len() > i.maxOutcomeLen
+			reductionNeeded = fc.Len() > v.maxOutcomeLen
 			// Add other types if they need reduction
 		}
 
 		if reductionNeeded {
 			switch fc := finalPopped.(type) {
 			case *core.Outcomes[core.AccessResult]:
-				trimmerFuncGen := core.TrimToSize(i.maxOutcomeLen+50, i.maxOutcomeLen)
+				trimmerFuncGen := core.TrimToSize(v.maxOutcomeLen+50, v.maxOutcomeLen)
 				successes, failures := fc.Split(core.AccessResult.IsSuccess)
 				trimmedSuccesses := trimmerFuncGen(successes)
 				trimmedFailures := trimmerFuncGen(failures)
 				finalTrimmed := (&core.Outcomes[core.AccessResult]{And: fc.And}).Append(trimmedSuccesses, trimmedFailures)
-				i.push(finalTrimmed) // Push trimmed result
+				v.push(finalTrimmed) // Push trimmed result
 				// fmt.Printf("Applied TrimToSize after IF, len %d -> %d\n", finalLen, finalTrimmed.Len()) // Debug log
 			// Add other trimmable types
 			default:
-				i.push(finalPopped) // Push original back if no trimmer
+				v.push(finalPopped) // Push original back if no trimmer
 			}
 		} else {
-			i.push(finalPopped) // Push original back if no reduction needed
+			v.push(finalPopped) // Push original back if no reduction needed
 		}
 	}
 
 	return nil
-}
-
-// combineAndReduceImplicit is a helper extracted from evalBlockStmt and evalRepeatExpr
-// It takes two outcome objects, combines them using sequential AND logic,
-// applies reduction if necessary, and returns the final combined outcome.
-// It assumes the types are compatible for sequential AND.
-func (i *Interpreter) combineAndReduceImplicit(leftOutcome, rightOutcome any) (any, error) {
-
-	var combinedOutcome any // Use interface{} to hold the result
-	var reductionNeeded bool = false
-
-	// --- Type switching for combination (similar to evalAndExpr) ---
-	switch lo := leftOutcome.(type) {
-	case *core.Outcomes[core.AccessResult]:
-		switch ro := rightOutcome.(type) {
-		case *core.Outcomes[core.AccessResult]:
-			reducer := core.AndAccessResults
-			combined := core.And(lo, ro, reducer) // core.And returns *Outcomes[Z]
-			combinedOutcome = combined            // Store the specific type
-			reductionNeeded = combined.Len() > i.maxOutcomeLen
-		case *core.Outcomes[core.Duration]: // Handle AccessResult + Duration
-			reducer := func(a core.AccessResult, b core.Duration) core.AccessResult {
-				return core.AccessResult{Success: a.Success, Latency: a.Latency + b}
-			}
-			combined := core.And(lo, ro, reducer)
-			combinedOutcome = combined
-			reductionNeeded = combined.Len() > i.maxOutcomeLen
-		default:
-			return nil, fmt.Errorf("%w: cannot implicitly AND %T with %T", ErrTypeMismatch, lo, ro)
-		}
-	case *core.Outcomes[core.Duration]:
-		switch ro := rightOutcome.(type) {
-		case *core.Outcomes[core.AccessResult]: // Handle Duration + AccessResult
-			reducer := func(a core.Duration, b core.AccessResult) core.AccessResult {
-				return core.AccessResult{Success: b.Success, Latency: a + b.Latency}
-			}
-			combined := core.And(lo, ro, reducer)
-			combinedOutcome = combined
-			reductionNeeded = combined.Len() > i.maxOutcomeLen
-		case *core.Outcomes[core.Duration]: // Handle Duration + Duration
-			reducer := func(a core.Duration, b core.Duration) core.Duration { return a + b }
-			combined := core.And(lo, ro, reducer)
-			combinedOutcome = combined
-			reductionNeeded = false // No trimming for Duration assumed
-		default:
-			return nil, fmt.Errorf("%w: cannot implicitly AND %T with %T", ErrTypeMismatch, lo, ro)
-		}
-	// Add more cases for RangedResult, etc.
-	default:
-		return nil, fmt.Errorf("%w: cannot implicitly AND %T with %T", ErrUnsupportedType, leftOutcome, rightOutcome)
-	}
-
-	// --- Apply Reduction if needed ---
-	if reductionNeeded {
-		switch co := combinedOutcome.(type) {
-		case *core.Outcomes[core.AccessResult]:
-			// Use the appropriate reduction strategy from core
-			trimmerFuncGen := core.TrimToSize(i.maxOutcomeLen+50, i.maxOutcomeLen)
-			// The trimmerFuncGen expects a group (success/failure). We need to split.
-			successes, failures := co.Split(core.AccessResult.IsSuccess)
-			trimmedSuccesses := trimmerFuncGen(successes)
-			trimmedFailures := trimmerFuncGen(failures) // Apply to failures too
-			// Re-combine
-			finalTrimmed := (&core.Outcomes[core.AccessResult]{And: co.And}).Append(trimmedSuccesses, trimmedFailures)
-			combinedOutcome = finalTrimmed // Update the outcome to be pushed
-			// fmt.Printf("Applied TrimToSize in combineAndReduce, len %d -> %d\n", co.Len(), finalTrimmed.Len()) // Debug log
-		// Add cases for other types that need trimming (e.g., RangedResult)
-		default:
-			// Type doesn't have a defined trimmer, or reduction wasn't deemed necessary earlier
-			// Do nothing or log a warning
-		}
-	}
-
-	return combinedOutcome, nil
 }

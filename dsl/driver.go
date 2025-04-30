@@ -13,7 +13,7 @@ import (
 // AnalysisResultWrapper holds the raw outcome and calculated metrics for an analyze block.
 type AnalysisResultWrapper struct {
 	Name              string                      // Name from the analyze block
-	Outcome           interface{}                 // The raw *core.Outcomes[V] result
+	Outcome           any                         // The raw *core.Outcomes[V] result
 	Metrics           map[core.MetricType]float64 // Use core.MetricType as key
 	Error             error                       // Any error during analysis evaluation
 	Skipped           bool                        // True if analysis couldn't run (e.g., target error)
@@ -22,30 +22,30 @@ type AnalysisResultWrapper struct {
 }
 
 // Helper to add a log message
-func (arw *AnalysisResultWrapper) addMsg(format string, args ...interface{}) {
+func (arw *AnalysisResultWrapper) addMsg(format string, args ...any) {
 	arw.Messages = append(arw.Messages, fmt.Sprintf(format, args...))
 }
 
 // componentConstructor defines the type for functions that create component instances.
-type componentConstructor func(name string, params map[string]interface{}) (interface{}, error)
+type componentConstructor func(name string, params map[string]any) (any, error)
 
-// registerBuiltinComponents registers Go component constructors in the interpreter's global environment.
-func registerBuiltinComponents(interpreter *Interpreter) {
+// registerBuiltinComponents registers Go component constructors in the vm's global environment.
+func registerBuiltinComponents(vm *VM) {
 	// The value stored is the constructor function itself.
 	// The key is the name used in the DSL (e.g., "Disk").
-	interpreter.Env().Set("Disk", componentConstructor(func(name string, params map[string]interface{}) (interface{}, error) {
+	vm.Env().Set("Disk", componentConstructor(func(name string, params map[string]any) (any, error) {
 		profile := "SSD" // Default
 		if p, ok := params["ProfileName"].(string); ok {
 			profile = p
 		}
 		return components.NewDisk(profile), nil
 	}))
-	interpreter.Env().Set("Cache", componentConstructor(func(name string, params map[string]interface{}) (interface{}, error) {
+	vm.Env().Set("Cache", componentConstructor(func(name string, params map[string]any) (any, error) {
 		cache := components.NewCache()
 		// TODO: Apply params map to cache fields if necessary
 		return cache, nil
 	}))
-	interpreter.Env().Set("ResourcePool", componentConstructor(func(name string, params map[string]interface{}) (interface{}, error) {
+	vm.Env().Set("ResourcePool", componentConstructor(func(name string, params map[string]any) (any, error) {
 		// TODO: Extract Size, ArrivalRate, AvgHoldTime from params map with type checks/defaults
 		sizeVal, _ := params["Size"].(int64)
 		lambdaVal, _ := params["ArrivalRate"].(float64)
@@ -67,9 +67,9 @@ func registerBuiltinComponents(interpreter *Interpreter) {
 
 // registerCoreInternalFunctions populates the registry with functions
 // needed by the declarative components' ASTs.
-func registerCoreInternalFunctions(interpreter *Interpreter) {
+func registerCoreInternalFunctions(vm *VM) {
 	// Disk Functions
-	interpreter.RegisterInternalFunc("GetDiskReadProfile", func(i *Interpreter, args []interface{}) (interface{}, error) {
+	vm.RegisterInternalFunc("GetDiskReadProfile", func(v *VM, args []any) (any, error) {
 		profileName := "SSD"
 		if len(args) > 0 {
 			nameOutcome, ok := args[0].(*core.Outcomes[string])
@@ -83,7 +83,7 @@ func registerCoreInternalFunctions(interpreter *Interpreter) {
 		tempDisk := components.NewDisk(profileName)
 		return tempDisk.Read(), nil
 	})
-	interpreter.RegisterInternalFunc("GetDiskWriteProfile", func(i *Interpreter, args []interface{}) (interface{}, error) {
+	vm.RegisterInternalFunc("GetDiskWriteProfile", func(v *VM, args []any) (any, error) {
 		profileName := "SSD"
 		if len(args) > 0 {
 			nameOutcome, ok := args[0].(*core.Outcomes[string])
@@ -97,13 +97,13 @@ func registerCoreInternalFunctions(interpreter *Interpreter) {
 		tempDisk := components.NewDisk(profileName)
 		return tempDisk.Write(), nil
 	})
-	interpreter.RegisterInternalFunc("GetRecordProcessingTime", func(i *Interpreter, args []interface{}) (interface{}, error) {
+	vm.RegisterInternalFunc("GetRecordProcessingTime", func(v *VM, args []any) (any, error) {
 		if len(args) != 1 {
 			return nil, fmt.Errorf("expected 1 arg for GetRecordProcessingTime")
 		}
 		return args[0], nil
 	})
-	interpreter.RegisterInternalFunc("ScaleLatency", func(i *Interpreter, args []interface{}) (interface{}, error) {
+	vm.RegisterInternalFunc("ScaleLatency", func(v *VM, args []any) (any, error) {
 		if len(args) != 2 {
 			return nil, fmt.Errorf("expected 2 args for ScaleLatency (outcome, factor)")
 		}
@@ -166,7 +166,7 @@ func calculateAndStoreMetrics(resultWrapper *AnalysisResultWrapper) {
 }
 
 // parseLiteralValue converts a LiteralExpr value string to a basic Go type.
-func parseLiteralValue(lit *LiteralExpr) (interface{}, error) {
+func parseLiteralValue(lit *LiteralExpr) (any, error) {
 	switch lit.Kind {
 	case "STRING":
 		return lit.Value, nil
@@ -193,13 +193,13 @@ func RunDSL(astRoot Node /* options? */) (map[string]*AnalysisResultWrapper, err
 		return analysisResults, fmt.Errorf("RunDSL currently expects *SystemDecl as root, got %T", astRoot)
 	}
 
-	interpreter := NewInterpreter(15)          // Default max buckets
-	registerBuiltinComponents(interpreter)     // Register component constructors
-	registerCoreInternalFunctions(interpreter) // Register helpers needed by decl components
+	vm := NewVM(15)                   // Default max buckets
+	registerBuiltinComponents(vm)     // Register component constructors
+	registerCoreInternalFunctions(vm) // Register helpers needed by decl components
 
 	// --- Process System ---
-	systemEnv := NewEnclosedEnvironment(interpreter.env)
-	interpreter.env = systemEnv // Switch to system env for instantiation
+	systemEnv := NewEnclosedEnvironment(vm.env)
+	vm.env = systemEnv // Switch to system env for instantiation
 
 	// Instantiate components
 	for _, node := range systemDecl.Body {
@@ -220,7 +220,7 @@ func RunDSL(astRoot Node /* options? */) (map[string]*AnalysisResultWrapper, err
 			err := fmt.Errorf("type '%s' is not a constructible component", instanceDecl.ComponentType)
 			return analysisResults, err
 		}
-		params := make(map[string]interface{})
+		params := make(map[string]any)
 		for _, p := range instanceDecl.Params {
 			if lit, okLit := p.Value.(*LiteralExpr); okLit {
 				parsedVal, err := parseLiteralValue(lit)
@@ -255,10 +255,10 @@ func RunDSL(astRoot Node /* options? */) (map[string]*AnalysisResultWrapper, err
 		analysisResults[analysisName] = resultWrapper
 
 		resultWrapper.addMsg("Starting analysis '%s'...", analysisName)
-		interpreter.ClearStack() // Ensure clean stack
+		vm.ClearStack() // Ensure clean stack
 
 		// Evaluate the target expression
-		_, evalErr := interpreter.Eval(analyzeDecl.Target)
+		_, evalErr := vm.Eval(analyzeDecl.Target)
 
 		if evalErr != nil {
 			resultWrapper.addMsg("Evaluation error: %v", evalErr)
@@ -269,7 +269,7 @@ func RunDSL(astRoot Node /* options? */) (map[string]*AnalysisResultWrapper, err
 		}
 
 		// Get final outcome from stack
-		finalOutcome, stackErr := interpreter.GetFinalResult()
+		finalOutcome, stackErr := vm.GetFinalResult()
 		if stackErr != nil {
 			resultWrapper.addMsg("Stack error after evaluation: %v", stackErr)
 			resultWrapper.Error = stackErr
@@ -291,6 +291,6 @@ func RunDSL(astRoot Node /* options? */) (map[string]*AnalysisResultWrapper, err
 
 	} // End analyze loop
 
-	interpreter.env = systemEnv.outer // Restore global env
+	vm.env = systemEnv.outer // Restore global env
 	return analysisResults, nil
 }

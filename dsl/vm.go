@@ -1,4 +1,4 @@
-// sdl/dsl/interpreter.go
+// sdl/dsl/vm.go
 package dsl
 
 import (
@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	ErrStackUnderflow       = errors.New("interpreter stack underflow")
+	ErrStackUnderflow       = errors.New("vm stack underflow")
 	ErrNotImplemented       = errors.New("evaluation for this node type not implemented")
 	ErrNotFound             = errors.New("identifier not found")
 	ErrInternalFuncNotFound = errors.New("internal function not found")
@@ -20,8 +20,8 @@ var (
 )
 
 // InternalFunction defines the signature for built-in functions callable by the VM.
-// It receives the interpreter instance (for potential access to env/stack) and evaluated arguments.
-type InternalFunction func(interpreter *Interpreter, args []any) (any, error)
+// It receives the vm instance (for potential access to env/stack) and evaluated arguments.
+type InternalFunction func(vm *VM, args []any) (any, error)
 
 // --- Reducer Registry ---
 
@@ -32,8 +32,8 @@ type ReducerKey struct {
 	RightType string
 }
 
-// Interpreter holds the state for evaluating an AST.
-type Interpreter struct {
+// VM holds the state for evaluating an AST.
+type VM struct {
 	stack              []any
 	env                *Environment
 	internalFuncs      map[string]InternalFunction
@@ -41,12 +41,12 @@ type Interpreter struct {
 	sequentialReducers map[ReducerKey]core.ReducerFunc[any, any, any] // Registry for AND
 }
 
-// NewInterpreter creates a new interpreter instance.
-func NewInterpreter(maxBuckets int) *Interpreter {
+// NewVM creates a new vm instance.
+func NewVM(maxBuckets int) *VM {
 	if maxBuckets <= 0 {
 		maxBuckets = 15 // Default if invalid
 	}
-	interp := &Interpreter{
+	interp := &VM{
 		stack:              make([]any, 0, 10), // Initial capacity
 		env:                NewEnvironment(),   // Start with a global environment
 		internalFuncs:      make(map[string]InternalFunction),
@@ -57,40 +57,40 @@ func NewInterpreter(maxBuckets int) *Interpreter {
 	return interp
 }
 
-// Env returns the current environment the interpreter is using.
-func (i *Interpreter) Env() *Environment {
-	return i.env
+// Env returns the current environment the vm is using.
+func (v *VM) Env() *Environment {
+	return v.env
 }
 
 // --- Stack Operations ---
 
-func (i *Interpreter) push(val any) {
-	i.stack = append(i.stack, val)
+func (v *VM) push(val any) {
+	v.stack = append(v.stack, val)
 }
 
-func (i *Interpreter) pop() (any, error) {
-	if len(i.stack) == 0 {
+func (v *VM) pop() (any, error) {
+	if len(v.stack) == 0 {
 		return nil, ErrStackUnderflow
 	}
-	lastIndex := len(i.stack) - 1
-	val := i.stack[lastIndex]
-	i.stack = i.stack[:lastIndex] // Slice off the last element
+	lastIndex := len(v.stack) - 1
+	val := v.stack[lastIndex]
+	v.stack = v.stack[:lastIndex] // Slice off the last element
 	return val, nil
 }
 
 // peek returns the top element without removing it (useful for debugging)
-func (i *Interpreter) peek() (any, bool) {
-	if len(i.stack) == 0 {
+func (v *VM) peek() (any, bool) {
+	if len(v.stack) == 0 {
 		return nil, false
 	}
-	return i.stack[len(i.stack)-1], true
+	return v.stack[len(v.stack)-1], true
 }
 
 // stackString provides a string representation of the stack for debugging
-func (i *Interpreter) stackString() string {
-	L := len(i.stack)
+func (v *VM) stackString() string {
+	L := len(v.stack)
 	items := make([]string, L)
-	for idx, item := range i.stack {
+	for idx, item := range v.stack {
 		items[idx] = fmt.Sprintf("%v", item)
 	}
 	return fmt.Sprintf("Stack(len=%d): %v", L, items)
@@ -98,63 +98,63 @@ func (i *Interpreter) stackString() string {
 
 // --- Internal Function Registry ---
 
-func (i *Interpreter) RegisterInternalFunc(name string, fn InternalFunction) {
-	i.internalFuncs[name] = fn
+func (v *VM) RegisterInternalFunc(name string, fn InternalFunction) {
+	v.internalFuncs[name] = fn
 }
 
 // --- Evaluation (Stub) ---
 
 // Eval is the main entry point for evaluating an AST node.
 // It uses a type switch to delegate to specific eval methods.
-// The result of an evaluation is typically left on the interpreter's stack.
+// The result of an evaluation is typically left on the vm's stack.
 // Returns the final result (often the top of the stack after full eval) and any error.
-func (i *Interpreter) Eval(node Node) (any, error) {
+func (v *VM) Eval(node Node) (any, error) {
 	// fmt.Printf("Eval entry: %T - %s\n", node, node) // Debug entry
 	var err error
 	switch n := node.(type) {
 	// We'll add cases here in subsequent phases
 	case *LiteralExpr:
-		err = i.evalLiteral(n)
+		err = v.evalLiteral(n)
 	case *IdentifierExpr:
-		err = i.evalIdentifier(n)
+		err = v.evalIdentifier(n)
 	case *InternalCallExpr:
-		err = i.evalInternalCall(n)
+		err = v.evalInternalCall(n)
 	case *AndExpr:
-		err = i.evalAndExpr(n)
+		err = v.evalAndExpr(n)
 	case *CallExpr:
-		err = i.evalCallExpr(n)
+		err = v.evalCallExpr(n)
 	case *MemberAccessExpr:
 		// Member access is often handled *within* evalCallExpr,
 		// but we might need a stub if it can be evaluated alone.
-		err = i.evalMemberAccessExpr(n) // <-- Call the actual implementation
+		err = v.evalMemberAccessExpr(n) // <-- Call the actual implementation
 	case *RepeatExpr:
-		err = i.evalRepeatExpr(n)
+		err = v.evalRepeatExpr(n)
 
 	// --- Statement Nodes ---
 	case *BlockStmt:
 		// When Eval is called directly on a BlockStmt (e.g., top level),
 		// there is no initial context from an outer structure like IfStmt.
 		// evalBlockStmt now returns the result directly, doesn't leave on stack implicitly
-		blockResult, evalErr := i.evalBlockStmt(n, i.env, nil) // Pass nil context
+		blockResult, evalErr := v.evalBlockStmt(n, v.env, nil) // Pass nil context
 		// Only push if no error and result is non-nil (avoids pushing nil return signal value)
 		if evalErr == nil && blockResult != nil {
-			i.push(blockResult) // Push the final result of the block evaluation
+			v.push(blockResult) // Push the final result of the block evaluation
 		}
 		err = evalErr // Assign any error from the block execution
 	case *AssignmentStmt:
-		err = i.evalAssignmentStmt(n)
+		err = v.evalAssignmentStmt(n)
 	case *ReturnStmt:
-		err = i.evalReturnStmt(n) // Return signals via special error/value
+		err = v.evalReturnStmt(n) // Return signals via special error/value
 	case *ExprStmt:
-		err = i.evalExprStmt(n)
+		err = v.evalExprStmt(n)
 	case *IfStmt: // <-- Will be implemented now
-		err = i.evalIfStmt(n)
+		err = v.evalIfStmt(n)
 
 	default:
 		return nil, fmt.Errorf("Eval not implemented for node type %T", node)
 	}
 
-	// fmt.Printf("Eval exit: %T - Err: %v, Stack: %s\n", node, err, i.stackString()) // Debug exit
+	// fmt.Printf("Eval exit: %T - Err: %v, Stack: %s\n", node, err, v.stackString()) // Debug exit
 
 	if err != nil {
 		return nil, err
@@ -172,19 +172,19 @@ func (i *Interpreter) Eval(node Node) (any, error) {
 
 // GetFinalResult attempts to retrieve the single final result from the stack.
 // Returns an error if the stack is empty or contains more than one item.
-func (i *Interpreter) GetFinalResult() (any, error) {
-	if len(i.stack) == 0 {
+func (v *VM) GetFinalResult() (any, error) {
+	if len(v.stack) == 0 {
 		return nil, fmt.Errorf("cannot get final result: stack is empty")
 	}
-	if len(i.stack) > 1 {
-		return nil, fmt.Errorf("cannot get final result: stack contains multiple items (%d)", len(i.stack))
+	if len(v.stack) > 1 {
+		return nil, fmt.Errorf("cannot get final result: stack contains multiple items (%d)", len(v.stack))
 	}
-	return i.stack[0], nil
+	return v.stack[0], nil
 }
 
 // ClearStack resets the stack for a new evaluation run.
-func (i *Interpreter) ClearStack() {
-	i.stack = i.stack[:0]
+func (v *VM) ClearStack() {
+	v.stack = v.stack[:0]
 }
 
 // Add stubs for other eval functions as needed...
@@ -194,7 +194,7 @@ func (i *Interpreter) ClearStack() {
 // combineAndReduceImplicit takes two outcome objects, determines
 // the correct sequential reducer from the registry, calls core.And (via the registered func),
 // applies reduction if necessary, and returns the final combined outcome.
-func (i *Interpreter) combineOutcomesAndReduce(leftOutcome, rightOutcome any) (any, error) {
+func (v *VM) combineOutcomesAndReduce(leftOutcome, rightOutcome any) (any, error) {
 	var combinedOutcome any // Use any to hold the result
 	var reductionNeeded bool = false
 	// var inputLenForLog int = 0 // For logging reduction - maybe add later if needed
@@ -206,7 +206,7 @@ func (i *Interpreter) combineOutcomesAndReduce(leftOutcome, rightOutcome any) (a
 	}
 
 	// The registered functions now directly perform the core.And call
-	registeredReducer, found := i.sequentialReducers[key]
+	registeredReducer, found := v.sequentialReducers[key]
 	if !found {
 		return nil, fmt.Errorf("%w: no sequential reducer registered for combination %T THEN %T (key: %+v)", ErrUnsupportedType, leftOutcome, rightOutcome, key)
 	}
@@ -215,14 +215,14 @@ func (i *Interpreter) combineOutcomesAndReduce(leftOutcome, rightOutcome any) (a
 	combinedOutcome = registeredReducer(leftOutcome, rightOutcome)
 
 	// Determine if reduction is needed based on the combined result type and length
-	reductionNeeded = i.needsReduction(combinedOutcome) // Use helper method
+	reductionNeeded = v.needsReduction(combinedOutcome) // Use helper method
 
 	// --- Apply Reduction if needed ---
 	if reductionNeeded {
 		trimmedOutcome := combinedOutcome // Start with the combined outcome
 		switch co := combinedOutcome.(type) {
 		case *core.Outcomes[core.AccessResult]:
-			trimmerFuncGen := core.TrimToSize(i.maxOutcomeLen+50, i.maxOutcomeLen)
+			trimmerFuncGen := core.TrimToSize(v.maxOutcomeLen+50, v.maxOutcomeLen)
 			successes, failures := co.Split(core.AccessResult.IsSuccess)
 			trimmedSuccesses := trimmerFuncGen(successes)
 			trimmedFailures := trimmerFuncGen(failures)
@@ -240,7 +240,7 @@ func (i *Interpreter) combineOutcomesAndReduce(leftOutcome, rightOutcome any) (a
 }
 
 // needsReduction checks if an outcome object requires trimming based on its type and length.
-func (i *Interpreter) needsReduction(outcome any) bool {
+func (v *VM) needsReduction(outcome any) bool {
 	// Check length based on type implementing OutcomeContainer
 	container, ok := outcome.(core.OutcomeContainer)
 	if !ok {
@@ -250,9 +250,9 @@ func (i *Interpreter) needsReduction(outcome any) bool {
 	// Check specific types that support trimming
 	switch outcome.(type) {
 	case *core.Outcomes[core.AccessResult]:
-		return container.Len() > i.maxOutcomeLen
+		return container.Len() > v.maxOutcomeLen
 	case *core.Outcomes[core.RangedResult]:
-		return container.Len() > i.maxOutcomeLen
+		return container.Len() > v.maxOutcomeLen
 	// Add other types that support reduction
 	default:
 		return false // By default, types don't need reduction
@@ -270,7 +270,7 @@ func getOutcomeTypeString(outcome any) string {
 	return reflect.TypeOf(outcome).String()
 }
 
-func (i *Interpreter) RegisterSequentialReducer(leftExample, rightExample any, reducer core.ReducerFunc[any, any, any]) error {
+func (v *VM) RegisterSequentialReducer(leftExample, rightExample any, reducer core.ReducerFunc[any, any, any]) error {
 	if reducer == nil {
 		return fmt.Errorf("reducer function cannot be nil")
 	}
@@ -284,12 +284,12 @@ func (i *Interpreter) RegisterSequentialReducer(leftExample, rightExample any, r
 	}
 
 	// fmt.Printf("DEBUG: Registering Reducer for Key: %+v\n", key) // Debug registration
-	i.sequentialReducers[key] = reducer
+	v.sequentialReducers[key] = reducer
 	return nil
 }
 
 // registerDefaultReducers populates the registry with standard combinations.
-func (i *Interpreter) registerDefaultReducers() {
+func (v *VM) registerDefaultReducers() {
 	// --- AccessResult Reducers ---
 	accRes := &core.Outcomes[core.AccessResult]{} // Example instance
 	dur := &core.Outcomes[core.Duration]{}        // Example instance
@@ -297,19 +297,19 @@ func (i *Interpreter) registerDefaultReducers() {
 
 	// AccessResult + AccessResult
 	// The registered function needs to handle the any conversion and call core.And
-	_ = i.RegisterSequentialReducer(accRes, accRes, func(a, b any) any {
+	_ = v.RegisterSequentialReducer(accRes, accRes, func(a, b any) any {
 		// Type assertion happens here inside the registered func
 		return core.And(a.(*core.Outcomes[core.AccessResult]), b.(*core.Outcomes[core.AccessResult]), core.AndAccessResults)
 	})
 	// AccessResult + Duration
-	_ = i.RegisterSequentialReducer(accRes, dur, func(a, b any) any {
+	_ = v.RegisterSequentialReducer(accRes, dur, func(a, b any) any {
 		reducer := func(vA core.AccessResult, vB core.Duration) core.AccessResult {
 			return core.AccessResult{Success: vA.Success, Latency: vA.Latency + vB}
 		}
 		return core.And(a.(*core.Outcomes[core.AccessResult]), b.(*core.Outcomes[core.Duration]), reducer)
 	})
 	// Duration + AccessResult
-	_ = i.RegisterSequentialReducer(dur, accRes, func(a, b any) any {
+	_ = v.RegisterSequentialReducer(dur, accRes, func(a, b any) any {
 		reducer := func(vA core.Duration, vB core.AccessResult) core.AccessResult {
 			return core.AccessResult{Success: vB.Success, Latency: vA + vB.Latency}
 		}
@@ -318,19 +318,19 @@ func (i *Interpreter) registerDefaultReducers() {
 
 	// --- Duration Reducers ---
 	// Duration + Duration
-	_ = i.RegisterSequentialReducer(dur, dur, func(a, b any) any {
+	_ = v.RegisterSequentialReducer(dur, dur, func(a, b any) any {
 		reducer := func(vA, vB core.Duration) core.Duration { return vA + vB }
 		return core.And(a.(*core.Outcomes[core.Duration]), b.(*core.Outcomes[core.Duration]), reducer)
 	})
 
 	// --- Bool Reducers ---
 	// Bool + AccessResult
-	_ = i.RegisterSequentialReducer(boolean, accRes, func(a, b any) any {
+	_ = v.RegisterSequentialReducer(boolean, accRes, func(a, b any) any {
 		reducer := func(vA bool, vB core.AccessResult) core.AccessResult { return vB } // Bool acts as filter via weights
 		return core.And(a.(*core.Outcomes[bool]), b.(*core.Outcomes[core.AccessResult]), reducer)
 	})
 	// Bool + Bool
-	_ = i.RegisterSequentialReducer(boolean, boolean, func(a, b any) any {
+	_ = v.RegisterSequentialReducer(boolean, boolean, func(a, b any) any {
 		reducer := func(vA, vB bool) bool { return vA && vB } // Example: logical AND
 		return core.And(a.(*core.Outcomes[bool]), b.(*core.Outcomes[bool]), reducer)
 	})

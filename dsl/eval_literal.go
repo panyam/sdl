@@ -10,8 +10,8 @@ import (
 // evalLiteral evaluates a LiteralExpr node.
 // It parses the literal value based on its Kind, wraps it in a deterministic
 // Outcomes[T] object (single bucket, weight 1.0), and pushes the result
-// onto the interpreter's stack.
-func (i *Interpreter) evalLiteral(expr *LiteralExpr) error {
+// onto the vm's stack.
+func (v *VM) evalLiteral(expr *LiteralExpr) error {
 	var outcome any
 	var parseErr error
 
@@ -69,6 +69,6 @@ func (i *Interpreter) evalLiteral(expr *LiteralExpr) error {
 		return fmt.Errorf("internal error: outcome is nil after parsing literal %s", expr.Value)
 	}
 
-	i.push(outcome)
+	v.push(outcome)
 	return nil
 }
