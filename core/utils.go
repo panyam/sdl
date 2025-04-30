@@ -39,3 +39,10 @@ func approxEqualTest(a, b, tolerance float64) bool {
 	} // Handle exact equality
 	return math.Abs(a-b) < tolerance
 }
+
+func ApproxEq(a, b, tolerance float64) bool {
+	if a == b {
+		return true
+	} // Handle exact equality
+	return math.Abs(a-b) < tolerance
+}

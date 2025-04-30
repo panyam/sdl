@@ -154,16 +154,6 @@ func (i *Interpreter) ClearStack() {
 
 // --- Placeholder Eval methods (will be implemented in separate files/phases) ---
 
-func (i *Interpreter) evalAndExpr(expr *AndExpr) error {
-	// To be implemented in Phase 3
-	return fmt.Errorf("evalAndExpr %w", ErrNotImplemented)
-}
-
-func (i *Interpreter) evalCallExpr(expr *CallExpr) error {
-	// To be implemented in Phase 4
-	return fmt.Errorf("evalCallExpr %w", ErrNotImplemented)
-}
-
 func (i *Interpreter) evalRepeatExpr(expr *RepeatExpr) error {
 	// To be implemented in Phase 6
 	return fmt.Errorf("evalRepeatExpr %w", ErrNotImplemented)

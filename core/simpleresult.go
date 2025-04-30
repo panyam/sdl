@@ -374,5 +374,19 @@ func reduceGroupPercentileAnchor(group *Outcomes[AccessResult], maxBuckets int, 
 
 	out := &Outcomes[AccessResult]{And: group.And}
 	out.Buckets = outputBuckets
+
+	// --- Add Renormalization Step ---
+	// Calculate the sum of weights of the selected buckets
+	selectedWeightSum := 0.0
+	for _, b := range out.Buckets {
+		selectedWeightSum += b.Weight
+	}
+	// Renormalize if needed
+	if selectedWeightSum > 1e-9 && math.Abs(selectedWeightSum-totalWeight) > 1e-9 {
+		renormFactor := totalWeight / selectedWeightSum
+		for i := range out.Buckets {
+			out.Buckets[i].Weight *= renormFactor
+		}
+	}
 	return out
 }

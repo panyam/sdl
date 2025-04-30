@@ -369,3 +369,186 @@ func TestInterpreter_Eval_Stub(t *testing.T) {
 	// }
 	// More robust: check if the error wraps ErrNotImplemented if we implement it that way later
 }
+
+// --- Test AndExpr & Reduction (Phase 3) ---
+// --- Test CallExpr (Method Calls - Phase 4) ---
+
+func TestInterpreter_Eval_CallExpr_DiskRead(t *testing.T) {
+	interp := NewInterpreter(10)
+	// Setup environment with a disk instance
+	disk := components.NewDisk("ssd1") // Uses SSD profile
+	interp.Env().Set("myDisk", disk)
+
+	// AST for myDisk.Read()
+	call := &CallExpr{
+		Function: &MemberAccessExpr{
+			Receiver: &IdentifierExpr{Name: "myDisk"},
+			Member:   "Read",
+		},
+		Args: []Expr{}, // No arguments for Read()
+	}
+
+	_, err := interp.Eval(call)
+	if err != nil {
+		t.Fatalf("Eval(CallExpr Disk.Read) failed: %v", err)
+	}
+
+	result, err := interp.GetFinalResult()
+	if err != nil {
+		t.Fatalf("GetFinalResult failed: %v", err)
+	}
+
+	// Check if the result is the correct outcome object (pointer comparison)
+	expectedOutcome := disk.Read()
+	if result != expectedOutcome {
+		t.Errorf("Expected myDisk.Read() to return the disk's ReadOutcomes object, got different object")
+	}
+}
+
+func TestInterpreter_Eval_CallExpr_MethodNotFound(t *testing.T) {
+	interp := NewInterpreter(10)
+	disk := components.NewDisk("ssd1")
+	interp.Env().Set("myDisk", disk)
+
+	// AST for myDisk.NoSuchMethod()
+	call := &CallExpr{
+		Function: &MemberAccessExpr{
+			Receiver: &IdentifierExpr{Name: "myDisk"},
+			Member:   "NoSuchMethod",
+		},
+		Args: []Expr{},
+	}
+
+	_, err := interp.Eval(call)
+	if err == nil {
+		t.Fatal("Eval(CallExpr) should have failed for non-existent method")
+	}
+	if !errors.Is(err, ErrMethodNotFound) {
+		t.Errorf("Expected ErrMethodNotFound, got: %v", err)
+	}
+}
+
+// TODO: Add tests for CallExpr with arguments once argument handling/conversion is implemented.
+// TODO: Add tests for CallExpr calling methods that return ast.Node (Phase 5).
+
+// Helper to register SSD Write profile getter
+func registerTestDiskWriteFunc(interp *Interpreter) {
+	ssd := components.NewDisk("TestSSD")
+	interp.RegisterInternalFunc("GetDiskWriteProfile", func(i *Interpreter, args []any) (any, error) {
+		return ssd.Write(), nil
+	})
+}
+
+func TestInterpreter_Eval_AndExpr_AccessResult(t *testing.T) {
+	interp := NewInterpreter(10)      // Max 10 buckets
+	registerTestDiskFuncs(interp)     // Registers GetDiskReadProfile
+	registerTestDiskWriteFunc(interp) // Registers GetDiskWriteProfile
+
+	// AST for GetDiskReadProfile() THEN GetDiskWriteProfile()
+	readCall := &InternalCallExpr{FuncName: "GetDiskReadProfile"}
+	writeCall := &InternalCallExpr{FuncName: "GetDiskWriteProfile"}
+	andExpr := &AndExpr{Left: readCall, Right: writeCall}
+
+	_, err := interp.Eval(andExpr)
+	if err != nil {
+		t.Fatalf("Eval(AndExpr) failed: %v", err)
+	}
+
+	result, err := interp.GetFinalResult()
+	if err != nil {
+		t.Fatalf("GetFinalResult failed: %v", err)
+	}
+
+	outcome, ok := result.(*core.Outcomes[core.AccessResult])
+	if !ok {
+		t.Fatalf("Expected result type *core.Outcomes[AccessResult], got %T", result)
+	}
+
+	// Basic checks on the combined outcome
+	if outcome.Len() == 0 {
+		t.Error("Combined outcome should not be empty")
+	}
+	// Allow slightly more tolerance for weight due to potential FP errors during combine/trim
+	if !core.ApproxEq(outcome.TotalWeight(), 1.0, 1e-5) {
+		t.Errorf("Expected total weight ~1.0, got %f", outcome.TotalWeight())
+	}
+	// After splitting, trimming each part to maxLen, and appending, the max possible is 2*maxLen
+	maxExpectedLen := 2 * interp.maxOutcomeLen
+	if outcome.Len() > maxExpectedLen {
+		t.Errorf("Expected outcome length <= %d (2 * maxLen) after reduction, got %d", maxExpectedLen, outcome.Len())
+	}
+
+	// Check if latency looks reasonable (sum of means)
+	readOutcome := components.NewDisk("").Read()
+	writeOutcome := components.NewDisk("").Write()
+	expectedMean := core.MeanLatency(readOutcome) + core.MeanLatency(writeOutcome)
+	actualMean := core.MeanLatency(outcome)
+	// Allow larger tolerance due to reduction possibly shifting the mean
+	if !core.ApproxEq(actualMean, expectedMean, expectedMean*0.2) {
+		t.Errorf("Mean latency %.6f differs significantly from expected sum %.6f", actualMean, expectedMean)
+	}
+	t.Logf("AndExpr Test: Final Len=%d, Mean Latency=%.6fs (Expected Sum ~%.6fs)", outcome.Len(), actualMean, expectedMean)
+}
+
+func TestInterpreter_Eval_AndExpr_TypeMismatch(t *testing.T) {
+	interp := NewInterpreter(10)
+	registerTestDiskFuncs(interp) // GetDiskReadProfile returns *Outcomes[AccessResult]
+
+	// AST for GetDiskReadProfile() THEN 123
+	readCall := &InternalCallExpr{FuncName: "GetDiskReadProfile"}
+	literalInt := &LiteralExpr{Kind: "INT", Value: "123"}
+	andExpr := &AndExpr{Left: readCall, Right: literalInt}
+
+	_, err := interp.Eval(andExpr)
+	if err == nil {
+		t.Fatalf("Eval(AndExpr) should have failed for type mismatch")
+	}
+	// Check the error type
+	if !errors.Is(err, ErrTypeMismatch) && !errors.Is(err, ErrUnsupportedType) {
+		t.Errorf("Expected ErrTypeMismatch or ErrUnsupportedType, got: %v", err)
+	}
+}
+
+func TestInterpreter_Eval_CallExpr_RecursiveAST(t *testing.T) {
+	interp := NewInterpreter(10)
+	registerTestDiskFuncs(interp) // Need GetDiskReadProfile internal func
+
+	// Setup environment with a *declarative* disk instance
+	// The actual Go disk component isn't directly needed in the env,
+	// as the call resolves to the Disk.Read() method which returns an AST.
+	declDisk := NewDisk("ssd_decl", "SSD")
+	interp.Env().Set("myDeclDisk", declDisk)
+
+	// AST for myDeclDisk.Read()
+	call := &CallExpr{
+		Function: &MemberAccessExpr{
+			Receiver: &IdentifierExpr{Name: "myDeclDisk"},
+			Member:   "Read", // This call returns an *InternalCallExpr AST node
+		},
+		Args: []Expr{},
+	}
+
+	_, err := interp.Eval(call) // This should trigger recursive evaluation
+	if err != nil {
+		t.Fatalf("Eval(CallExpr Disk.Read) failed: %v", err)
+	}
+
+	result, err := interp.GetFinalResult()
+	if err != nil {
+		t.Fatalf("GetFinalResult failed after recursive eval: %v", err)
+	}
+
+	// The final result should be the outcome from evaluating the *returned* AST
+	// (which was InternalCallExpr("GetDiskReadProfile", "SSD"))
+	// So, it should be the same as calling GetDiskReadProfile directly.
+	expectedOutcome := components.NewDisk("").Read() // Get the reference SSD read outcome
+	if result != expectedOutcome {                   // Compare pointers
+		t.Errorf("Expected recursive call to yield SSD Read profile, got different object")
+	}
+}
+
+// TODO: Add a test that explicitly triggers reduction.
+// This might require setting maxOutcomeLen very low (e.g., 2) and using
+// inputs known to produce more buckets, or creating a helper internal func
+// that returns an outcome with many buckets. Example:
+// func TestInterpreter_Eval_AndExpr_ReductionTriggered(t *testing.T) { ... }
