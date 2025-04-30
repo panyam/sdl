@@ -1,5 +1,7 @@
 package dsl
 
+import "strconv"
+
 type Disk struct {
 	Name        string
 	ProfileName string // e.g., "SSD", "HDD" - VM uses this to lookup profile
@@ -39,4 +41,19 @@ func (d *Disk) ReadProcessWrite(processingTime Expr) Expr {
 	step1 := &AndExpr{Left: read, Right: processingTime}
 	step2 := &AndExpr{Left: step1, Right: write}
 	return step2
+}
+
+func LitStr(v string) Expr { return &LiteralExpr{Kind: "STRING", Value: v} }
+func LitInt(v int) Expr    { return &LiteralExpr{Kind: "INT", Value: strconv.Itoa(v)} }
+func LitFloat(v float64) Expr {
+	return &LiteralExpr{Kind: "FLOAT", Value: strconv.FormatFloat(v, 'f', -1, 64)}
+}
+func LitBool(v bool) Expr            { return &LiteralExpr{Kind: "BOOL", Value: strconv.FormatBool(v)} }
+func Ident(n string) Expr            { return &IdentifierExpr{Name: n} }
+func Member(r Expr, m string) Expr   { return &MemberAccessExpr{Receiver: r, Member: m} }
+func Call(f Expr, args ...Expr) Expr { return &CallExpr{Function: f, Args: args} }
+func And(l, r Expr) Expr             { return &AndExpr{Left: l, Right: r} }
+func Par(l, r Expr) Expr             { return &ParallelExpr{Left: l, Right: r} }
+func InternalCall(fName string, args ...Expr) Expr {
+	return &InternalCallExpr{FuncName: fName, Args: args}
 }

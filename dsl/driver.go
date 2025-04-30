@@ -30,7 +30,7 @@ func (arw *AnalysisResultWrapper) addMsg(format string, args ...any) {
 type componentConstructor func(name string, params map[string]any) (any, error)
 
 // registerBuiltinComponents registers Go component constructors in the vm's global environment.
-func registerBuiltinComponents(vm *VM) {
+func _registerBuiltinComponents(vm *VM) {
 	// The value stored is the constructor function itself.
 	// The key is the name used in the DSL (e.g., "Disk").
 	vm.Env().Set("Disk", componentConstructor(func(name string, params map[string]any) (any, error) {
@@ -67,7 +67,7 @@ func registerBuiltinComponents(vm *VM) {
 
 // registerCoreInternalFunctions populates the registry with functions
 // needed by the declarative components' ASTs.
-func registerCoreInternalFunctions(vm *VM) {
+func _registerCoreInternalFunctions(vm *VM) {
 	// Disk Functions
 	vm.RegisterInternalFunc("GetDiskReadProfile", func(v *VM, args []any) (any, error) {
 		profileName := "SSD"
@@ -193,9 +193,9 @@ func RunDSL(astRoot Node /* options? */) (map[string]*AnalysisResultWrapper, err
 		return analysisResults, fmt.Errorf("RunDSL currently expects *SystemDecl as root, got %T", astRoot)
 	}
 
-	vm := NewVM(15)                   // Default max buckets
-	registerBuiltinComponents(vm)     // Register component constructors
-	registerCoreInternalFunctions(vm) // Register helpers needed by decl components
+	vm := NewVM(15) // Default max buckets
+	// registerBuiltinComponents(vm)     // Register component constructors
+	// registerCoreInternalFunctions(vm) // Register helpers needed by decl components
 
 	// --- Process System ---
 	systemEnv := NewEnclosedEnvironment(vm.env)

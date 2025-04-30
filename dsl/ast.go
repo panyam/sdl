@@ -211,6 +211,7 @@ type BlockStmt struct {
 	Statements []Stmt
 }
 
+func (b *BlockStmt) exprNode()      {}
 func (b *BlockStmt) stmtNode()      {}
 func (b *BlockStmt) String() string { return "{ ...statements... }" } // Simplified
 

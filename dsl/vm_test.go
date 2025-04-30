@@ -5,28 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"strconv"
 	"testing"
 
 	"github.com/panyam/leetcoach/sdl/components"
 	"github.com/panyam/leetcoach/sdl/core"
 	// "fmt" // For debugging
 )
-
-func litStr(v string) Expr { return &LiteralExpr{Kind: "STRING", Value: v} }
-func litInt(v int) Expr    { return &LiteralExpr{Kind: "INT", Value: strconv.Itoa(v)} }
-func litFloat(v float64) Expr {
-	return &LiteralExpr{Kind: "FLOAT", Value: strconv.FormatFloat(v, 'f', -1, 64)}
-}
-func litBool(v bool) Expr            { return &LiteralExpr{Kind: "BOOL", Value: strconv.FormatBool(v)} }
-func ident(n string) Expr            { return &IdentifierExpr{Name: n} }
-func member(r Expr, m string) Expr   { return &MemberAccessExpr{Receiver: r, Member: m} }
-func call(f Expr, args ...Expr) Expr { return &CallExpr{Function: f, Args: args} }
-func and(l, r Expr) Expr             { return &AndExpr{Left: l, Right: r} }
-func parallel(l, r Expr) Expr        { return &ParallelExpr{Left: l, Right: r} }
-func internalCall(fName string, args ...Expr) Expr {
-	return &InternalCallExpr{FuncName: fName, Args: args}
-}
 
 func TestVM_NewVM(t *testing.T) {
 	v := NewVM(20)
@@ -233,7 +217,7 @@ func registerTestDiskFuncs(v *VM) {
 
 func TestVM_Eval_InternalCall(t *testing.T) {
 	v := NewVM(10)
-	registerTestDiskFuncs(interp)
+	registerTestDiskFuncs(v)
 
 	// AST for Internal.GetDiskReadProfile("SSD") - Args aren't used yet by dummy func
 	call := &InternalCallExpr{FuncName: "GetDiskReadProfile", Args: []Expr{&LiteralExpr{Kind: "STRING", Value: "SSD"}}}
@@ -458,9 +442,9 @@ func registerTestDiskWriteFunc(v *VM) {
 }
 
 func TestVM_Eval_AndExpr_AccessResult(t *testing.T) {
-	v := NewVM(10)                    // Max 10 buckets
-	registerTestDiskFuncs(interp)     // Registers GetDiskReadProfile
-	registerTestDiskWriteFunc(interp) // Registers GetDiskWriteProfile
+	v := NewVM(10)               // Max 10 buckets
+	registerTestDiskFuncs(v)     // Registers GetDiskReadProfile
+	registerTestDiskWriteFunc(v) // Registers GetDiskWriteProfile
 
 	// AST for GetDiskReadProfile() THEN GetDiskWriteProfile()
 	readCall := &InternalCallExpr{FuncName: "GetDiskReadProfile"}
@@ -510,7 +494,7 @@ func TestVM_Eval_AndExpr_AccessResult(t *testing.T) {
 
 func TestVM_Eval_AndExpr_TypeMismatch(t *testing.T) {
 	v := NewVM(10)
-	registerTestDiskFuncs(interp) // GetDiskReadProfile returns *Outcomes[AccessResult]
+	registerTestDiskFuncs(v) // GetDiskReadProfile returns *Outcomes[AccessResult]
 
 	// AST for GetDiskReadProfile() THEN 123
 	readCall := &InternalCallExpr{FuncName: "GetDiskReadProfile"}
@@ -529,7 +513,7 @@ func TestVM_Eval_AndExpr_TypeMismatch(t *testing.T) {
 
 func TestVM_Eval_CallExpr_RecursiveAST(t *testing.T) {
 	v := NewVM(10)
-	registerTestDiskFuncs(interp) // Need GetDiskReadProfile internal func
+	registerTestDiskFuncs(v) // Need GetDiskReadProfile internal func
 
 	// Setup environment with a *declarative* disk instance
 	// The actual Go disk component isn't directly needed in the env,
@@ -568,8 +552,8 @@ func TestVM_Eval_CallExpr_RecursiveAST(t *testing.T) {
 // --- Test RepeatExpr (Sequential - Phase 6) ---
 
 func TestVM_Eval_RepeatExpr_Sequential(t *testing.T) {
-	v := NewVM(10)                // Reduce aggressively for testing
-	registerTestDiskFuncs(interp) // GetDiskReadProfile returns *Outcomes[AccessResult]
+	v := NewVM(10)           // Reduce aggressively for testing
+	registerTestDiskFuncs(v) // GetDiskReadProfile returns *Outcomes[AccessResult]
 
 	// AST for repeat(GetDiskReadProfile(), 3, Sequential)
 	repeatCount := int64(3)
@@ -652,7 +636,7 @@ func TestVM_Eval_RepeatExpr_InvalidCount(t *testing.T) {
 
 func TestVM_Eval_AssignmentStmt(t *testing.T) {
 	v := NewVM(10)
-	registerTestDiskFuncs(interp)
+	registerTestDiskFuncs(v)
 
 	// AST for: myRead = GetDiskReadProfile()
 	assignStmt := &AssignmentStmt{
@@ -691,7 +675,7 @@ func TestVM_Eval_AssignmentStmt(t *testing.T) {
 
 func TestVM_Eval_ReturnStmt(t *testing.T) {
 	v := NewVM(10)
-	registerTestDiskFuncs(interp)
+	registerTestDiskFuncs(v)
 
 	// AST for: return GetDiskReadProfile()
 	returnStmt := &ReturnStmt{
@@ -725,8 +709,8 @@ func TestVM_Eval_ReturnStmt(t *testing.T) {
 
 func TestVM_Eval_BlockStmt_Sequence(t *testing.T) {
 	v := NewVM(10)
-	registerTestDiskFuncs(interp)
-	registerTestDiskWriteFunc(interp)
+	registerTestDiskFuncs(v)
+	registerTestDiskWriteFunc(v)
 
 	// AST for: { readRes = GetDiskReadProfile(); GetDiskWriteProfile() }
 	// Implicit return of the And(readRes, writeProfile)
@@ -822,10 +806,10 @@ func TestVM_Eval_IfStmt_AccessResultSuccess(t *testing.T) {
 	ifStmt := &IfStmt{
 		Condition: &MemberAccessExpr{Receiver: &IdentifierExpr{Name: "condVar"}, Member: "Success"}, // Use the member access
 		Then: &BlockStmt{Statements: []Stmt{
-			&ExprStmt{Expression: call(member(ident("mock"), "OpSuccess"))},
+			&ExprStmt{Expression: Call(Member(Ident("mock"), "OpSuccess"))},
 		}},
 		Else: &BlockStmt{Statements: []Stmt{
-			&ExprStmt{Expression: call(member(ident("mock"), "OpFailure"))},
+			&ExprStmt{Expression: Call(Member(Ident("mock"), "OpFailure"))},
 		}},
 	}
 

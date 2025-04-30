@@ -36,7 +36,7 @@ func (v *VM) evalInternalCall(expr *InternalCallExpr) error {
 
 	// 4. Call the internal function
 	// The internal function receives the vm and the evaluated args slice
-	result, err := internalFn(i, evaluatedArgs)
+	result, err := internalFn(v, evaluatedArgs)
 	if err != nil {
 		return fmt.Errorf("error executing internal function '%s': %w", expr.FuncName, err)
 	}
