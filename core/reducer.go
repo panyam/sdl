@@ -17,6 +17,12 @@ type ReducerFunc[A any, B any, C any] = func(A, B) C
 
 type SignificanceFunction[V any] = func(o *Outcomes[V], index int) float64
 
+// TrimmerFunc defines the function signature for reducing the number of buckets
+// in an Outcomes distribution. It takes the input distribution (as any)
+// and should return the reduced distribution (as any) or the original if
+// no trimming was needed. Implementations will use type assertions/reflection.
+type TrimmerFunc[V any] func(input *Outcomes[V]) *Outcomes[V]
+
 // Adaptively reduce an outcome to fit into a set number of buckets.
 func AdaptiveReduce[V any](o *Outcomes[V], maxBuckets int, sigFunc SignificanceFunction[V]) (out *Outcomes[V]) {
 	type BucketWithImportance[V any] struct {

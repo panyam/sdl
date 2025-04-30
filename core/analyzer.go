@@ -47,6 +47,30 @@ type ExpectationResult struct {
 	Passed      bool        // Did the check pass?
 }
 
+type AnalysisResultInterface interface {
+	GetName() string
+	IsPerformed() bool
+	GetAllPassed() bool
+	GetExpectationChecks() []ExpectationResult
+	GetMetrics() map[MetricType]float64 // Returns calculated metrics
+
+	// Method to access underlying outcomes if needed (returns any)
+	GetCoreOutcomesAny() any
+
+	// We can add convenience methods for common metrics if desired
+	Availability() (float64, bool) // Returns value, true if metric exists
+	MeanLatency() (Duration, bool)
+	P50Latency() (Duration, bool)
+	P99Latency() (Duration, bool)
+	P999Latency() (Duration, bool)
+
+	// Keep logging/assertion helpers here, but maybe attach to the concrete type later?
+	// Or make them standalone functions taking the interface? Let's keep them for now.
+	LogResults(t *testing.T)
+	Assert(t *testing.T)
+	AssertFailure(t *testing.T)
+}
+
 // AnalysisResult holds the complete results of running an analysis.
 type AnalysisResult[V Metricable] struct {
 	Name              string                 // Name of the analysis run
@@ -55,6 +79,36 @@ type AnalysisResult[V Metricable] struct {
 	Metrics           map[MetricType]float64 // Calculated metrics
 	ExpectationChecks []ExpectationResult    // Results of each expectation check
 	AllPassed         bool                   // True if all expectations passed (or no expectations were given)
+}
+
+// --- Implementation of AnalysisResultInterface for AnalysisResult[V] ---
+
+func (ar *AnalysisResult[V]) GetName() string                           { return ar.Name }
+func (ar *AnalysisResult[V]) IsPerformed() bool                         { return ar.AnalysisPerformed }
+func (ar *AnalysisResult[V]) GetAllPassed() bool                        { return ar.AllPassed }
+func (ar *AnalysisResult[V]) GetExpectationChecks() []ExpectationResult { return ar.ExpectationChecks }
+func (ar *AnalysisResult[V]) GetMetrics() map[MetricType]float64        { return ar.Metrics }
+func (ar *AnalysisResult[V]) GetCoreOutcomesAny() any                   { return ar.Outcomes }
+
+func (ar *AnalysisResult[V]) Availability() (float64, bool) {
+	v, ok := ar.Metrics[AvailabilityMetric]
+	return v, ok
+}
+func (ar *AnalysisResult[V]) MeanLatency() (Duration, bool) {
+	v, ok := ar.Metrics[MeanLatencyMetric]
+	return v, ok // Duration is float64
+}
+func (ar *AnalysisResult[V]) P50Latency() (Duration, bool) {
+	v, ok := ar.Metrics[P50LatencyMetric]
+	return v, ok
+}
+func (ar *AnalysisResult[V]) P99Latency() (Duration, bool) {
+	v, ok := ar.Metrics[P99LatencyMetric]
+	return v, ok
+}
+func (ar *AnalysisResult[V]) P999Latency() (Duration, bool) {
+	v, ok := ar.Metrics[P999LatencyMetric]
+	return v, ok
 }
 
 // LogResults formats and logs the AnalysisResult to a *testing.T object.
