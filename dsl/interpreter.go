@@ -116,7 +116,11 @@ func (i *Interpreter) Eval(node Node) (any, error) {
 
 	// --- Statement Nodes ---
 	case *BlockStmt:
-		_, err = i.evalBlockStmt(n, i.env) // Eval block in current env
+		// When Eval is called directly on a BlockStmt (e.g., top level),
+		// there is no initial context from an outer structure like IfStmt.
+		blockResult, evalErr := i.evalBlockStmt(n, i.env, nil) // Pass nil context
+		i.push(blockResult)                                    // Push the final result of the block evaluation
+		err = evalErr                                          // Assign any error from the block execution
 	case *AssignmentStmt:
 		err = i.evalAssignmentStmt(n)
 	case *ReturnStmt:

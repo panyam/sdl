@@ -27,16 +27,16 @@ func (rv *ReturnValue) Error() string {
 // evalBlockStmt executes a sequence of statements within a given environment.
 // It handles the implicit sequential 'And' composition.
 // Returns the outcome of the *last* executed statement/expression in the block.
-func (i *Interpreter) evalBlockStmt(block *BlockStmt, env *Environment) (any, error) {
+func (i *Interpreter) evalBlockStmt(block *BlockStmt, env *Environment, initialContext interface{}) (any, error) {
 	// Use a new environment enclosed by the current one if needed for scoping?
 	// For now, execute in the provided environment.
 	// previousEnv := i.env
 	// i.env = env // Or NewEnclosedEnvironment(env)? Let's use current for simplicity first.
 	// defer func() { i.env = previousEnv }() // Restore env
+	var blockResult = initialContext            // Start with the provided context
+	isFirstStatement := (initialContext == nil) // Only true if no context was given
 
-	var blockResult any // Holds the *cumulative* outcome
-	isFirstStatement := true
-
+	// fmt.Printf("DEBUG evalBlockStmt: Start. Context: %T, isFirst: %t\n", initialContext, isFirstStatement) // Debug
 	for _, stmt := range block.Statements {
 		var currentStmtOutcome any
 		evalErr := error(nil)
@@ -77,11 +77,13 @@ func (i *Interpreter) evalBlockStmt(block *BlockStmt, env *Environment) (any, er
 		}
 
 		// --- Implicit Sequential Composition ---
+		// fmt.Printf("DEBUG evalBlockStmt: After Stmt %T. currentStmtOutcome: %T, blockResult: %T\n", stmt, currentStmtOutcome, blockResult) // Debug
 		if currentStmtOutcome == nil {
 			// Statement didn't produce an outcome to compose (e.g., just an assignment might conceptually do this, though ours pops)
 			// Or it was the return statement handled above.
 			// If blockResult is also nil, there's nothing to compose yet.
 			// If blockResult is not nil, we just continue with the existing blockResult.
+			// fmt.Printf("DEBUG evalBlockStmt: No outcome from stmt %T, continuing.\n", stmt) // Debug
 			continue
 		}
 
@@ -89,6 +91,13 @@ func (i *Interpreter) evalBlockStmt(block *BlockStmt, env *Environment) (any, er
 			blockResult = currentStmtOutcome
 			isFirstStatement = false
 		} else {
+			// Ensure blockResult is not nil before combining
+			if blockResult == nil {
+				// This means we had no initial context and the first statement didn't produce an outcome.
+				// This shouldn't happen based on current logic, but handle defensively.
+				return nil, fmt.Errorf("internal error: trying implicit AND with nil blockResult")
+			}
+
 			// Combine previous blockResult THEN currentStmtOutcome
 			// Call helper to combine and reduce
 			combinedResult, err := i.combineOutcomesAndReduce(blockResult, currentStmtOutcome)
@@ -274,9 +283,9 @@ func (i *Interpreter) evalIfStmt(stmt *IfStmt) error {
 		return fmt.Errorf("internal error: 'then' split result (%T) does not implement OutcomeContainer", thenInputOutcome)
 	}
 	if thenIsContainer && thenOutcomeContainer != nil && thenOutcomeContainer.Len() > 0 { // Check validity and length via interface
-		thenBranchResultOutcome, thenErr = i.evalBlockStmt(stmt.Then, i.env) // Eval block
-		// NOTE: evalBlockStmt should NOT leave its result on the stack. It returns it.
-		if thenErr != nil && !errors.Is(thenErr, ErrReturnSignal) { // Handle errors (ignore Return signal here)
+		// --- Pass context as argument, DON'T PUSH ---
+		thenBranchResultOutcome, thenErr = i.evalBlockStmt(stmt.Then, i.env, thenInputOutcome) // Pass context
+		if thenErr != nil && !errors.Is(thenErr, ErrReturnSignal) {                            // Handle errors (ignore Return signal here)
 			return fmt.Errorf("error in 'then' branch: %w", thenErr)
 		}
 		if errors.Is(thenErr, ErrReturnSignal) {
@@ -298,9 +307,9 @@ func (i *Interpreter) evalIfStmt(stmt *IfStmt) error {
 		return fmt.Errorf("internal error: 'else' split result (%T) does not implement OutcomeContainer", elseInputOutcome)
 	}
 	var elseErr error
-	if stmt.Else != nil && elseIsContainer && elseOutcomeContainer != nil && elseOutcomeContainer.Len() > 0 { // Check else exists and has probability
-		i.push(elseInputOutcome) // Push the 'failure' distribution context
-		elseBranchResultOutcome, elseErr = i.evalBlockStmt(stmt.Else, i.env)
+	if stmt.Else != nil && elseIsContainer && elseOutcomeContainer != nil && elseOutcomeContainer.Len() > 0 { // Check validity and length
+		// --- Pass context as argument, DON'T PUSH ---
+		elseBranchResultOutcome, elseErr = i.evalBlockStmt(stmt.Else, i.env, elseInputOutcome)
 		// NOTE: evalBlockStmt should NOT leave its result on the stack. It returns it.
 		if elseErr != nil && !errors.Is(elseErr, ErrReturnSignal) {
 			return fmt.Errorf("error in 'else' branch: %w", elseErr)
@@ -313,23 +322,6 @@ func (i *Interpreter) evalIfStmt(stmt *IfStmt) error {
 	} else {
 		elseBranchResultOutcome = nil
 	}
-
-	// --- Clean up stack: Pop the branch inputs if they were pushed ---
-	// Need to know if they were actually pushed and not popped by something else.
-	// This is getting messy. Let's rethink evalBlockStmt's input.
-
-	// --- Revised Approach: evalBlockStmt takes context as ARGUMENT ---
-	// Let's postpone this refactor. For now, assume the input context *might*
-	// still be on the stack *if* the corresponding block executed.
-
-	// --- Simpler Fix Attempt: Assume the warning message is right, one item left ---
-	// If only one item is left before the final push, let's pop it. This assumes
-	// the leftover item IS the context we pushed earlier.
-	if len(i.stack) == 1 {
-		fmt.Println("DEBUG: Popping leftover item before final IfStmt push.")
-		_, _ = i.pop() // Pop the leftover item seen in the warning
-	}
-	// 5. Comb
 
 	// 5. Combine Results using Append
 	// Need to handle type compatibility and nil branches.

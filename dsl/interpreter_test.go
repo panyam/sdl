@@ -743,7 +743,7 @@ func TestInterpreter_Eval_BlockStmt_Sequence(t *testing.T) {
 	}
 
 	// Eval the block
-	blockResult, err := interp.evalBlockStmt(block, interp.Env()) // Eval in current env
+	blockResult, err := interp.evalBlockStmt(block, interp.Env(), nil) // Eval in current env
 	if err != nil {
 		t.Fatalf("evalBlockStmt failed: %v", err)
 	}
