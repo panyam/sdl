@@ -119,6 +119,7 @@ func (i *Interpreter) evalAndExpr(expr *AndExpr) error {
 
 // combineOutcomesAndReduce takes two outcome objects (popped from stack), determines
 // the correct sequential reducer, calls core.And, applies reduction, and returns the result.
+/*
 func (i *Interpreter) combineOutcomesAndReduce(leftOutcome, rightOutcome any) (any, error) {
 	var combinedOutcome any // Use any to hold the result
 	var reductionNeeded bool = false
@@ -190,3 +191,4 @@ func (i *Interpreter) combineOutcomesAndReduce(leftOutcome, rightOutcome any) (a
 
 	return combinedOutcome, nil // Return the final result
 }
+*/

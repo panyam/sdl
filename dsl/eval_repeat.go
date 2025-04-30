@@ -83,58 +83,13 @@ func (i *Interpreter) evalRepeatExpr(expr *RepeatExpr) error {
 		}
 
 		// Combine `accumulatedOutcome` THEN `currentIterationOutcome`
-		// We reuse the AndExpr evaluation logic/helpers here
-		// Need to determine types and call core.And + apply reduction
-		var combinedOutcome interface{}
-		var reductionNeeded bool = false
-
-		// --- Type switching for combination (similar to evalAndExpr) ---
-		switch acc := accumulatedOutcome.(type) {
-		case *core.Outcomes[core.AccessResult]:
-			switch cur := currentIterationOutcome.(type) {
-			case *core.Outcomes[core.AccessResult]:
-				reducer := core.AndAccessResults
-				combined := core.And(acc, cur, reducer)
-				combinedOutcome = combined
-				reductionNeeded = combined.Len() > i.maxOutcomeLen
-			// Add cases for combining AccessResult with Duration if needed by Input expr
-			default:
-				return fmt.Errorf("%w: cannot sequentially repeat %T with accumulated %T", ErrTypeMismatch, cur, acc)
-			}
-		case *core.Outcomes[core.Duration]:
-			switch cur := currentIterationOutcome.(type) {
-			case *core.Outcomes[core.Duration]:
-				reducer := func(a, b core.Duration) core.Duration { return a + b }
-				combined := core.And(acc, cur, reducer)
-				combinedOutcome = combined
-				reductionNeeded = false // No trimming for Duration assumed
-			// Add cases for combining Duration with AccessResult if needed by Input expr
-			default:
-				return fmt.Errorf("%w: cannot sequentially repeat %T with accumulated %T", ErrTypeMismatch, cur, acc)
-			}
-		// Add more cases for other types if Repeat is used with them
-		default:
-			return fmt.Errorf("%w: cannot sequentially repeat with accumulated type %T", ErrUnsupportedType, accumulatedOutcome)
-		}
-
-		// --- Apply Reduction ---
-		if reductionNeeded {
-			switch co := combinedOutcome.(type) {
-			case *core.Outcomes[core.AccessResult]:
-				trimmerFuncGen := core.TrimToSize(i.maxOutcomeLen+50, i.maxOutcomeLen)
-				successes, failures := co.Split(core.AccessResult.IsSuccess)
-				trimmedSuccesses := trimmerFuncGen(successes)
-				trimmedFailures := trimmerFuncGen(failures)
-				finalTrimmed := (&core.Outcomes[core.AccessResult]{And: co.And}).Append(trimmedSuccesses, trimmedFailures)
-				combinedOutcome = finalTrimmed
-				// fmt.Printf("Applied TrimToSize in Repeat (iter %d), len %d -> %d\n", k, co.Len(), finalTrimmed.Len()) // Debug log
-			// Add cases for other trimmable types
-			default: // No trimmer defined
-			}
+		combinedResult, err := i.combineOutcomesAndReduce(accumulatedOutcome, currentIterationOutcome)
+		if err != nil {
+			return fmt.Errorf("repeat combination failed (iter %d): %w", k, err)
 		}
 
 		// Push the result of this iteration back onto the stack for the next loop
-		i.push(combinedOutcome)
+		i.push(combinedResult)
 	}
 
 	// The final accumulated result is left on the stack after the loop finishes.
