@@ -136,7 +136,7 @@ func (ar *AnalysisResult[V]) LogResults(t *testing.T) {
 				format = "%.6f"
 				suffix = ""
 			}
-			metricsParts = append(metricsParts, fmt.Sprintf("%s="+format+"%s", metricTypeToString(mt), val, suffix))
+			metricsParts = append(metricsParts, fmt.Sprintf("%s="+format+"%s", MetricTypeToString(mt), val, suffix))
 		}
 	}
 	bucketCount := 0
@@ -148,8 +148,8 @@ func (ar *AnalysisResult[V]) LogResults(t *testing.T) {
 
 	// Log expectation checks
 	for i, check := range ar.ExpectationChecks {
-		metricName := metricTypeToString(check.Expectation.Metric)
-		opStr := operatorTypeToString(check.Expectation.Operator)
+		metricName := MetricTypeToString(check.Expectation.Metric)
+		opStr := OperatorTypeToString(check.Expectation.Operator)
 		status := "PASS"
 		if !check.Passed {
 			status = "FAIL"
@@ -258,7 +258,7 @@ func Analyze[V Metricable](name string, simulationFunc func() *Outcomes[V], expe
 			check.Passed = false           // Treat as failed if metric doesn't exist? Or skip? Let's fail it.
 		} else {
 			check.ActualValue = actualValue
-			check.Passed = checkCondition(actualValue, exp.Operator, exp.Threshold)
+			check.Passed = CheckCondition(actualValue, exp.Operator, exp.Threshold)
 		}
 
 		result.ExpectationChecks = append(result.ExpectationChecks, check)
@@ -272,7 +272,7 @@ func Analyze[V Metricable](name string, simulationFunc func() *Outcomes[V], expe
 
 // --- Private helper functions ---
 
-func checkCondition(actual float64, op OperatorType, threshold float64) bool {
+func CheckCondition(actual float64, op OperatorType, threshold float64) bool {
 	// Use a small tolerance for float comparisons in EQ/NEQ
 	const tolerance = 1e-9
 	switch op {
@@ -293,7 +293,7 @@ func checkCondition(actual float64, op OperatorType, threshold float64) bool {
 	}
 }
 
-func metricTypeToString(m MetricType) string {
+func MetricTypeToString(m MetricType) string {
 	switch m {
 	case AvailabilityMetric:
 		return "Availability"
@@ -310,7 +310,7 @@ func metricTypeToString(m MetricType) string {
 	}
 }
 
-func operatorTypeToString(op OperatorType) string {
+func OperatorTypeToString(op OperatorType) string {
 	switch op {
 	case LT:
 		return "<"

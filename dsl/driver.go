@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv" // Need for parseLiteralValue
 
-	"github.com/panyam/leetcoach/sdl/components" // Needed for component constructors & internal funcs
+	// Needed for component constructors & internal funcs
 	"github.com/panyam/leetcoach/sdl/core"
 )
 
@@ -22,122 +22,15 @@ type AnalysisResultWrapper struct {
 }
 
 // Helper to add a log message
-func (arw *AnalysisResultWrapper) addMsg(format string, args ...any) {
+func (arw *AnalysisResultWrapper) AddMsg(format string, args ...any) {
 	arw.Messages = append(arw.Messages, fmt.Sprintf(format, args...))
 }
 
 // componentConstructor defines the type for functions that create component instances.
-type componentConstructor func(name string, params map[string]any) (any, error)
+type ComponentConstructor = func(name string, params map[string]any) (any, error)
 
-// registerBuiltinComponents registers Go component constructors in the vm's global environment.
-func _registerBuiltinComponents(vm *VM) {
-	// The value stored is the constructor function itself.
-	// The key is the name used in the DSL (e.g., "Disk").
-	vm.Env().Set("Disk", componentConstructor(func(name string, params map[string]any) (any, error) {
-		profile := "SSD" // Default
-		if p, ok := params["ProfileName"].(string); ok {
-			profile = p
-		}
-		return components.NewDisk(profile), nil
-	}))
-	vm.Env().Set("Cache", componentConstructor(func(name string, params map[string]any) (any, error) {
-		cache := components.NewCache()
-		// TODO: Apply params map to cache fields if necessary
-		return cache, nil
-	}))
-	vm.Env().Set("ResourcePool", componentConstructor(func(name string, params map[string]any) (any, error) {
-		// TODO: Extract Size, ArrivalRate, AvgHoldTime from params map with type checks/defaults
-		sizeVal, _ := params["Size"].(int64)
-		lambdaVal, _ := params["ArrivalRate"].(float64)
-		holdTimeVal, _ := params["AvgHoldTime"].(core.Duration)
-		// Add basic validation/defaults
-		if sizeVal <= 0 {
-			sizeVal = 1
-		}
-		if lambdaVal <= 0 {
-			lambdaVal = 1e-9
-		}
-		if holdTimeVal <= 0 {
-			holdTimeVal = 1e-9
-		}
-		return components.NewResourcePool(name, uint(sizeVal), lambdaVal, holdTimeVal), nil
-	}))
-	// ... register other components ...
-}
-
-// registerCoreInternalFunctions populates the registry with functions
-// needed by the declarative components' ASTs.
-func _registerCoreInternalFunctions(vm *VM) {
-	// Disk Functions
-	vm.RegisterInternalFunc("GetDiskReadProfile", func(v *VM, args []any) (any, error) {
-		profileName := "SSD"
-		if len(args) > 0 {
-			nameOutcome, ok := args[0].(*core.Outcomes[string])
-			if ok {
-				detName, okName := nameOutcome.GetValue()
-				if okName {
-					profileName = detName
-				}
-			}
-		}
-		tempDisk := components.NewDisk(profileName)
-		return tempDisk.Read(), nil
-	})
-	vm.RegisterInternalFunc("GetDiskWriteProfile", func(v *VM, args []any) (any, error) {
-		profileName := "SSD"
-		if len(args) > 0 {
-			nameOutcome, ok := args[0].(*core.Outcomes[string])
-			if ok {
-				detName, okName := nameOutcome.GetValue()
-				if okName {
-					profileName = detName
-				}
-			}
-		}
-		tempDisk := components.NewDisk(profileName)
-		return tempDisk.Write(), nil
-	})
-	vm.RegisterInternalFunc("GetRecordProcessingTime", func(v *VM, args []any) (any, error) {
-		if len(args) != 1 {
-			return nil, fmt.Errorf("expected 1 arg for GetRecordProcessingTime")
-		}
-		return args[0], nil
-	})
-	vm.RegisterInternalFunc("ScaleLatency", func(v *VM, args []any) (any, error) {
-		if len(args) != 2 {
-			return nil, fmt.Errorf("expected 2 args for ScaleLatency (outcome, factor)")
-		}
-		inputOutcomeRaw := args[0]
-		factorOutcomeRaw := args[1]
-		factorOutcome, ok := factorOutcomeRaw.(*core.Outcomes[float64])
-		if !ok {
-			return nil, fmt.Errorf("ScaleLatency factor must be float64 outcome, got %T", factorOutcomeRaw)
-		}
-		factor, ok := factorOutcome.GetValue()
-		if !ok {
-			return nil, fmt.Errorf("ScaleLatency factor must be deterministic")
-		}
-		switch inputOutcome := inputOutcomeRaw.(type) {
-		case *core.Outcomes[core.AccessResult]:
-			mapper := func(ar core.AccessResult) core.AccessResult {
-				if ar.Success {
-					ar.Latency *= factor
-				}
-				return ar
-			}
-			return core.Map(inputOutcome, mapper), nil
-		case *core.Outcomes[core.Duration]:
-			mapper := func(d core.Duration) core.Duration { return d * factor }
-			return core.Map(inputOutcome, mapper), nil
-		default:
-			return nil, fmt.Errorf("unsupported outcome type %T for ScaleLatency", inputOutcomeRaw)
-		}
-	})
-	// Add other internal funcs needed...
-}
-
-// calculateAndStoreMetrics populates the Metrics map within AnalysisResultWrapper.
-func calculateAndStoreMetrics(resultWrapper *AnalysisResultWrapper) {
+// CalculateAndStoreMetrics populates the Metrics map within AnalysisResultWrapper.
+func CalculateAndStoreMetrics(resultWrapper *AnalysisResultWrapper) {
 	if resultWrapper.Outcome == nil {
 		resultWrapper.AnalysisPerformed = false
 		return
@@ -160,13 +53,13 @@ func calculateAndStoreMetrics(resultWrapper *AnalysisResultWrapper) {
 		resultWrapper.AnalysisPerformed = (o != nil && o.Len() > 0)
 	// Add other Metricable types here
 	default:
-		resultWrapper.addMsg("Cannot calculate metrics for outcome type %T", o)
+		resultWrapper.AddMsg("Cannot calculate metrics for outcome type %T", o)
 		resultWrapper.AnalysisPerformed = false // Cannot calculate metrics
 	}
 }
 
-// parseLiteralValue converts a LiteralExpr value string to a basic Go type.
-func parseLiteralValue(lit *LiteralExpr) (any, error) {
+// ParseLiteralValue converts a LiteralExpr value string to a basic Go type.
+func ParseLiteralValue(lit *LiteralExpr) (any, error) {
 	switch lit.Kind {
 	case "STRING":
 		return lit.Value, nil
@@ -184,7 +77,7 @@ func parseLiteralValue(lit *LiteralExpr) (any, error) {
 
 // RunDSL executes the logic defined in an AST, focusing on System and Analyze blocks.
 // Returns a map of analysis names to their corresponding AnalysisResultWrapper.
-func RunDSL(astRoot Node /* options? */) (map[string]*AnalysisResultWrapper, error) {
+func RunDSL(vm *VM, astRoot Node /* options? */) (map[string]*AnalysisResultWrapper, error) {
 	analysisResults := make(map[string]*AnalysisResultWrapper)
 
 	// --- Basic Setup ---
@@ -193,9 +86,9 @@ func RunDSL(astRoot Node /* options? */) (map[string]*AnalysisResultWrapper, err
 		return analysisResults, fmt.Errorf("RunDSL currently expects *SystemDecl as root, got %T", astRoot)
 	}
 
-	vm := NewVM(15) // Default max buckets
-	// registerBuiltinComponents(vm)     // Register component constructors
-	// registerCoreInternalFunctions(vm) // Register helpers needed by decl components
+	if vm == nil {
+		vm = NewVM(15) // Default max buckets
+	}
 
 	// --- Process System ---
 	systemEnv := NewEnclosedEnvironment(vm.env)
@@ -215,7 +108,7 @@ func RunDSL(astRoot Node /* options? */) (map[string]*AnalysisResultWrapper, err
 			// We don't have a result wrapper yet to store this error in.
 			return analysisResults, err
 		}
-		constructor, isConstructor := constructorRaw.(componentConstructor)
+		constructor, isConstructor := constructorRaw.(ComponentConstructor)
 		if !isConstructor {
 			err := fmt.Errorf("type '%s' is not a constructible component", instanceDecl.ComponentType)
 			return analysisResults, err
@@ -223,7 +116,7 @@ func RunDSL(astRoot Node /* options? */) (map[string]*AnalysisResultWrapper, err
 		params := make(map[string]any)
 		for _, p := range instanceDecl.Params {
 			if lit, okLit := p.Value.(*LiteralExpr); okLit {
-				parsedVal, err := parseLiteralValue(lit)
+				parsedVal, err := ParseLiteralValue(lit)
 				if err != nil {
 					return analysisResults, fmt.Errorf("error parsing param '%s' for instance '%s': %w", p.Name, instanceDecl.Name, err)
 				}
@@ -254,14 +147,14 @@ func RunDSL(astRoot Node /* options? */) (map[string]*AnalysisResultWrapper, err
 		}
 		analysisResults[analysisName] = resultWrapper
 
-		resultWrapper.addMsg("Starting analysis '%s'...", analysisName)
+		resultWrapper.AddMsg("Starting analysis '%s'...", analysisName)
 		vm.ClearStack() // Ensure clean stack
 
 		// Evaluate the target expression
 		_, evalErr := vm.Eval(analyzeDecl.Target)
 
 		if evalErr != nil {
-			resultWrapper.addMsg("Evaluation error: %v", evalErr)
+			resultWrapper.AddMsg("Evaluation error: %v", evalErr)
 			resultWrapper.Error = evalErr
 			resultWrapper.Skipped = true
 			resultWrapper.AnalysisPerformed = false // Mark as not performed due to eval error
@@ -271,7 +164,7 @@ func RunDSL(astRoot Node /* options? */) (map[string]*AnalysisResultWrapper, err
 		// Get final outcome from stack
 		finalOutcome, stackErr := vm.GetFinalResult()
 		if stackErr != nil {
-			resultWrapper.addMsg("Stack error after evaluation: %v", stackErr)
+			resultWrapper.AddMsg("Stack error after evaluation: %v", stackErr)
 			resultWrapper.Error = stackErr
 			resultWrapper.Skipped = true
 			resultWrapper.AnalysisPerformed = false // Mark as not performed due to stack error
@@ -280,13 +173,13 @@ func RunDSL(astRoot Node /* options? */) (map[string]*AnalysisResultWrapper, err
 		resultWrapper.Outcome = finalOutcome // Store the raw *core.Outcomes[V] object
 
 		// Calculate Metrics
-		calculateAndStoreMetrics(resultWrapper) // Pass the wrapper
+		CalculateAndStoreMetrics(resultWrapper) // Pass the wrapper
 		// Log some results for feedback
 		if resultWrapper.AnalysisPerformed {
-			resultWrapper.addMsg("Analysis complete. Availability: %.6f, P99: %.6fs",
+			resultWrapper.AddMsg("Analysis complete. Availability: %.6f, P99: %.6fs",
 				resultWrapper.Metrics[core.AvailabilityMetric], resultWrapper.Metrics[core.P99LatencyMetric])
 		} else {
-			resultWrapper.addMsg("Analysis finished, but metrics could not be calculated (Outcome type: %T).", resultWrapper.Outcome)
+			resultWrapper.AddMsg("Analysis finished, but metrics could not be calculated (Outcome type: %T).", resultWrapper.Outcome)
 		}
 
 	} // End analyze loop

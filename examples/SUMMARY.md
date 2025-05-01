@@ -2,7 +2,7 @@
 
 **Purpose:**
 
-This package contains example system models built using the SDL library. These examples demonstrate how to use the core primitives and components to model real-world scenarios and analyze their performance.
+This package contains example system models built using the SDL library. These examples demonstrate how to use the core primitives and components **via the Go API** to model real-world scenarios and analyze their performance. They serve as integration tests and usage guides for the library's Go interface.
 
 **Key Examples:**
 
@@ -11,7 +11,7 @@ This package contains example system models built using the SDL library. These e
     *   Components: `IDGenerator`, `Cache` (`components.Cache`), `DatabaseComponent` (wraps `components.HashIndex`), `BitlyService` (orchestrator).
     *   Demonstrates composing cache reads/misses with database operations (`Redirect` operation).
     *   Demonstrates simple sequential operations (`ShortenURL` operation).
-    *   Uses the **Go API directly** to instantiate components and call `core.Analyze` for testing performance against expectations.
+    *   Uses `core.Analyze` for testing performance against expectations.
 
 2.  **`gpucaller/`:**
     *   Models an application server making inference requests to a pool of GPUs, including batching.
@@ -20,18 +20,17 @@ This package contains example system models built using the SDL library. These e
     *   Demonstrates using the stateless `ResourcePool` based on configured rates (`lambda`, `Ts`).
     *   Demonstrates using the `Batcher` component.
     *   Includes tests (`gpucaller_test.go`) that perform parameter sweeping (varying GPU pool size and QPS) using `core.Analyze` to evaluate SLOs under different loads.
-    *   Uses the **Go API directly**.
 
-3.  **`notifier/`:** (Partially Implemented/Conceptual)
+3.  **`notifier/`:**
     *   Models a notification system with asynchronous fan-out.
     *   Components: `NotifierService`, `MessageStore` (using `HashIndex`), `InboxStore` (using `LSMTree`), `AsyncProcessor`, CDC delay simulation.
     *   Highlights the challenge of modeling variable fan-out (message delivery to N recipients). The `AsyncProcessor` currently uses a manual expansion/approximation.
     *   Demonstrates combining synchronous (`SendMessage`) and asynchronous (CDC delay + `ProcessMessage`) paths for end-to-end analysis.
-    *   Uses the **Go API directly**.
 
 **Current Status:**
 
-*   Provides concrete usage examples for the Go API of the SDL library.
+*   Provides concrete usage examples for the **Go API** of the SDL library.
 *   Demonstrates modeling different system patterns (caching, database interaction, resource pooling, batching, basic async flows).
-*   Tests consistently use `core.Analyze` for verification.
-*   These examples serve as valuable test cases and could potentially be rewritten using the DSL once the parser and interpreter are complete.
+*   Tests consistently use `core.Analyze` for verification against performance expectations.
+*   These examples serve as valuable test cases for the `core` and `components` packages.
+*   They could potentially be rewritten using the DSL once the parser and interpreter are complete, serving as target use cases for the DSL implementation.

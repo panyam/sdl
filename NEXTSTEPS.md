@@ -1,91 +1,84 @@
 # SDL Project - Next Steps
 
-**Overall Goal:** Complete the initial functional version of the DSL VM/VM and the DSL Parser, enabling users to define, simulate, and analyze simple systems declaratively.
+**Overall Goal:** Implement the core functionality of the DSL based on **Model V4 (Implicit Outcomes + Discrete Values + Explicit Delay)**, including the VM execution logic and a basic parser, to enable declarative definition and analysis of simple systems.
 
-**Phase 4: DSL Implementation (Continued)**
+**Phase 1: VM Refactoring & Core Model V4 Implementation**
 
-**A. Complete Core VM Functionality:**
+*Goal: Update the VM's core evaluation logic to support the dual-track (value + latency) implicit model.*
 
-1.  **`ParallelExpr` Evaluator:**
-    *   Implement `evalParallelExpr`.
-    *   Design and implement a parallel reducer registry (similar to `sequentialReducers`).
-    *   Register default parallel reducers (e.g., Success=AND, Latency=MAX).
-    *   Apply reduction logic.
-    *   Add tests.
+1.  **Modify Environment:** Update `dsl.Environment` to potentially store two entries per variable (e.g., `varName` -> `Outcomes[V]`, `varName_latency` -> `Outcomes[Duration]`) or use a wrapper struct.
+2.  **Refactor `vm.Eval` Return:** Standardize how `Eval` returns results. It should probably return *both* the value outcome and the latency outcome.
+3.  **Refactor `evalAndExpr` (Sequential Composition):**
+    *   Modify to receive/return both value and latency outcomes.
+    *   Implement latency combination: `finalLat = And(latA, latB, AddDurations)`.
+    *   Implement value combination (Pragmatic "Take Last"): `finalVal = valB`. Associate `finalLat` with `finalVal`. Ensure probability/weights are handled correctly, potentially needing adjustments in `valB` based on combined success derived from `valA` and `valB`, or relying on `finalLat` carrying the combined probability implicitly. *Requires careful design and testing.*
+4.  **Refactor `evalIfStmt`:**
+    *   Modify to handle the dual tracks.
+    *   Split *both* value and latency distributions based on the condition value.
+    *   Pass split contexts (`valT`, `latT`) and (`valF`, `latF`) to recursive `evalBlockStmt` calls.
+    *   Combine results using `Append` for *both* value and latency tracks.
+5.  **Refactor `evalBlockStmt`:**
+    *   Modify to accept an initial context containing *both* value and latency outcomes.
+    *   Update sequential composition logic within the block to use the refactored `evalAndExpr` principles (combine latency, propagate last value).
+    *   Ensure it correctly returns the final value and latency outcomes for the block.
+6.  **Refactor `evalCallExpr` & `evalInternalCallExpr`:**
+    *   Ensure they correctly handle returning *both* value and latency outcomes from the called functions/methods.
+    *   Update argument handling if necessary (though Model V4 still expects deterministic args for Go methods).
+7.  **Implement `evalDelay`:**
+    *   Evaluate the duration expression (`Outcomes[Duration]`).
+    *   Combine this with the *current* implicit latency track using `And`.
+    *   Return an identity/void value outcome and the *updated* latency outcome.
+8.  **Implement `evalDistribute`:**
+    *   Evaluate probabilities.
+    *   For each branch:
+        *   Calculate effective probability `P_N`.
+        *   Split the incoming context (`val_in`, `lat_in`) by `P_N`.
+        *   Evaluate the branch block `blockN` with the split context. Get (`val_N`, `lat_N`).
+        *   *(Correction: No need to scale results by P_N here, Append handles weights)*.
+    *   Combine results from all branches using `Append` for both value and latency tracks.
+    *   Handle `default` and `totalExpr`.
+9.  **Unit Tests:** Add extensive unit tests for the refactored evaluators, focusing on correct dual-track synchronization and combination.
 
-2.  **`FanoutExpr` Evaluator:**
-    *   Implement `evalFanoutExpr`.
-    *   Evaluate the count distribution (`*Outcomes[int]`).
-    *   Iterate through count buckets.
-    *   For each count `N` and probability `P`:
-        *   Evaluate the `OpExpr` `N` times (likely using `RepeatExpr` with Parallel mode).
-        *   Handle success probability (approx `singleSuccess^N`?). Needs careful modeling.
-        *   Scale the resulting outcome by `P`.
-    *   Combine (Append) results from all count buckets.
-    *   Apply reduction.
-    *   Add tests. *(Note: This is complex and may require approximations)*.
+**Phase 2: DSL Parser Implementation**
 
-3.  **`FilterExpr` Evaluator:**
-    *   Implement `evalFilterExpr`.
-    *   Evaluate the `Input` expression.
-    *   Evaluate filter parameters (MinLatency, MaxLatency, BySuccess). Parameters must be deterministic.
-    *   Implement or refine `core.Filter` function if needed (current one might be basic).
-    *   Call `core.Filter` (or equivalent logic) using type assertion on the input outcome.
-    *   Push the filtered outcome.
-    *   Add tests.
+*Goal: Create a parser that translates DSL text (following Model V4 syntax) into the AST defined in `dsl/ast.go`.*
 
-4.  **`SwitchExpr` Evaluator:**
-    *   Implement `evalSwitchExpr`.
-    *   Evaluate the `Input` expression.
-    *   Iterate through `Cases`. For each case:
-        *   Evaluate `case.Condition`. Must yield a deterministic value of a comparable type to the Input's inner value.
-        *   Compare the Input outcome's value(s) against the case condition. This is complex with distributions - maybe only allow deterministic Input for Switch? Or match based on buckets? *Decision needed.*
-        *   If match, evaluate `case.Body` and use that as the result (signal exit like `ReturnStmt`).
-    *   Handle default case.
-    *   Add tests. *(Note: Semantics with probabilistic input need careful design)*.
+1.  **Finalize v1 Grammar:** Formally define the grammar for Model V4, including `component`, `system`, `param`, `uses`, `operation`, `instance`, `analyze`, `distribute`, `delay`, `if`, assignments, returns, expressions, etc.
+2.  **Choose Parser Library:** Confirm use of `participle` or select alternative.
+3.  **Implement Parser (`sdl/dsl/parser.go`):** Write parser code to generate the AST.
+4.  **Parser Unit Tests:** Test parsing of various valid DSL constructs and verify correct error reporting for invalid syntax.
 
-5.  **Refine Top-Level Driver (`driver.go`):**
-    *   Handle `ast.File` input (iterate through declarations).
-    *   Process `ComponentDecl` - store definitions for instantiation.
-    *   Refine `InstanceDecl` evaluation: Handle non-literal parameters (e.g., references), resolve `uses` dependencies.
-    *   Improve component constructor registration and parameter handling.
-    *   Implement parsing/handling of `OptionsDecl`.
-    *   Add support for `expect` clauses in `AnalyzeDecl` (requires extending `evalMemberAccessExpr` for metrics like `.P99`, `.Availability`).
+**Phase 3: Integration, Remaining Evaluators & Refinements**
 
-6.  **Refine `evalMemberAccessExpr`:**
-    *   Add support for accessing metrics directly (e.g., `myResult.P99`, `myResult.Availability`). This would involve calculating the metric on the receiver outcome and returning a new deterministic `Outcomes[float64]` or `Outcomes[Duration]`.
+*Goal: Connect parser to VM, implement remaining features, and refine.*
 
-7.  **Error Handling & Stack Management:**
-    *   Improve error messages with position info (requires passing `NodeInfo` through calls).
-    *   Ensure stack is consistently managed, especially on error paths.
-    *   Add more robust type checking during combinations and calls.
+1.  **Integrate Parser & Driver:** Modify `RunDSL` (or create a new entry point) to accept DSL file paths/strings, parse them using the new parser, and execute the resulting AST with the refactored VM.
+2.  **Implement Remaining Evaluators:**
+    *   `evalParallelExpr` (Requires parallel reducer design).
+    *   `evalFanoutExpr` (Complex, may need approximations).
+    *   `evalFilterExpr` (Requires core filtering logic).
+    *   `evalSwitchExpr` (Requires clear semantics for discrete matching).
+3.  **Refine Driver (`RunDSL`):**
+    *   Improve component instantiation (handle non-literal params, `uses` dependencies).
+    *   Implement `options` handling.
+    *   Add `expect` clause parsing and evaluation within `AnalyzeDecl` (requires metric access).
+4.  **Implement Metric Access:** Refine `evalMemberAccessExpr` to support accessing calculated metrics like `.P99`, `.Availability` from result variables, returning deterministic `Outcomes[float64]` etc.
+5.  **Error Handling:** Improve error reporting throughout the VM and driver, including positional information from the parser.
+6.  **Cleanup:** Remove the `.And` field from `core.Outcomes` and update core callers (VM now handles reducer selection).
 
-8.  **Refinements & Cleanup:**
-    *   Remove the `.And` field from `core.Outcomes` and update callers.
-    *   Optimize Reducer Registry lookup (e.g., using type IDs instead of strings).
-    *   Add more internal function implementations needed by `decl` components (math helpers, etc.).
+**Phase 4: Documentation & Examples**
 
+*Goal: Make the DSL usable by others.*
 
-**B. Implement DSL Parser (Milestone 4.1 from Roadmap):**
+1.  **Write DSL Documentation:** Create documentation explaining the Model V4 syntax, semantics, built-in components, and how to write and analyze systems.
+2.  **Rewrite Examples:** Convert at least one example from `sdl/examples` (e.g., `gpucaller` or `bitly`) to use the new DSL.
+3.  **Add DSL Tests:** Create test files (`*.sdl`) and use `RunDSL` within Go tests to verify end-to-end DSL execution and analysis results.
 
-1.  **Finalize v1 Grammar:** Solidify the syntax based on implemented AST nodes.
-2.  **Implement Parser (`sdl/dsl/parser.go`):** Use `participle` (or chosen library) to parse DSL text into the defined AST (`ast.go`).
-3.  **Parser Unit Tests:** Test parsing of various declaration structures. Test error reporting.
+**Suggested Order:**
 
-**C. Integration & Documentation:**
+1.  **Phase 1 (VM Refactoring & Core Model V4):** Focus heavily here first, as it's the most fundamental change. Implement `delay` and `distribute` early. Ensure `And`, `If`, `Block`, `Call` handle dual tracks correctly. *(This is the highest priority)*.
+2.  **Phase 2 (Parser):** Implement the parser once the target AST and basic V4 semantics are stable.
+3.  **Phase 3 (Integration & Remaining Evaluators):** Connect parser/VM. Implement metric access needed for `expect`. Implement `ParallelExpr`. Refine the driver. Defer `FanoutExpr`, `FilterExpr`, `SwitchExpr` if needed to reach a usable v1 faster.
+4.  **Phase 4 (Docs & Examples):** Document the usable subset and rewrite an example.
 
-1.  **Integrate Parser & Driver:** Modify `RunDSL` (or add a new entry point) to accept DSL file input, parse it, and then execute the resulting AST.
-2.  **Examples:** Rewrite one of the `sdl/examples` (e.g., `gpucaller`) using the DSL.
-3.  **Documentation:** Write initial user documentation for the v1 DSL syntax and how to run analyses.
-
-
-**Suggested Next Steps Order:**
-
-1.  **`evalMemberAccessExpr` (for metrics):** Implement access for `.Availability`, `.MeanLatency`, `.P50`, `.P99` to enable `expect` clauses later.
-2.  **`ParallelExpr`:** Implement parallel composition (relatively contained, builds on registry pattern).
-3.  **Refine Driver:** Improve component instantiation, parameter handling in `RunDSL`.
-4.  **Parser:** Implement the DSL parser (`parser.go`).
-5.  **Integration:** Connect parser to driver.
-6.  **Remaining Evaluators:** Implement `FanoutExpr`, `FilterExpr`, `SwitchExpr` (potentially deferring complex ones).
-7.  **Error Handling/Refinement:** Continuous improvement.
-8.  **Remove `.And` field:** Cleanup `core.Outcomes`.
+This provides a roadmap focused on delivering the core Model V4 DSL experience.

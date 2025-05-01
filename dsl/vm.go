@@ -62,6 +62,16 @@ func (v *VM) Env() *Environment {
 	return v.env
 }
 
+// Helper to provide access to VM environment during setup
+func (v *VM) SetEnv(e *Environment) {
+	v.env = e
+}
+
+// Helper to access outer environment
+func (e *Environment) Outer() *Environment {
+	return e.outer
+}
+
 // --- Stack Operations ---
 
 func (v *VM) push(val any) {
