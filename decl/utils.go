@@ -35,6 +35,10 @@ func newIdent(name string) *IdentifierExpr {
 	return &IdentifierExpr{Name: name}
 }
 
+func newStringLit(val string) *LiteralExpr {
+	return &LiteralExpr{Kind: "STRING", Value: val}
+}
+
 func newLetStmt(varName string, value Expr) *LetStmt {
 	return &LetStmt{Variable: newIdent(varName), Value: value}
 }
