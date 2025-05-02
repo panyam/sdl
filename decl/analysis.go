@@ -23,9 +23,6 @@ func (arw *AnalysisResultWrapper) AddMsg(format string, args ...any) {
 	arw.Messages = append(arw.Messages, fmt.Sprintf(format, args...))
 }
 
-// componentConstructor defines the type for functions that create component instances.
-type ComponentConstructor = func(name string, params map[string]any) (any, error)
-
 // CalculateAndStoreMetrics populates the Metrics map within AnalysisResultWrapper.
 func CalculateAndStoreMetrics(resultWrapper *AnalysisResultWrapper) {
 	if resultWrapper.Outcome == nil {

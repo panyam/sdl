@@ -43,7 +43,7 @@ func (n *NodeInfo) String() string { return "{Node}" } // Default stringer
 // File represents the top-level node of a parsed DSL file.
 type File struct {
 	NodeInfo
-	declarations []Node // Component, System, Options, Enum, Import
+	declarations []Node // ComponentDecl, SystemDecl, Options, Enum, Import
 }
 
 func (f *File) String() string {
@@ -86,20 +86,20 @@ type Import struct {
 
 func (i *Import) String() string { return fmt.Sprintf("import %s;", i.Path) }
 
-// --- Component Definition ---
+// --- ComponentDecl Definition ---
 
-// Component represents `component Name { ... }`
-type Component struct {
+// ComponentDecl represents `component Name { ... }`
+type ComponentDecl struct {
 	NodeInfo
-	Name *IdentifierExpr     // Component type name
-	Body []ComponentBodyItem // Param, Uses, MethodDef
+	Name *IdentifierExpr         // ComponentDecl type name
+	Body []ComponentDeclBodyItem // ParamDecl, UsesDecl, MethodDef
 }
 
-func (c *Component) String() string         { return fmt.Sprintf("component %s { ... }", c.Name) }
-func (c *Component) componentBodyItemNode() {}
+func (c *ComponentDecl) String() string         { return fmt.Sprintf("component %s { ... }", c.Name) }
+func (c *ComponentDecl) componentBodyItemNode() {}
 
-// ComponentBodyItem marker interface for items allowed in Component body.
-type ComponentBodyItem interface {
+// ComponentDeclBodyItem marker interface for items allowed in ComponentDecl body.
+type ComponentDeclBodyItem interface {
 	Node
 	componentBodyItemNode()
 }
@@ -128,16 +128,16 @@ func (t *TypeName) Name() string {
 
 func (t *TypeName) String() string { return t.Name() }
 
-// Param represents `param name: TypeName [= defaultExpr];`
-type Param struct {
+// ParamDecl represents `param name: TypeName [= defaultExpr];`
+type ParamDecl struct {
 	NodeInfo
 	Name         *IdentifierExpr
 	Type         *TypeName
 	DefaultValue Expr // Optional
 }
 
-func (p *Param) componentBodyItemNode() {}
-func (p *Param) String() string {
+func (p *ParamDecl) componentBodyItemNode() {}
+func (p *ParamDecl) String() string {
 	s := fmt.Sprintf("param %s: %s", p.Name, p.Type)
 	if p.DefaultValue != nil {
 		s += fmt.Sprintf(" = %s", p.DefaultValue)
@@ -145,22 +145,22 @@ func (p *Param) String() string {
 	return s + ";"
 }
 
-// Uses represents `uses varName: ComponentType [{ overrides }];`
-type Uses struct {
+// UsesDecl represents `uses varName: ComponentType [{ overrides }];`
+type UsesDecl struct {
 	NodeInfo
 	Name          *IdentifierExpr
 	ComponentType *IdentifierExpr // Type name of the dependency
 }
 
-func (u *Uses) componentBodyItemNode() {}
-func (u *Uses) String() string         { return fmt.Sprintf("uses %s: %s;", u.Name, u.ComponentType) }
+func (u *UsesDecl) componentBodyItemNode() {}
+func (u *UsesDecl) String() string         { return fmt.Sprintf("uses %s: %s;", u.Name, u.ComponentType) }
 
 // MethodDef represents `method name(params) [: returnType] { body }`
 type MethodDef struct {
 	NodeInfo
 	Name       *IdentifierExpr
-	Parameters []*Param  // Signature parameters (can be empty)
-	ReturnType *TypeName // Optional return type (primitive or enum)
+	Parameters []*ParamDecl // Signature parameters (can be empty)
+	ReturnType *TypeName    // Optional return type (primitive or enum)
 	Body       *BlockStmt
 }
 
@@ -173,33 +173,33 @@ func (o *MethodDef) String() string {
 	return fmt.Sprintf("method %s(...) %s { ... }", o.Name, retType)
 }
 
-// --- System Definition ---
+// --- SystemDecl Definition ---
 
-// System represents `system Name { ... }`
-type System struct {
+// SystemDecl represents `system Name { ... }`
+type SystemDecl struct {
 	NodeInfo
 	Name *IdentifierExpr
-	Body []SystemBodyItem // Instance, Analyze, Options, LetStmt
+	Body []SystemDeclBodyItem // InstanceDecl, Analyze, Options, LetStmt
 }
 
-func (s *System) String() string { return fmt.Sprintf("system %s { ... }", s.Name) }
+func (s *SystemDecl) String() string { return fmt.Sprintf("system %s { ... }", s.Name) }
 
-// SystemBodyItem marker interface for items allowed in System body.
-type SystemBodyItem interface {
+// SystemDeclBodyItem marker interface for items allowed in SystemDecl body.
+type SystemDeclBodyItem interface {
 	Node
 	systemBodyItemNode()
 }
 
-// Instance represents `instanceName: ComponentType = { overrides };`
-type Instance struct {
+// InstanceDecl represents `instanceName: ComponentType = { overrides };`
+type InstanceDecl struct {
 	NodeInfo
 	Name          *IdentifierExpr
 	ComponentType *IdentifierExpr
 	Overrides     []*AssignmentStmt // Changed from Params
 }
 
-func (i *Instance) systemBodyItemNode() {}
-func (i *Instance) String() string {
+func (i *InstanceDecl) systemBodyItemNode() {}
+func (i *InstanceDecl) String() string {
 	return fmt.Sprintf("instance %s: %s = { ... };", i.Name, i.ComponentType)
 }
 
@@ -529,7 +529,7 @@ func (f *FanoutExpr) String() string {
 
 // --- Statement Nodes ---
 
-// AssignmentStmt represents setting a parameter value in an Instance.
+// AssignmentStmt represents setting a parameter value in an InstanceDecl.
 type AssignmentStmt struct {
 	NodeInfo
 	Var      *IdentifierExpr

@@ -358,3 +358,243 @@ func TestEvalIfStmt(t *testing.T) {
 	assertLeafInt(t, ifNode3.Else, 99)
 	t.Logf("Eval(complex if block): %s", resBlock)
 }
+
+func TestEvalInstanceDecl(t *testing.T) {
+	vm, env := setupTestVM()
+
+	// Register the mock component constructor
+	vm.RegisterComponent("MockDisk", NewMockDiskComponent)
+
+	// Define System AST: system MySys { instance d1: MockDisk = { ProfileName = "HDD"; ReadLatency = 123; }; }
+	sysAST := newSysDecl("MySys",
+		newInstDecl("d1", "MockDisk",
+			newAssignStmt("ProfileName", &LiteralExpr{Kind: "STRING", Value: "HDD"}),
+			newAssignStmt("ReadLatency", newIntLit("123")), // Use INT literal
+		),
+	)
+
+	// Evaluate the System
+	resSys, errSys := Eval(sysAST, env, vm)
+	require.NoError(t, errSys)
+	assertNilNode(t, resSys) // System eval has side effects, returns Nil
+
+	// Verify environment state
+	instanceVal, ok := env.Get("d1")
+	require.True(t, ok, "Instance 'd1' not found in environment after system evaluation")
+
+	// Check the type and values of the stored Go instance
+	mockDiskInstance, okCast := instanceVal.(*MockDisk)
+	require.True(t, okCast, "Stored value for 'd1' is not a *MockDisk, got %T", instanceVal)
+
+	assert.Equal(t, "d1", mockDiskInstance.InstanceName)
+	assert.Equal(t, "HDD", mockDiskInstance.Profile)
+	assert.Equal(t, 123.0, mockDiskInstance.ReadLatency) // Constructor converted int64->float64
+
+	t.Logf("Env after system eval: %s", env)
+	t.Logf("Retrieved instance 'd1': %+v", mockDiskInstance)
+
+	// Test error case: Unknown component type
+	sysBadTypeAST := newSysDecl("MySysBad", newInstDecl("d2", "NoSuchComponent"))
+	_, errBadType := Eval(sysBadTypeAST, env, vm)
+	require.Error(t, errBadType)
+	assert.Contains(t, errBadType.Error(), "unknown component type 'NoSuchComponent'")
+	t.Logf("Eval(unknown component): %s", errBadType)
+
+	// Test error case: Bad override value type (using temporary logic)
+	sysBadOverrideAST := newSysDecl("MySysBadOverride",
+		newInstDecl("d3", "MockDisk",
+			newAssignStmt("ReadLatency", newBoolLit("true")), // Wrong type
+		),
+	)
+	_, errBadOverride := Eval(sysBadOverrideAST, env, vm)
+	require.Error(t, errBadOverride)
+	// Check error message (might depend on exact checks in constructor/eval)
+	assert.Contains(t, errBadOverride.Error(), "invalid type for 'ReadLatency' override")
+	t.Logf("Eval(bad override): %s", errBadOverride)
+
+	// Test error case: Duplicate identifier
+	sysDuplicateAST := newSysDecl("MySysDupl",
+		newInstDecl("d1", "MockDisk"), // d1 already exists from first eval
+	)
+	_, errDuplicate := Eval(sysDuplicateAST, env, vm) // Should fail
+	require.Error(t, errDuplicate)
+	assert.Contains(t, errDuplicate.Error(), "identifier 'd1' already exists")
+	t.Logf("Eval(duplicate instance): %s", errDuplicate)
+
+}
+
+// Refine evalIdentifier test slightly
+func TestEvalIdentifier_Refined(t *testing.T) {
+	vm, env := setupTestVM()
+
+	// Store an OpNode
+	expectedOpNode := &LeafNode{State: createBoolState(true)}
+	env.Set("dslVar", expectedOpNode)
+
+	// Store a Go component instance (should NOT be resolved by evalIdentifier)
+	goInstance := &MockDisk{InstanceName: "testDisk"}
+	env.Set("goVar", goInstance)
+
+	// Test resolving DSL variable
+	resOp, errOp := Eval(newIdent("dslVar"), env, vm)
+	require.NoError(t, errOp)
+	assert.Same(t, expectedOpNode, resOp)
+
+	// Test resolving identifier pointing to Go instance (should fail cleanly)
+	// NOTE: This depends on evalIdentifier correctly checking the type retrieved from Env
+	// Let's update evalIdentifier to do this check explicitly if it wasn't there.
+
+	// Re-check evalIdentifier implementation: It does have the type check now.
+	_, errGo := Eval(newIdent("goVar"), env, vm)
+	require.Error(t, errGo)
+	assert.Contains(t, errGo.Error(), "internal error: expected OpNode") // Correct error path
+	t.Logf("Eval(goVar identifier): %s", errGo)
+}
+
+// Test Definition Registration
+func TestEvalComponentDecl(t *testing.T) {
+	vm, _ := setupTestVM() // Env not used directly here
+
+	compAST := newCompDecl("MyComp",
+		newParamDecl("Size", "int"),
+		newUsesDecl("log", "Logger"),
+		// Add method def later if needed for testing
+	)
+
+	res, err := Eval(compAST, nil, vm) // Pass vm
+	require.NoError(t, err)
+	assertNilNode(t, res) // Definition returns NilNode
+
+	// Check VM definition registry
+	compDef, found := vm.ComponentDefRegistry["MyComp"]
+	require.True(t, found, "Component definition 'MyComp' not found in registry")
+	assert.Same(t, compAST, compDef.Node) // Check if AST node is stored
+
+	// Check processed parts
+	require.Contains(t, compDef.Params, "Size")
+	assert.Equal(t, "Size", compDef.Params["Size"].Name.Name)
+
+	require.Contains(t, compDef.Uses, "log")
+	assert.Equal(t, "log", compDef.Uses["log"].Name.Name)
+	assert.Equal(t, "Logger", compDef.Uses["log"].ComponentType.Name)
+
+	// Test duplicate definition
+	_, errDup := Eval(compAST, nil, vm)
+	require.Error(t, errDup)
+	assert.Contains(t, errDup.Error(), "already defined")
+}
+
+// Test Instance Decl with Dependency Injection
+func TestEvalInstanceDecl_WithUses(t *testing.T) {
+	vm, env := setupTestVM()
+
+	// 1. Define components needed
+	diskCompAST := newCompDecl("MyDisk", newParamDecl("Profile", "string"))
+	svcCompAST := newCompDecl("MySvc",
+		newUsesDecl("db", "MyDisk"), // Depends on MyDisk
+		newParamDecl("Timeout", "int"),
+	)
+	_, err := Eval(diskCompAST, nil, vm)
+	require.NoError(t, err)
+	_, err = Eval(svcCompAST, nil, vm)
+	require.NoError(t, err)
+
+	// 2. Register Go constructors for them
+	// Use MockDiskComponent for MyDisk def
+	vm.RegisterComponent("MyDisk", NewMockDiskComponent)
+	// Use MockSvcComponent for MySvc def
+	vm.RegisterComponent("MySvc", NewMockSvcComponent)
+
+	// 3. Define System AST to instantiate them
+	sysAST := newSysDecl("DepSys",
+		// Instantiate the dependency first
+		newInstDecl("theDbInstance", "MyDisk",
+			newAssignStmt("ProfileName", &LiteralExpr{Kind: "STRING", Value: "SSD"}),
+		),
+		// Instantiate the service, providing the dependency
+		newInstDecl("theSvcInstance", "MySvc",
+			newAssignStmt("db", newIdent("theDbInstance")), // Assign instance to 'uses' field
+			newAssignStmt("Timeout", newIntLit("500")),     // Assign regular param
+		),
+	)
+
+	// 4. Evaluate the System
+	resSys, errSys := Eval(sysAST, env, vm)
+	require.NoError(t, errSys)
+	assertNilNode(t, resSys)
+
+	// 5. Verify environment state
+	// Check DB instance
+	dbVal, okDb := env.Get("theDbInstance")
+	require.True(t, okDb, "Instance 'theDbInstance' not found")
+	mockDisk, okDisk := dbVal.(*MockDisk)
+	require.True(t, okDisk, "theDbInstance is not *MockDisk")
+	assert.Equal(t, "SSD", mockDisk.Profile)
+
+	// Check Service instance
+	svcVal, okSvc := env.Get("theSvcInstance")
+	require.True(t, okSvc, "Instance 'theSvcInstance' not found")
+	mockSvc, okSvcCast := svcVal.(*MockSvc)
+	require.True(t, okSvcCast, "theSvcInstance is not *MockSvc")
+
+	// Verify injected dependency
+	require.NotNil(t, mockSvc.DB, "Dependency 'DB' should have been injected")
+	injectedDisk, okInject := mockSvc.DB.(*MockDisk) // Check type of injected dep
+	require.True(t, okInject, "Injected dependency is not *MockDisk")
+	assert.Same(t, mockDisk, injectedDisk, "Injected disk is not the same instance as theDbInstance") // Verify it's the *same* instance
+
+	// Verify param override
+	assert.Equal(t, int64(500), mockSvc.Timeout)
+
+	t.Logf("Env after DepSys eval: %s", env)
+	t.Logf("Retrieved instance 'theSvcInstance': %+v", mockSvc)
+	t.Logf("Retrieved dependency 'theSvcInstance.DB': %+v", mockSvc.DB)
+
+	// Test error: Missing dependency override
+	sysMissingDepAST := newSysDecl("MissingDepSys",
+		newInstDecl("svcMissingDep", "MySvc",
+			// Missing assignment for 'db'
+			newAssignStmt("Timeout", newIntLit("1")),
+		),
+	)
+	_, errMissingDep := Eval(sysMissingDepAST, env, vm)
+	require.Error(t, errMissingDep)
+	assert.Contains(t, errMissingDep.Error(), "missing override to satisfy 'uses db:")
+	t.Logf("Eval(missing dependency): %s", errMissingDep)
+
+	// Test error: Dependency not found in env
+	sysDepNotFoundAST := newSysDecl("DepNotFoundSys",
+		newInstDecl("svcDepNotFound", "MySvc",
+			newAssignStmt("db", newIdent("nonExistentDb")), // Identifier not defined
+			newAssignStmt("Timeout", newIntLit("1")),
+		),
+	)
+	_, errDepNotFound := Eval(sysDepNotFoundAST, env, vm)
+	require.Error(t, errDepNotFound)
+	assert.ErrorIs(t, errDepNotFound, ErrNotFound) // Eval of identifier fails
+	t.Logf("Eval(dependency not found): %s", errDepNotFound)
+}
+
+// Re-run existing TestEvalInstanceDecl as TestEvalInstanceDecl_SimpleOverrides
+func TestEvalInstanceDecl_SimpleOverrides(t *testing.T) {
+	// Renamed test, code from previous TestEvalInstanceDecl goes here
+	vm, env := setupTestVM()
+	vm.RegisterComponent("MockDisk", NewMockDiskComponent)
+	sysAST := newSysDecl("MySys",
+		newInstDecl("d1", "MockDisk",
+			newAssignStmt("ProfileName", &LiteralExpr{Kind: "STRING", Value: "HDD"}),
+			newAssignStmt("ReadLatency", newIntLit("123")),
+		),
+	)
+	// ... (rest of the assertions from the original TestEvalInstanceDecl) ...
+	resSys, errSys := Eval(sysAST, env, vm)
+	require.NoError(t, errSys)
+	assertNilNode(t, resSys)
+	instanceVal, ok := env.Get("d1")
+	require.True(t, ok)
+	mockDiskInstance, okCast := instanceVal.(*MockDisk)
+	require.True(t, okCast)
+	assert.Equal(t, "d1", mockDiskInstance.InstanceName)
+	assert.Equal(t, "HDD", mockDiskInstance.Profile)
+	assert.Equal(t, 123.0, mockDiskInstance.ReadLatency)
+}
