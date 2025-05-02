@@ -125,10 +125,10 @@ Create a user-friendly, declarative Domain Specific Language (DSL) for defining 
 
 Couple of notes:
 * distribute is a statement.
-* There is also an expression version of it `dist` which can be passed as values:
+* There is also an expression version of it `distribution` which can be passed as values:
   ```
   // x will be of type Enum<val1, val2, val3, val4>
-  x := dist Total {
+  x := distribute Total {
     a => val1
     b => val2
     c => val3
@@ -136,17 +136,17 @@ Couple of notes:
   }
   
   // Add the latency given by above
-  wait x
+  delay x
   ```
 * Total, a, b and c should eval to a number.  `_` is the "default" case and is used for Total - (a + b + c).  If this
   resolves to <= 0 then default is ignored.
 * val1, val2, val3 ... should all be members of the SAME enum set.
-* Using this we could do `Delay(x)` or `wait x` or `latency x` 
+* Using this we could do `Delay(x)` or `latency x` 
 * The above can be written using a `distribute` statement:
   ```
   distribute Total {
     a => disk.Write()
-    b => wait 20
+    b => delay 20
     c => disk.Read()
     _ => ;
   }

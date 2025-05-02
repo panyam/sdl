@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	gfn "github.com/panyam/goutils/fn"
 )
 
 // --- Interfaces ---
@@ -58,7 +60,8 @@ type Options struct {
 	Body *BlockStmt // Placeholder for options assignments?
 }
 
-func (o *Options) String() string { return "options { ... }" }
+func (o *Options) systemBodyItemNode() {}
+func (o *Options) String() string      { return "options { ... }" }
 
 // Enum represents `enum Name { Val1, Val2, ... };`
 type Enum struct {
@@ -92,7 +95,8 @@ type Component struct {
 	Body []ComponentBodyItem // Param, Uses, MethodDef
 }
 
-func (c *Component) String() string { return fmt.Sprintf("component %s { ... }", c.Name) }
+func (c *Component) String() string         { return fmt.Sprintf("component %s { ... }", c.Name) }
+func (c *Component) componentBodyItemNode() {}
 
 // ComponentBodyItem marker interface for items allowed in Component body.
 type ComponentBodyItem interface {
@@ -103,10 +107,26 @@ type ComponentBodyItem interface {
 // TypeName represents primitive types or registered enum identifiers.
 type TypeName struct {
 	NodeInfo
-	Name string // "int", "float", "bool", "string", "duration", or an Enum identifier
+	// Can be one of the following
+	PrimitiveTypeName string // "int", "float", "bool", "string", "duration", or an Enum identifier
+	EnumTypeName      string
+	OutcomeTypeName   string
 }
 
-func (t *TypeName) String() string { return t.Name }
+func (t *TypeName) Name() string {
+	if t.PrimitiveTypeName != "" {
+		return t.PrimitiveTypeName
+	}
+	if t.EnumTypeName != "" {
+		return t.EnumTypeName
+	}
+	if t.OutcomeTypeName != "" {
+		return t.OutcomeTypeName
+	}
+	return ""
+}
+
+func (t *TypeName) String() string { return t.Name() }
 
 // Param represents `param name: TypeName [= defaultExpr];`
 type Param struct {
@@ -130,7 +150,6 @@ type Uses struct {
 	NodeInfo
 	Name          *IdentifierExpr
 	ComponentType *IdentifierExpr // Type name of the dependency
-	// Overrides removed - handled in Instance
 }
 
 func (u *Uses) componentBodyItemNode() {}
@@ -183,17 +202,6 @@ func (i *Instance) systemBodyItemNode() {}
 func (i *Instance) String() string {
 	return fmt.Sprintf("instance %s: %s = { ... };", i.Name, i.ComponentType)
 }
-
-// AssignmentStmt represents `paramName = valueExpr;` within Instance overrides
-// Also used for `let var = expr` ? No, let's use LetStmt explicitly.
-// Renamed to InstanceAssignmentStmt for clarity within Instance.
-type InstanceAssignmentStmt struct {
-	NodeInfo
-	Name  *IdentifierExpr
-	Value Expr // Can be LiteralExpr or IdentifierExpr (referencing another instance)
-}
-
-func (p *InstanceAssignmentStmt) String() string { return fmt.Sprintf("%s = %s;", p.Name, p.Value) }
 
 // Analyze represents `analyze name = callExpr expect { ... };`
 type Analyze struct {
@@ -320,16 +328,16 @@ type DelayStmt struct {
 func (d *DelayStmt) stmtNode()      {}
 func (d *DelayStmt) String() string { return fmt.Sprintf("delay %s;", d.Duration) }
 
-// RepeatStmt represents `repeat(countExpr, Mode) { body }`
-type RepeatStmt struct {
+// WaitStmt represents `delay durationExpr;`
+type WaitStmt struct {
 	NodeInfo
-	Count Expr // Must evaluate to int outcome
-	Mode  ExecutionMode
-	Body  *BlockStmt
+	Idents []*IdentifierExpr // Must evaluate to Duration outcome
 }
 
-func (r *RepeatStmt) stmtNode()      {}
-func (r *RepeatStmt) String() string { return fmt.Sprintf("repeat(%s, %s) { ... }", r.Count, r.Mode) }
+func (d *WaitStmt) stmtNode() {}
+func (d *WaitStmt) String() string {
+	return fmt.Sprintf("wait %s;", strings.Join(gfn.Map(d.Idents, func(i *IdentifierExpr) string { return i.Name }), ", "))
+}
 
 // ExecutionMode determines sequential or parallel execution.
 type ExecutionMode string // Use string for simplicity
@@ -342,11 +350,14 @@ const (
 // GoStmt represents `parallel { stmt* }`
 type GoStmt struct {
 	NodeInfo
-	Body *BlockStmt
+	VarName *IdentifierExpr
+	// Can call a async/parallel on a statement or an expression
+	Stmt *BlockStmt
+	Expr *Expr
 }
 
 func (p *GoStmt) stmtNode()      {}
-func (p *GoStmt) String() string { return "parallel { ... }" }
+func (p *GoStmt) String() string { return "go { ... }" }
 
 // LogStmt represents `log "message", expr1, expr2;`
 type LogStmt struct {
@@ -442,46 +453,20 @@ func (c *CallExpr) String() string {
 	return fmt.Sprintf("%s(%s)", c.Function, strings.Join(argsStr, ", "))
 }
 
-// GoExpr struct and String()
-type GoExpr struct {
+// SwitchStmt represents conditional branching
+type SwitchStmt struct {
 	NodeInfo
-	Left, Right Expr
+	Input   Expr
+	Cases   []*CaseExpr /* ; Default *BlockExpr */
+	Default Expr
 }
 
-func (p *GoExpr) exprNode()      {}
-func (p *GoExpr) String() string { return fmt.Sprintf("(%s || %s)", p.Left, p.Right) }
-
-// InternalCallExpr struct and String()
-type InternalCallExpr struct {
-	NodeInfo
-	FuncName string
-	Args     []Expr
-}
-
-func (ic *InternalCallExpr) exprNode() {}
-func (ic *InternalCallExpr) String() string { /* ... implementation ... */
-	argsStr := []string{}
-	for _, arg := range ic.Args {
-		argsStr = append(argsStr, arg.String())
-	}
-	return fmt.Sprintf("Internal.%s(%s)", ic.FuncName, strings.Join(argsStr, ", "))
-}
-
-// --- Added missing nodes from previous discussion ---
-
-// SwitchExpr represents conditional branching
-type SwitchExpr struct {
-	NodeInfo
-	Input Expr
-	Cases []*CaseExpr /* ; Default *BlockExpr */
-}
-
-func (s *SwitchExpr) exprNode() {}
-func (s *SwitchExpr) String() string { /* Basic string representation */
+func (s *SwitchStmt) exprNode() {}
+func (s *SwitchStmt) String() string { /* Basic string representation */
 	return fmt.Sprintf("switch(%s){...}", s.Input)
 }
 
-// CaseExpr represents a single case within a SwitchExpr
+// CaseExpr represents a single case within a SwitchStmt
 type CaseExpr struct {
 	NodeInfo
 	Condition Expr
@@ -491,6 +476,7 @@ type CaseExpr struct {
 func (c *CaseExpr) exprNode()      {}
 func (c *CaseExpr) String() string { return fmt.Sprintf("case %s: %s", c.Condition, c.Body) }
 
+/** Disable Filter and Repeat for now
 // FilterExpr represents filtering buckets
 type FilterExpr struct {
 	NodeInfo
@@ -509,7 +495,10 @@ type FilterParams struct {
 }
 
 func (f *FilterParams) exprNode()      {}
-func (f *FilterParams) String() string { /* Basic string representation */ return "{FilterParams...}" }
+func (f *FilterParams) String() string {
+	// Basic string representation
+	return "{FilterParams...}"
+}
 
 // RepeatExpr represents Op repeated N times
 type RepeatExpr struct {
@@ -536,29 +525,38 @@ func (f *FanoutExpr) exprNode() {}
 func (f *FanoutExpr) String() string {
 	return fmt.Sprintf("fanout(%s, %s, %s)", f.CountDist, f.OpExpr, f.Mode)
 }
+*/
 
 // --- Statement Nodes ---
 
 // AssignmentStmt represents setting a parameter value in an Instance.
 type AssignmentStmt struct {
 	NodeInfo
-	Name     string
+	Var      *IdentifierExpr
 	Value    Expr   // The value assigned to the parameter
 	IsLet    string // whether this is a let statement
 	IsFuture string // whether this is a future
 }
 
-func (p *AssignmentStmt) String() string { return fmt.Sprintf("%s = %s", p.Name, p.Value) }
+func (p *AssignmentStmt) String() string { return fmt.Sprintf("%s = %s", p.Var.Name, p.Value) }
 
 // DistributeExpr represents the probabilistic choice expression/statement
 type DistributeExpr struct {
 	NodeInfo
-	ReturnType string // If used as expression, expected return type name
-	TotalProb  Expr   // Optional total probability expression
-	Cases      []*DistributeCase
-	Default    *BlockStmt // Optional default block
+	TotalProb Expr // Optional total probability expression
+	Cases     []*DistributeExprCase
+	Default   Expr
 }
 
 func (d *DistributeExpr) exprNode()      {} // Can be expression
 func (d *DistributeExpr) stmtNode()      {} // Can be statement
 func (d *DistributeExpr) String() string { return "distribute {...}" }
+
+// DistributeExprnCase represents `probExpr => { block }`
+type DistributeExprCase struct {
+	NodeInfo
+	Probability Expr // Must evaluate to float outcome
+	Body        Expr
+}
+
+func (d *DistributeExprCase) String() string { return fmt.Sprintf("%s => { ... }", d.Probability) }

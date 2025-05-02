@@ -23,7 +23,7 @@ TypeName = PrimitiveType | OutcomeType | identifier /* For registered Enums */ ;
 PrimitiveType = "int" | "float" | "string" | "bool" | "duration" ;
 OutcomeType = "Outcome" "[" PrimitiveType "]" ;
 
-UsesDecl = "uses" identifier ":" identifier ["{" Assignment* "}"] ";" ; // varName: ComponentType { overrides }
+UsesDecl = "uses" identifier ":" identifier ["{" Assignment* "}"] ";" ;
 
 // *** Refine MethodDef ***
 MethodDef = "method" identifier "(" [ParamList] ")" [":" TypeName] BlockStmt ;
@@ -37,7 +37,7 @@ SystemBodyItem = InstanceDecl
                 | LetStmt /* Allow system-level constants? */
                 ;
 
-InstanceDecl = identifier ":" identifier ["=" "{" Assignment* "}"] ";" ; // instanceName: ComponentType = { overrides }
+InstanceDecl = identifier ":" identifier ["=" "{" Assignment* "}"] ";" ;
 
 // *** Refine AnalyzeDecl ***
 AnalyzeDecl = "analyze" identifier "=" Expression [ExpectBlock] ";" ; // analysisName = instance.Method(args)
@@ -100,9 +100,12 @@ PrimaryExpr = LiteralExpr
             | MemberAccessExpr // instance.param or self.param ONLY
             | CallExpr         // func(args) or instance.method(args)
             | DistributeExpr   // Keep separate from DistributeStmt for now
-            | InternalCallExpr
             | "(" Expression ")" ;
 
+DistributeExpr = "distribute" 
+DistributeExpr = "distribute" [TotalClause] "{" DistributeExprCase* [DefaultCase] "}" ;
+DistributeExprCase = Expression "=>" Expression ; // Expr must yield float outcome
+DefaultCaseExpr = "default" "=>" Expression ;
 
 // --- Expression Details ---
 LiteralExpr = IntLiteral | FloatLiteral | StringLiteral | BoolLiteral | DurationLiteral ;
