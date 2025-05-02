@@ -1,5 +1,7 @@
 # SDL DSL Syntax Design Evolution
 
+Also see dsl/GRAMMAR.md
+
 **1. Goal:**
 
 Create a user-friendly, declarative Domain Specific Language (DSL) for defining and analyzing system performance models using the underlying SDL Go library (`sdl/core`, `sdl/components`). The DSL should abstract away some of the complexities of direct `Outcomes` manipulation while enabling powerful probabilistic modeling.
