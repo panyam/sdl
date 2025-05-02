@@ -34,13 +34,15 @@ func Eval(node Node, env *Env[any], v *VM) (OpNode, error) {
 		return evalBlockStmt(n, NewEnv(env), nil) // Pass nil context
 	case *LetStmt:
 		return evalLetStmt(n, env, nil)
+	case *BinaryExpr:
+		return evalBinaryExpr(n, env, v)
 	case *ExprStmt:
 		return evalExprStmt(n, env, v)
+	case *IfStmt: // <-- Will be implemented now
+		return evalIfStmt(n, env, v)
 	/* - TODO
 	case *AssignmentStmt:
 		return evalAssignmentStmt(n, env, v)
-	case *IfStmt: // <-- Will be implemented now
-		return evalIfStmt(n, env, v)
 	case *SwitchStmt: // <-- Will be implemented now
 		return evalSwitchStmt(n, env, v)
 	case *CallExpr:
@@ -175,8 +177,39 @@ func evalBlockStmt(stmt *BlockStmt, env *Env[any], v *VM) (OpNode, error) {
 }
 
 /** Evaluate a If and return its value */
-func evalIfStmt(stmt *IfStmt, env *Env[any], v *VM) (val Value, err error) {
-	return
+func evalIfStmt(stmt *IfStmt, env *Env[any], v *VM) (val OpNode, err error) {
+	// Evaluate the condition expression to get its OpNode representation
+	conditionNode, err := Eval(stmt.Condition, env, v)
+	if err != nil {
+		// TODO: Improve error reporting
+		return nil, fmt.Errorf("evaluating condition for if statement: %w", err)
+	}
+
+	// Evaluate the 'then' block to get its OpNode representation
+	// Note: Use the *same* environment level as the if statement itself.
+	// Scoping for variables *inside* the block is handled by evalBlockStmt.
+	thenNode, err := Eval(stmt.Then, env, v)
+	if err != nil {
+		// TODO: Improve error reporting
+		return nil, fmt.Errorf("evaluating 'then' block for if statement: %w", err)
+	}
+
+	// Evaluate the 'else' block/statement, if it exists
+	var elseNode OpNode = theNilNode // Default to NilNode if no else
+	if stmt.Else != nil {
+		elseNode, err = Eval(stmt.Else, env, v)
+		if err != nil {
+			// TODO: Improve error reporting
+			return nil, fmt.Errorf("evaluating 'else' block for if statement: %w", err)
+		}
+	}
+
+	// Construct and return the IfChoiceNode representing the structure
+	return &IfChoiceNode{
+		Condition: conditionNode,
+		Then:      thenNode,
+		Else:      elseNode,
+	}, nil
 }
 
 /** Evaluate a Switch and return its value */
@@ -193,4 +226,34 @@ func evalExprStmt(stmt *ExprStmt, env *Env[any], v *VM) (OpNode, error) {
 /** Evaluate a Assignment as a statement and return its value */
 func evalAssignmentStmt(stmt *AssignmentStmt, env *Env[any], v *VM) (val Value, err error) {
 	return
+}
+
+func evalBinaryExpr(expr *BinaryExpr, env *Env[any], v *VM) (OpNode, error) {
+	// Recursively evaluate left and right operands
+	leftNode, err := Eval(expr.Left, env, v)
+	if err != nil {
+		// TODO: Improve error reporting with position info
+		return nil, fmt.Errorf("evaluating left operand for '%s': %w", expr.Operator, err)
+	}
+
+	rightNode, err := Eval(expr.Right, env, v)
+	if err != nil {
+		// TODO: Improve error reporting with position info
+		return nil, fmt.Errorf("evaluating right operand for '%s': %w", expr.Operator, err)
+	}
+
+	// Check operator validity if needed (parser should handle this mostly)
+	// switch expr.Operator {
+	// case "+", "-", "*", "/", "%", "&&", "||", "==", "!=", "<", "<=", ">", ">=":
+	// 	// Valid operator
+	// default:
+	// 	return nil, fmt.Errorf("unsupported binary operator '%s'", expr.Operator)
+	// }
+
+	// Construct and return the BinaryOpNode representing the operation
+	return &BinaryOpNode{
+		Op:    expr.Operator,
+		Left:  leftNode,
+		Right: rightNode,
+	}, nil
 }

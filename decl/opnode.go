@@ -77,4 +77,36 @@ func (n *SequenceNode) String() string {
 	return sb.String()
 }
 
-// TODO: Add other node types later (BinaryOpNode, ChoiceNode, etc.)
+// BinaryOpNode represents a binary operation (e.g., +, &&, ==).
+// The actual calculation is deferred until the Tree Evaluator stage.
+type BinaryOpNode struct {
+	Op    string // Operator symbol (e.g., "+", "&&", ">")
+	Left  OpNode
+	Right OpNode
+}
+
+func (n *BinaryOpNode) opNode() {}
+func (n *BinaryOpNode) String() string {
+	return fmt.Sprintf("(%s %s %s)", n.Left.String(), n.Op, n.Right.String())
+}
+
+// IfChoiceNode represents a conditional branching point (if-then-else).
+// The condition node will be evaluated first by the Tree Evaluator,
+// and based on its boolean outcome (potentially probabilistic), the
+// appropriate branch(es) will be evaluated.
+type IfChoiceNode struct {
+	Condition OpNode
+	Then      OpNode
+	Else      OpNode // Can be *NilNode if no else branch exists
+}
+
+func (n *IfChoiceNode) opNode() {}
+func (n *IfChoiceNode) String() string {
+	elseStr := "Nil"
+	if n.Else != nil {
+		elseStr = n.Else.String()
+	}
+	return fmt.Sprintf("If(%s) Then:{%s} Else:{%s}", n.Condition.String(), n.Then.String(), elseStr)
+}
+
+// TODO: Add UnaryOpNode, ChoiceNode, etc.
