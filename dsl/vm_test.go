@@ -9,6 +9,7 @@ import (
 
 	"github.com/panyam/leetcoach/sdl/components"
 	"github.com/panyam/leetcoach/sdl/core"
+	"github.com/panyam/leetcoach/sdl/decl"
 	// "fmt" // For debugging
 )
 
@@ -44,7 +45,7 @@ func TestVM_NewVM(t *testing.T) {
 
 func TestVM_Eval_LiteralInt(t *testing.T) {
 	v := NewVM(10)
-	literal := &LiteralExpr{Kind: "INT", Value: "42"}
+	literal := &decl.LiteralExpr{Kind: "INT", Value: "42"}
 
 	_, err := v.Eval(literal)
 	if err != nil {
@@ -72,7 +73,7 @@ func TestVM_Eval_LiteralInt(t *testing.T) {
 
 func TestVM_Eval_LiteralFloat(t *testing.T) {
 	v := NewVM(10)
-	literal := &LiteralExpr{Kind: "FLOAT", Value: "3.14"}
+	literal := &decl.LiteralExpr{Kind: "FLOAT", Value: "3.14"}
 
 	_, err := v.Eval(literal)
 	if err != nil {
@@ -97,7 +98,7 @@ func TestVM_Eval_LiteralFloat(t *testing.T) {
 
 func TestVM_Eval_LiteralString(t *testing.T) {
 	v := NewVM(10)
-	literal := &LiteralExpr{Kind: "STRING", Value: "hello"} // Note: No quotes in Value field
+	literal := &decl.LiteralExpr{Kind: "STRING", Value: "hello"} // Note: No quotes in Value field
 
 	_, err := v.Eval(literal)
 	if err != nil {
@@ -122,7 +123,7 @@ func TestVM_Eval_LiteralString(t *testing.T) {
 
 func TestVM_Eval_LiteralBool(t *testing.T) {
 	v := NewVM(10)
-	literal := &LiteralExpr{Kind: "BOOL", Value: "true"}
+	literal := &decl.LiteralExpr{Kind: "BOOL", Value: "true"}
 
 	_, err := v.Eval(literal)
 	if err != nil {
@@ -220,11 +221,11 @@ func TestVM_Eval_InternalCall(t *testing.T) {
 	registerTestDiskFuncs(v)
 
 	// AST for Internal.GetDiskReadProfile("SSD") - Args aren't used yet by dummy func
-	call := &InternalCallExpr{FuncName: "GetDiskReadProfile", Args: []Expr{&LiteralExpr{Kind: "STRING", Value: "SSD"}}}
+	call := &Internaldecl.CallExpr{FuncName: "GetDiskReadProfile", Args: []Expr{&decl.LiteralExpr{Kind: "STRING", Value: "SSD"}}}
 
 	_, err := v.Eval(call)
 	if err != nil {
-		t.Fatalf("Eval(InternalCallExpr) failed: %v", err)
+		t.Fatalf("Eval(Internaldecl.CallExpr) failed: %v", err)
 	}
 
 	result, err := v.GetFinalResult()
@@ -241,10 +242,10 @@ func TestVM_Eval_InternalCall(t *testing.T) {
 
 func TestVM_Eval_InternalCall_NotFound(t *testing.T) {
 	v := NewVM(10)
-	call := &InternalCallExpr{FuncName: "NoSuchFunction"}
+	call := &Internaldecl.CallExpr{FuncName: "NoSuchFunction"}
 	_, err := v.Eval(call)
 	if err == nil {
-		t.Fatal("Eval(InternalCallExpr) should fail for unregistered function")
+		t.Fatal("Eval(Internaldecl.CallExpr) should fail for unregistered function")
 	}
 	if !errors.Is(err, ErrInternalFuncNotFound) {
 		t.Errorf("Expected ErrInternalFuncNotFound, got: %v", err)
@@ -360,7 +361,7 @@ func TestVM_RegisterInternalFunc(t *testing.T) {
 func TestVM_Eval_Stub(t *testing.T) {
 	v := NewVM(10)
 	// Use an AST node for which Eval is not implemented yet
-	node := &MemberAccessExpr{}
+	node := &decl.MemberAccessExpr{}
 	_, err := v.Eval(node)
 	if err == nil {
 		t.Error("Expected an error for unimplemented node type")
@@ -373,7 +374,7 @@ func TestVM_Eval_Stub(t *testing.T) {
 }
 
 // --- Test AndExpr & Reduction (Phase 3) ---
-// --- Test CallExpr (Method Calls - Phase 4) ---
+// --- Test decl.CallExpr (Method Calls - Phase 4) ---
 
 func TestVM_Eval_CallExpr_DiskRead(t *testing.T) {
 	v := NewVM(10)
@@ -382,8 +383,8 @@ func TestVM_Eval_CallExpr_DiskRead(t *testing.T) {
 	v.Env().Set("myDisk", disk)
 
 	// AST for myDisk.Read()
-	call := &CallExpr{
-		Function: &MemberAccessExpr{
+	call := &decl.CallExpr{
+		Function: &decl.MemberAccessExpr{
 			Receiver: &IdentifierExpr{Name: "myDisk"},
 			Member:   "Read",
 		},
@@ -392,7 +393,7 @@ func TestVM_Eval_CallExpr_DiskRead(t *testing.T) {
 
 	_, err := v.Eval(call)
 	if err != nil {
-		t.Fatalf("Eval(CallExpr Disk.Read) failed: %v", err)
+		t.Fatalf("Eval(decl.CallExpr Disk.Read) failed: %v", err)
 	}
 
 	result, err := v.GetFinalResult()
@@ -413,8 +414,8 @@ func TestVM_Eval_CallExpr_MethodNotFound(t *testing.T) {
 	v.Env().Set("myDisk", disk)
 
 	// AST for myDisk.NoSuchMethod()
-	call := &CallExpr{
-		Function: &MemberAccessExpr{
+	call := &decl.CallExpr{
+		Function: &decl.MemberAccessExpr{
 			Receiver: &IdentifierExpr{Name: "myDisk"},
 			Member:   "NoSuchMethod",
 		},
@@ -423,15 +424,15 @@ func TestVM_Eval_CallExpr_MethodNotFound(t *testing.T) {
 
 	_, err := v.Eval(call)
 	if err == nil {
-		t.Fatal("Eval(CallExpr) should have failed for non-existent method")
+		t.Fatal("Eval(decl.CallExpr) should have failed for non-existent method")
 	}
 	if !errors.Is(err, ErrMethodNotFound) {
 		t.Errorf("Expected ErrMethodNotFound, got: %v", err)
 	}
 }
 
-// TODO: Add tests for CallExpr with arguments once argument handling/conversion is implemented.
-// TODO: Add tests for CallExpr calling methods that return ast.Node (Phase 5).
+// TODO: Add tests for decl.CallExpr with arguments once argument handling/conversion is implemented.
+// TODO: Add tests for decl.CallExpr calling methods that return ast.Node (Phase 5).
 
 // Helper to register SSD Write profile getter
 func registerTestDiskWriteFunc(v *VM) {
@@ -447,8 +448,8 @@ func TestVM_Eval_AndExpr_AccessResult(t *testing.T) {
 	registerTestDiskWriteFunc(v) // Registers GetDiskWriteProfile
 
 	// AST for GetDiskReadProfile() THEN GetDiskWriteProfile()
-	readCall := &InternalCallExpr{FuncName: "GetDiskReadProfile"}
-	writeCall := &InternalCallExpr{FuncName: "GetDiskWriteProfile"}
+	readCall := &Internaldecl.CallExpr{FuncName: "GetDiskReadProfile"}
+	writeCall := &Internaldecl.CallExpr{FuncName: "GetDiskWriteProfile"}
 	andExpr := &AndExpr{Left: readCall, Right: writeCall}
 
 	_, err := v.Eval(andExpr)
@@ -497,8 +498,8 @@ func TestVM_Eval_AndExpr_TypeMismatch(t *testing.T) {
 	registerTestDiskFuncs(v) // GetDiskReadProfile returns *Outcomes[AccessResult]
 
 	// AST for GetDiskReadProfile() THEN 123
-	readCall := &InternalCallExpr{FuncName: "GetDiskReadProfile"}
-	literalInt := &LiteralExpr{Kind: "INT", Value: "123"}
+	readCall := &Internaldecl.CallExpr{FuncName: "GetDiskReadProfile"}
+	literalInt := &decl.LiteralExpr{Kind: "INT", Value: "123"}
 	andExpr := &AndExpr{Left: readCall, Right: literalInt}
 
 	_, err := v.Eval(andExpr)
@@ -519,20 +520,20 @@ func TestVM_Eval_CallExpr_RecursiveAST(t *testing.T) {
 	// The actual Go disk component isn't directly needed in the env,
 	// as the call resolves to the Disk.Read() method which returns an AST.
 	declDisk := NewDisk("ssd_decl", "SSD")
-	v.Env().Set("myDeclDisk", declDisk)
+	v.Env().Set("myDisk", declDisk)
 
-	// AST for myDeclDisk.Read()
-	call := &CallExpr{
-		Function: &MemberAccessExpr{
-			Receiver: &IdentifierExpr{Name: "myDeclDisk"},
-			Member:   "Read", // This call returns an *InternalCallExpr AST node
+	// AST for myDisk.Read()
+	call := &decl.CallExpr{
+		Function: &decl.MemberAccessExpr{
+			Receiver: &IdentifierExpr{Name: "myDisk"},
+			Member:   "Read", // This call returns an *Internaldecl.CallExpr AST node
 		},
 		Args: []Expr{},
 	}
 
 	_, err := v.Eval(call) // This should trigger recursive evaluation
 	if err != nil {
-		t.Fatalf("Eval(CallExpr Disk.Read) failed: %v", err)
+		t.Fatalf("Eval(decl.CallExpr Disk.Read) failed: %v", err)
 	}
 
 	result, err := v.GetFinalResult()
@@ -541,7 +542,7 @@ func TestVM_Eval_CallExpr_RecursiveAST(t *testing.T) {
 	}
 
 	// The final result should be the outcome from evaluating the *returned* AST
-	// (which was InternalCallExpr("GetDiskReadProfile", "SSD"))
+	// (which was Internaldecl.CallExpr("GetDiskReadProfile", "SSD"))
 	// So, it should be the same as calling GetDiskReadProfile directly.
 	expectedOutcome := components.NewDisk("").Read() // Get the reference SSD read outcome
 	if result != expectedOutcome {                   // Compare pointers
@@ -558,8 +559,8 @@ func TestVM_Eval_RepeatExpr_Sequential(t *testing.T) {
 	// AST for repeat(GetDiskReadProfile(), 3, Sequential)
 	repeatCount := int64(3)
 	repeatExpr := &RepeatExpr{
-		Input: &InternalCallExpr{FuncName: "GetDiskReadProfile"},
-		Count: &LiteralExpr{Kind: "INT", Value: fmt.Sprintf("%d", repeatCount)}, // Count must be deterministic Outcomes[int64]
+		Input: &Internaldecl.CallExpr{FuncName: "GetDiskReadProfile"},
+		Count: &decl.LiteralExpr{Kind: "INT", Value: fmt.Sprintf("%d", repeatCount)}, // Count must be deterministic Outcomes[int64]
 		Mode:  Sequential,
 	}
 
@@ -611,8 +612,8 @@ func TestVM_Eval_RepeatExpr_InvalidCount(t *testing.T) {
 	v := NewVM(10)
 	// AST for repeat(GetDiskReadProfile(), -1, Sequential)
 	repeatExpr := &RepeatExpr{
-		Input: &InternalCallExpr{FuncName: "GetDiskReadProfile"},
-		Count: &LiteralExpr{Kind: "INT", Value: "-1"},
+		Input: &Internaldecl.CallExpr{FuncName: "GetDiskReadProfile"},
+		Count: &decl.LiteralExpr{Kind: "INT", Value: "-1"},
 		Mode:  Sequential,
 	}
 	_, err := v.Eval(repeatExpr)
@@ -641,7 +642,7 @@ func TestVM_Eval_AssignmentStmt(t *testing.T) {
 	// AST for: myRead = GetDiskReadProfile()
 	assignStmt := &AssignmentStmt{
 		Variable: &IdentifierExpr{Name: "myRead"},
-		Value:    &InternalCallExpr{FuncName: "GetDiskReadProfile"},
+		Value:    &Internaldecl.CallExpr{FuncName: "GetDiskReadProfile"},
 	}
 
 	// Eval the assignment (result should be left on stack AND stored in env)
@@ -679,7 +680,7 @@ func TestVM_Eval_ReturnStmt(t *testing.T) {
 
 	// AST for: return GetDiskReadProfile()
 	returnStmt := &ReturnStmt{
-		ReturnValue: &InternalCallExpr{FuncName: "GetDiskReadProfile"},
+		ReturnValue: &Internaldecl.CallExpr{FuncName: "GetDiskReadProfile"},
 	}
 
 	// Eval the return statement
@@ -718,10 +719,10 @@ func TestVM_Eval_BlockStmt_Sequence(t *testing.T) {
 		Statements: []Stmt{
 			&AssignmentStmt{
 				Variable: &IdentifierExpr{Name: "readRes"},
-				Value:    &InternalCallExpr{FuncName: "GetDiskReadProfile"},
+				Value:    &Internaldecl.CallExpr{FuncName: "GetDiskReadProfile"},
 			},
 			&ExprStmt{ // The write call is just an expression statement
-				Expression: &InternalCallExpr{FuncName: "GetDiskWriteProfile"},
+				Expression: &Internaldecl.CallExpr{FuncName: "GetDiskWriteProfile"},
 			},
 		},
 	}
@@ -804,7 +805,7 @@ func TestVM_Eval_IfStmt_AccessResultSuccess(t *testing.T) {
 	// AST for: if condVar.Success { mock.OpSuccess() } else { mock.OpFailure() }
 
 	ifStmt := &IfStmt{
-		Condition: &MemberAccessExpr{Receiver: &IdentifierExpr{Name: "condVar"}, Member: "Success"}, // Use the member access
+		Condition: &decl.MemberAccessExpr{Receiver: &IdentifierExpr{Name: "condVar"}, Member: "Success"}, // Use the member access
 		Then: &BlockStmt{Statements: []Stmt{
 			&ExprStmt{Expression: Call(Member(Ident("mock"), "OpSuccess"))},
 		}},
@@ -829,7 +830,7 @@ func TestVM_Eval_IfStmt_AccessResultSuccess(t *testing.T) {
 		t.Fatalf("Expected IfStmt result *core.Outcomes[AccessResult], got %T", result)
 	}
 
-	// Analyze the combined result
+	// decl.Analyze the combined result
 	if finalOutcome.Len() == 0 || finalOutcome.Len() > 2*v.maxOutcomeLen { // Allow up to 2*maxLen
 		t.Errorf("Unexpected outcome length %d", finalOutcome.Len())
 	}
@@ -863,7 +864,7 @@ func TestVM_Eval_IfStmt_AccessResultSuccess(t *testing.T) {
 	t.Logf("IfStmt Test: Final Len=%d, Avail=%.6f", finalOutcome.Len(), actualAvail)
 }
 
-// --- Test CallExpr with Arguments (Phase 9 / now) ---
+// --- Test decl.CallExpr with Arguments (Phase 9 / now) ---
 
 func TestVM_Eval_CallExpr_DiskReadProcessWrite(t *testing.T) {
 	v := NewVM(15)
@@ -876,8 +877,8 @@ func TestVM_Eval_CallExpr_DiskReadProcessWrite(t *testing.T) {
 	v.Env().Set("processingDuration", procTimeOutcome) // Store the outcome
 
 	// AST for myDiskRPW.ReadProcessWrite(processingDuration)
-	call := &CallExpr{
-		Function: &MemberAccessExpr{
+	call := &decl.CallExpr{
+		Function: &decl.MemberAccessExpr{
 			Receiver: &IdentifierExpr{Name: "myDiskRPW"},
 			Member:   "ReadProcessWrite",
 		},
@@ -888,7 +889,7 @@ func TestVM_Eval_CallExpr_DiskReadProcessWrite(t *testing.T) {
 
 	_, err := v.Eval(call)
 	if err != nil {
-		t.Fatalf("Eval(CallExpr Disk.ReadProcessWrite) failed: %v", err)
+		t.Fatalf("Eval(decl.CallExpr Disk.ReadProcessWrite) failed: %v", err)
 	}
 
 	result, err := v.GetFinalResult()
@@ -925,8 +926,8 @@ func TestVM_Eval_CallExpr_NonDeterministicArg(t *testing.T) {
 	v.Env().Set("nonDetDuration", nonDetOutcome)
 
 	// AST for myDiskErr.ReadProcessWrite(nonDetDuration)
-	call := &CallExpr{
-		Function: &MemberAccessExpr{Receiver: &IdentifierExpr{Name: "myDiskErr"}, Member: "ReadProcessWrite"},
+	call := &decl.CallExpr{
+		Function: &decl.MemberAccessExpr{Receiver: &IdentifierExpr{Name: "myDiskErr"}, Member: "ReadProcessWrite"},
 		Args:     []Expr{&IdentifierExpr{Name: "nonDetDuration"}},
 	}
 	_, err := v.Eval(call)
@@ -939,7 +940,7 @@ func TestVM_Eval_CallExpr_NonDeterministicArg(t *testing.T) {
 }
 
 // TODO: Add test for IfStmt without Else branch.
-// TODO: Add test for IfStmt where condition is myVar.Success (requires evalMemberAccess)
+// TODO: Add test for IfStmt where condition is myVar.Success (requires evaldecl.MemberAccess)
 
 // --- Test Top Level Driver (Phase X / now) ---
 
@@ -951,28 +952,28 @@ func TestVM_RunDSL_SimpleSystem(t *testing.T) {
 	//   analyze writePerf = d1.Write();
 	// }
 
-	systemAST := &SystemDecl{
-		Name: "TestSys",
-		Body: []Node{ // Use Node interface
-			&InstanceDecl{
-				Name:          "d1",
-				ComponentType: "Disk", // Matches name registered in registerBuiltinComponents
-				Params: []*ParamAssignment{ // Use ParamAssignment slice
-					{Name: "ProfileName", Value: &LiteralExpr{Kind: "STRING", Value: "SSD"}},
+	systemAST := &decl.System{
+		Name: Ident("TestSys"),
+		Body: []decl.Node{ // Use Node interface
+			&decl.Instance{
+				Name:          Ident("d1"),
+				ComponentType: Ident("Disk"), // Matches name registered in registerBuiltinComponents
+				Params: []*decl.ParamAssignment{ // Use ParamAssignment slice
+					{Name: "ProfileName", Value: &decl.LiteralExpr{Kind: "STRING", Value: "SSD"}},
 				},
 			},
-			&AnalyzeDecl{
+			&decl.decl.Analyze{
 				Name: "readPerf",
-				Target: &CallExpr{
-					Function: &MemberAccessExpr{Receiver: &IdentifierExpr{Name: "d1"}, Member: "Read"},
-					Args:     []Expr{},
+				Target: &decl.CallExpr{
+					Function: &decl.MemberAccessExpr{Receiver: &decl.IdentifierExpr{Name: "d1"}, Member: "Read"},
+					Args:     []decl.Expr{},
 				},
 			},
-			&AnalyzeDecl{
+			&decl.Analyze{
 				Name: "writePerf",
-				Target: &CallExpr{
-					Function: &MemberAccessExpr{Receiver: &IdentifierExpr{Name: "d1"}, Member: "Write"},
-					Args:     []Expr{},
+				Target: &decl.CallExpr{
+					Function: &decl.MemberAccessExpr{Receiver: &decl.IdentifierExpr{Name: "d1"}, Member: "Write"},
+					Args:     []decl.Expr{},
 				},
 			},
 		},

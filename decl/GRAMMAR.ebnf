@@ -1,57 +1,72 @@
+
 // --- Top Level ---
+
 File = Declaration* EOF ;
-Declaration = ComponentDecl | SystemDecl | OptionsDecl | ImportDecl /* Future */ | EnumDecl /* NEW */ ;
+Declaration = ComponentDecl | SystemDecl | OptionsDecl | ImportDecl /* Future */ | EnumDecl ;
 
-// *** NEW: Enum Definition ***
-EnumDecl = "enum" identifier "{" identifier ("," identifier)* ["..."] "}" ";" ; // Allows defining named discrete value sets
+// Enum Definition - Enums are the way to define outcome "sets"
+// We are NOT creating a general purpose language.  This DSL is to aid with performance analysis and capacity planning
+// of system designs.  For us more than correctness we want to evaluate the non-functional requirements
+EnumDecl = "enum" identifier "{" identifier ("," identifier)* "}" ; // Allows defining named discrete value sets
 
-ImportDecl = "import" StringLiteral ";" ;
-OptionsDecl = "options" BlockStmt ; // Define structure later
-
+ImportDecl = "import" StringLiteral ;
+OptionsDecl = "options" BlockStmt // Define structure later
 
 // --- Component Definition ---
 ComponentDecl = "component" identifier "{" ComponentBodyItem* "}" ;
-ComponentBodyItem = ParamDecl | UsesDecl | OperationDef ; // Removed nested ComponentDecl for now
+ComponentBodyItem = ParamDecl | UsesDecl | MethodDef | ComponentDecl ; 
 
 ParamDecl = "param" identifier ":" TypeName ["=" Expression] ";" ;
+
 // *** Refine TypeName ***
-TypeName = PrimitiveType | identifier /* For registered Enums */ ;
+TypeName = PrimitiveType | OutcomeType | identifier /* For registered Enums */ ;
 PrimitiveType = "int" | "float" | "string" | "bool" | "duration" ;
+OutcomeType = "Outcome" "[" PrimitiveType "]" ;
 
-UsesDecl = "uses" identifier ":" identifier ["{" ParamAssignment* "}"] ";" ; // varName: ComponentType { overrides }
+UsesDecl = "uses" identifier ":" identifier ["{" Assignment* "}"] ";" ; // varName: ComponentType { overrides }
 
-// *** Refine OperationDef ***
-OperationDef = "operation" identifier "(" [ParamList] ")" [":" TypeName] BlockStmt ; // TypeName must be primitive or registered Enum
+// *** Refine MethodDef ***
+MethodDef = "method" identifier "(" [ParamList] ")" [":" TypeName] BlockStmt ;
 ParamList = ParamDecl ("," ParamDecl)* ;
-
 
 // --- System Definition ---
 SystemDecl = "system" identifier "{" SystemBodyItem* "}" ;
-SystemBodyItem = InstanceDecl | AnalyzeDecl | OptionsDecl | LetStmt /* Allow system-level constants? */ ;
+SystemBodyItem = InstanceDecl
+                | AnalyzeDecl
+                | OptionsDecl 
+                | LetStmt /* Allow system-level constants? */
+                ;
 
-InstanceDecl = identifier ":" identifier ["=" "{" ParamAssignment* "}"] ";" ; // instanceName: ComponentType = { overrides }
-ParamAssignment = identifier "=" Expression ";" ;
+InstanceDecl = identifier ":" identifier ["=" "{" Assignment* "}"] ";" ; // instanceName: ComponentType = { overrides }
 
 // *** Refine AnalyzeDecl ***
-AnalyzeDecl = "analyze" identifier "=" Expression [ExpectBlock] ";" ; // analysisName = instance.Operation(args)
+AnalyzeDecl = "analyze" identifier "=" Expression [ExpectBlock] ";" ; // analysisName = instance.Method(args)
 ExpectBlock = "expect" "{" ExpectStmt* "}" ; // Use braces for clarity
 ExpectStmt = Expression Operator Expression ";" ; // TargetExpr Op ThresholdExpr (e.g., target.P99 < 100ms)
 
 
 // --- Statements ---
-Stmt = LetStmt | AssignmentStmt | ExprStmt | ReturnStmt | IfStmt
-     | DistributeStmt | DelayStmt | RepeatStmt | ParallelStmt | LogStmt
-     | BlockStmt /* | SwitchStmt | FilterStmt? */ ;
 
-LetStmt = "let" identifier "=" Expression ";" ;
-AssignmentStmt = identifier "=" Expression ";" ; // Maybe disallow, force 'let'? For simplicity, require 'let'. Let's remove this.
-// *** Revised: Use LetStmt only ***
-Stmt = LetStmt | ExprStmt | ReturnStmt | IfStmt | DistributeStmt | DelayStmt | RepeatStmt | ParallelStmt | LogStmt | BlockStmt ;
+Stmt = LetStmt
+      | ExprStmt | ReturnStmt | IfStmt
+      | DistributeStmt | WaitStmt | DelayStmt
+      | GoStmt | LogStmt | BlockStmt
+      | SwitchStmt
+      /* FilterStmt? */
+      ;
 
+// We *could* have an AssignmentStmt but using a let allows us simplicity and flexibility at the same time
+LetStmt = identifier ":=" Expression ";" 
+          | identifer ":=" "go" Expression ";"      // Let statements can also be futures - they have to be waited on
+          ;
+
+// Assignment is for overriding values instead of new values
+AssginmentStmt = identifier "=" Expression ";" ;
 
 ExprStmt = Expression ";" ;
 ReturnStmt = "return" Expression ";" ;
 DelayStmt = "delay" Expression ";" ; // Expr must yield Duration outcome
+WaitStmt = "wait" Expression ( "," Expression ) * ";" ; // Wait on one or more futures
 LogStmt = "log" (StringLiteral | Expression) ("," Expression)* ";" ;
 
 
@@ -59,15 +74,16 @@ LogStmt = "log" (StringLiteral | Expression) ("," Expression)* ";" ;
 IfStmt = "if" Expression BlockStmt ["else" (IfStmt | BlockStmt)] ; // Condition must yield bool outcome
 
 DistributeStmt = "distribute" [TotalClause] "{" DistributeCase* [DefaultCase] "}" ;
-TotalClause = "(" Expression ")" ; // Expr must yield float outcome
+TotalClause = "(" Expression ")" ; // Expr must yield a number outcome with which a distributio will be created
 DistributeCase = Expression "=>" BlockStmt ; // Expr must yield float outcome
 DefaultCase = "default" "=>" BlockStmt ;
 
 RepeatStmt = "repeat" "(" Expression "," ExecutionMode ")" BlockStmt ; // Expr must yield int outcome
-ExecutionMode = identifier{"Sequential"} | identifier{"Parallel"} ; // Treat as identifiers for now
+ExecutionMode = identifier{"Sequential"} | identifier{"Go"} ; // Treat as identifiers for now
 
-ParallelStmt = "parallel" BlockStmt ;
-
+GoStmt = "go" (identifer "=") BlockStmt 
+      | go identifier "=" Expression        // Use for single expression calls instead of entire statements
+      ;
 
 // --- Expressions ---
 Expression = OrExpr ; // Precedence: || lowest -> && -> Cmp -> Add/Sub -> Mul/Div -> Unary -> Primary
@@ -83,7 +99,7 @@ PrimaryExpr = LiteralExpr
             | IdentifierExpr
             | MemberAccessExpr // instance.param or self.param ONLY
             | CallExpr         // func(args) or instance.method(args)
-            //| DistributeExpr   // Keep separate from DistributeStmt for now
+            | DistributeExpr   // Keep separate from DistributeStmt for now
             | InternalCallExpr
             | "(" Expression ")" ;
 

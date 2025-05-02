@@ -15,3 +15,6 @@ testall: test bench
 
 prompt:
 	source ~/personal/.shhelpers && files_for_llm `find . | grep -v "\.sh" | grep -v attic | grep -v mkprompt `
+
+prompt2:
+	source ~/personal/.shhelpers && files_for_llm `find . | grep -v "\.sh" | grep -v attic | grep -v mkprompt | grep -v dsl `

@@ -1,27 +1,27 @@
 // sdl/dsl/driver.go
-package dsl
+package decl
 
 import (
 	"fmt"
 	// Need for parseLiteralValue
 	// Needed for component constructors & internal funcs
 	"github.com/panyam/leetcoach/sdl/core"
-	"github.com/panyam/leetcoach/sdl/decl"
 )
 
 // RunDSL executes the logic defined in an AST, focusing on System and Analyze blocks.
 // Returns a map of analysis names to their corresponding AnalysisResultWrapper.
-func RunDSL(vm *VM, astRoot decl.Node /* options? */) (map[string]*decl.AnalysisResultWrapper, error) {
-	analysisResults := make(map[string]*decl.AnalysisResultWrapper)
+func RunDSL(vm *VM, astRoot Node /* options? */) (map[string]*AnalysisResultWrapper, error) {
+	analysisResults := make(map[string]*AnalysisResultWrapper)
 
 	// --- Basic Setup ---
-	system, ok := astRoot.(*decl.System)
+	system, ok := astRoot.(*System)
 	if !ok {
 		return analysisResults, fmt.Errorf("RunDSL currently expects *System as root, got %T", astRoot)
 	}
 
 	if vm == nil {
-		vm = NewVM(15) // Default max buckets
+		vm = &VM{}
+		vm.Init()
 	}
 
 	// --- Process System ---
@@ -30,7 +30,7 @@ func RunDSL(vm *VM, astRoot decl.Node /* options? */) (map[string]*decl.Analysis
 
 	// Instantiate components
 	for _, node := range system.Body {
-		instance, isInstance := node.(*decl.Instance)
+		instance, isInstance := node.(*Instance)
 		if !isInstance {
 			continue
 		}
