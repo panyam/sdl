@@ -6,13 +6,13 @@ import (
 
 type MockDisk struct {
 	InstanceName string
-	Profile      string
+	ProfileName  string
 	ReadLatency  float64 // Example parameter
 }
 
 func NewMockDiskComponent(instanceName string) (ComponentRuntime, error) {
 	disk := &MockDisk{
-		Profile:     components.ProfileSSD, // Default
+		ProfileName: components.ProfileSSD, // Default
 		ReadLatency: 0.0001,                // Default
 	}
 	return &NativeComponent{
