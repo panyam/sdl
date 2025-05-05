@@ -41,9 +41,9 @@ func Eval(node Node, frame *Frame, v *VM) (OpNode, error) {
 		return evalExprStmt(n, frame, v)
 	case *IfStmt: // <-- Will be implemented now
 		return evalIfStmt(n, frame, v)
-	case *SystemDecl: // <<< Added case
+	case *SystemDecl:
 		return evalSystemDecl(n, frame, v)
-	case *InstanceDecl: // <<< Added case
+	case *InstanceDecl:
 		return evalInstanceDecl(n, frame, v)
 	case *CallExpr:
 		return evalCallExpr(n, frame, v)
@@ -363,7 +363,7 @@ func evalSystemDecl(stmt *SystemDecl, frame *Frame, v *VM) (OpNode, error) {
 		// For now, InstanceDecl modifies the passed frame.
 		_, err := Eval(item, frame, v) // Use passed frame
 		if err != nil {
-			return nil, fmt.Errorf("error evaluating item in system '%s': %w", stmt.Name, err)
+			return nil, fmt.Errorf("error evaluating item in system '%s': %w", stmt.NameNode.Name, err)
 		}
 		// Ignore the OpNode returned by body items (e.g., InstanceDecl returns NilNode)
 	}
@@ -374,7 +374,7 @@ func evalSystemDecl(stmt *SystemDecl, frame *Frame, v *VM) (OpNode, error) {
 
 // --- evalInstanceDecl (Instantiates Native or DSL component) ---
 func evalInstanceDecl(stmt *InstanceDecl, frame *Frame, v *VM) (OpNode, error) {
-	instanceName := stmt.Name
+	instanceName := stmt.NameNode.Name
 	componentTypeName := stmt.ComponentType.Name
 
 	// Check if instance name already exists in the current scope

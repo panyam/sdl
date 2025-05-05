@@ -405,13 +405,11 @@ func TestEvalInstanceDecl_NativeComponent(t *testing.T) {
 
 	// --- Register Mock Component Definition ---
 	mockDiskDef := &ComponentDecl{
-		Name: "MockDisk",
-		Params: map[string]*ParamDecl{
-			"ProfileName": newParamDecl("ProfileName", "string"),
-			"ReadLatency": newParamDecl("ReadLatency", "float"),
+		NameNode: newIdent("MockDisk"),
+		Body: []ComponentDeclBodyItem{
+			newParamDecl("ProfileName", "string"),
+			newParamDecl("ReadLatency", "float"),
 		},
-		Uses:    make(map[string]*UsesDecl),
-		Methods: make(map[string]*MethodDecl),
 	}
 	require.NoError(t, vm.Entry.RegisterComponent(mockDiskDef))
 

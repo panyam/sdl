@@ -30,9 +30,6 @@ func (n *NodeInfo) String() string { return "{Node}" } // Default stringer
 // Used for holding mthod/component and other definitions
 type Declaration interface {
 	Node
-
-	// Called to resolve specific AST aspects out of the parse tree
-	Resolve(file *FileDecl) error
 }
 
 // --- Top Level declarations ---
@@ -44,22 +41,46 @@ type FileDecl struct {
 
 	// Resolved values so we can work with processed/loaded values instead of resolving
 	// Identify expressions etc
-	Components map[string]*ComponentDecl
-	Enums      map[string]*EnumDecl
-	Systems    map[string]*SystemDecl
+	resolved   bool
+	components map[string]*ComponentDecl
+	enums      map[string]*EnumDecl
+	systems    map[string]*SystemDecl
+}
+
+func (f *FileDecl) GetComponent(name string) (*ComponentDecl, error) {
+	if !f.resolved {
+		if err := f.Resolve(); err != nil {
+			return nil, err
+		}
+		f.resolved = true
+	}
+	return f.components[name], nil
+}
+
+func (f *FileDecl) GetEnum(name string) (*EnumDecl, error) {
+	if !f.resolved {
+		if err := f.Resolve(); err != nil {
+			return nil, err
+		}
+		f.resolved = true
+	}
+	return f.enums[name], nil
+}
+
+func (f *FileDecl) GetSystem(name string) (*SystemDecl, error) {
+	if !f.resolved {
+		if err := f.Resolve(); err != nil {
+			return nil, err
+		}
+		f.resolved = true
+	}
+	return f.systems[name], nil
 }
 
 // Called to resolve specific AST aspects out of the parse tree
-func (f *FileDecl) Resolve(*FileDecl) error {
+func (f *FileDecl) Resolve() error {
 	if f == nil {
 		return fmt.Errorf("cannot load nil file")
-	}
-	// Initialize maps if they are nil (might happen if VM wasn't Init'd properly)
-	if f.Components == nil {
-		f.Components = make(map[string]*ComponentDecl)
-	}
-	if f.Systems == nil {
-		f.Systems = make(map[string]*SystemDecl)
 	}
 	// Add initializers for other registries (Enums, Options) if they exist
 
@@ -68,7 +89,7 @@ func (f *FileDecl) Resolve(*FileDecl) error {
 		switch node := decl.(type) {
 		case *ComponentDecl:
 			// Process and register the component definition
-			err := node.Resolve(f) // Use a helper function
+			err := node.Resolve() // Use a helper function
 			if err != nil {
 				return fmt.Errorf("error processing component '%s' at pos %d: %w", node.NameNode.Name, node.Pos(), err)
 			}
@@ -78,18 +99,10 @@ func (f *FileDecl) Resolve(*FileDecl) error {
 
 		case *SystemDecl:
 			// Store the SystemDecl AST by name for later execution
-			err := node.Resolve(f) // Use a helper function
-			if err != nil {
-				return fmt.Errorf("error processing system '%s' at pos %d: %w", node.NameNode.Name, node.Pos(), err)
-			}
 			if err := f.RegisterSystem(node); err != nil {
 				return err
 			}
 		case *EnumDecl:
-			err := node.Resolve(f) // Use a helper function
-			if err != nil {
-				return fmt.Errorf("error processing enum '%s' at pos %d: %w", node.NameNode.Name, node.Pos(), err)
-			}
 			if err := f.RegisterEnum(node); err != nil {
 				return err
 			}
@@ -110,35 +123,35 @@ func (f *FileDecl) Resolve(*FileDecl) error {
 }
 
 func (f *FileDecl) RegisterComponent(c *ComponentDecl) error {
-	if f.Components == nil {
-		f.Components = map[string]*ComponentDecl{}
+	if f.components == nil {
+		f.components = map[string]*ComponentDecl{}
 	}
-	if _, exists := f.Components[c.Name]; exists {
-		return fmt.Errorf("component definition '%s' already registered", c.Name)
+	if _, exists := f.components[c.NameNode.Name]; exists {
+		return fmt.Errorf("component definition '%s' already registered", c.NameNode.Name)
 	}
-	f.Components[c.Name] = c
+	f.components[c.NameNode.Name] = c
 	return nil
 }
 
 func (f *FileDecl) RegisterSystem(c *SystemDecl) error {
-	if f.Systems == nil {
-		f.Systems = map[string]*SystemDecl{}
+	if f.systems == nil {
+		f.systems = map[string]*SystemDecl{}
 	}
-	if _, exists := f.Systems[c.Name]; exists {
-		return fmt.Errorf("system definition '%s' already registered", c.Name)
+	if _, exists := f.systems[c.NameNode.Name]; exists {
+		return fmt.Errorf("system definition '%s' already registered", c.NameNode.Name)
 	}
-	f.Systems[c.Name] = c
+	f.systems[c.NameNode.Name] = c
 	return nil
 }
 
 func (f *FileDecl) RegisterEnum(c *EnumDecl) error {
-	if f.Enums == nil {
-		f.Enums = map[string]*EnumDecl{}
+	if f.enums == nil {
+		f.enums = map[string]*EnumDecl{}
 	}
-	if _, exists := f.Enums[c.Name]; exists {
-		return fmt.Errorf("enum definition '%s' already registered", c.Name)
+	if _, exists := f.enums[c.NameNode.Name]; exists {
+		return fmt.Errorf("enum definition '%s' already registered", c.NameNode.Name)
 	}
-	f.Enums[c.Name] = c
+	f.enums[c.NameNode.Name] = c
 	return nil
 }
 
@@ -167,14 +180,12 @@ type EnumDecl struct {
 
 	// Resolved values so we can work with processed/loaded values instead of resolving
 	// Identify expressions etc
-	Name   string
-	Values []string
+	values []string
 }
 
-func (d *EnumDecl) Resolve(file *FileDecl) error {
-	d.Name = d.NameNode.Name
-	d.Values = gfn.Map(d.ValuesNode, func(e *IdentifierExpr) string { return e.Name })
-	return nil
+func (d *EnumDecl) Values() []string {
+	// TODO - save this
+	return gfn.Map(d.ValuesNode, func(e *IdentifierExpr) string { return e.Name })
 }
 
 func (e *EnumDecl) String() string {
@@ -182,7 +193,7 @@ func (e *EnumDecl) String() string {
 	for _, v := range e.ValuesNode {
 		vals = append(vals, v.Name)
 	}
-	return fmt.Sprintf("enum %s { %s };", e.Name, strings.Join(vals, ", "))
+	return fmt.Sprintf("enum %s { %s };", e.NameNode, strings.Join(vals, ", "))
 }
 
 // ImportDecl represents `import "path";`
@@ -218,40 +229,65 @@ type ComponentDecl struct {
 
 	// Resolved values so we can work with processed/loaded values instead of resolving
 	// Identify expressions etc
-	Name    string
-	Params  map[string]*ParamDecl  // Processed parameters map[name]*ParamDecl
-	Uses    map[string]*UsesDecl   // Processed dependencies map[local_name]*UsesDecl
-	Methods map[string]*MethodDecl // Processed methods map[method_name]*MethodDef
+	resolved bool
+	params   map[string]*ParamDecl  // Processed parameters map[name]*ParamDecl
+	uses     map[string]*UsesDecl   // Processed dependencies map[local_name]*UsesDecl
+	methods  map[string]*MethodDecl // Processed methods map[method_name]*MethodDef
 }
 
-func (d *ComponentDecl) Resolve(file *FileDecl) error {
-	d.Name = d.NameNode.Name
-	d.Params = map[string]*ParamDecl{} // Processed parameters map[name]*ParamDecl
-	d.Uses = map[string]*UsesDecl{}    // Processed dependencies map[local_name]*UsesDecl
+func (d *ComponentDecl) GetParam(name string) (*ParamDecl, error) {
+	if !d.resolved {
+		if err := d.Resolve(); err != nil {
+			return nil, err
+		}
+		d.resolved = true
+	}
+	return d.params[name], nil
+}
+
+func (d *ComponentDecl) GetMethod(name string) (*MethodDecl, error) {
+	if !d.resolved {
+		if err := d.Resolve(); err != nil {
+			return nil, err
+		}
+	}
+	return d.methods[name], nil
+}
+
+func (d *ComponentDecl) GetDependency(name string) (*UsesDecl, error) {
+	if !d.resolved {
+		if err := d.Resolve(); err != nil {
+			return nil, err
+		}
+	}
+	return d.uses[name], nil
+}
+
+func (d *ComponentDecl) Resolve() error {
+	d.params = map[string]*ParamDecl{}
+	d.uses = map[string]*UsesDecl{} // Processed dependencies map[local_name]*UsesDecl
 
 	// Process body
 	for _, item := range d.Body {
 		switch bodyNode := item.(type) {
 		case *ParamDecl:
 			paramName := bodyNode.Name.Name
-			if _, exists := d.Params[paramName]; exists {
+			if _, exists := d.params[paramName]; exists {
 				return fmt.Errorf("duplicate parameter '%s'", paramName) // Error relative to component name handled by caller
 			}
-			d.Params[paramName] = bodyNode
+			d.params[paramName] = bodyNode
 		case *UsesDecl:
-			if err := bodyNode.Resolve(file); err != nil {
-				return err
-			}
 			usesName := bodyNode.NameNode.Name
-			if _, exists := d.Uses[usesName]; exists {
+			if _, exists := d.uses[usesName]; exists {
 				return fmt.Errorf("duplicate uses declaration '%s'", usesName)
 			}
+			d.uses[usesName] = bodyNode
 		case *MethodDecl:
 			methodName := bodyNode.NameNode.Name
-			if _, exists := d.Methods[methodName]; exists {
+			if _, exists := d.methods[methodName]; exists {
 				return fmt.Errorf("duplicate method definition '%s'", methodName)
 			}
-			d.Methods[methodName] = bodyNode
+			d.methods[methodName] = bodyNode
 			/* Disable recursive components for now
 			case *ComponentDecl:
 				// Handle nested definitions - recursive processing
@@ -276,7 +312,7 @@ func (d *ComponentDecl) Resolve(file *FileDecl) error {
 	return nil
 }
 
-func (c *ComponentDecl) String() string         { return fmt.Sprintf("component %s { ... }", c.Name) }
+func (c *ComponentDecl) String() string         { return fmt.Sprintf("component %s { ... }", c.NameNode) }
 func (c *ComponentDecl) componentBodyItemNode() {}
 
 // ComponentDeclBodyItem marker interface for items allowed in ComponentDecl body.
@@ -331,20 +367,12 @@ type UsesDecl struct {
 	NodeInfo
 	NameNode      *IdentifierExpr
 	ComponentNode *IdentifierExpr // Type name of the dependency
-
-	// Resolved values
-	Name         string
-	ComponentRef ComponentUse
 }
 
-func (u *UsesDecl) Resolve(file *FileDecl) error {
-	u.Name = u.NameNode.Name
-	u.ComponentRef = ComponentUse{
+func (u *UsesDecl) UsedComponent() *ComponentUse {
+	return &ComponentUse{
 		Name: u.ComponentNode.Name,
 	}
-	// TODO - Should we add u.Component.Ref into file.UnresolvedRefs so it can be resolved
-	// after the entire file is loaded or should it be delayed until runtime for lazy loading?
-	return nil
 }
 
 func (u *UsesDecl) componentBodyItemNode() {}
@@ -377,31 +405,14 @@ type SystemDecl struct {
 	NodeInfo
 	NameNode *IdentifierExpr
 	Body     []SystemDeclBodyItem // InstanceDecl, AnalyzeDecl, OptionsDecl, LetStmt
-
-	// Resolved values so we can work with processed/loaded values instead of resolving
-	// Identify expressions etc
-	Name string
-
-	// Note how we can get body etc from the Body decl directly
 }
 
-func (s *SystemDecl) Resolve(f *FileDecl) error {
-	s.Name = s.NameNode.Name
-	for _, item := range s.Body {
-		if err := item.Resolve(f); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (s *SystemDecl) String() string { return fmt.Sprintf("system %s { ... }", s.Name) }
+func (s *SystemDecl) String() string { return fmt.Sprintf("system %s { ... }", s.NameNode) }
 
 // SystemDeclBodyItem marker interface for items allowed in SystemDecl body.
 type SystemDeclBodyItem interface {
 	Node
 	systemBodyItemNode()
-	Resolve(f *FileDecl) error
 }
 
 // InstanceDecl represents `instanceName: ComponentType = { overrides };`
@@ -410,16 +421,11 @@ type InstanceDecl struct {
 	NameNode      *IdentifierExpr
 	ComponentType *IdentifierExpr
 	Overrides     []*AssignmentStmt
-
-	// Resolved values so we can work with processed/loaded values instead of resolving
-	// Identify expressions etc
-	Name      string
-	Component string // Name of the component being used.  Can be an FQN later if we do "dot" based imports
 }
 
 func (i *InstanceDecl) systemBodyItemNode() {}
 func (i *InstanceDecl) String() string {
-	return fmt.Sprintf("instance %s: %s = { ... };", i.Name, i.ComponentType)
+	return fmt.Sprintf("instance %s: %s = { ... };", i.NameNode, i.ComponentType)
 }
 
 // AnalyzeDecl represents `analyze name = callExpr expect { ... };`

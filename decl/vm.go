@@ -70,8 +70,11 @@ func (v *VM) registerDefaultComponents() {
 func (v *VM) CreateInstance(typeName string, instanceName string, overrides []*AssignmentStmt, frame *Frame) (runtimeInstance ComponentRuntime, err error) {
 
 	// 1. Get Component Definition (required for both native and DSL)
-	compDef, foundDef := v.Entry.Components[typeName]
-	if !foundDef {
+	compDef, err := v.Entry.GetComponent(typeName)
+	if err != nil {
+		return nil, err
+	}
+	if compDef == nil {
 		// Provide position info if possible - requires passing stmt? Or handling error higher up?
 		// Let's return error here, evalInstanceDecl can wrap it.
 		return nil, fmt.Errorf("unknown component type definition '%s' for instance '%s'", typeName, instanceName)
@@ -86,10 +89,10 @@ func (v *VM) CreateInstance(typeName string, instanceName string, overrides []*A
 			return nil, fmt.Errorf("evaluating override '%s' for DSL instance '%s': %w", assignVarName, instanceName, err)
 		}
 
-		if _, isParam := compDef.Params[assignVarName]; isParam {
+		if _, err := compDef.GetParam(assignVarName); err == nil {
 			// Parameter assignment: Store the resulting OpNode directly.
 			overriddenParams[assignVarName] = valueOpNode
-		} else if _, isUses := compDef.Uses[assignVarName]; isUses {
+		} else if _, err := compDef.GetDependency(assignVarName); err == nil {
 			// Dependency assignment: Expect RHS to evaluate to InstanceRefNode
 			instanceRef, okRef := valueOpNode.(*InstanceRefNode)
 			if !okRef {
@@ -135,7 +138,7 @@ func (v *VM) CreateInstance(typeName string, instanceName string, overrides []*A
 
 	// Process default parameters for DSL components
 	for paramName, paramOpNode := range overriddenParams {
-		paramDef := compDef.Params[paramName]
+		paramDef, _ := compDef.GetParam(paramName)
 		if paramDef == nil {
 			return nil, fmt.Errorf("invalid parameter: %s", paramName)
 		}
@@ -145,7 +148,7 @@ func (v *VM) CreateInstance(typeName string, instanceName string, overrides []*A
 	}
 
 	for depName, depInst := range overriddenDependencies {
-		depDef := compDef.Uses[depName]
+		depDef, _ := compDef.GetDependency(depName)
 		if depDef == nil {
 			return nil, fmt.Errorf("invalid dependency: %s", depName)
 		}

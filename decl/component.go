@@ -98,12 +98,12 @@ func (ci *UDComponent) String() string {
 	}
 	sort.Strings(depNames)
 
-	if ci.Definition.Name == "" {
+	if ci.Definition.NameNode.Name == "" {
 		panic("component not yet resolved")
 	}
 
 	return fmt.Sprintf("DSLInstance<%s name=%s, params=%v, deps=%v>",
-		ci.Definition.Name,
+		ci.Definition.NameNode.Name,
 		ci.InstanceName,
 		paramNames,
 		depNames,
@@ -134,9 +134,9 @@ func (ci *UDComponent) GetParam(name string) (OpNode, bool) {
 
 func (ci *UDComponent) InvokeMethod(methodName string, args []OpNode, vm *VM, callFrame *Frame) (OpNode, error) {
 	// 1. Find the Method Definition in the ComponentDefinition
-	methodDef, found := ci.Definition.Methods[methodName]
-	if !found {
-		return nil, fmt.Errorf("method '%s' not found on DSL component '%s' (type %s)", methodName, ci.InstanceName, ci.GetComponentTypeName())
+	methodDef, err := ci.Definition.GetMethod(methodName)
+	if err != nil || methodDef == nil {
+		return nil, err
 	}
 
 	// 2. Create a new frame for the method call.
