@@ -26,12 +26,6 @@ func (n *NodeInfo) Pos() int       { return n.StartPos }
 func (n *NodeInfo) End() int       { return n.StopPos }
 func (n *NodeInfo) String() string { return "{Node}" } // Default stringer
 
-// Declarations are processed at load time unlike statements and expressions
-// Used for holding mthod/component and other definitions
-type Declaration interface {
-	Node
-}
-
 // --- Top Level declarations ---
 
 // FileDecl represents the top-level node of a parsed DSL file.
@@ -417,7 +411,7 @@ type SystemDeclBodyItem interface {
 
 // InstanceDecl represents `instanceName: ComponentType = { overrides };`
 type InstanceDecl struct {
-	Declaration
+	NodeInfo
 	NameNode      *IdentifierExpr
 	ComponentType *IdentifierExpr
 	Overrides     []*AssignmentStmt
