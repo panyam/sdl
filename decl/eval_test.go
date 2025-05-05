@@ -405,6 +405,7 @@ func TestEvalInstanceDecl_NativeComponent(t *testing.T) {
 
 	// --- Register Mock Component Definition ---
 	mockDiskDef := &ComponentDecl{
+		IsNative: true,
 		NameNode: newIdent("MockDisk"),
 		Body: []ComponentDeclBodyItem{
 			newParamDecl("ProfileName", "string"),
@@ -437,7 +438,7 @@ func TestEvalInstanceDecl_NativeComponent(t *testing.T) {
 	mockDiskInstance, okCast := adapter.GoInstance.(*MockDisk)
 	require.True(t, okCast, "Adapter GoInstance is not *MockDisk")
 	assert.Equal(t, "d1", mockDiskInstance.InstanceName)
-	assert.Equal(t, "HDD", mockDiskInstance.Profile)
+	assert.Equal(t, "HDD", mockDiskInstance.ProfileName)
 	assert.Equal(t, 123.0, mockDiskInstance.ReadLatency)
 
 	t.Logf("(Native) Frame after system eval: %s", frame)
@@ -557,7 +558,7 @@ func TestEvalInstanceDecl_DependencyInjection(t *testing.T) {
 	require.True(t, okDbAdapter, "theDbInstance is not *NativeComponent")
 	mockDisk, okDisk := dbAdapter.GoInstance.(*MockDisk)
 	require.True(t, okDisk)
-	assert.Equal(t, "SSD", mockDisk.Profile)
+	assert.Equal(t, "SSD", mockDisk.ProfileName)
 
 	// Check Service instance (should be Native Adapter)
 	svcRuntime := assertComponentRuntime(t, frame, "theSvcInstance", "MySvc")
