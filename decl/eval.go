@@ -3,8 +3,6 @@ package decl
 import (
 	"errors"
 	"fmt"
-	"reflect"
-	"strings"
 
 	"github.com/panyam/leetcoach/sdl/core"
 )
@@ -384,6 +382,8 @@ func evalInstanceDecl(stmt *InstanceDecl, frame *Frame, v *VM) (OpNode, error) {
 		return nil, fmt.Errorf("identifier '%s' already exists in the current scope", instanceName)
 	}
 
+	// First evaluate the value of the overrides before passing them to the instance creator
+
 	// --- Call the Factory Method ---
 	runtimeInstance, err := v.CreateInstance(componentTypeName, instanceName, stmt.Overrides, frame)
 	if err != nil {
@@ -423,70 +423,4 @@ func extractLeafValue(leaf *LeafNode) (any, error) {
 		return nil, fmt.Errorf("value is probabilistic or empty, cannot extract single value")
 	}
 	return rawValue, nil
-}
-
-// --- Placeholder injectDependencies (remains the same, uses reflection conceptually) ---
-func injectDependencies(targetInstance any, dependencies map[string]ComponentRuntime) error {
-	targetVal := reflect.ValueOf(targetInstance)
-	// Check if targetInstance is valid pointer to struct
-	if targetVal.Kind() != reflect.Ptr || targetVal.IsNil() {
-		return fmt.Errorf("targetInstance must be a non-nil pointer")
-	}
-	targetElem := targetVal.Elem()
-	if targetElem.Kind() != reflect.Struct {
-		return fmt.Errorf("targetInstance must point to a struct")
-	}
-
-	// log.Printf("Conceptual Injection into %T:", targetInstance)
-	for name, depRuntime := range dependencies {
-		// log.Printf("  Injecting '%s' (%T)", name, depRuntime)
-
-		// Find field in targetInstance struct (Simple approach: match name case-insensitively?)
-		// Real approach needs tags or better mapping. Assume field name matches `uses` name but capitalized.
-		fieldName := strings.Title(name)
-		field := targetElem.FieldByName(fieldName)
-		if !field.IsValid() {
-			continue // Skip if no matching field found (could be error?)
-		}
-		if !field.CanSet() {
-			return fmt.Errorf("cannot set field '%s' in target %T", fieldName, targetInstance)
-		}
-
-		// Get the actual underlying value (Go instance or *UDComponent)
-		var depValueToInject any
-		if adapter, ok := depRuntime.(*NativeComponent); ok {
-			depValueToInject = adapter.GoInstance
-		} else if dslInst, ok := depRuntime.(*UDComponent); ok {
-			depValueToInject = dslInst
-		} else {
-			return fmt.Errorf("dependency %s has unknown ComponentRuntime type %T", name, depRuntime)
-		}
-
-		depVal := reflect.ValueOf(depValueToInject)
-
-		if !depVal.IsValid() { // Handle nil dependency value if necessary
-			// Check if field type is pointer or interface, if so, setting nil is okay
-			if field.Type().Kind() == reflect.Ptr || field.Type().Kind() == reflect.Interface || field.Type().Kind() == reflect.Map || field.Type().Kind() == reflect.Slice {
-				// Set the zero value for the field type (which is nil for pointers/interfaces/maps/slices)
-				field.Set(reflect.Zero(field.Type()))
-				continue
-			} else {
-				return fmt.Errorf("dependency '%s' value is nil, cannot assign to non-pointer/non-interface field '%s'", name, fieldName)
-			}
-		}
-		if !depVal.Type().AssignableTo(field.Type()) {
-			if field.Type().Kind() == reflect.Interface {
-				if !depVal.Type().Implements(field.Type()) {
-					if field.Type().NumMethod() != 0 { // Allow assignment to empty interface{}
-						return fmt.Errorf("type mismatch: cannot assign dependency '%s' type %T to interface field '%s' type %s (does not implement)", name, depValueToInject, fieldName, field.Type())
-					}
-				}
-			} else {
-				return fmt.Errorf("type mismatch: cannot assign dependency '%s' type %T to field '%s' type %s", name, depValueToInject, fieldName, field.Type())
-			}
-		}
-		field.Set(depVal)
-		// log.Printf("    Successfully injected '%s' into field '%s'", name, fieldName)
-	}
-	return nil
 }

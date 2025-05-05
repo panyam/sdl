@@ -1,11 +1,18 @@
 package decl
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"sort"
 
 	"github.com/panyam/leetcoach/sdl/core"
+)
+
+var (
+	ErrInvalidField           = errors.New("invalid field")
+	ErrInvalidFieldType       = errors.New("invalid field type")
+	ErrInvalidNativeComponent = errors.New("invalid native component")
 )
 
 // ComponentRuntime represents an instantiated component, either native Go or DSL-defined.
@@ -26,6 +33,15 @@ type ComponentRuntime interface {
 	// GetDependency returns the runtime instance (another ComponentRuntime)
 	// satisfying a dependency declared via 'uses'.
 	GetDependency(name string) (ComponentRuntime, bool) // Returns ComponentRuntime, found
+
+	// SetParam sets the evaluated parameter value for this instance.
+	// For DSL components, this sets an OpNode.
+	// For Native components, it is upto the component to manage the value of the OpNode
+	SetParam(name string, value OpNode) error // Returns OpNode, found
+
+	// SetDependency sets the runtime instance (another ComponentRuntime)
+	// satisfying a dependency declared via 'uses'.
+	SetDependency(name string, comp ComponentRuntime) error // Returns ComponentRuntime, found
 
 	// InvokeMethod prepares or executes a method call on this component instance.
 	// Args are the evaluated OpNodes for the arguments.
@@ -48,6 +64,21 @@ type UDComponent struct {
 	InstanceName string                      // The name given in the InstanceDecl
 	Params       map[string]OpNode           // Evaluated parameter OpNodes (override or default)
 	Dependencies map[string]ComponentRuntime // *** Unified map ***
+}
+
+// SetParam sets the evaluated parameter value for this instance.
+// For DSL components, this sets an OpNode.
+// For Native components, it is upto the component to manage the value of the OpNode
+func (ci *UDComponent) SetParam(name string, value OpNode) error {
+	ci.Params[name] = value
+	return nil
+}
+
+// SetDependency sets the runtime instance (another ComponentRuntime)
+// satisfying a dependency declared via 'uses'.
+func (ci *UDComponent) SetDependency(name string, comp ComponentRuntime) error {
+	ci.Dependencies[name] = comp
+	return nil
 }
 
 // Remove isNativeComponent helper (no longer needed here)
@@ -148,9 +179,30 @@ func (ci *UDComponent) InvokeMethod(methodName string, args []OpNode, vm *VM, ca
 type NativeComponent struct {
 	InstanceName string
 	TypeName     string
-	GoInstance   any // The actual *components.Disk, *components.Cache, etc.
-	// Maybe store evaluated params/dependencies used for its creation?
-	// ParamsMap    map[string]any // Store the raw Go values used at creation?
+
+	// The actual *components.Disk, *components.Cache, etc.
+	// Use a goinstance that can already handle some of the runtime methods we need
+	// When writing native components, we just enforce these so we can avoid reflection
+	GoInstance interface {
+		// GetParam returns the evaluated parameter value for this instance.
+		// For DSL components, this returns the OpNode.
+		// For Native components, it needs to retrieve the configured Go value
+		// and potentially wrap it in a LeafNode/VarState for consistency? (TBD)
+		// GetParam(name string) (OpNode, bool) // Returns OpNode, found
+
+		// GetDependency returns the runtime instance (another ComponentRuntime)
+		// satisfying a dependency declared via 'uses'.
+		// GetDependency(name string) (ComponentRuntime, bool) // Returns ComponentRuntime, found
+
+		// SetParam sets the evaluated parameter value for this instance.
+		// For DSL components, this sets an OpNode.
+		// For Native components, it is upto the component to manage the value of the OpNode
+		// SetParam(name string, value any) error
+
+		// SetDependency sets the runtime instance (another ComponentRuntime)
+		// satisfying a dependency declared via 'uses'.
+		// SetDependency(name string, comp ComponentRuntime) error
+	}
 }
 
 // Implement ComponentRuntime for *NativeComponent
@@ -326,4 +378,78 @@ func (na *NativeComponent) InvokeMethod(methodName string, args []OpNode, vm *VM
 	}
 
 	return &LeafNode{State: resultVarState}, nil
+}
+
+// SetParam sets the evaluated parameter value for this instance.
+// For DSL components, this sets an OpNode.
+// For Native components, it is upto the component to manage the value of the OpNode
+func (na *NativeComponent) SetParam(name string, value OpNode) error {
+	instanceVal := reflect.ValueOf(na.GoInstance)
+	if instanceVal.Kind() == reflect.Ptr {
+		instanceVal = instanceVal.Elem()
+	}
+	if instanceVal.Kind() != reflect.Struct {
+		return ErrInvalidNativeComponent
+	}
+
+	fieldVal := instanceVal.FieldByName(name) // Assumes direct mapping Name -> FieldName
+	if !fieldVal.IsValid() {
+		// Try converting param name (e.g., ProfileName) to field name (ProfileName)
+		// This is simple if they match case-sensitively. Often needs tags.
+		// For now, assume direct match.
+		return ErrInvalidField
+	}
+
+	// Convert the Go value back to a *VarState -> LeafNode (simplistic)
+	if !fieldVal.CanSet() {
+		return fmt.Errorf("cannot set value of param '%s'", name)
+	}
+
+	switch v := value.(type) {
+	case *NilNode:
+		fieldVal.SetPointer(nil)
+		break
+	case *LeafNode:
+		if v.State == nil {
+			fieldVal.SetPointer(nil)
+		} else {
+			switch val := v.State.ValueOutcome.(type) {
+			case int64:
+				fieldVal.SetInt(val)
+			case int:
+				fieldVal.SetInt(int64(val))
+			case uint64:
+				fieldVal.SetUint(val)
+			case uint:
+				fieldVal.SetUint(uint64(val))
+			case bool:
+				fieldVal.SetBool(val)
+			case string:
+				fieldVal.SetString(val)
+			case float32:
+				fieldVal.SetFloat(float64(val))
+			case float64:
+				fieldVal.SetFloat(val)
+			default:
+				return fmt.Errorf("invalid value type %v for param '%s'", reflect.TypeOf(val), name)
+			}
+		}
+		break
+	case *BinaryOpNode:
+	case *IfChoiceNode:
+	case *SequenceNode:
+		return fmt.Errorf("node (%s) must be evaluated before setting param ('%s')", reflect.TypeOf(v), name)
+	// How to handle *Outcomes[T] fields? Maybe return directly?
+	// case *core.Outcomes[core.Duration]: valueOutcome = v // Risky - mutable?
+	default:
+		return fmt.Errorf("Invalid value type for param ('%s'): '%s')", name, reflect.TypeOf(v))
+	}
+	return nil
+}
+
+// SetDependency sets the runtime instance (another ComponentRuntime)
+// satisfying a dependency declared via 'uses'.
+func (ci *NativeComponent) SetDependency(name string, comp ComponentRuntime) error {
+	// Cannot override dependeencies in native cmponents for now
+	return nil
 }

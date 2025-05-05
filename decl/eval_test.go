@@ -641,9 +641,9 @@ func TestEvalCallExpr_DSLMethod(t *testing.T) {
 
 	require.NoError(t, vm.Entry.RegisterComponent(mockNativeDef))
 	// Mock Constructor for NativeDep
-	vm.RegisterNativeComponent("NativeDep", func(instanceName string, params map[string]any) (any, error) {
+	vm.RegisterNativeComponent("NativeDep", func(instanceName string) (ComponentRuntime, error) {
 		// Simple mock, doesn't need much state for this test
-		return &struct{ InstanceName string }{InstanceName: instanceName}, nil
+		return &NativeComponent{InstanceName: instanceName}, nil
 	})
 	// Add a mock method to the native dependency (in mocks.go or define inline if simple enough)
 	// For this test, let's assume NativeDep has a method 'GetValue' that returns a LeafNode(int=100)
