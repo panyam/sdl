@@ -11,39 +11,43 @@ The DSL evaluation employs a two-stage strategy using an intermediate "Operator 
 1.  **Stage 1: AST Evaluation to Operator Tree (`Eval` function in `eval.go`)**
     *   The `Eval` function walks the Abstract Syntax Tree (AST) defined in `ast.go`.
     *   It uses the runtime `Env` (`env.go`) for variable scoping.
-    *   Instead of immediately calculating combined probabilistic states, it builds an **Operator Tree** (`opnode.go`).
-    *   **Leaves** (`LeafNode`) of this tree represent concrete values, holding a `VarState` (`state.go`) which encapsulates the dual-track `ValueOutcome` and `LatencyOutcome`. Leaf nodes are typically produced by evaluating literals or calling methods on Go components (from `sdl/components`).
-    *   **Internal Nodes** (`SequenceNode`, `BinaryOpNode`, `ChoiceNode`, etc. - *partially defined*) represent operations (+, &&, sequence, if, distribute) and hold references to their child nodes.
-    *   This stage focuses on correctly representing the *structure* of the computation.
+    *   It builds an **Operator Tree** (`opnode.go`) representing the computation symbolically.
+    *   **Leaves** (`LeafNode`) hold a `VarState` (`state.go`) (Value + Latency outcomes), created from literals or component calls.
+    *   **Internal Nodes** (`SequenceNode`, `BinaryOpNode`, `IfChoiceNode`, etc.) represent operations and structure.
+    *   Component *definitions* (`ComponentDecl`) are processed to populate a `ComponentDefRegistry` in the `VM`.
+    *   Component *instantiations* (`InstanceDecl`) use the definition registry and potentially a native Go constructor registry (`VM.ComponentRegistry`) to create runtime instances.
+        *   Native Go components (from `sdl/components`) are wrapped in a `NativeComponentAdapter`.
+        *   DSL-defined components are represented by `ComponentInstance`.
+        *   Both implement the `ComponentRuntime` interface (`instance.go`) and are stored in the `Env`.
+    *   Focuses on building the correct symbolic tree and setting up the runtime environment with component instances.
 
 2.  **Stage 2: Operator Tree Execution (Future "Tree Evaluator")**
-    *   *(Not Yet Implemented)* A separate component (the "Tree Evaluator") will be responsible for processing the `OpNode` tree generated in Stage 1.
-    *   It will walk the Operator Tree, recursively evaluating child nodes.
-    *   At each internal node, it will perform the actual probabilistic combination of the resulting child `VarState`s, implementing the **V4 Dual-Track Model**:
-        *   Combine `LatencyOutcome` tracks (typically using `core.And` with duration addition).
-        *   Combine `ValueOutcome` tracks based on the operation (e.g., arithmetic, boolean logic, conditional splitting/merging).
-    *   This stage will also apply complexity reduction (`core.TrimToSize` etc.) via the `reducers.go` logic (which needs alignment with `VarState`).
-    *   The final result of the Tree Evaluator will be a single, combined `VarState`.
+    *   *(Not Yet Implemented)* A separate component will process the `OpNode` tree.
+    *   It will walk the tree, performing actual `VarState` combinations (using the V4 dual-track model) and reduction (`reducers.go`).
+    *   It will interact with `ComponentRuntime` instances (via `InvokeMethod`) to handle method calls.
+    *   The final result will be a single, combined `VarState`.
 
 **Key Components & Files:**
 
-*   **`ast.go`:** Defines Go structs representing the parsed DSL grammar (Components, Systems, Statements, Expressions).
-*   **`opnode.go`:** Defines the interfaces and structs for the intermediate Operator Tree (`OpNode`, `LeafNode`, `SequenceNode`, `NilNode`).
-*   **`eval.go`:** Implements the `Eval` function (Stage 1) which traverses the AST and builds the `OpNode` tree.
-    *   *Currently Implemented:* Literals, Identifiers, Let Statements, Expression Statements, Blocks.
-*   **`env.go`:** Runtime environment for managing identifier scopes (stores `OpNode`s for variables during Stage 1).
-*   **`state.go`:** Defines `VarState` (dual-track outcomes) and helpers (`ZeroLatencyOutcome`, etc.). `VarState` is used within `LeafNode`s.
-*   **`vm.go`:** Basic VM structure, holds internal functions registry and reducer registry (currently single-outcome focused).
-*   **`analysis.go`:** Defines `AnalysisResultWrapper` and `CalculateAndStoreMetrics` for handling `analyze` block results. *(Needs update for `VarState` and Tree Evaluator integration)*.
-*   **`reducers.go`:** Manages outcome combination and reduction. *(Currently operates on single `core.Outcomes`, needs significant update for `VarState` combination within the Tree Evaluator)*.
-*   **`SYNTAX.md`, `GRAMMAR.ebnf`, `FUTURES.md`:** DSL design documents.
+*   **`ast.go`:** Defines the parsed DSL grammar structs.
+*   **`opnode.go`:** Defines the Operator Tree nodes (`OpNode`, `LeafNode`, `BinaryOpNode`, `IfChoiceNode`, etc.).
+*   **`instance.go`:** Defines the `ComponentRuntime` interface and the `ComponentInstance` struct (for DSL components). Includes the `NativeComponentAdapter` for wrapping Go components.
+*   **`eval.go`:** Implements the Stage 1 `Eval` function (builds `OpNode` tree).
+    *   *Currently Implemented:* Literals, Identifiers, Let Stmts, Expr Stmts, Blocks, Binary Ops, If Stmts, Component Defs, System Defs, Instance Decls (Native & DSL).
+*   **`env.go`:** Runtime environment (stores `OpNode`s for variables, `ComponentRuntime`s for instances).
+*   **`state.go`:** Defines `VarState` (dual-track outcomes).
+*   **`vm.go`:** VM structure, holds `ComponentDefRegistry`, `ComponentRegistry` (for native constructors), internal funcs, reducers.
+*   **`analysis.go`:** Defines `AnalysisResultWrapper`. *(Needs update for `VarState` and Tree Evaluator integration)*.
+*   **`reducers.go`:** Manages outcome combination/reduction. *(Needs update for `VarState`)*.
+*   **`SYNTAX.md`, `GRAMMAR.ebnf`, `FUTURES.md`, `EXAMPLES.md`:** Design and example documents.
 
 **Current Status:**
 
-*   AST, environment, and `VarState` structures are defined.
-*   The Operator Tree evaluation strategy is chosen. Basic `OpNode` types are defined.
-*   Stage 1 `Eval` implementation has begun: Literals, identifiers, let bindings, expression statements, and blocks correctly build `LeafNode`, `SequenceNode`, or `NilNode` results and manage the environment.
+*   AST, environment, `VarState`, `ComponentRuntime`, `ComponentInstance`, `NativeComponentAdapter`, and basic `OpNode` types are defined.
+*   The Operator Tree evaluation strategy is established.
+*   Stage 1 `Eval` implementation handles key structural elements: definitions (Component), setup (System, Instance - native & DSL, including dependency injection structure), and basic expressions/statements (Literals, Let, Identifiers, Blocks, Binary Ops, If).
 *   **Missing:**
-    *   `Eval` logic for most operations (binary ops, control flow, component calls, concurrency) to build their respective `OpNode`s.
-    *   The entire Stage 2 "Tree Evaluator" component is missing.
-    *   Integration with `analysis.go` and updates to `reducers.go` for `VarState` handling are needed.
+    *   `Eval` logic for method calls (`evalCallExpr`), unary ops, `distribute`, `delay`, concurrency (`go`, `wait`), etc.
+    *   The entire Stage 2 "Tree Evaluator" component.
+    *   Integration with `analysis.go` and updates to `reducers.go` for `VarState` / Tree Evaluator.
+    *   Temporary workarounds for evaluating native component parameters need replacement.

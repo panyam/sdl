@@ -19,46 +19,46 @@ var (
 )
 
 // Starts the execution of a single expression
-func Eval(node Node, env *Env[any], v *VM) (OpNode, error) {
+func Eval(node Node, frame *Frame, v *VM) (OpNode, error) {
 	// fmt.Printf("Eval entry: %T - %s\n", node, node) // Debug entry
 	switch n := node.(type) {
 	// We'll add cases here in subsequent phases
 	case *LiteralExpr:
-		return evalLiteral(n, env, v)
+		return evalLiteral(n, frame, v)
 	case *IdentifierExpr:
-		return evalIdentifier(n, env, v)
+		return evalIdentifier(n, frame, v)
 
 	// --- Statement Nodes ---
 	case *BlockStmt:
 		// When Eval is called directly on a BlockStmt (e.g., top level),
 		// there is no initial context from an outer structure like IfStmt.
 		// evalBlockStmt now returns the result directly, doesn't leave on stack implicitly
-		return evalBlockStmt(n, NewEnv(env), nil) // Pass nil context
+		return evalBlockStmt(n, NewFrame(frame), nil) // Pass nil context
 	case *LetStmt:
-		return evalLetStmt(n, env, nil)
+		return evalLetStmt(n, frame, nil)
 	case *BinaryExpr:
-		return evalBinaryExpr(n, env, v)
+		return evalBinaryExpr(n, frame, v)
 	case *ExprStmt:
-		return evalExprStmt(n, env, v)
+		return evalExprStmt(n, frame, v)
 	case *IfStmt: // <-- Will be implemented now
-		return evalIfStmt(n, env, v)
+		return evalIfStmt(n, frame, v)
 	case *SystemDecl: // <<< Added case
-		return evalSystemDecl(n, env, v)
+		return evalSystemDecl(n, frame, v)
 	case *InstanceDecl: // <<< Added case
-		return evalInstanceDecl(n, env, v)
+		return evalInstanceDecl(n, frame, v)
 	case *ComponentDecl: // <<< Added case
-		return evalComponentDecl(n, env, v)
-	/* - TODO
-	case *AssignmentStmt:
-		return evalAssignmentStmt(n, env, v)
-	case *SwitchStmt: // <-- Will be implemented now
-		return evalSwitchStmt(n, env, v)
+		return evalComponentDecl(n, frame, v)
 	case *CallExpr:
-		return evalCall(n, env, v)
+		return evalCallExpr(n, frame, v)
 	case *MemberAccessExpr:
 		// Member access is often handled *within* evalCallExpr,
 		// but we might need a stub if it can be evaluated alone.
-		return evalMemberAccess(n, env, v) // <-- Call the actual implementation
+		return evalMemberAccess(n, frame, v) // <-- Call the actual implementation
+	/* - TODO
+	case *AssignmentStmt:
+		return evalAssignmentStmt(n, frame, v)
+	case *SwitchStmt: // <-- Will be implemented now
+		return evalSwitchStmt(n, frame, v)
 	*/
 
 	default:
@@ -67,7 +67,7 @@ func Eval(node Node, env *Env[any], v *VM) (OpNode, error) {
 }
 
 /** Evaluate a literal and return its value */
-func evalLiteral(expr *LiteralExpr, env *Env[any], v *VM) (OpNode, error) {
+func evalLiteral(expr *LiteralExpr, frame *Frame, v *VM) (OpNode, error) {
 	rawValue, err := ParseLiteralValue(expr) // Use existing helper
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse literal '%s': %w", expr.Value, err)
@@ -114,55 +114,159 @@ func evalLiteral(expr *LiteralExpr, env *Env[any], v *VM) (OpNode, error) {
 }
 
 /** Evaluate a Identifier and return its value */
-func evalIdentifier(expr *IdentifierExpr, env *Env[any], v *VM) (OpNode, error) {
+func evalIdentifier(expr *IdentifierExpr, frame *Frame, v *VM) (OpNode, error) {
 	name := expr.Name
-	value, ok := env.Get(name)
+	value, ok := frame.Get(name)
 	if !ok {
 		return nil, fmt.Errorf("%w: identifier '%s'", ErrNotFound, name)
 	}
 
-	// The environment should store OpNodes for variables during evaluation
+	// The frame should store OpNodes for variables during evaluation
 	opNode, ok := value.(OpNode)
 	if !ok {
 		// This indicates an internal inconsistency - something other than an OpNode
 		// was stored for a variable during evaluation.
-		return nil, fmt.Errorf("internal error: expected OpNode for identifier '%s', but found type %T in environment", name, value)
+		return nil, fmt.Errorf("internal error: expected OpNode for identifier '%s', but found type %T in frame", name, value)
 	}
 
 	return opNode, nil
 }
 
-func evalLetStmt(stmt *LetStmt, env *Env[any], v *VM) (OpNode, error) {
+func evalLetStmt(stmt *LetStmt, frame *Frame, v *VM) (OpNode, error) {
 	varName := stmt.Variable.Name
-	valueOpNode, err := Eval(stmt.Value, env, v)
+	valueOpNode, err := Eval(stmt.Value, frame, v)
 	if err != nil {
 		return nil, fmt.Errorf("evaluating value for let statement '%s': %w", varName, err)
 	}
 
-	// Store the resulting OpNode in the current environment
-	env.Set(varName, valueOpNode)
+	// Store the resulting OpNode in the current frame
+	frame.Set(varName, valueOpNode)
 
 	// 'let' itself doesn't produce a value for subsequent sequence steps
 	return theNilNode, nil
 }
 
 /** Evaluate a Call and return its value */
-func evalCall(expr *CallExpr, env *Env[any], v *VM) (val Value, err error) {
-	return
+func evalCallExpr(expr *CallExpr, frame *Frame, v *VM) (val OpNode, err error) {
+	var runtimeInstance ComponentRuntime
+	var methodName string
+
+	// 1. Evaluate the Function part to determine what is being called.
+	//    Most common case: MemberAccessExpr (instance.method)
+	if memberAccess, ok := expr.Function.(*MemberAccessExpr); ok {
+		// Evaluate the receiver (should be an identifier)
+		receiverNode, err := Eval(memberAccess.Receiver, frame, v)
+		if err != nil {
+			return nil, fmt.Errorf("evaluating receiver for method call '%s': %w", memberAccess.Member.Name, err)
+		}
+
+		// The receiver *must* resolve to a ComponentRuntime instance stored in the frame.
+		// The receiver itself is likely an IdentifierExpr AST node, but Eval resolves it.
+		// We expect Eval(receiver) to return the OpNode associated with the identifier,
+		// which for an instance *should be* the ComponentRuntime itself.
+		// Let's adjust the expectation: Eval of Identifier returns the OpNode,
+		// but if that identifier *represents* an instance, we need the instance itself.
+		// This suggests instances might need to be stored directly in the frame, not as OpNodes.
+		// --> Let's check evalIdentifier and evalInstanceDecl again.
+		//
+		// CHECK: evalInstanceDecl stores the `runtimeInstance` (ComponentRuntime) in the frame.
+		// CHECK: evalIdentifier retrieves whatever is in the frame.
+		// OKAY: So, we expect evalIdentifier(receiverIdent) to return the ComponentRuntime.
+
+		// Let's re-evaluate the receiver identifier directly to get the runtime instance
+		receiverIdent, okIdent := memberAccess.Receiver.(*IdentifierExpr)
+		if !okIdent {
+			// If the receiver isn't a simple identifier (e.g., nested call result),
+			// this scenario is more complex and might require the Tree Evaluator.
+			// For Stage 1, let's assume simple instance.method calls.
+			return nil, fmt.Errorf("method call receiver must be a simple identifier, found %T", memberAccess.Receiver)
+		}
+
+		instanceAny, found := frame.Get(receiverIdent.Name)
+		if !found {
+			return nil, fmt.Errorf("instance '%s' not found for method call '%s'", receiverIdent.Name, memberAccess.Member.Name)
+		}
+
+		runtimeInstance, ok = instanceAny.(ComponentRuntime)
+		if !ok {
+			// This indicates an error - something other than a ComponentRuntime was stored for this identifier.
+			return nil, fmt.Errorf("identifier '%s' does not represent a component instance (found type %T)", receiverIdent.Name, instanceAny)
+		}
+
+		methodName = memberAccess.Member.Name // Get method name from the AST
+
+	} else if identFunc, ok := expr.Function.(*IdentifierExpr); ok {
+		// Case: Calling a potential global/builtin function (less common for components)
+		// Look up in VM's internal funcs? Defer implementation for now.
+		return nil, fmt.Errorf("calling standalone functions ('%s') not implemented yet", identFunc.Name)
+	} else {
+		// The function part is some other expression - likely invalid DSL structure
+		// or requires evaluation first (Stage 2 Tree Evaluator needed).
+		return nil, fmt.Errorf("invalid function/method expression type %T in call", expr.Function)
+	}
+
+	// 2. Evaluate Arguments -> []OpNode
+	argOpNodes := make([]OpNode, len(expr.Args))
+	for i, argExpr := range expr.Args {
+		argNode, err := Eval(argExpr, frame, v)
+		if err != nil {
+			// TODO: Improve error reporting (arg index, method name)
+			return nil, fmt.Errorf("evaluating argument %d for method '%s': %w", i, methodName, err)
+		}
+		argOpNodes[i] = argNode
+	}
+
+	// 3. Invoke the method on the ComponentRuntime instance
+	//    Pass the current frame (callFrame) for context.
+	resultOpNode, err := runtimeInstance.InvokeMethod(methodName, argOpNodes, v, frame)
+	if err != nil {
+		// Error could be method not found, arg mismatch (checked inside InvokeMethod),
+		// or error during execution (native reflection call fail, DSL body eval fail).
+		return nil, fmt.Errorf("error calling method '%s' on instance '%s': %w", methodName, runtimeInstance.GetInstanceName(), err)
+	}
+
+	// 4. Return the resulting OpNode
+	return resultOpNode, nil
 }
 
-/** Evaluate a MemberAccess and return its value */
-func evalMemberAccess(expr *MemberAccessExpr, env *Env[any], v *VM) (val Value, err error) {
-	return
+// evalMemberAccess - Placeholder implementation
+// This is called if a MemberAccessExpr is evaluated *outside* a CallExpr context.
+// For now, it's unclear if this is needed or how it should behave in Stage 1.
+// A simple member access like `myInstance.param` might need the Tree Evaluator
+// to extract the parameter value *during execution*. Stage 1 focuses on structure.
+// Let's return an error indicating it's not directly evaluatable this way yet.
+func evalMemberAccess(expr *MemberAccessExpr, frame *Frame, v *VM) (OpNode, error) {
+	// Evaluating receiver to ensure it exists might be useful
+	receiverIdent, okIdent := expr.Receiver.(*IdentifierExpr)
+	if !okIdent {
+		return nil, fmt.Errorf("member access receiver must be a simple identifier, found %T", expr.Receiver)
+	}
+	instanceAny, found := frame.Get(receiverIdent.Name)
+	if !found {
+		return nil, fmt.Errorf("identifier '%s' not found for member access '%s'", receiverIdent.Name, expr.Member.Name)
+	}
+	runtimeInstance, okRuntime := instanceAny.(ComponentRuntime)
+	if !okRuntime {
+		return nil, fmt.Errorf("identifier '%s' does not represent a component instance (found type %T)", receiverIdent.Name, instanceAny)
+	}
+
+	// However, *getting* the parameter might require the Tree Evaluator.
+	// We *could* try calling runtimeInstance.GetParam() here, but GetParam returns an OpNode.
+	// What does it mean to "evaluate" `instance.param` in Stage 1? Maybe it should
+	// return a specific OpNode type representing the parameter access?
+	// For now, let's return an error, assuming direct member access isn't handled in Stage 1.
+	// It's primarily used within method calls.
+	return nil, fmt.Errorf("direct evaluation of member access '%s.%s' not supported in Stage 1; use within method calls or assignments", receiverIdent.Name, expr.Member.Name)
+	// Alternative: Could return runtimeInstance.GetParam(expr.Member.Name) if GetParam is robust.
 }
 
 /** Evaluate a Block and return its value */
-func evalBlockStmt(stmt *BlockStmt, env *Env[any], v *VM) (OpNode, error) {
-	blockEnv := NewEnv[any](env) // Create block scope
+func evalBlockStmt(stmt *BlockStmt, frame *Frame, v *VM) (OpNode, error) {
+	blockFrame := NewFrame(frame) // Create block scope
 	steps := make([]OpNode, 0, len(stmt.Statements))
 
 	for _, statement := range stmt.Statements {
-		resultNode, err := Eval(statement, blockEnv, v)
+		resultNode, err := Eval(statement, blockFrame, v)
 		if err != nil {
 			// TODO: Improve error reporting with position info from statement
 			return nil, fmt.Errorf("error in block statement: %w", err)
@@ -185,9 +289,9 @@ func evalBlockStmt(stmt *BlockStmt, env *Env[any], v *VM) (OpNode, error) {
 }
 
 /** Evaluate a If and return its value */
-func evalIfStmt(stmt *IfStmt, env *Env[any], v *VM) (val OpNode, err error) {
+func evalIfStmt(stmt *IfStmt, frame *Frame, v *VM) (val OpNode, err error) {
 	// Evaluate the condition expression to get its OpNode representation
-	conditionNode, err := Eval(stmt.Condition, env, v)
+	conditionNode, err := Eval(stmt.Condition, frame, v)
 	if err != nil {
 		// TODO: Improve error reporting
 		return nil, fmt.Errorf("evaluating condition for if statement: %w", err)
@@ -196,7 +300,7 @@ func evalIfStmt(stmt *IfStmt, env *Env[any], v *VM) (val OpNode, err error) {
 	// Evaluate the 'then' block to get its OpNode representation
 	// Note: Use the *same* environment level as the if statement itself.
 	// Scoping for variables *inside* the block is handled by evalBlockStmt.
-	thenNode, err := Eval(stmt.Then, env, v)
+	thenNode, err := Eval(stmt.Then, frame, v)
 	if err != nil {
 		// TODO: Improve error reporting
 		return nil, fmt.Errorf("evaluating 'then' block for if statement: %w", err)
@@ -205,7 +309,7 @@ func evalIfStmt(stmt *IfStmt, env *Env[any], v *VM) (val OpNode, err error) {
 	// Evaluate the 'else' block/statement, if it exists
 	var elseNode OpNode = theNilNode // Default to NilNode if no else
 	if stmt.Else != nil {
-		elseNode, err = Eval(stmt.Else, env, v)
+		elseNode, err = Eval(stmt.Else, frame, v)
 		if err != nil {
 			// TODO: Improve error reporting
 			return nil, fmt.Errorf("evaluating 'else' block for if statement: %w", err)
@@ -221,30 +325,30 @@ func evalIfStmt(stmt *IfStmt, env *Env[any], v *VM) (val OpNode, err error) {
 }
 
 /** Evaluate a Switch and return its value */
-func evalSwitchStmt(stmt *SwitchStmt, env *Env[any], v *VM) (val Value, err error) {
+func evalSwitchStmt(stmt *SwitchStmt, frame *Frame, v *VM) (val Value, err error) {
 	return
 }
 
 /** Evaluate a Expr as a statement and return its value */
-func evalExprStmt(stmt *ExprStmt, env *Env[any], v *VM) (OpNode, error) {
+func evalExprStmt(stmt *ExprStmt, frame *Frame, v *VM) (OpNode, error) {
 	// Evaluate the expression and return its OpNode result
-	return Eval(stmt.Expression, env, v)
+	return Eval(stmt.Expression, frame, v)
 }
 
 /** Evaluate a Assignment as a statement and return its value */
-func evalAssignmentStmt(stmt *AssignmentStmt, env *Env[any], v *VM) (val Value, err error) {
+func evalAssignmentStmt(stmt *AssignmentStmt, frame *Frame, v *VM) (val Value, err error) {
 	return
 }
 
-func evalBinaryExpr(expr *BinaryExpr, env *Env[any], v *VM) (OpNode, error) {
+func evalBinaryExpr(expr *BinaryExpr, frame *Frame, v *VM) (OpNode, error) {
 	// Recursively evaluate left and right operands
-	leftNode, err := Eval(expr.Left, env, v)
+	leftNode, err := Eval(expr.Left, frame, v)
 	if err != nil {
 		// TODO: Improve error reporting with position info
 		return nil, fmt.Errorf("evaluating left operand for '%s': %w", expr.Operator, err)
 	}
 
-	rightNode, err := Eval(expr.Right, env, v)
+	rightNode, err := Eval(expr.Right, frame, v)
 	if err != nil {
 		// TODO: Improve error reporting with position info
 		return nil, fmt.Errorf("evaluating right operand for '%s': %w", expr.Operator, err)
@@ -267,7 +371,7 @@ func evalBinaryExpr(expr *BinaryExpr, env *Env[any], v *VM) (OpNode, error) {
 }
 
 // --- evalComponentDecl (Registers definition) ---
-func evalComponentDecl(stmt *ComponentDecl, env *Env[any], v *VM) (OpNode, error) {
+func evalComponentDecl(stmt *ComponentDecl, frame *Frame, v *VM) (OpNode, error) {
 	compName := stmt.Name.Name
 	// Check if definition already exists in VM registry
 	if _, exists := v.ComponentDefRegistry[compName]; exists {
@@ -304,7 +408,7 @@ func evalComponentDecl(stmt *ComponentDecl, env *Env[any], v *VM) (OpNode, error
 			compDef.Methods[methodName] = bodyNode
 		case *ComponentDecl:
 			// Handle nested definitions
-			_, err := evalComponentDecl(bodyNode, env, v)
+			_, err := evalComponentDecl(bodyNode, frame, v)
 			if err != nil {
 				return nil, fmt.Errorf("error defining nested component '%s' within '%s': %w", bodyNode.Name.Name, compName, err)
 			}
@@ -324,15 +428,15 @@ func evalComponentDecl(stmt *ComponentDecl, env *Env[any], v *VM) (OpNode, error
 }
 
 // --- evalSystemDecl (Processes system body) ---
-func evalSystemDecl(stmt *SystemDecl, env *Env[any], v *VM) (OpNode, error) {
-	// Systems define a scope, but for now, let's use the passed env.
-	// A system run might eventually need its own top-level env.
-	// systemEnv := NewEnv(env) // Option for later
+func evalSystemDecl(stmt *SystemDecl, frame *Frame, v *VM) (OpNode, error) {
+	// Systems define a scope, but for now, let's use the passed frame.
+	// A system run might eventually need its own top-level frame.
+	// systemFrame := NewFrame(frame) // Option for later
 
 	for _, item := range stmt.Body {
 		// Evaluate each item within the system's context
-		// For now, InstanceDecl modifies the passed env.
-		_, err := Eval(item, env, v) // Use passed env
+		// For now, InstanceDecl modifies the passed frame.
+		_, err := Eval(item, frame, v) // Use passed frame
 		if err != nil {
 			return nil, fmt.Errorf("error evaluating item in system '%s': %w", stmt.Name.Name, err)
 		}
@@ -344,12 +448,12 @@ func evalSystemDecl(stmt *SystemDecl, env *Env[any], v *VM) (OpNode, error) {
 }
 
 // --- evalInstanceDecl (Instantiates Native or DSL component) ---
-func evalInstanceDecl(stmt *InstanceDecl, env *Env[any], v *VM) (OpNode, error) {
+func evalInstanceDecl(stmt *InstanceDecl, frame *Frame, v *VM) (OpNode, error) {
 	instanceName := stmt.Name.Name
 	componentTypeName := stmt.ComponentType.Name
 
 	// Check if instance name already exists in the current scope
-	if _, exists := env.Get(instanceName); exists {
+	if _, exists := frame.Get(instanceName); exists {
 		return nil, fmt.Errorf("identifier '%s' already exists in the current scope", instanceName)
 	}
 
@@ -362,7 +466,7 @@ func evalInstanceDecl(stmt *InstanceDecl, env *Env[any], v *VM) (OpNode, error) 
 	// Check for Native Go Constructor (Prefer native if constructor exists)
 	constructor, foundConst := v.ComponentRegistry[componentTypeName]
 
-	var runtimeInstance ComponentRuntime // The instance to store in the env
+	var runtimeInstance ComponentRuntime // The instance to store in the frame
 
 	// --- Branch: Instantiate Native Go Component ---
 	if foundConst {
@@ -376,7 +480,7 @@ func evalInstanceDecl(stmt *InstanceDecl, env *Env[any], v *VM) (OpNode, error) 
 			assignVarName := assignStmt.Var.Name
 			processedOverrides[assignVarName] = true
 
-			valueOpNode, err := Eval(assignStmt.Value, env, v) // Eval RHS -> OpNode
+			valueOpNode, err := Eval(assignStmt.Value, frame, v) // Eval RHS -> OpNode
 			if err != nil {
 				return nil, fmt.Errorf("evaluating override '%s' for native instance '%s': %w", assignVarName, instanceName, err)
 			}
@@ -402,7 +506,7 @@ func evalInstanceDecl(stmt *InstanceDecl, env *Env[any], v *VM) (OpNode, error) 
 					return nil, fmt.Errorf("value for 'uses' override '%s' must be an identifier, got %T", assignVarName, assignStmt.Value)
 				}
 				depInstanceName := identExpr.Name
-				depInstanceAny, foundDep := env.Get(depInstanceName)
+				depInstanceAny, foundDep := frame.Get(depInstanceName)
 				if !foundDep {
 					return nil, fmt.Errorf("dependency instance '%s' (for '%s.%s') not found", depInstanceName, instanceName, assignVarName)
 				}
@@ -438,17 +542,17 @@ func evalInstanceDecl(stmt *InstanceDecl, env *Env[any], v *VM) (OpNode, error) 
 		}
 
 		// Wrap native instance in adapter
-		adapter := &NativeComponentAdapter{
+		adapter := &NativeComponent{
 			InstanceName: instanceName,
 			TypeName:     componentTypeName,
 			GoInstance:   goInstance,
 		}
 		runtimeInstance = adapter // Store the adapter
 
-		// --- Branch: Instantiate DSL ComponentInstance ---
+		// --- Branch: Instantiate DSL UDComponent ---
 	} else {
 		// Create the DSL instance
-		dslInstance := &ComponentInstance{
+		dslInstance := &UDComponent{
 			Definition:   compDef,
 			InstanceName: instanceName,
 			Params:       make(map[string]OpNode),
@@ -462,7 +566,7 @@ func evalInstanceDecl(stmt *InstanceDecl, env *Env[any], v *VM) (OpNode, error) 
 			assignVarName := assignStmt.Var.Name
 			processedOverrides[assignVarName] = true
 
-			valueOpNode, err := Eval(assignStmt.Value, env, v) // Eval RHS -> OpNode
+			valueOpNode, err := Eval(assignStmt.Value, frame, v) // Eval RHS -> OpNode
 			if err != nil {
 				return nil, fmt.Errorf("evaluating override '%s' for DSL instance '%s': %w", assignVarName, instanceName, err)
 			}
@@ -477,7 +581,7 @@ func evalInstanceDecl(stmt *InstanceDecl, env *Env[any], v *VM) (OpNode, error) 
 					return nil, fmt.Errorf("value for 'uses' override '%s' must be an identifier, got %T", assignVarName, assignStmt.Value)
 				}
 				depInstanceName := identExpr.Name
-				depInstanceAny, foundDep := env.Get(depInstanceName)
+				depInstanceAny, foundDep := frame.Get(depInstanceName)
 				if !foundDep {
 					return nil, fmt.Errorf("dependency instance '%s' (for '%s.%s') not found", depInstanceName, instanceName, assignVarName)
 				}
@@ -489,7 +593,7 @@ func evalInstanceDecl(stmt *InstanceDecl, env *Env[any], v *VM) (OpNode, error) 
 				}
 
 				// Store dependency based on its underlying type (Native vs DSL)
-				if _, isNative := depRuntime.(*NativeComponentAdapter); isNative {
+				if _, isNative := depRuntime.(*NativeComponent); isNative {
 					dslInstance.Dependencies[assignVarName] = depRuntime
 				} else {
 					// Should not happen if only adapters and instances are stored
@@ -504,7 +608,7 @@ func evalInstanceDecl(stmt *InstanceDecl, env *Env[any], v *VM) (OpNode, error) 
 		for paramName, paramAST := range compDef.Params {
 			if _, overridden := processedOverrides[paramName]; !overridden {
 				if paramAST.DefaultValue != nil {
-					defaultOpNode, err := Eval(paramAST.DefaultValue, env, v)
+					defaultOpNode, err := Eval(paramAST.DefaultValue, frame, v)
 					if err != nil {
 						return nil, fmt.Errorf("evaluating default value for param '%s' in DSL instance '%s': %w", paramName, instanceName, err)
 					}
@@ -526,7 +630,7 @@ func evalInstanceDecl(stmt *InstanceDecl, env *Env[any], v *VM) (OpNode, error) 
 	}
 
 	// Store the resulting ComponentRuntime (either adapter or DSL instance)
-	env.Set(instanceName, runtimeInstance)
+	frame.Set(instanceName, runtimeInstance)
 
 	// Instance declaration itself doesn't produce a value OpNode
 	return theNilNode, nil
@@ -588,11 +692,11 @@ func injectDependencies(targetInstance any, dependencies map[string]ComponentRun
 			return fmt.Errorf("cannot set field '%s' in target %T", fieldName, targetInstance)
 		}
 
-		// Get the actual underlying value (Go instance or *ComponentInstance)
+		// Get the actual underlying value (Go instance or *UDComponent)
 		var depValueToInject any
-		if adapter, ok := depRuntime.(*NativeComponentAdapter); ok {
+		if adapter, ok := depRuntime.(*NativeComponent); ok {
 			depValueToInject = adapter.GoInstance
-		} else if dslInst, ok := depRuntime.(*ComponentInstance); ok {
+		} else if dslInst, ok := depRuntime.(*UDComponent); ok {
 			depValueToInject = dslInst
 		} else {
 			return fmt.Errorf("dependency %s has unknown ComponentRuntime type %T", name, depRuntime)

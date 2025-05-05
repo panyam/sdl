@@ -5,10 +5,15 @@ import (
 	"fmt"
 )
 
+// References to values
+type Ref[T any] struct {
+	Value T
+}
+
 // Env[T] holds the runtime values for identifiers (variables, functions, components).
 // Supports basic scoping via the 'outer' environment.
 type Env[T any] struct {
-	store map[string]T
+	store map[string]*Ref[T]
 	outer *Env[T]
 }
 
@@ -16,44 +21,52 @@ type Env[T any] struct {
 // If outer is nil then returns a fresh top-level environment.
 // Useful for function calls or block scopes.
 func NewEnv[T any](outer *Env[T]) *Env[T] {
-	s := make(map[string]T)
+	s := make(map[string]*Ref[T])
 	return &Env[T]{store: s, outer: outer}
 }
 
 // Get retrieves a value by name. It checks the current environment first,
 // then recursively checks outer environments.
-func (e *Env[T]) Get(name string) (T, bool) {
-	obj, ok := e.store[name]
-	if !ok && e.outer != nil {
+func (e *Env[T]) GetRef(name string) *Ref[T] {
+	ref, ok := e.store[name]
+	if (!ok || ref == nil) && e.outer != nil {
 		// Not found here, try the outer scope
-		obj, ok = e.outer.Get(name)
+		ref = e.outer.GetRef(name)
 	}
-	return obj, ok
+	return ref
 }
 
-// Set defines or updates a VarState in the *current* environment.
-// It takes separate value and latency outcomes and creates/updates the VarState.
-/*
-func (e *Env[T]) Set(name string, valueOutcome any, latencyOutcome any) {
-	// Ensure latency is always *Outcomes[Duration] or nil
-	if latencyOutcome != nil {
-		if _, ok := latencyOutcome.(*core.Outcomes[core.Duration]); !ok {
-			// This indicates an internal error, should not happen if logic is correct
-			panic(fmt.Sprintf("internal error: attempting to set non-Duration outcome (%T) as latency for '%s'", latencyOutcome, name))
-		}
+func (e *Env[T]) Get(name string) (out T, found bool) {
+	ref := e.GetRef(name)
+	if ref != nil {
+		out = ref.Value
+		found = true
 	}
+	return
+}
 
+func (e *Env[T]) Set(key string, value T) {
 	// Create or update the VarState
-	e.store[name] = &VarState{
-		ValueOutcome:   valueOutcome,
-		LatencyOutcome: latencyOutcome,
+	e.store[key] = &Ref[T]{Value: value}
+}
+
+// Set multiple key/values at once.
+func (e *Env[T]) SetMany(kvpairs map[string]T) {
+	for k, v := range kvpairs {
+		e.Set(k, v)
 	}
 }
-*/
 
-func (e *Env[T]) Set(name string, node T) {
-	// Create or update the VarState
-	e.store[name] = node
+// Set multiple key/values at once.
+func (e *Env[T]) Push() *Env[T] {
+	return NewEnv(e)
+}
+
+// Extends our environment by creating a new environment and setting values in it
+func (e *Env[T]) Extend(kvpairs map[string]T) *Env[T] {
+	out := e.Push()
+	out.SetMany(kvpairs)
+	return out
 }
 
 // String representation for debugging

@@ -32,18 +32,18 @@ type ComponentRuntime interface {
 	// Returns an OpNode representing the result of the method call (often a LeafNode
 	// wrapping the *core.Outcomes from a native call, or the OpNode tree
 	// resulting from evaluating a DSL method body).
-	InvokeMethod(methodName string, args []OpNode, vm *VM, callEnv *Env[any]) (OpNode, error)
+	InvokeMethod(methodName string, args []OpNode, vm *VM, callFrame *Frame) (OpNode, error)
 
 	// --- Potential Helper Methods ---
 	// GetDefinition() *ComponentDefinition // Maybe useful?
 }
 
-// --- Existing ComponentInstance adapting to ComponentRuntime ---
+// --- Existing UDComponent adapting to ComponentRuntime ---
 
-// ComponentInstance represents a runtime instance of a component
+// UDComponent represents a runtime instance of a component
 // defined purely within the DSL. It holds resolved parameters (as OpNodes)
 // and dependencies.
-type ComponentInstance struct {
+type UDComponent struct {
 	Definition   *ComponentDefinition        // Pointer to the blueprint (AST etc.)
 	InstanceName string                      // The name given in the InstanceDecl
 	Params       map[string]OpNode           // Evaluated parameter OpNodes (override or default)
@@ -53,7 +53,7 @@ type ComponentInstance struct {
 // Remove isNativeComponent helper (no longer needed here)
 
 // Stringer for debugging - Update to use single map
-func (ci *ComponentInstance) String() string {
+func (ci *UDComponent) String() string {
 	paramNames := make([]string, 0, len(ci.Params))
 	for k := range ci.Params {
 		paramNames = append(paramNames, k)
@@ -76,60 +76,60 @@ func (ci *ComponentInstance) String() string {
 }
 
 // GetDependency - Simplify to use single map
-func (ci *ComponentInstance) GetDependency(name string) (ComponentRuntime, bool) {
+func (ci *UDComponent) GetDependency(name string) (ComponentRuntime, bool) {
 	dep, ok := ci.Dependencies[name]
 	// Check if ok and dep is not nil, although map lookup should handle nil?
 	// Let's return ok directly from map lookup.
 	return dep, ok
 }
 
-// Implement ComponentRuntime for *ComponentInstance
-func (ci *ComponentInstance) GetInstanceName() string {
+// Implement ComponentRuntime for *UDComponent
+func (ci *UDComponent) GetInstanceName() string {
 	return ci.InstanceName
 }
 
-func (ci *ComponentInstance) GetComponentTypeName() string {
+func (ci *UDComponent) GetComponentTypeName() string {
 	return ci.Definition.Node.Name.Name
 }
 
-func (ci *ComponentInstance) GetParam(name string) (OpNode, bool) {
+func (ci *UDComponent) GetParam(name string) (OpNode, bool) {
 	node, ok := ci.Params[name]
 	return node, ok
 }
 
-func (ci *ComponentInstance) InvokeMethod(methodName string, args []OpNode, vm *VM, callEnv *Env[any]) (OpNode, error) {
+func (ci *UDComponent) InvokeMethod(methodName string, args []OpNode, vm *VM, callFrame *Frame) (OpNode, error) {
 	// 1. Find the Method Definition in the ComponentDefinition
 	methodDef, found := ci.Definition.Methods[methodName]
 	if !found {
 		return nil, fmt.Errorf("method '%s' not found on DSL component '%s' (type %s)", methodName, ci.InstanceName, ci.GetComponentTypeName())
 	}
 
-	// 2. Create a new environment for the method call.
-	//    The outer env should be the env where the *component instance* lives?
-	//    Or should it be the env where the *call* is made? Let's use callEnv for now.
-	methodEnv := NewEnv(callEnv)
+	// 2. Create a new frame for the method call.
+	//    The outer frame should be the frame where the *component instance* lives?
+	//    Or should it be the frame where the *call* is made? Let's use callFrame for now.
+	methodFrame := NewFrame(nil)
 
-	// 3. Bind parameters (args) to local variables in methodEnv.
-	//    (Needs implementation: check arg count, types?, store OpNodes in methodEnv)
+	// 3. Bind parameters (args) to local variables in methodFrame.
+	//    (Needs implementation: check arg count, types?, store OpNodes in methodFrame)
 	if len(args) != len(methodDef.Parameters) {
 		return nil, fmt.Errorf("argument count mismatch for method '%s': expected %d, got %d", methodName, len(methodDef.Parameters), len(args))
 	}
 	for i, paramDef := range methodDef.Parameters {
 		// Store the provided argument OpNode under the parameter's name
-		methodEnv.Set(paramDef.Name.Name, args[i])
+		methodFrame.Set(paramDef.Name.Name, args[i])
 	}
 
-	// 4. Bind 'self'/'this' maybe? Store ci (*ComponentInstance) itself?
-	methodEnv.Set("self", ci) // Allow methods to access instance params/deps via self.
+	// 4. Bind 'self'/'this' maybe? Store ci (*UDComponent) itself?
+	methodFrame.Set("self", ci) // Allow methods to access instance params/deps via self.
 
-	// 5. Bind dependencies ('uses') to local variables in methodEnv.
+	// 5. Bind dependencies ('uses') to local variables in methodFrame.
 	for depName, depInstance := range ci.Dependencies {
-		methodEnv.Set(depName, depInstance) // Store the ComponentRuntime dependency
+		methodFrame.Set(depName, depInstance) // Store the ComponentRuntime dependency
 	}
 
-	// 6. Evaluate the method body (BlockStmt) using the methodEnv.
+	// 6. Evaluate the method body (BlockStmt) using the methodFrame.
 	//    The result of the block is the result of the method.
-	resultOpNode, err := Eval(methodDef.Body, methodEnv, vm)
+	resultOpNode, err := Eval(methodDef.Body, methodFrame, vm)
 	if err != nil {
 		return nil, fmt.Errorf("error executing method '%s' body for instance '%s': %w", methodName, ci.InstanceName, err)
 	}
@@ -140,8 +140,8 @@ func (ci *ComponentInstance) InvokeMethod(methodName string, args []OpNode, vm *
 	return resultOpNode, nil
 }
 
-// NativeComponentAdapter wraps a Go component instance to implement ComponentRuntime.
-type NativeComponentAdapter struct {
+// NativeComponent wraps a Go component instance to implement ComponentRuntime.
+type NativeComponent struct {
 	InstanceName string
 	TypeName     string
 	GoInstance   any // The actual *components.Disk, *components.Cache, etc.
@@ -149,12 +149,12 @@ type NativeComponentAdapter struct {
 	// ParamsMap    map[string]any // Store the raw Go values used at creation?
 }
 
-// Implement ComponentRuntime for *NativeComponentAdapter
-func (na *NativeComponentAdapter) GetInstanceName() string {
+// Implement ComponentRuntime for *NativeComponent
+func (na *NativeComponent) GetInstanceName() string {
 	return na.InstanceName
 }
 
-func (na *NativeComponentAdapter) GetComponentTypeName() string {
+func (na *NativeComponent) GetComponentTypeName() string {
 	return na.TypeName
 }
 
@@ -162,7 +162,7 @@ func (na *NativeComponentAdapter) GetComponentTypeName() string {
 // Option 1: Don't support GetParam directly for native components via the interface.
 // Option 2: Use reflection, get the Go field value, wrap it in LeafNode/VarState. (Complex)
 // Let's go with Option 2 for now, but only for simple types.
-func (na *NativeComponentAdapter) GetParam(name string) (OpNode, bool) {
+func (na *NativeComponent) GetParam(name string) (OpNode, bool) {
 	instanceVal := reflect.ValueOf(na.GoInstance)
 	if instanceVal.Kind() == reflect.Ptr {
 		instanceVal = instanceVal.Elem()
@@ -218,14 +218,14 @@ func (na *NativeComponentAdapter) GetParam(name string) (OpNode, bool) {
 // Their dependencies are Go fields injected during construction. This method might not
 // be meaningful or implementable in the same way as for DSL components.
 // Return false for now.
-func (na *NativeComponentAdapter) GetDependency(name string) (ComponentRuntime, bool) {
+func (na *NativeComponent) GetDependency(name string) (ComponentRuntime, bool) {
 	// Dependencies are internal Go fields, not exposed via 'uses' name here.
 	// We could use reflection based on field names/tags if needed, but complex.
 	return nil, false
 }
 
 // InvokeMethod uses reflection to call the method on the underlying GoInstance.
-func (na *NativeComponentAdapter) InvokeMethod(methodName string, args []OpNode, vm *VM, callEnv *Env[any]) (OpNode, error) {
+func (na *NativeComponent) InvokeMethod(methodName string, args []OpNode, vm *VM, callFrame *Frame) (OpNode, error) {
 	// 1. Find the method on the GoInstance using reflection.
 	instanceVal := reflect.ValueOf(na.GoInstance)
 	methodVal := instanceVal.MethodByName(methodName)

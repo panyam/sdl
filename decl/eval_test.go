@@ -10,12 +10,12 @@ import (
 
 // --- Test Helpers ---
 
-// Helper to create a basic VM and Env for testing
-func setupTestVM() (*VM, *Env[any]) {
+// Helper to create a basic VM and Frame for testing
+func setupTestVM() (*VM, *Frame) {
 	vm := &VM{}
 	vm.Init() // Initialize internal maps etc.
-	env := NewEnv[any](nil)
-	return vm, env
+	frame := NewFrame(nil)
+	return vm, frame
 }
 
 // Helper to assert leaf node properties (simplistic check for now)
@@ -64,18 +64,18 @@ func assertNilNode(t *testing.T, node OpNode) {
 // --- Actual Tests ---
 
 func TestEvalLiteral(t *testing.T) {
-	vm, env := setupTestVM()
+	vm, frame := setupTestVM()
 
 	// Test INT
 	nodeInt := newIntLit("123")
-	resInt, errInt := Eval(nodeInt, env, vm)
+	resInt, errInt := Eval(nodeInt, frame, vm)
 	require.NoError(t, errInt)
 	assertLeafInt(t, resInt, 123)
 	t.Logf("Eval(123): %s", resInt)
 
 	// Test BOOL
 	nodeBool := newBoolLit("true")
-	resBool, errBool := Eval(nodeBool, env, vm)
+	resBool, errBool := Eval(nodeBool, frame, vm)
 	require.NoError(t, errBool)
 	assertLeafBool(t, resBool, true)
 	t.Logf("Eval(true): %s", resBool)
@@ -84,70 +84,70 @@ func TestEvalLiteral(t *testing.T) {
 }
 
 func TestEvalIdentifier(t *testing.T) {
-	vm, env := setupTestVM()
-	// Setup env manually for testing Get
+	vm, frame := setupTestVM()
+	// Setup frame manually for testing Get
 	expectedNode := &LeafNode{State: createNilState()} // Example node
-	env.Set("myVar", expectedNode)
+	frame.Set("myVar", expectedNode)
 
 	// Test Found
 	nodeIdentFound := newIdent("myVar")
-	resFound, errFound := Eval(nodeIdentFound, env, vm)
+	resFound, errFound := Eval(nodeIdentFound, frame, vm)
 	require.NoError(t, errFound)
 	assert.Same(t, expectedNode, resFound, "Identifier lookup returned wrong node")
 	t.Logf("Eval(myVar): %s", resFound)
 
 	// Test Not Found
 	nodeIdentNotFound := newIdent("noVar")
-	_, errNotFound := Eval(nodeIdentNotFound, env, vm)
+	_, errNotFound := Eval(nodeIdentNotFound, frame, vm)
 	require.Error(t, errNotFound)
 	assert.ErrorIs(t, errNotFound, ErrNotFound)
 	t.Logf("Eval(noVar): %s", errNotFound)
 
-	// Test wrong type in env (shouldn't happen with current Set, but good check)
-	env.Set("badVar", 123) // Put non-OpNode
+	// Test wrong type in frame (shouldn't happen with current Set, but good check)
+	frame.Set("badVar", 123) // Put non-OpNode
 	nodeIdentBad := newIdent("badVar")
-	_, errBad := Eval(nodeIdentBad, env, vm)
+	_, errBad := Eval(nodeIdentBad, frame, vm)
 	require.Error(t, errBad)
 	assert.Contains(t, errBad.Error(), "internal error: expected OpNode")
 	t.Logf("Eval(badVar): %s", errBad)
 }
 
 func TestEvalLetStmt(t *testing.T) {
-	vm, env := setupTestVM()
+	vm, frame := setupTestVM()
 
 	// let x = 5;
 	letNode := newLetStmt("x", newIntLit("5"))
-	resLet, errLet := Eval(letNode, env, vm)
+	resLet, errLet := Eval(letNode, frame, vm)
 	require.NoError(t, errLet)
 	assertNilNode(t, resLet) // Let statement itself returns NilNode
 
-	// Verify env
-	storedNode, ok := env.Get("x")
-	require.True(t, ok, "Variable 'x' not found in env after let stmt")
+	// Verify frame
+	storedNode, ok := frame.Get("x")
+	require.True(t, ok, "Variable 'x' not found in frame after let stmt")
 	assertLeafInt(t, storedNode.(OpNode), 5)
-	t.Logf("Env after 'let x = 5': %s", env)
+	t.Logf("Frame after 'let x = 5': %s", frame)
 }
 
 func TestEvalBlockStmt(t *testing.T) {
-	vm, env := setupTestVM()
+	vm, frame := setupTestVM()
 
 	// Test empty block -> NilNode
 	blockEmpty := newBlockStmt()
-	resEmpty, errEmpty := Eval(blockEmpty, env, vm)
+	resEmpty, errEmpty := Eval(blockEmpty, frame, vm)
 	require.NoError(t, errEmpty)
 	assertNilNode(t, resEmpty)
 	t.Logf("Eval({}): %s", resEmpty)
 
 	// Test block with only let -> NilNode
 	blockLetOnly := newBlockStmt(newLetStmt("a", newIntLit("1")))
-	resLetOnly, errLetOnly := Eval(blockLetOnly, env, vm)
+	resLetOnly, errLetOnly := Eval(blockLetOnly, frame, vm)
 	require.NoError(t, errLetOnly)
 	assertNilNode(t, resLetOnly)
 	t.Logf("Eval({let a=1;}): %s", resLetOnly)
 
 	// Test block with single expression -> LeafNode
 	blockSingleExpr := newBlockStmt(newExprStmt(newIntLit("42")))
-	resSingleExpr, errSingleExpr := Eval(blockSingleExpr, env, vm)
+	resSingleExpr, errSingleExpr := Eval(blockSingleExpr, frame, vm)
 	require.NoError(t, errSingleExpr)
 	assertLeafInt(t, resSingleExpr, 42)
 	t.Logf("Eval({42;}): %s", resSingleExpr)
@@ -157,11 +157,11 @@ func TestEvalBlockStmt(t *testing.T) {
 		newLetStmt("b", newIntLit("10")),
 		newExprStmt(newIntLit("99")),
 	)
-	resLetExpr, errLetExpr := Eval(blockLetExpr, env, vm)
+	resLetExpr, errLetExpr := Eval(blockLetExpr, frame, vm)
 	require.NoError(t, errLetExpr)
 	assertLeafInt(t, resLetExpr, 99)
-	// Check env state *outside* the block (should be unchanged)
-	_, okOuter := env.Get("b")
+	// Check frame state *outside* the block (should be unchanged)
+	_, okOuter := frame.Get("b")
 	assert.False(t, okOuter, "'b' should not be visible outside the block")
 	t.Logf("Eval({let b=10; 99;}): %s", resLetExpr)
 
@@ -170,7 +170,7 @@ func TestEvalBlockStmt(t *testing.T) {
 		newExprStmt(newIntLit("1")),
 		newExprStmt(newBoolLit("true")),
 	)
-	resMultiExpr, errMultiExpr := Eval(blockMultiExpr, env, vm)
+	resMultiExpr, errMultiExpr := Eval(blockMultiExpr, frame, vm)
 	require.NoError(t, errMultiExpr)
 	seqNode, ok := resMultiExpr.(*SequenceNode)
 	require.True(t, ok, "Expected *SequenceNode, got %T", resMultiExpr)
@@ -181,12 +181,12 @@ func TestEvalBlockStmt(t *testing.T) {
 }
 
 func TestEvalBinaryExpr(t *testing.T) {
-	vm, env := setupTestVM()
+	vm, frame := setupTestVM()
 
 	// --- Test Arithmetic ---
 	// 1 + 2
 	exprAdd := newBinExpr(newIntLit("1"), "+", newIntLit("2"))
-	resAdd, errAdd := Eval(exprAdd, env, vm)
+	resAdd, errAdd := Eval(exprAdd, frame, vm)
 	require.NoError(t, errAdd)
 
 	binOpAdd, okAdd := resAdd.(*BinaryOpNode)
@@ -199,7 +199,7 @@ func TestEvalBinaryExpr(t *testing.T) {
 	// --- Test Boolean ---
 	// true && false
 	exprAnd := newBinExpr(newBoolLit("true"), "&&", newBoolLit("false"))
-	resAnd, errAnd := Eval(exprAnd, env, vm)
+	resAnd, errAnd := Eval(exprAnd, frame, vm)
 	require.NoError(t, errAnd)
 
 	binOpAnd, okAnd := resAnd.(*BinaryOpNode)
@@ -212,7 +212,7 @@ func TestEvalBinaryExpr(t *testing.T) {
 	// --- Test Comparison ---
 	// 10 > 5
 	exprGt := newBinExpr(newIntLit("10"), ">", newIntLit("5"))
-	resGt, errGt := Eval(exprGt, env, vm)
+	resGt, errGt := Eval(exprGt, frame, vm)
 	require.NoError(t, errGt)
 
 	binOpGt, okGt := resGt.(*BinaryOpNode)
@@ -228,7 +228,7 @@ func TestEvalBinaryExpr(t *testing.T) {
 		newLetStmt("x", newIntLit("20")),
 		newExprStmt(newBinExpr(newIdent("x"), "*", newIntLit("3"))),
 	)
-	resBlock, errBlock := Eval(block, env, vm) // Use fresh env for block
+	resBlock, errBlock := Eval(block, frame, vm) // Use fresh frame for block
 	require.NoError(t, errBlock)
 
 	binOpMul, okMul := resBlock.(*BinaryOpNode)
@@ -249,7 +249,7 @@ func TestEvalBinaryExpr(t *testing.T) {
 		"*",
 		newIntLit("3"), // Right operand
 	)
-	resNested, errNested := Eval(exprNested, env, vm) // Use same env is fine
+	resNested, errNested := Eval(exprNested, frame, vm) // Use same frame is fine
 	require.NoError(t, errNested)
 
 	outerMul, okOuter := resNested.(*BinaryOpNode)
@@ -269,7 +269,7 @@ func TestEvalBinaryExpr(t *testing.T) {
 }
 
 func TestEvalIfStmt(t *testing.T) {
-	vm, env := setupTestVM()
+	vm, frame := setupTestVM()
 
 	// --- Test Basic If-Then ---
 	// if true { 1 }
@@ -278,7 +278,7 @@ func TestEvalIfStmt(t *testing.T) {
 		newBlockStmt(newExprStmt(newIntLit("1"))),
 		nil, // No else
 	)
-	resIf1, errIf1 := Eval(ifStmt1, env, vm)
+	resIf1, errIf1 := Eval(ifStmt1, frame, vm)
 	require.NoError(t, errIf1)
 
 	ifNode1, ok1 := resIf1.(*IfChoiceNode)
@@ -299,7 +299,7 @@ func TestEvalIfStmt(t *testing.T) {
 		newBlockStmt(newExprStmt(newIntLit("10"))),      // Then
 		newBlockStmt(newExprStmt(newIntLit("20"))),      // Else (BlockStmt)
 	)
-	resIf2, errIf2 := Eval(ifStmt2, env, vm)
+	resIf2, errIf2 := Eval(ifStmt2, frame, vm)
 	require.NoError(t, errIf2)
 
 	ifNode2, ok2 := resIf2.(*IfChoiceNode)
@@ -333,7 +333,7 @@ func TestEvalIfStmt(t *testing.T) {
 		),
 	)
 
-	resBlock, errBlock := Eval(mainBlock, env, vm)
+	resBlock, errBlock := Eval(mainBlock, frame, vm)
 	require.NoError(t, errBlock)
 
 	// The result of the block is the result of the if statement
@@ -361,37 +361,37 @@ func TestEvalIfStmt(t *testing.T) {
 
 // Refine evalIdentifier test slightly
 func TestEvalIdentifier_Refined(t *testing.T) {
-	vm, env := setupTestVM()
+	vm, frame := setupTestVM()
 
 	// Store an OpNode
 	expectedOpNode := &LeafNode{State: createBoolState(true)}
-	env.Set("dslVar", expectedOpNode)
+	frame.Set("dslVar", expectedOpNode)
 
 	// Store a Go component instance (should NOT be resolved by evalIdentifier)
 	goInstance := &MockDisk{InstanceName: "testDisk"}
-	env.Set("goVar", goInstance)
+	frame.Set("goVar", goInstance)
 
 	// Test resolving DSL variable
-	resOp, errOp := Eval(newIdent("dslVar"), env, vm)
+	resOp, errOp := Eval(newIdent("dslVar"), frame, vm)
 	require.NoError(t, errOp)
 	assert.Same(t, expectedOpNode, resOp)
 
 	// Test resolving identifier pointing to Go instance (should fail cleanly)
-	// NOTE: This depends on evalIdentifier correctly checking the type retrieved from Env
+	// NOTE: This depends on evalIdentifier correctly checking the type retrieved from Frame
 	// Let's update evalIdentifier to do this check explicitly if it wasn't there.
 
 	// Re-check evalIdentifier implementation: It does have the type check now.
-	_, errGo := Eval(newIdent("goVar"), env, vm)
+	_, errGo := Eval(newIdent("goVar"), frame, vm)
 	require.Error(t, errGo)
 	assert.Contains(t, errGo.Error(), "internal error: expected OpNode") // Correct error path
 	t.Logf("Eval(goVar identifier): %s", errGo)
 }
 
 // Helper to assert ComponentRuntime type and name
-func assertComponentRuntime(t *testing.T, env *Env[any], instanceName string, expectedTypeName string) ComponentRuntime {
+func assertComponentRuntime(t *testing.T, frame *Frame, instanceName string, expectedTypeName string) ComponentRuntime {
 	t.Helper()
-	instanceVal, ok := env.Get(instanceName)
-	require.True(t, ok, "Instance '%s' not found in environment", instanceName)
+	instanceVal, ok := frame.Get(instanceName)
+	require.True(t, ok, "Instance '%s' not found in frame", instanceName)
 	runtimeInstance, okCast := instanceVal.(ComponentRuntime)
 	require.True(t, okCast, "Instance '%s' is not a ComponentRuntime, got %T", instanceName, instanceVal)
 	assert.Equal(t, expectedTypeName, runtimeInstance.GetComponentTypeName(), "Instance '%s' has wrong type name", instanceName)
@@ -421,7 +421,7 @@ func TestEvalComponentDecl(t *testing.T) {
 
 // Test Native Instantiation with Overrides (Previously TestEvalInstanceDecl_SimpleOverrides)
 func TestEvalInstanceDecl_NativeComponent(t *testing.T) {
-	vm, env := setupTestVM()
+	vm, frame := setupTestVM()
 
 	// --- Register Mock Component Definition ---
 	mockDiskDef := &ComponentDefinition{
@@ -447,13 +447,13 @@ func TestEvalInstanceDecl_NativeComponent(t *testing.T) {
 	)
 
 	// Evaluate the System
-	_, errSys := Eval(sysAST, env, vm)
+	_, errSys := Eval(sysAST, frame, vm)
 	require.NoError(t, errSys)
 
-	// Verify environment state - expecting NativeComponentAdapter
-	runtimeInstance := assertComponentRuntime(t, env, "d1", "MockDisk")
-	adapter, okAdapter := runtimeInstance.(*NativeComponentAdapter)
-	require.True(t, okAdapter, "Instance 'd1' should be wrapped in NativeComponentAdapter")
+	// Verify frame state - expecting NativeComponent
+	runtimeInstance := assertComponentRuntime(t, frame, "d1", "MockDisk")
+	adapter, okAdapter := runtimeInstance.(*NativeComponent)
+	require.True(t, okAdapter, "Instance 'd1' should be wrapped in NativeComponent")
 
 	// Check the underlying Go instance
 	mockDiskInstance, okCast := adapter.GoInstance.(*MockDisk)
@@ -462,13 +462,13 @@ func TestEvalInstanceDecl_NativeComponent(t *testing.T) {
 	assert.Equal(t, "HDD", mockDiskInstance.Profile)
 	assert.Equal(t, 123.0, mockDiskInstance.ReadLatency)
 
-	t.Logf("(Native) Env after system eval: %s", env)
+	t.Logf("(Native) Frame after system eval: %s", frame)
 	t.Logf("(Native) Retrieved adapter 'd1': %T storing %+v", adapter, mockDiskInstance)
 }
 
 // Test DSL Instantiation (Previously TestEvalInstanceDecl_DSLOnlyComponent)
 func TestEvalInstanceDecl_DSLComponent(t *testing.T) {
-	vm, env := setupTestVM()
+	vm, frame := setupTestVM()
 
 	// 1. Define components purely in DSL
 	loggerCompAST := newCompDecl("ConsoleLogger",
@@ -494,23 +494,23 @@ func TestEvalInstanceDecl_DSLComponent(t *testing.T) {
 	)
 
 	// 3. Evaluate the System
-	_, errSys := Eval(sysAST, env, vm)
+	_, errSys := Eval(sysAST, frame, vm)
 	require.NoError(t, errSys)
 
-	// 4. Verify environment state - expecting ComponentInstance
+	// 4. Verify frame state - expecting UDComponent
 	// Check logger instance
-	logRuntime := assertComponentRuntime(t, env, "log1", "ConsoleLogger")
-	dslLogInstance, okLogCast := logRuntime.(*ComponentInstance)
-	require.True(t, okLogCast, "log1 is not *ComponentInstance")
+	logRuntime := assertComponentRuntime(t, frame, "log1", "ConsoleLogger")
+	dslLogInstance, okLogCast := logRuntime.(*UDComponent)
+	require.True(t, okLogCast, "log1 is not *UDComponent")
 	assert.Equal(t, "ConsoleLogger", dslLogInstance.Definition.Node.Name.Name)
 	assert.Equal(t, "log1", dslLogInstance.InstanceName)
 	require.Contains(t, dslLogInstance.Params, "Level")
 	assertLeafStringValue(t, dslLogInstance.Params["Level"], "INFO") // Use new helper
 
 	// Check service instance
-	svcRuntime := assertComponentRuntime(t, env, "svc1", "MyServiceDSL")
-	dslSvcInstance, okSvcCast := svcRuntime.(*ComponentInstance)
-	require.True(t, okSvcCast, "svc1 is not *ComponentInstance")
+	svcRuntime := assertComponentRuntime(t, frame, "svc1", "MyServiceDSL")
+	dslSvcInstance, okSvcCast := svcRuntime.(*UDComponent)
+	require.True(t, okSvcCast, "svc1 is not *UDComponent")
 	assert.Equal(t, "MyServiceDSL", dslSvcInstance.Definition.Node.Name.Name)
 	require.Contains(t, dslSvcInstance.Params, "ServiceName")
 	assertLeafStringValue(t, dslSvcInstance.Params["ServiceName"], "PrimaryService") // Use new helper
@@ -520,7 +520,7 @@ func TestEvalInstanceDecl_DSLComponent(t *testing.T) {
 	injectedLoggerRuntime := dslSvcInstance.Dependencies["logger"]
 	assert.Same(t, logRuntime, injectedLoggerRuntime, "Injected logger is not the same runtime instance")
 
-	t.Logf("(DSLOnly) Env: %s", env)
+	t.Logf("(DSLOnly) Frame: %s", frame)
 	t.Logf("(DSLOnly) Logger Instance: %s", dslLogInstance)
 	t.Logf("(DSLOnly) Service Instance: %s", dslSvcInstance)
 
@@ -530,7 +530,7 @@ func TestEvalInstanceDecl_DSLComponent(t *testing.T) {
 			newAssignStmt("logger", newIdent("log1")),
 		),
 	)
-	_, errMissingParam := Eval(sysMissingParamAST, env, vm)
+	_, errMissingParam := Eval(sysMissingParamAST, frame, vm)
 	require.Error(t, errMissingParam)
 	assert.Contains(t, errMissingParam.Error(), "missing required parameter 'ServiceName'")
 	t.Logf("(DSLOnly) Eval(missing param): %s", errMissingParam)
@@ -538,7 +538,7 @@ func TestEvalInstanceDecl_DSLComponent(t *testing.T) {
 
 // Test Dependency Injection (Previously TestEvalInstanceDecl_WithUses)
 func TestEvalInstanceDecl_DependencyInjection(t *testing.T) {
-	vm, env := setupTestVM()
+	vm, frame := setupTestVM()
 
 	// 1. Define components
 	// Use definition name "MyDisk" but register native "MockDisk" constructor
@@ -569,22 +569,22 @@ func TestEvalInstanceDecl_DependencyInjection(t *testing.T) {
 	)
 
 	// 4. Evaluate
-	_, errSys := Eval(sysAST, env, vm)
+	_, errSys := Eval(sysAST, frame, vm)
 	require.NoError(t, errSys)
 
-	// 5. Verify environment state
+	// 5. Verify frame state
 	// Check DB instance (should be Native Adapter)
-	dbRuntime := assertComponentRuntime(t, env, "theDbInstance", "MyDisk")
-	dbAdapter, okDbAdapter := dbRuntime.(*NativeComponentAdapter)
-	require.True(t, okDbAdapter, "theDbInstance is not *NativeComponentAdapter")
+	dbRuntime := assertComponentRuntime(t, frame, "theDbInstance", "MyDisk")
+	dbAdapter, okDbAdapter := dbRuntime.(*NativeComponent)
+	require.True(t, okDbAdapter, "theDbInstance is not *NativeComponent")
 	mockDisk, okDisk := dbAdapter.GoInstance.(*MockDisk)
 	require.True(t, okDisk)
 	assert.Equal(t, "SSD", mockDisk.Profile)
 
 	// Check Service instance (should be Native Adapter)
-	svcRuntime := assertComponentRuntime(t, env, "theSvcInstance", "MySvc")
-	svcAdapter, okSvcAdapter := svcRuntime.(*NativeComponentAdapter)
-	require.True(t, okSvcAdapter, "theSvcInstance is not *NativeComponentAdapter")
+	svcRuntime := assertComponentRuntime(t, frame, "theSvcInstance", "MySvc")
+	svcAdapter, okSvcAdapter := svcRuntime.(*NativeComponent)
+	require.True(t, okSvcAdapter, "theSvcInstance is not *NativeComponent")
 	mockSvc, okSvcCast := svcAdapter.GoInstance.(*MockSvc)
 	require.True(t, okSvcCast)
 
@@ -596,7 +596,7 @@ func TestEvalInstanceDecl_DependencyInjection(t *testing.T) {
 
 	assert.Equal(t, int64(500), mockSvc.Timeout)
 
-	t.Logf("(DepInject) Env: %s", env)
+	t.Logf("(DepInject) Frame: %s", frame)
 	t.Logf("(DepInject) Service Adapter: %T storing %+v", svcAdapter, mockSvc)
 	t.Logf("(DepInject) Injected DB field: %+v", mockSvc.DB)
 
@@ -605,19 +605,19 @@ func TestEvalInstanceDecl_DependencyInjection(t *testing.T) {
 	sysMissingDepAST := newSysDecl("MissingDepSys",
 		newInstDecl("svcMissingDep", "MySvc", newAssignStmt("Timeout", newIntLit("1"))),
 	)
-	_, errMissingDep := Eval(sysMissingDepAST, env, vm)
+	_, errMissingDep := Eval(sysMissingDepAST, frame, vm)
 	require.Error(t, errMissingDep)
 	assert.Contains(t, errMissingDep.Error(), "missing override to satisfy 'uses db:")
 	t.Logf("(DepInject) Eval(missing dependency): %s", errMissingDep)
 
-	// Test error: Dependency not found in env
+	// Test error: Dependency not found in frame
 	sysDepNotFoundAST := newSysDecl("DepNotFoundSys",
 		newInstDecl("svcDepNotFound", "MySvc",
 			newAssignStmt("db", newIdent("nonExistentDb")),
 			newAssignStmt("Timeout", newIntLit("1")),
 		),
 	)
-	_, errDepNotFound := Eval(sysDepNotFoundAST, env, vm)
+	_, errDepNotFound := Eval(sysDepNotFoundAST, frame, vm)
 	require.Error(t, errDepNotFound)
 	assert.ErrorIs(t, errDepNotFound, ErrNotFound) // Eval of identifier fails
 	t.Logf("(DepInject) Eval(dependency not found): %s", errDepNotFound)
@@ -631,7 +631,7 @@ func TestEvalInstanceDecl_DependencyInjection(t *testing.T) {
 		),
 	)
 	// Need theDbInstance to exist for this test case (defined in previous successful eval)
-	_, errUnknownOverride := Eval(sysUnknownOverrideAST, env, vm)
+	_, errUnknownOverride := Eval(sysUnknownOverrideAST, frame, vm)
 	require.Error(t, errUnknownOverride)
 	// Error message changes slightly as it now checks native override targets
 	assert.Contains(t, errUnknownOverride.Error(), "unknown native override target 'NonExistentParam'")
