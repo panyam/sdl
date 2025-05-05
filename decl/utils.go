@@ -3,8 +3,10 @@ package decl
 import (
 	"fmt"
 	"strconv"
+	"testing"
 
 	"github.com/panyam/leetcoach/sdl/core"
+	"github.com/stretchr/testify/require"
 )
 
 // ParseLiteralValue converts a LiteralExpr value string to a basic Go type.
@@ -62,11 +64,11 @@ func newIfStmt(cond Expr, then *BlockStmt, elseStmt Stmt) *IfStmt { // elseStmt 
 }
 
 func newSysDecl(name string, body ...SystemDeclBodyItem) *SystemDecl {
-	return &SystemDecl{Name: newIdent(name), Body: body}
+	return &SystemDecl{NameNode: newIdent(name), Body: body}
 }
 
 func newInstDecl(name, compType string, overrides ...*AssignmentStmt) *InstanceDecl {
-	return &InstanceDecl{Name: newIdent(name), ComponentType: newIdent(compType), Overrides: overrides}
+	return &InstanceDecl{NameNode: newIdent(name), ComponentType: newIdent(compType), Overrides: overrides}
 }
 
 func newAssignStmt(varName string, value Expr) *AssignmentStmt {
@@ -75,13 +77,13 @@ func newAssignStmt(varName string, value Expr) *AssignmentStmt {
 
 // Helper for ComponentDecl AST
 func newCompDecl(name string, body ...ComponentDeclBodyItem) *ComponentDecl {
-	return &ComponentDecl{Name: newIdent(name), Body: body}
+	return &ComponentDecl{NameNode: newIdent(name), Body: body}
 }
 
 // Helper for UsesDecl AST
 func newUsesDecl(varName, compType string) *UsesDecl {
 	// Note: AST doesn't have overrides here, matches current struct
-	return &UsesDecl{Name: newIdent(varName), ComponentType: newIdent(compType)}
+	return &UsesDecl{NameNode: newIdent(varName), ComponentNode: newIdent(compType)}
 }
 
 // Helper for ParamDecl with default value
@@ -110,6 +112,43 @@ func newParamDecl(varName, typeName string) *ParamDecl {
 		tn.EnumTypeName = typeName // Assume others are enums/custom
 	}
 	return &ParamDecl{Name: newIdent(varName), Type: tn}
+}
+
+// Helper function to create a MethodDecl AST node for testing
+func newMethodDecl(name string, params []*ParamDecl, returnType *TypeName, body *BlockStmt) *MethodDecl {
+	return &MethodDecl{
+		NameNode:   newIdent(name),
+		Parameters: params,
+		ReturnType: returnType, // Can be nil
+		Body:       body,
+	}
+}
+
+func newMemberAccessExpr(receiver Expr, memberName string) *MemberAccessExpr {
+	return &MemberAccessExpr{
+		Receiver: receiver,
+		Member:   newIdent(memberName),
+	}
+}
+
+// Helper to create a CallExpr AST node for testing
+func newCallExpr(receiver Expr, methodName string, args ...Expr) *CallExpr {
+	return &CallExpr{
+		Function: &MemberAccessExpr{
+			Receiver: receiver,
+			Member:   newIdent(methodName),
+		},
+		Args: args,
+	}
+}
+
+// Helper assertion for BinaryOpNode structure
+func assertBinaryOpNode(t *testing.T, node OpNode, expectedOp string) *BinaryOpNode {
+	t.Helper()
+	binOp, ok := node.(*BinaryOpNode)
+	require.True(t, ok, "Expected *BinaryOpNode, got %T", node)
+	require.Equal(t, expectedOp, binOp.Op, "Binary operator mismatch")
+	return binOp
 }
 
 // outcomeToVarState converts a result from a native Go component call

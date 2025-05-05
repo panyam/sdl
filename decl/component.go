@@ -44,7 +44,7 @@ type ComponentRuntime interface {
 // defined purely within the DSL. It holds resolved parameters (as OpNodes)
 // and dependencies.
 type UDComponent struct {
-	Definition   *ComponentDefinition        // Pointer to the blueprint (AST etc.)
+	Definition   *ComponentDecl              // Pointer to the blueprint (AST etc.)
 	InstanceName string                      // The name given in the InstanceDecl
 	Params       map[string]OpNode           // Evaluated parameter OpNodes (override or default)
 	Dependencies map[string]ComponentRuntime // *** Unified map ***
@@ -67,8 +67,12 @@ func (ci *UDComponent) String() string {
 	}
 	sort.Strings(depNames)
 
+	if ci.Definition.Name == "" {
+		panic("component not yet resolved")
+	}
+
 	return fmt.Sprintf("DSLInstance<%s name=%s, params=%v, deps=%v>",
-		ci.Definition.Node.Name.Name,
+		ci.Definition.Name,
 		ci.InstanceName,
 		paramNames,
 		depNames,
@@ -89,7 +93,7 @@ func (ci *UDComponent) GetInstanceName() string {
 }
 
 func (ci *UDComponent) GetComponentTypeName() string {
-	return ci.Definition.Node.Name.Name
+	return ci.Definition.NameNode.Name
 }
 
 func (ci *UDComponent) GetParam(name string) (OpNode, bool) {

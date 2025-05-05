@@ -108,7 +108,7 @@ func TestEvalIdentifier(t *testing.T) {
 	nodeIdentBad := newIdent("badVar")
 	_, errBad := Eval(nodeIdentBad, frame, vm)
 	require.Error(t, errBad)
-	assert.Contains(t, errBad.Error(), "internal error: expected OpNode")
+	assert.Contains(t, errBad.Error(), "invalid type: identifier 'badVar' resolved to unexpected type int")
 	t.Logf("Eval(badVar): %s", errBad)
 }
 
@@ -383,7 +383,7 @@ func TestEvalIdentifier_Refined(t *testing.T) {
 	// Re-check evalIdentifier implementation: It does have the type check now.
 	_, errGo := Eval(newIdent("goVar"), frame, vm)
 	require.Error(t, errGo)
-	assert.Contains(t, errGo.Error(), "internal error: expected OpNode") // Correct error path
+	assert.Contains(t, errGo.Error(), "invalid type: identifier 'goVar' resolved to unexpected type *decl.MockDisk") // Correct error path
 	t.Logf("Eval(goVar identifier): %s", errGo)
 }
 
@@ -399,44 +399,24 @@ func assertComponentRuntime(t *testing.T, frame *Frame, instanceName string, exp
 	return runtimeInstance
 }
 
-// Test Definition Registration (Remains the same)
-func TestEvalComponentDecl(t *testing.T) {
-	vm, _ := setupTestVM()
-	compAST := newCompDecl("MyComp",
-		newParamDecl("Size", "int"),
-		newUsesDecl("log", "Logger"),
-	)
-	res, err := Eval(compAST, nil, vm)
-	require.NoError(t, err)
-	assertNilNode(t, res)
-	compDef, found := vm.ComponentDefRegistry["MyComp"]
-	require.True(t, found)
-	assert.Same(t, compAST, compDef.Node)
-	require.Contains(t, compDef.Params, "Size")
-	require.Contains(t, compDef.Uses, "log")
-	assert.Equal(t, "Logger", compDef.Uses["log"].ComponentType.Name)
-	_, errDup := Eval(compAST, nil, vm)
-	require.Error(t, errDup) // Test duplicate
-}
-
 // Test Native Instantiation with Overrides (Previously TestEvalInstanceDecl_SimpleOverrides)
 func TestEvalInstanceDecl_NativeComponent(t *testing.T) {
 	vm, frame := setupTestVM()
 
 	// --- Register Mock Component Definition ---
-	mockDiskDef := &ComponentDefinition{
-		Node: &ComponentDecl{Name: newIdent("MockDisk")},
+	mockDiskDef := &ComponentDecl{
+		Name: "MockDisk",
 		Params: map[string]*ParamDecl{
 			"ProfileName": newParamDecl("ProfileName", "string"),
 			"ReadLatency": newParamDecl("ReadLatency", "float"),
 		},
 		Uses:    make(map[string]*UsesDecl),
-		Methods: make(map[string]*MethodDef),
+		Methods: make(map[string]*MethodDecl),
 	}
-	require.NoError(t, vm.RegisterComponentDef(mockDiskDef))
+	require.NoError(t, vm.Entry.RegisterComponent(mockDiskDef))
 
 	// Register the Go constructor
-	vm.RegisterComponent("MockDisk", NewMockDiskComponent)
+	vm.RegisterNativeComponent("MockDisk", NewMockDiskComponent)
 
 	// Define System AST
 	sysAST := newSysDecl("MySysNative",
@@ -502,7 +482,7 @@ func TestEvalInstanceDecl_DSLComponent(t *testing.T) {
 	logRuntime := assertComponentRuntime(t, frame, "log1", "ConsoleLogger")
 	dslLogInstance, okLogCast := logRuntime.(*UDComponent)
 	require.True(t, okLogCast, "log1 is not *UDComponent")
-	assert.Equal(t, "ConsoleLogger", dslLogInstance.Definition.Node.Name.Name)
+	assert.Equal(t, "ConsoleLogger", dslLogInstance.Definition.NameNode.Name)
 	assert.Equal(t, "log1", dslLogInstance.InstanceName)
 	require.Contains(t, dslLogInstance.Params, "Level")
 	assertLeafStringValue(t, dslLogInstance.Params["Level"], "INFO") // Use new helper
@@ -511,7 +491,7 @@ func TestEvalInstanceDecl_DSLComponent(t *testing.T) {
 	svcRuntime := assertComponentRuntime(t, frame, "svc1", "MyServiceDSL")
 	dslSvcInstance, okSvcCast := svcRuntime.(*UDComponent)
 	require.True(t, okSvcCast, "svc1 is not *UDComponent")
-	assert.Equal(t, "MyServiceDSL", dslSvcInstance.Definition.Node.Name.Name)
+	assert.Equal(t, "MyServiceDSL", dslSvcInstance.Definition.NameNode.Name)
 	require.Contains(t, dslSvcInstance.Params, "ServiceName")
 	assertLeafStringValue(t, dslSvcInstance.Params["ServiceName"], "PrimaryService") // Use new helper
 
@@ -554,8 +534,8 @@ func TestEvalInstanceDecl_DependencyInjection(t *testing.T) {
 	require.NoError(t, err)
 
 	// 2. Register Go constructors
-	vm.RegisterComponent("MyDisk", NewMockDiskComponent) // Native constructor for MyDisk
-	vm.RegisterComponent("MySvc", NewMockSvcComponent)   // Native constructor for MySvc
+	vm.RegisterNativeComponent("MyDisk", NewMockDiskComponent) // Native constructor for MyDisk
+	vm.RegisterNativeComponent("MySvc", NewMockSvcComponent)   // Native constructor for MySvc
 
 	// 3. Define System AST
 	sysAST := newSysDecl("DepSys",
@@ -651,4 +631,108 @@ func assertLeafStringValue(t *testing.T, node OpNode, expectedVal string) {
 	assert.Equal(t, 1.0, valOutcome.Buckets[0].Weight, "ValueOutcome bucket weight")
 	assert.Equal(t, expectedVal, valOutcome.Buckets[0].Value, "ValueOutcome bucket value")
 	// TODO: Check zero latency?
+}
+
+func TestEvalCallExpr_DSLMethod(t *testing.T) {
+	// 1. Define Native Dependency Component (Mock for Simplicity)
+	mockNativeDef := &ComponentDecl{NameNode: newIdent("NativeDep")}
+
+	vm, frame := setupTestVM()
+
+	require.NoError(t, vm.Entry.RegisterComponent(mockNativeDef))
+	// Mock Constructor for NativeDep
+	vm.RegisterNativeComponent("NativeDep", func(instanceName string, params map[string]any) (any, error) {
+		// Simple mock, doesn't need much state for this test
+		return &struct{ InstanceName string }{InstanceName: instanceName}, nil
+	})
+	// Add a mock method to the native dependency (in mocks.go or define inline if simple enough)
+	// For this test, let's assume NativeDep has a method 'GetValue' that returns a LeafNode(int=100)
+	// We'll simulate this return value within NativeComponent.InvokeMethod during the test setup later?
+	// No, let's add the method to the native mock struct properly.
+
+	// 2. Define DSL Component with a method
+	dslCompAST := newCompDecl("MyDslComp",
+		// Parameter with default
+		newParamDeclWithDefault("Rate", "int", newIntLit("10")),
+		// Dependency
+		newUsesDecl("native", "NativeDep"),
+		// Method definition
+		newMethodDecl(
+			"Process", // Method name
+			[]*ParamDecl{newParamDecl("Multiplier", "int")}, // Parameters
+			nil, // No explicit return type for now
+			newBlockStmt( // Method body
+				// Let statement using parameter and self param
+				newLetStmt("temp", newBinExpr(newIdent("Multiplier"), "*", newMemberAccessExpr(newIdent("self"), "Rate"))),
+				// Call native dependency (assuming GetValue exists and returns LeafNode(100)) - TBD in mock
+				// newLetStmt("nativeVal", newCallExpr(newIdent("native"), "GetValue")), // Requires GetValue impl
+				// Final expression combining local var and native call result
+				newExprStmt(newBinExpr(newIdent("temp"), "+", newIntLit("5"))), // Simpler: use temp + literal
+				// newExprStmt(newBinExpr(newIdent("temp"), "+", newIdent("nativeVal"))), // If native call was used
+			),
+		),
+	)
+	_, err := Eval(dslCompAST, frame, vm)
+	require.NoError(t, err, "Failed to define DSL component")
+
+	// 3. Instantiate Components in the test Frame
+	// Instantiate Native Dependency
+	_, err = Eval(newInstDecl("depInst", "NativeDep"), frame, vm)
+	require.NoError(t, err, "Failed to instantiate NativeDep")
+	// Instantiate DSL Component, wiring the dependency
+	_, err = Eval(newInstDecl("dslInst", "MyDslComp",
+		newAssignStmt("native", newIdent("depInst")),
+		newAssignStmt("Rate", newIntLit("20")), // Override default Rate
+	), frame, vm)
+	require.NoError(t, err, "Failed to instantiate MyDslComp")
+
+	// Retrieve the DSL instance for verification if needed
+	dslRuntime := assertComponentRuntime(t, frame, "dslInst", "MyDslComp")
+	dslInstance, okDSL := dslRuntime.(*UDComponent)
+	require.True(t, okDSL)
+	// Check overridden parameter was stored correctly
+	assertLeafInt(t, dslInstance.Params["Rate"], 20)
+
+	// 4. Create the Call Expression AST for dslInst.Process(5)
+	callExpr := newCallExpr(newIdent("dslInst"), "Process", newIntLit("5"))
+
+	// 5. Evaluate the Call Expression
+	resultOpNode, errCall := Eval(callExpr, frame, vm)
+	require.NoError(t, errCall, "Failed to evaluate DSL method call")
+
+	// 6. Assert the Resulting OpNode Structure
+	// The method body is:
+	//   let temp = Multiplier * self.Rate; // Multiplier=5 (arg), self.Rate=20 (override) -> temp = 100
+	//   temp + 5;                          // 100 + 5
+	// The result OpNode should represent `temp + 5`.
+	// 'temp' itself resolves to the BinaryOpNode `Multiplier * self.Rate`.
+
+	// Expecting: BinaryOpNode(+)
+	//            /       \
+	//      BinaryOpNode(*)     LeafNode(5)
+	//       /      \
+	// LeafNode(5)  LeafNode(20) // Note: self.Rate resolves within the * operation
+
+	// Check the outer '+' operation
+	addNode := assertBinaryOpNode(t, resultOpNode, "+")
+
+	// Check the right operand of '+'
+	assertLeafInt(t, addNode.Right, 5)
+
+	// Check the left operand of '+' (should be the result of 'temp')
+	// 'temp' was assigned `Multiplier * self.Rate`
+	// The OpNode returned for `temp` should be the BinaryOpNode itself.
+	mulNode := assertBinaryOpNode(t, addNode.Left, "*")
+
+	// Check the operands of '*'
+	// Left operand: Multiplier (Arg value 5)
+	assertLeafInt(t, mulNode.Left, 5)
+	// Right operand: self.Rate (Instance value 20)
+	// This requires evalMemberAccess to work correctly when called *implicitly*
+	// during the evaluation of the BinaryExpr within the method body.
+	// Let's assume Eval handles self.Rate lookup correctly within the method frame.
+	// The OpNode for self.Rate should be the LeafNode(20) stored in the instance.
+	assertLeafInt(t, mulNode.Right, 20)
+
+	t.Logf("DSL Method Call Result OpNode: %s", resultOpNode)
 }

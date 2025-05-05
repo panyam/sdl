@@ -2,7 +2,7 @@ package decl
 
 import (
 	"fmt"
-	"strconv"
+	"log"
 	"strings"
 
 	gfn "github.com/panyam/goutils/fn"
@@ -17,18 +17,6 @@ type Node interface {
 	String() string // String representation for debugging/printing
 }
 
-// Expr represents an expression node (evaluates to a value/state).
-type Expr interface {
-	Node
-	exprNode() // Marker method for expressions
-}
-
-// Stmt represents a statement node (performs an action, controls flow).
-type Stmt interface {
-	Node
-	stmtNode() // Marker method for statements
-}
-
 // --- Base Struct ---
 
 // NodeInfo embeddable struct for position tracking.
@@ -38,15 +26,123 @@ func (n *NodeInfo) Pos() int       { return n.StartPos }
 func (n *NodeInfo) End() int       { return n.StopPos }
 func (n *NodeInfo) String() string { return "{Node}" } // Default stringer
 
-// --- Top Level declarations ---
+// Declarations are processed at load time unlike statements and expressions
+// Used for holding mthod/component and other definitions
+type Declaration interface {
+	Node
 
-// File represents the top-level node of a parsed DSL file.
-type File struct {
-	NodeInfo
-	declarations []Node // ComponentDecl, SystemDecl, Options, Enum, Import
+	// Called to resolve specific AST aspects out of the parse tree
+	Resolve(file *FileDecl) error
 }
 
-func (f *File) String() string {
+// --- Top Level declarations ---
+
+// FileDecl represents the top-level node of a parsed DSL file.
+type FileDecl struct {
+	NodeInfo
+	declarations []Node // ComponentDecl, SystemDecl, OptionsDecl, EnumDecl, ImportDecl
+
+	// Resolved values so we can work with processed/loaded values instead of resolving
+	// Identify expressions etc
+	Components map[string]*ComponentDecl
+	Enums      map[string]*EnumDecl
+	Systems    map[string]*SystemDecl
+}
+
+// Called to resolve specific AST aspects out of the parse tree
+func (f *FileDecl) Resolve(*FileDecl) error {
+	if f == nil {
+		return fmt.Errorf("cannot load nil file")
+	}
+	// Initialize maps if they are nil (might happen if VM wasn't Init'd properly)
+	if f.Components == nil {
+		f.Components = make(map[string]*ComponentDecl)
+	}
+	if f.Systems == nil {
+		f.Systems = make(map[string]*SystemDecl)
+	}
+	// Add initializers for other registries (Enums, Options) if they exist
+
+	// log.Printf("Loading definitions from File AST...")
+	for _, decl := range f.declarations {
+		switch node := decl.(type) {
+		case *ComponentDecl:
+			// Process and register the component definition
+			err := node.Resolve(f) // Use a helper function
+			if err != nil {
+				return fmt.Errorf("error processing component '%s' at pos %d: %w", node.NameNode.Name, node.Pos(), err)
+			}
+			if err := f.RegisterComponent(node); err != nil {
+				return err
+			}
+
+		case *SystemDecl:
+			// Store the SystemDecl AST by name for later execution
+			err := node.Resolve(f) // Use a helper function
+			if err != nil {
+				return fmt.Errorf("error processing system '%s' at pos %d: %w", node.NameNode.Name, node.Pos(), err)
+			}
+			if err := f.RegisterSystem(node); err != nil {
+				return err
+			}
+		case *EnumDecl:
+			err := node.Resolve(f) // Use a helper function
+			if err != nil {
+				return fmt.Errorf("error processing enum '%s' at pos %d: %w", node.NameNode.Name, node.Pos(), err)
+			}
+			if err := f.RegisterEnum(node); err != nil {
+				return err
+			}
+
+		case *OptionsDecl:
+			log.Printf("Found OptionsDecl (TODO: Implement processing)")
+
+		case *ImportDecl:
+			log.Printf("Found ImportDecl: %s (TODO: Implement handling)", node.Path)
+
+		default:
+			// Ignore other node types at the top level? Or error?
+			// log.Printf("Ignoring unsupported top-level declaration type %T at pos %d", node, node.Pos())
+		}
+	}
+	// log.Printf("Finished loading definitions.")
+	return nil
+}
+
+func (f *FileDecl) RegisterComponent(c *ComponentDecl) error {
+	if f.Components == nil {
+		f.Components = map[string]*ComponentDecl{}
+	}
+	if _, exists := f.Components[c.Name]; exists {
+		return fmt.Errorf("component definition '%s' already registered", c.Name)
+	}
+	f.Components[c.Name] = c
+	return nil
+}
+
+func (f *FileDecl) RegisterSystem(c *SystemDecl) error {
+	if f.Systems == nil {
+		f.Systems = map[string]*SystemDecl{}
+	}
+	if _, exists := f.Systems[c.Name]; exists {
+		return fmt.Errorf("system definition '%s' already registered", c.Name)
+	}
+	f.Systems[c.Name] = c
+	return nil
+}
+
+func (f *FileDecl) RegisterEnum(c *EnumDecl) error {
+	if f.Enums == nil {
+		f.Enums = map[string]*EnumDecl{}
+	}
+	if _, exists := f.Enums[c.Name]; exists {
+		return fmt.Errorf("enum definition '%s' already registered", c.Name)
+	}
+	f.Enums[c.Name] = c
+	return nil
+}
+
+func (f *FileDecl) String() string {
 	lines := []string{}
 	for _, d := range f.declarations {
 		lines = append(lines, d.String())
@@ -54,45 +150,130 @@ func (f *File) String() string {
 	return strings.Join(lines, "\n")
 }
 
-// Options represents `options { ... }` (structure TBD)
-type Options struct {
+// OptionsDecl represents `options { ... }` (structure TBD)
+type OptionsDecl struct {
 	NodeInfo
 	Body *BlockStmt // Placeholder for options assignments?
 }
 
-func (o *Options) systemBodyItemNode() {}
-func (o *Options) String() string      { return "options { ... }" }
+func (o *OptionsDecl) systemBodyItemNode() {}
+func (o *OptionsDecl) String() string      { return "options { ... }" }
 
-// Enum represents `enum Name { Val1, Val2, ... };`
-type Enum struct {
+// EnumDecl represents `enum Name { Val1, Val2, ... };`
+type EnumDecl struct {
 	NodeInfo
-	Name   *IdentifierExpr   // Enum type name
-	Values []*IdentifierExpr // List of enum value names
+	NameNode   *IdentifierExpr   // EnumDecl type name
+	ValuesNode []*IdentifierExpr // List of enum value names
+
+	// Resolved values so we can work with processed/loaded values instead of resolving
+	// Identify expressions etc
+	Name   string
+	Values []string
 }
 
-func (e *Enum) String() string {
+func (d *EnumDecl) Resolve(file *FileDecl) error {
+	d.Name = d.NameNode.Name
+	d.Values = gfn.Map(d.ValuesNode, func(e *IdentifierExpr) string { return e.Name })
+	return nil
+}
+
+func (e *EnumDecl) String() string {
 	vals := []string{}
-	for _, v := range e.Values {
+	for _, v := range e.ValuesNode {
 		vals = append(vals, v.Name)
 	}
 	return fmt.Sprintf("enum %s { %s };", e.Name, strings.Join(vals, ", "))
 }
 
-// Import represents `import "path";`
-type Import struct {
+// ImportDecl represents `import "path";`
+type ImportDecl struct {
 	NodeInfo
 	Path *LiteralExpr // Should be a STRING literal
 }
 
-func (i *Import) String() string { return fmt.Sprintf("import %s;", i.Path) }
+func (i *ImportDecl) String() string { return fmt.Sprintf("import %s;", i.Path) }
 
 // --- ComponentDecl Definition ---
+
+// Keeps track of a component ref for lazy resolution after file has been loaded
+// For example, components in a file can be declared in any order and can use other
+// components declared in a file.
+type ComponentUse struct {
+	Name         string         // Name/FQN of the component being used/referred to
+	ResolvedDecl *ComponentDecl // The resolved component when needed
+	Error        error          // Errors in resolution
+}
 
 // ComponentDecl represents `component Name { ... }`
 type ComponentDecl struct {
 	NodeInfo
-	Name *IdentifierExpr         // ComponentDecl type name
-	Body []ComponentDeclBodyItem // ParamDecl, UsesDecl, MethodDef
+	NameNode *IdentifierExpr         // ComponentDecl type name
+	Body     []ComponentDeclBodyItem // ParamDecl, UsesDecl, MethodDecl
+
+	// Marks whether a component is native or not
+	// Native components should still be declared if not defined.
+	// Method bodies of native components will be ignored (if you need to override we
+	// can introduce inheritance or mixins later on)
+	IsNative bool
+
+	// Resolved values so we can work with processed/loaded values instead of resolving
+	// Identify expressions etc
+	Name    string
+	Params  map[string]*ParamDecl  // Processed parameters map[name]*ParamDecl
+	Uses    map[string]*UsesDecl   // Processed dependencies map[local_name]*UsesDecl
+	Methods map[string]*MethodDecl // Processed methods map[method_name]*MethodDef
+}
+
+func (d *ComponentDecl) Resolve(file *FileDecl) error {
+	d.Name = d.NameNode.Name
+	d.Params = map[string]*ParamDecl{} // Processed parameters map[name]*ParamDecl
+	d.Uses = map[string]*UsesDecl{}    // Processed dependencies map[local_name]*UsesDecl
+
+	// Process body
+	for _, item := range d.Body {
+		switch bodyNode := item.(type) {
+		case *ParamDecl:
+			paramName := bodyNode.Name.Name
+			if _, exists := d.Params[paramName]; exists {
+				return fmt.Errorf("duplicate parameter '%s'", paramName) // Error relative to component name handled by caller
+			}
+			d.Params[paramName] = bodyNode
+		case *UsesDecl:
+			if err := bodyNode.Resolve(file); err != nil {
+				return err
+			}
+			usesName := bodyNode.NameNode.Name
+			if _, exists := d.Uses[usesName]; exists {
+				return fmt.Errorf("duplicate uses declaration '%s'", usesName)
+			}
+		case *MethodDecl:
+			methodName := bodyNode.NameNode.Name
+			if _, exists := d.Methods[methodName]; exists {
+				return fmt.Errorf("duplicate method definition '%s'", methodName)
+			}
+			d.Methods[methodName] = bodyNode
+			/* Disable recursive components for now
+			case *ComponentDecl:
+				// Handle nested definitions - recursive processing
+				nestedCompDef, err := v.processComponentDecl(bodyNode)
+				if err != nil {
+					return fmt.Errorf("error processing nested component '%s': %w", bodyNode.Name.Name, err)
+				}
+				// How to register nested? Maybe prefix name? Or store within outer compDef?
+				// For now, let's register globally with potentially full name? Needs design.
+				// Let's just process it for validation for now, registration TBD.
+				// We could register it here:
+				err = v.RegisterComponentDef(nestedCompDef)
+				if err != nil {
+					return fmt.Errorf("error registering nested component '%s': %w", nestedCompDef.Node.Name.Name, err)
+				}
+			*/
+
+		default:
+			// Ignore other items like comments or potentially misplaced nodes
+		}
+	}
+	return nil
 }
 
 func (c *ComponentDecl) String() string         { return fmt.Sprintf("component %s { ... }", c.Name) }
@@ -108,7 +289,7 @@ type ComponentDeclBodyItem interface {
 type TypeName struct {
 	NodeInfo
 	// Can be one of the following
-	PrimitiveTypeName string // "int", "float", "bool", "string", "duration", or an Enum identifier
+	PrimitiveTypeName string // "int", "float", "bool", "string", "duration", or an EnumDecl identifier
 	EnumTypeName      string
 	OutcomeTypeName   string
 }
@@ -148,24 +329,40 @@ func (p *ParamDecl) String() string {
 // UsesDecl represents `uses varName: ComponentType [{ overrides }];`
 type UsesDecl struct {
 	NodeInfo
-	Name          *IdentifierExpr
-	ComponentType *IdentifierExpr // Type name of the dependency
+	NameNode      *IdentifierExpr
+	ComponentNode *IdentifierExpr // Type name of the dependency
+
+	// Resolved values
+	Name         string
+	ComponentRef ComponentUse
+}
+
+func (u *UsesDecl) Resolve(file *FileDecl) error {
+	u.Name = u.NameNode.Name
+	u.ComponentRef = ComponentUse{
+		Name: u.ComponentNode.Name,
+	}
+	// TODO - Should we add u.Component.Ref into file.UnresolvedRefs so it can be resolved
+	// after the entire file is loaded or should it be delayed until runtime for lazy loading?
+	return nil
 }
 
 func (u *UsesDecl) componentBodyItemNode() {}
-func (u *UsesDecl) String() string         { return fmt.Sprintf("uses %s: %s;", u.Name, u.ComponentType) }
+func (u *UsesDecl) String() string         { return fmt.Sprintf("uses %s: %s;", u.NameNode, u.ComponentNode) }
 
-// MethodDef represents `method name(params) [: returnType] { body }`
-type MethodDef struct {
+// MethodDecl represents `method name(params) [: returnType] { body }`
+type MethodDecl struct {
 	NodeInfo
-	Name       *IdentifierExpr
+	NameNode   *IdentifierExpr
 	Parameters []*ParamDecl // Signature parameters (can be empty)
 	ReturnType *TypeName    // Optional return type (primitive or enum)
 	Body       *BlockStmt
+
+	Name string
 }
 
-func (o *MethodDef) componentBodyItemNode() {}
-func (o *MethodDef) String() string {
+func (o *MethodDecl) componentBodyItemNode() {}
+func (o *MethodDecl) String() string {
 	retType := ""
 	if o.ReturnType != nil {
 		retType = fmt.Sprintf(": %s", o.ReturnType)
@@ -178,8 +375,24 @@ func (o *MethodDef) String() string {
 // SystemDecl represents `system Name { ... }`
 type SystemDecl struct {
 	NodeInfo
-	Name *IdentifierExpr
-	Body []SystemDeclBodyItem // InstanceDecl, Analyze, Options, LetStmt
+	NameNode *IdentifierExpr
+	Body     []SystemDeclBodyItem // InstanceDecl, AnalyzeDecl, OptionsDecl, LetStmt
+
+	// Resolved values so we can work with processed/loaded values instead of resolving
+	// Identify expressions etc
+	Name string
+
+	// Note how we can get body etc from the Body decl directly
+}
+
+func (s *SystemDecl) Resolve(f *FileDecl) error {
+	s.Name = s.NameNode.Name
+	for _, item := range s.Body {
+		if err := item.Resolve(f); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *SystemDecl) String() string { return fmt.Sprintf("system %s { ... }", s.Name) }
@@ -188,14 +401,20 @@ func (s *SystemDecl) String() string { return fmt.Sprintf("system %s { ... }", s
 type SystemDeclBodyItem interface {
 	Node
 	systemBodyItemNode()
+	Resolve(f *FileDecl) error
 }
 
 // InstanceDecl represents `instanceName: ComponentType = { overrides };`
 type InstanceDecl struct {
-	NodeInfo
-	Name          *IdentifierExpr
+	Declaration
+	NameNode      *IdentifierExpr
 	ComponentType *IdentifierExpr
-	Overrides     []*AssignmentStmt // Changed from Params
+	Overrides     []*AssignmentStmt
+
+	// Resolved values so we can work with processed/loaded values instead of resolving
+	// Identify expressions etc
+	Name      string
+	Component string // Name of the component being used.  Can be an FQN later if we do "dot" based imports
 }
 
 func (i *InstanceDecl) systemBodyItemNode() {}
@@ -203,16 +422,16 @@ func (i *InstanceDecl) String() string {
 	return fmt.Sprintf("instance %s: %s = { ... };", i.Name, i.ComponentType)
 }
 
-// Analyze represents `analyze name = callExpr expect { ... };`
-type Analyze struct {
+// AnalyzeDecl represents `analyze name = callExpr expect { ... };`
+type AnalyzeDecl struct {
 	NodeInfo
 	Name         *IdentifierExpr
-	Target       *CallExpr    // Changed from Expr
-	Expectations *ExpectBlock // Optional
+	Target       *CallExpr         // Changed from Expr
+	Expectations *ExpectationsDecl // Optional
 }
 
-func (a *Analyze) systemBodyItemNode() {}
-func (a *Analyze) String() string {
+func (a *AnalyzeDecl) systemBodyItemNode() {}
+func (a *AnalyzeDecl) String() string {
 	s := fmt.Sprintf("analyze %s = %s", a.Name, a.Target)
 	if a.Expectations != nil {
 		s += " " + a.Expectations.String()
@@ -220,261 +439,13 @@ func (a *Analyze) String() string {
 	return s + ";"
 }
 
-// ExpectBlock represents `expect { expectStmt* }`
-type ExpectBlock struct {
+// ExpectationsDecl represents `expect { expectStmt* }`
+type ExpectationsDecl struct {
 	NodeInfo
 	Expects []*ExpectStmt
 }
 
-func (e *ExpectBlock) String() string { return "expect { ... }" }
-
-// ExpectStmt represents `targetMetric operator threshold;` (e.g., `result.P99 < 100ms;`)
-type ExpectStmt struct {
-	NodeInfo
-	Target    *MemberAccessExpr // e.g., result.P99 (requires VM resolution)
-	Operator  string            // e.g., "<", ">=", "=="
-	Threshold Expr
-}
-
-func (e *ExpectStmt) String() string {
-	return fmt.Sprintf("%s %s %s;", e.Target, e.Operator, e.Threshold)
-}
-
-// --- Statements ---
-
-// BlockStmt represents a sequence of statements `{ stmt1; stmt2; ... }`
-type BlockStmt struct {
-	NodeInfo
-	Statements []Stmt
-}
-
-func (b *BlockStmt) stmtNode()      {}
-func (b *BlockStmt) String() string { return "{ ...statements... }" } // Simplified
-
-// LetStmt represents `let var = expr;`
-type LetStmt struct {
-	NodeInfo
-	Variable *IdentifierExpr
-	Value    Expr
-}
-
-func (l *LetStmt) stmtNode()           {}
-func (l *LetStmt) systemBodyItemNode() {} // Allow let at system level
-func (l *LetStmt) String() string      { return fmt.Sprintf("let %s = %s;", l.Variable, l.Value) }
-
-// ExprStmt represents an expression used as a statement (e.g., a call)
-type ExprStmt struct {
-	NodeInfo
-	Expression Expr
-}
-
-func (e *ExprStmt) stmtNode()      {}
-func (e *ExprStmt) String() string { return e.Expression.String() + ";" }
-
-// ReturnStmt represents `return expr;`
-type ReturnStmt struct {
-	NodeInfo
-	ReturnValue Expr // Optional? Can be `return;`? Let's require a value for now.
-}
-
-func (r *ReturnStmt) stmtNode()      {}
-func (r *ReturnStmt) String() string { return fmt.Sprintf("return %s;", r.ReturnValue) }
-
-// IfStmt represents `if cond { ... } else { ... }`
-type IfStmt struct {
-	NodeInfo
-	Condition Expr // Must evaluate to bool outcome
-	Then      *BlockStmt
-	Else      Stmt // Can be another IfStmt or a BlockStmt
-}
-
-func (i *IfStmt) stmtNode()      {}
-func (i *IfStmt) String() string { return fmt.Sprintf("if (%s) { ... } else { ... }", i.Condition) }
-
-// DistributeStmt represents probabilistic control flow
-type DistributeStmt struct {
-	NodeInfo
-	Total       Expr // Optional total probability expression (float outcome)
-	Cases       []*DistributeCase
-	DefaultCase *DefaultCase // Optional
-}
-
-func (d *DistributeStmt) stmtNode()      {}
-func (d *DistributeStmt) String() string { return "distribute { ... }" }
-
-// DistributeCase represents `probExpr => { block }`
-type DistributeCase struct {
-	NodeInfo
-	Probability Expr // Must evaluate to float outcome
-	Body        *BlockStmt
-}
-
-func (d *DistributeCase) String() string { return fmt.Sprintf("%s => { ... }", d.Probability) }
-
-// DefaultCase represents `default => { block }`
-type DefaultCase struct {
-	NodeInfo
-	Body *BlockStmt
-}
-
-func (d *DefaultCase) String() string { return "default => { ... }" }
-
-// DelayStmt represents `delay durationExpr;`
-type DelayStmt struct {
-	NodeInfo
-	Duration Expr // Must evaluate to Duration outcome
-}
-
-func (d *DelayStmt) stmtNode()      {}
-func (d *DelayStmt) String() string { return fmt.Sprintf("delay %s;", d.Duration) }
-
-// WaitStmt represents `delay durationExpr;`
-type WaitStmt struct {
-	NodeInfo
-	Idents []*IdentifierExpr // Must evaluate to Duration outcome
-}
-
-func (d *WaitStmt) stmtNode() {}
-func (d *WaitStmt) String() string {
-	return fmt.Sprintf("wait %s;", strings.Join(gfn.Map(d.Idents, func(i *IdentifierExpr) string { return i.Name }), ", "))
-}
-
-// ExecutionMode determines sequential or parallel execution.
-type ExecutionMode string // Use string for simplicity
-
-const (
-	Sequential ExecutionMode = "Sequential"
-	Go         ExecutionMode = "Go"
-)
-
-// GoStmt represents `parallel { stmt* }`
-type GoStmt struct {
-	NodeInfo
-	VarName *IdentifierExpr
-	// Can call a async/parallel on a statement or an expression
-	Stmt *BlockStmt
-	Expr *Expr
-}
-
-func (p *GoStmt) stmtNode()      {}
-func (p *GoStmt) String() string { return "go { ... }" }
-
-// LogStmt represents `log "message", expr1, expr2;`
-type LogStmt struct {
-	NodeInfo
-	Args []Expr // First arg often StringLiteral, others are values to log
-}
-
-func (l *LogStmt) stmtNode()      {}
-func (l *LogStmt) String() string { return "log ... ;" }
-
-// --- Expressions ---
-
-// BinaryExpr represents `left operator right`
-type BinaryExpr struct {
-	NodeInfo
-	Left     Expr
-	Operator string // "||", "&&", "==", "!=", "<", "<=", ">", ">=", "+", "-", "*", "/", "%"
-	Right    Expr
-}
-
-func (b *BinaryExpr) exprNode() {}
-func (b *BinaryExpr) String() string {
-	// Basic, doesn't handle precedence for parentheses
-	return fmt.Sprintf("(%s %s %s)", b.Left, b.Operator, b.Right)
-}
-
-// UnaryExpr represents `operator operand`
-type UnaryExpr struct {
-	NodeInfo
-	Operator string // "!", "-"
-	Right    Expr
-}
-
-func (u *UnaryExpr) exprNode()      {}
-func (u *UnaryExpr) String() string { return fmt.Sprintf("(%s%s)", u.Operator, u.Right) }
-
-// LiteralExpr represents literal values
-type LiteralExpr struct {
-	NodeInfo
-	Kind  string // "INT", "FLOAT", "STRING", "BOOL", "DURATION"
-	Value string // Raw string value from source
-	// Duration specific fields could be added if needed after parsing
-	// DurationUnit string
-	// NumericValue float64
-}
-
-func (l *LiteralExpr) exprNode() {}
-func (l *LiteralExpr) String() string {
-	if l.Kind == "STRING" {
-		// Use strconv.Quote for proper escaping if Value contains raw string content
-		return strconv.Quote(l.Value)
-	}
-	if l.Kind == "DURATION" {
-		// Assuming Value includes the unit, e.g., "10ms"
-		return l.Value
-	}
-	return l.Value
-}
-
-// IdentifierExpr represents variable or function names
-type IdentifierExpr struct {
-	NodeInfo
-	Name string
-}
-
-func (i *IdentifierExpr) exprNode()           {}
-func (i *IdentifierExpr) systemBodyItemNode() {} // Allow bare identifier? Maybe not needed.
-func (i *IdentifierExpr) String() string      { return i.Name }
-
-// MemberAccessExpr represents `receiver.member` (accessing parameters/fields)
-type MemberAccessExpr struct {
-	NodeInfo
-	Receiver Expr // The object/instance being accessed
-	Member   *IdentifierExpr
-}
-
-func (m *MemberAccessExpr) exprNode()      {}
-func (m *MemberAccessExpr) String() string { return fmt.Sprintf("%s.%s", m.Receiver, m.Member) }
-
-// CallExpr represents `function(arg1, arg2, ...)` (user funcs, component methods, built-ins)
-type CallExpr struct {
-	NodeInfo
-	Function Expr   // Typically IdentifierExpr or MemberAccessExpr
-	Args     []Expr // Argument expressions
-}
-
-func (c *CallExpr) exprNode() {}
-func (c *CallExpr) String() string {
-	argsStr := []string{}
-	for _, arg := range c.Args {
-		argsStr = append(argsStr, arg.String())
-	}
-	return fmt.Sprintf("%s(%s)", c.Function, strings.Join(argsStr, ", "))
-}
-
-// SwitchStmt represents conditional branching
-type SwitchStmt struct {
-	NodeInfo
-	Input   Expr
-	Cases   []*CaseExpr /* ; Default *BlockExpr */
-	Default Expr
-}
-
-func (s *SwitchStmt) exprNode() {}
-func (s *SwitchStmt) String() string { /* Basic string representation */
-	return fmt.Sprintf("switch(%s){...}", s.Input)
-}
-
-// CaseExpr represents a single case within a SwitchStmt
-type CaseExpr struct {
-	NodeInfo
-	Condition Expr
-	Body      Expr
-}
-
-func (c *CaseExpr) exprNode()      {}
-func (c *CaseExpr) String() string { return fmt.Sprintf("case %s: %s", c.Condition, c.Body) }
+func (e *ExpectationsDecl) String() string { return "expect { ... }" }
 
 /** Disable Filter and Repeat for now
 // FilterExpr represents filtering buckets
@@ -526,37 +497,3 @@ func (f *FanoutExpr) String() string {
 	return fmt.Sprintf("fanout(%s, %s, %s)", f.CountDist, f.OpExpr, f.Mode)
 }
 */
-
-// --- Statement Nodes ---
-
-// AssignmentStmt represents setting a parameter value in an InstanceDecl.
-type AssignmentStmt struct {
-	NodeInfo
-	Var      *IdentifierExpr
-	Value    Expr   // The value assigned to the parameter
-	IsLet    string // whether this is a let statement
-	IsFuture string // whether this is a future
-}
-
-func (p *AssignmentStmt) String() string { return fmt.Sprintf("%s = %s", p.Var.Name, p.Value) }
-
-// DistributeExpr represents the probabilistic choice expression/statement
-type DistributeExpr struct {
-	NodeInfo
-	TotalProb Expr // Optional total probability expression
-	Cases     []*DistributeExprCase
-	Default   Expr
-}
-
-func (d *DistributeExpr) exprNode()      {} // Can be expression
-func (d *DistributeExpr) stmtNode()      {} // Can be statement
-func (d *DistributeExpr) String() string { return "distribute {...}" }
-
-// DistributeExprnCase represents `probExpr => { block }`
-type DistributeExprCase struct {
-	NodeInfo
-	Probability Expr // Must evaluate to float outcome
-	Body        Expr
-}
-
-func (d *DistributeExprCase) String() string { return fmt.Sprintf("%s => { ... }", d.Probability) }

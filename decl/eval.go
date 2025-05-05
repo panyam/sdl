@@ -16,6 +16,7 @@ var (
 	ErrNotFound             = errors.New("identifier not found")
 	ErrInternalFuncNotFound = errors.New("internal function not found")
 	ErrUnsupportedType      = errors.New("unsupported type for operation")
+	ErrInvalidType          = errors.New("invalid type")
 )
 
 // Starts the execution of a single expression
@@ -46,8 +47,6 @@ func Eval(node Node, frame *Frame, v *VM) (OpNode, error) {
 		return evalSystemDecl(n, frame, v)
 	case *InstanceDecl: // <<< Added case
 		return evalInstanceDecl(n, frame, v)
-	case *ComponentDecl: // <<< Added case
-		return evalComponentDecl(n, frame, v)
 	case *CallExpr:
 		return evalCallExpr(n, frame, v)
 	case *MemberAccessExpr:
@@ -121,15 +120,19 @@ func evalIdentifier(expr *IdentifierExpr, frame *Frame, v *VM) (OpNode, error) {
 		return nil, fmt.Errorf("%w: identifier '%s'", ErrNotFound, name)
 	}
 
-	// The frame should store OpNodes for variables during evaluation
-	opNode, ok := value.(OpNode)
-	if !ok {
-		// This indicates an internal inconsistency - something other than an OpNode
-		// was stored for a variable during evaluation.
-		return nil, fmt.Errorf("internal error: expected OpNode for identifier '%s', but found type %T in frame", name, value)
+	// Check the type of the value found in the frame
+	switch val := value.(type) {
+	case OpNode:
+		// If it's already an OpNode (e.g., from a let statement), return it directly.
+		return val, nil
+	case ComponentRuntime:
+		// If it's a ComponentRuntime instance, return an InstanceRefNode.
+		// The consumer (e.g., assignment eval) will handle this reference.
+		return &InstanceRefNode{InstanceName: name}, nil
+	default:
+		// Found something unexpected in the frame for this identifier.
+		return nil, fmt.Errorf("%w: identifier '%s' resolved to unexpected type %T", ErrInvalidType, name, value)
 	}
-
-	return opNode, nil
 }
 
 func evalLetStmt(stmt *LetStmt, frame *Frame, v *VM) (OpNode, error) {
@@ -154,25 +157,6 @@ func evalCallExpr(expr *CallExpr, frame *Frame, v *VM) (val OpNode, err error) {
 	// 1. Evaluate the Function part to determine what is being called.
 	//    Most common case: MemberAccessExpr (instance.method)
 	if memberAccess, ok := expr.Function.(*MemberAccessExpr); ok {
-		// Evaluate the receiver (should be an identifier)
-		receiverNode, err := Eval(memberAccess.Receiver, frame, v)
-		if err != nil {
-			return nil, fmt.Errorf("evaluating receiver for method call '%s': %w", memberAccess.Member.Name, err)
-		}
-
-		// The receiver *must* resolve to a ComponentRuntime instance stored in the frame.
-		// The receiver itself is likely an IdentifierExpr AST node, but Eval resolves it.
-		// We expect Eval(receiver) to return the OpNode associated with the identifier,
-		// which for an instance *should be* the ComponentRuntime itself.
-		// Let's adjust the expectation: Eval of Identifier returns the OpNode,
-		// but if that identifier *represents* an instance, we need the instance itself.
-		// This suggests instances might need to be stored directly in the frame, not as OpNodes.
-		// --> Let's check evalIdentifier and evalInstanceDecl again.
-		//
-		// CHECK: evalInstanceDecl stores the `runtimeInstance` (ComponentRuntime) in the frame.
-		// CHECK: evalIdentifier retrieves whatever is in the frame.
-		// OKAY: So, we expect evalIdentifier(receiverIdent) to return the ComponentRuntime.
-
 		// Let's re-evaluate the receiver identifier directly to get the runtime instance
 		receiverIdent, okIdent := memberAccess.Receiver.(*IdentifierExpr)
 		if !okIdent {
@@ -245,7 +229,7 @@ func evalMemberAccess(expr *MemberAccessExpr, frame *Frame, v *VM) (OpNode, erro
 	if !found {
 		return nil, fmt.Errorf("identifier '%s' not found for member access '%s'", receiverIdent.Name, expr.Member.Name)
 	}
-	runtimeInstance, okRuntime := instanceAny.(ComponentRuntime)
+	_ /*runtimeInstance*/, okRuntime := instanceAny.(ComponentRuntime)
 	if !okRuntime {
 		return nil, fmt.Errorf("identifier '%s' does not represent a component instance (found type %T)", receiverIdent.Name, instanceAny)
 	}
@@ -370,63 +354,6 @@ func evalBinaryExpr(expr *BinaryExpr, frame *Frame, v *VM) (OpNode, error) {
 	}, nil
 }
 
-// --- evalComponentDecl (Registers definition) ---
-func evalComponentDecl(stmt *ComponentDecl, frame *Frame, v *VM) (OpNode, error) {
-	compName := stmt.Name.Name
-	// Check if definition already exists in VM registry
-	if _, exists := v.ComponentDefRegistry[compName]; exists {
-		return nil, fmt.Errorf("component '%s' already defined", compName)
-	}
-
-	compDef := &ComponentDefinition{
-		Node:    stmt,
-		Params:  make(map[string]*ParamDecl),
-		Uses:    make(map[string]*UsesDecl),
-		Methods: make(map[string]*MethodDef),
-	}
-
-	// Process body to populate definition details
-	for _, item := range stmt.Body {
-		switch bodyNode := item.(type) {
-		case *ParamDecl:
-			paramName := bodyNode.Name.Name
-			if _, exists := compDef.Params[paramName]; exists {
-				return nil, fmt.Errorf("duplicate parameter '%s' in component '%s'", paramName, compName)
-			}
-			compDef.Params[paramName] = bodyNode
-		case *UsesDecl:
-			usesName := bodyNode.Name.Name
-			if _, exists := compDef.Uses[usesName]; exists {
-				return nil, fmt.Errorf("duplicate uses declaration '%s' in component '%s'", usesName, compName)
-			}
-			compDef.Uses[usesName] = bodyNode
-		case *MethodDef:
-			methodName := bodyNode.Name.Name
-			if _, exists := compDef.Methods[methodName]; exists {
-				return nil, fmt.Errorf("duplicate method definition '%s' in component '%s'", methodName, compName)
-			}
-			compDef.Methods[methodName] = bodyNode
-		case *ComponentDecl:
-			// Handle nested definitions
-			_, err := evalComponentDecl(bodyNode, frame, v)
-			if err != nil {
-				return nil, fmt.Errorf("error defining nested component '%s' within '%s': %w", bodyNode.Name.Name, compName, err)
-			}
-		default:
-			// Ignore other items for now
-		}
-	}
-
-	// Register the processed definition with the VM
-	err := v.RegisterComponentDef(compDef)
-	if err != nil {
-		return nil, err // Should be caught by initial check, but good practice
-	}
-
-	// Defining a component doesn't produce an executable OpNode
-	return theNilNode, nil
-}
-
 // --- evalSystemDecl (Processes system body) ---
 func evalSystemDecl(stmt *SystemDecl, frame *Frame, v *VM) (OpNode, error) {
 	// Systems define a scope, but for now, let's use the passed frame.
@@ -438,7 +365,7 @@ func evalSystemDecl(stmt *SystemDecl, frame *Frame, v *VM) (OpNode, error) {
 		// For now, InstanceDecl modifies the passed frame.
 		_, err := Eval(item, frame, v) // Use passed frame
 		if err != nil {
-			return nil, fmt.Errorf("error evaluating item in system '%s': %w", stmt.Name.Name, err)
+			return nil, fmt.Errorf("error evaluating item in system '%s': %w", stmt.Name, err)
 		}
 		// Ignore the OpNode returned by body items (e.g., InstanceDecl returns NilNode)
 	}
@@ -449,7 +376,7 @@ func evalSystemDecl(stmt *SystemDecl, frame *Frame, v *VM) (OpNode, error) {
 
 // --- evalInstanceDecl (Instantiates Native or DSL component) ---
 func evalInstanceDecl(stmt *InstanceDecl, frame *Frame, v *VM) (OpNode, error) {
-	instanceName := stmt.Name.Name
+	instanceName := stmt.Name
 	componentTypeName := stmt.ComponentType.Name
 
 	// Check if instance name already exists in the current scope
@@ -457,182 +384,16 @@ func evalInstanceDecl(stmt *InstanceDecl, frame *Frame, v *VM) (OpNode, error) {
 		return nil, fmt.Errorf("identifier '%s' already exists in the current scope", instanceName)
 	}
 
-	// Get Component Definition from VM Registry
-	compDef, foundDef := v.ComponentDefRegistry[componentTypeName]
-	if !foundDef {
-		return nil, fmt.Errorf("unknown component type definition '%s' for instance '%s'", componentTypeName, instanceName)
+	// --- Call the Factory Method ---
+	runtimeInstance, err := v.CreateInstance(componentTypeName, instanceName, stmt.Overrides, frame)
+	if err != nil {
+		// Wrap error with position info from the InstanceDecl statement
+		return nil, fmt.Errorf("failed to create instance '%s' (type %s) at pos %d: %w", instanceName, componentTypeName, stmt.Pos(), err)
 	}
 
-	// Check for Native Go Constructor (Prefer native if constructor exists)
-	constructor, foundConst := v.ComponentRegistry[componentTypeName]
-
-	var runtimeInstance ComponentRuntime // The instance to store in the frame
-
-	// --- Branch: Instantiate Native Go Component ---
-	if foundConst {
-		// Prepare maps for constructor params and dependencies
-		overrideParamValues := make(map[string]any)              // Raw Go values for constructor
-		dependencyInstances := make(map[string]ComponentRuntime) // Map uses_name -> ComponentRuntime
-
-		// Evaluate overrides provided in the InstanceDecl block
-		processedOverrides := make(map[string]bool)
-		for _, assignStmt := range stmt.Overrides {
-			assignVarName := assignStmt.Var.Name
-			processedOverrides[assignVarName] = true
-
-			valueOpNode, err := Eval(assignStmt.Value, frame, v) // Eval RHS -> OpNode
-			if err != nil {
-				return nil, fmt.Errorf("evaluating override '%s' for native instance '%s': %w", assignVarName, instanceName, err)
-			}
-
-			// Check if override targets a parameter or a dependency
-			if _, isParam := compDef.Params[assignVarName]; isParam {
-				// --- TEMPORARY WORKAROUND for Param ---
-				// Requires immediate evaluation of valueOpNode to a simple Go value.
-				leaf, ok := valueOpNode.(*LeafNode)
-				if !ok {
-					return nil, fmt.Errorf("param override '%s' for native instance '%s' did not evaluate to a simple value (got %T)", assignVarName, instanceName, valueOpNode)
-				}
-				rawValue, err := extractLeafValue(leaf) // Use helper
-				if err != nil {
-					return nil, fmt.Errorf("extracting value for param override '%s' for native instance '%s': %w", assignVarName, instanceName, err)
-				}
-				overrideParamValues[assignVarName] = rawValue
-				// --- END TEMPORARY WORKAROUND ---
-			} else if _, isUses := compDef.Uses[assignVarName]; isUses {
-				// Dependency assignment: RHS must be an identifier
-				identExpr, okIdent := assignStmt.Value.(*IdentifierExpr)
-				if !okIdent {
-					return nil, fmt.Errorf("value for 'uses' override '%s' must be an identifier, got %T", assignVarName, assignStmt.Value)
-				}
-				depInstanceName := identExpr.Name
-				depInstanceAny, foundDep := frame.Get(depInstanceName)
-				if !foundDep {
-					return nil, fmt.Errorf("dependency instance '%s' (for '%s.%s') not found", depInstanceName, instanceName, assignVarName)
-				}
-				// Assert the dependency is a ComponentRuntime
-				depRuntime, okRuntime := depInstanceAny.(ComponentRuntime)
-				if !okRuntime {
-					return nil, fmt.Errorf("dependency '%s' resolved to non-runtime type %T", depInstanceName, depInstanceAny)
-				}
-				dependencyInstances[assignVarName] = depRuntime
-			} else {
-				return nil, fmt.Errorf("unknown native override target '%s' for instance '%s'", assignVarName, instanceName)
-			}
-		}
-
-		// Check if all 'uses' dependencies were satisfied by overrides
-		for usesName := range compDef.Uses {
-			if _, satisfied := dependencyInstances[usesName]; !satisfied {
-				return nil, fmt.Errorf("missing override to satisfy 'uses %s: %s' dependency for native instance '%s'", usesName, compDef.Uses[usesName].ComponentType.Name, instanceName)
-			}
-		}
-
-		// Instantiate Component using Constructor
-		goInstance, err := constructor(instanceName, overrideParamValues)
-		if err != nil {
-			return nil, fmt.Errorf("failed to construct native component '%s': %w", instanceName, err)
-		}
-
-		// Inject Dependencies (Conceptual - requires reflection/setters)
-		// Pass the ComponentRuntime map for injection
-		err = injectDependencies(goInstance, dependencyInstances)
-		if err != nil {
-			return nil, fmt.Errorf("failed to inject dependencies into native '%s': %w", instanceName, err)
-		}
-
-		// Wrap native instance in adapter
-		adapter := &NativeComponent{
-			InstanceName: instanceName,
-			TypeName:     componentTypeName,
-			GoInstance:   goInstance,
-		}
-		runtimeInstance = adapter // Store the adapter
-
-		// --- Branch: Instantiate DSL UDComponent ---
-	} else {
-		// Create the DSL instance
-		dslInstance := &UDComponent{
-			Definition:   compDef,
-			InstanceName: instanceName,
-			Params:       make(map[string]OpNode),
-			Dependencies: make(map[string]ComponentRuntime),
-		}
-
-		processedOverrides := make(map[string]bool)
-
-		// Process overrides
-		for _, assignStmt := range stmt.Overrides {
-			assignVarName := assignStmt.Var.Name
-			processedOverrides[assignVarName] = true
-
-			valueOpNode, err := Eval(assignStmt.Value, frame, v) // Eval RHS -> OpNode
-			if err != nil {
-				return nil, fmt.Errorf("evaluating override '%s' for DSL instance '%s': %w", assignVarName, instanceName, err)
-			}
-
-			if _, isParam := compDef.Params[assignVarName]; isParam {
-				// Store the evaluated OpNode directly for parameters
-				dslInstance.Params[assignVarName] = valueOpNode
-			} else if _, isUses := compDef.Uses[assignVarName]; isUses {
-				// Dependency assignment: RHS must be an identifier
-				identExpr, okIdent := assignStmt.Value.(*IdentifierExpr)
-				if !okIdent {
-					return nil, fmt.Errorf("value for 'uses' override '%s' must be an identifier, got %T", assignVarName, assignStmt.Value)
-				}
-				depInstanceName := identExpr.Name
-				depInstanceAny, foundDep := frame.Get(depInstanceName)
-				if !foundDep {
-					return nil, fmt.Errorf("dependency instance '%s' (for '%s.%s') not found", depInstanceName, instanceName, assignVarName)
-				}
-
-				// Assert the dependency is a ComponentRuntime before storing
-				depRuntime, okRuntime := depInstanceAny.(ComponentRuntime)
-				if !okRuntime {
-					return nil, fmt.Errorf("dependency '%s' resolved to non-runtime type %T", depInstanceName, depInstanceAny)
-				}
-
-				// Store dependency based on its underlying type (Native vs DSL)
-				if _, isNative := depRuntime.(*NativeComponent); isNative {
-					dslInstance.Dependencies[assignVarName] = depRuntime
-				} else {
-					// Should not happen if only adapters and instances are stored
-					return nil, fmt.Errorf("internal error: dependency '%s' resolved to unknown ComponentRuntime type %T", depInstanceName, depRuntime)
-				}
-			} else {
-				return nil, fmt.Errorf("unknown DSL override target '%s' for instance '%s'", assignVarName, instanceName)
-			}
-		}
-
-		// Process default parameter values for those not overridden
-		for paramName, paramAST := range compDef.Params {
-			if _, overridden := processedOverrides[paramName]; !overridden {
-				if paramAST.DefaultValue != nil {
-					defaultOpNode, err := Eval(paramAST.DefaultValue, frame, v)
-					if err != nil {
-						return nil, fmt.Errorf("evaluating default value for param '%s' in DSL instance '%s': %w", paramName, instanceName, err)
-					}
-					dslInstance.Params[paramName] = defaultOpNode
-				} else {
-					return nil, fmt.Errorf("missing required parameter '%s' for DSL instance '%s'", paramName, instanceName)
-				}
-			}
-		}
-
-		// Check if all 'uses' dependencies were satisfied by overrides
-		for usesName := range compDef.Uses {
-			_, found := dslInstance.Dependencies[usesName]
-			if !found {
-				return nil, fmt.Errorf("missing override to satisfy 'uses %s: %s' dependency for DSL instance '%s'", usesName, compDef.Uses[usesName].ComponentType.Name, instanceName)
-			}
-		}
-		runtimeInstance = dslInstance // Store the DSL instance
-	}
-
-	// Store the resulting ComponentRuntime (either adapter or DSL instance)
+	// Store the resulting ComponentRuntime in the current frame's locals
 	frame.Set(instanceName, runtimeInstance)
 
-	// Instance declaration itself doesn't produce a value OpNode
 	return theNilNode, nil
 }
 
@@ -647,11 +408,12 @@ func extractLeafValue(leaf *LeafNode) (any, error) {
 	switch outcome := leaf.State.ValueOutcome.(type) {
 	case *core.Outcomes[int64]:
 		rawValue, extractOk = outcome.GetValue()
-	case *core.Outcomes[float64]:
-		rawValue, extractOk = outcome.GetValue()
 	case *core.Outcomes[bool]:
 		rawValue, extractOk = outcome.GetValue()
 	case *core.Outcomes[string]:
+		rawValue, extractOk = outcome.GetValue()
+	// case *core.Outcomes[float64]:
+	case *core.Outcomes[core.Duration]: // Added Duration case
 		rawValue, extractOk = outcome.GetValue()
 	// TODO: Add case for *core.Outcomes[core.Duration]?
 	default:
@@ -684,9 +446,7 @@ func injectDependencies(targetInstance any, dependencies map[string]ComponentRun
 		fieldName := strings.Title(name)
 		field := targetElem.FieldByName(fieldName)
 		if !field.IsValid() {
-			// log.Printf("    Warning: No field '%s' found in target %T (Skipping injection)", fieldName, targetInstance)
 			continue // Skip if no matching field found (could be error?)
-			// return fmt.Errorf("no field '%s' found in target %T", fieldName, targetInstance)
 		}
 		if !field.CanSet() {
 			return fmt.Errorf("cannot set field '%s' in target %T", fieldName, targetInstance)
@@ -704,16 +464,23 @@ func injectDependencies(targetInstance any, dependencies map[string]ComponentRun
 
 		depVal := reflect.ValueOf(depValueToInject)
 
-		// Check type compatibility before setting
+		if !depVal.IsValid() { // Handle nil dependency value if necessary
+			// Check if field type is pointer or interface, if so, setting nil is okay
+			if field.Type().Kind() == reflect.Ptr || field.Type().Kind() == reflect.Interface || field.Type().Kind() == reflect.Map || field.Type().Kind() == reflect.Slice {
+				// Set the zero value for the field type (which is nil for pointers/interfaces/maps/slices)
+				field.Set(reflect.Zero(field.Type()))
+				continue
+			} else {
+				return fmt.Errorf("dependency '%s' value is nil, cannot assign to non-pointer/non-interface field '%s'", name, fieldName)
+			}
+		}
 		if !depVal.Type().AssignableTo(field.Type()) {
-			// Allow assigning concrete types to interface fields
-			if field.Type().Kind() == reflect.Interface && depVal.Type().AssignableTo(field.Type()) {
-				// This check seems redundant with AssignableTo?
-				// Let AssignableTo handle interface checks.
-			} else if field.Type().Kind() == reflect.Interface && depVal.Type().Implements(field.Type()) {
-				// Explicit check for interface implementation
-			} else if field.Type().Kind() == reflect.Interface && field.Type().NumMethod() == 0 {
-				// Allow assigning anything to empty interface{}
+			if field.Type().Kind() == reflect.Interface {
+				if !depVal.Type().Implements(field.Type()) {
+					if field.Type().NumMethod() != 0 { // Allow assignment to empty interface{}
+						return fmt.Errorf("type mismatch: cannot assign dependency '%s' type %T to interface field '%s' type %s (does not implement)", name, depValueToInject, fieldName, field.Type())
+					}
+				}
 			} else {
 				return fmt.Errorf("type mismatch: cannot assign dependency '%s' type %T to field '%s' type %s", name, depValueToInject, fieldName, field.Type())
 			}

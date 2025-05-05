@@ -109,4 +109,13 @@ func (n *IfChoiceNode) String() string {
 	return fmt.Sprintf("If(%s) Then:{%s} Else:{%s}", n.Condition.String(), n.Then.String(), elseStr)
 }
 
-// TODO: Add UnaryOpNode, ChoiceNode, etc.
+type InstanceRefNode struct {
+	InstanceName string // The name of the instance being referenced
+	// Optionally, could hold a direct pointer to the ComponentRuntime if resolved early,
+	// but just the name might be sufficient for Stage 1. Let's stick with name.
+}
+
+func (n *InstanceRefNode) opNode() {}
+func (n *InstanceRefNode) String() string {
+	return fmt.Sprintf("Ref(%s)", n.InstanceName)
+}
