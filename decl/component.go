@@ -25,30 +25,30 @@ type ComponentRuntime interface {
 	GetComponentTypeName() string
 
 	// GetParam returns the evaluated parameter value for this instance.
-	// For DSL components, this returns the OpNode.
+	// For DSL components, this returns the RuntimeValue.
 	// For Native components, it needs to retrieve the configured Go value
 	// and potentially wrap it in a LeafNode/VarState for consistency? (TBD)
-	GetParam(name string) (OpNode, bool) // Returns OpNode, found
+	GetParam(name string) (RuntimeValue, bool) // Returns RuntimeValue, found
 
 	// GetDependency returns the runtime instance (another ComponentRuntime)
 	// satisfying a dependency declared via 'uses'.
 	GetDependency(name string) (ComponentRuntime, bool) // Returns ComponentRuntime, found
 
 	// SetParam sets the evaluated parameter value for this instance.
-	// For DSL components, this sets an OpNode.
-	// For Native components, it is upto the component to manage the value of the OpNode
-	SetParam(name string, value OpNode) error // Returns OpNode, found
+	// For DSL components, this sets an RuntimeValue.
+	// For Native components, it is upto the component to manage the value of the RuntimeValue
+	SetParam(name string, value RuntimeValue) error // Returns RuntimeValue, found
 
 	// SetDependency sets the runtime instance (another ComponentRuntime)
 	// satisfying a dependency declared via 'uses'.
 	SetDependency(name string, comp ComponentRuntime) error // Returns ComponentRuntime, found
 
 	// InvokeMethod prepares or executes a method call on this component instance.
-	// Args are the evaluated OpNodes for the arguments.
-	// Returns an OpNode representing the result of the method call (often a LeafNode
-	// wrapping the *core.Outcomes from a native call, or the OpNode tree
+	// Args are the evaluated RuntimeValues for the arguments.
+	// Returns an RuntimeValue representing the result of the method call (often a LeafNode
+	// wrapping the *core.Outcomes from a native call, or the RuntimeValue tree
 	// resulting from evaluating a DSL method body).
-	InvokeMethod(methodName string, args []OpNode, vm *VM, callFrame *Frame) (OpNode, error)
+	InvokeMethod(methodName string, args []Value, vm *VM, callFrame *Frame) (Value, error)
 
 	// --- Potential Helper Methods ---
 	// GetDefinition() *ComponentDefinition // Maybe useful?
@@ -57,19 +57,19 @@ type ComponentRuntime interface {
 // --- Existing UDComponent adapting to ComponentRuntime ---
 
 // UDComponent represents a runtime instance of a component
-// defined purely within the DSL. It holds resolved parameters (as OpNodes)
+// defined purely within the DSL. It holds resolved parameters (as RuntimeValues)
 // and dependencies.
 type UDComponent struct {
 	Definition   *ComponentDecl              // Pointer to the blueprint (AST etc.)
 	InstanceName string                      // The name given in the InstanceDecl
-	Params       map[string]OpNode           // Evaluated parameter OpNodes (override or default)
+	Params       map[string]RuntimeValue     // Evaluated parameter RuntimeValues (override or default)
 	Dependencies map[string]ComponentRuntime // *** Unified map ***
 }
 
 // SetParam sets the evaluated parameter value for this instance.
-// For DSL components, this sets an OpNode.
-// For Native components, it is upto the component to manage the value of the OpNode
-func (ci *UDComponent) SetParam(name string, value OpNode) error {
+// For DSL components, this sets an RuntimeValue.
+// For Native components, it is upto the component to manage the value of the RuntimeValue
+func (ci *UDComponent) SetParam(name string, value RuntimeValue) error {
 	ci.Params[name] = value
 	return nil
 }
@@ -127,16 +127,20 @@ func (ci *UDComponent) GetComponentTypeName() string {
 	return ci.Definition.NameNode.Name
 }
 
-func (ci *UDComponent) GetParam(name string) (OpNode, bool) {
+func (ci *UDComponent) GetParam(name string) (RuntimeValue, bool) {
 	node, ok := ci.Params[name]
 	return node, ok
 }
 
-func (ci *UDComponent) InvokeMethod(methodName string, args []OpNode, vm *VM, callFrame *Frame) (OpNode, error) {
+func (ci *UDComponent) InvokeMethod(methodName string, args []Value, vm *VM, callFrame *Frame) (val Value, err error) {
 	// 1. Find the Method Definition in the ComponentDefinition
 	methodDef, err := ci.Definition.GetMethod(methodName)
-	if err != nil || methodDef == nil {
-		return nil, err
+	if err != nil {
+		return
+	}
+	if methodDef == nil {
+		err = fmt.Errorf("method not found")
+		return
 	}
 
 	// 2. Create a new frame for the method call.
@@ -145,34 +149,44 @@ func (ci *UDComponent) InvokeMethod(methodName string, args []OpNode, vm *VM, ca
 	methodFrame := NewFrame(nil)
 
 	// 3. Bind parameters (args) to local variables in methodFrame.
-	//    (Needs implementation: check arg count, types?, store OpNodes in methodFrame)
+	//    (Needs implementation: check arg count, types?, store RuntimeValues in methodFrame)
 	if len(args) != len(methodDef.Parameters) {
-		return nil, fmt.Errorf("argument count mismatch for method '%s': expected %d, got %d", methodName, len(methodDef.Parameters), len(args))
+		err = fmt.Errorf("argument count mismatch for method '%s': expected %d, got %d", methodName, len(methodDef.Parameters), len(args))
+		return
 	}
 	for i, paramDef := range methodDef.Parameters {
-		// Store the provided argument OpNode under the parameter's name
+		// Store the provided argument RuntimeValue under the parameter's name
 		methodFrame.Set(paramDef.Name.Name, args[i])
 	}
 
 	// 4. Bind 'self'/'this' maybe? Store ci (*UDComponent) itself?
-	methodFrame.Set("self", ci) // Allow methods to access instance params/deps via self.
+	val, err = NewRuntimeValue(ComponentType, ci)
+	if err != nil {
+		return
+	}
+	methodFrame.Set("self", val) // Allow methods to access instance params/deps via self.
 
 	// 5. Bind dependencies ('uses') to local variables in methodFrame.
 	for depName, depInstance := range ci.Dependencies {
-		methodFrame.Set(depName, depInstance) // Store the ComponentRuntime dependency
+		depVal, err := NewRuntimeValue(ComponentType, depInstance)
+		if err != nil {
+			return nil, err
+		}
+		methodFrame.Set(depName, depVal) // Store the ComponentRuntime dependency
 	}
 
 	// 6. Evaluate the method body (BlockStmt) using the methodFrame.
 	//    The result of the block is the result of the method.
-	resultOpNode, err := Eval(methodDef.Body, methodFrame, vm)
+	resultRuntimeValue, err := Eval(methodDef.Body, methodFrame, vm)
 	if err != nil {
-		return nil, fmt.Errorf("error executing method '%s' body for instance '%s': %w", methodName, ci.InstanceName, err)
+		err = fmt.Errorf("error executing method '%s' body for instance '%s': %w", methodName, ci.InstanceName, err)
+		return
 	}
 
 	// TODO: Handle 'return' statements within the block? Eval needs modification.
 	// TODO: Check return type compatibility?
 
-	return resultOpNode, nil
+	return resultRuntimeValue, nil
 }
 
 // NativeComponent wraps a Go component instance to implement ComponentRuntime.
@@ -185,18 +199,18 @@ type NativeComponent struct {
 	// When writing native components, we just enforce these so we can avoid reflection
 	GoInstance interface {
 		// GetParam returns the evaluated parameter value for this instance.
-		// For DSL components, this returns the OpNode.
+		// For DSL components, this returns the RuntimeValue.
 		// For Native components, it needs to retrieve the configured Go value
 		// and potentially wrap it in a LeafNode/VarState for consistency? (TBD)
-		// GetParam(name string) (OpNode, bool) // Returns OpNode, found
+		// GetParam(name string) (RuntimeValue, bool) // Returns RuntimeValue, found
 
 		// GetDependency returns the runtime instance (another ComponentRuntime)
 		// satisfying a dependency declared via 'uses'.
 		// GetDependency(name string) (ComponentRuntime, bool) // Returns ComponentRuntime, found
 
 		// SetParam sets the evaluated parameter value for this instance.
-		// For DSL components, this sets an OpNode.
-		// For Native components, it is upto the component to manage the value of the OpNode
+		// For DSL components, this sets an RuntimeValue.
+		// For Native components, it is upto the component to manage the value of the RuntimeValue
 		// SetParam(name string, value any) error
 
 		// SetDependency sets the runtime instance (another ComponentRuntime)
@@ -214,17 +228,17 @@ func (na *NativeComponent) GetComponentTypeName() string {
 	return na.TypeName
 }
 
-// GetParam for native components is tricky. How do we map a Go field back to an OpNode?
+// GetParam for native components is tricky. How do we map a Go field back to an RuntimeValue?
 // Option 1: Don't support GetParam directly for native components via the interface.
 // Option 2: Use reflection, get the Go field value, wrap it in LeafNode/VarState. (Complex)
 // Let's go with Option 2 for now, but only for simple types.
-func (na *NativeComponent) GetParam(name string) (OpNode, bool) {
+func (na *NativeComponent) GetParam(name string) (val RuntimeValue, ok bool) {
 	instanceVal := reflect.ValueOf(na.GoInstance)
 	if instanceVal.Kind() == reflect.Ptr {
 		instanceVal = instanceVal.Elem()
 	}
 	if instanceVal.Kind() != reflect.Struct {
-		return nil, false // Cannot get params from non-struct
+		return
 	}
 
 	fieldVal := instanceVal.FieldByName(name) // Assumes direct mapping Name -> FieldName
@@ -232,14 +246,14 @@ func (na *NativeComponent) GetParam(name string) (OpNode, bool) {
 		// Try converting param name (e.g., ProfileName) to field name (ProfileName)
 		// This is simple if they match case-sensitively. Often needs tags.
 		// For now, assume direct match.
-		return nil, false
+		return
 	}
 
 	// Convert the Go value back to a *VarState -> LeafNode (simplistic)
 	goValue := fieldVal.Interface()
 	var valueOutcome any
 	latencyOutcome := ZeroLatencyOutcome()
-	ok := true
+	ok = true
 
 	switch v := goValue.(type) {
 	case int64:
@@ -263,11 +277,13 @@ func (na *NativeComponent) GetParam(name string) (OpNode, bool) {
 
 	if !ok {
 		// Cannot represent parameter value as standard outcome
-		return nil, false
+		return
 	}
 
 	state := &VarState{ValueOutcome: valueOutcome, LatencyOutcome: latencyOutcome}
-	return &LeafNode{State: state}, true
+	val.Type = OpNodeType
+	val.Value = &LeafNode{State: state}
+	return
 }
 
 // GetDependency for native components: Native components don't have DSL 'uses' declarations.
@@ -280,110 +296,10 @@ func (na *NativeComponent) GetDependency(name string) (ComponentRuntime, bool) {
 	return nil, false
 }
 
-// InvokeMethod uses reflection to call the method on the underlying GoInstance.
-func (na *NativeComponent) InvokeMethod(methodName string, args []OpNode, vm *VM, callFrame *Frame) (OpNode, error) {
-	// 1. Find the method on the GoInstance using reflection.
-	instanceVal := reflect.ValueOf(na.GoInstance)
-	methodVal := instanceVal.MethodByName(methodName)
-	if !methodVal.IsValid() {
-		return nil, fmt.Errorf("method '%s' not found on native component '%s' (type %T)", methodName, na.InstanceName, na.GoInstance)
-	}
-	methodType := methodVal.Type()
-
-	// 2. Evaluate argument OpNodes to get concrete values.
-	//    *** This requires the Tree Evaluator! ***
-	//    Temporary Workaround: Assume args are simple LeafNodes.
-	goArgs := make([]reflect.Value, methodType.NumIn()) // NumIn includes receiver if method value is bound
-	if !methodType.IsVariadic() && len(args) != methodType.NumIn() {
-		return nil, fmt.Errorf("argument count mismatch for native method '%s': expected %d, got %d", methodName, methodType.NumIn(), len(args))
-	}
-	// TODO: Handle variadic methods
-
-	for i := 0; i < methodType.NumIn(); i++ {
-		argOpNode := args[i]
-		paramType := methodType.In(i)
-
-		// --- TEMPORARY WORKAROUND ---
-		leaf, ok := argOpNode.(*LeafNode)
-		if !ok {
-			return nil, fmt.Errorf("argument %d for native method '%s' did not evaluate to a simple value (got %T)", i, methodName, argOpNode)
-		}
-		if leaf.State == nil || leaf.State.ValueOutcome == nil {
-			return nil, fmt.Errorf("argument %d value for native method '%s' evaluated to nil state", i, methodName)
-		}
-
-		var rawValue any
-		var extractOk bool
-		switch outcome := leaf.State.ValueOutcome.(type) {
-		case *core.Outcomes[int64]:
-			rawValue, extractOk = outcome.GetValue()
-		case *core.Outcomes[float64]:
-			rawValue, extractOk = outcome.GetValue()
-		case *core.Outcomes[bool]:
-			rawValue, extractOk = outcome.GetValue()
-		case *core.Outcomes[string]:
-			rawValue, extractOk = outcome.GetValue()
-		default:
-			return nil, fmt.Errorf("unsupported outcome type %T for native arg %d of method '%s'", outcome, i, methodName)
-		}
-		if !extractOk {
-			return nil, fmt.Errorf("native method argument %d value is probabilistic", i)
-		}
-		// --- END TEMPORARY WORKAROUND ---
-
-		argVal := reflect.ValueOf(rawValue)
-
-		// Check type compatibility (more robust check needed)
-		if !argVal.Type().ConvertibleTo(paramType) {
-			return nil, fmt.Errorf("type mismatch for argument %d of native method '%s': expected %s, got %s", i, methodName, paramType, argVal.Type())
-		}
-		// Convert if necessary (e.g., int64 to int)
-		goArgs[i] = argVal.Convert(paramType)
-	}
-
-	// 3. Call the method using reflection.
-	results := methodVal.Call(goArgs)
-
-	// 4. Process the result. Assume native methods return *core.Outcomes[V] or (result, error).
-	if len(results) == 0 {
-		// Method returns void, treat as NilNode? Or maybe identity state?
-		return &LeafNode{State: createIdentityState()}, nil // Return identity
-	}
-
-	// Assume first result is the main one (*core.Outcomes or value)
-	// Check for (result, error) pattern
-	var returnVal any = results[0].Interface()
-	var returnErr error = nil
-	if len(results) > 1 {
-		if errInter, ok := results[len(results)-1].Interface().(error); ok {
-			returnErr = errInter // Last value is error
-			if len(results) > 1 {
-				returnVal = results[0].Interface() // First is main result
-			} else {
-				returnVal = nil // Only error was returned
-			}
-		}
-	}
-	if returnErr != nil {
-		return nil, fmt.Errorf("native method '%s' call failed: %w", methodName, returnErr)
-	}
-	if returnVal == nil {
-		return &LeafNode{State: createNilState()}, nil // Return nil
-	}
-
-	// Convert the return value (expected *core.Outcomes[V]) to a VarState -> LeafNode
-	resultVarState, err := outcomeToVarState(returnVal)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert result of native method '%s' (type %T) to VarState: %w", methodName, returnVal, err)
-	}
-
-	return &LeafNode{State: resultVarState}, nil
-}
-
 // SetParam sets the evaluated parameter value for this instance.
-// For DSL components, this sets an OpNode.
-// For Native components, it is upto the component to manage the value of the OpNode
-func (na *NativeComponent) SetParam(name string, value OpNode) error {
+// For DSL components, this sets an RuntimeValue.
+// For Native components, it is upto the component to manage the value of the RuntimeValue
+func (na *NativeComponent) SetParam(name string, value RuntimeValue) error {
 	instanceVal := reflect.ValueOf(na.GoInstance)
 	if instanceVal.Kind() == reflect.Ptr {
 		instanceVal = instanceVal.Elem()
@@ -405,44 +321,49 @@ func (na *NativeComponent) SetParam(name string, value OpNode) error {
 		return fmt.Errorf("cannot set value of param '%s'", name)
 	}
 
-	switch v := value.(type) {
-	case *NilNode:
+	switch value.Type.Tag {
+	case ValueTypeNil:
 		fieldVal.SetPointer(nil)
 		break
-	case *LeafNode:
-		if v.State == nil {
-			fieldVal.SetPointer(nil)
+	case ValueTypeInt:
+		if val, err := value.GetInt(); err != nil {
+			return err
 		} else {
-			switch val := v.State.ValueOutcome.(type) {
-			case int64:
-				fieldVal.SetInt(val)
-			case int:
-				fieldVal.SetInt(int64(val))
-			case uint64:
-				fieldVal.SetUint(val)
-			case uint:
-				fieldVal.SetUint(uint64(val))
-			case bool:
-				fieldVal.SetBool(val)
-			case string:
-				fieldVal.SetString(val)
-			case float32:
-				fieldVal.SetFloat(float64(val))
-			case float64:
-				fieldVal.SetFloat(val)
-			default:
-				return fmt.Errorf("invalid value type %v for param '%s'", reflect.TypeOf(val), name)
-			}
+			fieldVal.SetInt(val)
 		}
 		break
-	case *BinaryOpNode:
-	case *IfChoiceNode:
-	case *SequenceNode:
-		return fmt.Errorf("node (%s) must be evaluated before setting param ('%s')", reflect.TypeOf(v), name)
+	case ValueTypeBool:
+		if val, err := value.GetBool(); err != nil {
+			return err
+		} else {
+			fieldVal.SetBool(val)
+		}
+		break
+	case ValueTypeFloat:
+		if val, err := value.GetFloat(); err != nil {
+			return err
+		} else {
+			fieldVal.SetFloat(val)
+		}
+		break
+	case ValueTypeString:
+		if val, err := value.GetString(); err != nil {
+			return err
+		} else {
+			fieldVal.SetString(val)
+		}
+		break
+	case ValueTypeOpNode:
+		/*
+			case *BinaryRuntimeValue:
+			case *IfChoiceNode:
+			case *SequenceNode:
+		*/
+		return fmt.Errorf("node (%s) must be evaluated before setting param ('%s')", reflect.TypeOf(value.Value), name)
 	// How to handle *Outcomes[T] fields? Maybe return directly?
 	// case *core.Outcomes[core.Duration]: valueOutcome = v // Risky - mutable?
 	default:
-		return fmt.Errorf("Invalid value type for param ('%s'): '%s')", name, reflect.TypeOf(v))
+		return fmt.Errorf("Invalid value type for param ('%s'): '%s')", name, reflect.TypeOf(value.Value))
 	}
 	return nil
 }
@@ -452,4 +373,86 @@ func (na *NativeComponent) SetParam(name string, value OpNode) error {
 func (ci *NativeComponent) SetDependency(name string, comp ComponentRuntime) error {
 	// Cannot override dependeencies in native cmponents for now
 	return nil
+}
+
+// InvokeMethod uses reflection to call the method on the underlying GoInstance.
+func (na *NativeComponent) InvokeMethod(methodName string, args []Value, vm *VM, callFrame *Frame) (val Value, err error) {
+	// 1. Find the method on the GoInstance using reflection.
+	instanceVal := reflect.ValueOf(na.GoInstance)
+	methodVal := instanceVal.MethodByName(methodName)
+	if !methodVal.IsValid() {
+		err = fmt.Errorf("method '%s' not found on native component '%s' (type %T)", methodName, na.InstanceName, na.GoInstance)
+		return
+	}
+	methodType := methodVal.Type()
+
+	// 2. Here we assume that the caller already has all the values evaluated before entering here.
+	// Temporary Workaround - Only caveat is the OpNode types - we will assume those are not what are being passed around for now.
+	goArgs := make([]reflect.Value, methodType.NumIn()) // NumIn includes receiver if method value is bound
+	if !methodType.IsVariadic() && len(args) != methodType.NumIn() {
+		err = fmt.Errorf("argument count mismatch for native method '%s': expected %d, got %d", methodName, methodType.NumIn(), len(args))
+		return
+	}
+	// TODO: Handle variadic methods
+
+	// Convert RuntimeValue to go values
+	for i := 0; i < methodType.NumIn(); i++ {
+		argRuntimeValue := args[i].Value
+		paramType := methodType.In(i)
+		argVal := reflect.ValueOf(argRuntimeValue)
+
+		// Check type compatibility (more robust check needed)
+		if !argVal.Type().ConvertibleTo(paramType) {
+			err = fmt.Errorf("type mismatch for argument %d of native method '%s': expected %s, got %s", i, methodName, paramType, argVal.Type())
+			return
+		}
+		// Convert if necessary (e.g., int64 to int)
+		goArgs[i] = argVal.Convert(paramType)
+	}
+
+	// 3. Call the method using reflection.
+	results := methodVal.Call(goArgs)
+
+	// 4. Process the result. Assume native methods return *core.Outcomes[V] or (result, error).
+	if len(results) == 0 {
+		// Method returns void, treat as NilNode? Or maybe identity state?
+		val.Type = OpNodeType
+		val.Value = &LeafNode{State: createIdentityState()}
+		return
+	}
+
+	// Assume first result is the main one (*core.Outcomes or value)
+	// Check for (result, error) pattern
+	var returnVal any = results[0].Interface()
+	var returnErr error = nil
+	if len(results) > 1 {
+		if errInter, ok := results[len(results)-1].Interface().(error); ok {
+			returnErr = errInter // Last value is error
+			if len(results) > 1 {
+				returnVal = results[0].Interface() // First is main result
+			} else {
+				returnVal = nil // Only error was returned
+			}
+		}
+	}
+	if returnErr != nil {
+		err = fmt.Errorf("native method '%s' call failed: %w", methodName, returnErr)
+		return
+	}
+	if returnVal == nil {
+		val.Type = OpNodeType
+		val.Value = &LeafNode{State: createNilState()}
+		return
+	}
+
+	// Convert the return value (expected *core.Outcomes[V]) to a VarState -> LeafNode
+	resultVarState, err := outcomeToVarState(returnVal)
+	if err != nil {
+		err = fmt.Errorf("failed to convert result of native method '%s' (type %T) to VarState: %w", methodName, returnVal, err)
+		return
+	}
+
+	val.Type = OpNodeType
+	val.Value = &LeafNode{State: resultVarState}
+	return
 }

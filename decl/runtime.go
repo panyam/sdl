@@ -24,7 +24,7 @@ type Frame struct {
 	outer *Frame
 
 	// Locals in this frame
-	locals map[string]any
+	locals map[string]Value
 
 	// Futures that were started in this frame the variable names they are bound to
 	futures map[string]*Future
@@ -37,7 +37,7 @@ type Frame struct {
 // NewFrame creates a new frame nested within an outer one.
 func NewFrame(outer *Frame) *Frame {
 	return &Frame{
-		locals:  make(map[string]any),
+		locals:  make(map[string]Value),
 		futures: make(map[string]*Future), // Initialize the futures map
 		outer:   outer,
 	}
@@ -45,7 +45,7 @@ func NewFrame(outer *Frame) *Frame {
 
 // Get retrieves a value by name, checking the current frame first,
 // then recursively checking outer frames.
-func (f *Frame) Get(name string) (any, bool) {
+func (f *Frame) Get(name string) (Value, bool) {
 	obj, ok := f.locals[name]
 	if !ok && f.outer != nil {
 		// Not found here, try the outer scope
@@ -56,7 +56,7 @@ func (f *Frame) Get(name string) (any, bool) {
 
 // Set defines or updates a value in the *current* frame's locals map.
 // Use this for function parameters, let bindings, etc., within the current scope.
-func (f *Frame) Set(name string, value any) {
+func (f *Frame) Set(name string, value Value) {
 	f.locals[name] = value
 }
 

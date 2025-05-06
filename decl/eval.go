@@ -7,7 +7,7 @@ import (
 	"github.com/panyam/leetcoach/sdl/core"
 )
 
-type Value = any
+type Value = *RuntimeValue
 
 var (
 	ErrNotImplemented       = errors.New("evaluation for this node type not implemented")
@@ -18,7 +18,7 @@ var (
 )
 
 // Starts the execution of a single expression
-func Eval(node Node, frame *Frame, v *VM) (OpNode, error) {
+func Eval(node Node, frame *Frame, v *VM) (val Value, err error) {
 	// fmt.Printf("Eval entry: %T - %s\n", node, node) // Debug entry
 	switch n := node.(type) {
 	// We'll add cases here in subsequent phases
@@ -64,7 +64,7 @@ func Eval(node Node, frame *Frame, v *VM) (OpNode, error) {
 }
 
 /** Evaluate a literal and return its value */
-func evalLiteral(expr *LiteralExpr, frame *Frame, v *VM) (OpNode, error) {
+func evalLiteral(expr *LiteralExpr, frame *Frame, v *VM) (val Value, err error) {
 	rawValue, err := ParseLiteralValue(expr) // Use existing helper
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse literal '%s': %w", expr.Value, err)
@@ -75,29 +75,29 @@ func evalLiteral(expr *LiteralExpr, frame *Frame, v *VM) (OpNode, error) {
 
 	switch expr.Kind {
 	case "INT":
-		val, ok := rawValue.(int64)
+		v, ok := rawValue.(int64)
 		if !ok {
 			return nil, fmt.Errorf("internal error: parsed INT literal '%s' resulted in %T, expected int64", expr.Value, rawValue)
 		}
-		valueOutcome = (&core.Outcomes[int64]{}).Add(1.0, val)
+		valueOutcome = (&core.Outcomes[int64]{}).Add(1.0, v)
 	case "FLOAT":
-		val, ok := rawValue.(float64)
+		v, ok := rawValue.(float64)
 		if !ok {
 			return nil, fmt.Errorf("internal error: parsed FLOAT literal '%s' resulted in %T, expected float64", expr.Value, rawValue)
 		}
-		valueOutcome = (&core.Outcomes[float64]{}).Add(1.0, val)
+		valueOutcome = (&core.Outcomes[float64]{}).Add(1.0, v)
 	case "BOOL":
-		val, ok := rawValue.(bool)
+		v, ok := rawValue.(bool)
 		if !ok {
 			return nil, fmt.Errorf("internal error: parsed BOOL literal '%s' resulted in %T, expected bool", expr.Value, rawValue)
 		}
-		valueOutcome = (&core.Outcomes[bool]{}).Add(1.0, val)
+		valueOutcome = (&core.Outcomes[bool]{}).Add(1.0, v)
 	case "STRING":
-		val, ok := rawValue.(string)
+		v, ok := rawValue.(string)
 		if !ok {
 			return nil, fmt.Errorf("internal error: parsed STRING literal '%s' resulted in %T, expected string", expr.Value, rawValue)
 		}
-		valueOutcome = (&core.Outcomes[string]{}).Add(1.0, val)
+		valueOutcome = (&core.Outcomes[string]{}).Add(1.0, v)
 	// TODO: case "DURATION": Handle duration parsing and create *core.Outcomes[core.Duration] value outcome
 	default:
 		return nil, fmt.Errorf("unsupported literal kind '%s' in evalLiteral", expr.Kind)
@@ -107,48 +107,37 @@ func evalLiteral(expr *LiteralExpr, frame *Frame, v *VM) (OpNode, error) {
 		ValueOutcome:   valueOutcome,
 		LatencyOutcome: latencyOutcome,
 	}
-	return &LeafNode{State: state}, nil
+	val.Type = OpNodeType
+	val.Value = &LeafNode{State: state}
+	return
 }
 
 /** Evaluate a Identifier and return its value */
-func evalIdentifier(expr *IdentifierExpr, frame *Frame, v *VM) (OpNode, error) {
+func evalIdentifier(expr *IdentifierExpr, frame *Frame, v *VM) (val Value, err error) {
 	name := expr.Name
 	value, ok := frame.Get(name)
 	if !ok {
 		return nil, fmt.Errorf("%w: identifier '%s'", ErrNotFound, name)
 	}
-
-	// Check the type of the value found in the frame
-	switch val := value.(type) {
-	case OpNode:
-		// If it's already an OpNode (e.g., from a let statement), return it directly.
-		return val, nil
-	case ComponentRuntime:
-		// If it's a ComponentRuntime instance, return an InstanceRefNode.
-		// The consumer (e.g., assignment eval) will handle this reference.
-		return &InstanceRefNode{InstanceName: name}, nil
-	default:
-		// Found something unexpected in the frame for this identifier.
-		return nil, fmt.Errorf("%w: identifier '%s' resolved to unexpected type %T", ErrInvalidType, name, value)
-	}
+	return value, nil
 }
 
-func evalLetStmt(stmt *LetStmt, frame *Frame, v *VM) (OpNode, error) {
+func evalLetStmt(stmt *LetStmt, frame *Frame, v *VM) (val Value, err error) {
 	varName := stmt.Variable.Name
-	valueOpNode, err := Eval(stmt.Value, frame, v)
+	val, err = Eval(stmt.Value, frame, v)
 	if err != nil {
 		return nil, fmt.Errorf("evaluating value for let statement '%s': %w", varName, err)
 	}
 
 	// Store the resulting OpNode in the current frame
-	frame.Set(varName, valueOpNode)
+	frame.Set(varName, val)
 
 	// 'let' itself doesn't produce a value for subsequent sequence steps
-	return theNilNode, nil
+	return
 }
 
 /** Evaluate a Call and return its value */
-func evalCallExpr(expr *CallExpr, frame *Frame, v *VM) (val OpNode, err error) {
+func evalCallExpr(expr *CallExpr, frame *Frame, v *VM) (val Value, err error) {
 	var runtimeInstance ComponentRuntime
 	var methodName string
 
@@ -169,7 +158,7 @@ func evalCallExpr(expr *CallExpr, frame *Frame, v *VM) (val OpNode, err error) {
 			return nil, fmt.Errorf("instance '%s' not found for method call '%s'", receiverIdent.Name, memberAccess.Member.Name)
 		}
 
-		runtimeInstance, ok = instanceAny.(ComponentRuntime)
+		runtimeInstance, ok = instanceAny.Value.(ComponentRuntime)
 		if !ok {
 			// This indicates an error - something other than a ComponentRuntime was stored for this identifier.
 			return nil, fmt.Errorf("identifier '%s' does not represent a component instance (found type %T)", receiverIdent.Name, instanceAny)
@@ -188,14 +177,13 @@ func evalCallExpr(expr *CallExpr, frame *Frame, v *VM) (val OpNode, err error) {
 	}
 
 	// 2. Evaluate Arguments -> []OpNode
-	argOpNodes := make([]OpNode, len(expr.Args))
+	argOpNodes := make([]Value, len(expr.Args))
 	for i, argExpr := range expr.Args {
-		argNode, err := Eval(argExpr, frame, v)
+		argOpNodes[i], err = Eval(argExpr, frame, v)
 		if err != nil {
 			// TODO: Improve error reporting (arg index, method name)
 			return nil, fmt.Errorf("evaluating argument %d for method '%s': %w", i, methodName, err)
 		}
-		argOpNodes[i] = argNode
 	}
 
 	// 3. Invoke the method on the ComponentRuntime instance
@@ -217,7 +205,7 @@ func evalCallExpr(expr *CallExpr, frame *Frame, v *VM) (val OpNode, err error) {
 // A simple member access like `myInstance.param` might need the Tree Evaluator
 // to extract the parameter value *during execution*. Stage 1 focuses on structure.
 // Let's return an error indicating it's not directly evaluatable this way yet.
-func evalMemberAccess(expr *MemberAccessExpr, frame *Frame, v *VM) (OpNode, error) {
+func evalMemberAccess(expr *MemberAccessExpr, frame *Frame, v *VM) (val Value, err error) {
 	// Evaluating receiver to ensure it exists might be useful
 	receiverIdent, okIdent := expr.Receiver.(*IdentifierExpr)
 	if !okIdent {
@@ -227,7 +215,7 @@ func evalMemberAccess(expr *MemberAccessExpr, frame *Frame, v *VM) (OpNode, erro
 	if !found {
 		return nil, fmt.Errorf("identifier '%s' not found for member access '%s'", receiverIdent.Name, expr.Member.Name)
 	}
-	_ /*runtimeInstance*/, okRuntime := instanceAny.(ComponentRuntime)
+	_ /*runtimeInstance*/, okRuntime := instanceAny.Value.(ComponentRuntime)
 	if !okRuntime {
 		return nil, fmt.Errorf("identifier '%s' does not represent a component instance (found type %T)", receiverIdent.Name, instanceAny)
 	}
@@ -243,9 +231,9 @@ func evalMemberAccess(expr *MemberAccessExpr, frame *Frame, v *VM) (OpNode, erro
 }
 
 /** Evaluate a Block and return its value */
-func evalBlockStmt(stmt *BlockStmt, frame *Frame, v *VM) (OpNode, error) {
+func evalBlockStmt(stmt *BlockStmt, frame *Frame, v *VM) (val Value, err error) {
 	blockFrame := NewFrame(frame) // Create block scope
-	steps := make([]OpNode, 0, len(stmt.Statements))
+	steps := make([]Value, 0, len(stmt.Statements))
 
 	for _, statement := range stmt.Statements {
 		resultNode, err := Eval(statement, blockFrame, v)
@@ -255,23 +243,23 @@ func evalBlockStmt(stmt *BlockStmt, frame *Frame, v *VM) (OpNode, error) {
 		}
 
 		// Only include non-nil nodes in the sequence
-		if _, isNil := resultNode.(*NilNode); !isNil {
+		if resultNode.Type.Tag != ValueTypeNil {
 			steps = append(steps, resultNode)
 		}
 	}
 
 	// Determine return value based on collected steps
 	if len(steps) == 0 {
-		return theNilNode, nil // Empty block or only let statements
+		return nil, nil // Empty block or only let statements
 	}
 	if len(steps) == 1 {
 		return steps[0], nil // Single effective statement, return its node
 	}
-	return &SequenceNode{Steps: steps}, nil // Multiple effective statements
+	return NewRuntimeValue(OpNodeType, &SequenceNode{Steps: steps})
 }
 
 /** Evaluate a If and return its value */
-func evalIfStmt(stmt *IfStmt, frame *Frame, v *VM) (val OpNode, err error) {
+func evalIfStmt(stmt *IfStmt, frame *Frame, v *VM) (val Value, err error) {
 	// Evaluate the condition expression to get its OpNode representation
 	conditionNode, err := Eval(stmt.Condition, frame, v)
 	if err != nil {
@@ -289,7 +277,7 @@ func evalIfStmt(stmt *IfStmt, frame *Frame, v *VM) (val OpNode, err error) {
 	}
 
 	// Evaluate the 'else' block/statement, if it exists
-	var elseNode OpNode = theNilNode // Default to NilNode if no else
+	var elseNode Value
 	if stmt.Else != nil {
 		elseNode, err = Eval(stmt.Else, frame, v)
 		if err != nil {
@@ -299,11 +287,11 @@ func evalIfStmt(stmt *IfStmt, frame *Frame, v *VM) (val OpNode, err error) {
 	}
 
 	// Construct and return the IfChoiceNode representing the structure
-	return &IfChoiceNode{
+	return NewRuntimeValue(OpNodeType, &IfChoiceNode{
 		Condition: conditionNode,
 		Then:      thenNode,
 		Else:      elseNode,
-	}, nil
+	})
 }
 
 /** Evaluate a Switch and return its value */
@@ -312,7 +300,7 @@ func evalSwitchStmt(stmt *SwitchStmt, frame *Frame, v *VM) (val Value, err error
 }
 
 /** Evaluate a Expr as a statement and return its value */
-func evalExprStmt(stmt *ExprStmt, frame *Frame, v *VM) (OpNode, error) {
+func evalExprStmt(stmt *ExprStmt, frame *Frame, v *VM) (val Value, err error) {
 	// Evaluate the expression and return its OpNode result
 	return Eval(stmt.Expression, frame, v)
 }
@@ -322,7 +310,7 @@ func evalAssignmentStmt(stmt *AssignmentStmt, frame *Frame, v *VM) (val Value, e
 	return
 }
 
-func evalBinaryExpr(expr *BinaryExpr, frame *Frame, v *VM) (OpNode, error) {
+func evalBinaryExpr(expr *BinaryExpr, frame *Frame, v *VM) (val Value, err error) {
 	// Recursively evaluate left and right operands
 	leftNode, err := Eval(expr.Left, frame, v)
 	if err != nil {
@@ -345,15 +333,15 @@ func evalBinaryExpr(expr *BinaryExpr, frame *Frame, v *VM) (OpNode, error) {
 	// }
 
 	// Construct and return the BinaryOpNode representing the operation
-	return &BinaryOpNode{
+	return NewRuntimeValue(OpNodeType, &BinaryOpNode{
 		Op:    expr.Operator,
 		Left:  leftNode,
 		Right: rightNode,
-	}, nil
+	})
 }
 
 // --- evalSystemDecl (Processes system body) ---
-func evalSystemDecl(stmt *SystemDecl, frame *Frame, v *VM) (OpNode, error) {
+func evalSystemDecl(stmt *SystemDecl, frame *Frame, v *VM) (val Value, err error) {
 	// Systems define a scope, but for now, let's use the passed frame.
 	// A system run might eventually need its own top-level frame.
 	// systemFrame := NewFrame(frame) // Option for later
@@ -369,11 +357,11 @@ func evalSystemDecl(stmt *SystemDecl, frame *Frame, v *VM) (OpNode, error) {
 	}
 
 	// System declaration itself doesn't produce a value OpNode
-	return theNilNode, nil
+	return nil, nil
 }
 
 // --- evalInstanceDecl (Instantiates Native or DSL component) ---
-func evalInstanceDecl(stmt *InstanceDecl, frame *Frame, v *VM) (OpNode, error) {
+func evalInstanceDecl(stmt *InstanceDecl, frame *Frame, v *VM) (val Value, err error) {
 	instanceName := stmt.NameNode.Name
 	componentTypeName := stmt.ComponentType.Name
 
@@ -392,9 +380,12 @@ func evalInstanceDecl(stmt *InstanceDecl, frame *Frame, v *VM) (OpNode, error) {
 	}
 
 	// Store the resulting ComponentRuntime in the current frame's locals
-	frame.Set(instanceName, runtimeInstance)
-
-	return theNilNode, nil
+	val, err = NewRuntimeValue(ComponentType, runtimeInstance)
+	if err != nil {
+		return
+	}
+	frame.Set(instanceName, val)
+	return
 }
 
 // --- Helper to extract simple value from LeafNode (Used in Temp Workaround) ---

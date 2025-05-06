@@ -47,20 +47,10 @@ func (n *LeafNode) String() string {
 	return fmt.Sprintf("Leaf(Value: %s, Latency: %s)", valStr, latStr)
 }
 
-// NilNode represents an operation with no return value or side effect
-// relevant to the final result (e.g., a 'let' statement).
-type NilNode struct{}
-
-func (n *NilNode) opNode()        {}
-func (n *NilNode) String() string { return "Nil" }
-
-// Singleton instance for NilNode
-var theNilNode = &NilNode{}
-
 // SequenceNode represents a series of operations executed sequentially.
 // Only non-Nil results are typically included.
 type SequenceNode struct {
-	Steps []OpNode
+	Steps []Value
 }
 
 func (n *SequenceNode) opNode() {}
@@ -81,8 +71,8 @@ func (n *SequenceNode) String() string {
 // The actual calculation is deferred until the Tree Evaluator stage.
 type BinaryOpNode struct {
 	Op    string // Operator symbol (e.g., "+", "&&", ">")
-	Left  OpNode
-	Right OpNode
+	Left  Value
+	Right Value
 }
 
 func (n *BinaryOpNode) opNode() {}
@@ -95,9 +85,9 @@ func (n *BinaryOpNode) String() string {
 // and based on its boolean outcome (potentially probabilistic), the
 // appropriate branch(es) will be evaluated.
 type IfChoiceNode struct {
-	Condition OpNode
-	Then      OpNode
-	Else      OpNode // Can be *NilNode if no else branch exists
+	Condition Value
+	Then      Value
+	Else      Value
 }
 
 func (n *IfChoiceNode) opNode() {}
@@ -107,15 +97,4 @@ func (n *IfChoiceNode) String() string {
 		elseStr = n.Else.String()
 	}
 	return fmt.Sprintf("If(%s) Then:{%s} Else:{%s}", n.Condition.String(), n.Then.String(), elseStr)
-}
-
-type InstanceRefNode struct {
-	InstanceName string // The name of the instance being referenced
-	// Optionally, could hold a direct pointer to the ComponentRuntime if resolved early,
-	// but just the name might be sufficient for Stage 1. Let's stick with name.
-}
-
-func (n *InstanceRefNode) opNode() {}
-func (n *InstanceRefNode) String() string {
-	return fmt.Sprintf("Ref(%s)", n.InstanceName)
 }

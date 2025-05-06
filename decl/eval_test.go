@@ -19,7 +19,7 @@ func setupTestVM() (*VM, *Frame) {
 }
 
 // Helper to assert leaf node properties (simplistic check for now)
-func assertLeafInt(t *testing.T, node OpNode, expectedVal int64) {
+func assertLeafInt(t *testing.T, node Value, expectedVal int64) {
 	t.Helper()
 	leaf, ok := node.(*LeafNode)
 	require.True(t, ok, "Expected *LeafNode, got %T", node)
@@ -41,7 +41,7 @@ func assertLeafInt(t *testing.T, node OpNode, expectedVal int64) {
 	assert.Equal(t, 0.0, latOutcome.Buckets[0].Value, "LatencyOutcome bucket value")
 }
 
-func assertLeafBool(t *testing.T, node OpNode, expectedVal bool) {
+func assertLeafBool(t *testing.T, node Value, expectedVal bool) {
 	t.Helper()
 	leaf, ok := node.(*LeafNode)
 	require.True(t, ok, "Expected *LeafNode, got %T", node)
@@ -55,7 +55,7 @@ func assertLeafBool(t *testing.T, node OpNode, expectedVal bool) {
 	// ... (assert zero latency)
 }
 
-func assertNilNode(t *testing.T, node OpNode) {
+func assertNilNode(t *testing.T, node Value) {
 	t.Helper()
 	_, ok := node.(*NilNode)
 	assert.True(t, ok, "Expected *NilNode, got %T", node)
@@ -618,7 +618,7 @@ func TestEvalInstanceDecl_DependencyInjection(t *testing.T) {
 }
 
 // Helper to assert leaf string value
-func assertLeafStringValue(t *testing.T, node OpNode, expectedVal string) {
+func assertLeafStringValue(t *testing.T, node Value, expectedVal string) {
 	t.Helper()
 	leaf, ok := node.(*LeafNode)
 	require.True(t, ok, "Expected *LeafNode, got %T", node)
