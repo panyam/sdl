@@ -70,46 +70,49 @@ func evalLiteral(expr *LiteralExpr, frame *Frame, v *VM) (val Value, err error) 
 		return nil, fmt.Errorf("failed to parse literal '%s': %w", expr.Value, err)
 	}
 
-	var valueOutcome any
-	latencyOutcome := ZeroLatencyOutcome()
+	return expr.Value, nil
+	/*
+		var valueOutcome any
+		latencyOutcome := ZeroLatencyOutcome()
 
-	switch expr.Kind {
-	case "INT":
-		v, ok := rawValue.(int64)
-		if !ok {
-			return nil, fmt.Errorf("internal error: parsed INT literal '%s' resulted in %T, expected int64", expr.Value, rawValue)
+		switch expr.Kind {
+		case "INT":
+			v, ok := rawValue.(int64)
+			if !ok {
+				return nil, fmt.Errorf("internal error: parsed INT literal '%s' resulted in %T, expected int64", expr.Value, rawValue)
+			}
+			valueOutcome = (&core.Outcomes[int64]{}).Add(1.0, v)
+		case "FLOAT":
+			v, ok := rawValue.(float64)
+			if !ok {
+				return nil, fmt.Errorf("internal error: parsed FLOAT literal '%s' resulted in %T, expected float64", expr.Value, rawValue)
+			}
+			valueOutcome = (&core.Outcomes[float64]{}).Add(1.0, v)
+		case "BOOL":
+			v, ok := rawValue.(bool)
+			if !ok {
+				return nil, fmt.Errorf("internal error: parsed BOOL literal '%s' resulted in %T, expected bool", expr.Value, rawValue)
+			}
+			valueOutcome = (&core.Outcomes[bool]{}).Add(1.0, v)
+		case "STRING":
+			v, ok := rawValue.(string)
+			if !ok {
+				return nil, fmt.Errorf("internal error: parsed STRING literal '%s' resulted in %T, expected string", expr.Value, rawValue)
+			}
+			valueOutcome = (&core.Outcomes[string]{}).Add(1.0, v)
+		// TODO: case "DURATION": Handle duration parsing and create *core.Outcomes[core.Duration] value outcome
+		default:
+			return nil, fmt.Errorf("unsupported literal kind '%s' in evalLiteral", expr.Kind)
 		}
-		valueOutcome = (&core.Outcomes[int64]{}).Add(1.0, v)
-	case "FLOAT":
-		v, ok := rawValue.(float64)
-		if !ok {
-			return nil, fmt.Errorf("internal error: parsed FLOAT literal '%s' resulted in %T, expected float64", expr.Value, rawValue)
-		}
-		valueOutcome = (&core.Outcomes[float64]{}).Add(1.0, v)
-	case "BOOL":
-		v, ok := rawValue.(bool)
-		if !ok {
-			return nil, fmt.Errorf("internal error: parsed BOOL literal '%s' resulted in %T, expected bool", expr.Value, rawValue)
-		}
-		valueOutcome = (&core.Outcomes[bool]{}).Add(1.0, v)
-	case "STRING":
-		v, ok := rawValue.(string)
-		if !ok {
-			return nil, fmt.Errorf("internal error: parsed STRING literal '%s' resulted in %T, expected string", expr.Value, rawValue)
-		}
-		valueOutcome = (&core.Outcomes[string]{}).Add(1.0, v)
-	// TODO: case "DURATION": Handle duration parsing and create *core.Outcomes[core.Duration] value outcome
-	default:
-		return nil, fmt.Errorf("unsupported literal kind '%s' in evalLiteral", expr.Kind)
-	}
 
-	state := &VarState{
-		ValueOutcome:   valueOutcome,
-		LatencyOutcome: latencyOutcome,
-	}
-	val.Type = OpNodeType
-	val.Value = &LeafNode{State: state}
-	return
+		state := &VarState{
+			ValueOutcome:   valueOutcome,
+			LatencyOutcome: latencyOutcome,
+		}
+		val.Type = OpNodeType
+		val.Value = &LeafNode{State: state}
+		return
+	*/
 }
 
 /** Evaluate a Identifier and return its value */

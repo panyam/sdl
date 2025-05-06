@@ -2,7 +2,6 @@ package decl
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 )
 
@@ -40,8 +39,7 @@ func (u *UnaryExpr) String() string { return fmt.Sprintf("(%s%s)", u.Operator, u
 // LiteralExpr represents literal values
 type LiteralExpr struct {
 	NodeInfo
-	Kind  string // "INT", "FLOAT", "STRING", "BOOL", "DURATION"
-	Value string // Raw string value from source
+	Value Value
 	// Duration specific fields could be added if needed after parsing
 	// DurationUnit string
 	// NumericValue float64
@@ -49,15 +47,7 @@ type LiteralExpr struct {
 
 func (l *LiteralExpr) exprNode() {}
 func (l *LiteralExpr) String() string {
-	if l.Kind == "STRING" {
-		// Use strconv.Quote for proper escaping if Value contains raw string content
-		return strconv.Quote(l.Value)
-	}
-	if l.Kind == "DURATION" {
-		// Assuming Value includes the unit, e.g., "10ms"
-		return l.Value
-	}
-	return l.Value
+	return l.Value.String()
 }
 
 // IdentifierExpr represents variable or function names

@@ -3,6 +3,8 @@ package decl
 import (
 	"fmt"
 	"strings"
+
+	gfn "github.com/panyam/goutils/fn"
 )
 
 type Enum struct {
@@ -23,8 +25,15 @@ const (
 	ValueTypeInt
 	ValueTypeFloat // Represents float64
 	ValueTypeString
-	ValueTypeList      // List Type
-	ValueTypeOutcomes  // Outcomes - treated like List for now
+	ValueTypeList     // List Type
+	ValueTypeOutcomes // Outcomes - treated like List for now
+
+	// A Tuple value type.  This can be used to a tuple of heterogenous types.
+	// The most apt usecase is in modelling Time+Value pairs in Outcome distributions.
+	// ie to model what the latency was for a particular value along an execution path.
+	// The child types determines the tuple types corresponding to each entry in the tuple type
+	ValueTypeTuple
+
 	ValueTypeComponent // Reference to a component that was created.  RuntimeValue.Value holds the component instance
 	ValueTypeEnum      // Reference to a component that was created.  RuntimeValue.Value holds enum "case"
 	ValueTypeOpNode    // A operator node of operations on outcomes that is collected to be processed later on
@@ -59,6 +68,16 @@ func ListType(elementType *ValueType) *ValueType {
 	}
 }
 
+func TupleType(elementTypes ...*ValueType) *ValueType {
+	if len(elementTypes) == 0 {
+		panic("Tuple element type cannot be nil or 0 length")
+	}
+	return &ValueType{
+		Tag:        ValueTypeTuple,
+		ChildTypes: elementTypes,
+	}
+}
+
 func OutcomesType(elementType *ValueType) *ValueType {
 	if elementType == nil {
 		panic("Outcomes element type cannot be nil")
@@ -87,6 +106,8 @@ func (v *ValueType) String() string {
 			return fmt.Sprintf("List[%s]", v.ChildTypes[0].String())
 		}
 		return "List[?]" // Invalid state
+	case ValueTypeTuple:
+		return fmt.Sprintf("Tuple[%s]", strings.Join(gfn.Map(v.ChildTypes, func(v *ValueType) string { return v.String() }), ", "))
 	case ValueTypeOutcomes:
 		if len(v.ChildTypes) == 1 && v.ChildTypes[0] != nil {
 			return fmt.Sprintf("Outcomes[%s]", v.ChildTypes[0].String())
@@ -399,6 +420,24 @@ func (r *RuntimeValue) GetList() ([]*RuntimeValue, error) {
 	val, ok := r.Value.([]*RuntimeValue)
 	if !ok {
 		return nil, fmt.Errorf("internal error: List value is not Go []*RuntimeValue (%T)", r.Value)
+	}
+	return val, nil
+}
+
+func (r *RuntimeValue) GetTuple() ([]*RuntimeValue, error) {
+	if r == nil || r.Type == nil {
+		return nil, fmt.Errorf("cannot get Tuple from nil RuntimeValue")
+	}
+	if r.Type.Tag != ValueTypeTuple {
+		return nil, fmt.Errorf("type mismatch: cannot get Tuple, value is type %s", r.Type.String())
+	}
+	if r.Value == nil {
+		// Return nil slice if internal value is nil (representing empty list)
+		return nil, nil
+	}
+	val, ok := r.Value.([]*RuntimeValue)
+	if !ok {
+		return nil, fmt.Errorf("internal error: Tuple value is not Go []*RuntimeValue (%T)", r.Value)
 	}
 	return val, nil
 }

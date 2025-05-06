@@ -19,12 +19,9 @@ func setupTestVM() (*VM, *Frame) {
 }
 
 // Helper to assert leaf node properties (simplistic check for now)
-func assertLeafInt(t *testing.T, node Value, expectedVal int64) {
+func assertValueInt(t *testing.T, node Value, expectedVal int64) {
 	t.Helper()
-	leaf, ok := node.(*LeafNode)
-	require.True(t, ok, "Expected *LeafNode, got %T", node)
-	require.NotNil(t, leaf.State, "LeafNode state is nil")
-	require.NotNil(t, leaf.State.ValueOutcome, "LeafNode ValueOutcome is nil")
+	assert.Equal(t, node.Type.Tag, ValueTypeInt)
 
 	valOutcome, ok := leaf.State.ValueOutcome.(*core.Outcomes[int64])
 	require.True(t, ok, "Expected ValueOutcome *core.Outcomes[int64], got %T", leaf.State.ValueOutcome)
@@ -50,7 +47,7 @@ func assertLeafBool(t *testing.T, node Value, expectedVal bool) {
 
 	valOutcome, ok := leaf.State.ValueOutcome.(*core.Outcomes[bool])
 	require.True(t, ok, "Expected ValueOutcome *core.Outcomes[bool], got %T", leaf.State.ValueOutcome)
-	// ... (rest of assertions similar to assertLeafInt)
+	// ... (rest of assertions similar to assertValueInt)
 	assert.Equal(t, expectedVal, valOutcome.Buckets[0].Value, "ValueOutcome bucket value")
 	// ... (assert zero latency)
 }
@@ -70,7 +67,7 @@ func TestEvalLiteral(t *testing.T) {
 	nodeInt := newIntLit("123")
 	resInt, errInt := Eval(nodeInt, frame, vm)
 	require.NoError(t, errInt)
-	assertLeafInt(t, resInt, 123)
+	assertValueInt(t, resInt, 123)
 	t.Logf("Eval(123): %s", resInt)
 
 	// Test BOOL
@@ -124,7 +121,7 @@ func TestEvalLetStmt(t *testing.T) {
 	// Verify frame
 	storedNode, ok := frame.Get("x")
 	require.True(t, ok, "Variable 'x' not found in frame after let stmt")
-	assertLeafInt(t, storedNode.(OpNode), 5)
+	assertValueInt(t, storedNode.(OpNode), 5)
 	t.Logf("Frame after 'let x = 5': %s", frame)
 }
 
@@ -149,7 +146,7 @@ func TestEvalBlockStmt(t *testing.T) {
 	blockSingleExpr := newBlockStmt(newExprStmt(newIntLit("42")))
 	resSingleExpr, errSingleExpr := Eval(blockSingleExpr, frame, vm)
 	require.NoError(t, errSingleExpr)
-	assertLeafInt(t, resSingleExpr, 42)
+	assertValueInt(t, resSingleExpr, 42)
 	t.Logf("Eval({42;}): %s", resSingleExpr)
 
 	// Test block with let and expression -> LeafNode (last expr)
@@ -159,7 +156,7 @@ func TestEvalBlockStmt(t *testing.T) {
 	)
 	resLetExpr, errLetExpr := Eval(blockLetExpr, frame, vm)
 	require.NoError(t, errLetExpr)
-	assertLeafInt(t, resLetExpr, 99)
+	assertValueInt(t, resLetExpr, 99)
 	// Check frame state *outside* the block (should be unchanged)
 	_, okOuter := frame.Get("b")
 	assert.False(t, okOuter, "'b' should not be visible outside the block")
@@ -175,7 +172,7 @@ func TestEvalBlockStmt(t *testing.T) {
 	seqNode, ok := resMultiExpr.(*SequenceNode)
 	require.True(t, ok, "Expected *SequenceNode, got %T", resMultiExpr)
 	require.Len(t, seqNode.Steps, 2, "SequenceNode should have 2 steps")
-	assertLeafInt(t, seqNode.Steps[0], 1)
+	assertValueInt(t, seqNode.Steps[0], 1)
 	assertLeafBool(t, seqNode.Steps[1], true)
 	t.Logf("Eval({1; true;}): %s", resMultiExpr)
 }
@@ -192,8 +189,8 @@ func TestEvalBinaryExpr(t *testing.T) {
 	binOpAdd, okAdd := resAdd.(*BinaryOpNode)
 	require.True(t, okAdd, "Expected *BinaryOpNode for add, got %T", resAdd)
 	assert.Equal(t, "+", binOpAdd.Op)
-	assertLeafInt(t, binOpAdd.Left, 1)
-	assertLeafInt(t, binOpAdd.Right, 2)
+	assertValueInt(t, binOpAdd.Left, 1)
+	assertValueInt(t, binOpAdd.Right, 2)
 	t.Logf("Eval(1 + 2): %s", resAdd)
 
 	// --- Test Boolean ---
@@ -218,8 +215,8 @@ func TestEvalBinaryExpr(t *testing.T) {
 	binOpGt, okGt := resGt.(*BinaryOpNode)
 	require.True(t, okGt, "Expected *BinaryOpNode for gt, got %T", resGt)
 	assert.Equal(t, ">", binOpGt.Op)
-	assertLeafInt(t, binOpGt.Left, 10)
-	assertLeafInt(t, binOpGt.Right, 5)
+	assertValueInt(t, binOpGt.Left, 10)
+	assertValueInt(t, binOpGt.Right, 5)
 	t.Logf("Eval(10 > 5): %s", resGt)
 
 	// --- Test with Variables ---
@@ -237,9 +234,9 @@ func TestEvalBinaryExpr(t *testing.T) {
 	// Left operand should be the LeafNode associated with 'x'
 	identNode, okIdent := binOpMul.Left.(*LeafNode) // Assuming identifier resolves directly for now
 	require.True(t, okIdent, "Expected identifier 'x' to resolve to *LeafNode, got %T", binOpMul.Left)
-	assertLeafInt(t, identNode, 20)
+	assertValueInt(t, identNode, 20)
 	// Right operand is the literal 3
-	assertLeafInt(t, binOpMul.Right, 3)
+	assertValueInt(t, binOpMul.Right, 3)
 	t.Logf("Eval({let x=20; x*3;}): %s", resBlock)
 
 	// --- Test Nested Expressions ---
@@ -257,14 +254,14 @@ func TestEvalBinaryExpr(t *testing.T) {
 	assert.Equal(t, "*", outerMul.Op)
 
 	// Check right operand of outer '*'
-	assertLeafInt(t, outerMul.Right, 3)
+	assertValueInt(t, outerMul.Right, 3)
 
 	// Check left operand of outer '*' (should be the inner '+')
 	innerAdd, okInner := outerMul.Left.(*BinaryOpNode)
 	require.True(t, okInner, "Expected inner node to be *BinaryOpNode, got %T", outerMul.Left)
 	assert.Equal(t, "+", innerAdd.Op)
-	assertLeafInt(t, innerAdd.Left, 1)
-	assertLeafInt(t, innerAdd.Right, 2)
+	assertValueInt(t, innerAdd.Left, 1)
+	assertValueInt(t, innerAdd.Right, 2)
 	t.Logf("Eval((1 + 2) * 3): %s", resNested)
 }
 
@@ -287,7 +284,7 @@ func TestEvalIfStmt(t *testing.T) {
 	// Check condition node
 	assertLeafBool(t, ifNode1.Condition, true)
 	// Check then node
-	assertLeafInt(t, ifNode1.Then, 1)
+	assertValueInt(t, ifNode1.Then, 1)
 	// Check else node (should be NilNode)
 	assertNilNode(t, ifNode1.Else)
 	t.Logf("Eval(if true { 1 }): %s", resIf1)
@@ -309,13 +306,13 @@ func TestEvalIfStmt(t *testing.T) {
 	condBinOp, okCond := ifNode2.Condition.(*BinaryOpNode)
 	require.True(t, okCond, "Expected Condition to be *BinaryOpNode, got %T", ifNode2.Condition)
 	assert.Equal(t, "<", condBinOp.Op)
-	assertLeafInt(t, condBinOp.Left, 5)
-	assertLeafInt(t, condBinOp.Right, 3)
+	assertValueInt(t, condBinOp.Left, 5)
+	assertValueInt(t, condBinOp.Right, 3)
 
 	// Check then node
-	assertLeafInt(t, ifNode2.Then, 10)
+	assertValueInt(t, ifNode2.Then, 10)
 	// Check else node
-	assertLeafInt(t, ifNode2.Else, 20)
+	assertValueInt(t, ifNode2.Else, 20)
 	t.Logf("Eval(if 5 < 3 { 10 } else { 20 }): %s", resIf2)
 
 	// --- Test If with Sequence in Branches ---
@@ -345,17 +342,17 @@ func TestEvalIfStmt(t *testing.T) {
 	require.True(t, okCond3, "Expected Condition to be *BinaryOpNode")
 	assert.Equal(t, "==", condBinOp3.Op)
 	assert.IsType(t, &LeafNode{}, condBinOp3.Left, "Condition left operand should be leaf 'x'")
-	assertLeafInt(t, condBinOp3.Right, 5)
+	assertValueInt(t, condBinOp3.Right, 5)
 
 	// Check then node (should be BinaryOpNode for y+1)
 	thenBinOp, okThen := ifNode3.Then.(*BinaryOpNode)
 	require.True(t, okThen, "Expected Then branch result to be *BinaryOpNode, got %T", ifNode3.Then)
 	assert.Equal(t, "+", thenBinOp.Op)
 	assert.IsType(t, &LeafNode{}, thenBinOp.Left, "Then '+' left operand should be leaf 'y'")
-	assertLeafInt(t, thenBinOp.Right, 1)
+	assertValueInt(t, thenBinOp.Right, 1)
 
 	// Check else node
-	assertLeafInt(t, ifNode3.Else, 99)
+	assertValueInt(t, ifNode3.Else, 99)
 	t.Logf("Eval(complex if block): %s", resBlock)
 }
 
@@ -690,7 +687,7 @@ func TestEvalCallExpr_DSLMethod(t *testing.T) {
 	dslInstance, okDSL := dslRuntime.(*UDComponent)
 	require.True(t, okDSL)
 	// Check overridden parameter was stored correctly
-	assertLeafInt(t, dslInstance.Params["Rate"], 20)
+	assertValueInt(t, dslInstance.Params["Rate"], 20)
 
 	// 4. Create the Call Expression AST for dslInst.Process(5)
 	callExpr := newCallExpr(newIdent("dslInst"), "Process", newIntLit("5"))
@@ -716,7 +713,7 @@ func TestEvalCallExpr_DSLMethod(t *testing.T) {
 	addNode := assertBinaryOpNode(t, resultOpNode, "+")
 
 	// Check the right operand of '+'
-	assertLeafInt(t, addNode.Right, 5)
+	assertValueInt(t, addNode.Right, 5)
 
 	// Check the left operand of '+' (should be the result of 'temp')
 	// 'temp' was assigned `Multiplier * self.Rate`
@@ -725,13 +722,13 @@ func TestEvalCallExpr_DSLMethod(t *testing.T) {
 
 	// Check the operands of '*'
 	// Left operand: Multiplier (Arg value 5)
-	assertLeafInt(t, mulNode.Left, 5)
+	assertValueInt(t, mulNode.Left, 5)
 	// Right operand: self.Rate (Instance value 20)
 	// This requires evalMemberAccess to work correctly when called *implicitly*
 	// during the evaluation of the BinaryExpr within the method body.
 	// Let's assume Eval handles self.Rate lookup correctly within the method frame.
 	// The OpNode for self.Rate should be the LeafNode(20) stored in the instance.
-	assertLeafInt(t, mulNode.Right, 20)
+	assertValueInt(t, mulNode.Right, 20)
 
 	t.Logf("DSL Method Call Result OpNode: %s", resultOpNode)
 }

@@ -81,7 +81,7 @@ func (v *VM) CreateInstance(typeName string, instanceName string, overrides []*A
 	}
 
 	overriddenDependencies := map[string]ComponentRuntime{}
-	overriddenParams := map[string]OpNode{}
+	overriddenParams := map[string]Value{}
 	for _, assignStmt := range overrides {
 		assignVarName := assignStmt.Var.Name
 		valueOpNode, err := Eval(assignStmt.Value, frame, v) // Pass frame and vm
@@ -94,16 +94,16 @@ func (v *VM) CreateInstance(typeName string, instanceName string, overrides []*A
 			overriddenParams[assignVarName] = valueOpNode
 		} else if _, err := compDef.GetDependency(assignVarName); err == nil {
 			// Dependency assignment: Expect RHS to evaluate to InstanceRefNode
-			instanceRef, okRef := valueOpNode.(*InstanceRefNode)
+			instanceRef, okRef := valueOpNode.Value.(ComponentRuntime)
 			if !okRef {
 				return nil, fmt.Errorf("value for 'uses' override '%s' must resolve to a component instance reference, got %T", assignVarName, valueOpNode)
 			}
-			depInstanceName := instanceRef.InstanceName
+			depInstanceName := instanceRef.GetInstanceName()
 			depInstanceAny, foundDep := frame.Get(depInstanceName) // Look up in frame
 			if !foundDep {
 				return nil, fmt.Errorf("dependency instance '%s' (for '%s.%s') not found", depInstanceName, instanceName, assignVarName)
 			}
-			depRuntime, okRuntime := depInstanceAny.(ComponentRuntime)
+			depRuntime, okRuntime := depInstanceAny.Value.(ComponentRuntime)
 			if !okRuntime {
 				return nil, fmt.Errorf("dependency '%s' resolved to non-runtime type %T", depInstanceName, depInstanceAny)
 			}
@@ -131,7 +131,7 @@ func (v *VM) CreateInstance(typeName string, instanceName string, overrides []*A
 		runtimeInstance = &UDComponent{
 			Definition:   compDef,
 			InstanceName: instanceName,
-			Params:       make(map[string]OpNode),
+			Params:       make(map[string]Value),
 			Dependencies: make(map[string]ComponentRuntime),
 		}
 	}

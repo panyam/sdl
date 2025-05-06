@@ -28,7 +28,7 @@ type ComponentRuntime interface {
 	// For DSL components, this returns the RuntimeValue.
 	// For Native components, it needs to retrieve the configured Go value
 	// and potentially wrap it in a LeafNode/VarState for consistency? (TBD)
-	GetParam(name string) (RuntimeValue, bool) // Returns RuntimeValue, found
+	GetParam(name string) (Value, bool) // Returns RuntimeValue, found
 
 	// GetDependency returns the runtime instance (another ComponentRuntime)
 	// satisfying a dependency declared via 'uses'.
@@ -37,7 +37,7 @@ type ComponentRuntime interface {
 	// SetParam sets the evaluated parameter value for this instance.
 	// For DSL components, this sets an RuntimeValue.
 	// For Native components, it is upto the component to manage the value of the RuntimeValue
-	SetParam(name string, value RuntimeValue) error // Returns RuntimeValue, found
+	SetParam(name string, value Value) error // Returns RuntimeValue, found
 
 	// SetDependency sets the runtime instance (another ComponentRuntime)
 	// satisfying a dependency declared via 'uses'.
@@ -62,14 +62,14 @@ type ComponentRuntime interface {
 type UDComponent struct {
 	Definition   *ComponentDecl              // Pointer to the blueprint (AST etc.)
 	InstanceName string                      // The name given in the InstanceDecl
-	Params       map[string]RuntimeValue     // Evaluated parameter RuntimeValues (override or default)
+	Params       map[string]Value            // Evaluated parameter RuntimeValues (override or default)
 	Dependencies map[string]ComponentRuntime // *** Unified map ***
 }
 
 // SetParam sets the evaluated parameter value for this instance.
 // For DSL components, this sets an RuntimeValue.
 // For Native components, it is upto the component to manage the value of the RuntimeValue
-func (ci *UDComponent) SetParam(name string, value RuntimeValue) error {
+func (ci *UDComponent) SetParam(name string, value *RuntimeValue) error {
 	ci.Params[name] = value
 	return nil
 }
@@ -127,7 +127,7 @@ func (ci *UDComponent) GetComponentTypeName() string {
 	return ci.Definition.NameNode.Name
 }
 
-func (ci *UDComponent) GetParam(name string) (RuntimeValue, bool) {
+func (ci *UDComponent) GetParam(name string) (Value, bool) {
 	node, ok := ci.Params[name]
 	return node, ok
 }
@@ -232,7 +232,7 @@ func (na *NativeComponent) GetComponentTypeName() string {
 // Option 1: Don't support GetParam directly for native components via the interface.
 // Option 2: Use reflection, get the Go field value, wrap it in LeafNode/VarState. (Complex)
 // Let's go with Option 2 for now, but only for simple types.
-func (na *NativeComponent) GetParam(name string) (val RuntimeValue, ok bool) {
+func (na *NativeComponent) GetParam(name string) (val Value, ok bool) {
 	instanceVal := reflect.ValueOf(na.GoInstance)
 	if instanceVal.Kind() == reflect.Ptr {
 		instanceVal = instanceVal.Elem()
@@ -299,7 +299,7 @@ func (na *NativeComponent) GetDependency(name string) (ComponentRuntime, bool) {
 // SetParam sets the evaluated parameter value for this instance.
 // For DSL components, this sets an RuntimeValue.
 // For Native components, it is upto the component to manage the value of the RuntimeValue
-func (na *NativeComponent) SetParam(name string, value RuntimeValue) error {
+func (na *NativeComponent) SetParam(name string, value Value) error {
 	instanceVal := reflect.ValueOf(na.GoInstance)
 	if instanceVal.Kind() == reflect.Ptr {
 		instanceVal = instanceVal.Elem()
