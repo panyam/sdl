@@ -5,6 +5,16 @@ import (
 	"strings"
 )
 
+type Enum struct {
+	Name    string
+	Options []string
+}
+
+type EnumValue struct {
+	Enum   *Enum
+	Option int
+}
+
 type ValueTypeTag int
 
 const (
@@ -13,9 +23,11 @@ const (
 	ValueTypeInt
 	ValueTypeFloat // Represents float64
 	ValueTypeString
-	ValueTypeList     // List Type
-	ValueTypeOutcomes // Outcomes - treated like List for now
-	// Add other types like ValueTypeFunc, ValueTypeRef if needed later
+	ValueTypeList      // List Type
+	ValueTypeOutcomes  // Outcomes - treated like List for now
+	ValueTypeComponent // Reference to a component that was created.  RuntimeValue.Value holds the component instance
+	ValueTypeEnum      // Reference to a component that was created.  RuntimeValue.Value holds enum "case"
+	ValueTypeOpNode    // A operator node of operations on outcomes that is collected to be processed later on
 )
 
 type ValueType struct {
@@ -27,11 +39,14 @@ type ValueType struct {
 
 var (
 	// Use singletons for basic types for efficiency
-	NilType   = &ValueType{Tag: ValueTypeNil}
-	BoolType  = &ValueType{Tag: ValueTypeBool}
-	IntType   = &ValueType{Tag: ValueTypeInt}
-	FloatType = &ValueType{Tag: ValueTypeFloat}
-	StrType   = &ValueType{Tag: ValueTypeString}
+	NilType       = &ValueType{Tag: ValueTypeNil}
+	BoolType      = &ValueType{Tag: ValueTypeBool}
+	IntType       = &ValueType{Tag: ValueTypeInt}
+	FloatType     = &ValueType{Tag: ValueTypeFloat}
+	StrType       = &ValueType{Tag: ValueTypeString}
+	EnumType      = &ValueType{Tag: ValueTypeEnum}
+	ComponentType = &ValueType{Tag: ValueTypeComponent}
+	OpNodeType    = &ValueType{Tag: ValueTypeOpNode}
 )
 
 func ListType(elementType *ValueType) *ValueType {
@@ -200,6 +215,22 @@ func (r *RuntimeValue) Set(v any) error {
 		r.Value = val
 		return nil
 
+	case ValueTypeEnum:
+		val, ok := v.(*EnumValue)
+		if !ok {
+			return fmt.Errorf("type mismatch: expected EnumValue, got %T", v)
+		}
+		r.Value = val
+		return nil
+
+	case ValueTypeComponent:
+		val, ok := v.(*ComponentRuntime)
+		if !ok {
+			return fmt.Errorf("type mismatch: expected ComponentRuntime, got %T", v)
+		}
+		r.Value = val
+		return nil
+
 	case ValueTypeList, ValueTypeOutcomes:
 		// Expecting a slice of *RuntimeValue for containers
 		listVal, ok := v.([]*RuntimeValue)
@@ -284,7 +315,7 @@ func (r *RuntimeValue) String() string {
 }
 
 // --- Custom getter methods
-func (r *RuntimeValue) GetInt() (int, error) {
+func (r *RuntimeValue) GetInt() (int64, error) {
 	if r == nil || r.Type == nil {
 		return 0, fmt.Errorf("cannot get Int from nil RuntimeValue")
 	}
@@ -294,7 +325,7 @@ func (r *RuntimeValue) GetInt() (int, error) {
 	if r.Value == nil {
 		return 0, fmt.Errorf("internal error: Int type has nil Go value")
 	}
-	val, ok := r.Value.(int)
+	val, ok := r.Value.(int64)
 	if !ok {
 		return 0, fmt.Errorf("internal error: Int value is not Go int (%T)", r.Value)
 	}
