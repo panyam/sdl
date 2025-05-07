@@ -65,11 +65,6 @@ func Eval(node Node, frame *Frame, v *VM) (val Value, err error) {
 
 /** Evaluate a literal and return its value */
 func evalLiteral(expr *LiteralExpr, frame *Frame, v *VM) (val Value, err error) {
-	rawValue, err := ParseLiteralValue(expr) // Use existing helper
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse literal '%s': %w", expr.Value, err)
-	}
-
 	return expr.Value, nil
 	/*
 		var valueOutcome any

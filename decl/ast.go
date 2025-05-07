@@ -31,7 +31,7 @@ func (n *NodeInfo) String() string { return "{Node}" } // Default stringer
 // FileDecl represents the top-level node of a parsed DSL file.
 type FileDecl struct {
 	NodeInfo
-	declarations []Node // ComponentDecl, SystemDecl, OptionsDecl, EnumDecl, ImportDecl
+	Declarations []Node // ComponentDecl, SystemDecl, OptionsDecl, EnumDecl, ImportDecl
 
 	// Resolved values so we can work with processed/loaded values instead of resolving
 	// Identify expressions etc
@@ -79,7 +79,7 @@ func (f *FileDecl) Resolve() error {
 	// Add initializers for other registries (Enums, Options) if they exist
 
 	// log.Printf("Loading definitions from File AST...")
-	for _, decl := range f.declarations {
+	for _, decl := range f.Declarations {
 		switch node := decl.(type) {
 		case *ComponentDecl:
 			// Process and register the component definition
@@ -151,7 +151,7 @@ func (f *FileDecl) RegisterEnum(c *EnumDecl) error {
 
 func (f *FileDecl) String() string {
 	lines := []string{}
-	for _, d := range f.declarations {
+	for _, d := range f.Declarations {
 		lines = append(lines, d.String())
 	}
 	return strings.Join(lines, "\n")

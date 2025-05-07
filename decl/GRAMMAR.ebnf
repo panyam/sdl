@@ -73,6 +73,8 @@ LogStmt = "log" (StringLiteral | Expression) ("," Expression)* ";" ;
 // --- Control Flow Statements ---
 IfStmt = "if" Expression BlockStmt ["else" (IfStmt | BlockStmt)] ; // Condition must yield bool outcome
 
+// - Distribute frankly can never be a statement?
+// This can be achieved by a switch?
 DistributeStmt = "distribute" [TotalClause] "{" DistributeCase* [DefaultCase] "}" ;
 TotalClause = "(" Expression ")" ; // Expr must yield a number outcome with which a distributio will be created
 DistributeCase = Expression "=>" BlockStmt ; // Expr must yield float outcome

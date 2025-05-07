@@ -1,0 +1,810 @@
+%{
+package parser
+
+import (
+    "log"
+    "fmt"
+    "io"
+)
+
+// Function to be called by yyParse on error.
+// Needs access to the lexer passed via %parse-param.
+func yyerror(lexer yyLexer, msg string) {
+    sdlLexer := lexer.(SdlLexer)
+    lexer.Error(fmt.Sprintf("%s near '%s'", msg, sdlLexer.Text()))
+}
+
+func yyerrok(lexer yyLexer) {
+  log.Println("Error here... not sure how to recover")
+  ///ErrFlag = 0 
+}
+
+%}
+
+// Add %parse-param to accept the lexer instance
+
+%union {
+    // Basic types from lexer
+    sval string // Holds raw string values like identifiers, literal content
+
+    // AST Nodes (using pointers) - these should have NodeInfo
+    file        *File
+    componentDecl *ComponentDecl
+    systemDecl *SystemDecl
+    node        Node // Generic interface for lists and for accessing NodeInfo
+    tokenNode   TokenNode // Generic interface for lists and for accessing NodeInfo
+    expr        Expr
+    stmt        Stmt
+    typeName    *TypeName
+    paramDecl   *ParamDecl
+    usesDecl    *UsesDecl
+    methodDef   *MethodDecl
+    instanceDecl *InstanceDecl
+    analyzeDecl *AnalyzeDecl
+    expectBlock *ExpectationsDecl
+    expectStmt  *ExpectStmt
+    blockStmt   *BlockStmt
+    ifStmt      *IfStmt
+    distributeStmt *DistributeStmt
+    distributeCase *DistributeCase
+    distributeExpr *DistributeExpr
+    distributeExprCase *DistributeExprCase
+    defaultCase    *DefaultCase
+    goStmt         *GoStmt
+    assignStmt     *AssignmentStmt
+    optionsDecl    *OptionsDecl
+    enumDecl       *EnumDecl
+    importDecl     *ImportDecl
+
+    // Slices for lists
+    nodeList           []Node
+    compBodyItemList   []ComponentDeclBodyItem
+    sysBodyItemList    []SystemDeclBodyItem
+    paramList          []*ParamDecl
+    assignList         []*AssignmentStmt
+    exprList           []Expr
+    stmtList           []Stmt
+    identList          []*IdentifierExpr
+    distributeCaseList []*DistributeCase
+    distributeExprCaseList []*DistributeExprCase
+    expectStmtList     []*ExpectStmt
+
+    // Add field to store position for simple tokens if needed
+    // posInfo     NodeInfo
+}
+
+// --- Tokens ---
+// Keywords (assume lexer returns token type, parser might need pos for some)
+%token<node> SYSTEM USES METHOD INSTANCE ANALYZE EXPECT LET IF ELSE DISTRIBUTE DEFAULT RETURN DELAY WAIT GO LOG SWITCH CASE TRUE FALSE FOR 
+
+// Marking these as nodes so can be returned as Node for their locations
+%token<node> LBRACE RBRACE OPTIONS ENUM COMPONENT PARAM SEMICOLON
+
+// Operators and Punctuation (assume lexer returns token type, use $N.(Node).Pos() if $N is a literal/ident)
+%token<node> ASSIGN COLON LPAREN RPAREN COMMA DOT ARROW PLUS_ASSIGN MINUS_ASSIGN MUL_ASSIGN DIV_ASSIGN LET_ASSIGN
+
+%token<tokenNode>  INT FLOAT BOOL STRING DURATION NOT MINUS 
+
+// Literals (lexer provides *LiteralExpr or *IdentifierExpr in lval.expr, with NodeInfo)
+%token <expr> IDENTIFIER INT_LITERAL FLOAT_LITERAL STRING_LITERAL BOOL_LITERAL DURATION_LITERAL IMPORT 
+
+// Operators (Tokens for precedence rules, lexer provides string in lval.sval)
+%token <tokenNode> OR AND EQ NEQ LT LTE GT GTE PLUS MUL DIV MOD
+
+// --- Types (Associating non-terminals with union fields) ---
+%type <file>         File
+%type <nodeList>     DeclarationList
+%type <node>         ComponentBodyItem SystemBodyItem  TopLevelDeclaration
+%type <componentDecl>         ComponentDecl
+%type <systemDecl>         SystemDecl
+%type <compBodyItemList> ComponentBodyItemList ComponentBodyItemOptList
+%type <sysBodyItemList>  SystemBodyItemOptList 
+%type <optionsDecl>  OptionsDecl
+%type <enumDecl>     EnumDecl
+%type <identList>    IdentifierList CommaIdentifierListOpt
+%type <importDecl>   ImportDecl
+%type <stmt>         Stmt IfStmtElseOpt LetStmt ExprStmt ReturnStmt DelayStmt WaitStmt LogStmt SwitchStmt
+%type <assignStmt>    AssignStmt
+%type <blockStmt>         BlockStmt
+%type <stmtList>     StmtList StmtOptList
+%type <expr>         Expression OrExpr AndBoolExpr CmpExpr AddExpr MulExpr UnaryExpr PrimaryExpr LiteralExpr CallExpr MemberAccessExpr SwitchExpr CaseExpr DefaultCaseExpr // Added SwitchExpr, CaseExpr, DefaultCaseExpr
+%type <exprList>     ArgList ArgListOpt CommaExpressionListOpt
+%type <paramDecl>    ParamDecl
+%type <paramList>    ParamList ParamListOpt 
+%type <typeName>     TypeName PrimitiveType // FUTURE USE: OutcomeType QualifiedIdentifier
+%type <usesDecl>     UsesDecl
+%type <methodDef>    MethodDecl
+%type <instanceDecl> InstanceDecl
+%type <assignStmt>   Assignment
+%type <assignList>   AssignList  AssignListOpt
+%type <analyzeDecl>  AnalyzeDecl
+%type <expectBlock>  ExpectBlock ExpectBlockOpt
+%type <expectStmt>   ExpectStmt
+%type <expectStmtList> ExpectStmtList ExpectStmtOptList
+%type <ifStmt>       IfStmt
+%type <distributeStmt> DistributeStmt 
+%type <expr>          TotalClauseOpt 
+%type <distributeCase> DistributeCase 
+%type <distributeCaseList> DistributeCaseListOpt 
+%type <defaultCase>    DefaultCase DefaultCaseOpt
+%type <distributeExpr> DistributeExpr 
+%type <distributeExprCaseList> DistributeExprCaseListOpt 
+%type <expr>           DefaultCaseExpr DefaultCaseExprOpt // Expr for cases
+%type <distributeExprCase>           DistributeExprCase
+%type <goStmt>         GoStmt
+
+// --- Operator Precedence and Associativity (Lowest to Highest) ---
+%left OR
+%left AND
+%nonassoc EQ NEQ LT LTE GT GTE // Comparisons don't chain
+%left PLUS MINUS
+%left MUL DIV MOD
+%right NOT UMINUS // Unary operators (UMINUS for precedence)
+
+%%
+// --- Grammar Rules (with position info derived from $N) ---
+
+File:
+    DeclarationList {
+      ni := NodeInfo{}
+      if len($1) > 0 {
+        ni.StartPos = $1[0].Pos()
+        ni.StopPos = $1[len($1)-1].End()
+      }
+      // lexer.(*Lexer).parseResult = &File{NodeInfo: ni, declarations: $1}
+      $$ = &File{NodeInfo: ni, Declarations: $1}
+    } 
+    ;
+
+DeclarationList:
+    /* empty */         { $$ = []Node{} }
+    | DeclarationList TopLevelDeclaration { $$ = append($1, $2) }
+    ;
+
+TopLevelDeclaration:
+      ComponentDecl { $$ = $1 }
+    | SystemDecl    { $$ = $1 }
+    | OptionsDecl   { $$ = $1 }
+    | EnumDecl      { $$ = $1 }
+    | ImportDecl    { $$ = $1 }
+    ;
+
+OptionsDecl:
+    OPTIONS LBRACE StmtList RBRACE { // OPTIONS ($1) LBRACE ($2) StmtList ($3) RBRACE ($4)
+        // Assume OPTIONS token itself doesn't carry complex NodeInfo from lexer for this example.
+        // Span from LBRACE to RBRACE for body. If StmtList is empty, Body.NodeInfo might be tricky.
+/*
+        bodyStart := $2.(Node).Pos() // Position of LBRACE (assuming lexer returns it as Node)
+        bodyEnd := $4.(Node).Pos()   // Position of RBRACE (actually its start, use .End() for full span)
+        if len($3) > 0 { // If StmtList is not empty
+            bodyStart = $3[0].Pos()
+            bodyEnd = $3[len($3)-1].End()
+        }
+*/
+        $$ = &OptionsDecl{
+            NodeInfo: newNodeInfo($1.(Node).Pos(), $4.(Node).End()), // Pos of OPTIONS, End of RBRACE
+            Body: &BlockStmt{
+                 NodeInfo: newNodeInfo($2.(Node).Pos(), $4.(Node).End()),
+                 Statements: $3,
+             },
+         }
+    }
+    ;
+
+EnumDecl:
+    ENUM IDENTIFIER LBRACE IdentifierList RBRACE { // ENUM($1) IDENTIFIER($2) ... RBRACE($5)
+        $$ = &EnumDecl{
+            NodeInfo: newNodeInfo($1.(Node).Pos(), $5.(Node).End()),
+            NameNode: $2.(*IdentifierExpr), // $2 is an IdentifierExpr from lexer, has Pos/End
+            ValuesNode: $4,
+        }
+    }
+    ;
+
+IdentifierList:
+    IDENTIFIER                { $$ = []*IdentifierExpr{$1.(*IdentifierExpr)} }
+    | IdentifierList COMMA IDENTIFIER { $$ = append($1, $3.(*IdentifierExpr)) }
+    ;
+
+ImportDecl:
+    IMPORT STRING_LITERAL { // IMPORT($1) STRING_LITERAL($2)
+        $$ = &ImportDecl{
+            NodeInfo: newNodeInfo($1.(Node).Pos(), $2.(Node).End()),
+            Path: $2.(*LiteralExpr), // $2 is a LiteralExpr from lexer
+        }
+    }
+    ;
+
+ComponentDecl:
+    COMPONENT IDENTIFIER LBRACE ComponentBodyItemList RBRACE { // COMPONENT($1) ... RBRACE($5)
+        $$ = &ComponentDecl{
+            NodeInfo: newNodeInfo($1.(Node).Pos(), $5.(Node).End()),
+            NameNode: $2.(*IdentifierExpr),
+            Body: $4,
+         }
+    }
+    ;
+
+ComponentBodyItemList: ComponentBodyItemOptList { $$ = $1 } ;
+
+ComponentBodyItemOptList: /* empty */ { $$=[]ComponentDeclBodyItem{} } | ComponentBodyItemOptList ComponentBodyItem { $$=append($1, $2.(ComponentDeclBodyItem)) };
+
+ComponentBodyItem:
+      ParamDecl   { $$ = $1 }
+    | UsesDecl    { $$ = $1 }
+    | MethodDecl   { $$ = $1 }
+    | ComponentDecl { $$ = $1 } // Allow nested components
+    ;
+
+ParamDecl:
+    PARAM IDENTIFIER COLON TypeName SEMICOLON { // PARAM($1) ... SEMICOLON($5)
+        $$ = &ParamDecl{
+            NodeInfo: newNodeInfo($1.(Node).Pos(), $5.(Node).End()),
+            Name: $2.(*IdentifierExpr),
+            Type: $4, // TypeName also needs to have NodeInfo
+        }
+    }
+    | PARAM IDENTIFIER COLON TypeName ASSIGN Expression SEMICOLON { // PARAM($1) ... SEMICOLON($7)
+        $$ = &ParamDecl{
+            NodeInfo: newNodeInfo($1.(Node).Pos(), $7.(Node).End()),
+            Name: $2.(*IdentifierExpr),
+            Type: $4,
+            DefaultValue: $6,
+        }
+    }
+    ;
+
+TypeName:
+      PrimitiveType { $$ = $1 } // PrimitiveType actions set NodeInfo
+    | IDENTIFIER    {
+                      identNode := $1.(Node) // $1 is IDENTIFIER token (IdentifierExpr)
+                      $$ = &TypeName{
+                           NodeInfo: identNode.(*IdentifierExpr).NodeInfo,
+                           EnumTypeName: identNode.(*IdentifierExpr).Name,
+                      }
+                    }
+    // | QualifiedIdentifier { $$ = $1 } // For future pkg.Type
+    // | OutcomeType { $$ = $1 } // Need separate rule if we allow Outcome[T] syntax
+    ;
+
+PrimitiveType: // These are keywords. Assume lexer sets NodeInfo if $N.posInfo is used
+      INT      { $$ = &TypeName{NodeInfo: $1.NodeInfo, PrimitiveTypeName: "int"} }
+    | FLOAT    { $$ = &TypeName{NodeInfo: $1.NodeInfo, PrimitiveTypeName: "float"} }
+    | STRING   { $$ = &TypeName{NodeInfo: $1.NodeInfo, PrimitiveTypeName: "string"} }
+    | BOOL     { $$ = &TypeName{NodeInfo: $1.NodeInfo, PrimitiveTypeName: "bool"} }
+    | DURATION { $$ = &TypeName{NodeInfo: $1.NodeInfo, PrimitiveTypeName: "duration"} }
+    ;
+
+// Placeholder for future pkg.Type or Outcome[T]
+// QualifiedIdentifier: IDENTIFIER DOT IDENTIFIER { ... }
+// OutcomeType: "Outcome" LBRACKET PrimitiveType RBRACKET { ... }
+
+UsesDecl:
+    USES IDENTIFIER COLON IDENTIFIER SEMICOLON { // USES($1) ... SEMICOLON($5)
+        $$ = &UsesDecl{
+            NodeInfo: newNodeInfo($1.(Node).Pos(), $5.(Node).End()),
+            NameNode: $2.(*IdentifierExpr),
+            ComponentNode: $4.(*IdentifierExpr),
+         }
+    }
+    // Optional: Add syntax for overrides within uses? Like `uses x: T { p1 = v1; }`
+    // USES IDENTIFIER COLON IDENTIFIER LBRACE AssignListOpt RBRACE SEMICOLON { ... }
+    ;
+
+MethodDecl:
+    METHOD IDENTIFIER LPAREN ParamListOpt RPAREN BlockStmt { // METHOD($1) ... BlockStmt($6)
+        $$ = &MethodDecl{
+            NodeInfo: newNodeInfo($1.(Node).Pos(), $6.End()),
+            NameNode: $2.(*IdentifierExpr),
+            Parameters: $4,
+            Body: $6,
+        }
+    }
+    | METHOD IDENTIFIER LPAREN ParamListOpt RPAREN COLON TypeName BlockStmt { // METHOD($1) ... BlockStmt($8)
+        $$ = &MethodDecl{
+            NodeInfo: newNodeInfo($1.(Node).Pos(), $8.End()),
+            Name: $2.(*IdentifierExpr).Name,
+            Parameters: $4,
+            ReturnType: $7,
+            Body: $8,
+         }
+    }
+    ;
+
+ParamListOpt:
+    /* empty */ { $$ = []*ParamDecl{} }
+    | ParamList { $$ = $1 }
+    ;
+
+ParamList:
+    ParamDecl               { $$ = []*ParamDecl{$1} }
+    | ParamList COMMA ParamDecl { $$ = append($1, $3) }
+    ;
+
+// --- System ---
+SystemDecl:
+    SYSTEM IDENTIFIER LBRACE SystemBodyItemOptList RBRACE { // SYSTEM($1) ... RBRACE($5)
+        $$ = &SystemDecl{
+             NodeInfo: newNodeInfo($1.(Node).Pos(), $5.(Node).End()),
+             NameNode: $2.(*IdentifierExpr),
+             Body: $4,
+        }
+    }
+    ;
+
+// SystemBodyItemOptList don't create top-level NodeInfo nodes
+SystemBodyItem:
+              InstanceDecl { $$=$1 }
+            | AnalyzeDecl { $$=$1 }
+            | OptionsDecl { $$=$1 }
+            | LetStmt { $$=$1 }
+            ;
+
+SystemBodyItemOptList:
+    /* empty */             { $$ = []SystemDeclBodyItem{} }
+    | SystemBodyItemOptList SystemBodyItem { $$ = append($1, $2.(SystemDeclBodyItem)) }
+    ;
+
+InstanceDecl:
+    IDENTIFIER COLON IDENTIFIER SEMICOLON { // IDENTIFIER($1) ... SEMICOLON($4)
+         $$ = &InstanceDecl{
+             NodeInfo: newNodeInfo($1.(Node).Pos(), $4.(Node).End()),
+             NameNode: $1.(*IdentifierExpr),
+             ComponentType: $3.(*IdentifierExpr),
+             Overrides: []*AssignmentStmt{},
+         }
+    }
+    | IDENTIFIER COLON IDENTIFIER ASSIGN LBRACE AssignListOpt RBRACE SEMICOLON { // IDENTIFIER($1) ... SEMICOLON($8)
+        $$ = &InstanceDecl{
+             NodeInfo: newNodeInfo($1.(Node).Pos(), $8.(Node).End()),
+             NameNode: $1.(*IdentifierExpr),
+             ComponentType: $3.(*IdentifierExpr),
+             Overrides: $6,
+         }
+    }
+    ;
+
+AssignListOpt:
+      /* empty */  { $$ = []*AssignmentStmt{} }
+    | AssignList { $$ = $1 }
+    ;
+
+AssignList:
+    Assignment             { $$ = []*AssignmentStmt{$1} }
+    | AssignList Assignment { $$ = append($1, $2) }
+    ;
+
+Assignment:
+    IDENTIFIER ASSIGN Expression SEMICOLON { // IDENTIFIER($1) ... SEMICOLON($4)
+        $$ = &AssignmentStmt{
+            NodeInfo: newNodeInfo($1.(Node).Pos(), $4.(Node).End()),
+            Var: $1.(*IdentifierExpr),
+            Value: $3,
+         }
+    }
+    ;
+
+AnalyzeDecl:
+    ANALYZE IDENTIFIER ASSIGN Expression ExpectBlockOpt SEMICOLON { // ANALYZE($1) ... SEMICOLON($6)
+        callExpr, ok := $4.(*CallExpr)
+        if !ok {
+            yyerror(yylex, fmt.Sprintf("analyze target must be a method call, found %T at pos %d", $4, $4.(Node).Pos()))
+        }
+        endPosNode := $6.(Node) // SEMICOLON
+        if $5 != nil { // If ExpectBlockOpt is not empty
+             endPosNode = $5
+        }
+        $$ = &AnalyzeDecl{
+             NodeInfo: newNodeInfo($1.(Node).Pos(), endPosNode.End()),
+             Name: $2.(*IdentifierExpr),
+             Target: callExpr,
+             Expectations: $5,
+         }
+    }
+    ;
+
+ExpectBlockOpt: /* empty */   { $$ = nil } | ExpectBlock { $$ = $1 };
+
+ExpectBlock:
+    EXPECT LBRACE ExpectStmtList RBRACE { // EXPECT($1) ... RBRACE($4)
+        $$ = &ExpectationsDecl{
+            NodeInfo: newNodeInfo($1.(Node).Pos(), $4.(Node).End()),
+            Expects: $3,
+        }
+    }
+    ;
+
+ExpectStmtList:
+      ExpectStmtOptList { $$ = $1 }
+    ;
+
+ExpectStmtOptList:
+      /* empty */            { $$ = []*ExpectStmt{} }
+    | ExpectStmtOptList ExpectStmt { $$ = append($1, $2) }
+    ;
+
+ExpectStmt:
+    Expression EQ Expression SEMICOLON  { $$ = &ExpectStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $4.(Node).End()), Target: $1.(*MemberAccessExpr), Operator: "==", Threshold: $3} }
+    | Expression NEQ Expression SEMICOLON { $$ = &ExpectStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $4.(Node).End()), Target: $1.(*MemberAccessExpr), Operator: "!=", Threshold: $3} }
+    | Expression LT Expression SEMICOLON  { $$ = &ExpectStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $4.(Node).End()), Target: $1.(*MemberAccessExpr), Operator: "<", Threshold: $3} }
+    | Expression LTE Expression SEMICOLON { $$ = &ExpectStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $4.(Node).End()), Target: $1.(*MemberAccessExpr), Operator: "<=", Threshold: $3} }
+    | Expression GT Expression SEMICOLON  { $$ = &ExpectStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $4.(Node).End()), Target: $1.(*MemberAccessExpr), Operator: ">", Threshold: $3} }
+    | Expression GTE Expression SEMICOLON { $$ = &ExpectStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $4.(Node).End()), Target: $1.(*MemberAccessExpr), Operator: ">=", Threshold: $3} }
+    ;
+
+// --- Statements ---
+StmtList: StmtOptList { $$ = $1 } ;
+StmtOptList: /* empty */       { $$ = []Stmt{} } | StmtOptList Stmt { $$ = append($1, $2) } ;
+
+Stmt:
+      LetStmt        { $$ = $1 }
+    | ExprStmt       { $$ = $1 }
+    | ReturnStmt     { $$ = $1 }
+    | IfStmt         { $$ = $1 }
+    | WaitStmt       { $$ = $1 }
+    | DelayStmt      { $$ = $1 }
+    | GoStmt         { $$ = $1 }
+    | LogStmt        { $$ = $1 }
+    | BlockStmt      { $$ = $1 }
+    // | DistributeStmt { $$ = $1 }
+    | SwitchStmt     { $$ = $1 } // Add SwitchStmt
+    // | AssignStmt     { $$ = $1 } // Disallow assignments as statements? Let's require `let` for now.
+    | error SEMICOLON { yyerrok(yylex) /* Recover on semicolon */ } // Basic error recovery
+    ;
+
+
+BlockStmt:
+    LBRACE StmtList RBRACE {
+      $$ = &BlockStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Statements: $2 }
+    }
+    ;
+
+LetStmt:
+    LET IDENTIFIER ASSIGN Expression SEMICOLON { // LET($1) ... SEMICOLON($5)
+         $$ = &LetStmt{
+             NodeInfo: newNodeInfo($1.(Node).Pos(), $5.(Node).End()),
+             Variable: $2.(*IdentifierExpr),
+             Value: $4,
+          }
+    }
+    ;
+
+AssignStmt: // Rule for simple assignment `a = b;` if needed as statement
+    IDENTIFIER ASSIGN Expression SEMICOLON {
+         // This might conflict with InstanceDecl's Assignment rule if not careful.
+         // Let's prefer LetStmt for variables. This rule might be removed.
+         // For now, map it to AssignmentStmt AST node used by InstanceDecl.
+         $$ = &AssignmentStmt{
+             NodeInfo: newNodeInfo($1.(Node).Pos(), $4.Pos()),
+             Var: $1.(*IdentifierExpr),
+             Value: $3,
+         }
+    }
+    ;
+
+ExprStmt:
+    Expression SEMICOLON { $$ = &ExprStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $2.(Node).End()), Expression: $1 } }
+    ;
+
+ReturnStmt:
+    RETURN Expression SEMICOLON { $$ = &ReturnStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), ReturnValue: $2 } }
+    | RETURN SEMICOLON          { $$ = &ReturnStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $2.(Node).End()), ReturnValue: nil } }
+    ;
+
+DelayStmt:
+    DELAY Expression SEMICOLON { $$ = &DelayStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Duration: $2 } }
+    ;
+
+WaitStmt:
+    WAIT IDENTIFIER CommaIdentifierListOpt SEMICOLON { // WAIT($1) IDENTIFIER($2) ... SEMICOLON($4)
+         idents := []*IdentifierExpr{$2.(*IdentifierExpr)}
+         endNode := $4.(Node) // SEMICOLON
+         if $3 != nil { // $3 is CommaIdentifierListOpt -> []*IdentifierExpr
+             identList := $3
+             if len(identList) > 0 {
+                 idents = append(idents, identList...)
+                 endNode = identList[len(identList)-1] // End at the last identifier in the list
+             }
+         }
+         $$ = &WaitStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), endNode.End()), Idents: idents }
+    }
+    ;
+
+CommaIdentifierListOpt:
+      /* empty */                  { $$ = nil }
+    | COMMA IDENTIFIER CommaIdentifierListOpt {
+         $$ = []*IdentifierExpr{$2.(*IdentifierExpr)}
+         if $3 != nil { $$ = append($$, $3...) }
+    }
+    ;
+
+LogStmt:
+    LOG Expression CommaExpressionListOpt SEMICOLON { // LOG($1) Expression($2) ... SEMICOLON($4)
+         args := []Expr{$2}
+         endNode := $4.(Node) // SEMICOLON
+         if $3 != nil { // $3 is CommaExpressionListOpt -> []Expr
+             exprList := $3
+             if len(exprList) > 0 {
+                 args = append(args, exprList...)
+                 endNode = exprList[len(exprList)-1].(Node) // End at last expression
+             }
+         }
+         $$ = &LogStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), endNode.End()), Args: args }
+    }
+    ;
+
+CommaExpressionListOpt:
+      /* empty */                   { $$ = nil }
+    | COMMA Expression CommaExpressionListOpt {
+        $$ = []Expr{$2}
+        if $3 != nil { $$ = append($$, $3...) }
+    }
+    ;
+
+
+// --- Control Flow ---
+IfStmt:
+    IF Expression BlockStmt IfStmtElseOpt { // IF($1) ...
+        endNode := Stmt($3)
+        if $4 != nil { endNode = $4 } // End of Else block/IfStmt
+        $$ = &IfStmt{
+          NodeInfo: newNodeInfo($1.(Node).Pos(), endNode.End()),
+          Condition: $2,
+          Then: $3,
+          Else: $4,
+        }
+    }
+    ;
+
+IfStmtElseOpt:
+      /* empty */         { $$ = nil }
+    | ELSE IfStmt         { $$ = $2 } // Chain if-else
+    | ELSE BlockStmt      { $$ = $2 } // else { ... }
+    ;
+
+DistributeStmt:
+    DISTRIBUTE TotalClauseOpt LBRACE DistributeCaseListOpt DefaultCaseOpt RBRACE { // DISTRIBUTE($1) ... RBRACE($6)
+        $$ = &DistributeStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $6.(Node).End()), Total: $2, Cases: $4, DefaultCase: $5 }
+    }
+    ;
+
+TotalClauseOpt: /* empty */ { $$=nil } | LPAREN Expression RPAREN { $$=$2 };
+
+DistributeCaseListOpt:
+      /* empty */                  { $$ = []*DistributeCase{} }
+    | DistributeCaseListOpt DistributeCase { $$ = append($1, $2) }
+    ;
+
+DistributeCase:
+    Expression ARROW BlockStmt { $$ = &DistributeCase{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.End()), Probability: $1, Body: $3 } }
+    ;
+
+DefaultCaseOpt:
+      /* empty */   { $$ = nil }
+    | DefaultCase { $$ = $1 }
+    ;
+
+DefaultCase:
+    DEFAULT ARROW BlockStmt { $$ = &DefaultCase{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.End()), Body: $3 } }
+    ;
+
+GoStmt:
+    GO IDENTIFIER ASSIGN BlockStmt { // GO($1) ... BlockStmt($4)
+        $$ = &GoStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $4.End()), VarName: $2.(*IdentifierExpr), Stmt: $4 }
+    }
+    | GO BlockStmt { // GO($1) BlockStmt($2)
+        $$ = &GoStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $2.End()), VarName: nil, Stmt: $2 }
+    }
+    | GO IDENTIFIER ASSIGN Expression SEMICOLON {
+         yyerror(yylex, fmt.Sprintf("`go` currently only supports assigning blocks, not expressions, at pos %d", $1.(Node).Pos()))
+         $$ = &GoStmt{}
+    }
+    ;
+
+SwitchStmt: // Placeholder
+    SWITCH Expression LBRACE /* TODO */ RBRACE { yyerror(yylex, "Switch statement not defined"); $$ = nil };
+
+// --- Expressions ---
+Expression: OrExpr { $$ = $1 } ;
+OrExpr: AndBoolExpr { $$=$1 } | OrExpr OR AndBoolExpr { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} };
+AndBoolExpr: CmpExpr { $$=$1 } | AndBoolExpr AND CmpExpr { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} };
+
+CmpExpr: AddExpr { $$=$1 }
+    | AddExpr EQ AddExpr  { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
+    | AddExpr NEQ AddExpr { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
+    | AddExpr LT AddExpr  { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
+    | AddExpr LTE AddExpr { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
+    | AddExpr GT AddExpr  { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
+    | AddExpr GTE AddExpr { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
+    ;
+
+AddExpr:
+      MulExpr { $$=$1 }
+    | AddExpr PLUS MulExpr { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
+    | AddExpr MINUS MulExpr { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
+    ;
+
+MulExpr: UnaryExpr { $$=$1 }
+    | MulExpr MUL UnaryExpr { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
+    | MulExpr DIV UnaryExpr { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
+    | MulExpr MOD UnaryExpr { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
+    ;
+
+UnaryExpr: PrimaryExpr { $$=$1 }
+    // For Unary, $1 is operator token, $2 is operand Expr node
+    | NOT UnaryExpr   { $$ = &UnaryExpr{ NodeInfo: newNodeInfo($1.Pos(), $2.(Node).End()), Operator: $1.String(), Right: $2} }
+    | MINUS UnaryExpr %prec UMINUS { $$ = &UnaryExpr{ NodeInfo: newNodeInfo($1.Pos(), $2.(Node).End()), Operator: $1.String(), Right: $2} }
+    ;
+
+PrimaryExpr:
+      LiteralExpr             { $$ = $1 }
+    | IDENTIFIER { $$ = $1 } // Already has position info
+    | MemberAccessExpr        { $$ = $1 }
+    | CallExpr                { $$ = $1 }
+    | DistributeExpr          { $$ = $1 } // Expression version
+    // | SwitchExpr              { $$ = $1 } // Expression version
+    | LPAREN Expression RPAREN { $$ = $2 } // Grouping
+    ;
+
+LiteralExpr:
+      INT_LITERAL             { $$ = $1 }
+    | FLOAT_LITERAL           { $$ = $1 }
+    | STRING_LITERAL          { $$ = $1 }
+    | BOOL_LITERAL            { $$ = $1 }
+    | DURATION_LITERAL        { $$ = $1 }
+    ;
+
+MemberAccessExpr:
+    PrimaryExpr DOT IDENTIFIER { // PrimaryExpr($1) DOT($2) IDENTIFIER($3)
+         $$ = &MemberAccessExpr{
+             NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()),
+             Receiver: $1,
+             Member: $3.(*IdentifierExpr),
+         }
+    }
+    ;
+
+CallExpr:
+    PrimaryExpr LPAREN RPAREN { // PrimaryExpr($1) LPAREN($2) RPAREN($3)
+         $$ = &CallExpr{
+             NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()),
+             Function: $1,
+             Args: []Expr{},
+         }
+    }
+    | PrimaryExpr LPAREN ArgList RPAREN { // PrimaryExpr($1) LPAREN($2) ArgList($3) RPAREN($4)
+         endNode := $4.(Node) // End at RPAREN
+         if len($3) > 0 {
+             exprList := $3
+             endNode = exprList[len(exprList)-1].(Node) // End at last arg
+         }
+         $$ = &CallExpr{
+             NodeInfo: newNodeInfo($1.(Node).Pos(), endNode.End()),
+             Function: $1,
+             Args: $3,
+         }
+    }
+    ;
+
+ArgListOpt:
+      /* empty */ { $$ = []Expr{} }
+    | ArgList   { $$ = $1 }
+    ;
+
+ArgList:
+    Expression                { $$ = []Expr{$1} }
+    | ArgList COMMA Expression { $$ = append($1, $3) }
+    ;
+
+
+DistributeExpr:
+    DISTRIBUTE TotalClauseOpt LBRACE DistributeExprCaseListOpt DefaultCaseExprOpt RBRACE {
+         $$ = &DistributeExpr{TotalProb: $2, Cases: $4, Default: $5} /* TODO: Pos */
+    }
+    ;
+
+DistributeExprCaseListOpt:
+      /* empty */                         { $$ = []*DistributeExprCase{} }
+    | DistributeExprCaseListOpt DistributeExprCase { $$ = append($1, $2) } // Ensure type assertion
+    ;
+
+DistributeExprCase: // Returns Expr for use in DistributeExpr struct
+    Expression ARROW Expression {
+        // Need to wrap in DistributeExprCase AST node
+        $$ = &DistributeExprCase{ Probability: $1, Body: $3 } /* TODO: Pos */
+    }
+    ;
+
+DefaultCaseExprOpt: // Returns Expr
+      /* empty */       { $$ = nil }
+    | DefaultCaseExpr { $$ = $1 }
+    ;
+
+DefaultCaseExpr: // Returns Expr
+    DEFAULT ARROW Expression { $$ = $3 } // Return the body expression directly
+    ;
+
+
+SwitchExpr: // Placeholder - Needs AST definition
+    SWITCH Expression LBRACE /* Case definitions */ RBRACE {
+         yyerror(yylex, "Switch expression not fully defined yet")
+         $$ = nil
+    }
+    ;
+
+CaseExpr: // Placeholder - Needs AST definition
+     CASE Expression COLON Expression {
+         yyerror(yylex, "Case expression not fully defined yet")
+         $$ = nil
+     }
+     ;
+%% // --- Go Code Section ---
+
+// Interface for the lexer required by the parser.
+type SdlLexer interface {
+    Lex(lval *yySymType) int
+    Error(s string)
+    // Add methods to get current position info
+    Pos() int // Start position of the last token read
+    End() int // End position of the last token read
+    Text() string // Text of the last token read
+}
+
+// Parse takes an input stream and attempts to parse it according to the SDL grammar. 22222
+// It returns the root of the Abstract Syntax Tree (*File) if successful, or an error.
+func Parse(input io.Reader) (*File, error) {
+	// Reset global result before parsing
+	lexer := NewLexer(input)
+	// Set yyDebug = 3 for verbose parser debugging output
+	// yyDebug = 3
+	resultCode := yyParse(lexer) // Call the LALR parser generated by goyacc
+
+	if resultCode != 0 {
+		// A syntax error occurred. The lexer's Error method should have been called
+		// and stored the error message.
+		if lexer.lastError != nil {
+			return nil, lexer.lastError
+		}
+		// Fallback error message if lexer didn't store one
+		return nil, fmt.Errorf("syntax error near byte %d", lexer.Pos())
+	}
+
+	// Parsing succeeded
+	if lexer.parseResult == nil {
+		// This indicates a potential issue with the grammar's top rule action
+		return nil, fmt.Errorf("parsing finished successfully, but no AST result was produced")
+	}
+
+	return lexer.parseResult, nil
+}
+
+// The parser expects the lexer variable to be named yyLex.
+// We can satisfy this by creating a global or passing it via yyParseWithLexer.
+// Using yyParseWithLexer is cleaner.
+
+// Example main function (optional, for standalone testing)
+/*
+func main() {
+	if len(os.Args) < 2 {
+		fmt.Println("Usage: parser <input_file>")
+		return
+	}
+	filePath := os.Args[1]
+	file, err := os.Open(filePath)
+	if err != nil {
+		fmt.Printf("Error opening file %s: %v\n", filePath, err)
+		return
+	}
+	defer file.Close()
+
+	astRoot, err := Parse(file)
+	if err != nil {
+		fmt.Printf("Parsing failed: %v\n", err)
+		// Error message should ideally include line/column from lexer
+	} else {
+		fmt.Println("Parsing successful!")
+		// Print the AST (implement String() methods for AST nodes for nice output)
+		fmt.Println(astRoot.String())
+	}
+}
+*/

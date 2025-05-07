@@ -2,7 +2,6 @@ package decl
 
 import (
 	"fmt"
-	"strconv"
 	"testing"
 
 	"github.com/panyam/leetcoach/sdl/core"
@@ -10,29 +9,33 @@ import (
 )
 
 // ParseLiteralValue converts a LiteralExpr value string to a basic Go type.
-func ParseLiteralValue(lit *LiteralExpr) (any, error) {
-	switch lit.Kind {
-	case "STRING":
+/*
+func ParseLiteralValue(lit string) (any, error) {
+	switch lit.Value.Type.Tag {
+	case ValueTypeString:
 		return lit.Value, nil
-	case "INT":
+	case ValueTypeInt:
 		return strconv.ParseInt(lit.Value, 10, 64)
-	case "FLOAT":
+	case ValueTypeFloat:
 		return strconv.ParseFloat(lit.Value, 64)
-	case "BOOL":
+	case ValueTypeBool:
 		return strconv.ParseBool(lit.Value)
 	// TODO: case "DURATION":
 	default:
 		return nil, fmt.Errorf("cannot parse literal kind %s yet", lit.Kind)
 	}
 }
+*/
 
 // Helper to create simple AST nodes for testing
-func newIntLit(val string) *LiteralExpr {
-	return &LiteralExpr{Kind: "INT", Value: val}
+func newIntLit(val int) *LiteralExpr {
+	v, _ := NewRuntimeValue(IntType, val)
+	return &LiteralExpr{Value: v}
 }
 
-func newBoolLit(val string) *LiteralExpr {
-	return &LiteralExpr{Kind: "BOOL", Value: val}
+func newBoolLit(val bool) *LiteralExpr {
+	v, _ := NewRuntimeValue(BoolType, val)
+	return &LiteralExpr{Value: v}
 }
 
 func newIdent(name string) *IdentifierExpr {
@@ -40,7 +43,8 @@ func newIdent(name string) *IdentifierExpr {
 }
 
 func newStringLit(val string) *LiteralExpr {
-	return &LiteralExpr{Kind: "STRING", Value: val}
+	v, _ := NewRuntimeValue(StrType, val)
+	return &LiteralExpr{Value: v}
 }
 
 func newLetStmt(varName string, value Expr) *LetStmt {

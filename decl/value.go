@@ -474,3 +474,24 @@ func (r *RuntimeValue) GetNil() error {
 	}
 	return nil // Success, it's nil type and holds nil
 }
+
+// Helpers to create specific simple values
+func StringValue(val string) (out *RuntimeValue) {
+	out, _ = NewRuntimeValue(StrType, val)
+	return
+}
+
+func IntValue(val int64) (out *RuntimeValue) {
+	out, _ = NewRuntimeValue(IntType, val)
+	return
+}
+
+func FloatValue(val float64) (out *RuntimeValue) {
+	out, _ = NewRuntimeValue(FloatType, val)
+	return
+}
+
+func BoolValue(val bool) (out *RuntimeValue) {
+	out, _ = NewRuntimeValue(BoolType, val)
+	return
+}
