@@ -9,9 +9,13 @@ import (
 
 // Function to be called by yyParse on error.
 // Needs access to the lexer passed via %parse-param.
-func yyerror(lexer yyLexer, msg string) {
-    sdlLexer := lexer.(SdlLexer)
-    lexer.Error(fmt.Sprintf("%s near '%s'", msg, sdlLexer.Text()))
+func yyerror(yyl yyLexer, msg string) {
+    lexer := yyl.(LexerInterface)
+	  line, col := lexer.Position()
+    // log.Println("YYERROR MSG = ", msg)
+	  errMsg := fmt.Sprintf("Error at Line %d, Col %d, Near ('%s'): %s",
+						  line, col, /* tokenString(lexer.LastToken()),*/ lexer.Text(), msg) // Added tokenString helper call
+    lexer.Error(errMsg)
 }
 
 func yyerrok(lexer yyLexer) {
@@ -55,6 +59,8 @@ func yyerrok(lexer yyLexer) {
     optionsDecl    *OptionsDecl
     enumDecl       *EnumDecl
     importDecl     *ImportDecl
+    waitStmt *WaitStmt
+    delayStmt *DelayStmt
 
     // Slices for lists
     nodeList           []Node
@@ -103,9 +109,11 @@ func yyerrok(lexer yyLexer) {
 %type <enumDecl>     EnumDecl
 %type <identList>    IdentifierList CommaIdentifierListOpt
 %type <importDecl>   ImportDecl
-%type <stmt>         Stmt IfStmtElseOpt LetStmt ExprStmt ReturnStmt DelayStmt WaitStmt LogStmt SwitchStmt
-%type <assignStmt>    AssignStmt
-%type <blockStmt>         BlockStmt
+%type <stmt>         Stmt IfStmtElseOpt LetStmt ExprStmt ReturnStmt LogStmt SwitchStmt
+%type <waitStmt>     WaitStmt
+%type <delayStmt>    DelayStmt 
+%type <assignStmt>   AssignStmt
+%type <blockStmt>    BlockStmt
 %type <stmtList>     StmtList StmtOptList
 %type <expr>         Expression OrExpr AndBoolExpr CmpExpr AddExpr MulExpr UnaryExpr PrimaryExpr LiteralExpr CallExpr MemberAccessExpr SwitchExpr CaseExpr DefaultCaseExpr // Added SwitchExpr, CaseExpr, DefaultCaseExpr
 %type <exprList>     ArgList ArgListOpt CommaExpressionListOpt
@@ -237,16 +245,16 @@ ComponentBodyItem:
     ;
 
 ParamDecl:
-    PARAM IDENTIFIER COLON TypeName SEMICOLON { // PARAM($1) ... SEMICOLON($5)
+    PARAM IDENTIFIER COLON TypeName { // PARAM($1) ... 
         $$ = &ParamDecl{
-            NodeInfo: newNodeInfo($1.(Node).Pos(), $5.(Node).End()),
+            NodeInfo: newNodeInfo($1.(Node).Pos(), $4.End()),
             Name: $2.(*IdentifierExpr),
             Type: $4, // TypeName also needs to have NodeInfo
         }
     }
-    | PARAM IDENTIFIER COLON TypeName ASSIGN Expression SEMICOLON { // PARAM($1) ... SEMICOLON($7)
+    | PARAM IDENTIFIER COLON TypeName ASSIGN Expression { // PARAM($1) ... 
         $$ = &ParamDecl{
-            NodeInfo: newNodeInfo($1.(Node).Pos(), $7.(Node).End()),
+            NodeInfo: newNodeInfo($1.(Node).Pos(), $6.End()),
             Name: $2.(*IdentifierExpr),
             Type: $4,
             DefaultValue: $6,
@@ -280,9 +288,9 @@ PrimitiveType: // These are keywords. Assume lexer sets NodeInfo if $N.posInfo i
 // OutcomeType: "Outcome" LBRACKET PrimitiveType RBRACKET { ... }
 
 UsesDecl:
-    USES IDENTIFIER COLON IDENTIFIER SEMICOLON { // USES($1) ... SEMICOLON($5)
+    USES IDENTIFIER COLON IDENTIFIER { // USES($1) ... 
         $$ = &UsesDecl{
-            NodeInfo: newNodeInfo($1.(Node).Pos(), $5.(Node).End()),
+            NodeInfo: newNodeInfo($1.(Node).Pos(), $4.End()),
             NameNode: $2.(*IdentifierExpr),
             ComponentNode: $4.(*IdentifierExpr),
          }
@@ -346,17 +354,17 @@ SystemBodyItemOptList:
     ;
 
 InstanceDecl:
-    IDENTIFIER COLON IDENTIFIER SEMICOLON { // IDENTIFIER($1) ... SEMICOLON($4)
+    IDENTIFIER COLON IDENTIFIER { // IDENTIFIER($1) ... 
          $$ = &InstanceDecl{
-             NodeInfo: newNodeInfo($1.(Node).Pos(), $4.(Node).End()),
+             NodeInfo: newNodeInfo($1.(Node).Pos(), $3.End()),
              NameNode: $1.(*IdentifierExpr),
              ComponentType: $3.(*IdentifierExpr),
              Overrides: []*AssignmentStmt{},
          }
     }
-    | IDENTIFIER COLON IDENTIFIER ASSIGN LBRACE AssignListOpt RBRACE SEMICOLON { // IDENTIFIER($1) ... SEMICOLON($8)
+    | IDENTIFIER COLON IDENTIFIER ASSIGN LBRACE AssignListOpt RBRACE { // IDENTIFIER($1) ... 
         $$ = &InstanceDecl{
-             NodeInfo: newNodeInfo($1.(Node).Pos(), $8.(Node).End()),
+             NodeInfo: newNodeInfo($1.(Node).Pos(), $7.End()),
              NameNode: $1.(*IdentifierExpr),
              ComponentType: $3.(*IdentifierExpr),
              Overrides: $6,
@@ -375,9 +383,9 @@ AssignList:
     ;
 
 Assignment:
-    IDENTIFIER ASSIGN Expression SEMICOLON { // IDENTIFIER($1) ... SEMICOLON($4)
+    IDENTIFIER ASSIGN Expression { // IDENTIFIER($1) ... 
         $$ = &AssignmentStmt{
-            NodeInfo: newNodeInfo($1.(Node).Pos(), $4.(Node).End()),
+            NodeInfo: newNodeInfo($1.(Node).Pos(), $3.End()),
             Var: $1.(*IdentifierExpr),
             Value: $3,
          }
@@ -385,17 +393,19 @@ Assignment:
     ;
 
 AnalyzeDecl:
-    ANALYZE IDENTIFIER ASSIGN Expression ExpectBlockOpt SEMICOLON { // ANALYZE($1) ... SEMICOLON($6)
+    ANALYZE IDENTIFIER ASSIGN Expression ExpectBlockOpt { // ANALYZE($1) ... 
         callExpr, ok := $4.(*CallExpr)
         if !ok {
             yyerror(yylex, fmt.Sprintf("analyze target must be a method call, found %T at pos %d", $4, $4.(Node).Pos()))
         }
-        endPosNode := $6.(Node) // SEMICOLON
-        if $5 != nil { // If ExpectBlockOpt is not empty
-             endPosNode = $5
+        endPos := 0
+        if $5 != nil {
+          endPos = $5.End()
+        } else {
+          endPos = $4.End()
         }
         $$ = &AnalyzeDecl{
-             NodeInfo: newNodeInfo($1.(Node).Pos(), endPosNode.End()),
+             NodeInfo: newNodeInfo($1.(Node).Pos(), endPos),
              Name: $2.(*IdentifierExpr),
              Target: callExpr,
              Expectations: $5,
@@ -424,12 +434,12 @@ ExpectStmtOptList:
     ;
 
 ExpectStmt:
-    Expression EQ Expression SEMICOLON  { $$ = &ExpectStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $4.(Node).End()), Target: $1.(*MemberAccessExpr), Operator: "==", Threshold: $3} }
-    | Expression NEQ Expression SEMICOLON { $$ = &ExpectStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $4.(Node).End()), Target: $1.(*MemberAccessExpr), Operator: "!=", Threshold: $3} }
-    | Expression LT Expression SEMICOLON  { $$ = &ExpectStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $4.(Node).End()), Target: $1.(*MemberAccessExpr), Operator: "<", Threshold: $3} }
-    | Expression LTE Expression SEMICOLON { $$ = &ExpectStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $4.(Node).End()), Target: $1.(*MemberAccessExpr), Operator: "<=", Threshold: $3} }
-    | Expression GT Expression SEMICOLON  { $$ = &ExpectStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $4.(Node).End()), Target: $1.(*MemberAccessExpr), Operator: ">", Threshold: $3} }
-    | Expression GTE Expression SEMICOLON { $$ = &ExpectStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $4.(Node).End()), Target: $1.(*MemberAccessExpr), Operator: ">=", Threshold: $3} }
+    Expression EQ Expression { $$ = &ExpectStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.End()), Target: $1.(*MemberAccessExpr), Operator: "==", Threshold: $3} }
+    | Expression NEQ Expression { $$ = &ExpectStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.End()), Target: $1.(*MemberAccessExpr), Operator: "!=", Threshold: $3} }
+    | Expression LT Expression { $$ = &ExpectStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.End()), Target: $1.(*MemberAccessExpr), Operator: "<", Threshold: $3} }
+    | Expression LTE Expression { $$ = &ExpectStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.End()), Target: $1.(*MemberAccessExpr), Operator: "<=", Threshold: $3} }
+    | Expression GT Expression { $$ = &ExpectStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.End()), Target: $1.(*MemberAccessExpr), Operator: ">", Threshold: $3} }
+    | Expression GTE Expression { $$ = &ExpectStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.End()), Target: $1.(*MemberAccessExpr), Operator: ">=", Threshold: $3} }
     ;
 
 // --- Statements ---
@@ -460,9 +470,9 @@ BlockStmt:
     ;
 
 LetStmt:
-    LET IDENTIFIER ASSIGN Expression SEMICOLON { // LET($1) ... SEMICOLON($5)
+    LET IDENTIFIER ASSIGN Expression { // LET($1) ... 
          $$ = &LetStmt{
-             NodeInfo: newNodeInfo($1.(Node).Pos(), $5.(Node).End()),
+             NodeInfo: newNodeInfo($1.(Node).Pos(), $4.End()),
              Variable: $2.(*IdentifierExpr),
              Value: $4,
           }
@@ -470,12 +480,12 @@ LetStmt:
     ;
 
 AssignStmt: // Rule for simple assignment `a = b;` if needed as statement
-    IDENTIFIER ASSIGN Expression SEMICOLON {
+    IDENTIFIER ASSIGN Expression {
          // This might conflict with InstanceDecl's Assignment rule if not careful.
          // Let's prefer LetStmt for variables. This rule might be removed.
          // For now, map it to AssignmentStmt AST node used by InstanceDecl.
          $$ = &AssignmentStmt{
-             NodeInfo: newNodeInfo($1.(Node).Pos(), $4.Pos()),
+             NodeInfo: newNodeInfo($1.(Node).Pos(), $3.Pos()),
              Var: $1.(*IdentifierExpr),
              Value: $3,
          }
@@ -487,26 +497,19 @@ ExprStmt:
     ;
 
 ReturnStmt:
-    RETURN Expression SEMICOLON { $$ = &ReturnStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), ReturnValue: $2 } }
+    RETURN Expression { $$ = &ReturnStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $2.(Node).End()), ReturnValue: $2 } }
     | RETURN SEMICOLON          { $$ = &ReturnStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $2.(Node).End()), ReturnValue: nil } }
     ;
 
 DelayStmt:
-    DELAY Expression SEMICOLON { $$ = &DelayStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Duration: $2 } }
+    DELAY Expression { $$ = &DelayStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $2.End()), Duration: $2 } }
     ;
 
 WaitStmt:
-    WAIT IDENTIFIER CommaIdentifierListOpt SEMICOLON { // WAIT($1) IDENTIFIER($2) ... SEMICOLON($4)
-         idents := []*IdentifierExpr{$2.(*IdentifierExpr)}
-         endNode := $4.(Node) // SEMICOLON
-         if $3 != nil { // $3 is CommaIdentifierListOpt -> []*IdentifierExpr
-             identList := $3
-             if len(identList) > 0 {
-                 idents = append(idents, identList...)
-                 endNode = identList[len(identList)-1] // End at the last identifier in the list
-             }
-         }
-         $$ = &WaitStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), endNode.End()), Idents: idents }
+    WAIT IdentifierList { // WAIT($1) IDENTIFIER($2) ... 
+         idents := $2
+         endNode := idents[len(idents)-1] // End at the last identifier in the list
+         $$ = &WaitStmt{ NodeInfo: newNodeInfo($1.Pos(), endNode.End()), Idents: idents }
     }
     ;
 
@@ -519,17 +522,19 @@ CommaIdentifierListOpt:
     ;
 
 LogStmt:
-    LOG Expression CommaExpressionListOpt SEMICOLON { // LOG($1) Expression($2) ... SEMICOLON($4)
-         args := []Expr{$2}
-         endNode := $4.(Node) // SEMICOLON
-         if $3 != nil { // $3 is CommaExpressionListOpt -> []Expr
-             exprList := $3
-             if len(exprList) > 0 {
-                 args = append(args, exprList...)
-                 endNode = exprList[len(exprList)-1].(Node) // End at last expression
-             }
-         }
-         $$ = &LogStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), endNode.End()), Args: args }
+    LOG Expression CommaExpressionListOpt { // LOG($1) Expression($2) ... 
+        args := []Expr{$2}
+        endPos := 0
+        exprList := $3
+        if exprList != nil {
+          endPos = exprList[len(exprList) - 1].End()
+        } else {
+          endPos = $2.End()
+        }
+        if len(exprList) > 0 { // $3 is CommaExpressionListOpt -> []Expr
+            args = append(args, $3...)
+        }
+         $$ = &LogStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), endPos), Args: args }
     }
     ;
 
@@ -647,7 +652,10 @@ PrimaryExpr:
     ;
 
 LiteralExpr:
-      INT_LITERAL             { $$ = $1 }
+      INT_LITERAL             { 
+          // yylex.(*Lexer).lval)
+          $$ = $1 
+      }
     | FLOAT_LITERAL           { $$ = $1 }
     | STRING_LITERAL          { $$ = $1 }
     | BOOL_LITERAL            { $$ = $1 }
@@ -741,18 +749,19 @@ CaseExpr: // Placeholder - Needs AST definition
 %% // --- Go Code Section ---
 
 // Interface for the lexer required by the parser.
-type SdlLexer interface {
+type LexerInterface interface {
     Lex(lval *yySymType) int
     Error(s string)
-    // Add methods to get current position info
-    Pos() int // Start position of the last token read
-    End() int // End position of the last token read
-    Text() string // Text of the last token read
+    Pos() int       // Start byte position of the last token read
+    End() int       // End byte position of the last token read
+    Text() string   // Text of the last token read
+    Position() (line, col int) // Added: Get line/col of last token start
+    LastToken() int // Added: Get the token code that was just lexed
 }
 
 // Parse takes an input stream and attempts to parse it according to the SDL grammar. 22222
 // It returns the root of the Abstract Syntax Tree (*File) if successful, or an error.
-func Parse(input io.Reader) (*File, error) {
+func Parse(input io.Reader) (*Lexer, *File, error) {
 	// Reset global result before parsing
 	lexer := NewLexer(input)
 	// Set yyDebug = 3 for verbose parser debugging output
@@ -763,19 +772,19 @@ func Parse(input io.Reader) (*File, error) {
 		// A syntax error occurred. The lexer's Error method should have been called
 		// and stored the error message.
 		if lexer.lastError != nil {
-			return nil, lexer.lastError
+			return lexer, nil, lexer.lastError
 		}
 		// Fallback error message if lexer didn't store one
-		return nil, fmt.Errorf("syntax error near byte %d", lexer.Pos())
+		return lexer, nil, fmt.Errorf("syntax error near byte %d", lexer.Pos())
 	}
 
 	// Parsing succeeded
 	if lexer.parseResult == nil {
 		// This indicates a potential issue with the grammar's top rule action
-		return nil, fmt.Errorf("parsing finished successfully, but no AST result was produced")
+		return lexer, nil, fmt.Errorf("parsing finished successfully, but no AST result was produced")
 	}
 
-	return lexer.parseResult, nil
+	return lexer, lexer.parseResult, nil
 }
 
 // The parser expects the lexer variable to be named yyLex.

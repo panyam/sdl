@@ -1,6 +1,8 @@
 
-test:
-	clear && go test
+all: build test
 
-all:
-	goyacc -o parser.go -p "yy" parser.go.y
+test:
+	go test
+
+build:
+	goyacc -o parser.go -p "yy" grammar.y

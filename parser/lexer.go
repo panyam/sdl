@@ -27,6 +27,7 @@ type Lexer struct {
 	tokenStartLine int    // Line number (1-based) where the current token started
 	tokenStartCol  int    // Column number (rune-based, 1-based) where the current token started
 	tokenText      string // Raw text of the current token
+	lastTokenCode  int    // <-- Added: Store the last token returned by Lex
 
 	// Current line and column (rune-based) in the input
 	line int
@@ -47,8 +48,13 @@ func NewLexer(r io.Reader) *Lexer {
 
 // Error is called by the parser (or lexer itself) on an error.
 func (l *Lexer) Error(s string) {
-	l.lastError = fmt.Errorf("Error at Line %d, Col %d near '%s': %s", l.tokenStartLine, l.tokenStartCol, l.tokenText, s)
-	fmt.Println(l.lastError) // For immediate feedback during development
+	l.lastError = fmt.Errorf("%s", s)
+	fmt.Println(s) // For immediate feedback during development
+}
+
+// Position returns the line/col where the last token started
+func (l *Lexer) Position() (line, col int) {
+	return l.tokenStartLine, l.tokenStartCol
 }
 
 // Pos returns the start byte offset of the most recently lexed token.
@@ -59,6 +65,11 @@ func (l *Lexer) Pos() int {
 // End returns the end byte offset (current position) after lexing the most recent token.
 func (l *Lexer) End() int {
 	return l.pos
+}
+
+// LastToken returns the code of the last token successfully lexed
+func (l *Lexer) LastToken() int {
+	return l.lastTokenCode
 }
 
 // Text returns the raw text of the most recently lexed token.
@@ -351,7 +362,10 @@ func (l *Lexer) scanString() (tok int, content string) {
 
 // Lex is the main lexing function called by the parser.
 func (l *Lexer) Lex(lval *yySymType) int {
+	var tokenCode int
 	if l.skipWhitespace() {
+		tokenCode = eof
+		l.lastTokenCode = tokenCode
 		return eof
 	}
 
@@ -362,6 +376,8 @@ func (l *Lexer) Lex(lval *yySymType) int {
 
 	r := l.peek()
 	if r == eof {
+		tokenCode = eof
+		l.lastTokenCode = tokenCode
 		return eof
 	}
 
@@ -371,6 +387,8 @@ func (l *Lexer) Lex(lval *yySymType) int {
 		tok, text := l.scanIdentifierOrKeyword()
 		l.tokenText = text
 		endPos := l.pos
+		tokenCode = tok
+
 		switch tok {
 		case IDENTIFIER:
 			lval.expr = newIdentifierExpr(text, startPosSnapshot, endPos)
@@ -391,6 +409,8 @@ func (l *Lexer) Lex(lval *yySymType) int {
 		numTok, numText := l.scanNumber()
 		numEndPos := l.pos
 		l.tokenText = numText
+		tokenCode = numTok // Assume number token initially
+
 		unit := ""
 		if l.hasPrefix("ms", false) {
 			unit = "ms"
@@ -418,6 +438,7 @@ func (l *Lexer) Lex(lval *yySymType) int {
 				dur := parseDuration(numText, unit)
 				durVal, _ := NewRuntimeValue(FloatType, dur)
 				lval.expr = newLiteralExpr(durVal, startPosSnapshot, l.pos)
+				tokenCode = DURATION_LITERAL
 				return DURATION_LITERAL
 			}
 		}
@@ -428,6 +449,7 @@ func (l *Lexer) Lex(lval *yySymType) int {
 				l.Error(fmt.Sprintf("Invalid integer: %s", numText))
 			}
 			lval.expr = newLiteralExpr(IntValue(intVal), startPosSnapshot, numEndPos)
+			tokenCode = INT_LITERAL
 			return INT_LITERAL
 		} else if numTok == FLOAT_LITERAL {
 			floatVal, err := strconv.ParseFloat(numText, 64)
@@ -435,6 +457,7 @@ func (l *Lexer) Lex(lval *yySymType) int {
 				l.Error(fmt.Sprintf("Invalid float: %s", numText))
 			}
 			lval.expr = newLiteralExpr(FloatValue(floatVal), startPosSnapshot, numEndPos)
+			tokenCode = FLOAT_LITERAL
 			return FLOAT_LITERAL
 		} else {
 			l.Error(fmt.Sprintf("Invalid numeric literal: %s", numText))
@@ -476,10 +499,12 @@ func (l *Lexer) Lex(lval *yySymType) int {
 			l.tokenText = ":="
 			currentEndPos = l.pos
 			lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
-			return LET_ASSIGN
+			tokenCode = LET_ASSIGN
+			return tokenCode
 		}
 		lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
-		return COLON
+		tokenCode = COLON
+		return tokenCode
 	case '=':
 		l.read()
 		if l.peek() == '=' {
@@ -488,17 +513,20 @@ func (l *Lexer) Lex(lval *yySymType) int {
 			currentEndPos = l.pos
 			lval.sval = "=="
 			lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
-			return EQ
+			tokenCode = EQ
+			return tokenCode
 		}
 		if l.peek() == '>' {
 			l.read()
 			l.tokenText = "=>"
 			currentEndPos = l.pos
 			lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
-			return ARROW
+			tokenCode = ARROW
+			return tokenCode
 		}
 		lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
-		return ASSIGN
+		tokenCode = ASSIGN
+		return tokenCode
 	case '|':
 		if l.peekN(1) == '|' {
 			l.read()
@@ -507,7 +535,8 @@ func (l *Lexer) Lex(lval *yySymType) int {
 			currentEndPos = l.pos
 			lval.sval = "||"
 			lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
-			return OR
+			tokenCode = OR
+			return tokenCode
 		}
 	case '&':
 		if l.peekN(1) == '&' {
@@ -517,7 +546,8 @@ func (l *Lexer) Lex(lval *yySymType) int {
 			currentEndPos = l.pos
 			lval.sval = "&&"
 			lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
-			return AND
+			tokenCode = AND
+			return tokenCode
 		}
 	case '!':
 		l.read()
@@ -527,11 +557,13 @@ func (l *Lexer) Lex(lval *yySymType) int {
 			currentEndPos = l.pos
 			lval.sval = "!="
 			lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
-			return NEQ
+			tokenCode = NEQ
+			return tokenCode
 		}
 		lval.sval = "!"
 		lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
-		return NOT
+		tokenCode = NOT
+		return tokenCode
 	case '<':
 		l.read()
 		if l.peek() == '=' {
@@ -540,11 +572,13 @@ func (l *Lexer) Lex(lval *yySymType) int {
 			currentEndPos = l.pos
 			lval.sval = "<="
 			lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
-			return LTE
+			tokenCode = LTE
+			return tokenCode
 		}
 		lval.sval = "<"
 		lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
-		return LT
+		tokenCode = LT
+		return tokenCode
 	case '>':
 		l.read()
 		if l.peek() == '=' {
@@ -553,11 +587,13 @@ func (l *Lexer) Lex(lval *yySymType) int {
 			currentEndPos = l.pos
 			lval.sval = ">="
 			lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
-			return GTE
+			tokenCode = GTE
+			return tokenCode
 		}
 		lval.sval = ">"
 		lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
-		return GT
+		tokenCode = GT
+		return tokenCode
 	case '+':
 		l.read()
 		if l.peek() == '=' {
@@ -565,11 +601,13 @@ func (l *Lexer) Lex(lval *yySymType) int {
 			l.tokenText = "+="
 			currentEndPos = l.pos
 			lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
-			return PLUS_ASSIGN
+			tokenCode = PLUS_ASSIGN
+			return tokenCode
 		}
 		lval.sval = "+"
 		lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
-		return PLUS
+		tokenCode = PLUS
+		return tokenCode
 	case '-':
 		l.read()
 		if l.peek() == '=' {
@@ -577,11 +615,13 @@ func (l *Lexer) Lex(lval *yySymType) int {
 			l.tokenText = "-="
 			currentEndPos = l.pos
 			lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
-			return MINUS_ASSIGN
+			tokenCode = MINUS_ASSIGN
+			return tokenCode
 		}
 		lval.sval = "-"
 		lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
-		return MINUS
+		tokenCode = MINUS
+		return tokenCode
 	case '*':
 		l.read()
 		if l.peek() == '=' {
@@ -589,11 +629,13 @@ func (l *Lexer) Lex(lval *yySymType) int {
 			l.tokenText = "*="
 			currentEndPos = l.pos
 			lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
-			return MUL_ASSIGN
+			tokenCode = MUL_ASSIGN
+			return tokenCode
 		}
 		lval.sval = "*"
 		lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
-		return MUL
+		tokenCode = MUL
+		return tokenCode
 	case '/': // Comments handled in skipWhitespace
 		l.read()
 		if l.peek() == '=' {
@@ -601,18 +643,23 @@ func (l *Lexer) Lex(lval *yySymType) int {
 			l.tokenText = "/="
 			currentEndPos = l.pos
 			lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
-			return DIV_ASSIGN
+			tokenCode = DIV_ASSIGN
+			return tokenCode
 		}
 		lval.sval = "/"
 		lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
-		return DIV
+		tokenCode = DIV
+		return tokenCode
 	case '%':
 		l.read()
 		lval.sval = "%"
 		lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
-		return MOD
+		tokenCode = MOD
+		return tokenCode
+	default:
 	}
 
+	tokenCode = eof // Return EOF on error to stop parser? Or a special error token? EOF is safer.
 	l.Error(fmt.Sprintf("unexpected character '%c'", r))
 	return eof // Indicate an error that should halt parsing
 }

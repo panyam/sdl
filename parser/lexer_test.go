@@ -236,7 +236,7 @@ func TestLexer_ComplexDurations(t *testing.T) {
 	expected := []expectedToken{
 		{INT_LITERAL, "10", 0, 2, 1, 1, IntValue(10), ""},
 		{DURATION_LITERAL, "10.5ms", 3, 9, 1, 4, FloatValue(parseDuration("10.5", "ms")), ""},
-		{INT_LITERAL, "1", 10, 11, 1, 11, IntValue(10), ""},
+		{INT_LITERAL, "1", 10, 11, 1, 11, IntValue(1), ""},
 		{IDENTIFIER, "s2", 11, 13, 1, 12, nil, "s2"}, // The '2' from "1s2" should be unread and form a new token
 	}
 	lexer := runLexerTest(t, input, expected, true)

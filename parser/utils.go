@@ -38,10 +38,11 @@ func newNodeInfo(startPos, endPos int) NodeInfo {
 // Helper function to create a LiteralExpr node
 func newLiteralExpr(value Value, startPos, endPos int) *LiteralExpr {
 	// For string literals, the lexer should provide the raw unquoted value.
-	return &LiteralExpr{
+	out := &LiteralExpr{
 		NodeInfo: newNodeInfo(startPos, endPos),
 		Value:    value,
 	}
+	return out
 }
 
 // Helper function to create an IdentifierExpr node

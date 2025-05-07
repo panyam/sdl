@@ -210,22 +210,32 @@ func (r *RuntimeValue) Set(v any) error {
 
 	case ValueTypeInt:
 		// Allow various Go int types? For simplicity, require 'int' for now.
-		val, ok := v.(int)
-		if !ok {
-			// Could add checks for int32, int64 etc. if needed
-			return fmt.Errorf("type mismatch: expected int, got %T", v)
+		if intVal, ok := v.(int64); ok {
+			r.Value = intVal
+		} else if intVal, ok := v.(int); ok {
+			r.Value = int64(intVal)
+		} else if intVal, ok := v.(int32); ok {
+			r.Value = int64(intVal)
+		} else if intVal, ok := v.(int16); ok {
+			r.Value = int64(intVal)
+		} else if intVal, ok := v.(int8); ok {
+			r.Value = int64(intVal)
+		} else {
+			// Could check for uint types if needed
+			return fmt.Errorf("type mismatch: expected int64, got %T", v)
 		}
-		r.Value = val
 		return nil
 
 	case ValueTypeFloat:
 		// Use float64 as the standard Go float type
-		val, ok := v.(float64)
-		if !ok {
-			// Could check for float32 if needed
+		if val, ok := v.(float64); ok {
+			r.Value = val
+		} else if floatVal, ok := v.(float32); ok {
+			r.Value = float64(floatVal)
+		} else {
+			// Could check for other float types if needed
 			return fmt.Errorf("type mismatch: expected float64, got %T", v)
 		}
-		r.Value = val
 		return nil
 
 	case ValueTypeString:
