@@ -2,6 +2,7 @@
 package parser
 
 import (
+    // "reflect"
     "log"
     "fmt"
     "io"
@@ -84,15 +85,15 @@ func yyerrok(lexer yyLexer) {
 %token<node> SYSTEM USES METHOD INSTANCE ANALYZE EXPECT LET IF ELSE DISTRIBUTE DEFAULT RETURN DELAY WAIT GO LOG SWITCH CASE TRUE FALSE FOR 
 
 // Marking these as nodes so can be returned as Node for their locations
-%token<node> LBRACE RBRACE OPTIONS ENUM COMPONENT PARAM SEMICOLON
+%token<node> LBRACE RBRACE OPTIONS ENUM COMPONENT PARAM IMPORT 
 
 // Operators and Punctuation (assume lexer returns token type, use $N.(Node).Pos() if $N is a literal/ident)
-%token<node> ASSIGN COLON LPAREN RPAREN COMMA DOT ARROW PLUS_ASSIGN MINUS_ASSIGN MUL_ASSIGN DIV_ASSIGN LET_ASSIGN
+%token<node> ASSIGN COLON LPAREN RPAREN COMMA DOT ARROW PLUS_ASSIGN MINUS_ASSIGN MUL_ASSIGN DIV_ASSIGN LET_ASSIGN  SEMICOLON 
 
 %token<tokenNode>  INT FLOAT BOOL STRING DURATION NOT MINUS 
 
 // Literals (lexer provides *LiteralExpr or *IdentifierExpr in lval.expr, with NodeInfo)
-%token <expr> IDENTIFIER INT_LITERAL FLOAT_LITERAL STRING_LITERAL BOOL_LITERAL DURATION_LITERAL IMPORT 
+%token <expr> IDENTIFIER INT_LITERAL FLOAT_LITERAL STRING_LITERAL BOOL_LITERAL DURATION_LITERAL
 
 // Operators (Tokens for precedence rules, lexer provides string in lval.sval)
 %token <tokenNode> OR AND EQ NEQ LT LTE GT GTE PLUS MUL DIV MOD
@@ -217,7 +218,7 @@ IdentifierList:
 ImportDecl:
     IMPORT STRING_LITERAL { // IMPORT($1) STRING_LITERAL($2)
         $$ = &ImportDecl{
-            NodeInfo: newNodeInfo($1.(Node).Pos(), $2.(Node).End()),
+            NodeInfo: newNodeInfo($1.(Node).Pos(), $2.End()),
             Path: $2.(*LiteralExpr), // $2 is a LiteralExpr from lexer
         }
     }

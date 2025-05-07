@@ -49,6 +49,14 @@ func assertPosition(t *testing.T, node Node, expectedStart, expectedEnd int) {
 	assert.Equal(t, expectedEnd, node.End(), "Node %T [%d:%d] end position mismatch", node, node.Pos(), node.End())
 }
 
+// Helper to assert identifier name
+func assertIdentifier(t *testing.T, node Node, expectedName string) {
+	t.Helper()
+	ident, ok := node.(*IdentifierExpr)
+	require.True(t, ok, "Expected *IdentifierExpr, got %T", node)
+	assert.Equal(t, expectedName, ident.Name)
+}
+
 // Helper to get the first declaration if it exists
 func firstDecl(t *testing.T, f *File) Node {
 	require.NotEmpty(t, f.Declarations)
@@ -125,6 +133,59 @@ func TestParseLiteralsInExprStmt(t *testing.T) {
 	}
 }
 */
+
+// Test parsing top-level declarations
+func TestParseDeclarations(t *testing.T) {
+	t.Run("Import", func(t *testing.T) {
+		input := `import "my/custom/path"`
+		ast := parseString(t, input)
+		decl := firstDecl(t, ast).(*ImportDecl)
+		assertPosition(t, decl, 0, 23)
+		assertLiteralWithValue(t, decl.Path, StrType, "my/custom/path")
+	})
+
+	t.Run("Enum", func(t *testing.T) {
+		input := `enum Status { OK, FAIL, UNKNOWN }`
+		ast := parseString(t, input)
+		decl := firstDecl(t, ast).(*EnumDecl)
+		assertPosition(t, decl, 0, 32)
+		assertIdentifier(t, decl.NameNode, "Status")
+		require.Len(t, decl.ValuesNode, 3)
+		assertIdentifier(t, decl.ValuesNode[0], "OK")
+		assertIdentifier(t, decl.ValuesNode[1], "FAIL")
+		assertIdentifier(t, decl.ValuesNode[2], "UNKNOWN")
+		assertPosition(t, decl.ValuesNode[0], 14, 16)
+		assertPosition(t, decl.ValuesNode[2], 24, 31)
+	})
+
+	t.Run("Options", func(t *testing.T) {
+		input := `options { let x = 1 }` // Options body uses StmtList
+		ast := parseString(t, input)
+		decl := firstDecl(t, ast).(*OptionsDecl)
+		assertPosition(t, decl, 0, 20)
+		require.NotNil(t, decl.Body)
+		assertPosition(t, decl.Body, 8, 20) // Position of the block itself
+		require.Len(t, decl.Body.Statements, 1)
+		_, ok := decl.Body.Statements[0].(*LetStmt)
+		assert.True(t, ok)
+	})
+
+	t.Run("MultipleDeclarations", func(t *testing.T) {
+		input := `
+            import "a"
+            component C {}
+            system S {}
+        `
+		ast := parseString(t, input)
+		require.Len(t, ast.Declarations, 3)
+		_, ok1 := ast.Declarations[0].(*ImportDecl)
+		_, ok2 := ast.Declarations[1].(*ComponentDecl)
+		_, ok3 := ast.Declarations[2].(*SystemDecl)
+		assert.True(t, ok1, "Decl 0 type")
+		assert.True(t, ok2, "Decl 1 type")
+		assert.True(t, ok3, "Decl 2 type")
+	})
+}
 
 func TestParseComponentParams(t *testing.T) {
 	input := `component C {
