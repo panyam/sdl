@@ -23,6 +23,7 @@ type Value = decl.Value
 type Node = decl.Node
 type File = decl.FileDecl
 
+type ValueType = decl.ValueType
 type UsesDecl = decl.UsesDecl
 type MethodDecl = decl.MethodDecl
 type InstanceDecl = decl.InstanceDecl

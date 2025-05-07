@@ -151,8 +151,8 @@ File:
         ni.StartPos = $1[0].Pos()
         ni.StopPos = $1[len($1)-1].End()
       }
-      // lexer.(*Lexer).parseResult = &File{NodeInfo: ni, declarations: $1}
-      $$ = &File{NodeInfo: ni, Declarations: $1}
+      yylex.(*Lexer).parseResult = &File{NodeInfo: ni, Declarations: $1}
+      // $$ = &File{NodeInfo: ni, Declarations: $1}
     } 
     ;
 

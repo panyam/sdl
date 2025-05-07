@@ -849,8 +849,8 @@ yydefault:
 				ni.StartPos = yyDollar[1].nodeList[0].Pos()
 				ni.StopPos = yyDollar[1].nodeList[len(yyDollar[1].nodeList)-1].End()
 			}
-			// lexer.(*Lexer).parseResult = &File{NodeInfo: ni, declarations: $1}
-			yyVAL.file = &File{NodeInfo: ni, Declarations: yyDollar[1].nodeList}
+			yylex.(*Lexer).parseResult = &File{NodeInfo: ni, Declarations: yyDollar[1].nodeList}
+			// $$ = &File{NodeInfo: ni, Declarations: $1}
 		}
 	case 2:
 		yyDollar = yyS[yypt-0 : yypt+1]
