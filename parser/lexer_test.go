@@ -23,9 +23,9 @@ type expectedToken struct {
 }
 
 // Helper function to run lexer tests
-func runLexerTest(t *testing.T, input string, expectedTokens []expectedToken) {
+func runLexerTest(t *testing.T, input string, expectedTokens []expectedToken, ignoreErrors bool) (lexer *Lexer) {
 	t.Helper()
-	lexer := NewLexer(strings.NewReader(input))
+	lexer = NewLexer(strings.NewReader(input))
 	lval := &yySymType{} // The semantic value structure
 
 	for i, exp := range expectedTokens {
@@ -71,7 +71,10 @@ func runLexerTest(t *testing.T, input string, expectedTokens []expectedToken) {
 	// After all expected tokens, Lex should return EOF
 	finalTok := lexer.Lex(lval)
 	assert.Equal(t, eof, finalTok, "Expected EOF after all tokens, got %s ('%s')", tokenString(finalTok), lexer.Text())
-	assert.NoError(t, lexer.lastError, "Expected no lexer error at the end")
+	if !ignoreErrors {
+		assert.NoError(t, lexer.lastError, "Expected no lexer error at the end")
+	}
+	return
 }
 
 func TestLexer_KeywordsAndIdentifiers(t *testing.T) {
@@ -84,7 +87,7 @@ func TestLexer_KeywordsAndIdentifiers(t *testing.T) {
 		{LET, "let", 30, 33, 1, 31, nil, ""},
 		{IDENTIFIER, "foo_bar123", 34, 44, 1, 35, nil, "foo_bar123"},
 	}
-	runLexerTest(t, input, expected)
+	runLexerTest(t, input, expected, false)
 }
 
 func TestLexer_Literals(t *testing.T) {
@@ -101,7 +104,7 @@ func TestLexer_Literals(t *testing.T) {
 		{DURATION_LITERAL, "20ns", 49, 53, 1, 50, FloatValue(parseDuration("20", "ns")), ""},
 		{DURATION_LITERAL, "1.5s", 54, 58, 1, 55, FloatValue(parseDuration("1.5", "s")), ""},
 	}
-	runLexerTest(t, input, expected)
+	runLexerTest(t, input, expected, false)
 }
 
 func TestLexer_OperatorsAndPunctuation(t *testing.T) {
@@ -133,7 +136,7 @@ func TestLexer_OperatorsAndPunctuation(t *testing.T) {
 		{AND, "&&", 53, 55, 1, 54, nil, ""},
 		{NOT, "!", 56, 57, 1, 57, nil, ""},
 	}
-	runLexerTest(t, input, expected)
+	runLexerTest(t, input, expected, false)
 }
 
 func TestLexer_Comments(t *testing.T) {
@@ -159,15 +162,16 @@ component Abc // another comment
 		{SEMICOLON, ";", 98, 99, 6, 14, nil, ""},
 		{RBRACE, "}", 125, 126, 8, 1, nil, ""}, // Line 6, Col 1
 	}
-	runLexerTest(t, input, expected)
+	runLexerTest(t, input, expected, false)
 }
 
 func TestLexer_StringEscapes(t *testing.T) {
-	input := `"hello\nworld\"\\\t"`
+	input := `"hello world" "hello\nworld\"\\\t"`
 	expected := []expectedToken{
-		{STRING_LITERAL, `"hello\nworld\"\\\t"`, 0, 20, 1, 1, StringValue("hello\nworld\"\\\t"), ""},
+		{STRING_LITERAL, `"hello world"`, 0, 13, 1, 1, StringValue("hello world"), ""},
+		{STRING_LITERAL, "\"hello\nworld\"\\\t\"", 14, 34, 1, 15, StringValue("hello\nworld\"\\\t"), ""},
 	}
-	runLexerTest(t, input, expected)
+	runLexerTest(t, input, expected, false)
 }
 
 func TestLexer_LineColumnTracking(t *testing.T) {
@@ -224,7 +228,7 @@ func TestLexer_InvalidEscape(t *testing.T) {
 	assert.Contains(t, lexer.lastError.Error(), "invalid escape sequence \\x")
 	// The lexer currently writes the 'x' to the buffer.
 	litExpr := lval.expr.(*LiteralExpr)
-	assert.Equal(t, "helloxworld", litExpr.Value)
+	assert.Equal(t, StringValue("helloxworld"), litExpr.Value)
 }
 
 func TestLexer_ComplexDurations(t *testing.T) {
@@ -232,17 +236,19 @@ func TestLexer_ComplexDurations(t *testing.T) {
 	expected := []expectedToken{
 		{INT_LITERAL, "10", 0, 2, 1, 1, IntValue(10), ""},
 		{DURATION_LITERAL, "10.5ms", 3, 9, 1, 4, FloatValue(parseDuration("10.5", "ms")), ""},
-		{DURATION_LITERAL, "1s", 10, 12, 1, 11, FloatValue(parseDuration("1", "s")), ""},
-		{IDENTIFIER, "s2", 12, 14, 1, 13, nil, "s2"}, // The '2' from "1s2" should be unread and form a new token
+		{INT_LITERAL, "1", 10, 11, 1, 11, IntValue(10), ""},
+		{IDENTIFIER, "s2", 11, 13, 1, 12, nil, "s2"}, // The '2' from "1s2" should be unread and form a new token
 	}
-	runLexerTest(t, input, expected)
+	lexer := runLexerTest(t, input, expected, true)
+	require.Error(t, lexer.lastError)
+	assert.Contains(t, lexer.lastError.Error(), "invalid character after unit or invalid unit")
 
 	input2 := `1msident` // 1ms then ident
 	expected2 := []expectedToken{
-		{DURATION_LITERAL, "1ms", 0, 3, 1, 1, FloatValue(parseDuration("1", "ms")), ""},
-		{IDENTIFIER, "ident", 3, 8, 1, 4, nil, "ident"},
+		{INT_LITERAL, "1", 0, 1, 1, 1, IntValue(1), ""},
+		{IDENTIFIER, "msident", 1, 8, 1, 2, nil, "msident"},
 	}
-	runLexerTest(t, input2, expected2)
+	runLexerTest(t, input2, expected2, true)
 }
 
 // tokenString helper needs yyToknames from generated sdl.go
@@ -335,17 +341,17 @@ func TestLexer_DivisionAndMultilineComments(t *testing.T) {
 		{IDENTIFIER, "a", 0, 1, 1, 1, nil, "a"},
 		{DIV, "/", 2, 3, 1, 3, nil, ""}, // Note: DIV token itself doesn't have lval.sval in current setup
 		{IDENTIFIER, "b", 4, 5, 1, 5, nil, "b"},
-		{IDENTIFIER, "c", 28, 29, 1, 29, nil, "c"}, // After "/* comment * test */ "
-		{IDENTIFIER, "d", 35, 36, 1, 36, nil, "d"}, // After "/**/ "
+		{IDENTIFIER, "c", 27, 28, 1, 28, nil, "c"}, // After "/* comment * test */ "
+		{IDENTIFIER, "d", 34, 35, 1, 35, nil, "d"}, // After "/**/ "
 	}
-	runLexerTest(t, input, expected)
+	runLexerTest(t, input, expected, false)
 
 	input2 := "/*unterminated"
 	lexer2 := NewLexer(strings.NewReader(input2))
 	lval2 := &yySymType{}
 	lexer2.Lex(lval2) // Should call Error and return eof
 	require.Error(t, lexer2.lastError)
-	assert.Contains(t, lexer2.lastError.Error(), "unterminated multi-line comment")
+	assert.Contains(t, lexer2.lastError.Error(), "unterminated block comment")
 
 	input3 := "a * /* b */ c" // Ensure '*' operator isn't confused by comment
 	expected3 := []expectedToken{
@@ -353,5 +359,5 @@ func TestLexer_DivisionAndMultilineComments(t *testing.T) {
 		{MUL, "*", 2, 3, 1, 3, nil, ""},
 		{IDENTIFIER, "c", 12, 13, 1, 13, nil, "c"},
 	}
-	runLexerTest(t, input3, expected3)
+	runLexerTest(t, input3, expected3, false)
 }

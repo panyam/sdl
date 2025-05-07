@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"log"
 	"strconv"
 	"unicode"
 )
@@ -187,9 +186,23 @@ func (l *Lexer) skipWhitespace() bool {
 			l.readTill('\n', true)
 		} else if l.hasPrefix("/*", true) {
 			// Skip whitespace and comments
-			l.readTill('*', true)
-			if l.peek() == '/' {
-				l.read()
+			expectSlash := false
+			for {
+				nextCh, _ := l.read()
+				if nextCh == eof {
+					l.Error("unterminated block comment")
+					return true
+				}
+				if expectSlash {
+					if nextCh == '/' {
+						break // done with comment
+					} else {
+						expectSlash = false // not a slash, so reset
+					}
+				}
+				if nextCh == '*' {
+					expectSlash = true
+				}
 			}
 		} else {
 			// Not whitespace or comment, so stop
@@ -379,53 +392,60 @@ func (l *Lexer) Lex(lval *yySymType) int {
 		numEndPos := l.pos
 		l.tokenText = numText
 		unit := ""
-		if l.hasPrefix("ms", true) {
+		if l.hasPrefix("ms", false) {
 			unit = "ms"
-		} else if l.hasPrefix("s", true) {
+		} else if l.hasPrefix("s", false) {
 			unit = "s"
-		} else if l.hasPrefix("us", true) {
+		} else if l.hasPrefix("us", false) {
 			unit = "us"
-		} else if l.hasPrefix("ns", true) {
+		} else if l.hasPrefix("ns", false) {
 			unit = "ns"
 		} else {
 			// Invalid unit, so throw an error or just ignore?
 			// For now, just leave unit as empty string
 			// l.Error(fmt.Sprintf("Invalid duration unit: %s", unit))
 		}
-		if _, ok := map[string]bool{"ns": true, "us": true, "ms": true, "s": true}[unit]; ok {
-			l.tokenText += unit
-			dur := parseDuration(numText, unit)
-			durVal, _ := NewRuntimeValue(FloatType, dur)
-			lval.expr = newLiteralExpr(durVal, startPosSnapshot, l.pos)
-			return DURATION_LITERAL
-		} else { // Not a valid duration unit, unread the unit chars if any
-			// Not sure what to do here
-			log.Println("numTok = ", numTok)
-			log.Println("numText = ", numText)
-			if numTok == INT_LITERAL {
-				intVal, err := strconv.ParseInt(numText, 10, 64)
-				if err != nil {
-					l.Error(fmt.Sprintf("Invalid integer: %s", numText))
-				}
-				lval.expr = newLiteralExpr(IntValue(intVal), startPosSnapshot, numEndPos)
-				return INT_LITERAL
-			} else if numTok == FLOAT_LITERAL {
-				floatVal, err := strconv.ParseFloat(numText, 64)
-				if err != nil {
-					l.Error(fmt.Sprintf("Invalid float: %s", numText))
-				}
-				lval.expr = newLiteralExpr(FloatValue(floatVal), startPosSnapshot, numEndPos)
-				return FLOAT_LITERAL
+		if nconsume, ok := map[string]int{"ns": 2, "us": 2, "ms": 2, "s": 1}[unit]; ok && nconsume > 0 {
+			// Make sure we have a non digit and non ident char *after* the unit
+			peekedAfter := l.peekN(nconsume)
+			if peekedAfter == '_' || unicode.IsDigit(peekedAfter) || unicode.IsLetter(peekedAfter) {
+				l.Error("invalid character after unit or invalid unit")
 			} else {
-				l.Error(fmt.Sprintf("Invalid numeric literal: %s", numText))
+				for range nconsume {
+					l.read()
+				}
+				l.tokenText += unit
+				dur := parseDuration(numText, unit)
+				durVal, _ := NewRuntimeValue(FloatType, dur)
+				lval.expr = newLiteralExpr(durVal, startPosSnapshot, l.pos)
+				return DURATION_LITERAL
 			}
-			return numTok
 		}
+		// Still consume the numeric part
+		if numTok == INT_LITERAL {
+			intVal, err := strconv.ParseInt(numText, 10, 64)
+			if err != nil {
+				l.Error(fmt.Sprintf("Invalid integer: %s", numText))
+			}
+			lval.expr = newLiteralExpr(IntValue(intVal), startPosSnapshot, numEndPos)
+			return INT_LITERAL
+		} else if numTok == FLOAT_LITERAL {
+			floatVal, err := strconv.ParseFloat(numText, 64)
+			if err != nil {
+				l.Error(fmt.Sprintf("Invalid float: %s", numText))
+			}
+			lval.expr = newLiteralExpr(FloatValue(floatVal), startPosSnapshot, numEndPos)
+			return FLOAT_LITERAL
+		} else {
+			l.Error(fmt.Sprintf("Invalid numeric literal: %s", numText))
+		}
+		return numTok
 	}
 
 	if r == '"' {
 		_, content := l.scanString()
 		l.tokenText = `"` + content + `"`
+		// l.tokenText = content
 		strVal, _ := NewRuntimeValue(StrType, content)
 		lval.expr = newLiteralExpr(strVal, startPosSnapshot, l.pos)
 		return STRING_LITERAL
