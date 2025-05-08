@@ -118,8 +118,8 @@ func yyerrok(lexer yyLexer) {
 %type <stmtList>     StmtList StmtOptList
 %type <expr>         Expression OrExpr AndBoolExpr CmpExpr AddExpr MulExpr UnaryExpr PrimaryExpr LiteralExpr CallExpr MemberAccessExpr SwitchExpr CaseExpr DefaultCaseExpr // Added SwitchExpr, CaseExpr, DefaultCaseExpr
 %type <exprList>     ArgList ArgListOpt CommaExpressionListOpt
-%type <paramDecl>    ParamDecl
-%type <paramList>    ParamList ParamListOpt 
+%type <paramDecl>    ParamDecl MethodParamDecl
+%type <paramList>    MethodParamList MethodParamListOpt
 %type <typeName>     TypeName PrimitiveType // FUTURE USE: OutcomeType QualifiedIdentifier
 %type <usesDecl>     UsesDecl
 %type <methodDef>    MethodDecl
@@ -236,7 +236,9 @@ ComponentDecl:
 
 ComponentBodyItemList: ComponentBodyItemOptList { $$ = $1 } ;
 
-ComponentBodyItemOptList: /* empty */ { $$=[]ComponentDeclBodyItem{} } | ComponentBodyItemOptList ComponentBodyItem { $$=append($1, $2.(ComponentDeclBodyItem)) };
+ComponentBodyItemOptList:
+                        /* empty */ { $$=[]ComponentDeclBodyItem{} }
+                      | ComponentBodyItemOptList ComponentBodyItem { $$=append($1, $2.(ComponentDeclBodyItem)) };
 
 ComponentBodyItem:
       ParamDecl   { $$ = $1 }
@@ -301,7 +303,7 @@ UsesDecl:
     ;
 
 MethodDecl:
-    METHOD IDENTIFIER LPAREN ParamListOpt RPAREN BlockStmt { // METHOD($1) ... BlockStmt($6)
+    METHOD IDENTIFIER LPAREN MethodParamListOpt RPAREN BlockStmt { // METHOD($1) ... BlockStmt($6)
         $$ = &MethodDecl{
             NodeInfo: newNodeInfo($1.(Node).Pos(), $6.End()),
             NameNode: $2.(*IdentifierExpr),
@@ -309,10 +311,10 @@ MethodDecl:
             Body: $6,
         }
     }
-    | METHOD IDENTIFIER LPAREN ParamListOpt RPAREN COLON TypeName BlockStmt { // METHOD($1) ... BlockStmt($8)
+    | METHOD IDENTIFIER LPAREN MethodParamListOpt RPAREN COLON TypeName BlockStmt { // METHOD($1) ... BlockStmt($8)
         $$ = &MethodDecl{
             NodeInfo: newNodeInfo($1.(Node).Pos(), $8.End()),
-            Name: $2.(*IdentifierExpr).Name,
+            NameNode: $2.(*IdentifierExpr),
             Parameters: $4,
             ReturnType: $7,
             Body: $8,
@@ -320,14 +322,32 @@ MethodDecl:
     }
     ;
 
-ParamListOpt:
+MethodParamListOpt:
     /* empty */ { $$ = []*ParamDecl{} }
-    | ParamList { $$ = $1 }
+    | MethodParamList { $$ = $1 }
     ;
 
-ParamList:
-    ParamDecl               { $$ = []*ParamDecl{$1} }
-    | ParamList COMMA ParamDecl { $$ = append($1, $3) }
+MethodParamList:
+    MethodParamDecl               { $$ = []*ParamDecl{$1} }
+    | MethodParamList COMMA MethodParamDecl { $$ = append($1, $3) }
+    ;
+
+MethodParamDecl:    // thse dont need "param" unlike param decls in components
+    IDENTIFIER COLON TypeName { // PARAM($1) ... 
+        $$ = &ParamDecl{
+            NodeInfo: newNodeInfo($1.(Node).Pos(), $3.End()),
+            Name: $1.(*IdentifierExpr),
+            Type: $3, // TypeName also needs to have NodeInfo
+        }
+    }
+    | IDENTIFIER COLON TypeName ASSIGN Expression { // PARAM($1) ... 
+        $$ = &ParamDecl{
+            NodeInfo: newNodeInfo($1.(Node).Pos(), $5.End()),
+            Name: $1.(*IdentifierExpr),
+            Type: $3,
+            DefaultValue: $5,
+        }
+    }
     ;
 
 // --- System ---
@@ -344,7 +364,7 @@ SystemDecl:
 // SystemBodyItemOptList don't create top-level NodeInfo nodes
 SystemBodyItem:
               InstanceDecl { $$=$1 }
-            | AnalyzeDecl { $$=$1 }
+            // | AnalyzeDecl { $$=$1 }
             | OptionsDecl { $$=$1 }
             | LetStmt { $$=$1 }
             ;
@@ -417,7 +437,8 @@ AnalyzeDecl:
 ExpectBlockOpt: /* empty */   { $$ = nil } | ExpectBlock { $$ = $1 };
 
 ExpectBlock:
-    EXPECT LBRACE ExpectStmtList RBRACE { // EXPECT($1) ... RBRACE($4)
+    EXPECT LBRACE ExpectStmtOptList RBRACE { // EXPECT($1) ... RBRACE($4)
+        log.Println("Did Expect Block Hit?")
         $$ = &ExpectationsDecl{
             NodeInfo: newNodeInfo($1.(Node).Pos(), $4.(Node).End()),
             Expects: $3,
@@ -425,13 +446,22 @@ ExpectBlock:
     }
     ;
 
-ExpectStmtList:
-      ExpectStmtOptList { $$ = $1 }
+ExpectStmtOptList:
+    /* empty */ { $$ = []*ExpectStmt{} }
+    | ExpectStmtList { $$ = $1 }
     ;
 
-ExpectStmtOptList:
-      /* empty */            { $$ = []*ExpectStmt{} }
-    | ExpectStmtOptList ExpectStmt { $$ = append($1, $2) }
+ExpectStmtList:
+    ExpectStmt {
+      log.Println("Did we come here????")
+      $$ = []*ExpectStmt{$1}
+    }
+    | ExpectStmtList SEMICOLON CmpExpr {
+      log.Println("Why not here Did we come here????")
+        cmpExp := $3.(*BinaryExpr);
+        expct := &ExpectStmt{ NodeInfo: newNodeInfo($1[0].Pos(), $3.End()), Target: cmpExp.Left.(*MemberAccessExpr), Operator: cmpExp.Operator, Threshold: cmpExp.Right}
+        $$ = append($1, expct)
+    }
     ;
 
 ExpectStmt:
@@ -612,8 +642,14 @@ SwitchStmt: // Placeholder
 
 // --- Expressions ---
 Expression: OrExpr { $$ = $1 } ;
-OrExpr: AndBoolExpr { $$=$1 } | OrExpr OR AndBoolExpr { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} };
-AndBoolExpr: CmpExpr { $$=$1 } | AndBoolExpr AND CmpExpr { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} };
+OrExpr: AndBoolExpr { $$=$1 }
+      | OrExpr OR AndBoolExpr { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
+      ;
+
+AndBoolExpr:
+       CmpExpr { $$=$1 }
+      | AndBoolExpr AND CmpExpr { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
+      ;
 
 CmpExpr: AddExpr { $$=$1 }
     | AddExpr EQ AddExpr  { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
