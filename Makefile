@@ -11,10 +11,13 @@ test:
 bench:
 	cd core && go test -bench=Benchmark -benchmem
 
+sdl:
+	go build -o ./dist/sdl ./cmd/sdl/main.go
+
 testall: test bench
 
 prompt4sdl:
-	source ~/personal/.shhelpers && files_for_llm `find . | grep -v "\.sh" | grep -v attic | grep -v mkprompt `
+	source ~/personal/.shhelpers && files_for_llm `find . | grep -v "\.sh" | grep -v attic | grep -v mkprompt | grep -v parser | grep -v vscode | grep -v dsl | grep -v _test.go `
 
 prompt4decl:
-	source ~/personal/.shhelpers && files_for_llm `find . | grep -v "\..parser" | grep -v "\.sh" | grep -v attic | grep -v mkprompt | grep -v dsl `
+	source ~/personal/.shhelpers && files_for_llm `find . | grep -v "\..parser" | grep -v "\.sh" | grep -v attic | grep -v mkprompt | grep -v dsl  | grep -v vscode  | grep -v _test.go `
