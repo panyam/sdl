@@ -41,34 +41,56 @@ type FileDecl struct {
 	systems    map[string]*SystemDecl
 }
 
-func (f *FileDecl) GetComponent(name string) (*ComponentDecl, error) {
+func (f *FileDecl) ensureResolved() error {
 	if !f.resolved {
 		if err := f.Resolve(); err != nil {
-			return nil, err
+			return err
 		}
 		f.resolved = true
 	}
-	return f.components[name], nil
+	return nil
 }
 
-func (f *FileDecl) GetEnum(name string) (*EnumDecl, error) {
-	if !f.resolved {
-		if err := f.Resolve(); err != nil {
-			return nil, err
-		}
-		f.resolved = true
-	}
-	return f.enums[name], nil
+func (f *FileDecl) GetComponents() (out map[string]*ComponentDecl, err error) {
+	err = f.ensureResolved()
+	out = f.components
+	return
 }
 
-func (f *FileDecl) GetSystem(name string) (*SystemDecl, error) {
-	if !f.resolved {
-		if err := f.Resolve(); err != nil {
-			return nil, err
-		}
-		f.resolved = true
+func (f *FileDecl) GetComponent(name string) (out *ComponentDecl, err error) {
+	components, err := f.GetComponents()
+	if err == nil {
+		out = components[name]
 	}
-	return f.systems[name], nil
+	return
+}
+
+func (f *FileDecl) GetEnums() (out map[string]*EnumDecl, err error) {
+	err = f.ensureResolved()
+	out = f.enums
+	return
+}
+
+func (f *FileDecl) GetEnum(name string) (out *EnumDecl, err error) {
+	enums, err := f.GetEnums()
+	if err == nil {
+		out = enums[name]
+	}
+	return
+}
+
+func (f *FileDecl) GetSystems() (out map[string]*SystemDecl, err error) {
+	err = f.ensureResolved()
+	out = f.systems
+	return
+}
+
+func (f *FileDecl) GetSystem(name string) (out *SystemDecl, err error) {
+	systems, err := f.GetSystems()
+	if err == nil {
+		out = systems[name]
+	}
+	return
 }
 
 // Called to resolve specific AST aspects out of the parse tree
@@ -229,32 +251,56 @@ type ComponentDecl struct {
 	methods  map[string]*MethodDecl // Processed methods map[method_name]*MethodDef
 }
 
-func (d *ComponentDecl) GetParam(name string) (*ParamDecl, error) {
+func (d *ComponentDecl) ensureResolved() error {
 	if !d.resolved {
 		if err := d.Resolve(); err != nil {
-			return nil, err
+			return err
 		}
 		d.resolved = true
 	}
-	return d.params[name], nil
+	return nil
 }
 
-func (d *ComponentDecl) GetMethod(name string) (*MethodDecl, error) {
-	if !d.resolved {
-		if err := d.Resolve(); err != nil {
-			return nil, err
-		}
-	}
-	return d.methods[name], nil
+func (d *ComponentDecl) GetParams() (out map[string]*ParamDecl, err error) {
+	err = d.ensureResolved()
+	out = d.params
+	return
 }
 
-func (d *ComponentDecl) GetDependency(name string) (*UsesDecl, error) {
-	if !d.resolved {
-		if err := d.Resolve(); err != nil {
-			return nil, err
-		}
+func (d *ComponentDecl) GetParam(name string) (out *ParamDecl, err error) {
+	params, err := d.GetParams()
+	if err == nil {
+		out = params[name]
 	}
-	return d.uses[name], nil
+	return
+}
+
+func (d *ComponentDecl) GetMethods() (out map[string]*MethodDecl, err error) {
+	err = d.ensureResolved()
+	out = d.methods
+	return
+}
+
+func (d *ComponentDecl) GetMethod(name string) (out *MethodDecl, err error) {
+	methods, err := d.GetMethods()
+	if err == nil {
+		out = methods[name]
+	}
+	return
+}
+
+func (d *ComponentDecl) GetDependencies() (out map[string]*UsesDecl, err error) {
+	err = d.ensureResolved()
+	out = d.uses
+	return
+}
+
+func (d *ComponentDecl) GetDependency(name string) (out *UsesDecl, err error) {
+	dependencies, err := d.GetDependencies()
+	if err == nil {
+		out = dependencies[name]
+	}
+	return
 }
 
 func (d *ComponentDecl) Resolve() error {

@@ -2,8 +2,9 @@ package commands
 
 import (
 	"fmt"
+	"os"
 
-	// "github.com/panyam/leetcoach/sdl/decl" // Will be needed later
+	"github.com/panyam/leetcoach/sdl/parser" // Assuming parser is in decl
 	"github.com/spf13/cobra"
 )
 
@@ -14,39 +15,53 @@ var validateCmd = &cobra.Command{
 correctness and basic semantic validity. It does not run any simulations.`,
 	Args: cobra.MinimumNArgs(1), // Require at least one file path
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Validate command called for files:")
+		fmt.Println("Validating DSL files:")
+		allValid := true
 		for _, filePath := range args {
 			fmt.Printf("- %s\n", filePath)
-			// Placeholder for actual validation logic:
-			// 1. Read file content
-			// 2. Parse using sdl/decl/parser (once available)
-			//    parser := decl.NewParser()
-			//    ast, err := parser.ParseFile(filePath)
-			//    if err != nil {
-			//        fmt.Fprintf(os.Stderr, "Error parsing %s: %v\n", filePath, err)
-			//        continue
-			//    }
-			// 3. Perform semantic checks (e.g., vm.LoadFile(ast) from sdl/decl)
-			//    vm := decl.NewVM() // Or get a shared VM instance
-			//    fileDecl, ok := ast.(*decl.FileDecl)
-			//    if !ok { // Should not happen if parser is correct
-			//        fmt.Fprintf(os.Stderr, "Error: %s did not parse to a valid FileDecl\n", filePath)
-			//        continue
-			//    }
-			//    err = vm.LoadFile(fileDecl)
-			//    if err != nil {
-			//        fmt.Fprintf(os.Stderr, "Error validating %s: %v\n", filePath, err)
-			//        continue
-			//    }
-			fmt.Printf("  (Placeholder) Successfully validated %s (syntax check pending parser)\n", filePath)
+
+			file, err := os.Open(filePath)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "  Error opening %s: %v\n", filePath, err)
+				allValid = false
+				continue
+			}
+			defer file.Close()
+
+			// Assume decl.Parse is available
+			_, astRoot, err := parser.Parse(file)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "  Error parsing %s: %v\n", filePath, err)
+				allValid = false
+				continue
+			}
+
+			// Perform semantic checks (e.g., vm.LoadFile(ast) or astRoot.Resolve())
+			// For now, let's assume FileDecl.Resolve() handles initial semantic checks.
+			if astRoot != nil { // Check if parsing returned a valid AST
+				err = astRoot.Resolve()
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "  Error validating semantics in %s: %v\n", filePath, err)
+					allValid = false
+					continue
+				}
+				fmt.Printf("  Successfully validated %s\n", filePath)
+			} else {
+				// This case should ideally be caught by parser error, but defensive check.
+				fmt.Fprintf(os.Stderr, "  Parsing %s did not return a valid AST.\n", filePath)
+				allValid = false
+			}
 		}
-		// Exit with an error code if any validation fails eventually
-		// os.Exit(1)
+
+		if !allValid {
+			fmt.Fprintln(os.Stderr, "One or more files failed validation.")
+			os.Exit(1)
+		}
+		fmt.Println("All specified files validated successfully.")
 	},
 }
 
 func init() {
 	AddCommand(validateCmd)
-	// Add local flags for validateCmd here if needed
 	// validateCmd.Flags().BoolP("strict", "s", false, "Enable stricter validation checks")
 }
