@@ -1,6 +1,6 @@
 
-watch:
-	while true; do clear	; make run ; fswatch  -o ../ | echo "Files changed, re-testing..."; sleep 1 ; done
+sdl:
+	go build -o ./dist/sdl ./cmd/sdl/main.go
 
 run:
 	go test
@@ -11,8 +11,8 @@ test:
 bench:
 	cd core && go test -bench=Benchmark -benchmem
 
-sdl:
-	go build -o ./dist/sdl ./cmd/sdl/main.go
+watch:
+	while true; do clear	; make run ; fswatch  -o ../ | echo "Files changed, re-testing..."; sleep 1 ; done
 
 testall: test bench
 

@@ -1,0 +1,16 @@
+
+enum HttpStatusCode {
+  Ok,
+  NotFound
+}
+
+component Database {
+}
+
+component AppServer {
+  method Redirect(): HttpStatusCode {
+  }
+}
+
+system Bitly {
+}

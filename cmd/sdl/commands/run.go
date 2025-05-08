@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/panyam/leetcoach/sdl/core" // Will be needed for VM and AST
 	"github.com/panyam/leetcoach/sdl/decl" // Will be needed for VM and AST
 	"github.com/spf13/cobra"
 )
@@ -69,7 +70,7 @@ Calculates performance metrics and checks expectations.`,
 			// metrics[core.P99LatencyMetric] = 0.120
 			mockResults[anName] = &decl.AnalysisResultWrapper{
 				Name:    anName,
-				Metrics: make(map[decl.MetricType]float64), // Placeholder
+				Metrics: make(map[core.MetricType]float64), // Placeholder
 				// ExpectationChecks: ...
 				AnalysisPerformed: true,
 				Messages:          []string{fmt.Sprintf("Mocked result for %s", anName)},

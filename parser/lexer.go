@@ -48,7 +48,11 @@ func NewLexer(r io.Reader) *Lexer {
 
 // Error is called by the parser (or lexer itself) on an error.
 func (l *Lexer) Error(s string) {
-	l.lastError = fmt.Errorf("%s", s)
+	if l.Text() != "" {
+		l.lastError = fmt.Errorf("Line: %d, Col: %d - Error near '%s' - %s", l.tokenStartLine, l.tokenStartCol, l.Text(), s)
+	} else {
+		l.lastError = fmt.Errorf("Line: %d, Col: %d - %s", l.tokenStartLine, l.tokenStartCol, s)
+	}
 	fmt.Println(s) // For immediate feedback during development
 }
 

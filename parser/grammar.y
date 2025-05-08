@@ -12,11 +12,10 @@ import (
 // Needs access to the lexer passed via %parse-param.
 func yyerror(yyl yyLexer, msg string) {
     lexer := yyl.(LexerInterface)
-	  line, col := lexer.Position()
+	  // line, col := lexer.Position()
     // log.Println("YYERROR MSG = ", msg)
-	  errMsg := fmt.Sprintf("Error at Line %d, Col %d, Near ('%s'): %s",
-						  line, col, /* tokenString(lexer.LastToken()),*/ lexer.Text(), msg) // Added tokenString helper call
-    lexer.Error(errMsg)
+	  // errMsg := fmt.Sprintf("Error at Line %d, Col %d, Near ('%s'): %s", line, col, /* tokenString(lexer.LastToken()),*/ lexer.Text(), msg) // Added tokenString helper call
+    lexer.Error(msg)
 }
 
 func yyerrok(lexer yyLexer) {
