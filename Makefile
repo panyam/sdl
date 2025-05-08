@@ -13,8 +13,8 @@ bench:
 
 testall: test bench
 
-prompt:
+prompt4sdl:
 	source ~/personal/.shhelpers && files_for_llm `find . | grep -v "\.sh" | grep -v attic | grep -v mkprompt `
 
-prompt2:
-	source ~/personal/.shhelpers && files_for_llm `find . | grep -v "\.sh" | grep -v attic | grep -v mkprompt | grep -v dsl `
+prompt4decl:
+	source ~/personal/.shhelpers && files_for_llm `find . | grep -v "\..parser" | grep -v "\.sh" | grep -v attic | grep -v mkprompt | grep -v dsl `
