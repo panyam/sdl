@@ -1,14 +1,81 @@
 
 enum HttpStatusCode {
   Ok,
-  NotFound
+  NotFound,
+  InternalError
+}
+
+native component NativeDisk {
+  method Read()
+}
+
+// We could use a custom disk or a NativeDisk
+component Disk {
+  method Read() bool {
+    // Make 1 in 1000 reads fail
+    distribute 1000 {
+      999 => distribute {         // 99.9% successes
+          distribute 100 {        // latency distribution
+              90 => delay 10us
+              9 => delay 50us
+              1 => delay 10ms
+          }
+          return true
+      }
+      default => distribute {     // .1% failure rates
+          distribute 100 {        // latency distribution
+              90 => delay 10us
+              9 => delay 50us
+              1 => delay 10ms
+          }
+          return false
+      }
+    }
+  }
+
+  // Give similar characteristics to a read
+  method Write() bool {
+    // Make 1 in 1000 reads fail
+    distribute 1000 {
+      999 => distribute {         // 99.9% successes
+          distribute 100 {        // latency distribution
+              90 => delay 10us
+              9 => delay 50us
+              1 => delay 10ms
+          }
+          return true
+      }
+      default => distribute {     // .1% failure rates
+          distribute 100 {        // latency distribution
+              90 => delay 10us
+              9 => delay 50us
+              1 => delay 10ms
+          }
+          return false
+      }
+    }
+  }
+}
+
+// Native components are defined externally
+// We just have to declare them
+native component HashIndex {
+  method 
 }
 
 component Database {
+    // The DB index for mapping short codes -> urls
+    uses ByShortCode HashIndex
 }
 
 component AppServer {
+  // Our main DB
+  uses DB Database
+
   method Redirect(): HttpStatusCode {
+  }
+
+  method Shorten(): HttpStatusCode {
   }
 }
 

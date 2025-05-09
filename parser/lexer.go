@@ -234,6 +234,10 @@ func (l *Lexer) scanIdentifierOrKeyword() (tok int, text string) {
 	}
 	text = l.buf.String()
 	switch text {
+	case "native":
+		return NATIVE, text
+	case "use":
+		return USE, text
 	case "component":
 		return COMPONENT, text
 	case "system":

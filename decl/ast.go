@@ -305,7 +305,8 @@ func (d *ComponentDecl) GetDependency(name string) (out *UsesDecl, err error) {
 
 func (d *ComponentDecl) Resolve() error {
 	d.params = map[string]*ParamDecl{}
-	d.uses = map[string]*UsesDecl{} // Processed dependencies map[local_name]*UsesDecl
+	d.uses = map[string]*UsesDecl{}      // Processed dependencies map[local_name]*UsesDecl
+	d.methods = map[string]*MethodDecl{} // Processed dependencies map[local_name]*UsesDecl
 
 	// Process body
 	for _, item := range d.Body {

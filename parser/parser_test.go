@@ -191,8 +191,8 @@ func TestParseDeclarations(t *testing.T) {
 
 func TestParseComponentParams(t *testing.T) {
 	input := `component C {
-        param p1: int
-        param p2: string = "default" // with default
+        param p1 int
+        param p2 string = "default" // with default
     }`
 	ast := parseString(t, input)
 	comp := firstDecl(t, ast).(*ComponentDecl)
@@ -240,7 +240,7 @@ func TestParseComponentParams(t *testing.T) {
 
 // Example: Update for InstanceDecl override literal
 func TestParseSystemInstancesWithLiteralOverride(t *testing.T) {
-	input := `system S { i1: D = { p = 5 } }` // Override p with int literal 5
+	input := `system S { use i1 D = { p = 5 } }` // Override p with int literal 5
 	ast := parseString(t, input)
 	sys := firstDecl(t, ast).(*SystemDecl)
 	require.Len(t, sys.Body, 1)
@@ -264,8 +264,8 @@ func TestParseComponent(t *testing.T) {
 
 	t.Run("Params", func(t *testing.T) {
 		input := `component WithParams {
-            param p1: int
-            param p2: string = "default"
+            param p1 int
+            param p2 string = "default"
         }`
 		// Indices: component(0) WithParams(10) {(21) param(35) p1(41) ... int(48) param(58) p2(64) ... "default"(82) }(91)
 		ast := parseString(t, input)
@@ -288,7 +288,7 @@ func TestParseComponent(t *testing.T) {
 	})
 
 	t.Run("Uses", func(t *testing.T) {
-		input := `component WithUses { uses dep : OtherComponent }` // Removed semicolon based on grammar
+		input := `component WithUses { uses dep OtherComponent }` // Removed semicolon based on grammar
 		ast := parseString(t, input)
 		comp := firstDecl(t, ast).(*ComponentDecl)
 		assertPosition(t, comp, 0, 47)
@@ -302,7 +302,7 @@ func TestParseComponent(t *testing.T) {
 	t.Run("Methods", func(t *testing.T) {
 		input := `component WithMethods {
             method m1() {}
-            method m2(a: int): bool { return true }
+            method m2(a int) bool { return true }
         }`
 		// Indices: component(0)... {(19) method(33)...m1(40)...{}(46) method(60)...m2(67)...(70)a(71)...int(76)...)(78): bool(81){}...(108) }(118)
 		ast := parseString(t, input)
@@ -335,7 +335,7 @@ func TestParseComponent(t *testing.T) {
 
 func TestParseSystem(t *testing.T) {
 	t.Run("InstanceSimple", func(t *testing.T) {
-		input := `system S { i1 : MyComp }` // Removed ; based on grammar
+		input := `system S { use i1 MyComp }` // Removed ; based on grammar
 		ast := parseString(t, input)
 		sys := firstDecl(t, ast).(*SystemDecl)
 		assertPosition(t, sys, 0, 23)
@@ -348,7 +348,7 @@ func TestParseSystem(t *testing.T) {
 	})
 
 	t.Run("InstanceWithOverrides", func(t *testing.T) {
-		input := `system S { i2 : D = { p1 = 5 p2 = "a" } }` // Removed ; based on grammar
+		input := `system S { use i2 D = { p1 = 5 p2 = "a" } }` // Removed ; based on grammar
 		ast := parseString(t, input)
 		sys := firstDecl(t, ast).(*SystemDecl)
 		assertPosition(t, sys, 0, 40)

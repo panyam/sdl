@@ -6,6 +6,7 @@ import (
     "log"
     "fmt"
     "io"
+	  gfn "github.com/panyam/goutils/fn"
 )
 
 // Function to be called by yyParse on error.
@@ -64,6 +65,7 @@ func yyerrok(lexer yyLexer) {
 
     // Slices for lists
     nodeList           []Node
+    compBodyItem        ComponentDeclBodyItem
     compBodyItemList   []ComponentDeclBodyItem
     sysBodyItemList    []SystemDeclBodyItem
     paramList          []*ParamDecl
@@ -74,6 +76,7 @@ func yyerrok(lexer yyLexer) {
     distributeCaseList []*DistributeCase
     distributeExprCaseList []*DistributeExprCase
     expectStmtList     []*ExpectStmt
+    methodSigItemList []*MethodDecl
 
     // Add field to store position for simple tokens if needed
     // posInfo     NodeInfo
@@ -84,7 +87,7 @@ func yyerrok(lexer yyLexer) {
 %token<node> SYSTEM USES METHOD INSTANCE ANALYZE EXPECT LET IF ELSE DISTRIBUTE DEFAULT RETURN DELAY WAIT GO LOG SWITCH CASE TRUE FALSE FOR 
 
 // Marking these as nodes so can be returned as Node for their locations
-%token<node> LBRACE RBRACE OPTIONS ENUM COMPONENT PARAM IMPORT 
+%token<node> USE NATIVE LBRACE RBRACE OPTIONS ENUM COMPONENT PARAM IMPORT 
 
 // Operators and Punctuation (assume lexer returns token type, use $N.(Node).Pos() if $N is a literal/ident)
 %token<node> ASSIGN COLON LPAREN RPAREN COMMA DOT ARROW PLUS_ASSIGN MINUS_ASSIGN MUL_ASSIGN DIV_ASSIGN LET_ASSIGN  SEMICOLON 
@@ -100,9 +103,10 @@ func yyerrok(lexer yyLexer) {
 // --- Types (Associating non-terminals with union fields) ---
 %type <file>         File
 %type <nodeList>     DeclarationList
-%type <node>         ComponentBodyItem SystemBodyItem  TopLevelDeclaration
+%type <node>         SystemBodyItem  TopLevelDeclaration
 %type <componentDecl>         ComponentDecl
 %type <systemDecl>         SystemDecl
+%type <compBodyItem> ComponentBodyItem 
 %type <compBodyItemList> ComponentBodyItemList ComponentBodyItemOptList
 %type <sysBodyItemList>  SystemBodyItemOptList 
 %type <optionsDecl>  OptionsDecl
@@ -122,6 +126,7 @@ func yyerrok(lexer yyLexer) {
 %type <typeName>     TypeName PrimitiveType // FUTURE USE: OutcomeType QualifiedIdentifier
 %type <usesDecl>     UsesDecl
 %type <methodDef>    MethodDecl
+%type <methodDef>    MethodSigDecl
 %type <instanceDecl> InstanceDecl
 %type <assignStmt>   Assignment
 %type <assignList>   AssignList  AssignListOpt
@@ -129,6 +134,7 @@ func yyerrok(lexer yyLexer) {
 %type <expectBlock>  ExpectBlock ExpectBlockOpt
 %type <expectStmt>   ExpectStmt
 %type <expectStmtList> ExpectStmtList ExpectStmtOptList
+%type <methodSigItemList> MethodSigDeclList MethodSigDeclOptList
 %type <ifStmt>       IfStmt
 %type <distributeStmt> DistributeStmt 
 %type <expr>          TotalClauseOpt 
@@ -224,7 +230,14 @@ ImportDecl:
     ;
 
 ComponentDecl:
-    COMPONENT IDENTIFIER LBRACE ComponentBodyItemList RBRACE { // COMPONENT($1) ... RBRACE($5)
+    NATIVE COMPONENT IDENTIFIER LBRACE MethodSigDeclOptList RBRACE { // COMPONENT($1) ... RBRACE($5)
+        $$ = &ComponentDecl{
+            NodeInfo: newNodeInfo($1.(Node).Pos(), $6.(Node).End()),
+            NameNode: $3.(*IdentifierExpr),
+            Body: gfn.Map($5, func(m *MethodDecl) ComponentDeclBodyItem { return m }),
+         }
+    }
+    | COMPONENT IDENTIFIER LBRACE ComponentBodyItemOptList RBRACE { // COMPONENT($1) ... RBRACE($5)
         $$ = &ComponentDecl{
             NodeInfo: newNodeInfo($1.(Node).Pos(), $5.(Node).End()),
             NameNode: $2.(*IdentifierExpr),
@@ -233,11 +246,42 @@ ComponentDecl:
     }
     ;
 
-ComponentBodyItemList: ComponentBodyItemOptList { $$ = $1 } ;
+MethodSigDeclOptList:
+                /* empty */ { $$ = []*MethodDecl{} }
+              | MethodSigDeclList { $$ = $1 }
+              ;
+
+MethodSigDeclList:
+              MethodSigDecl { $$=[]*MethodDecl{$1} }
+              | MethodSigDeclList MethodSigDecl { $$=append($1, $2) };
+
+MethodSigDecl:
+    METHOD IDENTIFIER LPAREN MethodParamListOpt RPAREN { // METHOD($1) ... BlockStmt($6)
+        $$ = &MethodDecl{
+            NodeInfo: newNodeInfo($1.(Node).Pos(), $5.End()),
+            NameNode: $2.(*IdentifierExpr),
+            Parameters: $4,
+        }
+    }
+    | METHOD IDENTIFIER LPAREN MethodParamListOpt RPAREN TypeName { // METHOD($1) ... BlockStmt($8)
+        $$ = &MethodDecl{
+            NodeInfo: newNodeInfo($1.(Node).Pos(), $6.End()),
+            NameNode: $2.(*IdentifierExpr),
+            Parameters: $4,
+            ReturnType: $6,
+         }
+    }
+    ;
 
 ComponentBodyItemOptList:
-                        /* empty */ { $$=[]ComponentDeclBodyItem{} }
-                      | ComponentBodyItemOptList ComponentBodyItem { $$=append($1, $2.(ComponentDeclBodyItem)) };
+                /* empty */ { $$ = []ComponentDeclBodyItem{} }
+              | ComponentBodyItemList { $$ = $1 }
+              ;
+
+ComponentBodyItemList:
+                ComponentBodyItem { $$=[]ComponentDeclBodyItem{$1} }
+              | ComponentBodyItemList ComponentBodyItem { $$=append($1, $2) }
+              ;
 
 ComponentBodyItem:
       ParamDecl   { $$ = $1 }
@@ -247,19 +291,19 @@ ComponentBodyItem:
     ;
 
 ParamDecl:
-    PARAM IDENTIFIER COLON TypeName { // PARAM($1) ... 
+    PARAM IDENTIFIER TypeName { // PARAM($1) ... 
         $$ = &ParamDecl{
-            NodeInfo: newNodeInfo($1.(Node).Pos(), $4.End()),
+            NodeInfo: newNodeInfo($1.(Node).Pos(), $3.End()),
             Name: $2.(*IdentifierExpr),
-            Type: $4, // TypeName also needs to have NodeInfo
+            Type: $3, // TypeName also needs to have NodeInfo
         }
     }
-    | PARAM IDENTIFIER COLON TypeName ASSIGN Expression { // PARAM($1) ... 
+    | PARAM IDENTIFIER TypeName ASSIGN Expression { // PARAM($1) ... 
         $$ = &ParamDecl{
-            NodeInfo: newNodeInfo($1.(Node).Pos(), $6.End()),
+            NodeInfo: newNodeInfo($1.(Node).Pos(), $5.End()),
             Name: $2.(*IdentifierExpr),
-            Type: $4,
-            DefaultValue: $6,
+            Type: $3,
+            DefaultValue: $5,
         }
     }
     ;
@@ -290,15 +334,15 @@ PrimitiveType: // These are keywords. Assume lexer sets NodeInfo if $N.posInfo i
 // OutcomeType: "Outcome" LBRACKET PrimitiveType RBRACKET { ... }
 
 UsesDecl:
-    USES IDENTIFIER COLON IDENTIFIER { // USES($1) ... 
+    USES IDENTIFIER IDENTIFIER { // USES($1) ... 
         $$ = &UsesDecl{
-            NodeInfo: newNodeInfo($1.(Node).Pos(), $4.End()),
+            NodeInfo: newNodeInfo($1.(Node).Pos(), $3.End()),
             NameNode: $2.(*IdentifierExpr),
-            ComponentNode: $4.(*IdentifierExpr),
+            ComponentNode: $3.(*IdentifierExpr),
          }
     }
     // Optional: Add syntax for overrides within uses? Like `uses x: T { p1 = v1; }`
-    // USES IDENTIFIER COLON IDENTIFIER LBRACE AssignListOpt RBRACE SEMICOLON { ... }
+    // USES IDENTIFIER IDENTIFIER LBRACE AssignListOpt RBRACE { ... }
     ;
 
 MethodDecl:
@@ -310,13 +354,13 @@ MethodDecl:
             Body: $6,
         }
     }
-    | METHOD IDENTIFIER LPAREN MethodParamListOpt RPAREN COLON TypeName BlockStmt { // METHOD($1) ... BlockStmt($8)
+    | METHOD IDENTIFIER LPAREN MethodParamListOpt RPAREN TypeName BlockStmt { // METHOD($1) ... BlockStmt($8)
         $$ = &MethodDecl{
-            NodeInfo: newNodeInfo($1.(Node).Pos(), $8.End()),
+            NodeInfo: newNodeInfo($1.(Node).Pos(), $7.End()),
             NameNode: $2.(*IdentifierExpr),
             Parameters: $4,
-            ReturnType: $7,
-            Body: $8,
+            ReturnType: $6,
+            Body: $7,
          }
     }
     ;
@@ -332,19 +376,19 @@ MethodParamList:
     ;
 
 MethodParamDecl:    // thse dont need "param" unlike param decls in components
-    IDENTIFIER COLON TypeName { // PARAM($1) ... 
+    IDENTIFIER TypeName { // PARAM($1) ... 
         $$ = &ParamDecl{
-            NodeInfo: newNodeInfo($1.(Node).Pos(), $3.End()),
+            NodeInfo: newNodeInfo($1.(Node).Pos(), $2.End()),
             Name: $1.(*IdentifierExpr),
-            Type: $3, // TypeName also needs to have NodeInfo
+            Type: $2, // TypeName also needs to have NodeInfo
         }
     }
-    | IDENTIFIER COLON TypeName ASSIGN Expression { // PARAM($1) ... 
+    | IDENTIFIER TypeName ASSIGN Expression { // PARAM($1) ... 
         $$ = &ParamDecl{
-            NodeInfo: newNodeInfo($1.(Node).Pos(), $5.End()),
+            NodeInfo: newNodeInfo($1.(Node).Pos(), $4.End()),
             Name: $1.(*IdentifierExpr),
-            Type: $3,
-            DefaultValue: $5,
+            Type: $2,
+            DefaultValue: $4,
         }
     }
     ;
@@ -374,18 +418,18 @@ SystemBodyItemOptList:
     ;
 
 InstanceDecl:
-    IDENTIFIER COLON IDENTIFIER { // IDENTIFIER($1) ... 
+    USE IDENTIFIER IDENTIFIER { // IDENTIFIER($1) ... 
          $$ = &InstanceDecl{
              NodeInfo: newNodeInfo($1.(Node).Pos(), $3.End()),
-             NameNode: $1.(*IdentifierExpr),
+             NameNode: $2.(*IdentifierExpr),
              ComponentType: $3.(*IdentifierExpr),
              Overrides: []*AssignmentStmt{},
          }
     }
-    | IDENTIFIER COLON IDENTIFIER ASSIGN LBRACE AssignListOpt RBRACE { // IDENTIFIER($1) ... 
+    | USE IDENTIFIER IDENTIFIER ASSIGN LBRACE AssignListOpt RBRACE { // IDENTIFIER($1) ... 
         $$ = &InstanceDecl{
              NodeInfo: newNodeInfo($1.(Node).Pos(), $7.End()),
-             NameNode: $1.(*IdentifierExpr),
+             NameNode: $2.(*IdentifierExpr),
              ComponentType: $3.(*IdentifierExpr),
              Overrides: $6,
          }

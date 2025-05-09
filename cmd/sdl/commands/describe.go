@@ -43,7 +43,7 @@ Entity types: component, system, analysis.`,
 			os.Exit(1)
 		}
 
-		var description interface{} // To hold the data for JSON output or formatted print
+		var description any // To hold the data for JSON output or formatted print
 
 		switch entityType {
 		case "component":
