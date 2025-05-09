@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"fmt"
 	"log"
 	"strconv"
 	"strings"
@@ -76,13 +75,142 @@ func newNodeInfoFromStartEndNode(startNode Node, endNode Node) NodeInfo {
 	return NodeInfo{StartPos: startNode.Pos(), StopPos: endNode.End()}
 }
 
+func newIdent(name string) *IdentifierExpr {
+	// NodeInfo will be zeroed out by cleanNodeInfo for comparison
+	return &IdentifierExpr{Name: name}
+}
+
+func newIntLit(val int64) *LiteralExpr {
+	return &LiteralExpr{Value: IntValue(val)}
+}
+func newStringLit(val string) *LiteralExpr { // val is the content without quotes
+	return &LiteralExpr{Value: StringValue(val)}
+}
+func newBoolLit(val bool) *LiteralExpr {
+	return &LiteralExpr{Value: BoolValue(val)}
+}
+
+func newBinaryExpr(left Expr, op string, right Expr) *BinaryExpr {
+	if strings.TrimSpace(op) == "" {
+		panic("Invalid op")
+	}
+	return &BinaryExpr{Left: left, Operator: op, Right: right}
+}
+
+func newUnaryExpr(op string, right Expr) *UnaryExpr {
+	return &UnaryExpr{Operator: op, Right: right}
+}
+
+func newLetStmt(varName string, value Expr) *LetStmt {
+	return &LetStmt{Variable: newIdent(varName), Value: value}
+}
+
+func newBlockStmt(stmts ...Stmt) *BlockStmt {
+	return &BlockStmt{Statements: stmts}
+}
+
+func newCallExpr(fn Expr, args ...Expr) *CallExpr {
+	// NodeInfo is cleaned by cleanNodeInfo
+	return &CallExpr{Function: fn, Args: args}
+}
+
+func newReturnStmt(returnValue Expr) *ReturnStmt {
+	// NodeInfo is cleaned
+	return &ReturnStmt{ReturnValue: returnValue}
+}
+
+func newExprStmt(expr Expr) *ExprStmt {
+	return &ExprStmt{Expression: expr}
+}
+
+func newComponentDecl(name string, isNative bool, body ...ComponentDeclBodyItem) *ComponentDecl {
+	return &ComponentDecl{NameNode: newIdent(name), IsNative: isNative, Body: body}
+}
+
+func newSystemDecl(name string, body ...SystemDeclBodyItem) *SystemDecl {
+	return &SystemDecl{NameNode: newIdent(name), Body: body}
+}
+
+func newUsesDecl(localName, componentType string) *UsesDecl {
+	return &UsesDecl{NameNode: newIdent(localName), ComponentNode: newIdent(componentType)}
+}
+
+func newMethodDecl(name string, returnTypeName *TypeName, body *BlockStmt, params ...*ParamDecl) *MethodDecl {
+	// NodeInfo is cleaned
+	if params == nil {
+		params = []*ParamDecl{}
+	}
+	return &MethodDecl{NameNode: newIdent(name), Parameters: params, ReturnType: returnTypeName, Body: body}
+}
+
+func newParamDecl(name string, typeName *TypeName, defaultValue Expr) *ParamDecl {
+	// NodeInfo is cleaned
+	return &ParamDecl{Name: newIdent(name), Type: typeName, DefaultValue: defaultValue}
+}
+
+func newTypeName(name string, isPrimitive bool) *TypeName {
+	// NodeInfo is cleaned
+	if isPrimitive {
+		return &TypeName{PrimitiveTypeName: name}
+	} else {
+		return &TypeName{EnumTypeName: name}
+	}
+}
+
+func newInstanceDecl(instanceName, componentType string, overrides ...*AssignmentStmt) *InstanceDecl {
+	return &InstanceDecl{
+		NameNode:      newIdent(instanceName),
+		ComponentType: newIdent(componentType),
+		Overrides:     overrides,
+	}
+}
+
+func newAssignmentStmt(varName string, value Expr) *AssignmentStmt {
+	return &AssignmentStmt{Var: newIdent(varName), Value: value}
+}
+
+func newOptionsDecl(body *BlockStmt) *OptionsDecl {
+	return &OptionsDecl{Body: body}
+}
+
+func newDistributeStmt(total Expr, defaultCase *DefaultCase, cases ...*DistributeCase) *DistributeStmt {
+	return &DistributeStmt{Total: total, Cases: cases, DefaultCase: defaultCase}
+}
+
+func newDistributeCase(prob Expr, body Stmt) *DistributeCase {
+	return &DistributeCase{Probability: prob, Body: body}
+}
+
+func newDefaultCase(body Stmt) *DefaultCase {
+	return &DefaultCase{Body: body}
+}
+
+func newGoStmt(varName *IdentifierExpr, stmt Stmt, expr Expr) *GoStmt {
+	return &GoStmt{VarName: varName, Stmt: stmt, Expr: expr}
+}
+
+func newDelayStmt(duration Expr) *DelayStmt {
+	return &DelayStmt{Duration: duration}
+}
+
+func newWaitStmt(idents ...*IdentifierExpr) *WaitStmt {
+	return &WaitStmt{Idents: idents}
+}
+
 type TokenNode struct {
 	NodeInfo
 	Text string
 }
 
+func newTokenNode(startPos, endPos int, text string) *TokenNode {
+	if strings.TrimSpace(text) == "" {
+		panic("TOken is empty")
+	}
+	return &TokenNode{newNodeInfo(startPos, endPos), text}
+}
+
 func (tn *TokenNode) Pos() int       { return tn.StartPos }
 func (tn *TokenNode) End() int       { return tn.StopPos }
-func (tn *TokenNode) String() string { return fmt.Sprintf("Token[%d:%d]", tn.StartPos, tn.StopPos) }
-func (tn *TokenNode) exprNode()      {} // If needed to satisfy Expr for some rules
-func (tn *TokenNode) stmtNode()      {} // If needed to satisfy Stmt
+func (tn *TokenNode) String() string { return tn.Text } // fmt.Sprintf("Token[%d:%d]", tn.StartPos, tn.StopPos) }
+func (tn *TokenNode) exprNode()      {}                 // If needed to satisfy Expr for some rules
+func (tn *TokenNode) stmtNode()      {}                 // If needed to satisfy Stmt

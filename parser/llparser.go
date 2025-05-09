@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	gfn "github.com/panyam/goutils/fn"
@@ -11,6 +12,7 @@ type LLParser struct {
 	lexer            *Lexer
 	peekedTokenValue *yySymType
 	peekedToken      int
+	Errors           []error
 	// file *File // You might want to store the top-level AST node being built here.
 }
 
@@ -19,6 +21,11 @@ func NewLLParser(lexer *Lexer) *LLParser {
 }
 func (p *LLParser) Parse(file *File) (err error) {
 	// p.file = file // Store the file being parsed
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recovered in f", r)
+		}
+	}()
 	for {
 		peekedToken := p.PeekToken()
 		if peekedToken == eof {
@@ -53,12 +60,15 @@ func (p *LLParser) Parse(file *File) (err error) {
 func (p *LLParser) Errorf(format string, args ...any) error {
 	s := fmt.Sprintf(format, args...)
 	p.lexer.Error(s)
-	panic(p.lexer.lastError)
+	// panic(p.lexer.lastError)
 	return p.lexer.lastError
 }
 
-func (p *LLParser) Advance() {
+func (p *LLParser) Advance() int {
+	p.PeekToken()
+	last := p.peekedToken
 	p.peekedTokenValue = nil
+	return last
 }
 
 func (p *LLParser) PeekToken() int {
@@ -79,8 +89,16 @@ func (p *LLParser) Expect(tokensIn ...int) (foundToken int, err error) {
 		}
 	}
 	expectedStrings := gfn.Map(tokensIn, func(t int) string { return tokenString(t) })
-	return -1, p.Errorf("expected one of: [%s], found: %s (%s)",
-		strings.Join(expectedStrings, ", "), tokenString(peekedToken), p.lexer.Text())
+	errMsg := "expected"
+	if len(tokensIn) == 1 {
+		errMsg = fmt.Sprintf("expected %s, found: %s", tokenString(tokensIn[0]), tokenString(peekedToken))
+	} else {
+		errMsg = fmt.Sprintf("expected one of: [%s], found: %s", strings.Join(expectedStrings, ", "), tokenString(peekedToken))
+	}
+	if p.lexer.Text() != "" {
+		errMsg = fmt.Sprintf("%s (%s)", errMsg, p.lexer.Text())
+	}
+	return -1, p.Errorf(errMsg, "")
 }
 
 // AdvanceIf expects one of the given tokens and advances if found.
@@ -128,10 +146,10 @@ func (p *LLParser) ParseComponentDecl(out *ComponentDecl) (err error) {
 	out.NodeInfo = newNodeInfo(p.peekedTokenValue.node.Pos(), 0)
 	isNative := peeked == NATIVE
 	if isNative {
-		p.Advance()
-		p.Advance() //
+		log.Println("Expecting NATIVE, Found: ", tokenString(p.Advance()))
+		log.Println("Expecting COMPONENT, Found: ", tokenString(p.Advance()))
 	} else {
-		p.Advance()
+		log.Println("Expecting COMPONENT, Found: ", tokenString(p.Advance()))
 	}
 
 	if out.NameNode, err = p.ParseIdentifier(); err != nil {
@@ -792,7 +810,7 @@ func (p *LLParser) parseBinaryExpr(
 		left = &BinaryExpr{
 			NodeInfo: newNodeInfo(left.Pos(), right.End()),
 			Left:     left,
-			Operator: opTokenVal.tokenNode.String(), // Assumes operator token's text from Node via TokenNode
+			Operator: opTokenVal.node.String(), // Assumes operator token's text from Node via TokenNode
 			Right:    right,
 		}
 		// Loop continues to handle left-associativity (e.g., a + b + c)
@@ -842,7 +860,7 @@ func (p *LLParser) ParseCmpExpr() (Expr, error) {
 		return &BinaryExpr{
 			NodeInfo: newNodeInfo(left.Pos(), right.End()),
 			Left:     left,
-			Operator: opTokenVal.tokenNode.String(),
+			Operator: opTokenVal.node.String(),
 			Right:    right,
 		}, nil
 	default:
@@ -877,7 +895,7 @@ func (p *LLParser) ParseUnaryExpr() (Expr, error) {
 		}
 		return &UnaryExpr{
 			NodeInfo: newNodeInfo(opTokenVal.node.Pos(), operand.End()),
-			Operator: opTokenVal.tokenNode.String(),
+			Operator: opTokenVal.node.String(),
 			Right:    operand,
 		}, nil
 	}
@@ -892,9 +910,7 @@ func (p *LLParser) ParsePrimaryExpr() (expr Expr, err error) {
 	// startTokenVal := p.peekedTokenValue // For NodeInfo if it's a simple token
 
 	switch peeked {
-	case INT_LITERAL, FLOAT_LITERAL, STRING_LITERAL, DURATION_LITERAL, TRUE, FALSE:
-		// Note: Your grammar has BOOL_LITERAL token, but also TRUE/FALSE keywords.
-		// Assume TRUE/FALSE are lexed as distinct tokens for boolean literals.
+	case INT_LITERAL, FLOAT_LITERAL, STRING_LITERAL, DURATION_LITERAL, BOOL_LITERAL:
 		expr, err = p.ParseLiteralExpr()
 		if err != nil {
 			return nil, err
@@ -985,10 +1001,13 @@ func (p *LLParser) ParsePrimaryExpr() (expr Expr, err error) {
 // Grammar: INT_LITERAL | FLOAT_LITERAL | STRING_LITERAL | BOOL_LITERAL | DURATION_LITERAL
 func (p *LLParser) ParseLiteralExpr() (Expr, error) {
 	peeked := p.PeekToken()
+	if p.lexer.lastError != nil {
+		return nil, p.lexer.lastError
+	}
 
 	// Expect one of the literal tokens
 	switch peeked {
-	case INT_LITERAL, FLOAT_LITERAL, STRING_LITERAL, DURATION_LITERAL, TRUE, FALSE:
+	case INT_LITERAL, FLOAT_LITERAL, STRING_LITERAL, DURATION_LITERAL, BOOL_LITERAL:
 		// Valid literal token
 	default:
 		return nil, p.Errorf("expected a literal, found %s (%s)", tokenString(peeked), p.lexer.Text())
@@ -1005,10 +1024,6 @@ func (p *LLParser) ParseLiteralExpr() (Expr, error) {
 		// Or use litTokenVal.sval if populated by lexer for literals
 	}
 
-	// If TRUE/FALSE are specific tokens but should map to a general BOOL_LITERAL kind:
-	if peeked == TRUE || peeked == FALSE {
-		out.Value = BoolValue(peeked == TRUE)
-	}
 	// You might parse out.Value into a Go native type (int, float64, bool) here or later.
 	return out, nil
 }
@@ -1029,17 +1044,36 @@ func (p *LLParser) ParseStmt() (out Stmt, err error) {
 		return p.ParseReturnStmt() // You'll implement this
 	case IF:
 		return p.ParseIfStmt() // You'll implement this
+	case WAIT:
+		return p.ParseWaitStmt() // You'll implement this
+	case DELAY:
+		return p.ParseDelayStmt() // You'll implement this
+	case DISTRIBUTE: // Added
+		return p.ParseDistributeStmt()
+		/*
+			case GO: // Added
+				goStmt, goErr := p.ParseGoStmt()
+				if goErr != nil {
+					return nil, goErr
+				}
+				// Handle the error case for `go var = Expr;`
+				if gs, ok := goStmt.(*GoStmt); ok && gs.IsExprAssignment {
+					// Report error as per grammar for `go IDENTIFIER ASSIGN Expression `
+					// You can return the node + an error, or just the error,
+					// or have a separate error collection mechanism.
+					// For now, let's return an explicit error that the caller of ParseStmt must check.
+					return gs, p.Errorf("`go` with variable assignment currently only supports assigning blocks, not expressions (at pos %d near '%s')",
+						gs.Pos(), p.lexer.Text()) // Use gs.Pos() for more accuracy
+				}
+				return goStmt, nil
+		*/
 	// ... Add cases for other statement-starting keywords:
 	// case LOG: return p.ParseLogStmt()
-	// case WAIT: return p.ParseWaitStmt()
-	// case DELAY: return p.ParseDelayStmt()
-	// case GO: return p.ParseGoStmt()
-	// case DISTRIBUTE: return p.ParseDistributeStmt()
 	// case SWITCH: return p.ParseSwitchStmt()
 
 	default:
 		// If no specific statement keyword, it might be an ExpressionStatement.
-		// ExpressionStatement: Expression SEMICOLON (as per your grammar)
+		// ExpressionStatement: Expression (as per your grammar)
 		// This needs care: ensure an expression can indeed start with the current token.
 		expr, exprErr := p.ParseExpression()
 		if exprErr != nil {
@@ -1181,4 +1215,265 @@ func (p *LLParser) ParseIfStmt() (Stmt, error) {
 		Then:      thenBlock,
 		Else:      elseStmt,
 	}, nil
+}
+
+// ParseDistributeStmt parses a distribute statement.
+// Grammar: DISTRIBUTE TotalClauseOpt LBRACE DistributeCaseListOpt DefaultCaseOpt RBRACE
+// TotalClauseOpt: /* empty */ | Expression
+// DistributeCaseListOpt: /* empty */ | DistributeCaseListOpt DistributeCase
+// DistributeCase: Expression ARROW Stmt
+// DefaultCaseOpt: /* empty */ | DefaultCase
+// DefaultCase: DEFAULT ARROW Stmt
+func (p *LLParser) ParseDistributeStmt() (Stmt, error) {
+	out := &DistributeStmt{}
+	var distributeTokenVal *yySymType
+	var err error
+
+	if _, distributeTokenVal, err = p.AdvanceIf(DISTRIBUTE); err != nil {
+		return nil, err
+	}
+	out.NodeInfo.StartPos = distributeTokenVal.node.Pos()
+
+	// Parse TotalClauseOpt: Optional Expression
+	// If the next token is not LBRACE, it could be an expression for TotalClause.
+	if p.PeekToken() != LBRACE {
+		// Need to be careful: An expression can start with LBRACE (e.g. map literal, if supported)
+		// However, for `DISTRIBUTE Total { ... }`, the LBRACE is a clear delimiter.
+		// We rely on the fact that an expression parser (ParseExpression) would consume tokens
+		// and leave LBRACE if it's not part of that expression.
+		// A simpler check is if it's not an LBRACE, try to parse an expression.
+		// This assumes expressions don't usually end right before an LBRACE that isn't part of them,
+		// which is generally true unless expressions themselves can be blocks.
+		// Given the grammar TotalClauseOpt LBRACE, the expression *must* terminate before LBRACE.
+
+		// Let's try to parse an expression. If it fails and next is LBRACE, it was optional.
+		// If it fails and next is NOT LBRACE, it's an error.
+		// If it succeeds, we must then see LBRACE.
+
+		// A robust way: peek. If not LBRACE, attempt to parse Expr.
+		// If successful, out.Total = expr. Then expect LBRACE.
+		// If LBRACE directly, out.Total remains nil.
+		if p.PeekToken() != LBRACE {
+			out.Total, err = p.ParseExpression()
+			if err != nil {
+				// If parsing expression failed, but the next token IS LBRACE,
+				// then the TotalClause was indeed empty, and the failure was likely
+				// because the current token was not the start of a valid expression.
+				// This can happen if the "Expression" rule is too greedy or has ambiguities.
+				// For now, assume ParseExpression correctly fails if no expression is present.
+				return nil, p.Errorf("expected expression for total clause or '{' in DISTRIBUTE statement, found %s (%s): %v",
+					tokenString(p.PeekToken()), p.lexer.Text(), err)
+			}
+		}
+	}
+
+	if _, _, err = p.AdvanceIf(LBRACE); err != nil {
+		return nil, p.Errorf("expected '{' to start DISTRIBUTE statement body, found %s (%s)", tokenString(p.PeekToken()), p.lexer.Text())
+	}
+
+	// Parse DistributeCaseListOpt
+	out.Cases = []*DistributeCase{}
+	for p.PeekToken() != RBRACE && p.PeekToken() != DEFAULT && p.PeekToken() != eof {
+		caseExpr, err := p.ParseExpression()
+		if err != nil {
+			return nil, p.Errorf("expected expression for DISTRIBUTE case condition, found %s (%s): %v", tokenString(p.PeekToken()), p.lexer.Text(), err)
+		}
+
+		// var arrowTokenVal *yySymType
+		if _, _, err = p.AdvanceIf(ARROW); err != nil {
+			return nil, p.Errorf("expected '->' after DISTRIBUTE case condition, found %s (%s)", tokenString(p.PeekToken()), p.lexer.Text())
+		}
+
+		// A case body is a single Stmt, not necessarily a BlockStmt.
+		// Stmt: LetStmt | ExprStmt | ReturnStmt | IfStmt | BlockStmt etc.
+		caseBody, err := p.ParseStmt()
+		if err != nil {
+			return nil, p.Errorf("error parsing DISTRIBUTE case body: %v", err)
+		}
+
+		distCase := &DistributeCase{
+			NodeInfo:    newNodeInfo(caseExpr.Pos(), caseBody.End()),
+			Probability: caseExpr,
+			Body:        caseBody,
+		}
+		out.Cases = append(out.Cases, distCase)
+	}
+
+	// Parse DefaultCaseOpt
+	if p.PeekToken() == DEFAULT {
+		defaultTokenVal := p.peekedTokenValue
+		p.Advance() // Consume DEFAULT
+
+		if _, _, err = p.AdvanceIf(ARROW); err != nil {
+			return nil, p.Errorf("expected '->' after DEFAULT in DISTRIBUTE statement, found %s (%s)", tokenString(p.PeekToken()), p.lexer.Text())
+		}
+
+		defaultBody, err := p.ParseStmt()
+		if err != nil {
+			return nil, p.Errorf("error parsing DEFAULT case body in DISTRIBUTE statement: %v", err)
+		}
+		out.DefaultCase = &DefaultCase{
+			NodeInfo: newNodeInfo(defaultTokenVal.node.Pos(), defaultBody.End()),
+			Body:     defaultBody,
+		}
+	}
+
+	var rbraceTokenVal *yySymType
+	if _, rbraceTokenVal, err = p.AdvanceIf(RBRACE); err != nil {
+		return nil, p.Errorf("expected '}' to close DISTRIBUTE statement, found %s (%s)", tokenString(p.PeekToken()), p.lexer.Text())
+	}
+	out.NodeInfo.StopPos = rbraceTokenVal.node.End()
+
+	return out, nil
+}
+
+// ParseGoStmt parses a go statement.
+// Grammar:
+//
+//	GO IDENTIFIER ASSIGN BlockStmt
+//	GO BlockStmt
+//	GO IDENTIFIER ASSIGN Expression SEMICOLON (This is an error case in yacc)
+func (p *LLParser) ParseGoStmt() (Stmt, error) {
+	/*
+			out := &GoStmt{}
+			var goTokenVal *yySymType
+			var err error
+
+			if _, goTokenVal, err = p.AdvanceIf(GO); err != nil {
+				return nil, err
+			}
+			out.NodeInfo.StartPos = goTokenVal.node.Pos()
+
+			if p.PeekToken() == IDENTIFIER {
+				// Could be `GO IDENTIFIER ASSIGN BlockStmt` or `GO IDENTIFIER ASSIGN Expression SEMICOLON`
+				// identPeek := p.peekedTokenValue    // Peek at identifier before parsing it
+				// nextTokenAfterIdent := p.lexer.Lex // This is tricky, we need lookahead(2)
+				// For a simple LL(1) parser, this is harder.
+				// Let's parse the identifier first.
+
+				var varName *IdentifierExpr
+				varName, err = p.ParseIdentifier() // Consumes IDENTIFIER
+				if err != nil {
+					// This shouldn't happen if PeekToken was IDENTIFIER, but defensive.
+					return nil, err
+				}
+				out.VarName = varName
+
+				if _, _, err = p.AdvanceIf(ASSIGN); err != nil {
+					return nil, p.Errorf("expected '=' after identifier '%s' in GO statement, found %s (%s)", out.VarName.Name, tokenString(p.PeekToken()), p.lexer.Text())
+				}
+
+				if p.PeekToken() == LBRACE { // `GO IDENTIFIER ASSIGN BlockStmt`
+					block, blockErr := p.ParseBlockStmt()
+					if blockErr != nil {
+						return nil, blockErr
+					}
+					out.Stmt = block
+					out.NodeInfo.StopPos = block.End()
+				} else { // `GO IDENTIFIER ASSIGN Expression SEMICOLON` (error case)
+					expr, exprErr := p.ParseExpression()
+					if exprErr != nil {
+						return nil, p.Errorf("expected block or expression after '=' in GO statement, found %s (%s): %v", tokenString(p.PeekToken()), p.lexer.Text(), exprErr)
+					}
+					out.Stmt = expr // Store the expression, but mark as error type
+					out.IsExprAssignment = true
+
+					var semiTokenVal *yySymType
+					if _, semiTokenVal, err = p.AdvanceIf(SEMICOLON); err != nil {
+						return nil, p.Errorf("expected ';' after expression in GO statement assignment, found %s (%s)", tokenString(p.PeekToken()), p.lexer.Text())
+					}
+					out.NodeInfo.StopPos = semiTokenVal.node.End()
+
+					// As per grammar's yyerror, this form is an error.
+					// The parser can construct the node, but should signal an error.
+					// One way is to return the node AND an error, or have a separate error reporting.
+					// For now, let the caller (or a later semantic pass) handle the IsExprAssignment flag.
+					// Alternatively, return an error directly here:
+					// return out, p.Errorf("`go` with variable assignment currently only supports assigning blocks, not expressions, at pos %d", goTokenVal.node.Pos())
+				}
+			} else if p.PeekToken() == LBRACE { // `GO BlockStmt`
+				block, blockErr := p.ParseBlockStmt()
+				if blockErr != nil {
+					return nil, blockErr
+				}
+				out.Stmt = block
+				out.NodeInfo.StopPos = block.End()
+			} else {
+				return nil, p.Errorf("expected identifier or '{' after GO, found %s (%s)", tokenString(p.PeekToken()), p.lexer.Text())
+			}
+		return out, nil
+	*/
+	return nil, nil
+}
+
+// ParseDelayStmt parses a delay statement.
+// Grammar: DELAY Expression
+// The semicolon is handled by the statement list context, not here.
+func (p *LLParser) ParseDelayStmt() (Stmt, error) {
+	out := &DelayStmt{}
+	var delayTokenVal *yySymType
+	var err error
+
+	if _, delayTokenVal, err = p.AdvanceIf(DELAY); err != nil {
+		return nil, err
+	}
+
+	out.Duration, err = p.ParseExpression()
+	if err != nil {
+		return nil, p.Errorf("expected expression for DELAY duration, found %s (%s): %v", tokenString(p.PeekToken()), p.lexer.Text(), err)
+	}
+
+	out.NodeInfo = newNodeInfo(delayTokenVal.node.Pos(), out.Duration.End())
+	return out, nil
+}
+
+// ParseWaitStmt parses a wait statement.
+// Grammar: WAIT IdentifierList
+// IdentifierList: IDENTIFIER (COMMA IDENTIFIER)*
+// The semicolon is handled by the statement list context.
+func (p *LLParser) ParseWaitStmt() (Stmt, error) {
+	out := &WaitStmt{}
+	var waitTokenVal *yySymType
+	var err error
+
+	if _, waitTokenVal, err = p.AdvanceIf(WAIT); err != nil {
+		return nil, err
+	}
+
+	// Parse IdentifierList
+	out.Idents = []*IdentifierExpr{}
+	if p.PeekToken() != IDENTIFIER {
+		return nil, p.Errorf("expected at least one identifier after WAIT, found %s (%s)", tokenString(p.PeekToken()), p.lexer.Text())
+	}
+
+	firstIdent, err := p.ParseIdentifier()
+	if err != nil {
+		// Should be caught by the PeekToken check above, but defensive.
+		return nil, err
+	}
+	out.Idents = append(out.Idents, firstIdent)
+
+	for p.PeekToken() == COMMA {
+		p.Advance() // Consume COMMA
+
+		// Optional: Check for trailing comma if not allowed.
+		// If the next token is not IDENTIFIER, it's an error (e.g. WAIT id1, ;)
+		if p.PeekToken() != IDENTIFIER {
+			return nil, p.Errorf("expected identifier after comma in WAIT statement, found %s (%s)", tokenString(p.PeekToken()), p.lexer.Text())
+		}
+
+		nextIdent, err := p.ParseIdentifier()
+		if err != nil {
+			return nil, err // Error parsing subsequent identifier
+		}
+		out.Idents = append(out.Idents, nextIdent)
+	}
+
+	if len(out.Idents) == 0 {
+		// This case should ideally be caught earlier, but as a final check.
+		return nil, p.Errorf("WAIT statement requires at least one identifier")
+	}
+
+	out.NodeInfo = newNodeInfo(waitTokenVal.node.Pos(), out.Idents[len(out.Idents)-1].End())
+	return out, nil
 }

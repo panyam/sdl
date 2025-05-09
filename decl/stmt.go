@@ -125,8 +125,8 @@ type GoStmt struct {
 	NodeInfo
 	VarName *IdentifierExpr
 	// Can call a async/parallel on a statement or an expression
-	Stmt *BlockStmt
-	Expr *Expr
+	Stmt Stmt
+	Expr Expr
 }
 
 func (p *GoStmt) stmtNode()      {}

@@ -49,7 +49,7 @@ func NewLexer(r io.Reader) *Lexer {
 // Error is called by the parser (or lexer itself) on an error.
 func (l *Lexer) Error(s string) {
 	if l.Text() != "" {
-		l.lastError = fmt.Errorf("Line: %d, Col: %d - Error near '%s' - %s", l.tokenStartLine, l.tokenStartCol, l.Text(), s)
+		l.lastError = fmt.Errorf("Line: %d, Col: %d - Error near '%s' --- %s", l.tokenStartLine, l.tokenStartCol, l.Text(), s)
 	} else {
 		l.lastError = fmt.Errorf("Line: %d, Col: %d - %s", l.tokenStartLine, l.tokenStartCol, s)
 	}
@@ -404,10 +404,10 @@ func (l *Lexer) Lex(lval *yySymType) int {
 			boolVal, _ := NewRuntimeValue(BoolType, text == "true")
 			lval.expr = newLiteralExpr(boolVal, startPosSnapshot, endPos)
 		case INT, FLOAT, BOOL, STRING, DURATION: // Type keywords
-			lval.node = &TokenNode{NodeInfo: newNodeInfo(startPosSnapshot, endPos), Text: text}
+			lval.node = newTokenNode(startPosSnapshot, endPos, text)
 		default: // Other keywords
 			// Pass position via Node, if grammar expects Node for keywords
-			lval.node = &TokenNode{NodeInfo: newNodeInfo(startPosSnapshot, endPos), Text: text}
+			lval.node = newTokenNode(startPosSnapshot, endPos, text)
 			lval.sval = text // Keep sval too for compatibility if rules use it for ops
 		}
 		return tok
@@ -490,7 +490,7 @@ func (l *Lexer) Lex(lval *yySymType) int {
 	switch r {
 	case ';', '{', '}', '(', ')', ',', '.':
 		l.read()
-		lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
+		lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
 		return map[rune]int{
 			';': SEMICOLON,
 			'{': LBRACE,
@@ -506,11 +506,11 @@ func (l *Lexer) Lex(lval *yySymType) int {
 			l.read()
 			l.tokenText = ":="
 			currentEndPos = l.pos
-			lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
+			lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
 			tokenCode = LET_ASSIGN
 			return tokenCode
 		}
-		lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
+		lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
 		tokenCode = COLON
 		return tokenCode
 	case '=':
@@ -520,7 +520,7 @@ func (l *Lexer) Lex(lval *yySymType) int {
 			l.tokenText = "=="
 			currentEndPos = l.pos
 			lval.sval = "=="
-			lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
+			lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
 			tokenCode = EQ
 			return tokenCode
 		}
@@ -528,11 +528,11 @@ func (l *Lexer) Lex(lval *yySymType) int {
 			l.read()
 			l.tokenText = "=>"
 			currentEndPos = l.pos
-			lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
+			lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
 			tokenCode = ARROW
 			return tokenCode
 		}
-		lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
+		lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
 		tokenCode = ASSIGN
 		return tokenCode
 	case '|':
@@ -542,7 +542,7 @@ func (l *Lexer) Lex(lval *yySymType) int {
 			l.tokenText = "||"
 			currentEndPos = l.pos
 			lval.sval = "||"
-			lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
+			lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
 			tokenCode = OR
 			return tokenCode
 		}
@@ -553,7 +553,7 @@ func (l *Lexer) Lex(lval *yySymType) int {
 			l.tokenText = "&&"
 			currentEndPos = l.pos
 			lval.sval = "&&"
-			lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
+			lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
 			tokenCode = AND
 			return tokenCode
 		}
@@ -564,12 +564,12 @@ func (l *Lexer) Lex(lval *yySymType) int {
 			l.tokenText = "!="
 			currentEndPos = l.pos
 			lval.sval = "!="
-			lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
+			lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
 			tokenCode = NEQ
 			return tokenCode
 		}
 		lval.sval = "!"
-		lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
+		lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
 		tokenCode = NOT
 		return tokenCode
 	case '<':
@@ -579,12 +579,12 @@ func (l *Lexer) Lex(lval *yySymType) int {
 			l.tokenText = "<="
 			currentEndPos = l.pos
 			lval.sval = "<="
-			lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
+			lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
 			tokenCode = LTE
 			return tokenCode
 		}
 		lval.sval = "<"
-		lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
+		lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
 		tokenCode = LT
 		return tokenCode
 	case '>':
@@ -594,12 +594,12 @@ func (l *Lexer) Lex(lval *yySymType) int {
 			l.tokenText = ">="
 			currentEndPos = l.pos
 			lval.sval = ">="
-			lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
+			lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
 			tokenCode = GTE
 			return tokenCode
 		}
 		lval.sval = ">"
-		lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
+		lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
 		tokenCode = GT
 		return tokenCode
 	case '+':
@@ -608,12 +608,13 @@ func (l *Lexer) Lex(lval *yySymType) int {
 			l.read()
 			l.tokenText = "+="
 			currentEndPos = l.pos
-			lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
+			lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
 			tokenCode = PLUS_ASSIGN
 			return tokenCode
 		}
+		l.tokenText = "+"
 		lval.sval = "+"
-		lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
+		lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
 		tokenCode = PLUS
 		return tokenCode
 	case '-':
@@ -622,12 +623,12 @@ func (l *Lexer) Lex(lval *yySymType) int {
 			l.read()
 			l.tokenText = "-="
 			currentEndPos = l.pos
-			lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
+			lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
 			tokenCode = MINUS_ASSIGN
 			return tokenCode
 		}
 		lval.sval = "-"
-		lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
+		lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
 		tokenCode = MINUS
 		return tokenCode
 	case '*':
@@ -636,12 +637,12 @@ func (l *Lexer) Lex(lval *yySymType) int {
 			l.read()
 			l.tokenText = "*="
 			currentEndPos = l.pos
-			lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
+			lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
 			tokenCode = MUL_ASSIGN
 			return tokenCode
 		}
 		lval.sval = "*"
-		lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
+		lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
 		tokenCode = MUL
 		return tokenCode
 	case '/': // Comments handled in skipWhitespace
@@ -650,18 +651,18 @@ func (l *Lexer) Lex(lval *yySymType) int {
 			l.read()
 			l.tokenText = "/="
 			currentEndPos = l.pos
-			lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
+			lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
 			tokenCode = DIV_ASSIGN
 			return tokenCode
 		}
 		lval.sval = "/"
-		lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
+		lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
 		tokenCode = DIV
 		return tokenCode
 	case '%':
 		l.read()
 		lval.sval = "%"
-		lval.node = &TokenNode{newNodeInfo(startPosSnapshot, currentEndPos), l.tokenText}
+		lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
 		tokenCode = MOD
 		return tokenCode
 	default:
@@ -708,14 +709,12 @@ var testTokenNames = map[int]string{
 	ENUM:             "ENUM",
 	IMPORT:           "IMPORT",
 	OPTIONS:          "OPTIONS",
-	TRUE:             "TRUE",  // Also keyword
-	FALSE:            "FALSE", // Also keyword
 	FOR:              "FOR",
-	INT:              "INT_TYPE", // Keyword for type
-	FLOAT:            "FLOAT_TYPE",
-	BOOL:             "BOOL_TYPE",
-	STRING:           "STRING_TYPE",
-	DURATION:         "DURATION_TYPE",
+	INT:              "int", // Keyword for type
+	FLOAT:            "float",
+	BOOL:             "bool",
+	STRING:           "string",
+	DURATION:         "Duration",
 	ASSIGN:           "ASSIGN",
 	COLON:            "COLON",
 	SEMICOLON:        "SEMICOLON",

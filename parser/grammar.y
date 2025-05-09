@@ -37,7 +37,7 @@ func yyerrok(lexer yyLexer) {
     componentDecl *ComponentDecl
     systemDecl *SystemDecl
     node        Node // Generic interface for lists and for accessing NodeInfo
-    tokenNode   TokenNode // Generic interface for lists and for accessing NodeInfo
+    // tokenNode   TokenNode // Generic interface for lists and for accessing NodeInfo
     expr        Expr
     stmt        Stmt
     typeName    *TypeName
@@ -85,7 +85,7 @@ func yyerrok(lexer yyLexer) {
 
 // --- Tokens ---
 // Keywords (assume lexer returns token type, parser might need pos for some)
-%token<node> SYSTEM USES METHOD INSTANCE ANALYZE EXPECT LET IF ELSE DISTRIBUTE DEFAULT RETURN DELAY WAIT GO LOG SWITCH CASE TRUE FALSE FOR 
+%token<node> SYSTEM USES METHOD INSTANCE ANALYZE EXPECT LET IF ELSE DISTRIBUTE DEFAULT RETURN DELAY WAIT GO LOG SWITCH CASE FOR 
 
 // Marking these as nodes so can be returned as Node for their locations
 %token<node> USE NATIVE LBRACE RBRACE OPTIONS ENUM COMPONENT PARAM IMPORT 
@@ -93,14 +93,14 @@ func yyerrok(lexer yyLexer) {
 // Operators and Punctuation (assume lexer returns token type, use $N.(Node).Pos() if $N is a literal/ident)
 %token<node> ASSIGN COLON LPAREN RPAREN COMMA DOT ARROW PLUS_ASSIGN MINUS_ASSIGN MUL_ASSIGN DIV_ASSIGN LET_ASSIGN  SEMICOLON 
 
-%token<tokenNode>  INT FLOAT BOOL STRING DURATION NOT MINUS 
+%token<node>  INT FLOAT BOOL STRING DURATION NOT MINUS 
 
 // Literals (lexer provides *LiteralExpr or *IdentifierExpr in lval.expr, with NodeInfo)
 %token <expr> INT_LITERAL FLOAT_LITERAL STRING_LITERAL BOOL_LITERAL DURATION_LITERAL
 %token <ident> IDENTIFIER
 
 // Operators (Tokens for precedence rules, lexer provides string in lval.sval)
-%token <tokenNode> OR AND EQ NEQ LT LTE GT GTE PLUS MUL DIV MOD
+%token <node> OR AND EQ NEQ LT LTE GT GTE PLUS MUL DIV MOD
 
 // --- Types (Associating non-terminals with union fields) ---
 %type <file>         File
@@ -324,11 +324,11 @@ TypeName:
     ;
 
 PrimitiveType: // These are keywords. Assume lexer sets NodeInfo if $N.posInfo is used
-      INT      { $$ = &TypeName{NodeInfo: $1.NodeInfo, PrimitiveTypeName: "int"} }
-    | FLOAT    { $$ = &TypeName{NodeInfo: $1.NodeInfo, PrimitiveTypeName: "float"} }
-    | STRING   { $$ = &TypeName{NodeInfo: $1.NodeInfo, PrimitiveTypeName: "string"} }
-    | BOOL     { $$ = &TypeName{NodeInfo: $1.NodeInfo, PrimitiveTypeName: "bool"} }
-    | DURATION { $$ = &TypeName{NodeInfo: $1.NodeInfo, PrimitiveTypeName: "duration"} }
+      INT      { $$ = &TypeName{NodeInfo: $1.(*TokenNode).NodeInfo, PrimitiveTypeName: "int"} }
+    | FLOAT    { $$ = &TypeName{NodeInfo: $1.(*TokenNode).NodeInfo, PrimitiveTypeName: "float"} }
+    | STRING   { $$ = &TypeName{NodeInfo: $1.(*TokenNode).NodeInfo, PrimitiveTypeName: "string"} }
+    | BOOL     { $$ = &TypeName{NodeInfo: $1.(*TokenNode).NodeInfo, PrimitiveTypeName: "bool"} }
+    | DURATION { $$ = &TypeName{NodeInfo: $1.(*TokenNode).NodeInfo, PrimitiveTypeName: "duration"} }
     ;
 
 // Placeholder for future pkg.Type or Outcome[T]
@@ -532,7 +532,7 @@ Stmt:
     | GoStmt         { $$ = $1 }
     | LogStmt        { $$ = $1 }
     | BlockStmt      { $$ = $1 }
-    // | DistributeStmt { $$ = $1 }
+    | DistributeStmt { $$ = $1 }
     | SwitchStmt     { $$ = $1 } // Add SwitchStmt
     // | AssignStmt     { $$ = $1 } // Disallow assignments as statements? Let's require `let` for now.
     | error SEMICOLON { yyerrok(yylex) /* Recover on semicolon */ } // Basic error recovery
@@ -670,13 +670,13 @@ DefaultCase:
     ;
 
 GoStmt:
-    GO IDENTIFIER ASSIGN BlockStmt { // GO($1) ... BlockStmt($4)
+    GO IDENTIFIER ASSIGN Stmt { // GO($1) ... BlockStmt($4)
         $$ = &GoStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $4.End()), VarName: $2, Stmt: $4 }
     }
     | GO BlockStmt { // GO($1) BlockStmt($2)
         $$ = &GoStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $2.End()), VarName: nil, Stmt: $2 }
     }
-    | GO IDENTIFIER ASSIGN Expression SEMICOLON {
+    | GO IDENTIFIER ASSIGN Expression {
          yyerror(yylex, fmt.Sprintf("`go` currently only supports assigning blocks, not expressions, at pos %d", $1.(Node).Pos()))
          $$ = &GoStmt{}
     }
@@ -693,7 +693,7 @@ OrExpr: AndBoolExpr { $$=$1 }
 
 AndBoolExpr:
        CmpExpr { $$=$1 }
-      | AndBoolExpr AND CmpExpr { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
+      | AndBoolExpr AND CmpExpr { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.(Node).String(), Right: $3} }
       ;
 
 CmpExpr: AddExpr { $$=$1 }
@@ -728,7 +728,7 @@ PrimaryExpr:
     | IDENTIFIER { $$ = $1 } // Already has position info
     | MemberAccessExpr        { $$ = $1 }
     | CallExpr                { $$ = $1 }
-    | DistributeExpr          { $$ = $1 } // Expression version
+    // | DistributeExpr          { $$ = $1 } // Expression version
     // | SwitchExpr              { $$ = $1 } // Expression version
     | LPAREN Expression RPAREN { $$ = $2 } // Grouping
     ;
