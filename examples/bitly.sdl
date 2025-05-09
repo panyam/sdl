@@ -14,16 +14,16 @@ component Disk {
   method Read() {
     // Make 1 in 1000 reads fail
     distribute 1000 {
-      999 => distribute {         // 99.9% successes
-          distribute 100 {        // latency distribution
+    999 => {
+          distribute 100 {         // 99.9% successes
               90 => delay 10us
               9 => delay 50us
               1 => delay 10ms
           }
           return true
       }
-      default => distribute {     // .1% failure rates
-          distribute 100 {        // latency distribution
+      default => {
+          distribute {     // .1% failure rates
               90 => delay 10us
               9 => delay 50us
               1 => delay 10ms
@@ -37,16 +37,16 @@ component Disk {
   method Write() bool {
     // Make 1 in 1000 reads fail
     distribute 1000 {
-      999 => distribute {         // 99.9% successes
-          distribute 100 {        // latency distribution
+    999 => {
+          distribute 100 {         // 99.9% successes
               90 => delay 10us
               9 => delay 50us
               1 => delay 10ms
           }
           return true
       }
-      default => distribute {     // .1% failure rates
-          distribute 100 {        // latency distribution
+      default => {
+          distribute {     // .1% failure rates
               90 => delay 10us
               9 => delay 50us
               1 => delay 10ms

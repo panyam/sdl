@@ -13,6 +13,7 @@ func parse(input io.Reader) (*decl.FileDecl, error) {
 	file := &decl.FileDecl{}
 	l := parser.NewLexer(input)
 	p := parser.NewLLParser(l)
+	p.PanicOnError = true
 	err := p.Parse(file)
 	return file, err
 }

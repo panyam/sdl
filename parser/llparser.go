@@ -11,7 +11,9 @@ type LLParser struct {
 	lexer            *Lexer
 	peekedTokenValue *yySymType
 	peekedToken      int
-	Errors           []error
+
+	PanicOnError bool
+	Errors       []error
 	// file *File // You might want to store the top-level AST node being built here.
 }
 
@@ -57,7 +59,9 @@ func (p *LLParser) Parse(file *File) (err error) {
 func (p *LLParser) Errorf(format string, args ...any) error {
 	s := fmt.Sprintf(format, args...)
 	p.lexer.Error(s)
-	// panic(p.lexer.lastError)
+	if p.PanicOnError {
+		panic(p.lexer.lastError)
+	}
 	return p.lexer.lastError
 }
 
@@ -1267,17 +1271,15 @@ func (p *LLParser) ParseDistributeStmt() (Stmt, error) {
 		// A robust way: peek. If not LBRACE, attempt to parse Expr.
 		// If successful, out.Total = expr. Then expect LBRACE.
 		// If LBRACE directly, out.Total remains nil.
-		if p.PeekToken() != LBRACE {
-			out.Total, err = p.ParseExpression()
-			if err != nil {
-				// If parsing expression failed, but the next token IS LBRACE,
-				// then the TotalClause was indeed empty, and the failure was likely
-				// because the current token was not the start of a valid expression.
-				// This can happen if the "Expression" rule is too greedy or has ambiguities.
-				// For now, assume ParseExpression correctly fails if no expression is present.
-				return nil, p.Errorf("expected expression for total clause or '{' in DISTRIBUTE statement, found %s (%s): %v",
-					tokenString(p.PeekToken()), p.lexer.Text(), err)
-			}
+		out.Total, err = p.ParseExpression()
+		if err != nil {
+			// If parsing expression failed, but the next token IS LBRACE,
+			// then the TotalClause was indeed empty, and the failure was likely
+			// because the current token was not the start of a valid expression.
+			// This can happen if the "Expression" rule is too greedy or has ambiguities.
+			// For now, assume ParseExpression correctly fails if no expression is present.
+			return nil, p.Errorf("expected expression for total clause or '{' in DISTRIBUTE statement, found %s (%s): %v",
+				tokenString(p.PeekToken()), p.lexer.Text(), err)
 		}
 	}
 
