@@ -1,5 +1,6 @@
 
 sdl:
+	cd parser && make build
 	go build -o ./dist/sdl ./cmd/sdl/main.go
 
 run:

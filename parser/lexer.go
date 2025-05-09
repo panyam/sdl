@@ -399,7 +399,7 @@ func (l *Lexer) Lex(lval *yySymType) int {
 
 		switch tok {
 		case IDENTIFIER:
-			lval.expr = newIdentifierExpr(text, startPosSnapshot, endPos)
+			lval.ident = newIdentifierExpr(text, startPosSnapshot, endPos)
 		case BOOL_LITERAL:
 			boolVal, _ := NewRuntimeValue(BoolType, text == "true")
 			lval.expr = newLiteralExpr(boolVal, startPosSnapshot, endPos)
@@ -670,4 +670,90 @@ func (l *Lexer) Lex(lval *yySymType) int {
 	tokenCode = eof // Return EOF on error to stop parser? Or a special error token? EOF is safer.
 	l.Error(fmt.Sprintf("unexpected character '%c'", r))
 	return eof // Indicate an error that should halt parsing
+}
+
+// tokenString helper needs yyToknames from generated sdl.go
+// For testing, we can define a minimal version or mock it.
+// Minimal version for testing:
+var testTokenNames = map[int]string{
+	eof:              "EOF",
+	IDENTIFIER:       "IDENTIFIER",
+	INT_LITERAL:      "INT_LITERAL",
+	FLOAT_LITERAL:    "FLOAT_LITERAL",
+	STRING_LITERAL:   "STRING_LITERAL",
+	BOOL_LITERAL:     "BOOL_LITERAL",
+	DURATION_LITERAL: "DURATION_LITERAL",
+	NATIVE:           "NATIVE",
+	USE:              "USE",
+	COMPONENT:        "COMPONENT",
+	SYSTEM:           "SYSTEM",
+	PARAM:            "PARAM",
+	USES:             "USES",
+	METHOD:           "METHOD",
+	INSTANCE:         "INSTANCE",
+	ANALYZE:          "ANALYZE",
+	EXPECT:           "EXPECT",
+	LET:              "LET",
+	IF:               "IF",
+	ELSE:             "ELSE",
+	DISTRIBUTE:       "DISTRIBUTE",
+	DEFAULT:          "DEFAULT",
+	RETURN:           "RETURN",
+	DELAY:            "DELAY",
+	WAIT:             "WAIT",
+	GO:               "GO",
+	LOG:              "LOG",
+	SWITCH:           "SWITCH",
+	CASE:             "CASE",
+	ENUM:             "ENUM",
+	IMPORT:           "IMPORT",
+	OPTIONS:          "OPTIONS",
+	TRUE:             "TRUE",  // Also keyword
+	FALSE:            "FALSE", // Also keyword
+	FOR:              "FOR",
+	INT:              "INT_TYPE", // Keyword for type
+	FLOAT:            "FLOAT_TYPE",
+	BOOL:             "BOOL_TYPE",
+	STRING:           "STRING_TYPE",
+	DURATION:         "DURATION_TYPE",
+	ASSIGN:           "ASSIGN",
+	COLON:            "COLON",
+	SEMICOLON:        "SEMICOLON",
+	LBRACE:           "LBRACE",
+	RBRACE:           "RBRACE",
+	LPAREN:           "LPAREN",
+	RPAREN:           "RPAREN",
+	COMMA:            "COMMA",
+	DOT:              "DOT",
+	ARROW:            "ARROW",
+	PLUS_ASSIGN:      "PLUS_ASSIGN",
+	MINUS_ASSIGN:     "MINUS_ASSIGN",
+	MUL_ASSIGN:       "MUL_ASSIGN",
+	DIV_ASSIGN:       "DIV_ASSIGN",
+	LET_ASSIGN:       "LET_ASSIGN",
+	OR:               "OR_OP",
+	AND:              "AND_OP",
+	EQ:               "EQ_OP",
+	NEQ:              "NEQ_OP",
+	LT:               "LT_OP",
+	LTE:              "LTE_OP",
+	GT:               "GT_OP",
+	GTE:              "GTE_OP",
+	PLUS:             "PLUS_OP",
+	MINUS:            "MINUS_OP",
+	MUL:              "MUL_OP",
+	DIV:              "DIV_OP",
+	MOD:              "MOD_OP",
+	NOT:              "NOT_OP",
+}
+
+func tokenString(tok int) string {
+	if name, ok := testTokenNames[tok]; ok {
+		return name
+	}
+	// For single char punct tokens that are not in the map
+	if tok > 0 && tok < 256 && !unicode.IsLetter(rune(tok)) && !unicode.IsDigit(rune(tok)) {
+		return fmt.Sprintf("'%c'", rune(tok))
+	}
+	return fmt.Sprintf("TOKEN<%d>", tok)
 }

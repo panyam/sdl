@@ -11,7 +11,7 @@ native component NativeDisk {
 
 // We could use a custom disk or a NativeDisk
 component Disk {
-  method Read() bool {
+  method Read() {
     // Make 1 in 1000 reads fail
     distribute 1000 {
       999 => distribute {         // 99.9% successes

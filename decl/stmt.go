@@ -79,7 +79,7 @@ func (d *DistributeStmt) String() string { return "distribute { ... }" }
 type DistributeCase struct {
 	NodeInfo
 	Probability Expr // Must evaluate to float outcome
-	Body        *BlockStmt
+	Body        Stmt
 }
 
 func (d *DistributeCase) String() string { return fmt.Sprintf("%s => { ... }", d.Probability) }
@@ -87,7 +87,7 @@ func (d *DistributeCase) String() string { return fmt.Sprintf("%s => { ... }", d
 // DefaultCase represents `default => { block }`
 type DefaultCase struct {
 	NodeInfo
-	Body *BlockStmt
+	Body Stmt
 }
 
 func (d *DefaultCase) String() string { return "default => { ... }" }

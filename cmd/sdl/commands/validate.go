@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/panyam/leetcoach/sdl/parser" // Assuming parser is in decl
+	// Assuming parser is in decl
 	"github.com/spf13/cobra"
 )
 
@@ -18,20 +18,8 @@ correctness and basic semantic validity. It does not run any simulations.`,
 		fmt.Println("Validating DSL files:")
 		allValid := true
 		for _, filePath := range args {
-			fmt.Printf("- %s\n", filePath)
-
-			file, err := os.Open(filePath)
+			astRoot, err := parseFile(filePath)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "  Error opening %s: %v\n", filePath, err)
-				allValid = false
-				continue
-			}
-			defer file.Close()
-
-			// Assume decl.Parse is available
-			_, astRoot, err := parser.Parse(file)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "  Error parsing %s: %v\n", filePath, err)
 				allValid = false
 				continue
 			}

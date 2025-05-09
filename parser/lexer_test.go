@@ -1,10 +1,8 @@
 package parser
 
 import (
-	"fmt"
 	"strings"
 	"testing"
-	"unicode"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -49,8 +47,8 @@ func runLexerTest(t *testing.T, input string, expectedTokens []expectedToken, ig
 			assert.Equal(t, exp.endPos, litExpr.End(), "Test %d: LiteralExpr endPos mismatch for %s.", i, expTokStr)
 		}
 		if exp.identName != "" {
-			identExpr, ok := lval.expr.(*IdentifierExpr)
-			require.True(t, ok, "Test %d: Expected IdentifierExpr for token %s, got %T", i, expTokStr, lval.expr)
+			identExpr := lval.ident
+			require.NotNil(t, identExpr)
 			assert.Equal(t, exp.identName, identExpr.Name, "Test %d: Identifier name mismatch for %s.", i, expTokStr)
 			assert.Equal(t, exp.startPos, identExpr.Pos(), "Test %d: IdentifierExpr startPos mismatch for %s.", i, expTokStr)
 			assert.Equal(t, exp.endPos, identExpr.End(), "Test %d: IdentifierExpr endPos mismatch for %s.", i, expTokStr)
@@ -249,90 +247,6 @@ func TestLexer_ComplexDurations(t *testing.T) {
 		{IDENTIFIER, "msident", 1, 8, 1, 2, nil, "msident"},
 	}
 	runLexerTest(t, input2, expected2, true)
-}
-
-// tokenString helper needs yyToknames from generated sdl.go
-// For testing, we can define a minimal version or mock it.
-// Minimal version for testing:
-var testTokenNames = map[int]string{
-	eof:              "EOF",
-	IDENTIFIER:       "IDENTIFIER",
-	INT_LITERAL:      "INT_LITERAL",
-	FLOAT_LITERAL:    "FLOAT_LITERAL",
-	STRING_LITERAL:   "STRING_LITERAL",
-	BOOL_LITERAL:     "BOOL_LITERAL",
-	DURATION_LITERAL: "DURATION_LITERAL",
-	COMPONENT:        "COMPONENT",
-	SYSTEM:           "SYSTEM",
-	PARAM:            "PARAM",
-	USES:             "USES",
-	METHOD:           "METHOD",
-	INSTANCE:         "INSTANCE",
-	ANALYZE:          "ANALYZE",
-	EXPECT:           "EXPECT",
-	LET:              "LET",
-	IF:               "IF",
-	ELSE:             "ELSE",
-	DISTRIBUTE:       "DISTRIBUTE",
-	DEFAULT:          "DEFAULT",
-	RETURN:           "RETURN",
-	DELAY:            "DELAY",
-	WAIT:             "WAIT",
-	GO:               "GO",
-	LOG:              "LOG",
-	SWITCH:           "SWITCH",
-	CASE:             "CASE",
-	ENUM:             "ENUM",
-	IMPORT:           "IMPORT",
-	OPTIONS:          "OPTIONS",
-	TRUE:             "TRUE",  // Also keyword
-	FALSE:            "FALSE", // Also keyword
-	FOR:              "FOR",
-	INT:              "INT_TYPE", // Keyword for type
-	FLOAT:            "FLOAT_TYPE",
-	BOOL:             "BOOL_TYPE",
-	STRING:           "STRING_TYPE",
-	DURATION:         "DURATION_TYPE",
-	ASSIGN:           "ASSIGN",
-	COLON:            "COLON",
-	SEMICOLON:        "SEMICOLON",
-	LBRACE:           "LBRACE",
-	RBRACE:           "RBRACE",
-	LPAREN:           "LPAREN",
-	RPAREN:           "RPAREN",
-	COMMA:            "COMMA",
-	DOT:              "DOT",
-	ARROW:            "ARROW",
-	PLUS_ASSIGN:      "PLUS_ASSIGN",
-	MINUS_ASSIGN:     "MINUS_ASSIGN",
-	MUL_ASSIGN:       "MUL_ASSIGN",
-	DIV_ASSIGN:       "DIV_ASSIGN",
-	LET_ASSIGN:       "LET_ASSIGN",
-	OR:               "OR_OP",
-	AND:              "AND_OP",
-	EQ:               "EQ_OP",
-	NEQ:              "NEQ_OP",
-	LT:               "LT_OP",
-	LTE:              "LTE_OP",
-	GT:               "GT_OP",
-	GTE:              "GTE_OP",
-	PLUS:             "PLUS_OP",
-	MINUS:            "MINUS_OP",
-	MUL:              "MUL_OP",
-	DIV:              "DIV_OP",
-	MOD:              "MOD_OP",
-	NOT:              "NOT_OP",
-}
-
-func tokenString(tok int) string {
-	if name, ok := testTokenNames[tok]; ok {
-		return name
-	}
-	// For single char punct tokens that are not in the map
-	if tok > 0 && tok < 256 && !unicode.IsLetter(rune(tok)) && !unicode.IsDigit(rune(tok)) {
-		return fmt.Sprintf("'%c'", rune(tok))
-	}
-	return fmt.Sprintf("TOKEN<%d>", tok)
 }
 
 func TestLexer_DivisionAndMultilineComments(t *testing.T) {

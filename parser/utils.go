@@ -53,6 +53,29 @@ func newIdentifierExpr(name string, startPos, endPos int) *IdentifierExpr {
 	}
 }
 
+// Helper to create NodeInfo from a token's yySymType value.
+// This is the one that was missing.
+func newNodeInfoFromToken(tokenValue *yySymType) NodeInfo {
+	if tokenValue == nil || tokenValue.node == nil {
+		// This case should ideally be an error or handled carefully.
+		// Returning zero NodeInfo might hide parsing issues.
+		// For robustness, you might want to log or panic here if tokenValue or tokenValue.node is nil,
+		// as it indicates an issue in how the lexer or parser is handling token values.
+		// For now, returning an empty NodeInfo to avoid panics during development.
+		return NodeInfo{}
+	}
+	return NodeInfo{StartPos: tokenValue.node.Pos(), StopPos: tokenValue.node.End()}
+}
+
+// Helper to create NodeInfo spanning from a start Node to an end Node.
+func newNodeInfoFromStartEndNode(startNode Node, endNode Node) NodeInfo {
+	if startNode == nil || endNode == nil {
+		// Similar to above, handle nil nodes carefully.
+		return NodeInfo{}
+	}
+	return NodeInfo{StartPos: startNode.Pos(), StopPos: endNode.End()}
+}
+
 type TokenNode struct {
 	NodeInfo
 	Text string
