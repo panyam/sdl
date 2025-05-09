@@ -19,11 +19,11 @@ func parseDuration(numText, unit string) (out float64) {
 	if unit == "ms" {
 		// base unit is ms
 	} else if unit == "s" {
-		out /= 1000.0
+		out *= 1000.0
 	} else if unit == "us" {
-		out *= 1000
+		out /= 1000
 	} else if unit == "ns" {
-		out *= 1000000
+		out /= 1000000
 	}
 	return
 }

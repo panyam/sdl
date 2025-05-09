@@ -53,7 +53,7 @@ func (l *Lexer) Error(s string) {
 	} else {
 		l.lastError = fmt.Errorf("Line: %d, Col: %d - %s", l.tokenStartLine, l.tokenStartCol, s)
 	}
-	fmt.Println(s) // For immediate feedback during development
+	// fmt.Println(s) // For immediate feedback during development
 }
 
 // Position returns the line/col where the last token started

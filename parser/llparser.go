@@ -2,7 +2,6 @@ package parser
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	gfn "github.com/panyam/goutils/fn"
@@ -21,11 +20,6 @@ func NewLLParser(lexer *Lexer) *LLParser {
 }
 func (p *LLParser) Parse(file *File) (err error) {
 	// p.file = file // Store the file being parsed
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println("Recovered in f", r)
-		}
-	}()
 	for {
 		peekedToken := p.PeekToken()
 		if peekedToken == eof {
@@ -49,6 +43,9 @@ func (p *LLParser) Parse(file *File) (err error) {
 				return err
 			}
 			file.Declarations = append(file.Declarations, node)
+		} else if peekedToken == SEMICOLON {
+			p.Advance()
+			continue
 		} else {
 			// No more top-level declarations or unexpected token
 			return p.Errorf("expected 'component', 'enum' or 'system', found: %s (%s)",
@@ -68,6 +65,7 @@ func (p *LLParser) Advance() int {
 	p.PeekToken()
 	last := p.peekedToken
 	p.peekedTokenValue = nil
+	p.peekedToken = -1
 	return last
 }
 
@@ -146,10 +144,10 @@ func (p *LLParser) ParseComponentDecl(out *ComponentDecl) (err error) {
 	out.NodeInfo = newNodeInfo(p.peekedTokenValue.node.Pos(), 0)
 	isNative := peeked == NATIVE
 	if isNative {
-		log.Println("Expecting NATIVE, Found: ", tokenString(p.Advance()))
-		log.Println("Expecting COMPONENT, Found: ", tokenString(p.Advance()))
+		tokenString(p.Advance())
+		tokenString(p.Advance())
 	} else {
-		log.Println("Expecting COMPONENT, Found: ", tokenString(p.Advance()))
+		tokenString(p.Advance())
 	}
 
 	if out.NameNode, err = p.ParseIdentifier(); err != nil {
@@ -165,6 +163,10 @@ func (p *LLParser) ParseComponentDecl(out *ComponentDecl) (err error) {
 		if peekedToken == eof {
 			err = fmt.Errorf("unexpected eof reading component: %s", out.NameNode.Name)
 			return
+		}
+		if peekedToken == SEMICOLON {
+			p.Advance()
+			continue
 		}
 		if peekedToken == PARAM {
 			node := &ParamDecl{}
@@ -275,6 +277,10 @@ func (p *LLParser) ParseSystemDecl(out *SystemDecl) (err error) {
 	for p.PeekToken() != RBRACE && p.PeekToken() != eof {
 		var item SystemDeclBodyItem
 		peekedItemStart := p.PeekToken()
+		if peekedItemStart == SEMICOLON {
+			p.Advance()
+			continue
+		}
 		switch peekedItemStart {
 		case USE: // Start of InstanceDecl
 			instDecl := &InstanceDecl{}
@@ -310,7 +316,7 @@ func (p *LLParser) ParseSystemDecl(out *SystemDecl) (err error) {
 			}
 
 		default:
-			return p.Errorf("unexpected token '%s' in system '%s' body. Expected 'use', 'options', or 'let'.",
+			return p.Errorf("unexpected token '%s' in system '%s' body. Expected 'use' or 'let'.",
 				tokenString(peekedItemStart), out.NameNode.Name)
 		}
 		out.Body = append(out.Body, item)
@@ -371,6 +377,10 @@ func (p *LLParser) ParseInstanceDecl(out *InstanceDecl) (err error) {
 				// Before parsing next assignment, ensure it's an IDENTIFIER.
 				// If it's RBRACE, the loop condition will handle it.
 				// If it's something else, ParseAssignment will error.
+				if p.PeekToken() == SEMICOLON {
+					p.Advance()
+					continue
+				}
 				if p.PeekToken() != IDENTIFIER {
 					// This might be too strict if other tokens could start an assignment
 					// or if RBRACE is the only valid non-identifier.
@@ -407,7 +417,7 @@ func (p *LLParser) ParseAssignment() (*AssignmentStmt, error) {
 	if _, err = p.Expect(IDENTIFIER); err != nil {
 		return nil, p.Errorf("expected identifier for assignment variable, found %s (%s)", tokenString(p.PeekToken()), p.lexer.Text())
 	}
-	startPos := p.peekedTokenValue.node.Pos()
+	startPos := p.peekedTokenValue.ident.Pos()
 
 	out.Var, err = p.ParseIdentifier()
 	if err != nil {
@@ -607,6 +617,10 @@ func (p *LLParser) ParseStmtList(closingTokens ...int) (stmts []Stmt, err error)
 		if peeked == eof {
 			break // End of file
 		}
+		if peeked == SEMICOLON {
+			p.Advance()
+			continue
+		}
 		isClosing := false
 		for _, closer := range closingTokens {
 			if peeked == closer {
@@ -700,14 +714,14 @@ func (p *LLParser) ParseMethodParamDecl() (out *ParamDecl, err error) {
 	out = &ParamDecl{}
 	var identNode *IdentifierExpr
 
-	// Store start position from the first token of the declaration
-	startPos := p.peekedTokenValue.node.Pos()
-
 	identNode, err = p.ParseIdentifier()
 	if err != nil {
 		return nil, err
 	}
 	out.Name = identNode
+
+	// Store start position from the first token of the declaration
+	startPos := identNode.Pos()
 
 	out.Type, err = p.ParseTypeName() // You'll need to implement ParseTypeName
 	if err != nil {
@@ -1281,7 +1295,7 @@ func (p *LLParser) ParseDistributeStmt() (Stmt, error) {
 
 		// var arrowTokenVal *yySymType
 		if _, _, err = p.AdvanceIf(ARROW); err != nil {
-			return nil, p.Errorf("expected '->' after DISTRIBUTE case condition, found %s (%s)", tokenString(p.PeekToken()), p.lexer.Text())
+			return nil, p.Errorf("expected '=>' after DISTRIBUTE case condition, found %s (%s)", tokenString(p.PeekToken()), p.lexer.Text())
 		}
 
 		// A case body is a single Stmt, not necessarily a BlockStmt.
@@ -1305,7 +1319,7 @@ func (p *LLParser) ParseDistributeStmt() (Stmt, error) {
 		p.Advance() // Consume DEFAULT
 
 		if _, _, err = p.AdvanceIf(ARROW); err != nil {
-			return nil, p.Errorf("expected '->' after DEFAULT in DISTRIBUTE statement, found %s (%s)", tokenString(p.PeekToken()), p.lexer.Text())
+			return nil, p.Errorf("expected '=>' after DEFAULT in DISTRIBUTE statement, found %s (%s)", tokenString(p.PeekToken()), p.lexer.Text())
 		}
 
 		defaultBody, err := p.ParseStmt()
