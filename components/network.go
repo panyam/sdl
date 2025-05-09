@@ -85,7 +85,7 @@ func (nl *NetworkLink) calculateTransferOutcomes() {
 		bucketWeight := successProb / float64(nl.LatencyBuckets)
 		latencyStep := (2 * nl.MaxJitter) / float64(nl.LatencyBuckets-1) // Step between latency points
 
-		for i := 0; i < nl.LatencyBuckets; i++ {
+		for i := range nl.LatencyBuckets {
 			// Calculate latency for this bucket: Base +/- Jitter
 			// Simple linear distribution for jitter for now:
 			// Bucket 0: Base - MaxJitter

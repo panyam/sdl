@@ -33,6 +33,14 @@ func (p *LLParser) Parse(file *File) (err error) {
 				return err
 			}
 			file.Declarations = append(file.Declarations, node)
+		} else if peekedToken == IMPORT {
+			imports, err := p.ParseImportDecl()
+			if err != nil {
+				return err
+			}
+			for _, imp := range imports {
+				file.Declarations = append(file.Declarations, imp)
+			}
 		} else if peekedToken == ENUM {
 			node := &EnumDecl{}
 			if err = p.ParseEnumDecl(node); err != nil {
@@ -198,6 +206,77 @@ func (p *LLParser) ParseComponentDecl(out *ComponentDecl) (err error) {
 			return p.Errorf("Expected 'uses', 'param' or 'method', Found: %s", p.lexer.Text())
 		}
 	}
+}
+
+// ParseImportDecl parses an enumeration declaration.
+// Grammar:
+//
+//	IMPORT from STRING
+//	IMPORT ImportedItemList STRING
+//
+// ImportedItem := IDENTIFIER
+// ImportedItem := IDENTIFIER ( "as IDENTIFIER )
+// ImportedItemList := ImportedItem (COMMA ImportedItemList) *
+func (p *LLParser) ParseImportDecl() (out []*ImportDecl, err error) {
+	if _, _, err = p.AdvanceIf(IMPORT); err != nil {
+		return nil, err
+	}
+
+	for {
+		if p.PeekToken() == eof {
+			return nil, p.Errorf("Unexpected end of input.  Expected IDENTIFIER")
+		}
+		if p.PeekToken() != IDENTIFIER {
+			return nil, p.Errorf("Expected IDENTIFER, Found: %s", p.lexer.Text())
+		}
+
+		imported, err := p.ParseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		importDecl := &ImportDecl{
+			NodeInfo:     newNodeInfo(imported.Pos(), imported.End()),
+			ImportedItem: imported,
+		}
+
+		if p.PeekToken() == AS {
+			// we have an alias
+			p.Advance()
+			alias, err := p.ParseIdentifier()
+			if err != nil {
+				return nil, err
+			}
+			importDecl.Alias = alias
+		}
+		out = append(out, importDecl)
+
+		if p.PeekToken() == FROM {
+			break
+		} else if p.PeekToken() == COMMA {
+			// all good
+			p.Advance()
+		} else {
+			return nil, p.Errorf("expected 'from' or ',' in import declaration, found %s (%s)", tokenString(p.PeekToken()), p.lexer.Text())
+		}
+	}
+
+	if _, _, err = p.AdvanceIf(FROM); err != nil {
+		return nil, p.Errorf("expected 'from' import declaration, found %s (%s)", tokenString(p.PeekToken()), p.lexer.Text())
+	}
+
+	if _, err := p.Expect(STRING_LITERAL); err != nil {
+		return nil, err
+	}
+
+	source, err := p.ParseLiteralExpr()
+	if err != nil {
+		return nil, err
+	}
+	// set path on all imports
+	for _, imp := range out {
+		imp.Path = source
+	}
+	return out, nil
 }
 
 // ParseEnumDecl parses an enumeration declaration.
@@ -1017,7 +1096,7 @@ func (p *LLParser) ParsePrimaryExpr() (expr Expr, err error) {
 
 // ParseLiteralExpr parses a literal value.
 // Grammar: INT_LITERAL | FLOAT_LITERAL | STRING_LITERAL | BOOL_LITERAL | DURATION_LITERAL
-func (p *LLParser) ParseLiteralExpr() (Expr, error) {
+func (p *LLParser) ParseLiteralExpr() (*LiteralExpr, error) {
 	peeked := p.PeekToken()
 	if p.lexer.lastError != nil {
 		return nil, p.lexer.lastError

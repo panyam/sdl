@@ -38,6 +38,7 @@ type FileDecl struct {
 	resolved   bool
 	components map[string]*ComponentDecl
 	enums      map[string]*EnumDecl
+	imports    map[string]*ImportDecl
 	systems    map[string]*SystemDecl
 }
 
@@ -127,7 +128,9 @@ func (f *FileDecl) Resolve() error {
 			log.Printf("Found OptionsDecl (TODO: Implement processing)")
 
 		case *ImportDecl:
-			log.Printf("Found ImportDecl: %s (TODO: Implement handling)", node.Path)
+			if err := f.RegisterImport(node); err != nil {
+				return err
+			}
 
 		default:
 			// Ignore other node types at the top level? Or error?
@@ -168,6 +171,17 @@ func (f *FileDecl) RegisterEnum(c *EnumDecl) error {
 		return fmt.Errorf("enum definition '%s' already registered", c.NameNode.Name)
 	}
 	f.enums[c.NameNode.Name] = c
+	return nil
+}
+
+func (f *FileDecl) RegisterImport(c *ImportDecl) error {
+	if f.imports == nil {
+		f.imports = map[string]*ImportDecl{}
+	}
+	if _, exists := f.imports[c.ImportedAs()]; exists {
+		return fmt.Errorf("import definition '%s' already registered", c.ImportedAs())
+	}
+	f.imports[c.ImportedAs()] = c
 	return nil
 }
 
@@ -215,10 +229,26 @@ func (e *EnumDecl) String() string {
 // ImportDecl represents `import "path";`
 type ImportDecl struct {
 	NodeInfo
-	Path *LiteralExpr // Should be a STRING literal
+	Path         *LiteralExpr // Should be a STRING literal
+	Alias        *IdentifierExpr
+	ImportedItem *IdentifierExpr
 }
 
-func (i *ImportDecl) String() string { return fmt.Sprintf("import %s;", i.Path) }
+func (i *ImportDecl) String() string {
+	if i.Alias != nil {
+		return fmt.Sprintf("import %s as %s from '%s';", i.ImportedItem.Name, i.Alias.Name, i.Path)
+	} else {
+		return fmt.Sprintf("import %s from '%s';", i.ImportedItem.Name, i.Path)
+	}
+}
+
+// What the import is imported as if an alias is used
+func (i *ImportDecl) ImportedAs() string {
+	if i.Alias != nil {
+		return i.Alias.Name
+	}
+	return i.ImportedItem.Name
+}
 
 // --- ComponentDecl Definition ---
 

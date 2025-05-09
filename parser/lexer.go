@@ -282,6 +282,10 @@ func (l *Lexer) scanIdentifierOrKeyword() (tok int, text string) {
 		return ENUM, text
 	case "import":
 		return IMPORT, text
+	case "from":
+		return FROM, text
+	case "as":
+		return AS, text
 	case "options":
 		return OPTIONS, text
 	case "true":
@@ -708,6 +712,8 @@ var testTokenNames = map[int]string{
 	CASE:             "CASE",
 	ENUM:             "ENUM",
 	IMPORT:           "IMPORT",
+	FROM:             "FROM",
+	AS:               "AS",
 	OPTIONS:          "OPTIONS",
 	FOR:              "FOR",
 	INT:              "int", // Keyword for type

@@ -1,13 +1,5 @@
 
-enum HttpStatusCode {
-  Ok,
-  NotFound,
-  InternalError
-}
-
-native component NativeDisk {
-  method Read()
-}
+import NativeDisk, HttpStatusCode, HashIndex from "./common" ;
 
 // We could use a custom disk or a NativeDisk
 component Disk {
@@ -37,7 +29,7 @@ component Disk {
   method Write() bool {
     // Make 1 in 1000 reads fail
     distribute 1000 {
-    999 => {
+      999 => {
           distribute 100 {         // 99.9% successes
               90 => delay 10us
               9 => delay 50us
@@ -57,12 +49,6 @@ component Disk {
   }
 }
 
-// Native components are defined externally
-// We just have to declare them
-native component HashIndex {
-  method 
-}
-
 component Database {
     // The DB index for mapping short codes -> urls
     uses ByShortCode HashIndex
@@ -72,12 +58,15 @@ component AppServer {
   // Our main DB
   uses DB Database
 
-  method Redirect(): HttpStatusCode {
+  method Shorten() HttpStatusCode {
   }
 
-  method Shorten(): HttpStatusCode {
+  method Redirect() HttpStatusCode {
   }
 }
 
 system Bitly {
+    // Order of dependencies does not matter  They will be bound later
+    use app AppServer = {db = db}
+    use db Database
 }

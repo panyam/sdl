@@ -65,6 +65,7 @@ func yyerrok(lexer yyLexer) {
 
     // Slices for lists
     nodeList           []Node
+    importDeclList     []*ImportDecl
     compBodyItem        ComponentDeclBodyItem
     compBodyItemList   []ComponentDeclBodyItem
     sysBodyItemList    []SystemDeclBodyItem
@@ -88,7 +89,7 @@ func yyerrok(lexer yyLexer) {
 %token<node> SYSTEM USES METHOD INSTANCE ANALYZE EXPECT LET IF ELSE DISTRIBUTE DEFAULT RETURN DELAY WAIT GO LOG SWITCH CASE FOR 
 
 // Marking these as nodes so can be returned as Node for their locations
-%token<node> USE NATIVE LBRACE RBRACE OPTIONS ENUM COMPONENT PARAM IMPORT 
+%token<node> USE NATIVE LBRACE RBRACE OPTIONS ENUM COMPONENT PARAM IMPORT FROM AS
 
 // Operators and Punctuation (assume lexer returns token type, use $N.(Node).Pos() if $N is a literal/ident)
 %token<node> ASSIGN COLON LPAREN RPAREN COMMA DOT ARROW PLUS_ASSIGN MINUS_ASSIGN MUL_ASSIGN DIV_ASSIGN LET_ASSIGN  SEMICOLON 
@@ -114,7 +115,8 @@ func yyerrok(lexer yyLexer) {
 %type <optionsDecl>  OptionsDecl
 %type <enumDecl>     EnumDecl
 %type <identList>    IdentifierList CommaIdentifierListOpt
-%type <importDecl>   ImportDecl
+%type <importDecl>   ImportDecl ImportItem
+%type <importDeclList>   ImportList ImportListOpt
 %type <stmt>         Stmt IfStmtElseOpt LetStmt ExprStmt ReturnStmt LogStmt SwitchStmt
 %type <waitStmt>     WaitStmt
 %type <delayStmt>    DelayStmt 
@@ -247,6 +249,18 @@ ImportDecl:
         }
     }
     ;
+
+ImportListOpt: /* empty */ { $$ = nil }
+             | ImportList { $$ = $1 }
+            ;
+
+ImportList : ImportItem             { $$ = []*ImportDecl{$1}; }
+           | ImportList ImportItem  { $$ = append($$, $1...) }
+           ;
+
+ImportItem: IDENTIFIER { $$ = &ImportDecl{ImportedItem: $1} }
+          | IDENTIFIER AS IDENTIFIER { $$ = &ImportDecl{ImportedItem: $1, Alias: $3 } }
+          ;
 
 MethodSigDeclOptList:
                 /* empty */ { $$ = []*MethodDecl{} }

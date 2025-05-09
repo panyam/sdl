@@ -12,10 +12,15 @@ import (
 func parse(input io.Reader) (*decl.FileDecl, error) {
 	file := &decl.FileDecl{}
 	l := parser.NewLexer(input)
-	p := parser.NewLLParser(l)
-	p.PanicOnError = true
-	err := p.Parse(file)
-	return file, err
+	if true { // use the LL parser
+		p := parser.NewLLParser(l)
+		p.PanicOnError = true
+		err := p.Parse(file)
+		return file, err
+	} else {
+		_, file, err := parser.Parse(input)
+		return file, err
+	}
 }
 
 func parseFile(filePath string) (*decl.FileDecl, error) {

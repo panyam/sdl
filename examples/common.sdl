@@ -1,0 +1,67 @@
+
+enum HttpStatusCode {
+  Ok,
+  NotFound,
+  InternalError
+}
+
+native component NativeDisk {
+  method Read()
+}
+
+// Native components are defined externally
+// We just have to declare them
+native component HashIndex {
+  // Exposing a dependency that can be configured
+  // It is upto the native component to manage setting/getting this
+  method Find() bool
+  method Insert() bool
+  method Delete () bool
+}
+
+native component BTreeIndex {
+  // Exposing a dependency that can be configured
+  // It is upto the native component to manage setting/getting this
+  method Find() bool
+  method Insert() bool
+  method Delete () bool
+}
+
+native component BitmapIndex {
+  // Exposing a dependency that can be configured
+  // It is upto the native component to manage setting/getting this
+  uses disk Disk
+  method Find() bool
+  method Insert() bool
+  method Delete () bool
+  method Update() bool
+}
+
+native component Cache {
+  method Read() bool
+  method Write() bool
+}
+
+native component LSMTree {
+  method Read() bool
+  method Write() bool
+}
+
+native component MM1Queue {
+  method Enqueue() bool
+  method Dequeue() bool
+}
+
+native component MMCKQueue {
+  method Enqueue() bool
+  method Dequeue() bool
+}
+
+native component ResourcePool {
+  method Acquire() bool
+}
+
+native component Link {
+  method Transfer() bool
+}
+

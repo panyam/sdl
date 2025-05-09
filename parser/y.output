@@ -3,7 +3,7 @@ state 0
 	$accept: .File $end 
 	DeclarationList: .    (2)
 
-	.  reduce 2 (src line 175)
+	.  reduce 2 (src line 177)
 
 	File  goto 1
 	DeclarationList  goto 2
@@ -25,7 +25,7 @@ state 2
 	ENUM  shift 13
 	COMPONENT  shift 10
 	IMPORT  shift 14
-	.  reduce 1 (src line 163)
+	.  reduce 1 (src line 165)
 
 	TopLevelDeclaration  goto 3
 	ComponentDecl  goto 4
@@ -37,37 +37,37 @@ state 2
 state 3
 	DeclarationList:  DeclarationList TopLevelDeclaration.    (3)
 
-	.  reduce 3 (src line 177)
+	.  reduce 3 (src line 179)
 
 
 state 4
 	TopLevelDeclaration:  ComponentDecl.    (4)
 
-	.  reduce 4 (src line 180)
+	.  reduce 4 (src line 182)
 
 
 state 5
 	TopLevelDeclaration:  SystemDecl.    (5)
 
-	.  reduce 5 (src line 182)
+	.  reduce 5 (src line 184)
 
 
 state 6
 	TopLevelDeclaration:  OptionsDecl.    (6)
 
-	.  reduce 6 (src line 183)
+	.  reduce 6 (src line 185)
 
 
 state 7
 	TopLevelDeclaration:  EnumDecl.    (7)
 
-	.  reduce 7 (src line 184)
+	.  reduce 7 (src line 186)
 
 
 state 8
 	TopLevelDeclaration:  ImportDecl.    (8)
 
-	.  reduce 8 (src line 185)
+	.  reduce 8 (src line 187)
 
 
 state 9
@@ -135,9 +135,9 @@ state 17
 
 state 18
 	OptionsDecl:  OPTIONS LBRACE.StmtList RBRACE 
-	StmtList: .    (74)
+	StmtList: .    (80)
 
-	.  reduce 74 (src line 521)
+	.  reduce 80 (src line 535)
 
 	StmtList  goto 24
 
@@ -151,7 +151,7 @@ state 19
 state 20
 	ImportDecl:  IMPORT STRING_LITERAL.    (15)
 
-	.  reduce 15 (src line 242)
+	.  reduce 15 (src line 244)
 
 
 state 21
@@ -163,14 +163,14 @@ state 21
 
 state 22
 	ComponentDecl:  COMPONENT IDENTIFIER LBRACE.ComponentBodyItemOptList RBRACE 
-	ComponentBodyItemOptList: .    (22)
+	ComponentBodyItemOptList: .    (28)
 
 	USES  shift 35
 	METHOD  shift 36
 	NATIVE  shift 9
 	COMPONENT  shift 10
 	PARAM  shift 34
-	.  reduce 22 (src line 278)
+	.  reduce 28 (src line 292)
 
 	ComponentDecl  goto 33
 	ComponentBodyItem  goto 29
@@ -182,9 +182,9 @@ state 22
 
 state 23
 	SystemDecl:  SYSTEM IDENTIFIER LBRACE.SystemBodyItemOptList RBRACE 
-	SystemBodyItemOptList: .    (48)
+	SystemBodyItemOptList: .    (54)
 
-	.  reduce 48 (src line 409)
+	.  reduce 54 (src line 423)
 
 	SystemBodyItemOptList  goto 37
 
@@ -249,10 +249,10 @@ state 25
 
 state 26
 	ComponentDecl:  NATIVE COMPONENT IDENTIFIER LBRACE.MethodSigDeclOptList RBRACE 
-	MethodSigDeclOptList: .    (16)
+	MethodSigDeclOptList: .    (22)
 
 	METHOD  shift 87
-	.  reduce 16 (src line 251)
+	.  reduce 22 (src line 265)
 
 	MethodSigDecl  goto 86
 	MethodSigDeclList  goto 85
@@ -266,7 +266,7 @@ state 27
 
 
 state 28
-	ComponentBodyItemOptList:  ComponentBodyItemList.    (23)
+	ComponentBodyItemOptList:  ComponentBodyItemList.    (29)
 	ComponentBodyItemList:  ComponentBodyItemList.ComponentBodyItem 
 
 	USES  shift 35
@@ -274,7 +274,7 @@ state 28
 	NATIVE  shift 9
 	COMPONENT  shift 10
 	PARAM  shift 34
-	.  reduce 23 (src line 280)
+	.  reduce 29 (src line 294)
 
 	ComponentDecl  goto 33
 	ComponentBodyItem  goto 89
@@ -283,33 +283,33 @@ state 28
 	MethodDecl  goto 32
 
 state 29
-	ComponentBodyItemList:  ComponentBodyItem.    (24)
+	ComponentBodyItemList:  ComponentBodyItem.    (30)
 
-	.  reduce 24 (src line 283)
+	.  reduce 30 (src line 297)
 
 
 state 30
-	ComponentBodyItem:  ParamDecl.    (26)
+	ComponentBodyItem:  ParamDecl.    (32)
 
-	.  reduce 26 (src line 288)
+	.  reduce 32 (src line 302)
 
 
 state 31
-	ComponentBodyItem:  UsesDecl.    (27)
+	ComponentBodyItem:  UsesDecl.    (33)
 
-	.  reduce 27 (src line 290)
+	.  reduce 33 (src line 304)
 
 
 state 32
-	ComponentBodyItem:  MethodDecl.    (28)
+	ComponentBodyItem:  MethodDecl.    (34)
 
-	.  reduce 28 (src line 291)
+	.  reduce 34 (src line 305)
 
 
 state 33
-	ComponentBodyItem:  ComponentDecl.    (29)
+	ComponentBodyItem:  ComponentDecl.    (35)
 
-	.  reduce 29 (src line 292)
+	.  reduce 35 (src line 306)
 
 
 state 34
@@ -353,79 +353,79 @@ state 37
 state 38
 	OptionsDecl:  OPTIONS LBRACE StmtList RBRACE.    (9)
 
-	.  reduce 9 (src line 188)
+	.  reduce 9 (src line 190)
 
 
 state 39
-	StmtList:  StmtList Stmt.    (75)
+	StmtList:  StmtList Stmt.    (81)
 
-	.  reduce 75 (src line 523)
+	.  reduce 81 (src line 537)
 
 
 state 40
-	Stmt:  LetStmt.    (76)
+	Stmt:  LetStmt.    (82)
 
-	.  reduce 76 (src line 525)
+	.  reduce 82 (src line 539)
 
 
 state 41
-	Stmt:  ExprStmt.    (77)
+	Stmt:  ExprStmt.    (83)
 
-	.  reduce 77 (src line 527)
+	.  reduce 83 (src line 541)
 
 
 state 42
-	Stmt:  ReturnStmt.    (78)
+	Stmt:  ReturnStmt.    (84)
 
-	.  reduce 78 (src line 528)
+	.  reduce 84 (src line 542)
 
 
 state 43
-	Stmt:  IfStmt.    (79)
+	Stmt:  IfStmt.    (85)
 
-	.  reduce 79 (src line 529)
+	.  reduce 85 (src line 543)
 
 
 state 44
-	Stmt:  WaitStmt.    (80)
+	Stmt:  WaitStmt.    (86)
 
-	.  reduce 80 (src line 530)
+	.  reduce 86 (src line 544)
 
 
 state 45
-	Stmt:  DelayStmt.    (81)
+	Stmt:  DelayStmt.    (87)
 
-	.  reduce 81 (src line 531)
+	.  reduce 87 (src line 545)
 
 
 state 46
-	Stmt:  GoStmt.    (82)
+	Stmt:  GoStmt.    (88)
 
-	.  reduce 82 (src line 532)
+	.  reduce 88 (src line 546)
 
 
 state 47
-	Stmt:  LogStmt.    (83)
+	Stmt:  LogStmt.    (89)
 
-	.  reduce 83 (src line 533)
+	.  reduce 89 (src line 547)
 
 
 state 48
-	Stmt:  BlockStmt.    (84)
+	Stmt:  BlockStmt.    (90)
 
-	.  reduce 84 (src line 534)
+	.  reduce 90 (src line 548)
 
 
 state 49
-	Stmt:  DistributeStmt.    (85)
+	Stmt:  DistributeStmt.    (91)
 
-	.  reduce 85 (src line 535)
+	.  reduce 91 (src line 549)
 
 
 state 50
-	Stmt:  SwitchStmt.    (86)
+	Stmt:  SwitchStmt.    (92)
 
-	.  reduce 86 (src line 536)
+	.  reduce 92 (src line 550)
 
 
 state 51
@@ -576,15 +576,15 @@ state 59
 
 state 60
 	BlockStmt:  LBRACE.StmtList RBRACE 
-	StmtList: .    (74)
+	StmtList: .    (80)
 
-	.  reduce 74 (src line 521)
+	.  reduce 80 (src line 535)
 
 	StmtList  goto 110
 
 state 61
 	DistributeStmt:  DISTRIBUTE.TotalClauseOpt LBRACE DistributeCaseListOpt DefaultCaseOpt RBRACE 
-	TotalClauseOpt: .    (106)
+	TotalClauseOpt: .    (112)
 
 	LPAREN  shift 76
 	NOT  shift 70
@@ -595,7 +595,7 @@ state 61
 	BOOL_LITERAL  shift 80
 	DURATION_LITERAL  shift 81
 	IDENTIFIER  shift 73
-	.  reduce 106 (src line 652)
+	.  reduce 112 (src line 666)
 
 	Expression  goto 112
 	OrExpr  goto 63
@@ -637,30 +637,30 @@ state 62
 	MemberAccessExpr  goto 74
 
 state 63
-	Expression:  OrExpr.    (118)
+	Expression:  OrExpr.    (124)
 	OrExpr:  OrExpr.OR AndBoolExpr 
 
 	OR  shift 114
-	.  reduce 118 (src line 689)
+	.  reduce 124 (src line 703)
 
 
 state 64
-	OrExpr:  AndBoolExpr.    (119)
+	OrExpr:  AndBoolExpr.    (125)
 	AndBoolExpr:  AndBoolExpr.AND CmpExpr 
 
 	AND  shift 115
-	.  reduce 119 (src line 690)
+	.  reduce 125 (src line 704)
 
 
 state 65
-	AndBoolExpr:  CmpExpr.    (121)
+	AndBoolExpr:  CmpExpr.    (127)
 
-	.  reduce 121 (src line 694)
+	.  reduce 127 (src line 708)
 
 
-66: shift/reduce conflict (shift 123(4), red'n 123(0)) on MINUS
+66: shift/reduce conflict (shift 123(4), red'n 129(0)) on MINUS
 state 66
-	CmpExpr:  AddExpr.    (123)
+	CmpExpr:  AddExpr.    (129)
 	CmpExpr:  AddExpr.EQ AddExpr 
 	CmpExpr:  AddExpr.NEQ AddExpr 
 	CmpExpr:  AddExpr.LT AddExpr 
@@ -678,11 +678,11 @@ state 66
 	GT  shift 120
 	GTE  shift 121
 	PLUS  shift 122
-	.  reduce 123 (src line 699)
+	.  reduce 129 (src line 713)
 
 
 state 67
-	AddExpr:  MulExpr.    (130)
+	AddExpr:  MulExpr.    (136)
 	MulExpr:  MulExpr.MUL UnaryExpr 
 	MulExpr:  MulExpr.DIV UnaryExpr 
 	MulExpr:  MulExpr.MOD UnaryExpr 
@@ -690,25 +690,25 @@ state 67
 	MUL  shift 124
 	DIV  shift 125
 	MOD  shift 126
-	.  reduce 130 (src line 708)
+	.  reduce 136 (src line 722)
 
 
 state 68
-	MulExpr:  UnaryExpr.    (133)
+	MulExpr:  UnaryExpr.    (139)
 
-	.  reduce 133 (src line 714)
+	.  reduce 139 (src line 728)
 
 
-69: shift/reduce conflict (shift 128(0), red'n 137(0)) on LPAREN
+69: shift/reduce conflict (shift 128(0), red'n 143(0)) on LPAREN
 state 69
-	UnaryExpr:  PrimaryExpr.    (137)
+	UnaryExpr:  PrimaryExpr.    (143)
 	MemberAccessExpr:  PrimaryExpr.DOT IDENTIFIER 
 	CallExpr:  PrimaryExpr.LPAREN RPAREN 
 	CallExpr:  PrimaryExpr.LPAREN ArgList RPAREN 
 
 	LPAREN  shift 128
 	DOT  shift 127
-	.  reduce 137 (src line 720)
+	.  reduce 143 (src line 734)
 
 
 state 70
@@ -752,27 +752,27 @@ state 71
 	MemberAccessExpr  goto 74
 
 state 72
-	PrimaryExpr:  LiteralExpr.    (140)
+	PrimaryExpr:  LiteralExpr.    (146)
 
-	.  reduce 140 (src line 726)
+	.  reduce 146 (src line 740)
 
 
 state 73
-	PrimaryExpr:  IDENTIFIER.    (141)
+	PrimaryExpr:  IDENTIFIER.    (147)
 
-	.  reduce 141 (src line 728)
+	.  reduce 147 (src line 742)
 
 
 state 74
-	PrimaryExpr:  MemberAccessExpr.    (142)
+	PrimaryExpr:  MemberAccessExpr.    (148)
 
-	.  reduce 142 (src line 729)
+	.  reduce 148 (src line 743)
 
 
 state 75
-	PrimaryExpr:  CallExpr.    (143)
+	PrimaryExpr:  CallExpr.    (149)
 
-	.  reduce 143 (src line 730)
+	.  reduce 149 (src line 744)
 
 
 state 76
@@ -802,33 +802,33 @@ state 76
 	MemberAccessExpr  goto 74
 
 state 77
-	LiteralExpr:  INT_LITERAL.    (145)
+	LiteralExpr:  INT_LITERAL.    (151)
 
-	.  reduce 145 (src line 736)
+	.  reduce 151 (src line 750)
 
 
 state 78
-	LiteralExpr:  FLOAT_LITERAL.    (146)
+	LiteralExpr:  FLOAT_LITERAL.    (152)
 
-	.  reduce 146 (src line 741)
+	.  reduce 152 (src line 755)
 
 
 state 79
-	LiteralExpr:  STRING_LITERAL.    (147)
+	LiteralExpr:  STRING_LITERAL.    (153)
 
-	.  reduce 147 (src line 742)
+	.  reduce 153 (src line 756)
 
 
 state 80
-	LiteralExpr:  BOOL_LITERAL.    (148)
+	LiteralExpr:  BOOL_LITERAL.    (154)
 
-	.  reduce 148 (src line 743)
+	.  reduce 154 (src line 757)
 
 
 state 81
-	LiteralExpr:  DURATION_LITERAL.    (149)
+	LiteralExpr:  DURATION_LITERAL.    (155)
 
-	.  reduce 149 (src line 744)
+	.  reduce 155 (src line 758)
 
 
 state 82
@@ -843,7 +843,7 @@ state 82
 state 83
 	IdentifierList:  IDENTIFIER.    (13)
 
-	.  reduce 13 (src line 237)
+	.  reduce 13 (src line 239)
 
 
 state 84
@@ -854,18 +854,18 @@ state 84
 
 
 state 85
-	MethodSigDeclOptList:  MethodSigDeclList.    (17)
+	MethodSigDeclOptList:  MethodSigDeclList.    (23)
 	MethodSigDeclList:  MethodSigDeclList.MethodSigDecl 
 
 	METHOD  shift 87
-	.  reduce 17 (src line 253)
+	.  reduce 23 (src line 267)
 
 	MethodSigDecl  goto 135
 
 state 86
-	MethodSigDeclList:  MethodSigDecl.    (18)
+	MethodSigDeclList:  MethodSigDecl.    (24)
 
-	.  reduce 18 (src line 256)
+	.  reduce 24 (src line 270)
 
 
 state 87
@@ -879,13 +879,13 @@ state 87
 state 88
 	ComponentDecl:  COMPONENT IDENTIFIER LBRACE ComponentBodyItemOptList RBRACE.    (11)
 
-	.  reduce 11 (src line 218)
+	.  reduce 11 (src line 220)
 
 
 state 89
-	ComponentBodyItemList:  ComponentBodyItemList ComponentBodyItem.    (25)
+	ComponentBodyItemList:  ComponentBodyItemList ComponentBodyItem.    (31)
 
-	.  reduce 25 (src line 285)
+	.  reduce 31 (src line 299)
 
 
 state 90
@@ -913,33 +913,33 @@ state 92
 
 
 state 93
-	SystemDecl:  SYSTEM IDENTIFIER LBRACE SystemBodyItemOptList RBRACE.    (47)
+	SystemDecl:  SYSTEM IDENTIFIER LBRACE SystemBodyItemOptList RBRACE.    (53)
 
-	.  reduce 47 (src line 399)
+	.  reduce 53 (src line 413)
 
 
 state 94
-	SystemBodyItemOptList:  SystemBodyItemOptList SystemBodyItem.    (49)
+	SystemBodyItemOptList:  SystemBodyItemOptList SystemBodyItem.    (55)
 
-	.  reduce 49 (src line 411)
+	.  reduce 55 (src line 425)
 
 
 state 95
-	SystemBodyItem:  InstanceDecl.    (50)
+	SystemBodyItem:  InstanceDecl.    (56)
 
-	.  reduce 50 (src line 414)
+	.  reduce 56 (src line 428)
 
 
 state 96
-	SystemBodyItem:  OptionsDecl.    (51)
+	SystemBodyItem:  OptionsDecl.    (57)
 
-	.  reduce 51 (src line 417)
+	.  reduce 57 (src line 431)
 
 
 state 97
-	SystemBodyItem:  LetStmt.    (52)
+	SystemBodyItem:  LetStmt.    (58)
 
-	.  reduce 52 (src line 418)
+	.  reduce 58 (src line 432)
 
 
 state 98
@@ -951,9 +951,9 @@ state 98
 
 
 state 99
-	Stmt:  error SEMICOLON.    (87)
+	Stmt:  error SEMICOLON.    (93)
 
-	.  reduce 87 (src line 538)
+	.  reduce 93 (src line 552)
 
 
 state 100
@@ -964,21 +964,21 @@ state 100
 
 
 state 101
-	ExprStmt:  Expression SEMICOLON.    (91)
+	ExprStmt:  Expression SEMICOLON.    (97)
 
-	.  reduce 91 (src line 571)
+	.  reduce 97 (src line 585)
 
 
 state 102
-	ReturnStmt:  RETURN Expression.    (92)
+	ReturnStmt:  RETURN Expression.    (98)
 
-	.  reduce 92 (src line 575)
+	.  reduce 98 (src line 589)
 
 
 state 103
-	ReturnStmt:  RETURN SEMICOLON.    (93)
+	ReturnStmt:  RETURN SEMICOLON.    (99)
 
-	.  reduce 93 (src line 577)
+	.  reduce 99 (src line 591)
 
 
 state 104
@@ -991,16 +991,16 @@ state 104
 
 state 105
 	IdentifierList:  IdentifierList.COMMA IDENTIFIER 
-	WaitStmt:  WAIT IdentifierList.    (95)
+	WaitStmt:  WAIT IdentifierList.    (101)
 
 	COMMA  shift 133
-	.  reduce 95 (src line 584)
+	.  reduce 101 (src line 598)
 
 
 state 106
-	DelayStmt:  DELAY Expression.    (94)
+	DelayStmt:  DELAY Expression.    (100)
 
-	.  reduce 94 (src line 580)
+	.  reduce 100 (src line 594)
 
 
 state 107
@@ -1012,17 +1012,17 @@ state 107
 
 
 state 108
-	GoStmt:  GO BlockStmt.    (115)
+	GoStmt:  GO BlockStmt.    (121)
 
-	.  reduce 115 (src line 676)
+	.  reduce 121 (src line 690)
 
 
 state 109
 	LogStmt:  LOG Expression.CommaExpressionListOpt 
-	CommaExpressionListOpt: .    (99)
+	CommaExpressionListOpt: .    (105)
 
 	COMMA  shift 146
-	.  reduce 99 (src line 617)
+	.  reduce 105 (src line 631)
 
 	CommaExpressionListOpt  goto 145
 
@@ -1085,9 +1085,9 @@ state 111
 
 
 state 112
-	TotalClauseOpt:  Expression.    (107)
+	TotalClauseOpt:  Expression.    (113)
 
-	.  reduce 107 (src line 652)
+	.  reduce 113 (src line 666)
 
 
 state 113
@@ -1415,15 +1415,15 @@ state 128
 	ArgList  goto 165
 
 state 129
-	UnaryExpr:  NOT UnaryExpr.    (138)
+	UnaryExpr:  NOT UnaryExpr.    (144)
 
-	.  reduce 138 (src line 722)
+	.  reduce 144 (src line 736)
 
 
 state 130
-	UnaryExpr:  MINUS UnaryExpr.    (139)
+	UnaryExpr:  MINUS UnaryExpr.    (145)
 
-	.  reduce 139 (src line 723)
+	.  reduce 145 (src line 737)
 
 
 state 131
@@ -1436,7 +1436,7 @@ state 131
 state 132
 	EnumDecl:  ENUM IDENTIFIER LBRACE IdentifierList RBRACE.    (12)
 
-	.  reduce 12 (src line 227)
+	.  reduce 12 (src line 229)
 
 
 state 133
@@ -1449,13 +1449,13 @@ state 133
 state 134
 	ComponentDecl:  NATIVE COMPONENT IDENTIFIER LBRACE MethodSigDeclOptList RBRACE.    (10)
 
-	.  reduce 10 (src line 210)
+	.  reduce 10 (src line 212)
 
 
 state 135
-	MethodSigDeclList:  MethodSigDeclList MethodSigDecl.    (19)
+	MethodSigDeclList:  MethodSigDeclList MethodSigDecl.    (25)
 
-	.  reduce 19 (src line 258)
+	.  reduce 25 (src line 272)
 
 
 state 136
@@ -1467,32 +1467,32 @@ state 136
 
 
 state 137
-	ParamDecl:  PARAM IDENTIFIER TypeName.    (30)
+	ParamDecl:  PARAM IDENTIFIER TypeName.    (36)
 	ParamDecl:  PARAM IDENTIFIER TypeName.ASSIGN Expression 
 
 	ASSIGN  shift 170
-	.  reduce 30 (src line 295)
+	.  reduce 36 (src line 309)
 
 
 state 138
-	TypeName:  IDENTIFIER.    (32)
+	TypeName:  IDENTIFIER.    (38)
 
-	.  reduce 32 (src line 313)
+	.  reduce 38 (src line 327)
 
 
 state 139
-	UsesDecl:  USES IDENTIFIER IDENTIFIER.    (38)
+	UsesDecl:  USES IDENTIFIER IDENTIFIER.    (44)
 
-	.  reduce 38 (src line 338)
+	.  reduce 44 (src line 352)
 
 
 state 140
 	MethodDecl:  METHOD IDENTIFIER LPAREN.MethodParamListOpt RPAREN BlockStmt 
 	MethodDecl:  METHOD IDENTIFIER LPAREN.MethodParamListOpt RPAREN TypeName BlockStmt 
-	MethodParamListOpt: .    (41)
+	MethodParamListOpt: .    (47)
 
 	IDENTIFIER  shift 174
-	.  reduce 41 (src line 370)
+	.  reduce 47 (src line 384)
 
 	MethodParamDecl  goto 173
 	MethodParamList  goto 172
@@ -1534,10 +1534,10 @@ state 142
 
 state 143
 	IfStmt:  IF Expression BlockStmt.IfStmtElseOpt 
-	IfStmtElseOpt: .    (102)
+	IfStmtElseOpt: .    (108)
 
 	ELSE  shift 178
-	.  reduce 102 (src line 640)
+	.  reduce 108 (src line 654)
 
 	IfStmtElseOpt  goto 177
 
@@ -1592,9 +1592,9 @@ state 144
 	GoStmt  goto 46
 
 state 145
-	LogStmt:  LOG Expression CommaExpressionListOpt.    (98)
+	LogStmt:  LOG Expression CommaExpressionListOpt.    (104)
 
-	.  reduce 98 (src line 600)
+	.  reduce 104 (src line 614)
 
 
 state 146
@@ -1624,16 +1624,16 @@ state 146
 	MemberAccessExpr  goto 74
 
 state 147
-	BlockStmt:  LBRACE StmtList RBRACE.    (88)
+	BlockStmt:  LBRACE StmtList RBRACE.    (94)
 
-	.  reduce 88 (src line 542)
+	.  reduce 94 (src line 556)
 
 
 state 148
 	DistributeStmt:  DISTRIBUTE TotalClauseOpt LBRACE.DistributeCaseListOpt DefaultCaseOpt RBRACE 
-	DistributeCaseListOpt: .    (108)
+	DistributeCaseListOpt: .    (114)
 
-	.  reduce 108 (src line 654)
+	.  reduce 114 (src line 668)
 
 	DistributeCaseListOpt  goto 182
 
@@ -1645,81 +1645,81 @@ state 149
 
 
 state 150
-	OrExpr:  OrExpr OR AndBoolExpr.    (120)
+	OrExpr:  OrExpr OR AndBoolExpr.    (126)
 	AndBoolExpr:  AndBoolExpr.AND CmpExpr 
 
 	AND  shift 115
-	.  reduce 120 (src line 691)
+	.  reduce 126 (src line 705)
 
 
 state 151
-	AndBoolExpr:  AndBoolExpr AND CmpExpr.    (122)
+	AndBoolExpr:  AndBoolExpr AND CmpExpr.    (128)
 
-	.  reduce 122 (src line 696)
+	.  reduce 128 (src line 710)
 
 
 state 152
-	CmpExpr:  AddExpr EQ AddExpr.    (124)
+	CmpExpr:  AddExpr EQ AddExpr.    (130)
 	AddExpr:  AddExpr.PLUS MulExpr 
 	AddExpr:  AddExpr.MINUS MulExpr 
 
 	MINUS  shift 123
 	PLUS  shift 122
-	.  reduce 124 (src line 700)
+	.  reduce 130 (src line 714)
 
 
 state 153
-	CmpExpr:  AddExpr NEQ AddExpr.    (125)
+	CmpExpr:  AddExpr NEQ AddExpr.    (131)
 	AddExpr:  AddExpr.PLUS MulExpr 
 	AddExpr:  AddExpr.MINUS MulExpr 
 
 	MINUS  shift 123
 	PLUS  shift 122
-	.  reduce 125 (src line 701)
+	.  reduce 131 (src line 715)
 
 
 state 154
-	CmpExpr:  AddExpr LT AddExpr.    (126)
+	CmpExpr:  AddExpr LT AddExpr.    (132)
 	AddExpr:  AddExpr.PLUS MulExpr 
 	AddExpr:  AddExpr.MINUS MulExpr 
 
 	MINUS  shift 123
 	PLUS  shift 122
-	.  reduce 126 (src line 702)
+	.  reduce 132 (src line 716)
 
 
 state 155
-	CmpExpr:  AddExpr LTE AddExpr.    (127)
+	CmpExpr:  AddExpr LTE AddExpr.    (133)
 	AddExpr:  AddExpr.PLUS MulExpr 
 	AddExpr:  AddExpr.MINUS MulExpr 
 
 	MINUS  shift 123
 	PLUS  shift 122
-	.  reduce 127 (src line 703)
+	.  reduce 133 (src line 717)
 
 
 state 156
-	CmpExpr:  AddExpr GT AddExpr.    (128)
+	CmpExpr:  AddExpr GT AddExpr.    (134)
 	AddExpr:  AddExpr.PLUS MulExpr 
 	AddExpr:  AddExpr.MINUS MulExpr 
 
 	MINUS  shift 123
 	PLUS  shift 122
-	.  reduce 128 (src line 704)
+	.  reduce 134 (src line 718)
 
 
 state 157
-	CmpExpr:  AddExpr GTE AddExpr.    (129)
+	CmpExpr:  AddExpr GTE AddExpr.    (135)
 	AddExpr:  AddExpr.PLUS MulExpr 
 	AddExpr:  AddExpr.MINUS MulExpr 
 
 	MINUS  shift 123
 	PLUS  shift 122
-	.  reduce 129 (src line 705)
+	.  reduce 135 (src line 719)
 
 
 state 158
-	AddExpr:  AddExpr PLUS MulExpr.    (131)
+	AddExpr:  AddExpr PLUS MulExpr.    (137)
 	MulExpr:  MulExpr.MUL UnaryExpr 
 	MulExpr:  MulExpr.DIV UnaryExpr 
 	MulExpr:  MulExpr.MOD UnaryExpr 
@@ -1727,11 +1727,11 @@ state 158
 	MUL  shift 124
 	DIV  shift 125
 	MOD  shift 126
-	.  reduce 131 (src line 710)
+	.  reduce 137 (src line 724)
 
 
 state 159
-	AddExpr:  AddExpr MINUS MulExpr.    (132)
+	AddExpr:  AddExpr MINUS MulExpr.    (138)
 	MulExpr:  MulExpr.MUL UnaryExpr 
 	MulExpr:  MulExpr.DIV UnaryExpr 
 	MulExpr:  MulExpr.MOD UnaryExpr 
@@ -1739,37 +1739,37 @@ state 159
 	MUL  shift 124
 	DIV  shift 125
 	MOD  shift 126
-	.  reduce 132 (src line 711)
+	.  reduce 138 (src line 725)
 
 
 state 160
-	MulExpr:  MulExpr MUL UnaryExpr.    (134)
+	MulExpr:  MulExpr MUL UnaryExpr.    (140)
 
-	.  reduce 134 (src line 715)
+	.  reduce 140 (src line 729)
 
 
 state 161
-	MulExpr:  MulExpr DIV UnaryExpr.    (135)
+	MulExpr:  MulExpr DIV UnaryExpr.    (141)
 
-	.  reduce 135 (src line 716)
+	.  reduce 141 (src line 730)
 
 
 state 162
-	MulExpr:  MulExpr MOD UnaryExpr.    (136)
+	MulExpr:  MulExpr MOD UnaryExpr.    (142)
 
-	.  reduce 136 (src line 717)
+	.  reduce 142 (src line 731)
 
 
 state 163
-	MemberAccessExpr:  PrimaryExpr DOT IDENTIFIER.    (150)
+	MemberAccessExpr:  PrimaryExpr DOT IDENTIFIER.    (156)
 
-	.  reduce 150 (src line 747)
+	.  reduce 156 (src line 761)
 
 
 state 164
-	CallExpr:  PrimaryExpr LPAREN RPAREN.    (151)
+	CallExpr:  PrimaryExpr LPAREN RPAREN.    (157)
 
-	.  reduce 151 (src line 757)
+	.  reduce 157 (src line 771)
 
 
 state 165
@@ -1782,30 +1782,30 @@ state 165
 
 
 state 166
-	ArgList:  Expression.    (155)
+	ArgList:  Expression.    (161)
 
-	.  reduce 155 (src line 784)
+	.  reduce 161 (src line 798)
 
 
 state 167
-	PrimaryExpr:  LPAREN Expression RPAREN.    (144)
+	PrimaryExpr:  LPAREN Expression RPAREN.    (150)
 
-	.  reduce 144 (src line 733)
+	.  reduce 150 (src line 747)
 
 
 state 168
 	IdentifierList:  IdentifierList COMMA IDENTIFIER.    (14)
 
-	.  reduce 14 (src line 239)
+	.  reduce 14 (src line 241)
 
 
 state 169
 	MethodSigDecl:  METHOD IDENTIFIER LPAREN.MethodParamListOpt RPAREN 
 	MethodSigDecl:  METHOD IDENTIFIER LPAREN.MethodParamListOpt RPAREN TypeName 
-	MethodParamListOpt: .    (41)
+	MethodParamListOpt: .    (47)
 
 	IDENTIFIER  shift 174
-	.  reduce 41 (src line 370)
+	.  reduce 47 (src line 384)
 
 	MethodParamDecl  goto 173
 	MethodParamList  goto 172
@@ -1846,17 +1846,17 @@ state 171
 
 
 state 172
-	MethodParamListOpt:  MethodParamList.    (42)
+	MethodParamListOpt:  MethodParamList.    (48)
 	MethodParamList:  MethodParamList.COMMA MethodParamDecl 
 
 	COMMA  shift 189
-	.  reduce 42 (src line 372)
+	.  reduce 48 (src line 386)
 
 
 state 173
-	MethodParamList:  MethodParamDecl.    (43)
+	MethodParamList:  MethodParamDecl.    (49)
 
-	.  reduce 43 (src line 375)
+	.  reduce 49 (src line 389)
 
 
 state 174
@@ -1869,23 +1869,23 @@ state 174
 	TypeName  goto 190
 
 state 175
-	InstanceDecl:  USE IDENTIFIER IDENTIFIER.    (53)
+	InstanceDecl:  USE IDENTIFIER IDENTIFIER.    (59)
 	InstanceDecl:  USE IDENTIFIER IDENTIFIER.ASSIGN LBRACE AssignListOpt RBRACE 
 
 	ASSIGN  shift 191
-	.  reduce 53 (src line 421)
+	.  reduce 59 (src line 435)
 
 
 state 176
-	LetStmt:  LET IDENTIFIER ASSIGN Expression.    (89)
+	LetStmt:  LET IDENTIFIER ASSIGN Expression.    (95)
 
-	.  reduce 89 (src line 548)
+	.  reduce 95 (src line 562)
 
 
 state 177
-	IfStmt:  IF Expression BlockStmt IfStmtElseOpt.    (101)
+	IfStmt:  IF Expression BlockStmt IfStmtElseOpt.    (107)
 
-	.  reduce 101 (src line 627)
+	.  reduce 107 (src line 641)
 
 
 state 178
@@ -1900,32 +1900,32 @@ state 178
 	IfStmt  goto 192
 
 state 179
-	GoStmt:  GO IDENTIFIER ASSIGN Stmt.    (114)
+	GoStmt:  GO IDENTIFIER ASSIGN Stmt.    (120)
 
-	.  reduce 114 (src line 672)
+	.  reduce 120 (src line 686)
 
 
 state 180
 	ExprStmt:  Expression.SEMICOLON 
-	GoStmt:  GO IDENTIFIER ASSIGN Expression.    (116)
+	GoStmt:  GO IDENTIFIER ASSIGN Expression.    (122)
 
 	SEMICOLON  shift 101
-	.  reduce 116 (src line 679)
+	.  reduce 122 (src line 693)
 
 
 state 181
 	CommaExpressionListOpt:  COMMA Expression.CommaExpressionListOpt 
-	CommaExpressionListOpt: .    (99)
+	CommaExpressionListOpt: .    (105)
 
 	COMMA  shift 146
-	.  reduce 99 (src line 617)
+	.  reduce 105 (src line 631)
 
 	CommaExpressionListOpt  goto 194
 
 state 182
 	DistributeStmt:  DISTRIBUTE TotalClauseOpt LBRACE DistributeCaseListOpt.DefaultCaseOpt RBRACE 
 	DistributeCaseListOpt:  DistributeCaseListOpt.DistributeCase 
-	DefaultCaseOpt: .    (111)
+	DefaultCaseOpt: .    (117)
 
 	DEFAULT  shift 199
 	LPAREN  shift 76
@@ -1937,7 +1937,7 @@ state 182
 	BOOL_LITERAL  shift 80
 	DURATION_LITERAL  shift 81
 	IDENTIFIER  shift 73
-	.  reduce 111 (src line 663)
+	.  reduce 117 (src line 677)
 
 	Expression  goto 198
 	OrExpr  goto 63
@@ -1955,15 +1955,15 @@ state 182
 	DefaultCaseOpt  goto 195
 
 state 183
-	SwitchStmt:  SWITCH Expression LBRACE RBRACE.    (117)
+	SwitchStmt:  SWITCH Expression LBRACE RBRACE.    (123)
 
-	.  reduce 117 (src line 685)
+	.  reduce 123 (src line 699)
 
 
 state 184
-	CallExpr:  PrimaryExpr LPAREN ArgList RPAREN.    (152)
+	CallExpr:  PrimaryExpr LPAREN ArgList RPAREN.    (158)
 
-	.  reduce 152 (src line 765)
+	.  reduce 158 (src line 779)
 
 
 state 185
@@ -2001,9 +2001,9 @@ state 186
 
 
 state 187
-	ParamDecl:  PARAM IDENTIFIER TypeName ASSIGN Expression.    (31)
+	ParamDecl:  PARAM IDENTIFIER TypeName ASSIGN Expression.    (37)
 
-	.  reduce 31 (src line 303)
+	.  reduce 37 (src line 317)
 
 
 state 188
@@ -2026,11 +2026,11 @@ state 189
 	MethodParamDecl  goto 204
 
 state 190
-	MethodParamDecl:  IDENTIFIER TypeName.    (45)
+	MethodParamDecl:  IDENTIFIER TypeName.    (51)
 	MethodParamDecl:  IDENTIFIER TypeName.ASSIGN Expression 
 
 	ASSIGN  shift 205
-	.  reduce 45 (src line 380)
+	.  reduce 51 (src line 394)
 
 
 state 191
@@ -2041,21 +2041,21 @@ state 191
 
 
 state 192
-	IfStmtElseOpt:  ELSE IfStmt.    (103)
+	IfStmtElseOpt:  ELSE IfStmt.    (109)
 
-	.  reduce 103 (src line 642)
+	.  reduce 109 (src line 656)
 
 
 state 193
-	IfStmtElseOpt:  ELSE BlockStmt.    (104)
+	IfStmtElseOpt:  ELSE BlockStmt.    (110)
 
-	.  reduce 104 (src line 643)
+	.  reduce 110 (src line 657)
 
 
 state 194
-	CommaExpressionListOpt:  COMMA Expression CommaExpressionListOpt.    (100)
+	CommaExpressionListOpt:  COMMA Expression CommaExpressionListOpt.    (106)
 
-	.  reduce 100 (src line 619)
+	.  reduce 106 (src line 633)
 
 
 state 195
@@ -2066,15 +2066,15 @@ state 195
 
 
 state 196
-	DistributeCaseListOpt:  DistributeCaseListOpt DistributeCase.    (109)
+	DistributeCaseListOpt:  DistributeCaseListOpt DistributeCase.    (115)
 
-	.  reduce 109 (src line 656)
+	.  reduce 115 (src line 670)
 
 
 state 197
-	DefaultCaseOpt:  DefaultCase.    (112)
+	DefaultCaseOpt:  DefaultCase.    (118)
 
-	.  reduce 112 (src line 665)
+	.  reduce 118 (src line 679)
 
 
 state 198
@@ -2092,24 +2092,24 @@ state 199
 
 
 state 200
-	ArgList:  ArgList COMMA Expression.    (156)
+	ArgList:  ArgList COMMA Expression.    (162)
 
-	.  reduce 156 (src line 786)
+	.  reduce 162 (src line 800)
 
 
 state 201
-	MethodSigDecl:  METHOD IDENTIFIER LPAREN MethodParamListOpt RPAREN.    (20)
+	MethodSigDecl:  METHOD IDENTIFIER LPAREN MethodParamListOpt RPAREN.    (26)
 	MethodSigDecl:  METHOD IDENTIFIER LPAREN MethodParamListOpt RPAREN.TypeName 
 
 	IDENTIFIER  shift 138
-	.  reduce 20 (src line 260)
+	.  reduce 26 (src line 274)
 
 	TypeName  goto 210
 
 state 202
-	MethodDecl:  METHOD IDENTIFIER LPAREN MethodParamListOpt RPAREN BlockStmt.    (39)
+	MethodDecl:  METHOD IDENTIFIER LPAREN MethodParamListOpt RPAREN BlockStmt.    (45)
 
-	.  reduce 39 (src line 350)
+	.  reduce 45 (src line 364)
 
 
 state 203
@@ -2121,9 +2121,9 @@ state 203
 	BlockStmt  goto 211
 
 state 204
-	MethodParamList:  MethodParamList COMMA MethodParamDecl.    (44)
+	MethodParamList:  MethodParamList COMMA MethodParamDecl.    (50)
 
-	.  reduce 44 (src line 377)
+	.  reduce 50 (src line 391)
 
 
 state 205
@@ -2154,19 +2154,19 @@ state 205
 
 state 206
 	InstanceDecl:  USE IDENTIFIER IDENTIFIER ASSIGN LBRACE.AssignListOpt RBRACE 
-	AssignListOpt: .    (55)
+	AssignListOpt: .    (61)
 
 	IDENTIFIER  shift 216
-	.  reduce 55 (src line 440)
+	.  reduce 61 (src line 454)
 
 	Assignment  goto 215
 	AssignList  goto 214
 	AssignListOpt  goto 213
 
 state 207
-	DistributeStmt:  DISTRIBUTE TotalClauseOpt LBRACE DistributeCaseListOpt DefaultCaseOpt RBRACE.    (105)
+	DistributeStmt:  DISTRIBUTE TotalClauseOpt LBRACE DistributeCaseListOpt DefaultCaseOpt RBRACE.    (111)
 
-	.  reduce 105 (src line 646)
+	.  reduce 111 (src line 660)
 
 
 state 208
@@ -2268,21 +2268,21 @@ state 209
 	GoStmt  goto 46
 
 state 210
-	MethodSigDecl:  METHOD IDENTIFIER LPAREN MethodParamListOpt RPAREN TypeName.    (21)
+	MethodSigDecl:  METHOD IDENTIFIER LPAREN MethodParamListOpt RPAREN TypeName.    (27)
 
-	.  reduce 21 (src line 268)
+	.  reduce 27 (src line 282)
 
 
 state 211
-	MethodDecl:  METHOD IDENTIFIER LPAREN MethodParamListOpt RPAREN TypeName BlockStmt.    (40)
+	MethodDecl:  METHOD IDENTIFIER LPAREN MethodParamListOpt RPAREN TypeName BlockStmt.    (46)
 
-	.  reduce 40 (src line 359)
+	.  reduce 46 (src line 373)
 
 
 state 212
-	MethodParamDecl:  IDENTIFIER TypeName ASSIGN Expression.    (46)
+	MethodParamDecl:  IDENTIFIER TypeName ASSIGN Expression.    (52)
 
-	.  reduce 46 (src line 388)
+	.  reduce 52 (src line 402)
 
 
 state 213
@@ -2293,18 +2293,18 @@ state 213
 
 
 state 214
-	AssignListOpt:  AssignList.    (56)
+	AssignListOpt:  AssignList.    (62)
 	AssignList:  AssignList.Assignment 
 
 	IDENTIFIER  shift 216
-	.  reduce 56 (src line 442)
+	.  reduce 62 (src line 456)
 
 	Assignment  goto 220
 
 state 215
-	AssignList:  Assignment.    (57)
+	AssignList:  Assignment.    (63)
 
-	.  reduce 57 (src line 445)
+	.  reduce 63 (src line 459)
 
 
 state 216
@@ -2315,27 +2315,27 @@ state 216
 
 
 state 217
-	DistributeCase:  Expression ARROW Stmt.    (110)
+	DistributeCase:  Expression ARROW Stmt.    (116)
 
-	.  reduce 110 (src line 659)
+	.  reduce 116 (src line 673)
 
 
 state 218
-	DefaultCase:  DEFAULT ARROW Stmt.    (113)
+	DefaultCase:  DEFAULT ARROW Stmt.    (119)
 
-	.  reduce 113 (src line 668)
+	.  reduce 119 (src line 682)
 
 
 state 219
-	InstanceDecl:  USE IDENTIFIER IDENTIFIER ASSIGN LBRACE AssignListOpt RBRACE.    (54)
+	InstanceDecl:  USE IDENTIFIER IDENTIFIER ASSIGN LBRACE AssignListOpt RBRACE.    (60)
 
-	.  reduce 54 (src line 430)
+	.  reduce 60 (src line 444)
 
 
 state 220
-	AssignList:  AssignList Assignment.    (58)
+	AssignList:  AssignList Assignment.    (64)
 
-	.  reduce 58 (src line 447)
+	.  reduce 64 (src line 461)
 
 
 state 221
@@ -2365,10 +2365,16 @@ state 221
 	MemberAccessExpr  goto 74
 
 state 222
-	Assignment:  IDENTIFIER ASSIGN Expression.    (59)
+	Assignment:  IDENTIFIER ASSIGN Expression.    (65)
 
-	.  reduce 59 (src line 450)
+	.  reduce 65 (src line 464)
 
+Rule not reduced: ImportListOpt:  
+Rule not reduced: ImportListOpt:  ImportList 
+Rule not reduced: ImportList:  ImportItem 
+Rule not reduced: ImportList:  ImportList ImportItem 
+Rule not reduced: ImportItem:  IDENTIFIER 
+Rule not reduced: ImportItem:  IDENTIFIER AS IDENTIFIER 
 Rule not reduced: PrimitiveType:  INT 
 Rule not reduced: PrimitiveType:  FLOAT 
 Rule not reduced: PrimitiveType:  STRING 
@@ -2403,15 +2409,15 @@ Rule not reduced: DefaultCaseExpr:  DEFAULT ARROW Expression
 Rule not reduced: SwitchExpr:  SWITCH Expression LBRACE RBRACE 
 Rule not reduced: CaseExpr:  CASE Expression COLON Expression 
 
-70 terminals, 78 nonterminals
-166 grammar rules, 223/16000 states
+72 terminals, 81 nonterminals
+172 grammar rules, 223/16000 states
 2 shift/reduce, 0 reduce/reduce conflicts reported
-127 working sets used
-memory: parser 463/240000
+130 working sets used
+memory: parser 462/240000
 132 extra closures
 503 shift entries, 1 exceptions
-131 goto entries
-308 entries saved by goto default
-Optimizer space used: output 322/240000
-322 table entries, 11 zero
-maximum spread: 69, maximum offset: 221
+134 goto entries
+305 entries saved by goto default
+Optimizer space used: output 326/240000
+326 table entries, 15 zero
+maximum spread: 71, maximum offset: 221
