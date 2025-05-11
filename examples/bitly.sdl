@@ -1,51 +1,120 @@
 
-import NativeDisk, HttpStatusCode, HashIndex from "./common" ;
+// import NativeDisk, HttpStatusCode, HashIndex from "./common" ;
 
 // We could use a custom disk or a NativeDisk
 component Disk {
-  method Read() {
-    // Make 1 in 1000 reads fail
-    distribute 1000 {
-    999 => {
-          distribute 100 {         // 99.9% successes
-              90 => delay 10us
-              9 => delay 50us
-              1 => delay 10ms
-          }
-          return true
-      }
-      default => {
-          distribute {     // .1% failure rates
-              90 => delay 10us
-              9 => delay 50us
-              1 => delay 10ms
-          }
-          return false
-      }
+  // How about *just* latencies
+  // Option 1 - Define them purely as a single dimentional entities
+  param ReadLatencies = dist {
+     999 => 10us
+     9 => 50us
+     1 => 10ms
+  }
+
+  // Just a duration of latencies
+  param WriteLatencies = dist 1000 {
+     999 => 10us
+     9 => 50us
+     1 => 10ms
+  }
+
+  // Problem with above is we dont know which latencies are to be associated
+  // with which success codes.
+  // Pro - very simple.  You just have to do 2 samples
+
+  // Option 2 - Make them like a map or multi dimensional, eg:
+  /*
+  param ReadLatencies = dist 1000 {
+    999 => true, dist 100 {
     }
+    default => false, dist {
+    }
+  }
+  */
+
+  // This is actually complicated syntax as we are not introducing tuples 
+  // and we have to enforce types etc.  
+  // Keep it simple and stick with option 1
+  // With this we can do something easier on the dist side
+  // introduce the "sample" key word and use a switch, eg:
+  // This MUST be from a finite set
+  method Read1() int {
+    let retCode = sample ReadResults
+
+    switch retCode {
+      true => delay sample self.SuccessReadLatencies
+      false => delay sample self.FailureReadLatencies
+    }
+  }
+
+  // and same for writes:
+
+  method Write1() string {
+    let retCode = sample self.WriteResults {
+    }
+
+    // Option 3 - Basic tuples, eg:
+    let ReadLatencies = dist 1000 {
+      900 => (true, 10ms)
+      10 => (false, 20ms)
+      50 => (true, 100ms)
+      default => (false, 1000ms)
+    }
+  }
+
+    // Option 3 is *sligtly* more complex than Option 1 but vastly more
+    // commonjj
+
+
+  param ReadLatencies2 = dist 1000 {
+    999 => (true, dist 100 {         // 99.9% successes
+              90 => 10us
+              9 => 50us
+              1 => 10ms
+      })
+      default => (false, dist {     // .1% failure rates
+          90 => 10us
+          9 => 50us
+          1 => 10ms
+      })
+  }
+
+  method Read() {
+    let ret = sample self.ReadLatencies
+    // Make 1 in 1000 reads fail
+    let success, latency = sample dist 1000 {
+        999 => (true, dist 100 {         // 99.9% successes
+              90 => 10us
+              9 => 50us
+              1 => 10ms
+        })
+        default => (false, dist {     // .1% failure rates
+              90 => 10us
+              9 => 50us
+              1 => 10ms
+        })
+    }
+    delay sample latencyDist
+    return success
   }
 
   // Give similar characteristics to a read
   method Write() bool {
     // Make 1 in 1000 reads fail
-    distribute 1000 {
-      999 => {
-          distribute 100 {         // 99.9% successes
-              90 => delay 10us
-              9 => delay 50us
-              1 => delay 10ms
-          }
-          return true
-      }
-      default => {
-          distribute {     // .1% failure rates
-              90 => delay 10us
-              9 => delay 50us
-              1 => delay 10ms
-          }
-          return false
-      }
+    let success, latencyDist = sample dist 1000 {
+      999 => (true, dist 100 {         // 99.9% successes
+              90 => 10us
+              9 => 50us
+              1 => 10ms
+          })
+      default => (false, dist {     // .1% failure rates
+              90 => 10us
+              9 => 50us
+              1 => 10ms
+          })
     }
+    delay sample latencyDist
+    return success
   }
 }
 
@@ -59,6 +128,8 @@ component AppServer {
   uses DB Database
 
   method Shorten() HttpStatusCode {
+    // create a random by doing an Insert
+    let nextid = self.DB.Insert() 
   }
 
   method Redirect() HttpStatusCode {

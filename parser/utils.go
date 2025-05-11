@@ -102,7 +102,7 @@ func newUnaryExpr(op string, right Expr) *UnaryExpr {
 }
 
 func newLetStmt(varName string, value Expr) *LetStmt {
-	return &LetStmt{Variable: newIdent(varName), Value: value}
+	return &LetStmt{Variables: []*IdentifierExpr{newIdent(varName)}, Value: value}
 }
 
 func newBlockStmt(stmts ...Stmt) *BlockStmt {
@@ -135,26 +135,22 @@ func newUsesDecl(localName, componentType string) *UsesDecl {
 	return &UsesDecl{NameNode: newIdent(localName), ComponentNode: newIdent(componentType)}
 }
 
-func newMethodDecl(name string, returnTypeName *TypeName, body *BlockStmt, params ...*ParamDecl) *MethodDecl {
+func newMethodDecl(name string, returnTypeDecl *TypeDecl, body *BlockStmt, params ...*ParamDecl) *MethodDecl {
 	// NodeInfo is cleaned
 	if params == nil {
 		params = []*ParamDecl{}
 	}
-	return &MethodDecl{NameNode: newIdent(name), Parameters: params, ReturnType: returnTypeName, Body: body}
+	return &MethodDecl{NameNode: newIdent(name), Parameters: params, ReturnType: returnTypeDecl, Body: body}
 }
 
-func newParamDecl(name string, typeName *TypeName, defaultValue Expr) *ParamDecl {
+func newParamDecl(name string, typeName *TypeDecl, defaultValue Expr) *ParamDecl {
 	// NodeInfo is cleaned
 	return &ParamDecl{Name: newIdent(name), Type: typeName, DefaultValue: defaultValue}
 }
 
-func newTypeName(name string, isPrimitive bool) *TypeName {
+func newTypeDecl(name string, args []*TypeDecl) *TypeDecl {
 	// NodeInfo is cleaned
-	if isPrimitive {
-		return &TypeName{PrimitiveTypeName: name}
-	} else {
-		return &TypeName{EnumTypeName: name}
-	}
+	return &TypeDecl{Name: name, Args: args}
 }
 
 func newInstanceDecl(instanceName, componentType string, overrides ...*AssignmentStmt) *InstanceDecl {
@@ -173,16 +169,8 @@ func newOptionsDecl(body *BlockStmt) *OptionsDecl {
 	return &OptionsDecl{Body: body}
 }
 
-func newDistributeStmt(total Expr, defaultCase *DefaultCase, cases ...*DistributeCase) *DistributeStmt {
-	return &DistributeStmt{Total: total, Cases: cases, DefaultCase: defaultCase}
-}
-
-func newDistributeCase(prob Expr, body Stmt) *DistributeCase {
-	return &DistributeCase{Probability: prob, Body: body}
-}
-
-func newDefaultCase(body Stmt) *DefaultCase {
-	return &DefaultCase{Body: body}
+func newDistributeExpr(total Expr, defaultCase Expr, cases ...*CaseExpr) *DistributeExpr {
+	return &DistributeExpr{TotalProb: total, Cases: cases, Default: defaultCase}
 }
 
 func newGoStmt(varName *IdentifierExpr, stmt Stmt, expr Expr) *GoStmt {
@@ -201,6 +189,8 @@ type TokenNode struct {
 	NodeInfo
 	Text string
 }
+
+var e Expr = &ChainedExpr{}
 
 func newTokenNode(startPos, endPos int, text string) *TokenNode {
 	if strings.TrimSpace(text) == "" {

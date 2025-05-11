@@ -121,7 +121,7 @@ func evalIdentifier(expr *IdentifierExpr, frame *Frame, v *VM) (val Value, err e
 }
 
 func evalLetStmt(stmt *LetStmt, frame *Frame, v *VM) (val Value, err error) {
-	varName := stmt.Variable.Name
+	varName := stmt.Variables[0].Name
 	val, err = Eval(stmt.Value, frame, v)
 	if err != nil {
 		return nil, fmt.Errorf("evaluating value for let statement '%s': %w", varName, err)
@@ -290,11 +290,6 @@ func evalIfStmt(stmt *IfStmt, frame *Frame, v *VM) (val Value, err error) {
 		Then:      thenNode,
 		Else:      elseNode,
 	})
-}
-
-/** Evaluate a Switch and return its value */
-func evalSwitchStmt(stmt *SwitchStmt, frame *Frame, v *VM) (val Value, err error) {
-	return
 }
 
 /** Evaluate a Expr as a statement and return its value */

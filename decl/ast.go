@@ -392,35 +392,27 @@ type ComponentDeclBodyItem interface {
 	componentBodyItemNode()
 }
 
-// TypeName represents primitive types or registered enum identifiers.
-type TypeName struct {
+// TypeDecl represents primitive types or registered enum identifiers.
+type TypeDecl struct {
 	NodeInfo
 	// Can be one of the following
-	PrimitiveTypeName string // "int", "float", "bool", "string", "duration", or an EnumDecl identifier
-	EnumTypeName      string
-	OutcomeTypeName   string
+	Name string
+	Args []*TypeDecl
 }
 
-func (t *TypeName) Name() string {
-	if t.PrimitiveTypeName != "" {
-		return t.PrimitiveTypeName
+func (t *TypeDecl) String() string {
+	if len(t.Args) == 0 {
+		return fmt.Sprintf("Type { %s ", t.Name)
+	} else {
+		return fmt.Sprintf("Type { %s[%s] } ", t.Name, strings.Join(gfn.Map(t.Args, func(t *TypeDecl) string { return t.String() }), ", "))
 	}
-	if t.EnumTypeName != "" {
-		return t.EnumTypeName
-	}
-	if t.OutcomeTypeName != "" {
-		return t.OutcomeTypeName
-	}
-	return ""
 }
 
-func (t *TypeName) String() string { return t.Name() }
-
-// ParamDecl represents `param name: TypeName [= defaultExpr];`
+// ParamDecl represents `param name: TypeDecl [= defaultExpr];`
 type ParamDecl struct {
 	NodeInfo
 	Name         *IdentifierExpr
-	Type         *TypeName
+	Type         *TypeDecl
 	DefaultValue Expr // Optional
 }
 
@@ -454,7 +446,7 @@ type MethodDecl struct {
 	NodeInfo
 	NameNode   *IdentifierExpr
 	Parameters []*ParamDecl // Signature parameters (can be empty)
-	ReturnType *TypeName    // Optional return type (primitive or enum)
+	ReturnType *TypeDecl    // Optional return type (primitive or enum)
 	Body       *BlockStmt
 
 	Name string

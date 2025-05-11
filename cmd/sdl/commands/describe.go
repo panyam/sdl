@@ -60,7 +60,7 @@ Entity types: component, system, analysis.`,
 				fmt.Println("  Params:")
 				params, _ := comp.GetParams()
 				for _, p := range params { // Assuming GetParams()
-					fmt.Printf("    - %s: %s\n", p.Name.Name, p.Type.Name())
+					fmt.Printf("    - %s: %s\n", p.Name.Name, p.Type.Name)
 				}
 				fmt.Println("  Uses:")
 				uses, _ := comp.GetDependencies()

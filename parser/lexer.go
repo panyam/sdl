@@ -6,7 +6,9 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log"
 	"strconv"
+	"strings"
 	"unicode"
 )
 
@@ -258,9 +260,13 @@ func (l *Lexer) scanIdentifierOrKeyword() (tok int, text string) {
 		return LET, text
 	case "if":
 		return IF, text
+	case "tup":
+		return TUP, text
 	case "else":
 		return ELSE, text
-	case "distribute":
+	case "sample":
+		return SAMPLE, text
+	case "dist":
 		return DISTRIBUTE, text
 	case "default":
 		return DEFAULT, text
@@ -294,16 +300,18 @@ func (l *Lexer) scanIdentifierOrKeyword() (tok int, text string) {
 		return BOOL_LITERAL, text
 	case "for":
 		return FOR, text
-	case "int":
-		return INT, text
-	case "float":
-		return FLOAT, text
-	case "bool":
-		return BOOL, text
-	case "string":
-		return STRING, text
-	case "duration":
-		return DURATION, text
+		/*
+			case "int":
+				return INT, text
+			case "float":
+				return FLOAT, text
+			case "bool":
+				return BOOL, text
+			case "string":
+				return STRING, text
+			case "duration":
+				return DURATION, text
+		*/
 	default:
 		return IDENTIFIER, text
 	}
@@ -492,13 +500,15 @@ func (l *Lexer) Lex(lval *yySymType) int {
 
 	// Handle multi-character operators
 	switch r {
-	case ';', '{', '}', '(', ')', ',', '.':
+	case ';', '{', '}', '(', ')', ',', '.', '[', ']':
 		l.read()
 		lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
 		return map[rune]int{
 			';': SEMICOLON,
 			'{': LBRACE,
 			'}': RBRACE,
+			'[': LSQUARE,
+			']': RSQUARE,
 			'(': LPAREN,
 			')': RPAREN,
 			',': COMMA,
@@ -519,15 +529,6 @@ func (l *Lexer) Lex(lval *yySymType) int {
 		return tokenCode
 	case '=':
 		l.read()
-		if l.peek() == '=' {
-			l.read()
-			l.tokenText = "=="
-			currentEndPos = l.pos
-			lval.sval = "=="
-			lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
-			tokenCode = EQ
-			return tokenCode
-		}
 		if l.peek() == '>' {
 			l.read()
 			l.tokenText = "=>"
@@ -539,140 +540,25 @@ func (l *Lexer) Lex(lval *yySymType) int {
 		lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
 		tokenCode = ASSIGN
 		return tokenCode
-	case '|':
-		if l.peekN(1) == '|' {
-			l.read()
-			l.read()
-			l.tokenText = "||"
-			currentEndPos = l.pos
-			lval.sval = "||"
-			lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
-			tokenCode = OR
-			return tokenCode
-		}
-	case '&':
-		if l.peekN(1) == '&' {
-			l.read()
-			l.read()
-			l.tokenText = "&&"
-			currentEndPos = l.pos
-			lval.sval = "&&"
-			lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
-			tokenCode = AND
-			return tokenCode
-		}
-	case '!':
-		l.read()
-		if l.peek() == '=' {
-			l.read()
-			l.tokenText = "!="
-			currentEndPos = l.pos
-			lval.sval = "!="
-			lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
-			tokenCode = NEQ
-			return tokenCode
-		}
-		lval.sval = "!"
-		lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
-		tokenCode = NOT
-		return tokenCode
-	case '<':
-		l.read()
-		if l.peek() == '=' {
-			l.read()
-			l.tokenText = "<="
-			currentEndPos = l.pos
-			lval.sval = "<="
-			lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
-			tokenCode = LTE
-			return tokenCode
-		}
-		lval.sval = "<"
-		lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
-		tokenCode = LT
-		return tokenCode
-	case '>':
-		l.read()
-		if l.peek() == '=' {
-			l.read()
-			l.tokenText = ">="
-			currentEndPos = l.pos
-			lval.sval = ">="
-			lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
-			tokenCode = GTE
-			return tokenCode
-		}
-		lval.sval = ">"
-		lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
-		tokenCode = GT
-		return tokenCode
-	case '+':
-		l.read()
-		if l.peek() == '=' {
-			l.read()
-			l.tokenText = "+="
-			currentEndPos = l.pos
-			lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
-			tokenCode = PLUS_ASSIGN
-			return tokenCode
-		}
-		l.tokenText = "+"
-		lval.sval = "+"
-		lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
-		tokenCode = PLUS
-		return tokenCode
-	case '-':
-		l.read()
-		if l.peek() == '=' {
-			l.read()
-			l.tokenText = "-="
-			currentEndPos = l.pos
-			lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
-			tokenCode = MINUS_ASSIGN
-			return tokenCode
-		}
-		lval.sval = "-"
-		lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
-		tokenCode = MINUS
-		return tokenCode
-	case '*':
-		l.read()
-		if l.peek() == '=' {
-			l.read()
-			l.tokenText = "*="
-			currentEndPos = l.pos
-			lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
-			tokenCode = MUL_ASSIGN
-			return tokenCode
-		}
-		lval.sval = "*"
-		lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
-		tokenCode = MUL
-		return tokenCode
-	case '/': // Comments handled in skipWhitespace
-		l.read()
-		if l.peek() == '=' {
-			l.read()
-			l.tokenText = "/="
-			currentEndPos = l.pos
-			lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
-			tokenCode = DIV_ASSIGN
-			return tokenCode
-		}
-		lval.sval = "/"
-		lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
-		tokenCode = DIV
-		return tokenCode
-	case '%':
-		l.read()
-		lval.sval = "%"
-		lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
-		tokenCode = MOD
-		return tokenCode
 	default:
 	}
 
-	tokenCode = eof // Return EOF on error to stop parser? Or a special error token? EOF is safer.
+	opchars := "<>&^%$#@!*~=/|:+-"
+	if l.peek() == '-' && strings.IndexRune(opchars, l.peekN(1)) < 0 {
+		l.read()
+		lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
+		tokenCode = MINUS
+		return tokenCode
+	}
+
+	var out []rune
+	for strings.IndexRune(opchars, l.peek()) >= 0 {
+		out = append(out, l.peek())
+		l.read()
+	}
+	log.Println("At Peek: ", string(l.peek()))
+	lval.node = newTokenNode(startPosSnapshot, currentEndPos, string(out))
+	tokenCode = BINARY_OP
 	l.Error(fmt.Sprintf("unexpected character '%c'", r))
 	return eof // Indicate an error that should halt parsing
 }
@@ -726,30 +612,16 @@ var testTokenNames = map[int]string{
 	SEMICOLON:        "SEMICOLON",
 	LBRACE:           "LBRACE",
 	RBRACE:           "RBRACE",
+	LSQUARE:          "LSQUARE",
+	RSQUARE:          "RSQUARE",
 	LPAREN:           "LPAREN",
 	RPAREN:           "RPAREN",
 	COMMA:            "COMMA",
 	DOT:              "DOT",
 	ARROW:            "ARROW",
-	PLUS_ASSIGN:      "PLUS_ASSIGN",
-	MINUS_ASSIGN:     "MINUS_ASSIGN",
-	MUL_ASSIGN:       "MUL_ASSIGN",
-	DIV_ASSIGN:       "DIV_ASSIGN",
 	LET_ASSIGN:       "LET_ASSIGN",
-	OR:               "OR_OP",
-	AND:              "AND_OP",
-	EQ:               "EQ_OP",
-	NEQ:              "NEQ_OP",
-	LT:               "LT_OP",
-	LTE:              "LTE_OP",
-	GT:               "GT_OP",
-	GTE:              "GTE_OP",
-	PLUS:             "PLUS_OP",
-	MINUS:            "MINUS_OP",
-	MUL:              "MUL_OP",
-	DIV:              "DIV_OP",
-	MOD:              "MOD_OP",
-	NOT:              "NOT_OP",
+	BINARY_OP:        "BINARY_OP",
+	MINUS:            "MINUS",
 }
 
 func tokenString(tok int) string {

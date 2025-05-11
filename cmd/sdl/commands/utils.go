@@ -12,7 +12,7 @@ import (
 func parse(input io.Reader) (*decl.FileDecl, error) {
 	file := &decl.FileDecl{}
 	l := parser.NewLexer(input)
-	if true { // use the LL parser
+	if os.Getenv("USE_LRPARSER") != "true" { // use the LL parser
 		p := parser.NewLLParser(l)
 		p.PanicOnError = true
 		err := p.Parse(file)

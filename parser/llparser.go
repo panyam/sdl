@@ -563,7 +563,7 @@ func (p *LLParser) ParseUsesDecl(out *UsesDecl) (err error) {
 
 // ParseMethodDecl parses a method declaration or signature (ComponentBodyItem).
 // isSignatureOnly = true for NATIVE component methods (no body).
-// Grammar: METHOD IDENTIFIER LPAREN MethodParamListOpt RPAREN [TypeName] [BlockStmt]
+// Grammar: METHOD IDENTIFIER LPAREN MethodParamListOpt RPAREN [TypeDecl] [BlockStmt]
 func (p *LLParser) ParseMethodDecl(out *MethodDecl, isSignatureOptional bool) (err error) {
 	var methodTokenVal *yySymType
 	if _, methodTokenVal, err = p.AdvanceIf(METHOD); err != nil {
@@ -592,23 +592,23 @@ func (p *LLParser) ParseMethodDecl(out *MethodDecl, isSignatureOptional bool) (e
 	endNodePos := rparenTokenVal.node.End() // End position if no return type or body
 
 	// Check for optional ReturnType
-	// A TypeName can start with IDENTIFIER or a primitive type keyword (INT, FLOAT, etc.)
+	// A TypeDecl can start with IDENTIFIER or a primitive type keyword (INT, FLOAT, etc.)
 	peekedAfterParen := p.PeekToken()
 	if peekedAfterParen == IDENTIFIER ||
 		peekedAfterParen == INT || peekedAfterParen == FLOAT ||
 		peekedAfterParen == STRING || peekedAfterParen == BOOL || peekedAfterParen == DURATION {
 
-		// It *could* be a TypeName. But if it's `isSignatureOnly == false` and the next token
+		// It *could* be a TypeDecl . But if it's `isSignatureOnly == false` and the next token
 		// is LBRACE (start of BlockStmt), then this IDENTIFIER/keyword is NOT a return type.
 		// Example: method foo() int {}  vs method foo() {}
-		// If it's a signature, any valid TypeName start means it IS a return type.
+		// If it's a signature, any valid TypeDecl start means it IS a return type.
 		// If it's a full decl, we need to ensure it's not the LBRACE of the body.
 
 		isPotentiallyBlockStart := (peekedAfterParen == LBRACE && !isSignatureOptional)
 
 		if !isPotentiallyBlockStart { // If it's not LBRACE (for full decl) or if it IS a signature decl
 			// Then it must be a return type if it looks like one
-			out.ReturnType, err = p.ParseTypeName() // Assumes this function is defined
+			out.ReturnType, err = p.ParseTypeDecl() // Assumes this function is defined
 			if err != nil {
 				// This error means it looked like a type but wasn't valid.
 				return p.Errorf("error parsing return type for method '%s': %v", out.NameNode.Name, err)
@@ -634,7 +634,7 @@ func (p *LLParser) ParseMethodDecl(out *MethodDecl, isSignatureOptional bool) (e
 }
 
 // ParseParamDecl parses a parameter declaration (ComponentBodyItem).
-// Grammar: PARAM IDENTIFIER TypeName [ASSIGN Expression]
+// Grammar: PARAM IDENTIFIER TypeDecl [ASSIGN Expression]
 func (p *LLParser) ParseParamDecl(out *ParamDecl) (err error) {
 	var paramTokenVal *yySymType
 	if _, paramTokenVal, err = p.AdvanceIf(PARAM); err != nil {
@@ -646,7 +646,7 @@ func (p *LLParser) ParseParamDecl(out *ParamDecl) (err error) {
 		return p.Errorf("expected identifier for param name after PARAM, found %s (%s): %v", tokenString(p.PeekToken()), p.lexer.Text(), err)
 	}
 
-	out.Type, err = p.ParseTypeName() // Assumes this function is defined
+	out.Type, err = p.ParseTypeDecl() // Assumes this function is defined
 	if err != nil {
 		return p.Errorf("expected type name for param '%s', found %s (%s): %v", out.Name.Name, tokenString(p.PeekToken()), p.lexer.Text(), err)
 	}
@@ -766,7 +766,7 @@ func (p *LLParser) ParseMethodParamListOpt() (params []*ParamDecl, err error) {
 	}
 
 	// Parse the first parameter
-	// ParseMethodParamDecl is specific to your grammar: IDENTIFIER TypeName [ASSIGN Expression]
+	// ParseMethodParamDecl is specific to your grammar: IDENTIFIER TypeDecl [ASSIGN Expression]
 	firstParam, err := p.ParseMethodParamDecl()
 	if err != nil {
 		return nil, err // Error parsing the first parameter
@@ -792,7 +792,7 @@ func (p *LLParser) ParseMethodParamListOpt() (params []*ParamDecl, err error) {
 }
 
 // ParseMethodParamDecl parses a single parameter declaration for a method.
-// Grammar: IDENTIFIER TypeName [ASSIGN Expression]
+// Grammar: IDENTIFIER TypeDecl [ASSIGN Expression]
 func (p *LLParser) ParseMethodParamDecl() (out *ParamDecl, err error) {
 	out = &ParamDecl{}
 	var identNode *IdentifierExpr
@@ -806,7 +806,7 @@ func (p *LLParser) ParseMethodParamDecl() (out *ParamDecl, err error) {
 	// Store start position from the first token of the declaration
 	startPos := identNode.Pos()
 
-	out.Type, err = p.ParseTypeName() // You'll need to implement ParseTypeName
+	out.Type, err = p.ParseTypeDecl() // You'll need to implement ParseTypeDecl
 	if err != nil {
 		return nil, err
 	}
@@ -827,28 +827,19 @@ func (p *LLParser) ParseMethodParamDecl() (out *ParamDecl, err error) {
 	return out, nil
 }
 
-// ParseTypeName parses a type name.
+// ParseTypeDecl parses a type name.
 // Grammar: IDENTIFIER | PrimitiveType (INT | FLOAT | STRING | BOOL | DURATION)
-func (p *LLParser) ParseTypeName() (out *TypeName, err error) {
+func (p *LLParser) ParseTypeDecl() (out *TypeDecl, err error) {
 	peeked := p.PeekToken()
 	typeNameTokenVal := p.peekedTokenValue
 	p.Advance() // Consume the type token
 
-	out = &TypeName{NodeInfo: newNodeInfoFromToken(typeNameTokenVal)}
+	out = &TypeDecl{NodeInfo: newNodeInfoFromToken(typeNameTokenVal)}
 
 	switch peeked {
 	case IDENTIFIER:
 		// If lexer puts IdentifierExpr in .ident for IDENTIFIER token
-		if typeNameTokenVal.ident != nil {
-			out.EnumTypeName = typeNameTokenVal.ident.Name
-		} else {
-			// Fallback: if .ident is not populated, use .sval or .node.String()
-			// This depends on how your lexer populates yySymType for IDENTIFIER.
-			// For this example, let's assume it's in sval if .ident is nil.
-			out.PrimitiveTypeName = typeNameTokenVal.sval
-		}
-	case INT, FLOAT, STRING, BOOL, DURATION:
-		out.PrimitiveTypeName = tokenString(peeked) // Or typeNameTokenVal.node.(TokenNode).String()
+		out.Name = typeNameTokenVal.ident.Name
 	default:
 		// Revert advance if token was not a valid type
 		// This is tricky. PeekToken/Advance model makes this hard.
@@ -865,7 +856,37 @@ func (p *LLParser) ParseTypeName() (out *TypeName, err error) {
 // ParseExpression is the entry point for parsing any expression.
 // It starts with the lowest precedence operator (OR in your grammar).
 func (p *LLParser) ParseExpression() (Expr, error) {
-	return p.ParseOrExpr() // Start with the lowest precedence level
+	// return p.ParseOrExpr() // Start with the lowest precedence level
+	return p.ParseChainedExpr()
+}
+
+// ChainedExpr : UnaryExpr ( BINARY_OP UnaryExpr ) *
+// Idea is to collect them and then sort out precedences dynamically
+func (p *LLParser) ParseChainedExpr() (Expr, error) {
+	left, err := p.ParseUnaryExpr()
+	if err != nil {
+		return nil, err
+	}
+	out := &ChainedExpr{Children: []Expr{left}}
+
+	for {
+		currentPeekedToken := p.PeekToken()
+		if currentPeekedToken != BINARY_OP {
+			break
+		}
+		opToken := currentPeekedToken
+		opTokenVal := p.peekedTokenValue // Capture semantic value of operator before advancing
+		p.Advance()                      // Consume the operator
+
+		next, err := p.ParseUnaryExpr()
+		if err != nil {
+			return nil, p.Errorf("expected unary expression after operator '%s', found %s (%s): %v",
+				tokenString(opToken), tokenString(p.PeekToken()), p.lexer.Text(), err)
+		}
+		out.Children = append(out.Children, next)
+		out.Operators = append(out.Operators, opTokenVal.node.(*TokenNode).Text)
+	}
+	return out, nil
 }
 
 // Generic helper for parsing left-associative binary expressions for a given precedence level.
@@ -916,6 +937,7 @@ func (p *LLParser) parseBinaryExpr(
 }
 
 // OrExpr: AndBoolExpr ( OR AndBoolExpr )*
+/*
 func (p *LLParser) ParseOrExpr() (Expr, error) {
 	return p.parseBinaryExpr(p.ParseAndBoolExpr, OR)
 }
@@ -974,6 +996,7 @@ func (p *LLParser) ParseAddExpr() (Expr, error) {
 func (p *LLParser) ParseMulExpr() (Expr, error) {
 	return p.parseBinaryExpr(p.ParseUnaryExpr, MUL, DIV, MOD)
 }
+*/
 
 // UnaryExpr: (NOT | MINUS) UnaryExpr | PrimaryExpr
 // Unary operators are right-associative (e.g., !!a or --a).
@@ -1146,7 +1169,7 @@ func (p *LLParser) ParseStmt() (out Stmt, err error) {
 	case DELAY:
 		return p.ParseDelayStmt() // You'll implement this
 	case DISTRIBUTE: // Added
-		return p.ParseDistributeStmt()
+		return p.ParseDistributeExpr()
 		/*
 			case GO: // Added
 				goStmt, goErr := p.ParseGoStmt()
@@ -1219,9 +1242,9 @@ func (p *LLParser) ParseLetStmt() (Stmt, error) {
 	// Your grammar does not show a semicolon for LetStmt itself.
 	// It's a Stmt directly. If a semicolon is required, add AdvanceIf(SEMICOLON).
 	return &LetStmt{
-		NodeInfo: newNodeInfo(letTokenVal.node.Pos(), valExpr.End()),
-		Variable: varIdent,
-		Value:    valExpr,
+		NodeInfo:  newNodeInfo(letTokenVal.node.Pos(), valExpr.End()),
+		Variables: []*IdentifierExpr{varIdent},
+		Value:     valExpr,
 	}, nil
 }
 
@@ -1314,15 +1337,15 @@ func (p *LLParser) ParseIfStmt() (Stmt, error) {
 	}, nil
 }
 
-// ParseDistributeStmt parses a distribute statement.
-// Grammar: DISTRIBUTE TotalClauseOpt LBRACE DistributeCaseListOpt DefaultCaseOpt RBRACE
+// ParseDistributeExpr parses a distribute statement.
+// Grammar: DISTRIBUTE TotalClauseOpt LBRACE CaseExprListOpt DefaultCaseOpt RBRACE
 // TotalClauseOpt: /* empty */ | Expression
-// DistributeCaseListOpt: /* empty */ | DistributeCaseListOpt DistributeCase
-// DistributeCase: Expression ARROW Stmt
+// CaseExprListOpt: /* empty */ | CaseExprListOpt CaseExpr
+// CaseExpr: Expression ARROW Stmt
 // DefaultCaseOpt: /* empty */ | DefaultCase
 // DefaultCase: DEFAULT ARROW Stmt
-func (p *LLParser) ParseDistributeStmt() (Stmt, error) {
-	out := &DistributeStmt{}
+func (p *LLParser) ParseDistributeExpr() (Stmt, error) {
+	out := &DistributeExpr{}
 	var distributeTokenVal *yySymType
 	var err error
 
@@ -1350,7 +1373,7 @@ func (p *LLParser) ParseDistributeStmt() (Stmt, error) {
 		// A robust way: peek. If not LBRACE, attempt to parse Expr.
 		// If successful, out.Total = expr. Then expect LBRACE.
 		// If LBRACE directly, out.Total remains nil.
-		out.Total, err = p.ParseExpression()
+		out.TotalProb, err = p.ParseExpression()
 		if err != nil {
 			// If parsing expression failed, but the next token IS LBRACE,
 			// then the TotalClause was indeed empty, and the failure was likely
@@ -1366,8 +1389,8 @@ func (p *LLParser) ParseDistributeStmt() (Stmt, error) {
 		return nil, p.Errorf("expected '{' to start DISTRIBUTE statement body, found %s (%s)", tokenString(p.PeekToken()), p.lexer.Text())
 	}
 
-	// Parse DistributeCaseListOpt
-	out.Cases = []*DistributeCase{}
+	// Parse CaseExprListOpt
+	out.Cases = []*CaseExpr{}
 	for p.PeekToken() != RBRACE && p.PeekToken() != DEFAULT && p.PeekToken() != eof {
 		caseExpr, err := p.ParseExpression()
 		if err != nil {
@@ -1381,36 +1404,32 @@ func (p *LLParser) ParseDistributeStmt() (Stmt, error) {
 
 		// A case body is a single Stmt, not necessarily a BlockStmt.
 		// Stmt: LetStmt | ExprStmt | ReturnStmt | IfStmt | BlockStmt etc.
-		caseBody, err := p.ParseStmt()
+		caseBody, err := p.ParseExpression()
 		if err != nil {
 			return nil, p.Errorf("error parsing DISTRIBUTE case body: %v", err)
 		}
 
-		distCase := &DistributeCase{
-			NodeInfo:    newNodeInfo(caseExpr.Pos(), caseBody.End()),
-			Probability: caseExpr,
-			Body:        caseBody,
+		distCase := &CaseExpr{
+			NodeInfo:  newNodeInfo(caseExpr.Pos(), caseBody.End()),
+			Condition: caseExpr,
+			Body:      caseBody,
 		}
 		out.Cases = append(out.Cases, distCase)
 	}
 
 	// Parse DefaultCaseOpt
 	if p.PeekToken() == DEFAULT {
-		defaultTokenVal := p.peekedTokenValue
 		p.Advance() // Consume DEFAULT
 
 		if _, _, err = p.AdvanceIf(ARROW); err != nil {
 			return nil, p.Errorf("expected '=>' after DEFAULT in DISTRIBUTE statement, found %s (%s)", tokenString(p.PeekToken()), p.lexer.Text())
 		}
 
-		defaultBody, err := p.ParseStmt()
+		defaultBody, err := p.ParseExpression()
 		if err != nil {
 			return nil, p.Errorf("error parsing DEFAULT case body in DISTRIBUTE statement: %v", err)
 		}
-		out.DefaultCase = &DefaultCase{
-			NodeInfo: newNodeInfo(defaultTokenVal.node.Pos(), defaultBody.End()),
-			Body:     defaultBody,
-		}
+		out.Default = defaultBody
 	}
 
 	var rbraceTokenVal *yySymType

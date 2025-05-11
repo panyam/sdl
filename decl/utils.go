@@ -48,7 +48,7 @@ func newStringLit(val string) *LiteralExpr {
 }
 
 func newLetStmt(varName string, value Expr) *LetStmt {
-	return &LetStmt{Variable: newIdent(varName), Value: value}
+	return &LetStmt{Variables: []*IdentifierExpr{newIdent(varName)}, Value: value}
 }
 
 func newBinExpr(left Expr, op string, right Expr) *BinaryExpr {
@@ -99,27 +99,13 @@ func newParamDeclWithDefault(varName, typeName string, defaultVal Expr) *ParamDe
 
 // Helper for ParamDecl AST (without default for now)
 func newParamDecl(varName, typeName string) *ParamDecl {
-	// Assuming TypeName handling can be simple for now
-	tn := &TypeName{}
-	switch typeName {
-	case "string":
-		tn.PrimitiveTypeName = typeName
-	case "int":
-		tn.PrimitiveTypeName = typeName
-	case "float":
-		tn.PrimitiveTypeName = typeName
-	case "bool":
-		tn.PrimitiveTypeName = typeName
-	case "duration":
-		tn.PrimitiveTypeName = typeName
-	default:
-		tn.EnumTypeName = typeName // Assume others are enums/custom
-	}
+	// Assuming TypeDecl handling can be simple for now
+	tn := &TypeDecl{Name: typeName}
 	return &ParamDecl{Name: newIdent(varName), Type: tn}
 }
 
 // Helper function to create a MethodDecl AST node for testing
-func newMethodDecl(name string, params []*ParamDecl, returnType *TypeName, body *BlockStmt) *MethodDecl {
+func newMethodDecl(name string, params []*ParamDecl, returnType *TypeDecl, body *BlockStmt) *MethodDecl {
 	return &MethodDecl{
 		NameNode:   newIdent(name),
 		Parameters: params,
