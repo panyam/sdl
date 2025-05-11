@@ -321,7 +321,8 @@ func (na *NativeComponent) SetParam(name string, value Value) error {
 		return fmt.Errorf("cannot set value of param '%s'", name)
 	}
 
-	switch value.Type.Tag {
+	/* TODO - Convert RuntimeValue -> Go Value
+	switch value.Type {
 	case ValueTypeNil:
 		fieldVal.SetPointer(nil)
 		break
@@ -354,17 +355,16 @@ func (na *NativeComponent) SetParam(name string, value Value) error {
 		}
 		break
 	case ValueTypeOpNode:
-		/*
-			case *BinaryRuntimeValue:
-			case *IfChoiceNode:
-			case *SequenceNode:
-		*/
+			// case *BinaryRuntimeValue:
+			// case *IfChoiceNode:
+			// case *SequenceNode:
 		return fmt.Errorf("node (%s) must be evaluated before setting param ('%s')", reflect.TypeOf(value.Value), name)
 	// How to handle *Outcomes[T] fields? Maybe return directly?
 	// case *core.Outcomes[core.Duration]: valueOutcome = v // Risky - mutable?
 	default:
 		return fmt.Errorf("Invalid value type for param ('%s'): '%s')", name, reflect.TypeOf(value.Value))
 	}
+	*/
 	return nil
 }
 

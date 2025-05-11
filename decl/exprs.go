@@ -13,8 +13,14 @@ type Expr interface {
 	exprNode() // Marker method for expressions
 }
 
-type ChainedExpr struct {
+type ExprBase struct {
 	NodeInfo
+	DeclaredType *Type
+	InferredType *Type
+}
+
+type ChainedExpr struct {
+	ExprBase
 	Children  []Expr
 	Operators []string
 }
@@ -29,7 +35,7 @@ func (b *ChainedExpr) String() string {
 // --- Expressions ---
 // TupleExpr represents `left operator right`
 type TupleExpr struct {
-	NodeInfo
+	ExprBase
 	Children []Expr
 }
 
@@ -42,7 +48,7 @@ func (b *TupleExpr) String() string {
 // --- Expressions ---
 // BinaryExpr represents `left operator right`
 type BinaryExpr struct {
-	NodeInfo
+	ExprBase
 	Left     Expr
 	Operator string // "||", "&&", "==", "!=", "<", "<=", ">", ">=", "+", "-", "*", "/", "%"
 	Right    Expr
@@ -56,7 +62,7 @@ func (b *BinaryExpr) String() string {
 
 // UnaryExpr represents `operator operand`
 type UnaryExpr struct {
-	NodeInfo
+	ExprBase
 	Operator string // "!", "-"
 	Right    Expr
 }
@@ -66,7 +72,7 @@ func (u *UnaryExpr) String() string { return fmt.Sprintf("(%s%s)", u.Operator, u
 
 // LiteralExpr represents literal values
 type LiteralExpr struct {
-	NodeInfo
+	ExprBase
 	Value Value
 	// Duration specific fields could be added if needed after parsing
 	// DurationUnit string
@@ -80,7 +86,7 @@ func (l *LiteralExpr) String() string {
 
 // IdentifierExpr represents variable or function names
 type IdentifierExpr struct {
-	NodeInfo
+	ExprBase
 	Name string
 }
 
@@ -90,7 +96,7 @@ func (i *IdentifierExpr) String() string      { return i.Name }
 
 // MemberAccessExpr represents `receiver.member` (accessing parameters/fields)
 type MemberAccessExpr struct {
-	NodeInfo
+	ExprBase
 	Receiver Expr // The object/instance being accessed
 	Member   *IdentifierExpr
 }
@@ -100,7 +106,7 @@ func (m *MemberAccessExpr) String() string { return fmt.Sprintf("%s.%s", m.Recei
 
 // CallExpr represents `function(arg1, arg2, ...)` (user funcs, component methods, built-ins)
 type CallExpr struct {
-	NodeInfo
+	ExprBase
 	Function Expr   // Typically IdentifierExpr or MemberAccessExpr
 	Args     []Expr // Argument expressions
 }
@@ -116,7 +122,7 @@ func (c *CallExpr) String() string {
 
 // DistributeExpr represents the probabilistic choice expression/statement
 type DistributeExpr struct {
-	NodeInfo
+	ExprBase
 	TotalProb Expr // Optional total probability expression
 	Cases     []*CaseExpr
 	Default   Expr // default can only exist if TotalProb is given
@@ -128,7 +134,7 @@ func (d *DistributeExpr) String() string { return "distribute {...}" }
 
 // SampleExpr represents `delay durationExpr;`
 type SampleExpr struct {
-	NodeInfo
+	ExprBase
 	FromExpr Expr // Must evaluate to Outcome[X]
 }
 
@@ -138,7 +144,7 @@ func (d *SampleExpr) String() string { return fmt.Sprintf("sample %s;", d.FromEx
 
 // CaseExpr represents a single case within a SwitchStmt
 type CaseExpr struct {
-	NodeInfo
+	ExprBase
 	Condition Expr
 	Body      Expr
 }

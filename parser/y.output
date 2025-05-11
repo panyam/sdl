@@ -620,19 +620,19 @@ state 60
 
 	BINARY_OP  shift 110
 	MINUS  shift 111
-	.  reduce 99 (src line 700)
+	.  reduce 99 (src line 701)
 
 
 state 61
 	ChainedExpr:  UnaryExpr.    (102)
 
-	.  reduce 102 (src line 707)
+	.  reduce 102 (src line 711)
 
 
 state 62
 	UnaryExpr:  PrimaryExpr.    (108)
 
-	.  reduce 108 (src line 733)
+	.  reduce 108 (src line 739)
 
 
 state 63
@@ -692,19 +692,19 @@ state 64
 state 65
 	PrimaryExpr:  LeafExpr.    (111)
 
-	.  reduce 111 (src line 776)
+	.  reduce 111 (src line 788)
 
 
 state 66
 	PrimaryExpr:  CallExpr.    (112)
 
-	.  reduce 112 (src line 778)
+	.  reduce 112 (src line 790)
 
 
 state 67
 	LeafExpr:  LiteralExpr.    (113)
 
-	.  reduce 113 (src line 781)
+	.  reduce 113 (src line 793)
 
 
 68: shift/reduce conflict (shift 115(0), red'n 114(0)) on LPAREN
@@ -715,31 +715,31 @@ state 68
 
 	LPAREN  shift 115
 	DOT  shift 114
-	.  reduce 114 (src line 783)
+	.  reduce 114 (src line 795)
 
 
 state 69
 	LeafExpr:  DistributeExpr.    (115)
 
-	.  reduce 115 (src line 784)
+	.  reduce 115 (src line 796)
 
 
 state 70
 	LeafExpr:  SampleExpr.    (116)
 
-	.  reduce 116 (src line 785)
+	.  reduce 116 (src line 797)
 
 
 state 71
 	LeafExpr:  TupleExpr.    (117)
 
-	.  reduce 117 (src line 786)
+	.  reduce 117 (src line 798)
 
 
 state 72
 	LeafExpr:  ParenExpr.    (118)
 
-	.  reduce 118 (src line 787)
+	.  reduce 118 (src line 799)
 
 
 73: shift/reduce conflict (shift 117(0), red'n 119(0)) on LPAREN
@@ -750,37 +750,37 @@ state 73
 
 	LPAREN  shift 117
 	DOT  shift 116
-	.  reduce 119 (src line 788)
+	.  reduce 119 (src line 800)
 
 
 state 74
 	LiteralExpr:  INT_LITERAL.    (121)
 
-	.  reduce 121 (src line 793)
+	.  reduce 121 (src line 805)
 
 
 state 75
 	LiteralExpr:  FLOAT_LITERAL.    (122)
 
-	.  reduce 122 (src line 798)
+	.  reduce 122 (src line 810)
 
 
 state 76
 	LiteralExpr:  STRING_LITERAL.    (123)
 
-	.  reduce 123 (src line 799)
+	.  reduce 123 (src line 811)
 
 
 state 77
 	LiteralExpr:  BOOL_LITERAL.    (124)
 
-	.  reduce 124 (src line 800)
+	.  reduce 124 (src line 812)
 
 
 state 78
 	LiteralExpr:  DURATION_LITERAL.    (125)
 
-	.  reduce 125 (src line 801)
+	.  reduce 125 (src line 813)
 
 
 state 79
@@ -798,7 +798,7 @@ state 79
 	IDENTIFIER  shift 68
 	UNARY_OP  shift 63
 	MINUS  shift 64
-	.  reduce 91 (src line 674)
+	.  reduce 91 (src line 675)
 
 	SampleExpr  goto 70
 	TupleExpr  goto 71
@@ -1168,13 +1168,13 @@ state 111
 state 112
 	UnaryExpr:  UNARY_OP UnaryExpr.    (109)
 
-	.  reduce 109 (src line 735)
+	.  reduce 109 (src line 741)
 
 
 state 113
 	UnaryExpr:  MINUS UnaryExpr.    (110)
 
-	.  reduce 110 (src line 737)
+	.  reduce 110 (src line 746)
 
 
 state 114
@@ -1219,7 +1219,7 @@ state 118
 state 119
 	TotalClauseOpt:  Expression.    (92)
 
-	.  reduce 92 (src line 674)
+	.  reduce 92 (src line 675)
 
 
 state 120
@@ -1241,7 +1241,7 @@ state 122
 	ParenExpr:  LPAREN Expression.RPAREN 
 
 	RPAREN  shift 146
-	.  reduce 94 (src line 678)
+	.  reduce 94 (src line 679)
 
 
 state 123
@@ -1393,7 +1393,7 @@ state 135
 	IDENTIFIER  shift 68
 	UNARY_OP  shift 63
 	MINUS  shift 64
-	.  reduce 140 (src line 883)
+	.  reduce 140 (src line 897)
 
 	SampleExpr  goto 70
 	TupleExpr  goto 71
@@ -1420,19 +1420,19 @@ state 136
 state 137
 	ChainedExpr:  ChainedExpr BINARY_OP UnaryExpr.    (103)
 
-	.  reduce 103 (src line 711)
+	.  reduce 103 (src line 715)
 
 
 state 138
 	ChainedExpr:  ChainedExpr MINUS UnaryExpr.    (104)
 
-	.  reduce 104 (src line 716)
+	.  reduce 104 (src line 720)
 
 
 state 139
 	MemberAccessExpr:  IDENTIFIER DOT IDENTIFIER.    (126)
 
-	.  reduce 126 (src line 804)
+	.  reduce 126 (src line 816)
 
 
 state 140
@@ -1474,7 +1474,7 @@ state 141
 state 142
 	MemberAccessExpr:  MemberAccessExpr DOT IDENTIFIER.    (127)
 
-	.  reduce 127 (src line 812)
+	.  reduce 127 (src line 824)
 
 
 state 143
@@ -1499,7 +1499,7 @@ state 144
 	IDENTIFIER  shift 68
 	UNARY_OP  shift 63
 	MINUS  shift 64
-	.  reduce 131 (src line 854)
+	.  reduce 131 (src line 866)
 
 	SampleExpr  goto 70
 	TupleExpr  goto 71
@@ -1550,7 +1550,7 @@ state 145
 state 146
 	ParenExpr:  LPAREN Expression RPAREN.    (120)
 
-	.  reduce 120 (src line 791)
+	.  reduce 120 (src line 803)
 
 
 state 147
@@ -1670,7 +1670,7 @@ state 159
 	DefaultCaseStmtOpt: .    (145)
 
 	DEFAULT  shift 182
-	.  reduce 145 (src line 897)
+	.  reduce 145 (src line 911)
 
 	DefaultCaseStmt  goto 181
 	DefaultCaseStmtOpt  goto 180
@@ -1690,7 +1690,7 @@ state 160
 	IDENTIFIER  shift 68
 	UNARY_OP  shift 63
 	MINUS  shift 64
-	.  reduce 141 (src line 885)
+	.  reduce 141 (src line 899)
 
 	SampleExpr  goto 70
 	TupleExpr  goto 71
@@ -1709,7 +1709,7 @@ state 160
 state 161
 	CaseStmtList:  CaseStmt.    (142)
 
-	.  reduce 142 (src line 888)
+	.  reduce 142 (src line 902)
 
 
 state 162
@@ -1722,7 +1722,7 @@ state 162
 state 163
 	CallExpr:  IDENTIFIER LPAREN CommaExpressionListOpt RPAREN.    (128)
 
-	.  reduce 128 (src line 821)
+	.  reduce 128 (src line 833)
 
 
 state 164
@@ -1737,7 +1737,7 @@ state 164
 state 165
 	CallExpr:  MemberAccessExpr LPAREN CommaExpressionListOpt RPAREN.    (129)
 
-	.  reduce 129 (src line 834)
+	.  reduce 129 (src line 846)
 
 
 state 166
@@ -1745,7 +1745,7 @@ state 166
 	DefaultCaseExprOpt: .    (136)
 
 	DEFAULT  shift 188
-	.  reduce 136 (src line 868)
+	.  reduce 136 (src line 882)
 
 	DefaultCaseExpr  goto 187
 	DefaultCaseExprOpt  goto 186
@@ -1765,7 +1765,7 @@ state 167
 	IDENTIFIER  shift 68
 	UNARY_OP  shift 63
 	MINUS  shift 64
-	.  reduce 132 (src line 856)
+	.  reduce 132 (src line 868)
 
 	SampleExpr  goto 70
 	TupleExpr  goto 71
@@ -1784,7 +1784,7 @@ state 167
 state 168
 	CaseExprList:  CaseExpr.    (133)
 
-	.  reduce 133 (src line 859)
+	.  reduce 133 (src line 871)
 
 
 state 169
@@ -1799,7 +1799,7 @@ state 170
 	CommaSepExprList:  CommaSepExprList COMMA Expression.    (95)
 
 	RPAREN  shift 191
-	.  reduce 95 (src line 680)
+	.  reduce 95 (src line 681)
 
 
 state 171
@@ -1877,7 +1877,7 @@ state 180
 state 181
 	DefaultCaseStmtOpt:  DefaultCaseStmt.    (146)
 
-	.  reduce 146 (src line 899)
+	.  reduce 146 (src line 913)
 
 
 state 182
@@ -1890,7 +1890,7 @@ state 182
 state 183
 	CaseStmtList:  CaseStmtList CaseStmt.    (143)
 
-	.  reduce 143 (src line 890)
+	.  reduce 143 (src line 904)
 
 
 state 184
@@ -1957,7 +1957,7 @@ state 186
 state 187
 	DefaultCaseExprOpt:  DefaultCaseExpr.    (137)
 
-	.  reduce 137 (src line 870)
+	.  reduce 137 (src line 884)
 
 
 state 188
@@ -1970,7 +1970,7 @@ state 188
 state 189
 	CaseExprList:  CaseExprList CaseExpr.    (134)
 
-	.  reduce 134 (src line 861)
+	.  reduce 134 (src line 873)
 
 
 state 190
@@ -2005,7 +2005,7 @@ state 190
 state 191
 	TupleExpr:  LPAREN CommaSepExprList COMMA Expression RPAREN.    (93)
 
-	.  reduce 93 (src line 676)
+	.  reduce 93 (src line 677)
 
 
 state 192
@@ -2077,7 +2077,7 @@ state 197
 state 198
 	SwitchStmt:  SWITCH Expression LBRACE CaseStmtListOpt DefaultCaseStmtOpt RBRACE.    (139)
 
-	.  reduce 139 (src line 877)
+	.  reduce 139 (src line 891)
 
 
 state 199
@@ -2131,13 +2131,13 @@ state 199
 state 200
 	CaseStmt:  Expression ARROW Stmt.    (144)
 
-	.  reduce 144 (src line 893)
+	.  reduce 144 (src line 907)
 
 
 state 201
 	DistributeExpr:  DISTRIBUTE TotalClauseOpt LBRACE CaseExprListOpt DefaultCaseExprOpt RBRACE.    (130)
 
-	.  reduce 130 (src line 848)
+	.  reduce 130 (src line 860)
 
 
 state 202
@@ -2172,7 +2172,7 @@ state 202
 state 203
 	CaseExpr:  Expression ARROW Expression.    (135)
 
-	.  reduce 135 (src line 864)
+	.  reduce 135 (src line 876)
 
 
 state 204
@@ -2219,13 +2219,13 @@ state 209
 state 210
 	DefaultCaseStmt:  DEFAULT ARROW Stmt.    (147)
 
-	.  reduce 147 (src line 902)
+	.  reduce 147 (src line 916)
 
 
 state 211
 	DefaultCaseExpr:  DEFAULT ARROW Expression.    (138)
 
-	.  reduce 138 (src line 873)
+	.  reduce 138 (src line 887)
 
 
 state 212

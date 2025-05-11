@@ -241,7 +241,7 @@ func evalBlockStmt(stmt *BlockStmt, frame *Frame, v *VM) (val Value, err error) 
 		}
 
 		// Only include non-nil nodes in the sequence
-		if resultNode.Type.Tag != ValueTypeNil {
+		if resultNode.Type != nil {
 			steps = append(steps, resultNode)
 		}
 	}

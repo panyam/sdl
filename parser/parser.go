@@ -230,7 +230,7 @@ const yyEofCode = 1
 const yyErrCode = 2
 const yyInitialStackSize = 16
 
-//line grammar.y:906
+//line grammar.y:920
 // --- Go Code Section ---
 
 // Interface for the lexer required by the parser.
@@ -1480,84 +1480,86 @@ yydefault:
 		yyDollar = yyS[yypt-2 : yypt+1]
 //line grammar.y:669
 		{ // DISTRIBUTE($1) ... RBRACE($6)
-			yyVAL.sampleExpr = &SampleExpr{NodeInfo: newNodeInfo(yyDollar[1].node.(Node).Pos(), yyDollar[2].expr.(Node).End()), FromExpr: yyDollar[2].expr}
+			yyVAL.sampleExpr = &SampleExpr{FromExpr: yyDollar[2].expr}
+			yyVAL.sampleExpr.NodeInfo = newNodeInfo(yyDollar[1].node.(Node).Pos(), yyDollar[2].expr.(Node).End())
 		}
 	case 91:
 		yyDollar = yyS[yypt-0 : yypt+1]
-//line grammar.y:674
+//line grammar.y:675
 		{
 			yyVAL.expr = nil
 		}
 	case 92:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line grammar.y:674
+//line grammar.y:675
 		{
 			yyVAL.expr = yyDollar[1].expr
 		}
 	case 93:
 		yyDollar = yyS[yypt-5 : yypt+1]
-//line grammar.y:676
+//line grammar.y:677
 		{
 			yyVAL.tupleExpr = &TupleExpr{Children: yyDollar[2].exprList}
 		}
 	case 94:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line grammar.y:679
+//line grammar.y:680
 		{
 			yyVAL.exprList = []Expr{yyDollar[1].expr}
 		}
 	case 95:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line grammar.y:680
+//line grammar.y:681
 		{
 			yyVAL.exprList = append(yyDollar[1].exprList, yyDollar[3].expr)
 		}
 	case 96:
 		yyDollar = yyS[yypt-4 : yypt+1]
-//line grammar.y:684
+//line grammar.y:685
 		{ // GO($1) ... BlockStmt($4)
 			yyVAL.goStmt = &GoStmt{NodeInfo: newNodeInfo(yyDollar[1].node.(Node).Pos(), yyDollar[4].stmt.End()), VarName: yyDollar[2].ident, Stmt: yyDollar[4].stmt}
 		}
 	case 97:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line grammar.y:687
+//line grammar.y:688
 		{ // GO($1) BlockStmt($2)
 			yyVAL.goStmt = &GoStmt{NodeInfo: newNodeInfo(yyDollar[1].node.(Node).Pos(), yyDollar[2].blockStmt.End()), VarName: nil, Stmt: yyDollar[2].blockStmt}
 		}
 	case 98:
 		yyDollar = yyS[yypt-4 : yypt+1]
-//line grammar.y:690
+//line grammar.y:691
 		{
 			yyerror(yylex, fmt.Sprintf("`go` currently only supports assigning blocks, not expressions, at pos %d", yyDollar[1].node.(Node).Pos()))
 			yyVAL.goStmt = &GoStmt{}
 		}
 	case 99:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line grammar.y:700
+//line grammar.y:701
 		{
 			yyVAL.expr = yyDollar[1].chainedExpr
 		}
 	case 100:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line grammar.y:703
+//line grammar.y:704
 		{
 			yyVAL.expr = yyDollar[1].expr
 		}
 	case 101:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line grammar.y:704
+//line grammar.y:705
 		{
-			yyVAL.expr = &BinaryExpr{NodeInfo: newNodeInfo(yyDollar[1].expr.(Node).Pos(), yyDollar[3].expr.(Node).End()), Left: yyDollar[1].expr, Operator: yyDollar[2].node.String(), Right: yyDollar[3].expr}
+			yyVAL.expr = &BinaryExpr{Left: yyDollar[1].expr, Operator: yyDollar[2].node.String(), Right: yyDollar[3].expr}
+			yyVAL.expr.(*BinaryExpr).NodeInfo = newNodeInfo(yyDollar[1].expr.(Node).Pos(), yyDollar[3].expr.(Node).End())
 		}
 	case 102:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line grammar.y:708
+//line grammar.y:712
 		{
 			yyVAL.chainedExpr = &ChainedExpr{Children: []Expr{yyDollar[1].expr}}
 		}
 	case 103:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line grammar.y:711
+//line grammar.y:715
 		{
 			yyDollar[1].chainedExpr.Children = append(yyDollar[1].chainedExpr.Children, yyDollar[3].expr)
 			yyDollar[1].chainedExpr.Operators = append(yyDollar[1].chainedExpr.Operators, yyDollar[2].node.String())
@@ -1565,7 +1567,7 @@ yydefault:
 		}
 	case 104:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line grammar.y:716
+//line grammar.y:720
 		{
 			yyDollar[1].chainedExpr.Children = append(yyDollar[1].chainedExpr.Children, yyDollar[3].expr)
 			yyDollar[1].chainedExpr.Operators = append(yyDollar[1].chainedExpr.Operators, yyDollar[2].node.String())
@@ -1573,167 +1575,156 @@ yydefault:
 		}
 	case 105:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line grammar.y:723
+//line grammar.y:727
 		{
 			yyVAL.expr = yyDollar[1].expr
 		}
 	case 106:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line grammar.y:724
+//line grammar.y:728
 		{
-			yyVAL.expr = &BinaryExpr{NodeInfo: newNodeInfo(yyDollar[1].expr.(Node).Pos(), yyDollar[3].expr.(Node).End()), Left: yyDollar[1].expr, Operator: yyDollar[2].node.(Node).String(), Right: yyDollar[3].expr}
+			yyVAL.expr = &BinaryExpr{Left: yyDollar[1].expr, Operator: yyDollar[2].node.(Node).String(), Right: yyDollar[3].expr}
+			yyVAL.expr.(*BinaryExpr).NodeInfo = newNodeInfo(yyDollar[1].expr.(Node).Pos(), yyDollar[3].expr.(Node).End())
 		}
 	case 107:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line grammar.y:727
+//line grammar.y:732
 		{
-			yyVAL.expr = &BinaryExpr{NodeInfo: newNodeInfo(yyDollar[1].expr.(Node).Pos(), yyDollar[3].expr.(Node).End()), Left: yyDollar[1].expr, Operator: yyDollar[2].node.(Node).String(), Right: yyDollar[3].expr}
+			yyVAL.expr = &BinaryExpr{Left: yyDollar[1].expr, Operator: yyDollar[2].node.(Node).String(), Right: yyDollar[3].expr}
+			yyVAL.expr.(*BinaryExpr).NodeInfo = newNodeInfo(yyDollar[1].expr.(Node).Pos(), yyDollar[3].expr.(Node).End())
 		}
 	case 108:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line grammar.y:733
+//line grammar.y:739
 		{
 			yyVAL.expr = yyDollar[1].expr
 		}
 	case 109:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line grammar.y:735
+//line grammar.y:741
 		{
-			yyVAL.expr = &UnaryExpr{NodeInfo: newNodeInfo(yyDollar[1].node.Pos(), yyDollar[2].expr.(Node).End()), Operator: yyDollar[1].node.String(), Right: yyDollar[2].expr}
+			yyVAL.expr = &UnaryExpr{Operator: yyDollar[1].node.String(), Right: yyDollar[2].expr}
+			yyVAL.expr.(*BinaryExpr).NodeInfo = newNodeInfo(yyDollar[1].node.(Node).Pos(), yyDollar[2].expr.(Node).End())
 		}
 	case 110:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line grammar.y:737
+//line grammar.y:746
 		{
-			yyVAL.expr = &UnaryExpr{NodeInfo: newNodeInfo(yyDollar[1].node.Pos(), yyDollar[2].expr.(Node).End()), Operator: yyDollar[1].node.String(), Right: yyDollar[2].expr}
+			yyVAL.expr = &UnaryExpr{Operator: yyDollar[1].node.String(), Right: yyDollar[2].expr}
+			yyVAL.expr.(*BinaryExpr).NodeInfo = newNodeInfo(yyDollar[1].node.(Node).Pos(), yyDollar[2].expr.(Node).End())
 		}
 	case 111:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line grammar.y:777
+//line grammar.y:789
 		{
 			yyVAL.expr = yyDollar[1].expr
 		}
 	case 112:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line grammar.y:778
+//line grammar.y:790
 		{
 			yyVAL.expr = yyDollar[1].expr
 		}
 	case 113:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line grammar.y:782
+//line grammar.y:794
 		{
 			yyVAL.expr = yyDollar[1].expr
 		}
 	case 114:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line grammar.y:783
+//line grammar.y:795
 		{
 			yyVAL.expr = yyDollar[1].ident
 		}
 	case 115:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line grammar.y:784
+//line grammar.y:796
 		{
 			yyVAL.expr = yyDollar[1].distributeExpr
 		}
 	case 116:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line grammar.y:785
+//line grammar.y:797
 		{
 			yyVAL.expr = yyDollar[1].sampleExpr
 		}
 	case 117:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line grammar.y:786
+//line grammar.y:798
 		{
 			yyVAL.expr = yyDollar[1].tupleExpr
 		}
 	case 118:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line grammar.y:787
+//line grammar.y:799
 		{
 			yyVAL.expr = yyDollar[1].expr
 		}
 	case 119:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line grammar.y:788
+//line grammar.y:800
 		{
 			yyVAL.expr = yyDollar[1].expr
 		}
 	case 120:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line grammar.y:791
+//line grammar.y:803
 		{
 			yyVAL.expr = yyDollar[2].expr
 		}
 	case 121:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line grammar.y:794
+//line grammar.y:806
 		{
 			// yylex.(*Lexer).lval)
 			yyVAL.expr = yyDollar[1].expr
 		}
 	case 122:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line grammar.y:798
+//line grammar.y:810
 		{
 			yyVAL.expr = yyDollar[1].expr
 		}
 	case 123:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line grammar.y:799
+//line grammar.y:811
 		{
 			yyVAL.expr = yyDollar[1].expr
 		}
 	case 124:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line grammar.y:800
+//line grammar.y:812
 		{
 			yyVAL.expr = yyDollar[1].expr
 		}
 	case 125:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line grammar.y:801
+//line grammar.y:813
 		{
 			yyVAL.expr = yyDollar[1].expr
 		}
 	case 126:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line grammar.y:805
+//line grammar.y:817
 		{ // PrimaryExpr($1) DOT($2) IDENTIFIER($3)
 			yyVAL.expr = &MemberAccessExpr{
-				NodeInfo: newNodeInfo(yyDollar[1].ident.Pos(), yyDollar[3].ident.End()),
 				Receiver: yyDollar[1].ident,
 				Member:   yyDollar[3].ident,
 			}
+			yyVAL.expr.(*MemberAccessExpr).NodeInfo = newNodeInfo(yyDollar[1].ident.Pos(), yyDollar[3].ident.End())
 		}
 	case 127:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line grammar.y:812
+//line grammar.y:824
 		{ // PrimaryExpr($1) DOT($2) IDENTIFIER($3)
 			yyVAL.expr = &MemberAccessExpr{
-				NodeInfo: newNodeInfo(yyDollar[1].expr.(Node).Pos(), yyDollar[3].ident.End()),
 				Receiver: yyDollar[1].expr,
 				Member:   yyDollar[3].ident,
 			}
+			yyVAL.expr.(*MemberAccessExpr).NodeInfo = newNodeInfo(yyDollar[1].expr.Pos(), yyDollar[3].ident.End())
 		}
 	case 128:
-		yyDollar = yyS[yypt-4 : yypt+1]
-//line grammar.y:822
-		{ // PrimaryExpr($1) LPAREN($2) ArgList($3) RPAREN($4)
-			endNode := yyDollar[4].node.(Node) // End at RPAREN
-			if len(yyDollar[3].exprList) > 0 {
-				exprList := yyDollar[3].exprList
-				endNode = exprList[len(exprList)-1].(Node) // End at last arg
-			}
-			yyVAL.expr = &CallExpr{
-				NodeInfo: newNodeInfo(yyDollar[1].ident.Pos(), endNode.End()),
-				Function: yyDollar[1].ident,
-				Args:     yyDollar[3].exprList,
-			}
-		}
-	case 129:
 		yyDollar = yyS[yypt-4 : yypt+1]
 //line grammar.y:834
 		{ // PrimaryExpr($1) LPAREN($2) ArgList($3) RPAREN($4)
@@ -1743,116 +1734,131 @@ yydefault:
 				endNode = exprList[len(exprList)-1].(Node) // End at last arg
 			}
 			yyVAL.expr = &CallExpr{
-				NodeInfo: newNodeInfo(yyDollar[1].expr.(Node).Pos(), endNode.End()),
+				Function: yyDollar[1].ident,
+				Args:     yyDollar[3].exprList,
+			}
+			yyVAL.expr.(*MemberAccessExpr).NodeInfo = newNodeInfo(yyDollar[1].ident.Pos(), endNode.End())
+		}
+	case 129:
+		yyDollar = yyS[yypt-4 : yypt+1]
+//line grammar.y:846
+		{ // PrimaryExpr($1) LPAREN($2) ArgList($3) RPAREN($4)
+			endNode := yyDollar[4].node.(Node) // End at RPAREN
+			if len(yyDollar[3].exprList) > 0 {
+				exprList := yyDollar[3].exprList
+				endNode = exprList[len(exprList)-1].(Node) // End at last arg
+			}
+			yyVAL.expr = &CallExpr{
 				Function: yyDollar[1].expr,
 				Args:     yyDollar[3].exprList,
 			}
+			yyVAL.expr.(*MemberAccessExpr).NodeInfo = newNodeInfo(yyDollar[1].expr.Pos(), endNode.End())
 		}
 	case 130:
 		yyDollar = yyS[yypt-6 : yypt+1]
-//line grammar.y:849
+//line grammar.y:861
 		{
 			yyVAL.distributeExpr = &DistributeExpr{TotalProb: yyDollar[2].expr, Cases: yyDollar[4].caseExprList, Default: yyDollar[5].expr} /* TODO: Pos */
 		}
 	case 131:
 		yyDollar = yyS[yypt-0 : yypt+1]
-//line grammar.y:855
+//line grammar.y:867
 		{
 			yyVAL.caseExprList = []*CaseExpr{}
 		}
 	case 132:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line grammar.y:856
+//line grammar.y:868
 		{
 			yyVAL.caseExprList = yyDollar[1].caseExprList
 		}
 	case 133:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line grammar.y:860
+//line grammar.y:872
 		{
 			yyVAL.caseExprList = []*CaseExpr{yyDollar[1].caseExpr}
 		}
 	case 134:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line grammar.y:861
+//line grammar.y:873
 		{
 			yyVAL.caseExprList = append(yyDollar[1].caseExprList, yyDollar[2].caseExpr)
 		}
 	case 135:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line grammar.y:865
+//line grammar.y:877
 		{
-			yyVAL.caseExpr = &CaseExpr{NodeInfo: newNodeInfo(yyDollar[1].expr.(Node).Pos(), yyDollar[3].expr.End()), Condition: yyDollar[1].expr, Body: yyDollar[3].expr}
+			yyVAL.caseExpr = &CaseExpr{Condition: yyDollar[1].expr, Body: yyDollar[3].expr}
 		}
 	case 136:
 		yyDollar = yyS[yypt-0 : yypt+1]
-//line grammar.y:869
+//line grammar.y:883
 		{
 			yyVAL.expr = nil
 		}
 	case 137:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line grammar.y:870
+//line grammar.y:884
 		{
 			yyVAL.expr = yyDollar[1].expr
 		}
 	case 138:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line grammar.y:874
+//line grammar.y:888
 		{
 			yyVAL.expr = yyDollar[3].expr
 		}
 	case 139:
 		yyDollar = yyS[yypt-6 : yypt+1]
-//line grammar.y:878
+//line grammar.y:892
 		{
 			yyVAL.switchStmt = &SwitchStmt{Expr: yyDollar[2].expr, Cases: yyDollar[4].caseStmtList, Default: yyDollar[5].stmt} /* TODO: Pos */
 		}
 	case 140:
 		yyDollar = yyS[yypt-0 : yypt+1]
-//line grammar.y:884
+//line grammar.y:898
 		{
 			yyVAL.caseStmtList = []*CaseStmt{}
 		}
 	case 141:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line grammar.y:885
+//line grammar.y:899
 		{
 			yyVAL.caseStmtList = yyDollar[1].caseStmtList
 		}
 	case 142:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line grammar.y:889
+//line grammar.y:903
 		{
 			yyVAL.caseStmtList = []*CaseStmt{yyDollar[1].caseStmt}
 		}
 	case 143:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line grammar.y:890
+//line grammar.y:904
 		{
 			yyVAL.caseStmtList = append(yyDollar[1].caseStmtList, yyDollar[2].caseStmt)
 		}
 	case 144:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line grammar.y:894
+//line grammar.y:908
 		{
 			yyVAL.caseStmt = &CaseStmt{NodeInfo: newNodeInfo(yyDollar[1].expr.(Node).Pos(), yyDollar[3].stmt.End()), Condition: yyDollar[1].expr, Body: yyDollar[3].stmt}
 		}
 	case 145:
 		yyDollar = yyS[yypt-0 : yypt+1]
-//line grammar.y:898
+//line grammar.y:912
 		{
 			yyVAL.stmt = nil
 		}
 	case 146:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line grammar.y:899
+//line grammar.y:913
 		{
 			yyVAL.stmt = yyDollar[1].stmt
 		}
 	case 147:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line grammar.y:903
+//line grammar.y:917
 		{
 			yyVAL.stmt = yyDollar[3].stmt
 		}

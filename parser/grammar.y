@@ -667,7 +667,8 @@ IfStmtElseOpt:
 
 SampleExpr:
     SAMPLE Expression { // DISTRIBUTE($1) ... RBRACE($6)
-        $$ = &SampleExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $2.(Node).End()), FromExpr: $2 }
+        $$ = &SampleExpr{ FromExpr: $2 }
+        $$.NodeInfo = newNodeInfo($1.(Node).Pos(), $2.(Node).End())
     }
     ;
 
@@ -701,7 +702,10 @@ Expression: ChainedExpr { $$ = $1 };
 
 NonAssocBinExpr:
     BinaryExpr  { $$ = $1 }
-    | BinaryExpr BINARY_NC_OP BinaryExpr { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
+    | BinaryExpr BINARY_NC_OP BinaryExpr { 
+        $$ = &BinaryExpr{ Left: $1, Operator: $2.String(), Right: $3} 
+        $$.(*BinaryExpr).NodeInfo = newNodeInfo($1.(Node).Pos(), $3.(Node).End())
+    }
     ;
 
 ChainedExpr:
@@ -722,19 +726,27 @@ ChainedExpr:
 BinaryExpr:
     UnaryExpr  { $$ = $1 }
   | BinaryExpr BINARY_OP UnaryExpr {
-     $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.(Node).String(), Right: $3}
+     $$ = &BinaryExpr{ Left: $1, Operator: $2.(Node).String(), Right: $3}
+     $$.(*BinaryExpr).NodeInfo = newNodeInfo($1.(Node).Pos(), $3.(Node).End())
   }
   | BinaryExpr MINUS UnaryExpr {
-     $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.(Node).String(), Right: $3}
+     $$ = &BinaryExpr{ Left: $1, Operator: $2.(Node).String(), Right: $3}
+     $$.(*BinaryExpr).NodeInfo = newNodeInfo($1.(Node).Pos(), $3.(Node).End())
   }
   // | For each operator that can be BOTH binary and unary add it here explicitly
   ;
 
 UnaryExpr: PrimaryExpr { $$=$1 }
     // For Unary, $1 is operator token, $2 is operand Expr node
-    | UNARY_OP UnaryExpr { $$ = &UnaryExpr{ NodeInfo: newNodeInfo($1.Pos(), $2.(Node).End()), Operator: $1.String(), Right: $2} }
+    | UNARY_OP UnaryExpr { 
+        $$ = &UnaryExpr{ Operator: $1.String(), Right: $2} 
+        $$.(*BinaryExpr).NodeInfo = newNodeInfo($1.(Node).Pos(), $2.(Node).End())
+    }
   // | For each operator that can be BOTH binary and unary add it here explicitly
-    | MINUS UnaryExpr %prec UMINUS { $$ = &UnaryExpr{ NodeInfo: newNodeInfo($1.Pos(), $2.(Node).End()), Operator: $1.String(), Right: $2} }
+    | MINUS UnaryExpr %prec UMINUS { 
+        $$ = &UnaryExpr{ Operator: $1.String(), Right: $2} 
+        $$.(*BinaryExpr).NodeInfo = newNodeInfo($1.(Node).Pos(), $2.(Node).End())
+    }
     // For each OPERATOR  that can be binary or unary add a rule like the above MINUS and add a U<OPERATOR> as well
     ;
 
@@ -803,33 +815,33 @@ LiteralExpr:
 
 MemberAccessExpr:
     IDENTIFIER DOT IDENTIFIER { // PrimaryExpr($1) DOT($2) IDENTIFIER($3)
-         $$ = &MemberAccessExpr{
-             NodeInfo: newNodeInfo($1.Pos(), $3.End()),
+        $$ = &MemberAccessExpr{
              Receiver: $1,
              Member: $3,
-         }
+        }
+        $$.(*MemberAccessExpr).NodeInfo = newNodeInfo($1.Pos(), $3.End())
     }
     | MemberAccessExpr DOT IDENTIFIER { // PrimaryExpr($1) DOT($2) IDENTIFIER($3)
-         $$ = &MemberAccessExpr{
-             NodeInfo: newNodeInfo($1.(Node).Pos(), $3.End()),
-             Receiver: $1,
-             Member: $3,
-         }
+        $$ = &MemberAccessExpr{
+            Receiver: $1,
+            Member: $3,
+        }
+        $$.(*MemberAccessExpr).NodeInfo = newNodeInfo($1.Pos(), $3.End())
     }
     ;
 
 CallExpr:
     IDENTIFIER LPAREN CommaExpressionListOpt RPAREN { // PrimaryExpr($1) LPAREN($2) ArgList($3) RPAREN($4)
-         endNode := $4.(Node) // End at RPAREN
-         if len($3) > 0 {
+        endNode := $4.(Node) // End at RPAREN
+        if len($3) > 0 {
              exprList := $3
              endNode = exprList[len(exprList)-1].(Node) // End at last arg
-         }
-         $$ = &CallExpr{
-             NodeInfo: newNodeInfo($1.Pos(), endNode.End()),
+        }
+        $$ = &CallExpr{
              Function: $1,
              Args: $3,
-         }
+        }
+        $$.(*MemberAccessExpr).NodeInfo = newNodeInfo($1.Pos(), endNode.End())
     }
     | MemberAccessExpr LPAREN CommaExpressionListOpt RPAREN { // PrimaryExpr($1) LPAREN($2) ArgList($3) RPAREN($4)
          endNode := $4.(Node) // End at RPAREN
@@ -838,10 +850,10 @@ CallExpr:
              endNode = exprList[len(exprList)-1].(Node) // End at last arg
          }
          $$ = &CallExpr{
-             NodeInfo: newNodeInfo($1.(Node).Pos(), endNode.End()),
              Function: $1,
              Args: $3,
          }
+        $$.(*MemberAccessExpr).NodeInfo = newNodeInfo($1.Pos(), endNode.End())
     }
     ;
 
@@ -862,7 +874,9 @@ CaseExprList:
     ;
 
 CaseExpr:
-    Expression ARROW Expression { $$ = &CaseExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.End()), Condition: $1, Body: $3 } }
+    Expression ARROW Expression { 
+      $$ = &CaseExpr{ Condition: $1, Body: $3 } 
+    }
     ;
 
 DefaultCaseExprOpt:

@@ -6,6 +6,7 @@ type NodeInfo = decl.NodeInfo
 type LiteralExpr = decl.LiteralExpr
 type IdentifierExpr = decl.IdentifierExpr
 type Expr = decl.Expr
+type ExprBase = decl.ExprBase
 type Stmt = decl.Stmt
 type LetStmt = decl.LetStmt
 type ReturnStmt = decl.ReturnStmt
@@ -23,7 +24,7 @@ type Value = decl.Value
 type Node = decl.Node
 type File = decl.FileDecl
 
-type ValueType = decl.ValueType
+type Type = decl.Type
 type UsesDecl = decl.UsesDecl
 type MethodDecl = decl.MethodDecl
 type InstanceDecl = decl.InstanceDecl
