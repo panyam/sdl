@@ -9,7 +9,7 @@ import (
 
 type LLParser struct {
 	lexer            *Lexer
-	peekedTokenValue *yySymType
+	peekedTokenValue *SDLSymType
 	peekedToken      int
 
 	PanicOnError bool
@@ -59,7 +59,7 @@ func (p *LLParser) Parse(file *File) (err error) {
 		} else {
 			// No more top-level declarations or unexpected token
 			return p.Errorf("expected 'component', 'enum' or 'system', found: %s (%s)",
-				tokenString(p.PeekToken()), p.lexer.Text())
+				TokenString(p.PeekToken()), p.lexer.Text())
 		}
 	}
 }
@@ -83,7 +83,7 @@ func (p *LLParser) Advance() int {
 
 func (p *LLParser) PeekToken() int {
 	if p.peekedTokenValue == nil {
-		p.peekedTokenValue = &yySymType{}
+		p.peekedTokenValue = &SDLSymType{}
 		p.peekedToken = p.lexer.Lex(p.peekedTokenValue)
 	}
 	return p.peekedToken
@@ -98,12 +98,12 @@ func (p *LLParser) Expect(tokensIn ...int) (foundToken int, err error) {
 			return tok, nil
 		}
 	}
-	expectedStrings := gfn.Map(tokensIn, func(t int) string { return tokenString(t) })
+	expectedStrings := gfn.Map(tokensIn, func(t int) string { return TokenString(t) })
 	errMsg := "expected"
 	if len(tokensIn) == 1 {
-		errMsg = fmt.Sprintf("expected %s, found: %s", tokenString(tokensIn[0]), tokenString(peekedToken))
+		errMsg = fmt.Sprintf("expected %s, found: %s", TokenString(tokensIn[0]), TokenString(peekedToken))
 	} else {
-		errMsg = fmt.Sprintf("expected one of: [%s], found: %s", strings.Join(expectedStrings, ", "), tokenString(peekedToken))
+		errMsg = fmt.Sprintf("expected one of: [%s], found: %s", strings.Join(expectedStrings, ", "), TokenString(peekedToken))
 	}
 	if p.lexer.Text() != "" {
 		errMsg = fmt.Sprintf("%s (%s)", errMsg, p.lexer.Text())
@@ -113,7 +113,7 @@ func (p *LLParser) Expect(tokensIn ...int) (foundToken int, err error) {
 
 // AdvanceIf expects one of the given tokens and advances if found.
 // Returns the matched token type and its semantic value.
-func (p *LLParser) AdvanceIf(tokensIn ...int) (foundToken int, tokenValue *yySymType, err error) {
+func (p *LLParser) AdvanceIf(tokensIn ...int) (foundToken int, tokenValue *SDLSymType, err error) {
 	if _, err = p.Expect(tokensIn...); err != nil {
 		return -1, nil, err
 	}
@@ -138,7 +138,7 @@ func (p *LLParser) ParseIdentifier() (out *IdentifierExpr, err error) {
 	// If not, construct IdentifierExpr here:
 	if tokenVal.ident == nil { // Fallback if lexer doesn't directly create *IdentifierExpr
 		out = &IdentifierExpr{
-			NodeInfo: newNodeInfoFromToken(tokenVal),
+			ExprBase: ExprBase{NodeInfo: newNodeInfoFromToken(tokenVal)},
 			Name:     tokenVal.sval, // Or tokenVal.node.(TokenNode).String() if sval is not for idents
 		}
 	} else {
@@ -156,10 +156,10 @@ func (p *LLParser) ParseComponentDecl(out *ComponentDecl) (err error) {
 	out.NodeInfo = newNodeInfo(p.peekedTokenValue.node.Pos(), 0)
 	isNative := peeked == NATIVE
 	if isNative {
-		tokenString(p.Advance())
-		tokenString(p.Advance())
+		TokenString(p.Advance())
+		TokenString(p.Advance())
 	} else {
-		tokenString(p.Advance())
+		TokenString(p.Advance())
 	}
 
 	if out.NameNode, err = p.ParseIdentifier(); err != nil {
@@ -256,12 +256,12 @@ func (p *LLParser) ParseImportDecl() (out []*ImportDecl, err error) {
 			// all good
 			p.Advance()
 		} else {
-			return nil, p.Errorf("expected 'from' or ',' in import declaration, found %s (%s)", tokenString(p.PeekToken()), p.lexer.Text())
+			return nil, p.Errorf("expected 'from' or ',' in import declaration, found %s (%s)", TokenString(p.PeekToken()), p.lexer.Text())
 		}
 	}
 
 	if _, _, err = p.AdvanceIf(FROM); err != nil {
-		return nil, p.Errorf("expected 'from' import declaration, found %s (%s)", tokenString(p.PeekToken()), p.lexer.Text())
+		return nil, p.Errorf("expected 'from' import declaration, found %s (%s)", TokenString(p.PeekToken()), p.lexer.Text())
 	}
 
 	if _, err := p.Expect(STRING_LITERAL); err != nil {
@@ -283,18 +283,18 @@ func (p *LLParser) ParseImportDecl() (out []*ImportDecl, err error) {
 // Grammar: ENUM IDENTIFIER LBRACE IdentifierList RBRACE
 // IdentifierList: IDENTIFIER (COMMA IDENTIFIER)*
 func (p *LLParser) ParseEnumDecl(out *EnumDecl) (err error) {
-	var enumTokenVal *yySymType
+	var enumTokenVal *SDLSymType
 	if _, enumTokenVal, err = p.AdvanceIf(ENUM); err != nil {
 		return err
 	}
 
 	out.NameNode, err = p.ParseIdentifier()
 	if err != nil {
-		return p.Errorf("expected identifier for enum name after ENUM, found %s (%s): %v", tokenString(p.PeekToken()), p.lexer.Text(), err)
+		return p.Errorf("expected identifier for enum name after ENUM, found %s (%s): %v", TokenString(p.PeekToken()), p.lexer.Text(), err)
 	}
 
 	if _, _, err = p.AdvanceIf(LBRACE); err != nil {
-		return p.Errorf("expected '{' after enum name '%s', found %s (%s)", out.NameNode.Name, tokenString(p.PeekToken()), p.lexer.Text())
+		return p.Errorf("expected '{' after enum name '%s', found %s (%s)", out.NameNode.Name, TokenString(p.PeekToken()), p.lexer.Text())
 	}
 
 	// Parse IdentifierList
@@ -302,7 +302,7 @@ func (p *LLParser) ParseEnumDecl(out *EnumDecl) (err error) {
 	if p.PeekToken() != RBRACE { // Check if list is not empty
 		firstIdent, err := p.ParseIdentifier()
 		if err != nil {
-			return p.Errorf("expected identifier in enum value list for '%s', found %s (%s): %v", out.NameNode.Name, tokenString(p.PeekToken()), p.lexer.Text(), err)
+			return p.Errorf("expected identifier in enum value list for '%s', found %s (%s): %v", out.NameNode.Name, TokenString(p.PeekToken()), p.lexer.Text(), err)
 		}
 		out.ValuesNode = append(out.ValuesNode, firstIdent)
 
@@ -316,7 +316,7 @@ func (p *LLParser) ParseEnumDecl(out *EnumDecl) (err error) {
 
 			nextIdent, err := p.ParseIdentifier()
 			if err != nil {
-				return p.Errorf("expected identifier after comma in enum value list for '%s', found %s (%s): %v", out.NameNode.Name, tokenString(p.PeekToken()), p.lexer.Text(), err)
+				return p.Errorf("expected identifier after comma in enum value list for '%s', found %s (%s): %v", out.NameNode.Name, TokenString(p.PeekToken()), p.lexer.Text(), err)
 			}
 			out.ValuesNode = append(out.ValuesNode, nextIdent)
 		}
@@ -329,9 +329,9 @@ func (p *LLParser) ParseEnumDecl(out *EnumDecl) (err error) {
 		// For now, let's assume an empty enum `enum E {}` is valid and results in an empty ValuesNode.
 	}
 
-	var rbraceTokenVal *yySymType
+	var rbraceTokenVal *SDLSymType
 	if _, rbraceTokenVal, err = p.AdvanceIf(RBRACE); err != nil {
-		return p.Errorf("expected '}' to close enum '%s', found %s (%s)", out.NameNode.Name, tokenString(p.PeekToken()), p.lexer.Text())
+		return p.Errorf("expected '}' to close enum '%s', found %s (%s)", out.NameNode.Name, TokenString(p.PeekToken()), p.lexer.Text())
 	}
 
 	out.NodeInfo = newNodeInfo(enumTokenVal.node.Pos(), rbraceTokenVal.node.End())
@@ -342,18 +342,18 @@ func (p *LLParser) ParseEnumDecl(out *EnumDecl) (err error) {
 // Grammar: SYSTEM IDENTIFIER LBRACE SystemBodyItemOptList RBRACE
 // SystemBodyItem: InstanceDecl | OptionsDecl | LetStmt
 func (p *LLParser) ParseSystemDecl(out *SystemDecl) (err error) {
-	var systemTokenVal *yySymType
+	var systemTokenVal *SDLSymType
 	if _, systemTokenVal, err = p.AdvanceIf(SYSTEM); err != nil {
 		return err
 	}
 
 	out.NameNode, err = p.ParseIdentifier()
 	if err != nil {
-		return p.Errorf("expected identifier for system name after SYSTEM, found %s (%s): %v", tokenString(p.PeekToken()), p.lexer.Text(), err)
+		return p.Errorf("expected identifier for system name after SYSTEM, found %s (%s): %v", TokenString(p.PeekToken()), p.lexer.Text(), err)
 	}
 
 	if _, _, err = p.AdvanceIf(LBRACE); err != nil {
-		return p.Errorf("expected '{' after system name '%s', found %s (%s)", out.NameNode.Name, tokenString(p.PeekToken()), p.lexer.Text())
+		return p.Errorf("expected '{' after system name '%s', found %s (%s)", out.NameNode.Name, TokenString(p.PeekToken()), p.lexer.Text())
 	}
 
 	out.Body = []SystemDeclBodyItem{}
@@ -400,14 +400,14 @@ func (p *LLParser) ParseSystemDecl(out *SystemDecl) (err error) {
 
 		default:
 			return p.Errorf("unexpected token '%s' in system '%s' body. Expected 'use' or 'let'.",
-				tokenString(peekedItemStart), out.NameNode.Name)
+				TokenString(peekedItemStart), out.NameNode.Name)
 		}
 		out.Body = append(out.Body, item)
 	}
 
-	var rbraceTokenVal *yySymType
+	var rbraceTokenVal *SDLSymType
 	if _, rbraceTokenVal, err = p.AdvanceIf(RBRACE); err != nil {
-		return p.Errorf("expected '}' to close system '%s', found %s (%s)", out.NameNode.Name, tokenString(p.PeekToken()), p.lexer.Text())
+		return p.Errorf("expected '}' to close system '%s', found %s (%s)", out.NameNode.Name, TokenString(p.PeekToken()), p.lexer.Text())
 	}
 
 	out.NodeInfo = newNodeInfo(systemTokenVal.node.Pos(), rbraceTokenVal.node.End())
@@ -419,19 +419,19 @@ func (p *LLParser) ParseSystemDecl(out *SystemDecl) (err error) {
 //
 //	| USE IDENTIFIER IDENTIFIER ASSIGN LBRACE AssignListOpt RBRACE
 func (p *LLParser) ParseInstanceDecl(out *InstanceDecl) (err error) {
-	var useTokenVal *yySymType
+	var useTokenVal *SDLSymType
 	if _, useTokenVal, err = p.AdvanceIf(USE); err != nil {
 		return err // Should not happen if called correctly by ParseSystemDecl
 	}
 
 	out.NameNode, err = p.ParseIdentifier()
 	if err != nil {
-		return p.Errorf("expected identifier for instance name after USE, found %s (%s): %v", tokenString(p.PeekToken()), p.lexer.Text(), err)
+		return p.Errorf("expected identifier for instance name after USE, found %s (%s): %v", TokenString(p.PeekToken()), p.lexer.Text(), err)
 	}
 
 	out.ComponentType, err = p.ParseIdentifier()
 	if err != nil {
-		return p.Errorf("expected identifier for component type after instance name '%s', found %s (%s): %v", out.NameNode.Name, tokenString(p.PeekToken()), p.lexer.Text(), err)
+		return p.Errorf("expected identifier for component type after instance name '%s', found %s (%s): %v", out.NameNode.Name, TokenString(p.PeekToken()), p.lexer.Text(), err)
 	}
 
 	endPos := out.ComponentType.End() // End position if no overrides
@@ -440,7 +440,7 @@ func (p *LLParser) ParseInstanceDecl(out *InstanceDecl) (err error) {
 		p.Advance() // Consume ASSIGN
 
 		if _, _, err = p.AdvanceIf(LBRACE); err != nil {
-			return p.Errorf("expected '{' for instance '%s' overrides, found %s (%s)", out.NameNode.Name, tokenString(p.PeekToken()), p.lexer.Text())
+			return p.Errorf("expected '{' for instance '%s' overrides, found %s (%s)", out.NameNode.Name, TokenString(p.PeekToken()), p.lexer.Text())
 		}
 
 		// Parse AssignListOpt
@@ -477,9 +477,9 @@ func (p *LLParser) ParseInstanceDecl(out *InstanceDecl) (err error) {
 				out.Overrides = append(out.Overrides, nextAssign)
 			}
 		}
-		var rbraceTokenVal *yySymType
+		var rbraceTokenVal *SDLSymType
 		if _, rbraceTokenVal, err = p.AdvanceIf(RBRACE); err != nil {
-			return p.Errorf("expected '}' to close instance '%s' overrides, found %s (%s)", out.NameNode.Name, tokenString(p.PeekToken()), p.lexer.Text())
+			return p.Errorf("expected '}' to close instance '%s' overrides, found %s (%s)", out.NameNode.Name, TokenString(p.PeekToken()), p.lexer.Text())
 		}
 		endPos = rbraceTokenVal.node.End()
 	} else {
@@ -498,7 +498,7 @@ func (p *LLParser) ParseAssignment() (*AssignmentStmt, error) {
 
 	// Start position is from the IDENTIFIER
 	if _, err = p.Expect(IDENTIFIER); err != nil {
-		return nil, p.Errorf("expected identifier for assignment variable, found %s (%s)", tokenString(p.PeekToken()), p.lexer.Text())
+		return nil, p.Errorf("expected identifier for assignment variable, found %s (%s)", TokenString(p.PeekToken()), p.lexer.Text())
 	}
 	startPos := p.peekedTokenValue.ident.Pos()
 
@@ -509,12 +509,12 @@ func (p *LLParser) ParseAssignment() (*AssignmentStmt, error) {
 	}
 
 	if _, _, err = p.AdvanceIf(ASSIGN); err != nil {
-		return nil, p.Errorf("expected '=' after variable '%s' in assignment, found %s (%s)", out.Var.Name, tokenString(p.PeekToken()), p.lexer.Text())
+		return nil, p.Errorf("expected '=' after variable '%s' in assignment, found %s (%s)", out.Var.Name, TokenString(p.PeekToken()), p.lexer.Text())
 	}
 
 	out.Value, err = p.ParseExpression()
 	if err != nil {
-		return nil, p.Errorf("expected expression after '=' for variable '%s' in assignment, found %s (%s): %v", out.Var.Name, tokenString(p.PeekToken()), p.lexer.Text(), err)
+		return nil, p.Errorf("expected expression after '=' for variable '%s' in assignment, found %s (%s): %v", out.Var.Name, TokenString(p.PeekToken()), p.lexer.Text(), err)
 	}
 
 	out.NodeInfo = newNodeInfo(startPos, out.Value.End())
@@ -524,7 +524,7 @@ func (p *LLParser) ParseAssignment() (*AssignmentStmt, error) {
 // ParseOptionsDecl parses an options block (SystemBodyItem or TopLevelDeclaration).
 // Grammar: OPTIONS LBRACE StmtList RBRACE
 func (p *LLParser) ParseOptionsDecl(out *OptionsDecl) (err error) {
-	var optionsTokenVal *yySymType
+	var optionsTokenVal *SDLSymType
 	if _, optionsTokenVal, err = p.AdvanceIf(OPTIONS); err != nil {
 		return err // Should not happen if called correctly
 	}
@@ -542,19 +542,19 @@ func (p *LLParser) ParseOptionsDecl(out *OptionsDecl) (err error) {
 // ParseUsesDecl parses a uses declaration (ComponentBodyItem).
 // Grammar: USES IDENTIFIER IDENTIFIER
 func (p *LLParser) ParseUsesDecl(out *UsesDecl) (err error) {
-	var usesTokenVal *yySymType
+	var usesTokenVal *SDLSymType
 	if _, usesTokenVal, err = p.AdvanceIf(USES); err != nil {
 		return err // Should not happen if called correctly
 	}
 
 	out.NameNode, err = p.ParseIdentifier()
 	if err != nil {
-		return p.Errorf("expected identifier for uses name after USES, found %s (%s): %v", tokenString(p.PeekToken()), p.lexer.Text(), err)
+		return p.Errorf("expected identifier for uses name after USES, found %s (%s): %v", TokenString(p.PeekToken()), p.lexer.Text(), err)
 	}
 
 	out.ComponentNode, err = p.ParseIdentifier()
 	if err != nil {
-		return p.Errorf("expected identifier for component type after uses name '%s', found %s (%s): %v", out.NameNode.Name, tokenString(p.PeekToken()), p.lexer.Text(), err)
+		return p.Errorf("expected identifier for component type after uses name '%s', found %s (%s): %v", out.NameNode.Name, TokenString(p.PeekToken()), p.lexer.Text(), err)
 	}
 
 	out.NodeInfo = newNodeInfo(usesTokenVal.node.Pos(), out.ComponentNode.End())
@@ -565,18 +565,18 @@ func (p *LLParser) ParseUsesDecl(out *UsesDecl) (err error) {
 // isSignatureOnly = true for NATIVE component methods (no body).
 // Grammar: METHOD IDENTIFIER LPAREN MethodParamListOpt RPAREN [TypeDecl] [BlockStmt]
 func (p *LLParser) ParseMethodDecl(out *MethodDecl, isSignatureOptional bool) (err error) {
-	var methodTokenVal *yySymType
+	var methodTokenVal *SDLSymType
 	if _, methodTokenVal, err = p.AdvanceIf(METHOD); err != nil {
 		return err // Should not happen if called correctly
 	}
 
 	out.NameNode, err = p.ParseIdentifier()
 	if err != nil {
-		return p.Errorf("expected identifier for method name after METHOD, found %s (%s): %v", tokenString(p.PeekToken()), p.lexer.Text(), err)
+		return p.Errorf("expected identifier for method name after METHOD, found %s (%s): %v", TokenString(p.PeekToken()), p.lexer.Text(), err)
 	}
 
 	if _, _, err = p.AdvanceIf(LPAREN); err != nil {
-		return p.Errorf("expected '(' after method name '%s', found %s (%s)", out.NameNode.Name, tokenString(p.PeekToken()), p.lexer.Text())
+		return p.Errorf("expected '(' after method name '%s', found %s (%s)", out.NameNode.Name, TokenString(p.PeekToken()), p.lexer.Text())
 	}
 
 	out.Parameters, err = p.ParseMethodParamListOpt() // Assumes this function is defined (from previous response)
@@ -584,9 +584,9 @@ func (p *LLParser) ParseMethodDecl(out *MethodDecl, isSignatureOptional bool) (e
 		return p.Errorf("error parsing parameters for method '%s': %v", out.NameNode.Name, err)
 	}
 
-	var rparenTokenVal *yySymType
+	var rparenTokenVal *SDLSymType
 	if _, rparenTokenVal, err = p.AdvanceIf(RPAREN); err != nil {
-		return p.Errorf("expected ')' after parameters for method '%s', found %s (%s)", out.NameNode.Name, tokenString(p.PeekToken()), p.lexer.Text())
+		return p.Errorf("expected ')' after parameters for method '%s', found %s (%s)", out.NameNode.Name, TokenString(p.PeekToken()), p.lexer.Text())
 	}
 
 	endNodePos := rparenTokenVal.node.End() // End position if no return type or body
@@ -620,7 +620,7 @@ func (p *LLParser) ParseMethodDecl(out *MethodDecl, isSignatureOptional bool) (e
 	if !isSignatureOptional {
 		// Parse BlockStmt for the method body
 		if p.PeekToken() != LBRACE {
-			return p.Errorf("expected '{' for method body of '%s', found %s (%s)", out.NameNode.Name, tokenString(p.PeekToken()), p.lexer.Text())
+			return p.Errorf("expected '{' for method body of '%s', found %s (%s)", out.NameNode.Name, TokenString(p.PeekToken()), p.lexer.Text())
 		}
 		out.Body, err = p.ParseBlockStmt()
 		if err != nil {
@@ -636,19 +636,19 @@ func (p *LLParser) ParseMethodDecl(out *MethodDecl, isSignatureOptional bool) (e
 // ParseParamDecl parses a parameter declaration (ComponentBodyItem).
 // Grammar: PARAM IDENTIFIER TypeDecl [ASSIGN Expression]
 func (p *LLParser) ParseParamDecl(out *ParamDecl) (err error) {
-	var paramTokenVal *yySymType
+	var paramTokenVal *SDLSymType
 	if _, paramTokenVal, err = p.AdvanceIf(PARAM); err != nil {
 		return err // Should not happen if called correctly
 	}
 
 	out.Name, err = p.ParseIdentifier()
 	if err != nil {
-		return p.Errorf("expected identifier for param name after PARAM, found %s (%s): %v", tokenString(p.PeekToken()), p.lexer.Text(), err)
+		return p.Errorf("expected identifier for param name after PARAM, found %s (%s): %v", TokenString(p.PeekToken()), p.lexer.Text(), err)
 	}
 
 	out.Type, err = p.ParseTypeDecl() // Assumes this function is defined
 	if err != nil {
-		return p.Errorf("expected type name for param '%s', found %s (%s): %v", out.Name.Name, tokenString(p.PeekToken()), p.lexer.Text(), err)
+		return p.Errorf("expected type name for param '%s', found %s (%s): %v", out.Name.Name, TokenString(p.PeekToken()), p.lexer.Text(), err)
 	}
 
 	endPos := out.Type.End() // End position if no default value
@@ -658,7 +658,7 @@ func (p *LLParser) ParseParamDecl(out *ParamDecl) (err error) {
 		p.Advance() // Consume ASSIGN
 		out.DefaultValue, err = p.ParseExpression()
 		if err != nil {
-			return p.Errorf("expected expression for default value of param '%s', found %s (%s): %v", out.Name.Name, tokenString(p.PeekToken()), p.lexer.Text(), err)
+			return p.Errorf("expected expression for default value of param '%s', found %s (%s): %v", out.Name.Name, TokenString(p.PeekToken()), p.lexer.Text(), err)
 		}
 		endPos = out.DefaultValue.End()
 	}
@@ -671,7 +671,7 @@ func (p *LLParser) ParseParamDecl(out *ParamDecl) (err error) {
 // Grammar: LBRACE StmtList RBRACE
 func (p *LLParser) ParseBlockStmt() (out *BlockStmt, err error) {
 	out = &BlockStmt{}
-	var lbraceTokenVal *yySymType
+	var lbraceTokenVal *SDLSymType
 	if _, lbraceTokenVal, err = p.AdvanceIf(LBRACE); err != nil {
 		return nil, err
 	}
@@ -682,9 +682,9 @@ func (p *LLParser) ParseBlockStmt() (out *BlockStmt, err error) {
 		return nil, err // Error from parsing statements
 	}
 
-	var rbraceTokenVal *yySymType
+	var rbraceTokenVal *SDLSymType
 	if _, rbraceTokenVal, err = p.AdvanceIf(RBRACE); err != nil {
-		return nil, p.Errorf("expected '}' to close block, found %s (%s)", tokenString(p.PeekToken()), p.lexer.Text())
+		return nil, p.Errorf("expected '}' to close block, found %s (%s)", TokenString(p.PeekToken()), p.lexer.Text())
 	}
 	out.NodeInfo = newNodeInfo(lbraceTokenVal.node.Pos(), rbraceTokenVal.node.End())
 	return out, nil
@@ -723,7 +723,7 @@ func (p *LLParser) ParseStmtList(closingTokens ...int) (stmts []Stmt, err error)
 			// This indicates an issue or an empty statement if allowed.
 			// For now, let's assume ParseStmt always returns a Stmt or an error.
 			// If ParseStmt can return nil, decide if that's an error here.
-			return nil, p.Errorf("ParseStmt returned nil unexpectedly at %s", tokenString(p.PeekToken()))
+			return nil, p.Errorf("ParseStmt returned nil unexpectedly at %s", TokenString(p.PeekToken()))
 		}
 		stmts = append(stmts, stmt)
 	}
@@ -736,7 +736,7 @@ func (p *LLParser) ParseStmtList(closingTokens ...int) (stmts []Stmt, err error)
 func (p *LLParser) ParseArgList() (args []Expr, err error) {
 	firstArg, err := p.ParseExpression()
 	if err != nil {
-		return nil, p.Errorf("expected expression for argument list, found %s (%s): %v", tokenString(p.PeekToken()), p.lexer.Text(), err)
+		return nil, p.Errorf("expected expression for argument list, found %s (%s): %v", TokenString(p.PeekToken()), p.lexer.Text(), err)
 	}
 	args = append(args, firstArg)
 
@@ -744,7 +744,7 @@ func (p *LLParser) ParseArgList() (args []Expr, err error) {
 		p.Advance() // Consume COMMA
 		nextArg, err := p.ParseExpression()
 		if err != nil {
-			return nil, p.Errorf("expected expression after ',' in argument list, found %s (%s): %v", tokenString(p.PeekToken()), p.lexer.Text(), err)
+			return nil, p.Errorf("expected expression after ',' in argument list, found %s (%s): %v", TokenString(p.PeekToken()), p.lexer.Text(), err)
 		}
 		args = append(args, nextArg)
 	}
@@ -779,7 +779,7 @@ func (p *LLParser) ParseMethodParamListOpt() (params []*ParamDecl, err error) {
 
 		// Optional: Check for trailing comma if not allowed (e.g. if next is RPAREN)
 		if p.PeekToken() == RPAREN {
-			return nil, p.Errorf("trailing comma not allowed in parameter list at %s", tokenString(RPAREN))
+			return nil, p.Errorf("trailing comma not allowed in parameter list at %s", TokenString(RPAREN))
 		}
 
 		nextParam, err := p.ParseMethodParamDecl()
@@ -846,7 +846,7 @@ func (p *LLParser) ParseTypeDecl() (out *TypeDecl, err error) {
 		// Better to use p.Expect(IDENTIFIER, INT, ...) and then p.AdvanceIf
 		// For now, we assume the advance was correct and raise error.
 		return nil, p.Errorf("expected type name (identifier or primitive), found %s (%s)",
-			tokenString(peeked), p.lexer.Text())
+			TokenString(peeked), p.lexer.Text())
 	}
 	return out, nil
 }
@@ -881,7 +881,7 @@ func (p *LLParser) ParseChainedExpr() (Expr, error) {
 		next, err := p.ParseUnaryExpr()
 		if err != nil {
 			return nil, p.Errorf("expected unary expression after operator '%s', found %s (%s): %v",
-				tokenString(opToken), tokenString(p.PeekToken()), p.lexer.Text(), err)
+				TokenString(opToken), TokenString(p.PeekToken()), p.lexer.Text(), err)
 		}
 		out.Children = append(out.Children, next)
 		out.Operators = append(out.Operators, opTokenVal.node.(*TokenNode).Text)
@@ -921,12 +921,12 @@ func (p *LLParser) parseBinaryExpr(
 		right, err := parseHigherPrecedenceOperand()
 		if err != nil {
 			return nil, p.Errorf("expected expression after operator '%s', found %s (%s): %v",
-				tokenString(opToken), tokenString(p.PeekToken()), p.lexer.Text(), err)
+				TokenString(opToken), TokenString(p.PeekToken()), p.lexer.Text(), err)
 		}
 
 		// Create binary expression node
 		left = &BinaryExpr{
-			NodeInfo: newNodeInfo(left.Pos(), right.End()),
+			ExprBase: ExprBase{NodeInfo: newNodeInfo(left.Pos(), right.End())},
 			Left:     left,
 			Operator: opTokenVal.node.String(), // Assumes operator token's text from Node via TokenNode
 			Right:    right,
@@ -966,14 +966,14 @@ func (p *LLParser) ParseCmpExpr() (Expr, error) {
 		right, err := p.ParseAddExpr() // Parse the right-hand operand
 		if err != nil {
 			return nil, p.Errorf("expected expression after comparison operator '%s', found %s (%s): %v",
-				tokenString(opToken), tokenString(p.PeekToken()), p.lexer.Text(), err)
+				TokenString(opToken), TokenString(p.PeekToken()), p.lexer.Text(), err)
 		}
 
 		// Optional: Check for chaining if strict non-associativity is required.
 		// If p.PeekToken() is another comparison operator, it's an error.
 		// peekedAfterRight := p.PeekToken()
 		// if peekedAfterRight == EQ || ... {
-		//    return nil, p.Errorf("comparison operators are non-associative and cannot be chained at %s", tokenString(peekedAfterRight))
+		//    return nil, p.Errorf("comparison operators are non-associative and cannot be chained at %s", TokenString(peekedAfterRight))
 		// }
 
 		return &BinaryExpr{
@@ -1011,10 +1011,10 @@ func (p *LLParser) ParseUnaryExpr() (Expr, error) {
 		operand, err := p.ParseUnaryExpr()
 		if err != nil {
 			return nil, p.Errorf("expected expression after unary operator '%s', found %s (%s): %v",
-				tokenString(opToken), tokenString(p.PeekToken()), p.lexer.Text(), err)
+				TokenString(opToken), TokenString(p.PeekToken()), p.lexer.Text(), err)
 		}
 		return &UnaryExpr{
-			NodeInfo: newNodeInfo(opTokenVal.node.Pos(), operand.End()),
+			ExprBase: ExprBase{NodeInfo: newNodeInfo(opTokenVal.node.Pos(), operand.End())},
 			Operator: opTokenVal.node.String(),
 			Right:    operand,
 		}, nil
@@ -1050,9 +1050,9 @@ func (p *LLParser) ParsePrimaryExpr() (expr Expr, err error) {
 		if err != nil {
 			return nil, err
 		}
-		// var rparenTokenVal *yySymType
+		// var rparenTokenVal *SDLSymType
 		if _ /*rparenTokenVal*/, _, err = p.AdvanceIf(RPAREN); err != nil {
-			return nil, p.Errorf("expected ')' to close parenthesized expression, found %s (%s)", tokenString(p.PeekToken()), p.lexer.Text())
+			return nil, p.Errorf("expected ')' to close parenthesized expression, found %s (%s)", TokenString(p.PeekToken()), p.lexer.Text())
 		}
 		// The yacc grammar `LPAREN Expression RPAREN { $$ = $2 }` means the resulting node IS the inner expression.
 		// If you want the parens to contribute to NodeInfo, you'd wrap it or adjust NodeInfo.
@@ -1063,7 +1063,7 @@ func (p *LLParser) ParsePrimaryExpr() (expr Expr, err error) {
 
 	default:
 		return nil, p.Errorf("unexpected token at start of primary expression: %s (%s)",
-			tokenString(peeked), p.lexer.Text())
+			TokenString(peeked), p.lexer.Text())
 	}
 
 	// After parsing a base primary (like IDENTIFIER, literal, or parenthesized expr),
@@ -1079,10 +1079,10 @@ func (p *LLParser) ParsePrimaryExpr() (expr Expr, err error) {
 
 			memberIdent, err := p.ParseIdentifier()
 			if err != nil {
-				return nil, p.Errorf("expected identifier after '.', found %s (%s): %v", tokenString(p.PeekToken()), p.lexer.Text(), err)
+				return nil, p.Errorf("expected identifier after '.', found %s (%s): %v", TokenString(p.PeekToken()), p.lexer.Text(), err)
 			}
 			expr = &MemberAccessExpr{
-				NodeInfo: newNodeInfo(expr.Pos(), memberIdent.End()), // Spans from start of receiver to end of member
+				ExprBase: ExprBase{NodeInfo: newNodeInfo(expr.Pos(), memberIdent.End())}, // Spans from start of receiver to end of member
 				Receiver: expr,
 				Member:   memberIdent,
 			}
@@ -1101,12 +1101,12 @@ func (p *LLParser) ParsePrimaryExpr() (expr Expr, err error) {
 			} else {
 				args = []Expr{} // Empty argument list
 			}
-			var rparenTokenVal *yySymType
+			var rparenTokenVal *SDLSymType
 			if _, rparenTokenVal, err = p.AdvanceIf(RPAREN); err != nil {
-				return nil, p.Errorf("expected ')' to close function call arguments, found %s (%s)", tokenString(p.PeekToken()), p.lexer.Text())
+				return nil, p.Errorf("expected ')' to close function call arguments, found %s (%s)", TokenString(p.PeekToken()), p.lexer.Text())
 			}
 			expr = &CallExpr{
-				NodeInfo: newNodeInfo(expr.Pos(), rparenTokenVal.node.End()), // Spans from start of function to end of ')'
+				ExprBase: ExprBase{NodeInfo: newNodeInfo(expr.Pos(), rparenTokenVal.node.End())},
 				Function: expr,
 				Args:     args,
 			}
@@ -1130,16 +1130,16 @@ func (p *LLParser) ParseLiteralExpr() (*LiteralExpr, error) {
 	case INT_LITERAL, FLOAT_LITERAL, STRING_LITERAL, DURATION_LITERAL, BOOL_LITERAL:
 		// Valid literal token
 	default:
-		return nil, p.Errorf("expected a literal, found %s (%s)", tokenString(peeked), p.lexer.Text())
+		return nil, p.Errorf("expected a literal, found %s (%s)", TokenString(peeked), p.lexer.Text())
 	}
 
 	litTokenVal := p.peekedTokenValue
 	p.Advance() // Consume the literal token
 
-	// In a yacc setup, the lexer populates yySymType.expr or a specific literal field.
+	// In a yacc setup, the lexer populates SDLSymType.expr or a specific literal field.
 	// In a handwritten parser, we construct the LiteralExpr AST node here.
 	out := &LiteralExpr{
-		NodeInfo: newNodeInfoFromToken(litTokenVal),
+		ExprBase: ExprBase{NodeInfo: newNodeInfoFromToken(litTokenVal)},
 		Value:    litTokenVal.expr.(*LiteralExpr).Value,
 		// Or use litTokenVal.sval if populated by lexer for literals
 	}
@@ -1199,14 +1199,14 @@ func (p *LLParser) ParseStmt() (out Stmt, err error) {
 		if exprErr != nil {
 			// If parsing an expression fails, it's not a valid statement start.
 			return nil, p.Errorf("expected statement, found %s (%s). Attempting to parse as expression failed: %v",
-				tokenString(peeked), p.lexer.Text(), exprErr)
+				TokenString(peeked), p.lexer.Text(), exprErr)
 		}
 
 		// Successfully parsed an expression, now expect a SEMICOLON.
-		var semiTokenVal *yySymType
+		var semiTokenVal *SDLSymType
 		if _, semiTokenVal, err = p.AdvanceIf(SEMICOLON); err != nil {
 			return nil, p.Errorf("expected ';' after expression statement, found %s (%s) (expression was: %T)",
-				tokenString(p.PeekToken()), p.lexer.Text(), expr)
+				TokenString(p.PeekToken()), p.lexer.Text(), expr)
 		}
 		return &ExprStmt{
 			NodeInfo:   newNodeInfo(expr.Pos(), semiTokenVal.node.End()),
@@ -1218,7 +1218,7 @@ func (p *LLParser) ParseStmt() (out Stmt, err error) {
 // Example: ParseLetStmt (you can create similar ones for other statements)
 // Grammar: LET IDENTIFIER ASSIGN Expression
 func (p *LLParser) ParseLetStmt() (Stmt, error) {
-	var letTokenVal *yySymType
+	var letTokenVal *SDLSymType
 	var err error
 
 	if _, letTokenVal, err = p.AdvanceIf(LET); err != nil {
@@ -1227,16 +1227,16 @@ func (p *LLParser) ParseLetStmt() (Stmt, error) {
 
 	varIdent, err := p.ParseIdentifier()
 	if err != nil {
-		return nil, p.Errorf("expected identifier after LET, found %s (%s): %v", tokenString(p.PeekToken()), p.lexer.Text(), err)
+		return nil, p.Errorf("expected identifier after LET, found %s (%s): %v", TokenString(p.PeekToken()), p.lexer.Text(), err)
 	}
 
 	if _, _, err = p.AdvanceIf(ASSIGN); err != nil {
-		return nil, p.Errorf("expected '=' after identifier in LET statement, found %s (%s)", tokenString(p.PeekToken()), p.lexer.Text())
+		return nil, p.Errorf("expected '=' after identifier in LET statement, found %s (%s)", TokenString(p.PeekToken()), p.lexer.Text())
 	}
 
 	valExpr, err := p.ParseExpression()
 	if err != nil {
-		return nil, p.Errorf("expected expression after '=' in LET statement, found %s (%s): %v", tokenString(p.PeekToken()), p.lexer.Text(), err)
+		return nil, p.Errorf("expected expression after '=' in LET statement, found %s (%s): %v", TokenString(p.PeekToken()), p.lexer.Text(), err)
 	}
 
 	// Your grammar does not show a semicolon for LetStmt itself.
@@ -1251,7 +1251,7 @@ func (p *LLParser) ParseLetStmt() (Stmt, error) {
 // Example: ParseReturnStmt
 // Grammar: RETURN Expression | RETURN SEMICOLON
 func (p *LLParser) ParseReturnStmt() (Stmt, error) {
-	var returnTokenVal *yySymType
+	var returnTokenVal *SDLSymType
 	var err error
 
 	if _, returnTokenVal, err = p.AdvanceIf(RETURN); err != nil {
@@ -1274,7 +1274,7 @@ func (p *LLParser) ParseReturnStmt() (Stmt, error) {
 	// or this function should consume it. Let's assume `ReturnStmt` rule handles the expression only.
 	returnValue, err := p.ParseExpression()
 	if err != nil {
-		return nil, p.Errorf("expected expression or ';' after RETURN, found %s (%s): %v", tokenString(p.PeekToken()), p.lexer.Text(), err)
+		return nil, p.Errorf("expected expression or ';' after RETURN, found %s (%s): %v", TokenString(p.PeekToken()), p.lexer.Text(), err)
 	}
 
 	return &ReturnStmt{
@@ -1287,7 +1287,7 @@ func (p *LLParser) ParseReturnStmt() (Stmt, error) {
 // Grammar: IF Expression BlockStmt IfStmtElseOpt
 // IfStmtElseOpt: /* empty */ | ELSE IfStmt | ELSE BlockStmt
 func (p *LLParser) ParseIfStmt() (Stmt, error) {
-	var ifTokenVal *yySymType
+	var ifTokenVal *SDLSymType
 	var err error
 
 	if _, ifTokenVal, err = p.AdvanceIf(IF); err != nil {
@@ -1296,12 +1296,12 @@ func (p *LLParser) ParseIfStmt() (Stmt, error) {
 
 	condition, err := p.ParseExpression()
 	if err != nil {
-		return nil, p.Errorf("expected condition expression after IF, found %s (%s): %v", tokenString(p.PeekToken()), p.lexer.Text(), err)
+		return nil, p.Errorf("expected condition expression after IF, found %s (%s): %v", TokenString(p.PeekToken()), p.lexer.Text(), err)
 	}
 
 	thenBlock, err := p.ParseBlockStmt()
 	if err != nil {
-		return nil, p.Errorf("expected block statement for THEN branch of IF, found %s (%s): %v", tokenString(p.PeekToken()), p.lexer.Text(), err)
+		return nil, p.Errorf("expected block statement for THEN branch of IF, found %s (%s): %v", TokenString(p.PeekToken()), p.lexer.Text(), err)
 	}
 
 	var elseStmt Stmt // Can be *IfStmt, *BlockStmt, or nil
@@ -1322,7 +1322,7 @@ func (p *LLParser) ParseIfStmt() (Stmt, error) {
 				return nil, err
 			}
 		} else {
-			return nil, p.Errorf("expected IF or '{' after ELSE, found %s (%s)", tokenString(p.PeekToken()), p.lexer.Text())
+			return nil, p.Errorf("expected IF or '{' after ELSE, found %s (%s)", TokenString(p.PeekToken()), p.lexer.Text())
 		}
 		if elseStmt != nil {
 			endPos = elseStmt.End()
@@ -1346,7 +1346,7 @@ func (p *LLParser) ParseIfStmt() (Stmt, error) {
 // DefaultCase: DEFAULT ARROW Stmt
 func (p *LLParser) ParseDistributeExpr() (Stmt, error) {
 	out := &DistributeExpr{}
-	var distributeTokenVal *yySymType
+	var distributeTokenVal *SDLSymType
 	var err error
 
 	if _, distributeTokenVal, err = p.AdvanceIf(DISTRIBUTE); err != nil {
@@ -1381,12 +1381,12 @@ func (p *LLParser) ParseDistributeExpr() (Stmt, error) {
 			// This can happen if the "Expression" rule is too greedy or has ambiguities.
 			// For now, assume ParseExpression correctly fails if no expression is present.
 			return nil, p.Errorf("expected expression for total clause or '{' in DISTRIBUTE statement, found %s (%s): %v",
-				tokenString(p.PeekToken()), p.lexer.Text(), err)
+				TokenString(p.PeekToken()), p.lexer.Text(), err)
 		}
 	}
 
 	if _, _, err = p.AdvanceIf(LBRACE); err != nil {
-		return nil, p.Errorf("expected '{' to start DISTRIBUTE statement body, found %s (%s)", tokenString(p.PeekToken()), p.lexer.Text())
+		return nil, p.Errorf("expected '{' to start DISTRIBUTE statement body, found %s (%s)", TokenString(p.PeekToken()), p.lexer.Text())
 	}
 
 	// Parse CaseExprListOpt
@@ -1394,12 +1394,12 @@ func (p *LLParser) ParseDistributeExpr() (Stmt, error) {
 	for p.PeekToken() != RBRACE && p.PeekToken() != DEFAULT && p.PeekToken() != eof {
 		caseExpr, err := p.ParseExpression()
 		if err != nil {
-			return nil, p.Errorf("expected expression for DISTRIBUTE case condition, found %s (%s): %v", tokenString(p.PeekToken()), p.lexer.Text(), err)
+			return nil, p.Errorf("expected expression for DISTRIBUTE case condition, found %s (%s): %v", TokenString(p.PeekToken()), p.lexer.Text(), err)
 		}
 
-		// var arrowTokenVal *yySymType
+		// var arrowTokenVal *SDLSymType
 		if _, _, err = p.AdvanceIf(ARROW); err != nil {
-			return nil, p.Errorf("expected '=>' after DISTRIBUTE case condition, found %s (%s)", tokenString(p.PeekToken()), p.lexer.Text())
+			return nil, p.Errorf("expected '=>' after DISTRIBUTE case condition, found %s (%s)", TokenString(p.PeekToken()), p.lexer.Text())
 		}
 
 		// A case body is a single Stmt, not necessarily a BlockStmt.
@@ -1410,7 +1410,7 @@ func (p *LLParser) ParseDistributeExpr() (Stmt, error) {
 		}
 
 		distCase := &CaseExpr{
-			NodeInfo:  newNodeInfo(caseExpr.Pos(), caseBody.End()),
+			ExprBase:  ExprBase{NodeInfo: newNodeInfo(caseExpr.Pos(), caseBody.End())},
 			Condition: caseExpr,
 			Body:      caseBody,
 		}
@@ -1422,7 +1422,7 @@ func (p *LLParser) ParseDistributeExpr() (Stmt, error) {
 		p.Advance() // Consume DEFAULT
 
 		if _, _, err = p.AdvanceIf(ARROW); err != nil {
-			return nil, p.Errorf("expected '=>' after DEFAULT in DISTRIBUTE statement, found %s (%s)", tokenString(p.PeekToken()), p.lexer.Text())
+			return nil, p.Errorf("expected '=>' after DEFAULT in DISTRIBUTE statement, found %s (%s)", TokenString(p.PeekToken()), p.lexer.Text())
 		}
 
 		defaultBody, err := p.ParseExpression()
@@ -1432,9 +1432,9 @@ func (p *LLParser) ParseDistributeExpr() (Stmt, error) {
 		out.Default = defaultBody
 	}
 
-	var rbraceTokenVal *yySymType
+	var rbraceTokenVal *SDLSymType
 	if _, rbraceTokenVal, err = p.AdvanceIf(RBRACE); err != nil {
-		return nil, p.Errorf("expected '}' to close DISTRIBUTE statement, found %s (%s)", tokenString(p.PeekToken()), p.lexer.Text())
+		return nil, p.Errorf("expected '}' to close DISTRIBUTE statement, found %s (%s)", TokenString(p.PeekToken()), p.lexer.Text())
 	}
 	out.NodeInfo.StopPos = rbraceTokenVal.node.End()
 
@@ -1450,7 +1450,7 @@ func (p *LLParser) ParseDistributeExpr() (Stmt, error) {
 func (p *LLParser) ParseGoStmt() (Stmt, error) {
 	/*
 			out := &GoStmt{}
-			var goTokenVal *yySymType
+			var goTokenVal *SDLSymType
 			var err error
 
 			if _, goTokenVal, err = p.AdvanceIf(GO); err != nil {
@@ -1474,7 +1474,7 @@ func (p *LLParser) ParseGoStmt() (Stmt, error) {
 				out.VarName = varName
 
 				if _, _, err = p.AdvanceIf(ASSIGN); err != nil {
-					return nil, p.Errorf("expected '=' after identifier '%s' in GO statement, found %s (%s)", out.VarName.Name, tokenString(p.PeekToken()), p.lexer.Text())
+					return nil, p.Errorf("expected '=' after identifier '%s' in GO statement, found %s (%s)", out.VarName.Name, TokenString(p.PeekToken()), p.lexer.Text())
 				}
 
 				if p.PeekToken() == LBRACE { // `GO IDENTIFIER ASSIGN BlockStmt`
@@ -1487,14 +1487,14 @@ func (p *LLParser) ParseGoStmt() (Stmt, error) {
 				} else { // `GO IDENTIFIER ASSIGN Expression SEMICOLON` (error case)
 					expr, exprErr := p.ParseExpression()
 					if exprErr != nil {
-						return nil, p.Errorf("expected block or expression after '=' in GO statement, found %s (%s): %v", tokenString(p.PeekToken()), p.lexer.Text(), exprErr)
+						return nil, p.Errorf("expected block or expression after '=' in GO statement, found %s (%s): %v", TokenString(p.PeekToken()), p.lexer.Text(), exprErr)
 					}
 					out.Stmt = expr // Store the expression, but mark as error type
 					out.IsExprAssignment = true
 
-					var semiTokenVal *yySymType
+					var semiTokenVal *SDLSymType
 					if _, semiTokenVal, err = p.AdvanceIf(SEMICOLON); err != nil {
-						return nil, p.Errorf("expected ';' after expression in GO statement assignment, found %s (%s)", tokenString(p.PeekToken()), p.lexer.Text())
+						return nil, p.Errorf("expected ';' after expression in GO statement assignment, found %s (%s)", TokenString(p.PeekToken()), p.lexer.Text())
 					}
 					out.NodeInfo.StopPos = semiTokenVal.node.End()
 
@@ -1513,7 +1513,7 @@ func (p *LLParser) ParseGoStmt() (Stmt, error) {
 				out.Stmt = block
 				out.NodeInfo.StopPos = block.End()
 			} else {
-				return nil, p.Errorf("expected identifier or '{' after GO, found %s (%s)", tokenString(p.PeekToken()), p.lexer.Text())
+				return nil, p.Errorf("expected identifier or '{' after GO, found %s (%s)", TokenString(p.PeekToken()), p.lexer.Text())
 			}
 		return out, nil
 	*/
@@ -1525,7 +1525,7 @@ func (p *LLParser) ParseGoStmt() (Stmt, error) {
 // The semicolon is handled by the statement list context, not here.
 func (p *LLParser) ParseDelayStmt() (Stmt, error) {
 	out := &DelayStmt{}
-	var delayTokenVal *yySymType
+	var delayTokenVal *SDLSymType
 	var err error
 
 	if _, delayTokenVal, err = p.AdvanceIf(DELAY); err != nil {
@@ -1534,7 +1534,7 @@ func (p *LLParser) ParseDelayStmt() (Stmt, error) {
 
 	out.Duration, err = p.ParseExpression()
 	if err != nil {
-		return nil, p.Errorf("expected expression for DELAY duration, found %s (%s): %v", tokenString(p.PeekToken()), p.lexer.Text(), err)
+		return nil, p.Errorf("expected expression for DELAY duration, found %s (%s): %v", TokenString(p.PeekToken()), p.lexer.Text(), err)
 	}
 
 	out.NodeInfo = newNodeInfo(delayTokenVal.node.Pos(), out.Duration.End())
@@ -1547,7 +1547,7 @@ func (p *LLParser) ParseDelayStmt() (Stmt, error) {
 // The semicolon is handled by the statement list context.
 func (p *LLParser) ParseWaitStmt() (Stmt, error) {
 	out := &WaitStmt{}
-	var waitTokenVal *yySymType
+	var waitTokenVal *SDLSymType
 	var err error
 
 	if _, waitTokenVal, err = p.AdvanceIf(WAIT); err != nil {
@@ -1557,7 +1557,7 @@ func (p *LLParser) ParseWaitStmt() (Stmt, error) {
 	// Parse IdentifierList
 	out.Idents = []*IdentifierExpr{}
 	if p.PeekToken() != IDENTIFIER {
-		return nil, p.Errorf("expected at least one identifier after WAIT, found %s (%s)", tokenString(p.PeekToken()), p.lexer.Text())
+		return nil, p.Errorf("expected at least one identifier after WAIT, found %s (%s)", TokenString(p.PeekToken()), p.lexer.Text())
 	}
 
 	firstIdent, err := p.ParseIdentifier()
@@ -1573,7 +1573,7 @@ func (p *LLParser) ParseWaitStmt() (Stmt, error) {
 		// Optional: Check for trailing comma if not allowed.
 		// If the next token is not IDENTIFIER, it's an error (e.g. WAIT id1, ;)
 		if p.PeekToken() != IDENTIFIER {
-			return nil, p.Errorf("expected identifier after comma in WAIT statement, found %s (%s)", tokenString(p.PeekToken()), p.lexer.Text())
+			return nil, p.Errorf("expected identifier after comma in WAIT statement, found %s (%s)", TokenString(p.PeekToken()), p.lexer.Text())
 		}
 
 		nextIdent, err := p.ParseIdentifier()

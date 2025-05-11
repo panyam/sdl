@@ -95,7 +95,7 @@ func parseFragment[T Node](t *testing.T, input string, parseFunc func(p *LLParse
 	if err == nil {
 		if peeked := parser.PeekToken(); peeked != eof {
 			t.Errorf("Input: %q\nParser did not consume all input. Remaining token: %s (%q)",
-				input, tokenString(peeked), parser.lexer.Text())
+				input, TokenString(peeked), parser.lexer.Text())
 			// To prevent cascading errors, we can treat this as a parse failure for this test
 			err = NewParseError(parser.peekedTokenValue.node.Pos(),
 				parser.peekedTokenValue.node.End(),

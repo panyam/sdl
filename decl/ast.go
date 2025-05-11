@@ -400,6 +400,13 @@ type TypeDecl struct {
 	Args []*TypeDecl
 }
 
+func (t *TypeDecl) Type() *Type {
+	return &Type{
+		Name:       t.Name,
+		ChildTypes: gfn.Map(t.Args, func(t *TypeDecl) *Type { return t.Type() }),
+	}
+}
+
 func (t *TypeDecl) String() string {
 	if len(t.Args) == 0 {
 		return fmt.Sprintf("Type { %s ", t.Name)

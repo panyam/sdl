@@ -66,7 +66,7 @@ func firstDecl(t *testing.T, f *File) Node {
 }
 
 // --- NEW/UPDATED Assertion Helper for Literals ---
-func assertLiteralWithValue(t *testing.T, node Node, expectedType *ValueType, expectedGoValue any) {
+func assertLiteralWithValue(t *testing.T, node Node, expectedType *Type, expectedGoValue any) {
 	t.Helper()
 	litExpr, ok := node.(*LiteralExpr)
 	require.True(t, ok, "Expected *LiteralExpr, got %T", node)
@@ -98,7 +98,7 @@ func TestParseLiteralsInExprStmt(t *testing.T) {
 	testCases := []struct {
 		name            string
 		input           string
-		expectedType    *ValueType
+		expectedType    *Type
 		expectedGoValue any // The underlying Go value expected
 		expectedStart   int
 		expectedEnd     int
@@ -200,13 +200,13 @@ func TestParseComponentParams(t *testing.T) {
 
 	p1 := comp.Body[0].(*ParamDecl)
 	assert.Equal(t, "p1", p1.Name.Name)
-	assert.Equal(t, "int", p1.Type.PrimitiveTypeName)
+	assert.Equal(t, "int", p1.Type.Name)
 	assert.Nil(t, p1.DefaultValue)
 	// Add position check if needed
 
 	p2 := comp.Body[1].(*ParamDecl)
 	assert.Equal(t, "p2", p2.Name.Name)
-	assert.Equal(t, "string", p2.Type.PrimitiveTypeName)
+	assert.Equal(t, "string", p2.Type.Name)
 	require.NotNil(t, p2.DefaultValue)
 	// Check the default value using the new literal structure
 	assertLiteralWithValue(t, p2.DefaultValue, StrType, "default")
@@ -275,13 +275,13 @@ func TestParseComponent(t *testing.T) {
 
 		p1 := comp.Body[0].(*ParamDecl)
 		assert.Equal(t, "p1", p1.Name.Name)
-		assert.Equal(t, "int", p1.Type.PrimitiveTypeName)
+		assert.Equal(t, "int", p1.Type.Name)
 		assert.Nil(t, p1.DefaultValue)
 		assertPosition(t, p1, 35, 0) // Fix this to get the correct end position
 
 		p2 := comp.Body[1].(*ParamDecl)
 		assert.Equal(t, "p2", p2.Name.Name)
-		assert.Equal(t, "string", p2.Type.PrimitiveTypeName)
+		assert.Equal(t, "string", p2.Type.Name)
 		require.NotNil(t, p2.DefaultValue)
 		assertLiteralWithValue(t, p2.DefaultValue, StrType, "default")
 		assertPosition(t, p2, 61, 89) // From 'param' to end of "default"
@@ -323,9 +323,9 @@ func TestParseComponent(t *testing.T) {
 		assertIdentifier(t, m2.NameNode, "m2")
 		require.Len(t, m2.Parameters, 1)
 		assert.Equal(t, "a", m2.Parameters[0].Name.Name)
-		assert.Equal(t, "int", m2.Parameters[0].Type.PrimitiveTypeName)
+		assert.Equal(t, "int", m2.Parameters[0].Type.Name)
 		require.NotNil(t, m2.ReturnType)
-		assert.Equal(t, "bool", m2.ReturnType.PrimitiveTypeName)
+		assert.Equal(t, "bool", m2.ReturnType.Name)
 		require.Len(t, m2.Body.Statements, 1)
 		_, ok := m2.Body.Statements[0].(*ReturnStmt)
 		assert.True(t, ok)

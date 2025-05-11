@@ -1,4 +1,3 @@
-// decl/lexer.go
 package parser
 
 import (
@@ -381,7 +380,7 @@ func (l *Lexer) scanString() (tok int, content string) {
 }
 
 // Lex is the main lexing function called by the parser.
-func (l *Lexer) Lex(lval *yySymType) int {
+func (l *Lexer) Lex(lval *SDLSymType) int {
 	var tokenCode int
 	if l.skipWhitespace() {
 		tokenCode = eof
@@ -563,7 +562,7 @@ func (l *Lexer) Lex(lval *yySymType) int {
 	return eof // Indicate an error that should halt parsing
 }
 
-// tokenString helper needs yyToknames from generated sdl.go
+// TokenString helper needs yyToknames from generated sdl.go
 // For testing, we can define a minimal version or mock it.
 // Minimal version for testing:
 var testTokenNames = map[int]string{
@@ -624,7 +623,7 @@ var testTokenNames = map[int]string{
 	MINUS:            "MINUS",
 }
 
-func tokenString(tok int) string {
+func TokenString(tok int) string {
 	if name, ok := testTokenNames[tok]; ok {
 		return name
 	}

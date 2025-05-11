@@ -10,6 +10,8 @@ import (
 type Type struct {
 	Name       string
 	ChildTypes []*Type
+	ChildNames []string // when we are a record type
+	IsEnum     bool
 	// Name        ValueTypeName
 	// ChildTypes []*Type // Used for List, Outcomes, potentially Func later
 }
@@ -74,15 +76,23 @@ func (v *Type) Equals(other *Type) bool {
 	if v == nil || other == nil {
 		return false
 	}
-	if v.Name != other.Name {
+	if v.Name != other.Name || v.IsEnum != other.IsEnum {
 		return false
 	}
 	if len(v.ChildTypes) != len(other.ChildTypes) {
 		return false
 	}
+	if len(v.ChildNames) != len(other.ChildNames) {
+		return false
+	}
 
 	for i, t1 := range v.ChildTypes {
 		if !t1.Equals(other.ChildTypes[i]) {
+			return false
+		}
+	}
+	for i, t1 := range v.ChildNames {
+		if t1 != other.ChildNames[i] {
 			return false
 		}
 	}

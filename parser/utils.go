@@ -52,9 +52,9 @@ func newIdentifierExpr(name string, startPos, endPos int) *IdentifierExpr {
 	}
 }
 
-// Helper to create NodeInfo from a token's yySymType value.
+// Helper to create NodeInfo from a token's SDLSymType value.
 // This is the one that was missing.
-func newNodeInfoFromToken(tokenValue *yySymType) NodeInfo {
+func newNodeInfoFromToken(tokenValue *SDLSymType) NodeInfo {
 	if tokenValue == nil || tokenValue.node == nil {
 		// This case should ideally be an error or handled carefully.
 		// Returning zero NodeInfo might hide parsing issues.
