@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/panyam/leetcoach/sdl/decl"
 	"github.com/panyam/leetcoach/sdl/parser"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -69,12 +70,10 @@ func findExprInMethodReturn(file *FileDecl, compName, methodName string) (Expr, 
 
 func assertInferredType(t *testing.T, expr Expr, expectedType *Type, testName string) {
 	t.Helper()
-	base, err := getExprBase(expr)
-	require.NoError(t, err, "[%s] Failed to get ExprBase", testName)
-	require.NotNil(t, base.InferredType, "[%s] InferredType is nil for expr: %s", testName, expr.String())
-	assert.True(t, expectedType.Equals(base.InferredType),
+	require.NotNil(t, expr.InferredType(), "[%s] InferredType is nil for expr: %s", testName, expr.String())
+	assert.True(t, expectedType.Equals(expr.InferredType()),
 		"[%s] Type mismatch for expr '%s'. Expected: %s, Got: %s",
-		testName, expr.String(), expectedType.String(), base.InferredType.String())
+		testName, expr.String(), expectedType.String(), expr.InferredType().String())
 }
 
 func assertErrorContains(t *testing.T, errors []error, substring string, testName string) {
@@ -409,7 +408,7 @@ func TestInferCallExpressions(t *testing.T) {
 		expr, _ = findExprInAnalyze(file, "TestSys", "CallSayHello")
 		assertInferredType(t, expr, StrType, "CallSayHello")
 		expr, _ = findExprInAnalyze(file, "TestSys", "CallDoNothing")
-		assertInferredType(t, expr, NilType, "CallDoNothing (void return)")
+		assertInferredType(t, expr, nil, "CallDoNothing (void return)")
 		expr, _ = findExprInAnalyze(file, "TestSys", "CallAdd")
 		assertInferredType(t, expr, IntType, "CallAdd")
 		expr, _ = findExprInAnalyze(file, "TestSys", "CallPromote")
@@ -642,11 +641,11 @@ func TestInferSystemItems(t *testing.T) {
 		sysDecl, _ := file.GetSystem("DataFlow")
 		require.NotNil(t, sysDecl)
 		// Manually create a scope to test
-		rootScope := NewRootTypeScope(file)
+		rootScope := decl.NewRootTypeScope(file)
 		systemScope := rootScope.Push(nil, nil)
 		// Populate scope as inferTypesForSystemDeclBodyItem would
 		for _, item := range sysDecl.Body {
-			inferTypesForSystemDeclBodyItem(item, systemScope) // This will populate systemScope
+			decl.InferTypesForSystemDeclBodyItem(item, systemScope) // This will populate systemScope
 		}
 
 		prodType, ok := systemScope.Get("prod")
@@ -659,8 +658,7 @@ func TestInferSystemItems(t *testing.T) {
 
 		// Check analyze block's identifier type
 		analyzeTargetExpr, _ := findExprInAnalyze(file, "DataFlow", "MetricsProvider")
-		base, _ := getExprBase(analyzeTargetExpr)
-		analyzeBlockIdentType := base.InferredType // Type of prod.Produce()
+		analyzeBlockIdentType := analyzeTargetExpr.InferredType() // Type of prod.Produce()
 
 		sys, _ := file.GetSystem("DataFlow")
 		var analyzeDeclNode *AnalyzeDecl
@@ -671,8 +669,7 @@ func TestInferSystemItems(t *testing.T) {
 			}
 		}
 		require.NotNil(t, analyzeDeclNode)
-		baseIdent, _ := getExprBase(analyzeDeclNode.Name)
-		assert.True(t, analyzeBlockIdentType.Equals(baseIdent.InferredType), "Analyze block name 'MetricsProvider' should have inferred type of its target")
+		assert.True(t, analyzeBlockIdentType.Equals(analyzeDeclNode.Name.InferredType()), "Analyze block name 'MetricsProvider' should have inferred type of its target")
 	})
 }
 

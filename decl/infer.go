@@ -116,25 +116,25 @@ func InferExprType(expr Expr, scope *TypeScope) (*Type, error) {
 
 	switch e := expr.(type) {
 	case *LiteralExpr:
-		inferred, err = inferLiteralExprType(e, scope)
+		inferred, err = InferLiteralExprType(e, scope)
 	case *IdentifierExpr:
-		inferred, err = inferIdentifierExprType(e, scope)
+		inferred, err = InferIdentifierExprType(e, scope)
 	case *BinaryExpr:
-		inferred, err = inferBinaryExprType(e, scope)
+		inferred, err = InferBinaryExprType(e, scope)
 	case *UnaryExpr:
-		inferred, err = inferUnaryExprType(e, scope)
+		inferred, err = InferUnaryExprType(e, scope)
 	case *MemberAccessExpr:
-		inferred, err = inferMemberAccessExprType(e, scope)
+		inferred, err = InferMemberAccessExprType(e, scope)
 	case *CallExpr:
-		inferred, err = inferCallExprType(e, scope)
+		inferred, err = InferCallExprType(e, scope)
 	case *TupleExpr:
-		inferred, err = inferTupleExprType(e, scope)
+		inferred, err = InferTupleExprType(e, scope)
 	case *ChainedExpr:
-		inferred, err = inferChainedExprType(e, scope)
+		inferred, err = InferChainedExprType(e, scope)
 	case *DistributeExpr:
-		inferred, err = inferDistributeExprType(e, scope)
+		inferred, err = InferDistributeExprType(e, scope)
 	case *SampleExpr:
-		inferred, err = inferSampleExprType(e, scope)
+		inferred, err = InferSampleExprType(e, scope)
 	case *CaseExpr:
 		if e.Body == nil {
 			return nil, fmt.Errorf("CaseExpr at pos %d has no body", e.Pos())
@@ -168,14 +168,14 @@ func InferExprType(expr Expr, scope *TypeScope) (*Type, error) {
 	return inferred, nil
 }
 
-func inferLiteralExprType(expr *LiteralExpr, scope *TypeScope) (*Type, error) {
+func InferLiteralExprType(expr *LiteralExpr, scope *TypeScope) (*Type, error) {
 	if expr.Value == nil || expr.Value.Type == nil {
 		return nil, fmt.Errorf("literal expression at pos %d has invalid internal RuntimeValue or Type", expr.Pos())
 	}
 	return expr.Value.Type, nil
 }
 
-func inferIdentifierExprType(expr *IdentifierExpr, scope *TypeScope) (*Type, error) {
+func InferIdentifierExprType(expr *IdentifierExpr, scope *TypeScope) (*Type, error) {
 	t, ok := scope.Get(expr.Name)
 	if !ok {
 		return nil, fmt.Errorf("identifier '%s' not found at pos %d", expr.Name, expr.Pos())
@@ -183,7 +183,7 @@ func inferIdentifierExprType(expr *IdentifierExpr, scope *TypeScope) (*Type, err
 	return t, nil
 }
 
-func inferBinaryExprType(expr *BinaryExpr, scope *TypeScope) (*Type, error) {
+func InferBinaryExprType(expr *BinaryExpr, scope *TypeScope) (*Type, error) {
 	leftType, err := InferExprType(expr.Left, scope)
 	if err != nil {
 		return nil, fmt.Errorf("error inferring type for left operand of binary expr ('%s') at pos %d: %w", expr.Operator, expr.Left.Pos(), err)
@@ -245,7 +245,7 @@ func inferBinaryExprType(expr *BinaryExpr, scope *TypeScope) (*Type, error) {
 	}
 }
 
-func inferUnaryExprType(expr *UnaryExpr, scope *TypeScope) (*Type, error) {
+func InferUnaryExprType(expr *UnaryExpr, scope *TypeScope) (*Type, error) {
 	rightType, err := InferExprType(expr.Right, scope)
 	if err != nil {
 		return nil, fmt.Errorf("error inferring type for operand of unary expr ('%s') at pos %d: %w", expr.Operator, expr.Right.Pos(), err)
@@ -272,7 +272,7 @@ func inferUnaryExprType(expr *UnaryExpr, scope *TypeScope) (*Type, error) {
 	}
 }
 
-func inferMemberAccessExprType(expr *MemberAccessExpr, scope *TypeScope) (*Type, error) {
+func InferMemberAccessExprType(expr *MemberAccessExpr, scope *TypeScope) (*Type, error) {
 	receiverType, err := InferExprType(expr.Receiver, scope)
 	if err != nil {
 		return nil, fmt.Errorf("error inferring type for receiver of member access '%s' at pos %d: %w", expr.Member.Name, expr.Receiver.Pos(), err)
@@ -357,7 +357,7 @@ func inferMemberAccessExprType(expr *MemberAccessExpr, scope *TypeScope) (*Type,
 		memberName, receiverType.String(), expr.Pos())
 }
 
-func inferCallExprType(expr *CallExpr, scope *TypeScope) (*Type, error) {
+func InferCallExprType(expr *CallExpr, scope *TypeScope) (*Type, error) {
 	var returnType *Type = NilType // Default to NilType if not void
 	var expectedParamTypes []*Type
 	var funcNameForError string
@@ -454,7 +454,7 @@ func inferCallExprType(expr *CallExpr, scope *TypeScope) (*Type, error) {
 	return returnType, nil
 }
 
-func inferTupleExprType(expr *TupleExpr, scope *TypeScope) (*Type, error) {
+func InferTupleExprType(expr *TupleExpr, scope *TypeScope) (*Type, error) {
 	if len(expr.Children) == 0 {
 		// Or should this be an error? An empty tuple type might be valid.
 		// Let's assume TupleType requires at least one element as per types.go panic.
@@ -474,7 +474,7 @@ func inferTupleExprType(expr *TupleExpr, scope *TypeScope) (*Type, error) {
 	return TupleType(childTypes...), nil
 }
 
-func inferChainedExprType(expr *ChainedExpr, scope *TypeScope) (*Type, error) {
+func InferChainedExprType(expr *ChainedExpr, scope *TypeScope) (*Type, error) {
 	if len(expr.Children) == 0 {
 		return nil, fmt.Errorf("chained expression at pos %d has no children", expr.Pos())
 	}
@@ -549,7 +549,7 @@ func inferChainedExprType(expr *ChainedExpr, scope *TypeScope) (*Type, error) {
 	return currentType, nil
 }
 
-func inferDistributeExprType(expr *DistributeExpr, scope *TypeScope) (*Type, error) {
+func InferDistributeExprType(expr *DistributeExpr, scope *TypeScope) (*Type, error) {
 	var commonBodyType *Type
 
 	if len(expr.Cases) == 0 && expr.Default == nil {
@@ -617,7 +617,7 @@ func inferDistributeExprType(expr *DistributeExpr, scope *TypeScope) (*Type, err
 	return OutcomesType(commonBodyType), nil
 }
 
-func inferSampleExprType(expr *SampleExpr, scope *TypeScope) (*Type, error) {
+func InferSampleExprType(expr *SampleExpr, scope *TypeScope) (*Type, error) {
 	fromType, err := InferExprType(expr.FromExpr, scope)
 	if err != nil {
 		return nil, fmt.Errorf("error inferring type for 'from' expression of sample expr at pos %d: %w", expr.FromExpr.Pos(), err)
@@ -696,14 +696,14 @@ func InferTypesForFile(file *FileDecl) []error {
 				}
 
 				if method.Body != nil {
-					errs := inferTypesForBlockStmt(method.Body, methodScope)
+					errs := InferTypesForBlockStmt(method.Body, methodScope)
 					errors = append(errors, errs...)
 				}
 			}
 		case *SystemDecl:
 			systemScope := rootScope.Push(nil, nil)
 			for _, item := range d.Body {
-				errs := inferTypesForSystemDeclBodyItem(item, systemScope)
+				errs := InferTypesForSystemDeclBodyItem(item, systemScope)
 				errors = append(errors, errs...)
 			}
 		}
@@ -711,19 +711,19 @@ func InferTypesForFile(file *FileDecl) []error {
 	return errors
 }
 
-func inferTypesForBlockStmt(block *BlockStmt, parentScope *TypeScope) []error {
+func InferTypesForBlockStmt(block *BlockStmt, parentScope *TypeScope) []error {
 	var errors []error
 	// Create a new scope for the block, inheriting from parentScope
 	// The current component/method context is inherited from parentScope
 	blockScope := parentScope.Push(parentScope.currentComponent, parentScope.currentMethod)
 	for _, stmt := range block.Statements {
-		errs := inferTypesForStmt(stmt, blockScope)
+		errs := InferTypesForStmt(stmt, blockScope)
 		errors = append(errors, errs...)
 	}
 	return errors
 }
 
-func inferTypesForStmt(stmt Stmt, scope *TypeScope) []error {
+func InferTypesForStmt(stmt Stmt, scope *TypeScope) []error {
 	var errors []error
 	switch s := stmt.(type) {
 	case *LetStmt:
@@ -797,18 +797,18 @@ func inferTypesForStmt(stmt Stmt, scope *TypeScope) []error {
 			errors = append(errors, fmt.Errorf("if condition at pos %d must be boolean, got %s", s.Condition.Pos(), condType.String()))
 		}
 		if s.Then != nil {
-			errsThen := inferTypesForBlockStmt(s.Then, scope) // Then block gets a new sub-scope from current scope
+			errsThen := InferTypesForBlockStmt(s.Then, scope) // Then block gets a new sub-scope from current scope
 			errors = append(errors, errsThen...)
 		}
 		if s.Else != nil {
 			// Else statement also operates in a sub-scope of the If's scope.
 			// If Else is a BlockStmt, inferTypesForBlockStmt will create its own scope.
 			// If Else is another IfStmt, inferTypesForStmt will handle it.
-			errsElse := inferTypesForStmt(s.Else, scope)
+			errsElse := InferTypesForStmt(s.Else, scope)
 			errors = append(errors, errsElse...)
 		}
 	case *BlockStmt: // Nested block
-		errs := inferTypesForBlockStmt(s, scope) // Pass current scope; it will push a new one
+		errs := InferTypesForBlockStmt(s, scope) // Pass current scope; it will push a new one
 		errors = append(errors, errs...)
 	case *AssignmentStmt: // Typically in InstanceDecl overrides
 		valType, err := InferExprType(s.Value, scope)
@@ -855,7 +855,7 @@ func inferTypesForStmt(stmt Stmt, scope *TypeScope) []error {
 	return errors
 }
 
-func inferTypesForSystemDeclBodyItem(item SystemDeclBodyItem, systemScope *TypeScope) []error {
+func InferTypesForSystemDeclBodyItem(item SystemDeclBodyItem, systemScope *TypeScope) []error {
 	var errors []error
 	switch i := item.(type) {
 	case *InstanceDecl:
@@ -956,7 +956,7 @@ func inferTypesForSystemDeclBodyItem(item SystemDeclBodyItem, systemScope *TypeS
 		}
 
 	case *LetStmt: // LetStmt can also be a SystemDeclBodyItem
-		errs := inferTypesForStmt(i, systemScope) // Use systemScope
+		errs := InferTypesForStmt(i, systemScope) // Use systemScope
 		errors = append(errors, errs...)
 		// OptionsDecl - usually doesn't have expressions that need this kind of complex inference.
 	}

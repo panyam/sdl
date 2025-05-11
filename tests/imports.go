@@ -62,6 +62,9 @@ var BoolType = decl.BoolType
 var StrType = decl.StrType
 var IntType = decl.IntType
 var FloatType = decl.FloatType
+var TupleType = decl.TupleType
+var ListType = decl.ListType
+var OutcomesType = decl.OutcomesType
 
 var BoolValue = decl.BoolValue
 var StringValue = decl.StringValue
