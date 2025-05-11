@@ -11,12 +11,32 @@ import (
 type Expr interface {
 	Node
 	exprNode() // Marker method for expressions
+	InferredType() *Type
+	DeclaredType() *Type
+	SetInferredType(*Type)
+	SetDeclaredType(*Type)
 }
 
 type ExprBase struct {
 	NodeInfo
-	DeclaredType *Type
-	InferredType *Type
+	declaredType *Type
+	inferredType *Type
+}
+
+func (e *ExprBase) SetInferredType(t *Type) {
+	e.inferredType = t
+}
+
+func (e *ExprBase) InferredType() *Type {
+	return e.inferredType
+}
+
+func (e *ExprBase) SetDeclaredType(t *Type) {
+	e.declaredType = t
+}
+
+func (e *ExprBase) DeclaredType() *Type {
+	return e.declaredType
 }
 
 type ChainedExpr struct {

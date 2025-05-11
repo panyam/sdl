@@ -131,6 +131,7 @@ type ExpectStmt struct {
 	Threshold Expr
 }
 
+func (p *ExpectStmt) stmtNode() {}
 func (e *ExpectStmt) String() string {
 	return fmt.Sprintf("%s %s %s;", e.Target, e.Operator, e.Threshold)
 }
@@ -145,6 +146,7 @@ type AssignmentStmt struct {
 }
 
 func (p *AssignmentStmt) String() string { return fmt.Sprintf("%s = %s", p.Var.Name, p.Value) }
+func (p *AssignmentStmt) stmtNode()      {}
 
 // SwitchStmt represents the probabilistic choice expression/statement
 type SwitchStmt struct {
