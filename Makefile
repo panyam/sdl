@@ -1,7 +1,7 @@
 
 sdl:
 	cd parser && make build
-	go build -o ./dist/sdl ./cmd/sdl/main.go
+	go build -o /tmp/sdl ./cmd/sdl/main.go
 
 run:
 	go test
@@ -17,8 +17,14 @@ watch:
 
 testall: test bench
 
-prompt4sdl:
-	source ~/personal/.shhelpers && files_for_llm `find . | grep -v "\.sh" | grep -v attic | grep -v mkprompt | grep -v parser | grep -v vscode | grep -v dsl | grep -v _test.go `
+sdlfiles:
+	@find . | grep -v "\.sh" | grep -v "\..decl" | grep -v attic | grep -v mkprompt | grep -v vscode | grep -v dsl | grep -v _test.go
 
-prompt4decl:
-	source ~/personal/.shhelpers && files_for_llm `find . | grep -v "\..parser" | grep -v "\.sh" | grep -v attic | grep -v mkprompt | grep -v dsl  | grep -v vscode  | grep -v _test.go `
+promptsdl:
+	source ~/personal/.shhelpers && files_for_llm `make sdlfiles`
+
+parserfiles:
+	@find . | grep -e "decl" -e "parser" | grep -v ll | grep -v y.output | grep -v parser.go
+
+prompt4parser:
+	source ~/personal/.shhelpers && files_for_llm `make parserfiles`

@@ -34,7 +34,7 @@ type Lexer struct {
 	line int
 	col  int
 
-	parseResult *File // Field to store the final AST root, set by the parser
+	parseResult *FileDecl // Field to store the final AST root, set by the parser
 }
 
 // NewLexer creates a new lexer instance

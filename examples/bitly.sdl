@@ -116,3 +116,48 @@ system Bitly {
     use app AppServer ( db = db )
     use db Database
 }
+
+component AppServerWithCache {
+  // Our main DB
+  uses DB Database
+  uses cache Cache
+
+  method Shorten() HttpStatusCode {
+    for RetryCount {
+      let foundDuplicate = self.CheckDuplicateShortId()
+
+      if not foundDuplicate {
+        // Success so try saving a new short ID
+        if self.HashIndex.Write() {
+          // .... Write to cache as well
+          return HttpStatusOk
+        } else {
+          return HttpStatusInternalError
+        }
+      }
+    }
+
+    // All retries elapsed - too many conflicts
+    return HttpStatusConflict
+  }
+
+  method Redirect() HttpStatusCode {
+    // See if there is a cache hit
+    if cache.Read() {
+      return HttpStatusOk // or may be 302
+    }
+
+    if self.DB.GetByShortId() {
+      return HttpStatusOk // or may be 302
+    }
+
+    // Simplified - can model more errors
+    return HttpStatusInternalError
+  }
+}
+
+system BitlyWithCache {
+    use cache Cache
+    use db Database
+    use app AppServerWithCache ( db = db, cache = cache )
+}

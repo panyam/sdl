@@ -14,13 +14,13 @@ type LLParser struct {
 
 	PanicOnError bool
 	Errors       []error
-	// file *File // You might want to store the top-level AST node being built here.
+	// file *FileDecl // You might want to store the top-level AST node being built here.
 }
 
 func NewLLParser(lexer *Lexer) *LLParser {
 	return &LLParser{lexer: lexer}
 }
-func (p *LLParser) Parse(file *File) (err error) {
+func (p *LLParser) Parse(file *FileDecl) (err error) {
 	// p.file = file // Store the file being parsed
 	for {
 		peekedToken := p.PeekToken()

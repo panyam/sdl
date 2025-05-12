@@ -33,7 +33,7 @@ func yyerrok(lexer SDLLexer) {
     sval string // Holds raw string values like identifiers, literal content
 
     // AST Nodes (using pointers) - these should have NodeInfo
-    file        *File
+    file        *FileDecl
     componentDecl *ComponentDecl
     systemDecl *SystemDecl
     node        Node // Generic interface for lists and for accessing NodeInfo
@@ -196,7 +196,7 @@ File:
         ni.StartPos = $1[0].Pos()
         ni.StopPos = $1[len($1)-1].End()
       }
-      SDLlex.(*Lexer).parseResult = &File{NodeInfo: ni, Declarations: $1}
+      SDLlex.(*Lexer).parseResult = &FileDecl{NodeInfo: ni, Declarations: $1}
       // $$ = &File{NodeInfo: ni, Declarations: $1}
     } 
     ;
@@ -489,7 +489,7 @@ AssignListOpt:
 
 AssignList:
     Assignment             { $$ = []*AssignmentStmt{$1} }
-    | AssignList Assignment { $$ = append($1, $2) }
+    | AssignList COMMA Assignment { $$ = append($1, $3) }
     ;
 
 Assignment:
@@ -951,8 +951,8 @@ type LexerInterface interface {
 }
 
 // Parse takes an input stream and attempts to parse it according to the SDL grammar. 22222
-// It returns the root of the Abstract Syntax Tree (*File) if successful, or an error.
-func Parse(input io.Reader) (*Lexer, *File, error) {
+// It returns the root of the Abstract Syntax Tree (*FileDecl) if successful, or an error.
+func Parse(input io.Reader) (*Lexer, *FileDecl, error) {
 	// Reset global result before parsing
 	lexer := NewLexer(input)
 	// Set yyDebug = 3 for verbose parser debugging output

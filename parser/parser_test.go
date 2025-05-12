@@ -26,7 +26,7 @@ func printWithLineNumbers(t *testing.T, input string) {
 }
 
 // --- Helper Functions ---
-func parseString(t *testing.T, input string) *File {
+func parseString(t *testing.T, input string) *FileDecl {
 	t.Helper()
 	printWithLineNumbers(t, input)
 	_, ast, err := Parse(strings.NewReader(input)) // Assumes Parse is in the same package
@@ -60,7 +60,7 @@ func assertIdentifier(t *testing.T, node Node, expectedName string) {
 }
 
 // Helper to get the first declaration if it exists
-func firstDecl(t *testing.T, f *File) Node {
+func firstDecl(t *testing.T, f *FileDecl) Node {
 	require.NotEmpty(t, f.Declarations)
 	return f.Declarations[0]
 }
@@ -401,7 +401,7 @@ func TestParseSystem(t *testing.T) {
 func TestParseStatements(t *testing.T) {
 	// Wrap statements in a dummy block if they can't be top-level
 	wrap := func(stmt string) string { return fmt.Sprintf("component T { method M() { %s } }", stmt) }
-	getStmt := func(t *testing.T, f *File) Stmt {
+	getStmt := func(t *testing.T, f *FileDecl) Stmt {
 		comp := f.Declarations[0].(*ComponentDecl)
 		meth := comp.Body[0].(*MethodDecl)
 		require.NotEmpty(t, meth.Body.Statements)
@@ -506,7 +506,7 @@ func TestParseStatements(t *testing.T) {
 func TestParseExpressions(t *testing.T) {
 	// Wrap in dummy function for parsing
 	wrap := func(expr string) string { return fmt.Sprintf("component T { method M() { let _ = %s; } }", expr) }
-	getExpr := func(t *testing.T, f *File) Expr {
+	getExpr := func(t *testing.T, f *FileDecl) Expr {
 		comp := f.Declarations[0].(*ComponentDecl)
 		meth := comp.Body[0].(*MethodDecl)
 		let := meth.Body.Statements[0].(*LetStmt)

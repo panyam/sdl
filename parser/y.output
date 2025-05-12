@@ -2244,12 +2244,11 @@ state 210
 
 state 211
 	AssignListOpt:  AssignList.    (59)
-	AssignList:  AssignList.Assignment 
+	AssignList:  AssignList.COMMA Assignment 
 
-	IDENTIFIER  shift 213
+	COMMA  shift 223
 	.  reduce 59 (src line 487)
 
-	Assignment  goto 223
 
 state 212
 	AssignList:  Assignment.    (60)
@@ -2389,10 +2388,12 @@ state 222
 
 
 state 223
-	AssignList:  AssignList Assignment.    (61)
+	AssignList:  AssignList COMMA.Assignment 
 
-	.  reduce 61 (src line 492)
+	IDENTIFIER  shift 213
+	.  error
 
+	Assignment  goto 228
 
 state 224
 	Assignment:  IDENTIFIER ASSIGN.Expression 
@@ -2412,7 +2413,7 @@ state 224
 
 	SampleExpr  goto 81
 	TupleExpr  goto 82
-	Expression  goto 228
+	Expression  goto 229
 	UnaryExpr  goto 72
 	PrimaryExpr  goto 73
 	LiteralExpr  goto 78
@@ -2433,7 +2434,7 @@ state 226
 	DefaultCaseExpr:  DEFAULT ARROW Expression.    (135)
 	DefaultCaseExpr:  DEFAULT ARROW Expression.COMMA 
 
-	COMMA  shift 229
+	COMMA  shift 230
 	.  reduce 135 (src line 906)
 
 
@@ -2444,12 +2445,18 @@ state 227
 
 
 state 228
+	AssignList:  AssignList COMMA Assignment.    (61)
+
+	.  reduce 61 (src line 492)
+
+
+state 229
 	Assignment:  IDENTIFIER ASSIGN Expression.    (62)
 
 	.  reduce 62 (src line 495)
 
 
-state 229
+state 230
 	DefaultCaseExpr:  DEFAULT ARROW Expression COMMA.    (136)
 
 	.  reduce 136 (src line 908)
@@ -2459,14 +2466,14 @@ Rule not reduced: GoStmt:  GO BlockStmt
 Rule not reduced: GoStmt:  GO IDENTIFIER ASSIGN Expression 
 
 63 terminals, 71 nonterminals
-146 grammar rules, 230/16000 states
+146 grammar rules, 231/16000 states
 4 shift/reduce, 0 reduce/reduce conflicts reported
 120 working sets used
 memory: parser 712/240000
 118 extra closures
-507 shift entries, 1 exceptions
+508 shift entries, 1 exceptions
 123 goto entries
 371 entries saved by goto default
-Optimizer space used: output 306/240000
-306 table entries, 0 zero
+Optimizer space used: output 307/240000
+307 table entries, 0 zero
 maximum spread: 62, maximum offset: 224

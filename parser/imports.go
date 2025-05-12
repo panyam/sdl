@@ -23,7 +23,7 @@ type EnumDecl = decl.EnumDecl
 type Value = decl.Value
 
 type Node = decl.Node
-type File = decl.FileDecl
+type FileDecl = decl.FileDecl
 
 type Type = decl.Type
 type UsesDecl = decl.UsesDecl

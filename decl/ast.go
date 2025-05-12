@@ -39,6 +39,7 @@ type FileDecl struct {
 	components map[string]*ComponentDecl
 	enums      map[string]*EnumDecl
 	imports    map[string]*ImportDecl
+	importList []*ImportDecl // Keep original list for iteration order if needed
 	systems    map[string]*SystemDecl
 }
 
@@ -82,6 +83,13 @@ func (f *FileDecl) GetSystem(name string) (out *SystemDecl, err error) {
 		out = systems[name]
 	}
 	return
+}
+
+func (f *FileDecl) Imports() (map[string]*ImportDecl, error) {
+	if err := f.Resolve(); err != nil {
+		return nil, err
+	}
+	return f.imports, nil
 }
 
 // Called to resolve specific AST aspects out of the parse tree
@@ -171,12 +179,14 @@ func (f *FileDecl) RegisterEnum(c *EnumDecl) error {
 func (f *FileDecl) RegisterImport(c *ImportDecl) error {
 	if f.imports == nil {
 		f.imports = map[string]*ImportDecl{}
+		f.importList = []*ImportDecl{}
 	}
 	if _, exists := f.imports[c.ImportedAs()]; exists {
 		err := fmt.Errorf("import definition '%s' already registered", c.ImportedAs())
 		panic(err)
 	}
 	f.imports[c.ImportedAs()] = c
+	f.importList = append(f.importList, c)
 	return nil
 }
 
