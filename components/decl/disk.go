@@ -1,6 +1,6 @@
 package decl
 
-import "github.com/panyam/leetcoach/sdl/dsl"
+import "github.com/panyam/sdl/dsl"
 
 type Disk struct {
 	Name        string

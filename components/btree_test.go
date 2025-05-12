@@ -5,7 +5,7 @@ import (
 	// Added
 	"testing"
 
-	sc "github.com/panyam/leetcoach/sdl/core"
+	sc "github.com/panyam/sdl/core"
 )
 
 // Tests for Init, Height remain the same...

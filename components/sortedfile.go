@@ -3,7 +3,7 @@ package components
 import (
 	"math"
 
-	sc "github.com/panyam/leetcoach/sdl/core"
+	sc "github.com/panyam/sdl/core"
 )
 
 type SortedFile struct {

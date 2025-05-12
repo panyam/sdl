@@ -1,6 +1,6 @@
 package parser
 
-import "github.com/panyam/leetcoach/sdl/decl"
+import "github.com/panyam/sdl/decl"
 
 type NodeInfo = decl.NodeInfo
 type LiteralExpr = decl.LiteralExpr

@@ -1,8 +1,8 @@
 package tests
 
 import (
-	"github.com/panyam/leetcoach/sdl/decl"
-	"github.com/panyam/leetcoach/sdl/parser"
+	"github.com/panyam/sdl/decl"
+	"github.com/panyam/sdl/parser"
 )
 
 type NodeInfo = decl.NodeInfo

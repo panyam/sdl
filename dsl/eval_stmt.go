@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/panyam/leetcoach/sdl/core" // For identity outcome
+	"github.com/panyam/sdl/core" // For identity outcome
 )
 
 // --- Return Value Handling ---

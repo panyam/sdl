@@ -6,7 +6,7 @@ import (
 	"math/rand"
 	"time"
 
-	sc "github.com/panyam/leetcoach/sdl/core"
+	sc "github.com/panyam/sdl/core"
 )
 
 // BatchProcessor defines the interface for a component that can process a batch of items.

@@ -2,7 +2,7 @@
 package gpucaller
 
 import (
-	sdl "github.com/panyam/leetcoach/sdl/core"
+	sdl "github.com/panyam/sdl/core"
 )
 
 // DefineGPUWorkProfile creates an assumed Outcomes distribution representing the

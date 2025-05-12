@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	// "github.com/panyam/leetcoach/sdl/decl"
+	// "github.com/panyam/sdl/decl"
 	// "gonum.org/v1/plot" // For actual plotting
 	// "gonum.org/v1/plot/plotter"
 	// "gonum.org/v1/plot/vg"

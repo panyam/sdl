@@ -4,8 +4,8 @@ package gpucaller
 import (
 	"fmt"
 
-	"github.com/panyam/leetcoach/sdl/components"
-	sdl "github.com/panyam/leetcoach/sdl/core"
+	"github.com/panyam/sdl/components"
+	sdl "github.com/panyam/sdl/core"
 )
 
 // AppServer represents the application server handling inference requests.

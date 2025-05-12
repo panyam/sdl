@@ -6,7 +6,7 @@ import (
 	"math"
 	"testing"
 
-	sc "github.com/panyam/leetcoach/sdl/core"
+	sc "github.com/panyam/sdl/core"
 )
 
 // MockProcessor and NewMockProcessor remain the same...

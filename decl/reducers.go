@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/panyam/leetcoach/sdl/core"
+	"github.com/panyam/sdl/core"
 )
 
 // --- Reducer Registry ---

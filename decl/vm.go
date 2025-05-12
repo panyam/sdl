@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/panyam/leetcoach/sdl/core"
+	"github.com/panyam/sdl/core"
 )
 
 // ReducerKey identifies a pair of types for dispatching reducer functions.

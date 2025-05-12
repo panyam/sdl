@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	// "github.com/panyam/leetcoach/sdl/decl"
+	// "github.com/panyam/sdl/decl"
 	"github.com/spf13/cobra"
 )
 

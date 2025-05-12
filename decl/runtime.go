@@ -3,7 +3,7 @@ package decl
 import (
 	"fmt"
 
-	"github.com/panyam/leetcoach/sdl/core"
+	"github.com/panyam/sdl/core"
 )
 
 // A future that was spawned in side a frame

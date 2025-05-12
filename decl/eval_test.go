@@ -3,7 +3,7 @@ package decl
 import (
 	"testing"
 
-	"github.com/panyam/leetcoach/sdl/core" // For core types
+	"github.com/panyam/sdl/core" // For core types
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

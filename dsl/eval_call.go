@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/panyam/leetcoach/sdl/core" // Need outcomes for type checking return value
+	"github.com/panyam/sdl/core" // Need outcomes for type checking return value
 )
 
 var (
@@ -175,7 +175,7 @@ func (v *VM) evalCallExpr(expr *CallExpr) error {
 		isOutcome := retType.Kind() == reflect.Ptr &&
 			retType.Elem().Kind() == reflect.Struct && // Check if it's a pointer to a struct
 			retType.Elem().Name() == "Outcomes" && // Check the struct name
-			retType.Elem().PkgPath() == "github.com/panyam/leetcoach/sdl/core" // Check package path
+			retType.Elem().PkgPath() == "github.com/panyam/sdl/core" // Check package path
 
 		if isOutcome {
 			v.push(ret) // Push the generic *core.Outcomes[?]

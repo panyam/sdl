@@ -3,7 +3,7 @@ package decl
 import (
 	"strconv"
 
-	"github.com/panyam/leetcoach/sdl/dsl"
+	"github.com/panyam/sdl/dsl"
 )
 
 // --- NetworkLink ---

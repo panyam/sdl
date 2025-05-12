@@ -4,8 +4,8 @@ package gpucaller
 import (
 	"fmt"
 	// Required for Ceil
-	"github.com/panyam/leetcoach/sdl/components"
-	sdl "github.com/panyam/leetcoach/sdl/core"
+	"github.com/panyam/sdl/components"
+	sdl "github.com/panyam/sdl/core"
 )
 
 // GpuBatchProcessor implements components.BatchProcessor

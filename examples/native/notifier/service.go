@@ -4,7 +4,7 @@ package notifier
 import (
 	"fmt"
 
-	sdl "github.com/panyam/leetcoach/sdl/core"
+	sdl "github.com/panyam/sdl/core"
 )
 
 // NotifierService handles incoming messages and user queries for sent messages.

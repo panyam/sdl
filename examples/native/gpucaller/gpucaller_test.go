@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/panyam/leetcoach/sdl/components"
-	sdl "github.com/panyam/leetcoach/sdl/core"
+	"github.com/panyam/sdl/components"
+	sdl "github.com/panyam/sdl/core"
 )
 
 // Helper function to set up the system

@@ -3,7 +3,7 @@ package components
 import (
 	"math"
 
-	sc "github.com/panyam/leetcoach/sdl/core"
+	sc "github.com/panyam/sdl/core"
 )
 
 // HashIndex represents a hash-based index structure (e.g., static, extendible, linear)

@@ -3,7 +3,7 @@ package components
 import (
 	"math"
 
-	sc "github.com/panyam/leetcoach/sdl/core"
+	sc "github.com/panyam/sdl/core"
 )
 
 // BTreeIndex represents a clustered B-Tree index structure

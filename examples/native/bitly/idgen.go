@@ -1,7 +1,7 @@
 package bitly
 
 import (
-	sdl "github.com/panyam/leetcoach/sdl/core"
+	sdl "github.com/panyam/sdl/core"
 )
 
 // IDGenerator component simulates generating unique short codes.

@@ -5,8 +5,8 @@ import (
 	"io"
 	"os"
 
-	"github.com/panyam/leetcoach/sdl/decl"
-	"github.com/panyam/leetcoach/sdl/parser"
+	"github.com/panyam/sdl/decl"
+	"github.com/panyam/sdl/parser"
 )
 
 func parse(input io.Reader) (*decl.FileDecl, error) {

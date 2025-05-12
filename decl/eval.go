@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/panyam/leetcoach/sdl/core"
+	"github.com/panyam/sdl/core"
 )
 
 type Value = *RuntimeValue

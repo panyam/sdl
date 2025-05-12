@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/panyam/leetcoach/sdl/core" // Will be needed for VM and AST
-	"github.com/panyam/leetcoach/sdl/decl" // Will be needed for VM and AST
+	"github.com/panyam/sdl/core" // Will be needed for VM and AST
+	"github.com/panyam/sdl/decl" // Will be needed for VM and AST
 	"github.com/spf13/cobra"
 )
 

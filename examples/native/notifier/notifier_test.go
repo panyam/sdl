@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	sdl "github.com/panyam/leetcoach/sdl/core"
+	sdl "github.com/panyam/sdl/core"
 )
 
 // Setup function

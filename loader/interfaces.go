@@ -3,7 +3,7 @@ package loader
 import (
 	"io"
 
-	"github.com/panyam/leetcoach/sdl/decl" // Loader needs to know about the AST structure
+	"github.com/panyam/sdl/decl" // Loader needs to know about the AST structure
 )
 
 // Parser defines the interface for parsing SDL content.

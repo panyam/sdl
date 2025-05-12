@@ -3,7 +3,7 @@ package components
 import (
 	"testing"
 
-	sc "github.com/panyam/leetcoach/sdl/core"
+	sc "github.com/panyam/sdl/core"
 	// Ensure metrics helpers are accessible
 )
 

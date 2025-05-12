@@ -2,9 +2,9 @@
 package decl
 
 import (
-	"github.com/panyam/leetcoach/sdl/dsl"
+	"github.com/panyam/sdl/dsl"
 	// Assume core ExecutionMode is accessible or redefine here
-	// "github.com/panyam/leetcoach/sdl/core"
+	// "github.com/panyam/sdl/core"
 )
 
 // --- Batcher ---

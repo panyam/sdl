@@ -1,6 +1,6 @@
 package components
 
-import sc "github.com/panyam/leetcoach/sdl/core"
+import sc "github.com/panyam/sdl/core"
 
 type HeapFile struct {
 	Index

@@ -5,7 +5,7 @@ import (
 	"math"
 	"testing"
 
-	sc "github.com/panyam/leetcoach/sdl/core"
+	sc "github.com/panyam/sdl/core"
 )
 
 // Tests for Init remain largely the same, checking calculated values

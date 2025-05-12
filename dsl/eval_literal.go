@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/panyam/leetcoach/sdl/core"
+	"github.com/panyam/sdl/core"
 )
 
 // evalLiteral evaluates a LiteralExpr node.

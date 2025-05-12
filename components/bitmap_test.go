@@ -5,7 +5,7 @@ import (
 	// Added
 	"testing"
 
-	sc "github.com/panyam/leetcoach/sdl/core"
+	sc "github.com/panyam/sdl/core"
 )
 
 // Test Init remains the same...

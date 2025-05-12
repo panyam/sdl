@@ -1,7 +1,7 @@
 package decl
 
 import (
-	"github.com/panyam/leetcoach/sdl/components"
+	"github.com/panyam/sdl/components"
 )
 
 type MockDisk struct {

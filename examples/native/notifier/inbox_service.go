@@ -3,7 +3,7 @@ package notifier
 import (
 	"fmt"
 
-	sdl "github.com/panyam/leetcoach/sdl/core"
+	sdl "github.com/panyam/sdl/core"
 )
 
 // InboxService provides operations related to user inboxes.

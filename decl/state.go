@@ -1,6 +1,6 @@
 package decl
 
-import "github.com/panyam/leetcoach/sdl/core"
+import "github.com/panyam/sdl/core"
 
 var (
 	// Lazily initialize these? Or create here? Creating here is simpler.

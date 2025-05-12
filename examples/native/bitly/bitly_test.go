@@ -5,8 +5,8 @@ package bitly
 import (
 	"testing"
 
-	sdlc "github.com/panyam/leetcoach/sdl/components"
-	sdl "github.com/panyam/leetcoach/sdl/core"
+	sdlc "github.com/panyam/sdl/components"
+	sdl "github.com/panyam/sdl/core"
 )
 
 // Helper function to create a default BitlyService setup for testing

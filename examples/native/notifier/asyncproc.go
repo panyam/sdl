@@ -4,7 +4,7 @@ package notifier
 import (
 	"log" // Using log for warnings/errors in manual approach
 
-	sdl "github.com/panyam/leetcoach/sdl/core"
+	sdl "github.com/panyam/sdl/core"
 )
 
 // AsyncProcessor simulates the logic that processes a single message

@@ -3,7 +3,7 @@ package components
 import (
 	"fmt"
 
-	sc "github.com/panyam/leetcoach/sdl/core"
+	sc "github.com/panyam/sdl/core"
 	// Assuming metrics helpers are available via import or same package
 	// "log" // If needed for warnings
 )

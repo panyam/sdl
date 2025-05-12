@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/panyam/leetcoach/sdl/dsl"
+	"github.com/panyam/sdl/dsl"
 )
 
 // --- Test Helper Functions ---

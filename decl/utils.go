@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/panyam/leetcoach/sdl/core"
+	"github.com/panyam/sdl/core"
 	"github.com/stretchr/testify/require"
 )
 

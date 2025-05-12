@@ -7,7 +7,7 @@ import (
 
 	// No longer need "sync"
 
-	sc "github.com/panyam/leetcoach/sdl/core"
+	sc "github.com/panyam/sdl/core"
 )
 
 // ResourcePool models a pool of limited, identical resources using the M/M/c

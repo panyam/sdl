@@ -7,9 +7,9 @@ import (
 	"math"
 	"testing"
 
-	"github.com/panyam/leetcoach/sdl/components"
-	"github.com/panyam/leetcoach/sdl/core"
-	"github.com/panyam/leetcoach/sdl/decl"
+	"github.com/panyam/sdl/components"
+	"github.com/panyam/sdl/core"
+	"github.com/panyam/sdl/decl"
 	// "fmt" // For debugging
 )
 

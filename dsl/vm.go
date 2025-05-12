@@ -5,9 +5,9 @@ import (
 	"errors" // Import errors package
 	"fmt"
 
-	"github.com/panyam/leetcoach/sdl/decl"
+	"github.com/panyam/sdl/decl"
 	// We will need core later, but not for phase 0 structure
-	// "github.com/panyam/leetcoach/sdl/core"
+	// "github.com/panyam/sdl/core"
 )
 
 var (

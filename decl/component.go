@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"sort"
 
-	"github.com/panyam/leetcoach/sdl/core"
+	"github.com/panyam/sdl/core"
 )
 
 var (

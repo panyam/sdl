@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/panyam/leetcoach/sdl/decl" // Adjust this import path
+	"github.com/panyam/sdl/decl" // Adjust this import path
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

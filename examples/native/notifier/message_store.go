@@ -1,8 +1,8 @@
 package notifier
 
 import (
-	"github.com/panyam/leetcoach/sdl/components"
-	sdl "github.com/panyam/leetcoach/sdl/core"
+	"github.com/panyam/sdl/components"
+	sdl "github.com/panyam/sdl/core"
 )
 
 // MessageStore handles storage and retrieval of original messages.

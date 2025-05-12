@@ -5,8 +5,8 @@ import (
 	"fmt"
 	// Need for parseLiteralValue
 	// Needed for component constructors & internal funcs
-	"github.com/panyam/leetcoach/sdl/core"
-	"github.com/panyam/leetcoach/sdl/decl"
+	"github.com/panyam/sdl/core"
+	"github.com/panyam/sdl/decl"
 )
 
 // RunDSL executes the logic defined in an AST, focusing on System and Analyze blocks.

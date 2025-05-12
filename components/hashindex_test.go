@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	sc "github.com/panyam/leetcoach/sdl/core"
+	sc "github.com/panyam/sdl/core"
 )
 
 func TestHashIndex_Init(t *testing.T) {

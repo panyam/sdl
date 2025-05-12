@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math"
 
-	sc "github.com/panyam/leetcoach/sdl/core"
+	sc "github.com/panyam/sdl/core"
 )
 
 // Queue models a basic FIFO queuing system using analytical approximations (M/M/1).

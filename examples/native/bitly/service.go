@@ -3,8 +3,8 @@ package bitly
 import (
 	"fmt"
 
-	sdlc "github.com/panyam/leetcoach/sdl/components"
-	sdl "github.com/panyam/leetcoach/sdl/core"
+	sdlc "github.com/panyam/sdl/components"
+	sdl "github.com/panyam/sdl/core"
 )
 
 // "log"

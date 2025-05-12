@@ -6,7 +6,7 @@ import (
 	"math"
 	"testing"
 
-	sc "github.com/panyam/leetcoach/sdl/core" // Added alias
+	sc "github.com/panyam/sdl/core" // Added alias
 )
 
 // Tests for Init remain the same...

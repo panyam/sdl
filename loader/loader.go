@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync" // To handle potential concurrent loads if needed later, though starting sequential.
 
-	"github.com/panyam/leetcoach/sdl/decl"
+	"github.com/panyam/sdl/decl"
 )
 
 // LoadResult holds the outcome of a loading operation.

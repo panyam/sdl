@@ -4,7 +4,7 @@ import (
 	"math/rand"
 	"time"
 
-	sc "github.com/panyam/leetcoach/sdl/core"
+	sc "github.com/panyam/sdl/core"
 	// "math" // If needed later
 )
 
