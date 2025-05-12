@@ -2,6 +2,7 @@ package loader
 
 import (
 	"fmt"
+	"path/filepath"
 	"sync" // To handle potential concurrent loads if needed later, though starting sequential.
 
 	"github.com/panyam/sdl/decl"
@@ -43,6 +44,14 @@ func NewLoader(parser Parser, resolver FileResolver, maxDepth int) *Loader {
 func (l *Loader) LoadRootFile(rootPath string) (*LoadResult, error) {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
+
+	if !filepath.IsAbs(rootPath) {
+		abspath, err := filepath.Abs(rootPath)
+		if err != nil {
+			return nil, err
+		}
+		rootPath = abspath
+	}
 
 	// Reset state for this load operation
 	l.loadedFiles = make(map[string]*decl.FileDecl)

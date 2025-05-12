@@ -5,6 +5,7 @@ import (
 	"os"
 
 	// Assuming parser is in decl
+	"github.com/panyam/sdl/loader"
 	"github.com/spf13/cobra"
 )
 
@@ -17,13 +18,18 @@ correctness and basic semantic validity. It does not run any simulations.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("Validating DSL files:")
 		allValid := true
+		sdlParser := &SDLParserAdapter{}
+		fileResolver := loader.NewDefaultFileResolver()
+		sdlLoader := loader.NewLoader(sdlParser, fileResolver, 10) // Max depth 10
 		for _, filePath := range args {
-			astRoot, err := parseFile(filePath)
+			result, err := sdlLoader.LoadRootFile(filePath)
 			if err != nil {
+				fmt.Fprintf(os.Stderr, "  Error loading file: %v", err)
 				allValid = false
 				continue
 			}
 
+			astRoot := result.RootFile
 			// Perform semantic checks (e.g., vm.LoadFile(ast) or astRoot.Resolve())
 			// For now, let's assume FileDecl.Resolve() handles initial semantic checks.
 			if astRoot != nil { // Check if parsing returned a valid AST

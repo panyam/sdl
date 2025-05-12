@@ -31,7 +31,8 @@ native component BTreeIndex {
 native component BitmapIndex {
   // Exposing a dependency that can be configured
   // It is upto the native component to manage setting/getting this
-  uses disk Disk
+  // uses disk Disk
+
   method Find() bool
   method Insert() bool
   method Delete () bool
