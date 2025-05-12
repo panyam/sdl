@@ -60,6 +60,7 @@ func yyerrok(lexer SDLLexer) {
 
     tupleExpr *TupleExpr
     goStmt         *GoStmt
+    forStmt         *ForStmt
     assignStmt     *AssignmentStmt
     optionsDecl    *OptionsDecl
     enumDecl       *EnumDecl
@@ -93,7 +94,7 @@ func yyerrok(lexer SDLLexer) {
 
 // --- Tokens ---
 // Keywords (assume lexer returns token type, parser might need pos for some)
-%token<node> SYSTEM USES METHOD INSTANCE ANALYZE EXPECT LET IF ELSE SAMPLE DISTRIBUTE DEFAULT RETURN DELAY WAIT GO TUP LOG SWITCH CASE FOR 
+%token<node> SYSTEM USES METHOD INSTANCE ANALYZE EXPECT LET IF ELSE SAMPLE DISTRIBUTE DEFAULT RETURN DELAY WAIT GO LOG SWITCH CASE FOR 
 
 // Marking these as nodes so can be returned as Node for their locations
 %token<node> USE NATIVE LSQUARE RSQUARE LBRACE RBRACE OPTIONS ENUM COMPONENT PARAM IMPORT FROM AS
@@ -125,8 +126,8 @@ func yyerrok(lexer SDLLexer) {
 %type <optionsDecl>  OptionsDecl
 %type <enumDecl>     EnumDecl
 %type <identList>    CommaIdentifierList 
-%type <importDecl>   ImportDecl ImportItem
-%type <importDeclList>   ImportList ImportListOpt
+%type <importDecl>   ImportItem
+%type <importDeclList>   ImportDecl ImportList
 %type <stmt>         Stmt IfStmtElseOpt LetStmt ExprStmt ReturnStmt LogStmt
 %type <waitStmt>     WaitStmt
 %type <delayStmt>    DelayStmt 
@@ -135,7 +136,8 @@ func yyerrok(lexer SDLLexer) {
 %type <blockStmt>    BlockStmt
 %type <stmtList>     StmtList 
 %type <tupleExpr>         TupleExpr
-%type <expr>         Expression BinaryExpr UnaryExpr PrimaryExpr LiteralExpr CallExpr MemberAccessExpr LeafExpr NonAssocBinExpr ParenExpr
+%type <expr>         Expression UnaryExpr PrimaryExpr LiteralExpr CallExpr MemberAccessExpr LeafExpr ParenExpr
+// %type <expr>         BinaryExpr NonAssocBinExpr 
 %type <chainedExpr>         ChainedExpr
 // %type <expr> OrExpr AndBoolExpr CmpExpr AddExpr MulExpr UnaryExpr 
 %type <exprList>     CommaExpressionListOpt
@@ -147,6 +149,7 @@ func yyerrok(lexer SDLLexer) {
 %type <methodDef>    MethodDecl
 %type <methodDef>    MethodSigDecl
 %type <instanceDecl> InstanceDecl
+%type <forStmt>   ForStmt
 %type <assignStmt>   Assignment
 %type <assignList>   AssignList  AssignListOpt
 // %type <analyzeDecl>  AnalyzeDecl
@@ -200,7 +203,16 @@ File:
 
 DeclarationList:
     /* empty */         { $$ = []Node{} }
-    | DeclarationList TopLevelDeclaration { $$ = append($1, $2) }
+    | DeclarationList SEMICOLON { $$ = $1 }
+    | DeclarationList TopLevelDeclaration {
+        $$ = append($1, $2)
+    }
+    | DeclarationList ImportDecl {
+        for _, imp := range $2 {
+          $1 = append($1, imp)
+        }
+        $$ = $1
+    }
     ;
 
 TopLevelDeclaration:
@@ -208,7 +220,6 @@ TopLevelDeclaration:
     | SystemDecl    { $$ = $1 }
     | OptionsDecl   { $$ = $1 }
     | EnumDecl      { $$ = $1 }
-    | ImportDecl    { $$ = $1 }
     ;
 
 OptionsDecl:
@@ -266,23 +277,20 @@ CommaIdentifierList:
     ;
 
 ImportDecl:
-    IMPORT STRING_LITERAL { // IMPORT($1) STRING_LITERAL($2)
-        $$ = &ImportDecl{
-            NodeInfo: newNodeInfo($1.(Node).Pos(), $2.End()),
-            Path: $2.(*LiteralExpr), // $2 is a LiteralExpr from lexer
+    IMPORT ImportList FROM STRING_LITERAL { // IMPORT($1) STRING_LITERAL($2)
+        path := $4.(*LiteralExpr)
+        for _, imp := range $2 {
+          imp.Path = path
         }
+        $$ = $2
     }
     ;
 
-ImportListOpt: /* empty */ { $$ = nil }
-             | ImportList { $$ = $1 }
-            ;
-
 ImportList : ImportItem             { $$ = []*ImportDecl{$1}; }
-           | ImportList ImportItem  { $$ = append($$, $1...) }
+           | ImportList COMMA ImportItem  { $$ = append($$, $3) }
            ;
 
-ImportItem: IDENTIFIER { $$ = &ImportDecl{ImportedItem: $1} }
+ImportItem: IDENTIFIER { $$ = &ImportDecl{ImportedItem: $1, Alias: $1 } }
           | IDENTIFIER AS IDENTIFIER { $$ = &ImportDecl{ImportedItem: $1, Alias: $3 } }
           ;
 
@@ -464,12 +472,12 @@ InstanceDecl:
              Overrides: []*AssignmentStmt{},
          }
     }
-    | USE IDENTIFIER IDENTIFIER ASSIGN LBRACE AssignListOpt RBRACE { // IDENTIFIER($1) ... 
+    | USE IDENTIFIER IDENTIFIER LPAREN AssignListOpt RPAREN { // IDENTIFIER($1) ... 
         $$ = &InstanceDecl{
-             NodeInfo: newNodeInfo($1.(Node).Pos(), $7.End()),
+             NodeInfo: newNodeInfo($1.(Node).Pos(), $6.End()),
              NameNode: $2,
              ComponentType: $3,
-             Overrides: $6,
+             Overrides: $5,
          }
     }
     ;
@@ -566,6 +574,7 @@ StmtList:
 Stmt:
       LetStmt        { $$ = $1 }
     | ExprStmt       { $$ = $1 }
+    | ForStmt       { $$ = $1 }
     | ReturnStmt     { $$ = $1 }
     | IfStmt         { $$ = $1 }
     | WaitStmt       { $$ = $1 }
@@ -583,6 +592,11 @@ BlockStmt:
       $$ = &BlockStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Statements: $2 }
     }
     ;
+
+ForStmt: FOR Expression Stmt {
+        $$ = &ForStmt{NodeInfo: newNodeInfo($1.(Node).Pos(), $3.End()), Condition: $2, Body: $3 }
+       }
+       ;
 
 LetStmt:
     LET CommaIdentifierList ASSIGN Expression { // LET($1) ... 
@@ -697,9 +711,10 @@ GoStmt:
 // --- Expressions ---
 // Expression: OpSepExprList        { $$ = $1 } ;
 
-// Expression: NonAssocBinExpr ;
 Expression: ChainedExpr { $$ = $1 };
+// Expression: NonAssocBinExpr ;
 
+/*
 NonAssocBinExpr:
     BinaryExpr  { $$ = $1 }
     | BinaryExpr BINARY_NC_OP BinaryExpr { 
@@ -707,6 +722,19 @@ NonAssocBinExpr:
         $$.(*BinaryExpr).NodeInfo = newNodeInfo($1.(Node).Pos(), $3.(Node).End())
     }
     ;
+
+BinaryExpr:
+    UnaryExpr  { $$ = $1 }
+  | BinaryExpr BINARY_OP UnaryExpr {
+     $$ = &BinaryExpr{ Left: $1, Operator: $2.(Node).String(), Right: $3}
+     $$.(*BinaryExpr).NodeInfo = newNodeInfo($1.(Node).Pos(), $3.(Node).End())
+  }
+  | BinaryExpr MINUS UnaryExpr {
+     $$ = &BinaryExpr{ Left: $1, Operator: $2.(Node).String(), Right: $3}
+     $$.(*BinaryExpr).NodeInfo = newNodeInfo($1.(Node).Pos(), $3.(Node).End())
+  }
+  // | For each operator that can be BOTH binary and unary add it here explicitly
+*/
 
 ChainedExpr:
     UnaryExpr  {
@@ -722,30 +750,18 @@ ChainedExpr:
       $1.Operators = append($1.Operators, $2.String());
       $$ = $1 ;
   }
-
-BinaryExpr:
-    UnaryExpr  { $$ = $1 }
-  | BinaryExpr BINARY_OP UnaryExpr {
-     $$ = &BinaryExpr{ Left: $1, Operator: $2.(Node).String(), Right: $3}
-     $$.(*BinaryExpr).NodeInfo = newNodeInfo($1.(Node).Pos(), $3.(Node).End())
-  }
-  | BinaryExpr MINUS UnaryExpr {
-     $$ = &BinaryExpr{ Left: $1, Operator: $2.(Node).String(), Right: $3}
-     $$.(*BinaryExpr).NodeInfo = newNodeInfo($1.(Node).Pos(), $3.(Node).End())
-  }
-  // | For each operator that can be BOTH binary and unary add it here explicitly
   ;
 
 UnaryExpr: PrimaryExpr { $$=$1 }
     // For Unary, $1 is operator token, $2 is operand Expr node
     | UNARY_OP UnaryExpr { 
         $$ = &UnaryExpr{ Operator: $1.String(), Right: $2} 
-        $$.(*BinaryExpr).NodeInfo = newNodeInfo($1.(Node).Pos(), $2.(Node).End())
+        $$.(*UnaryExpr).NodeInfo = newNodeInfo($1.(Node).Pos(), $2.(Node).End())
     }
   // | For each operator that can be BOTH binary and unary add it here explicitly
     | MINUS UnaryExpr %prec UMINUS { 
         $$ = &UnaryExpr{ Operator: $1.String(), Right: $2} 
-        $$.(*BinaryExpr).NodeInfo = newNodeInfo($1.(Node).Pos(), $2.(Node).End())
+        $$.(*UnaryExpr).NodeInfo = newNodeInfo($1.(Node).Pos(), $2.(Node).End())
     }
     // For each OPERATOR  that can be binary or unary add a rule like the above MINUS and add a U<OPERATOR> as well
     ;
@@ -841,7 +857,7 @@ CallExpr:
              Function: $1,
              Args: $3,
         }
-        $$.(*MemberAccessExpr).NodeInfo = newNodeInfo($1.Pos(), endNode.End())
+        $$.(*CallExpr).NodeInfo = newNodeInfo($1.Pos(), endNode.End())
     }
     | MemberAccessExpr LPAREN CommaExpressionListOpt RPAREN { // PrimaryExpr($1) LPAREN($2) ArgList($3) RPAREN($4)
          endNode := $4.(Node) // End at RPAREN
@@ -853,7 +869,7 @@ CallExpr:
              Function: $1,
              Args: $3,
          }
-        $$.(*MemberAccessExpr).NodeInfo = newNodeInfo($1.Pos(), endNode.End())
+        $$.(*CallExpr).NodeInfo = newNodeInfo($1.Pos(), endNode.End())
     }
     ;
 
@@ -877,6 +893,9 @@ CaseExpr:
     Expression ARROW Expression { 
       $$ = &CaseExpr{ Condition: $1, Body: $3 } 
     }
+    | Expression ARROW Expression COMMA { // allow optional comma
+      $$ = &CaseExpr{ Condition: $1, Body: $3 } 
+    }
     ;
 
 DefaultCaseExprOpt:
@@ -886,6 +905,7 @@ DefaultCaseExprOpt:
 
 DefaultCaseExpr:
     DEFAULT ARROW Expression { $$ = $3 }
+    | DEFAULT ARROW Expression COMMA { $$ = $3 }
     ;
 
 SwitchStmt:

@@ -643,7 +643,7 @@ func InferTypesForFile(file *FileDecl) []error {
 		return errors
 	}
 
-	if err := file.ensureResolved(); err != nil {
+	if err := file.Resolve(); err != nil {
 		errors = append(errors, fmt.Errorf("error resolving file before type inference: %w", err))
 		return errors // Stop if resolution fails
 	}

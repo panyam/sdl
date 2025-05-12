@@ -1,14 +1,19 @@
 
-// import NativeDisk, HttpStatusCode, HashIndex from "./common" ;
+import NativeDisk, HttpStatusCode, HashIndex from "./common" ;
 
 // We could use a custom disk or a NativeDisk
 component Disk {
   // How about *just* latencies
   // Option 1 - Define them purely as a single dimentional entities
-  param ReadLatencies = dist {
+  param ReadSuccessLatencies = dist {
      999 => 10us
      9 => 50us
      1 => 10ms
+  }
+
+  param ReadFailureLatencies = dist {
+     999 => 10us
+     1 => 100us
   }
 
   // Just a duration of latencies
@@ -18,109 +23,59 @@ component Disk {
      1 => 10ms
   }
 
-  // Problem with above is we dont know which latencies are to be associated
-  // with which success codes.
-  // Pro - very simple.  You just have to do 2 samples
-
-  // Option 2 - Make them like a map or multi dimensional, eg:
-  /*
-  param ReadLatencies = dist 1000 {
-    999 => true, dist 100 {
-    }
-    default => false, dist {
-    }
-  }
-  */
-
-  // This is actually complicated syntax as we are not introducing tuples 
-  // and we have to enforce types etc.  
-  // Keep it simple and stick with option 1
-  // With this we can do something easier on the dist side
-  // introduce the "sample" key word and use a switch, eg:
-  // This MUST be from a finite set
-  method Read1() int {
-    let retCode = sample ReadResults
-
-    switch retCode {
-      true => delay sample self.SuccessReadLatencies
-      false => delay sample self.FailureReadLatencies
-    }
+  // 5 9s of read success!
+  param ReadOutcomes = dist {
+    99999 => (true, ReadSuccessLatencies)
+    1 => (false, ReadFailureLatencies)
   }
 
-  // and same for writes:
-
-  method Write1() string {
-    let retCode = sample self.WriteResults {
-    }
-
-    // Option 3 - Basic tuples, eg:
-    let ReadLatencies = dist 1000 {
-      900 => (true, 10ms)
-      10 => (false, 20ms)
-      50 => (true, 100ms)
-      default => (false, 1000ms)
-    }
-  }
-
-    // Option 3 is *sligtly* more complex than Option 1 but vastly more
-    // commonjj
-
-
-  param ReadLatencies2 = dist 1000 {
-    999 => (true, dist 100 {         // 99.9% successes
-              90 => 10us
-              9 => 50us
-              1 => 10ms
-      })
-      default => (false, dist {     // .1% failure rates
-          90 => 10us
-          9 => 50us
-          1 => 10ms
-      })
+  param WriteOutcomes = dist {
+    99999 => (true, WriteSuccessLatencies)
+    1 => (false, WriteFailureLatencies)
   }
 
   method Read() {
-    let ret = sample self.ReadLatencies
-    // Make 1 in 1000 reads fail
-    let success, latency = sample dist 1000 {
-        999 => (true, dist 100 {         // 99.9% successes
-              90 => 10us
-              9 => 50us
-              1 => 10ms
-        })
-        default => (false, dist {     // .1% failure rates
-              90 => 10us
-              9 => 50us
-              1 => 10ms
-        })
-    }
-    delay sample latencyDist
-    return success
+    let outcome, latency = sample ReadOutcomes
+    delay sample latency
+    return outcome
   }
 
-  // Give similar characteristics to a read
-  method Write() bool {
-    // Make 1 in 1000 reads fail
-    let success, latencyDist = sample dist 1000 {
-      999 => (true, dist 100 {         // 99.9% successes
-              90 => 10us
-              9 => 50us
-              1 => 10ms
-          })
-      default => (false, dist {     // .1% failure rates
-              90 => 10us
-              9 => 50us
-              1 => 10ms
-          })
-    }
-    delay sample latencyDist
-    return success
+  method Write() {
+    let outcome, latency = sample WriteOutcomes
+    delay sample latency
+    return outcome
   }
 }
+
+enum DBResult { FOUND, NOT_FOUND, INTERNAL_ERROR }
+enum DuplicateCheck { FOUND, NOTFOUND, ERROR }
 
 component Database {
     // The DB index for mapping short codes -> urls
     uses ByShortCode HashIndex
+    param RetryCount = 3
+
+    // Tries to get an entry by short URL
+    method GetByShortId() bool {
+        return self.HashIndex.Find()
+    }
+
+    // Adds a new short url into the system
+    method PutShortUrl() bool {
+        return self.HashIndex.Insert()
+    }
+
+    // When generating new IDs use this to check for collissions
+    // Simplistic model - better to use transactions
+    method CheckDuplicateShortId() bool {
+      // Reading the DB also incurs a delay
+      if not self.HashIndex.Read() {
+        // Had a database error so fail
+        return ERROR
+      }
+
+      return sample dist { 99999 => FOUND, 1 => NOTFOUND}
+    }
 }
 
 component AppServer {
@@ -128,16 +83,36 @@ component AppServer {
   uses DB Database
 
   method Shorten() HttpStatusCode {
-    // create a random by doing an Insert
-    let nextid = self.DB.Insert() 
+    for RetryCount {
+      let foundDuplicate = self.CheckDuplicateShortId()
+
+      if not foundDuplicate {
+        // Success so try saving a new short ID
+        if self.HashIndex.Write() {
+          return HttpStatusOk
+        } else {
+          return HttpStatusInternalError
+        }
+      }
+    }
+
+    // All retries elapsed - too many conflicts
+    return HttpStatusConflict
   }
 
   method Redirect() HttpStatusCode {
+    if self.DB.GetByShortId() {
+      return HttpStatusOk // or may be 302
+    }
+
+    // Simplified - can model more errors
+    return HttpStatusInternalError
   }
 }
 
 system Bitly {
     // Order of dependencies does not matter  They will be bound later
-    use app AppServer = {db = db}
+    // This allows cyclical links
+    use app AppServer ( db = db )
     use db Database
 }

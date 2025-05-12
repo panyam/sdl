@@ -24,6 +24,19 @@ type BlockStmt struct {
 func (b *BlockStmt) stmtNode()      {}
 func (b *BlockStmt) String() string { return "{ ...statements... }" } // Simplified
 
+// ForStmt represents `for expression { stmt }`
+type ForStmt struct {
+	NodeInfo
+	Condition Expr
+	Body      Stmt
+}
+
+func (l *ForStmt) stmtNode()           {}
+func (l *ForStmt) systemBodyItemNode() {} // Allow let at system level
+func (l *ForStmt) String() string {
+	return fmt.Sprintf("for %s { %s }", l.Condition.String(), l.Body.String())
+}
+
 // LetStmt represents `let var = expr;`
 type LetStmt struct {
 	NodeInfo

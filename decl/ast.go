@@ -42,18 +42,8 @@ type FileDecl struct {
 	systems    map[string]*SystemDecl
 }
 
-func (f *FileDecl) ensureResolved() error {
-	if !f.resolved {
-		if err := f.Resolve(); err != nil {
-			return err
-		}
-		f.resolved = true
-	}
-	return nil
-}
-
 func (f *FileDecl) GetComponents() (out map[string]*ComponentDecl, err error) {
-	err = f.ensureResolved()
+	err = f.Resolve()
 	out = f.components
 	return
 }
@@ -67,7 +57,7 @@ func (f *FileDecl) GetComponent(name string) (out *ComponentDecl, err error) {
 }
 
 func (f *FileDecl) GetEnums() (out map[string]*EnumDecl, err error) {
-	err = f.ensureResolved()
+	err = f.Resolve()
 	out = f.enums
 	return
 }
@@ -81,7 +71,7 @@ func (f *FileDecl) GetEnum(name string) (out *EnumDecl, err error) {
 }
 
 func (f *FileDecl) GetSystems() (out map[string]*SystemDecl, err error) {
-	err = f.ensureResolved()
+	err = f.Resolve()
 	out = f.systems
 	return
 }
@@ -98,6 +88,9 @@ func (f *FileDecl) GetSystem(name string) (out *SystemDecl, err error) {
 func (f *FileDecl) Resolve() error {
 	if f == nil {
 		return fmt.Errorf("cannot load nil file")
+	}
+	if f.resolved {
+		return nil
 	}
 	// Add initializers for other registries (Enums, Options) if they exist
 
@@ -138,6 +131,7 @@ func (f *FileDecl) Resolve() error {
 		}
 	}
 	// log.Printf("Finished loading definitions.")
+	f.resolved = true
 	return nil
 }
 
@@ -179,7 +173,8 @@ func (f *FileDecl) RegisterImport(c *ImportDecl) error {
 		f.imports = map[string]*ImportDecl{}
 	}
 	if _, exists := f.imports[c.ImportedAs()]; exists {
-		return fmt.Errorf("import definition '%s' already registered", c.ImportedAs())
+		err := fmt.Errorf("import definition '%s' already registered", c.ImportedAs())
+		panic(err)
 	}
 	f.imports[c.ImportedAs()] = c
 	return nil
@@ -281,18 +276,8 @@ type ComponentDecl struct {
 	methods  map[string]*MethodDecl // Processed methods map[method_name]*MethodDef
 }
 
-func (d *ComponentDecl) ensureResolved() error {
-	if !d.resolved {
-		if err := d.Resolve(); err != nil {
-			return err
-		}
-		d.resolved = true
-	}
-	return nil
-}
-
 func (d *ComponentDecl) GetParams() (out map[string]*ParamDecl, err error) {
-	err = d.ensureResolved()
+	err = d.Resolve()
 	out = d.params
 	return
 }
@@ -306,7 +291,7 @@ func (d *ComponentDecl) GetParam(name string) (out *ParamDecl, err error) {
 }
 
 func (d *ComponentDecl) GetMethods() (out map[string]*MethodDecl, err error) {
-	err = d.ensureResolved()
+	err = d.Resolve()
 	out = d.methods
 	return
 }
@@ -320,7 +305,7 @@ func (d *ComponentDecl) GetMethod(name string) (out *MethodDecl, err error) {
 }
 
 func (d *ComponentDecl) GetDependencies() (out map[string]*UsesDecl, err error) {
-	err = d.ensureResolved()
+	err = d.Resolve()
 	out = d.uses
 	return
 }
@@ -334,6 +319,9 @@ func (d *ComponentDecl) GetDependency(name string) (out *UsesDecl, err error) {
 }
 
 func (d *ComponentDecl) Resolve() error {
+	if d.resolved {
+		return nil
+	}
 	d.params = map[string]*ParamDecl{}
 	d.uses = map[string]*UsesDecl{}      // Processed dependencies map[local_name]*UsesDecl
 	d.methods = map[string]*MethodDecl{} // Processed dependencies map[local_name]*UsesDecl
@@ -380,6 +368,7 @@ func (d *ComponentDecl) Resolve() error {
 			// Ignore other items like comments or potentially misplaced nodes
 		}
 	}
+	d.resolved = true
 	return nil
 }
 

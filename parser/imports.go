@@ -9,6 +9,7 @@ type Expr = decl.Expr
 type ExprBase = decl.ExprBase
 type Stmt = decl.Stmt
 type LetStmt = decl.LetStmt
+type ForStmt = decl.ForStmt
 type ReturnStmt = decl.ReturnStmt
 type ExprStmt = decl.ExprStmt
 type WaitStmt = decl.WaitStmt

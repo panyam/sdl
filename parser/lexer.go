@@ -259,8 +259,7 @@ func (l *Lexer) scanIdentifierOrKeyword() (tok int, text string) {
 		return LET, text
 	case "if":
 		return IF, text
-	case "tup":
-		return TUP, text
+	// case "tup": return TUP, text
 	case "else":
 		return ELSE, text
 	case "sample":
@@ -297,6 +296,8 @@ func (l *Lexer) scanIdentifierOrKeyword() (tok int, text string) {
 		return BOOL_LITERAL, text
 	case "false":
 		return BOOL_LITERAL, text
+	case "not":
+		return UNARY_OP, text
 	case "for":
 		return FOR, text
 		/*
