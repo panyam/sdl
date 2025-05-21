@@ -110,7 +110,7 @@ func yyerrok(lexer SDLLexer) {
 
 // Operators (Tokens for precedence rules, lexer provides string in lval.sval)
 // %token <node> OPERATOR
-// %token <node> OR AND EQ NEQ LT LTE GT GTE PLUS MUL DIV MOD
+%token <node> OR AND EQ NEQ LT LTE GT GTE PLUS MUL DIV MOD
 
 %token <node> DUAL_OP BINARY_NC_OP BINARY_OP UNARY_OP MINUS
 

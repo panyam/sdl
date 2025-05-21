@@ -14,6 +14,11 @@ import (
 // Ensure EOF is defined
 const eof = 0
 
+type PrecedenceInfo struct {
+	Precedence int
+	AssocType  int // -1 for left, 0 for non associative, 1 for right associative
+}
+
 // Lexer structure
 type Lexer struct {
 	lookaheadRunes  []rune
@@ -22,6 +27,9 @@ type Lexer struct {
 	buf             bytes.Buffer // Temporary buffer for scanned text
 	pos             int          // Current byte offset from the beginning of the input
 	lastError       error
+
+	// Precedecences, associativity of operators
+	Precedences map[int]PrecedenceInfo
 
 	// Position tracking for the current token
 	tokenStartPos  int    // Byte offset where the current token started
@@ -537,6 +545,14 @@ func (l *Lexer) Lex(lval *SDLSymType) int {
 			tokenCode = ARROW
 			return tokenCode
 		}
+		if l.peek() == '=' {
+			l.read()
+			l.tokenText = "=="
+			currentEndPos = l.pos
+			lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
+			tokenCode = EQ
+			return tokenCode
+		}
 		lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
 		tokenCode = ASSIGN
 		return tokenCode
@@ -552,12 +568,13 @@ func (l *Lexer) Lex(lval *SDLSymType) int {
 	}
 
 	var out []rune
-	for strings.IndexRune(opchars, l.peek()) >= 0 {
+	for l.peek() > 0 && strings.IndexRune(opchars, l.peek()) >= 0 {
 		out = append(out, l.peek())
 		l.read()
 	}
 	log.Println("At Peek: ", string(l.peek()))
 	lval.node = newTokenNode(startPosSnapshot, currentEndPos, string(out))
+	lval.sval = string(out)
 	tokenCode = BINARY_OP
 	l.Error(fmt.Sprintf("unexpected character '%c'", r))
 	return eof // Indicate an error that should halt parsing

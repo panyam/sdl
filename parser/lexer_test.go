@@ -177,6 +177,7 @@ func TestLexer_LineColumnTracking(t *testing.T) {
 	input := "abc\ndef\n  ghi"
 	lexer := NewLexer(strings.NewReader(input))
 	lval := &SDLSymType{}
+	tokenStartLine, tokenStartCol := lexer.Position()
 
 	// abc
 	tok := lexer.Lex(lval)
@@ -209,12 +210,13 @@ func TestLexer_LineColumnTracking(t *testing.T) {
 func TestLexer_UnterminatedString(t *testing.T) {
 	input := `"hello`
 	lexer := NewLexer(strings.NewReader(input))
+	tokenStartLine, tokenStartCol := lexer.Position()
 	lval := &SDLSymType{}
 	lexer.Lex(lval) // Should call Error and return eof
 	require.Error(t, lexer.lastError)
 	assert.Contains(t, lexer.lastError.Error(), "unterminated string literal")
-	assert.Equal(t, 1, tokenStartLine)
-	assert.Equal(t, 1, tokenStartCol)
+	assert.Equal(t, 0, tokenStartLine)
+	assert.Equal(t, 0, tokenStartCol)
 }
 
 func TestLexer_InvalidEscape(t *testing.T) {

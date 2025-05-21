@@ -43,6 +43,9 @@ type ChainedExpr struct {
 	ExprBase
 	Children  []Expr
 	Operators []string
+
+	// Expression after operators have been taken into account
+	UnchainedExpr Expr
 }
 
 func (b *ChainedExpr) exprNode() {}

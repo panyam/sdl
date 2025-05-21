@@ -393,7 +393,7 @@ func TestParseSystem(t *testing.T) {
 		require.Len(t, sys.Body, 1)
 		let := sys.Body[0].(*LetStmt)
 		assertPosition(t, let, 11, 22)
-		assertIdentifier(t, let.Variable, "x")
+		assertIdentifier(t, let.Variables[0], "x")
 		assertLiteralWithValue(t, let.Value, IntType, int64(100))
 	})
 }
@@ -413,7 +413,7 @@ func TestParseStatements(t *testing.T) {
 		ast := parseString(t, input)
 		stmt := getStmt(t, ast).(*LetStmt)
 		assertPosition(t, stmt, 27, 40)
-		assertIdentifier(t, stmt.Variable, "v")
+		assertIdentifier(t, stmt.Variables[0], "v")
 		_, ok := stmt.Value.(*BinaryExpr)
 		assert.True(t, ok)
 	})
