@@ -300,3 +300,119 @@ func ExampleChainedExpr_Unchain() {
 
 	// Output: (((a + b) - c) * d)
 }
+
+// (Continue in parser/chainexpr_test.go)
+
+func TestChainedExpr_Unchain_RealisticPrecedenceSimulation(t *testing.T) {
+	// Operands
+	a := newMockExpr("a", 0, 1)
+	b := newMockExpr("b", 2, 3)
+	c_expr := newMockExpr("c", 4, 5)
+	d_expr := newMockExpr("d", 6, 7)
+	e_expr := newMockExpr("e", 8, 9)
+
+	// Precedence/Associativity Info (simulating lookups by the parser)
+	// Let's assume:
+	// Level 1 (highest): *, / (Left-associative)
+	// Level 2: +, - (Left-associative)
+	// Level 3 (lowest): >, <, == (Non-associative)
+	precInfoMulDiv := []PrecedenceInfo{{Precedence: 1, AssocType: -1}} // Left-assoc
+	precInfoAddSub := []PrecedenceInfo{{Precedence: 2, AssocType: -1}} // Left-assoc
+	precInfoCompare := []PrecedenceInfo{{Precedence: 3, AssocType: 0}} // Non-assoc
+
+	t.Run("a + b * c - d", func(t *testing.T) {
+		// Parser action:
+		// 1. Sees `b * c` (higher precedence than +,-)
+		//    Forms chain_mul = ChainedExpr{ Children: [b, c_expr], Operators: ["*"] }
+		//    Unchains it: chain_mul.Unchain(precInfoMulDiv) -> binary_mul_bc
+		chain_mul_bc := newTestChainedExpr([]Expr{b, c_expr}, []string{"*"})
+		chain_mul_bc.Unchain(precInfoMulDiv)
+		binary_mul_bc := assertBinaryExpr(t, chain_mul_bc.UnchainedExpr, "*", b, c_expr)
+		require.NotNil(t, binary_mul_bc)
+
+		// 2. Now has `a + binary_mul_bc - d`. Forms chain_add_sub.
+		//    (All ops +, - are same precedence, left-associative)
+		//    ChainedExpr{ Children: [a, binary_mul_bc, d_expr], Operators: ["+", "-"] }
+		chain_add_sub := newTestChainedExpr([]Expr{a, binary_mul_bc, d_expr}, []string{"+", "-"})
+		chain_add_sub.Unchain(precInfoAddSub) // Unchain with +/- rules
+
+		// Expected: ((a + (b*c)) - d)
+		require.NotNil(t, chain_add_sub.UnchainedExpr)
+		outer_sub := assertBinaryExpr(t, chain_add_sub.UnchainedExpr, "-", nil, d_expr)
+		inner_add := assertBinaryExpr(t, outer_sub.Left, "+", a, binary_mul_bc)
+
+		assert.Same(t, binary_mul_bc, inner_add.Right.(*BinaryExpr))
+
+		// Check overall NodeInfo for the final expression
+		assert.Equal(t, a.Pos(), outer_sub.Pos(), "Final expression StartPos")
+		assert.Equal(t, d_expr.End(), outer_sub.End(), "Final expression EndPos")
+		// ((a + (b * c)) - d)
+		// fmt.Println(chain_add_sub.UnchainedExpr.String())
+	})
+
+	t.Run("a > b + c", func(t *testing.T) {
+		// Parser action:
+		// 1. Sees `b + c` (higher precedence than >)
+		//    Forms chain_add = ChainedExpr{ Children: [b, c_expr], Operators: ["+"] }
+		//    Unchains it: chain_add.Unchain(precInfoAddSub) -> binary_add_bc
+		chain_add_bc := newTestChainedExpr([]Expr{b, c_expr}, []string{"+"})
+		chain_add_bc.Unchain(precInfoAddSub)
+		binary_add_bc := assertBinaryExpr(t, chain_add_bc.UnchainedExpr, "+", b, c_expr)
+		require.NotNil(t, binary_add_bc)
+
+		// 2. Now has `a > binary_add_bc`. Forms chain_compare.
+		//    (Operator > is non-associative)
+		//    ChainedExpr{ Children: [a, binary_add_bc], Operators: [">"] }
+		chain_compare := newTestChainedExpr([]Expr{a, binary_add_bc}, []string{">"})
+		chain_compare.Unchain(precInfoCompare) // Unchain with comparison rules
+
+		// Expected: (a > (b+c))
+		require.NotNil(t, chain_compare.UnchainedExpr)
+		final_compare := assertBinaryExpr(t, chain_compare.UnchainedExpr, ">", a, binary_add_bc)
+		assert.Same(t, binary_add_bc, final_compare.Right.(*BinaryExpr))
+
+		assert.Equal(t, a.Pos(), final_compare.Pos())
+		assert.Equal(t, binary_add_bc.End(), final_compare.End()) // End of (b+c)
+		// (a > (b + c))
+		// fmt.Println(chain_compare.UnchainedExpr.String())
+	})
+
+	t.Run("a * b == c - d / e", func(t *testing.T) {
+		// Parser action:
+		// 1. Highest precedence: `a * b` and `d / e`
+		//    chain_mul_ab = ChainedExpr{Children:[a,b], Ops:["*"]} -> Unchain -> binary_mul_ab
+		//    chain_div_de = ChainedExpr{Children:[d_expr,e_expr], Ops:["/"]} -> Unchain -> binary_div_de
+		chain_mul_ab := newTestChainedExpr([]Expr{a, b}, []string{"*"})
+		chain_mul_ab.Unchain(precInfoMulDiv)
+		binary_mul_ab := assertBinaryExpr(t, chain_mul_ab.UnchainedExpr, "*", a, b)
+		require.NotNil(t, binary_mul_ab)
+
+		chain_div_de := newTestChainedExpr([]Expr{d_expr, e_expr}, []string{"/"})
+		chain_div_de.Unchain(precInfoMulDiv)
+		binary_div_de := assertBinaryExpr(t, chain_div_de.UnchainedExpr, "/", d_expr, e_expr)
+		require.NotNil(t, binary_div_de)
+
+		// 2. Next precedence: `c - binary_div_de`
+		//    chain_sub_c_div = ChainedExpr{Children:[c_expr, binary_div_de], Ops:["-"]} -> Unchain -> binary_sub_c_div
+		chain_sub_c_div := newTestChainedExpr([]Expr{c_expr, binary_div_de}, []string{"-"})
+		chain_sub_c_div.Unchain(precInfoAddSub)
+		binary_sub_c_div := assertBinaryExpr(t, chain_sub_c_div.UnchainedExpr, "-", c_expr, binary_div_de)
+		require.NotNil(t, binary_sub_c_div)
+		assert.Same(t, binary_div_de, binary_sub_c_div.Right.(*BinaryExpr))
+
+		// 3. Lowest precedence: `binary_mul_ab == binary_sub_c_div` (non-associative)
+		//    chain_eq = ChainedExpr{Children:[binary_mul_ab, binary_sub_c_div], Ops:["=="]} -> Unchain -> final_expr
+		chain_eq := newTestChainedExpr([]Expr{binary_mul_ab, binary_sub_c_div}, []string{"=="})
+		chain_eq.Unchain(precInfoCompare)
+		final_expr := assertBinaryExpr(t, chain_eq.UnchainedExpr, "==", binary_mul_ab, binary_sub_c_div)
+		require.NotNil(t, final_expr)
+		assert.Same(t, binary_mul_ab, final_expr.Left.(*BinaryExpr))
+		assert.Same(t, binary_sub_c_div, final_expr.Right.(*BinaryExpr))
+
+		// Check overall NodeInfo
+		assert.Equal(t, binary_mul_ab.Pos(), final_expr.Pos())    // Starts with 'a'
+		assert.Equal(t, binary_sub_c_div.End(), final_expr.End()) // Ends with 'e' (from d/e)
+		// ((a * b) == (c - (d / e)))
+		// fmt.Println(final_expr.String())
+	})
+}

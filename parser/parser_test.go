@@ -348,7 +348,7 @@ func TestParseSystem(t *testing.T) {
 	})
 
 	t.Run("InstanceWithOverrides", func(t *testing.T) {
-		input := `system S { use i2 D = { p1 = 5 p2 = "a" } }` // Removed ; based on grammar
+		input := `system S { use i2 D ( p1 = 5, p2 = "a" ) }` // Removed ; based on grammar
 		ast := parseString(t, input)
 		sys := firstDecl(t, ast).(*SystemDecl)
 		assertPosition(t, sys, 0, 40)

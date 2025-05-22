@@ -21,8 +21,6 @@ type PrecedenceInfo struct {
 	AssocType  int // -1 for left, 0 for non associative, 1 for right associative
 }
 
-func (c *ChainedExpr) exprNode() {}
-func (c *ChainedExpr) stmtNode() {}
 func (c *ChainedExpr) String() string {
 	// Basic, doesn't handle precedence for parentheses
 	return fmt.Sprintf("(%s)", strings.Join(gfn.Map(c.Children, func(e Expr) string { return e.String() }), ", "))
@@ -33,15 +31,15 @@ func (c *ChainedExpr) String() string {
 // is built by a parser rule that groups operators of the same precedence level.
 // The `precedences` argument is assumed to provide the PrecedenceInfo for this
 // shared level, or defaults are used if it's empty.
-func (c *ChainedExpr) Unchain(precedences []PrecedenceInfo) {
+func (c *ChainedExpr) Unchain(precedences []PrecedenceInfo) Expr {
 	if c == nil {
-		return
+		return nil
 	}
 
 	// Handle cases with no children or no operators first.
 	if len(c.Children) == 0 {
 		c.UnchainedExpr = nil
-		return
+		return nil
 	}
 
 	if len(c.Operators) == 0 {
@@ -52,14 +50,14 @@ func (c *ChainedExpr) Unchain(precedences []PrecedenceInfo) {
 			// Malformed: e.g., multiple children but no operators to combine them.
 			c.UnchainedExpr = nil
 		}
-		return
+		return c.UnchainedExpr
 	}
 
 	// Ensure the number of children and operators is consistent for a chain.
 	// Expected: len(Children) == len(Operators) + 1
 	if len(c.Children) != len(c.Operators)+1 {
 		c.UnchainedExpr = nil // Malformed chain
-		return
+		return c.UnchainedExpr
 	}
 
 	// Determine associativity. Default to left-associative if no precedence info is provided.
@@ -76,14 +74,14 @@ func (c *ChainedExpr) Unchain(precedences []PrecedenceInfo) {
 		currentExpr = c.Children[0]
 		if currentExpr == nil { // First child should not be nil
 			c.UnchainedExpr = nil
-			return
+			return nil
 		}
 
 		for i := 0; i < len(c.Operators); i++ {
 			rightOperand := c.Children[i+1]
 			if rightOperand == nil { // Subsequent children should not be nil
 				c.UnchainedExpr = nil
-				return
+				return nil
 			}
 			opStr := c.Operators[i]
 
@@ -104,14 +102,14 @@ func (c *ChainedExpr) Unchain(precedences []PrecedenceInfo) {
 		currentExpr = c.Children[len(c.Children)-1]
 		if currentExpr == nil { // Last child should not be nil
 			c.UnchainedExpr = nil
-			return
+			return nil
 		}
 
 		for i := len(c.Operators) - 1; i >= 0; i-- {
 			leftOperand := c.Children[i]
 			if leftOperand == nil { // Earlier children should not be nil
 				c.UnchainedExpr = nil
-				return
+				return nil
 			}
 			opStr := c.Operators[i]
 
@@ -133,13 +131,13 @@ func (c *ChainedExpr) Unchain(precedences []PrecedenceInfo) {
 			// Must have exactly two children for one non-associative operator
 			if len(c.Children) != 2 {
 				c.UnchainedExpr = nil // Malformed
-				return
+				return nil
 			}
 			leftOperand := c.Children[0]
 			rightOperand := c.Children[1]
 			if leftOperand == nil || rightOperand == nil {
 				c.UnchainedExpr = nil
-				return
+				return nil
 			}
 			opStr := c.Operators[0]
 
@@ -163,4 +161,5 @@ func (c *ChainedExpr) Unchain(precedences []PrecedenceInfo) {
 		// Unknown or unsupported associativity type.
 		c.UnchainedExpr = nil
 	}
+	return c.UnchainedExpr
 }

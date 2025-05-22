@@ -711,7 +711,9 @@ GoStmt:
 // --- Expressions ---
 // Expression: OpSepExprList        { $$ = $1 } ;
 
-Expression: ChainedExpr { $$ = $1 };
+Expression: ChainedExpr {
+    $$ = $1.Unchain(DefaultPrecedence)
+};
 // Expression: NonAssocBinExpr ;
 
 /*
