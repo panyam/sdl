@@ -129,8 +129,7 @@ func InferExprType(expr Expr, scope *TypeScope) (*Type, error) {
 		inferred, err = InferCallExprType(e, scope)
 	case *TupleExpr:
 		inferred, err = InferTupleExprType(e, scope)
-	case *ChainedExpr:
-		inferred, err = InferChainedExprType(e, scope)
+	// case *ChainedExpr: inferred, err = InferChainedExprType(e, scope)
 	case *DistributeExpr:
 		inferred, err = InferDistributeExprType(e, scope)
 	case *SampleExpr:
@@ -474,6 +473,7 @@ func InferTupleExprType(expr *TupleExpr, scope *TypeScope) (*Type, error) {
 	return TupleType(childTypes...), nil
 }
 
+/*
 func InferChainedExprType(expr *ChainedExpr, scope *TypeScope) (*Type, error) {
 	if len(expr.Children) == 0 {
 		return nil, fmt.Errorf("chained expression at pos %d has no children", expr.Pos())
@@ -548,6 +548,7 @@ func InferChainedExprType(expr *ChainedExpr, scope *TypeScope) (*Type, error) {
 	}
 	return currentType, nil
 }
+*/
 
 func InferDistributeExprType(expr *DistributeExpr, scope *TypeScope) (*Type, error) {
 	var commonBodyType *Type

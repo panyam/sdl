@@ -14,11 +14,6 @@ import (
 // Ensure EOF is defined
 const eof = 0
 
-type PrecedenceInfo struct {
-	Precedence int
-	AssocType  int // -1 for left, 0 for non associative, 1 for right associative
-}
-
 // Lexer structure
 type Lexer struct {
 	lookaheadRunes  []rune

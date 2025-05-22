@@ -17,7 +17,6 @@ func TestValueTypeString(t *testing.T) {
 	assert.Equal(t, "Outcomes[string]", OutcomesType(StrType).String())
 	assert.Equal(t, "List[List[bool]]", ListType(ListType(BoolType)).String())
 	assert.Equal(t, "Outcomes[List[int]]", OutcomesType(ListType(IntType)).String())
-	assert.Equal(t, "UnknownTypeTag(100)", (&ValueType{Tag: 100}).String())
 }
 
 func TestValueTypeEquals(t *testing.T) {

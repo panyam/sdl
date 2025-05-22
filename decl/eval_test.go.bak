@@ -21,7 +21,7 @@ func setupTestVM() (*VM, *Frame) {
 // Helper to assert leaf node properties (simplistic check for now)
 func assertValueInt(t *testing.T, node Value, expectedVal int64) {
 	t.Helper()
-	assert.Equal(t, node.Type.Tag, ValueTypeInt)
+	assert.Equal(t, node.Type.Name, "Int")
 
 	valOutcome, ok := leaf.State.ValueOutcome.(*core.Outcomes[int64])
 	require.True(t, ok, "Expected ValueOutcome *core.Outcomes[int64], got %T", leaf.State.ValueOutcome)

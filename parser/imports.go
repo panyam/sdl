@@ -48,7 +48,6 @@ type ComponentDeclBodyItem = decl.ComponentDeclBodyItem
 type SystemDeclBodyItem = decl.SystemDeclBodyItem
 
 type BinaryExpr = decl.BinaryExpr
-type ChainedExpr = decl.ChainedExpr
 type UnaryExpr = decl.UnaryExpr
 type MemberAccessExpr = decl.MemberAccessExpr
 type CallExpr = decl.CallExpr

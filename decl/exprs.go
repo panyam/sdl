@@ -39,21 +39,7 @@ func (e *ExprBase) DeclaredType() *Type {
 	return e.declaredType
 }
 
-type ChainedExpr struct {
-	ExprBase
-	Children  []Expr
-	Operators []string
-
-	// Expression after operators have been taken into account
-	UnchainedExpr Expr
-}
-
-func (b *ChainedExpr) exprNode() {}
-func (b *ChainedExpr) stmtNode() {}
-func (b *ChainedExpr) String() string {
-	// Basic, doesn't handle precedence for parentheses
-	return fmt.Sprintf("(%s)", strings.Join(gfn.Map(b.Children, func(e Expr) string { return e.String() }), ", "))
-}
+func (me *ExprBase) exprNode() {}
 
 // --- Expressions ---
 // TupleExpr represents `left operator right`
@@ -79,8 +65,15 @@ type BinaryExpr struct {
 
 func (b *BinaryExpr) exprNode() {}
 func (b *BinaryExpr) String() string {
-	// Basic, doesn't handle precedence for parentheses
-	return fmt.Sprintf("(%s %s %s)", b.Left, b.Operator, b.Right)
+	leftStr := "nil"
+	if b.Left != nil {
+		leftStr = b.Left.String()
+	}
+	rightStr := "nil"
+	if b.Right != nil {
+		rightStr = b.Right.String()
+	}
+	return fmt.Sprintf("(%s %s %s)", leftStr, b.Operator, rightStr)
 }
 
 // UnaryExpr represents `operator operand`
