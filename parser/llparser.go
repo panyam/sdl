@@ -1002,7 +1002,7 @@ func (p *LLParser) ParseMulExpr() (Expr, error) {
 // Unary operators are right-associative (e.g., !!a or --a).
 func (p *LLParser) ParseUnaryExpr() (Expr, error) {
 	peeked := p.PeekToken()
-	if peeked == NOT || peeked == MINUS { // MINUS for unary negation (%prec UMINUS)
+	if peeked == UNARY_OP || peeked == MINUS { // MINUS for unary negation (%prec UMINUS)
 		opToken := peeked
 		opTokenVal := p.peekedTokenValue
 		p.Advance() // Consume operator

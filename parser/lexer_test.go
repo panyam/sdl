@@ -64,7 +64,7 @@ func runLexerTest(t *testing.T, input string, expectedTokens []expectedToken, ig
 		} else {
 			// Original check for specific operators, might be less relevant now if all are BINARY_OP
 			switch exp.tok {
-			case OR, AND, EQ, NEQ, LT, LTE, GT, GTE, PLUS, MINUS, MUL, DIV, MOD, NOT:
+			case OR, AND, EQ, NEQ, LT, LTE, GT, GTE, PLUS, MINUS, MUL, DIV, MOD:
 				assert.Equal(t, exp.text, lval.sval, "Test %d: Operator sval mismatch for specific op %s", i, expTokStr)
 			}
 		}
@@ -181,7 +181,7 @@ func TestLexer_StringEscapes(t *testing.T) {
 	input := `"hello world" "hello\nworld\"\\\t"`
 	expected := []expectedToken{
 		{STRING_LITERAL, `"hello world"`, 0, 13, 1, 1, StringValue("hello world"), ""},
-		{STRING_LITERAL, "\"hello\\nworld\\\"\\\\\\t\"", 14, 34, 1, 15, StringValue("hello\nworld\"\\\t"), ""},
+		{STRING_LITERAL, `"hello\nworld\"\\\t"`, 14, 34, 1, 15, StringValue("hello\nworld\"\\\t"), ""},
 	}
 	runLexerTest(t, input, expected, false)
 }

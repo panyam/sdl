@@ -102,7 +102,7 @@ func yyerrok(lexer SDLLexer) {
 // Operators and Punctuation (assume lexer returns token type, use $N.(Node).Pos() if $N is a literal/ident)
 %token<node> ASSIGN COLON LPAREN RPAREN COMMA DOT ARROW LET_ASSIGN  SEMICOLON 
 
-%token<node>  INT FLOAT BOOL STRING DURATION NOT
+%token<node>  INT FLOAT BOOL STRING DURATION
 
 // Literals (lexer provides *LiteralExpr or *IdentifierExpr in lval.expr, with NodeInfo)
 %token <expr> INT_LITERAL FLOAT_LITERAL STRING_LITERAL BOOL_LITERAL DURATION_LITERAL

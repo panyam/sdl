@@ -308,18 +308,6 @@ func (l *Lexer) scanIdentifierOrKeyword() (tok int, text string) {
 		return UNARY_OP, text
 	case "for":
 		return FOR, text
-		/*
-			case "int":
-				return INT, text
-			case "float":
-				return FLOAT, text
-			case "bool":
-				return BOOL, text
-			case "string":
-				return STRING, text
-			case "duration":
-				return DURATION, text
-		*/
 	default:
 		return IDENTIFIER, text
 	}
@@ -352,9 +340,11 @@ func (l *Lexer) scanNumber() (tok int, text string) {
 
 func (l *Lexer) scanString() (tok int, content string) {
 	l.buf.Reset()
+	l.tokenText = "\""
 	l.read() // Consume opening '"'
 	for {
 		r, _ := l.read()
+		l.tokenText += string(r)
 		if r == eof {
 			l.Error("unterminated string literal")
 			return eof, ""
@@ -368,6 +358,7 @@ func (l *Lexer) scanString() (tok int, content string) {
 				l.Error("unterminated string literal after escape")
 				return eof, ""
 			}
+			l.tokenText += string(esc)
 			switch esc {
 			case 'n':
 				l.buf.WriteRune('\n')
@@ -487,7 +478,6 @@ func (l *Lexer) Lex(lval *SDLSymType) int {
 
 	if r == '"' {
 		_, content := l.scanString()
-		l.tokenText = `"` + content + `"`
 		// l.tokenText = content
 		strVal, _ := NewRuntimeValue(StrType, content)
 		lval.expr = newLiteralExpr(strVal, startPosSnapshot, l.pos)
@@ -514,50 +504,11 @@ func (l *Lexer) Lex(lval *SDLSymType) int {
 			',': COMMA,
 			'.': DOT,
 		}[r]
-		/*
-			case ':':
-				l.read()
-				if l.peek() == '=' {
-					l.read()
-					l.tokenText = ":="
-					currentEndPos = l.pos
-					lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
-					return LET_ASSIGN
-				}
-				lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
-				return COLON
-			case '=':
-				l.read()
-				if l.peek() == '>' {
-					l.read()
-					l.tokenText = "=>"
-					currentEndPos = l.pos
-					lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
-					return ARROW
-				}
-				if l.peek() == '=' {
-					l.read()
-					l.tokenText = "=="
-					currentEndPos = l.pos
-					lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
-					return EQ
-				}
-				lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
-				return ASSIGN
-		*/
 	default:
 	}
 
-	opchars := "<>&^%$#@!*~=/|:+-"
-	/*
-		if l.peek() == '-' && strings.IndexRune(opchars, l.peekN(1)) < 0 {
-			l.read()
-			lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
-			return MINUS
-		}
-	*/
-
 	// Collect all operator characters
+	opchars := "<>&^%$#@!*~=/|:+-"
 	var out []rune
 	for l.peek() > 0 && strings.IndexRune(opchars, l.peek()) >= 0 {
 		out = append(out, l.peek())
