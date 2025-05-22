@@ -161,7 +161,7 @@ component Abc // another comment
 		{COLON, ":", 93, 94, 6, 9, nil, ""},
 		{IDENTIFIER, "int", 95, 98, 6, 11, nil, "int"}, // Type name "int" is an IDENTIFIER
 		{SEMICOLON, ";", 98, 99, 6, 14, nil, ""},
-		{RBRACE, "}", 125, 126, 8, 1, nil, ""}, // Line 6, Col 1
+		{RBRACE, "}", 125, 126, 8, 1, nil, ""}, // Line 8, Col 1
 	}
 	runLexerTest(t, input, expected, false)
 }
