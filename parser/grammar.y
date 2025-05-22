@@ -712,7 +712,8 @@ GoStmt:
 // Expression: OpSepExprList        { $$ = $1 } ;
 
 Expression: ChainedExpr {
-    $$ = $1.Unchain(DefaultPrecedence)
+    $1.Unchain(nil)
+    $$ = $1.UnchainedExpr
 };
 // Expression: NonAssocBinExpr ;
 

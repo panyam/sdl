@@ -26,140 +26,210 @@ func (c *ChainedExpr) String() string {
 	return fmt.Sprintf("(%s)", strings.Join(gfn.Map(c.Children, func(e Expr) string { return e.String() }), ", "))
 }
 
-// Note: This implementation assumes that all operators within a single ChainedExpr
-// instance share the same precedence and associativity. This is typical if ChainedExpr
-// is built by a parser rule that groups operators of the same precedence level.
-// The `precedences` argument is assumed to provide the PrecedenceInfo for this
-// shared level, or defaults are used if it's empty.
-func (c *ChainedExpr) Unchain(precedences []PrecedenceInfo) Expr {
-	if c == nil {
-		return nil
-	}
+// Associativity (assuming these are defined in the same package or accessible)
+type Associativity int
 
-	// Handle cases with no children or no operators first.
+const (
+	AssocNone Associativity = iota
+	AssocLeft
+	AssocRight
+)
+
+type Precedencer interface {
+	PrecedenceFor(operator string) int
+	AssociativityFor(operator string) Associativity
+}
+
+// defaultPrecedencer provides default behavior if no Precedencer is given to Unchain.
+type defaultPrecedencer struct{}
+
+func (dp *defaultPrecedencer) PrecedenceFor(operator string) int {
+	switch operator {
+	case "*", "/":
+		return 2 // Higher precedence
+	case "+", "-":
+		return 1 // Lower precedence
+	default:
+		// For other operators like comparisons, assignments, logical ops,
+		// assign precedences as per your language design.
+		// Defaulting to 0 if not specified.
+		return 0
+	}
+}
+
+func (dp *defaultPrecedencer) AssociativityFor(operator string) Associativity {
+	// Define common associativities.
+	// This is a simplified example; a real DSL would have more.
+	switch operator {
+	// Add other right-associative operators if any (e.g., power '^', some assignments)
+	// case "=":
+	//	 return AssocRight
+	default:
+		return AssocLeft // Most binary operators are left-associative
+	}
+}
+
+// Unchain converts the ChainedExpr into a tree of BinaryExpr nodes,
+// respecting operator precedence and associativity provided by the Precedencer.
+// The result is stored in c.UnchainedExpr.
+func (c *ChainedExpr) Unchain(preceder Precedencer) {
+	if c == nil {
+		return // Should not happen if called on a valid object instance
+	}
 	if len(c.Children) == 0 {
 		c.UnchainedExpr = nil
-		return nil
+		return
 	}
 
 	if len(c.Operators) == 0 {
 		if len(c.Children) == 1 {
-			// If there's one child and no operators, the unchained expression is just that child.
 			c.UnchainedExpr = c.Children[0]
 		} else {
-			// Malformed: e.g., multiple children but no operators to combine them.
+			// Malformed: multiple children, no operators. Parser should catch this.
 			c.UnchainedExpr = nil
 		}
-		return c.UnchainedExpr
+		return
 	}
 
-	// Ensure the number of children and operators is consistent for a chain.
-	// Expected: len(Children) == len(Operators) + 1
+	// A valid chain must have one more child than operators.
 	if len(c.Children) != len(c.Operators)+1 {
 		c.UnchainedExpr = nil // Malformed chain
-		return c.UnchainedExpr
+		return
 	}
 
-	// Determine associativity. Default to left-associative if no precedence info is provided.
-	assocType := -1 // Default: Left-associative
-	if len(precedences) > 0 {
-		// Assuming the first (or only) PrecedenceInfo applies to all operators in this chain.
-		assocType = precedences[0].AssocType
+	// Use provided preceder or a default if nil.
+	p := preceder
+	if p == nil {
+		p = &defaultPrecedencer{}
 	}
 
-	var currentExpr Expr
+	// Initialize indices for stepping through children and operators.
+	childIdx := 0
+	opIdx := 0
 
-	switch assocType {
-	case -1: // Left-associative (e.g., a + b + c -> ((a+b)+c))
-		currentExpr = c.Children[0]
-		if currentExpr == nil { // First child should not be nil
-			c.UnchainedExpr = nil
-			return nil
+	// Start parsing with the lowest possible precedence (0).
+	// The parseExpressionRecursive function will build the tree.
+	c.UnchainedExpr = c.parseExpressionRecursive(p, &childIdx, &opIdx, 0)
+
+	// Post-parsing check: If not all children or operators were consumed,
+	// it might indicate an issue with the input ChainedExpr or parsing logic,
+	// potentially meaning the chain contained multiple independent expressions
+	// or trailing tokens not part of a single valid expression structure.
+	// For now, we assume the ChainedExpr is intended to form one cohesive expression.
+	// If c.UnchainedExpr is nil, an error occurred during the recursive parse.
+	if c.UnchainedExpr != nil {
+		if childIdx != len(c.Children) || opIdx != len(c.Operators) {
+			// This condition suggests that the ChainedExpr might have been formed
+			// with more tokens than constitute a single expression parsable by
+			// precedence climbing from the start. This should ideally be handled
+			// by the parser that creates ChainedExpr instances.
+			// For robustness, one might consider this an error state and set c.UnchainedExpr = nil.
+			// log.Printf("Warning: Unchain did not consume all children/operators. Child: %d/%d, Op: %d/%d",
+			// 	childIdx, len(c.Children), opIdx, len(c.Operators))
+		}
+	}
+}
+
+// parseExpressionRecursive implements the core precedence climbing logic.
+// It consumes operands and operators from the ChainedExpr's lists,
+// starting from the current *childIdx and *opIdx.
+// It only processes operators whose precedence is >= minPrecedence.
+func (c *ChainedExpr) parseExpressionRecursive(p Precedencer, childIdx *int, opIdx *int, minPrecedence int) Expr {
+	// Check if there's an initial operand available.
+	if *childIdx >= len(c.Children) {
+		return nil // Error: Expected an operand, but ran out of children.
+	}
+
+	lhs := c.Children[*childIdx]
+	if lhs == nil {
+		return nil // Error: Encountered a nil operand in the chain.
+	}
+	*childIdx++ // Consume the lhs operand.
+
+	for {
+		// Check if there are more operators to process.
+		if *opIdx >= len(c.Operators) {
+			break // No more operators, lhs is the result for this level.
 		}
 
-		for i := 0; i < len(c.Operators); i++ {
-			rightOperand := c.Children[i+1]
-			if rightOperand == nil { // Subsequent children should not be nil
-				c.UnchainedExpr = nil
-				return nil
-			}
-			opStr := c.Operators[i]
+		currentOp := c.Operators[*opIdx]
+		opPrec := p.PrecedenceFor(currentOp)
+		opAssoc := p.AssociativityFor(currentOp)
 
-			newExprBase := ExprBase{}
-			newExprBase.NodeInfo.StartPos = currentExpr.Pos()
-			newExprBase.NodeInfo.StopPos = rightOperand.End()
-
-			currentExpr = &BinaryExpr{
-				ExprBase: newExprBase,
-				Left:     currentExpr,
-				Operator: opStr,
-				Right:    rightOperand,
-			}
-		}
-		c.UnchainedExpr = currentExpr
-
-	case 1: // Right-associative (e.g., a = b = c -> (a=(b=c)) or a ^ b ^ c -> (a^(b^c)))
-		currentExpr = c.Children[len(c.Children)-1]
-		if currentExpr == nil { // Last child should not be nil
-			c.UnchainedExpr = nil
-			return nil
+		// If the current operator's precedence is less than minPrecedence,
+		// we don't process it at this level; return the lhs accumulated so far.
+		// For left-associative operators of the same precedence:
+		//   If opPrec == minPrecedence, it should NOT be processed by the recursive call for RHS,
+		//   but by this loop iteration. This is handled by nextMinPrecedence = opPrec + 1.
+		// For right-associative operators of the same precedence:
+		//   If opPrec == minPrecedence, it SHOULD be processed by the recursive call for RHS.
+		//   This is handled by nextMinPrecedence = opPrec.
+		if opPrec < minPrecedence {
+			break
 		}
 
-		for i := len(c.Operators) - 1; i >= 0; i-- {
-			leftOperand := c.Children[i]
-			if leftOperand == nil { // Earlier children should not be nil
-				c.UnchainedExpr = nil
-				return nil
-			}
-			opStr := c.Operators[i]
+		// Specific check for non-associative operators:
+		// If current operator is non-associative, and its precedence is equal to minPrecedence,
+		// it implies an attempt to chain non-associative operators of the same precedence level
+		// (e.g., a < b < c). This is an error.
+		// This loop structure means we've already processed an 'lhs' and are considering 'currentOp'.
+		// If 'minPrecedence' came from a previous non-associative op of the same precedence,
+		// 'nextMinPrecedence' would have been 'opPrec + 1', causing this 'opPrec < minPrecedence' to break.
+		// The only way to hit 'opPrec == minPrecedence' for a non-associative operator in the loop
+		// implies an issue or that the `minPrecedence` wasn't correctly bumped by a prior non-associative op.
+		// However, the core logic is: when we encounter `op`, we parse `rhs` with a potentially higher `minPrecedence`.
+		// If `op` is non-associative, `rhs` is parsed with `opPrec + 1`. If `rhs` itself starts with an operator
+		// of `opPrec`, that inner operator will fail `innerOpPrec < (opPrec + 1)` and the inner `parseExpressionRecursive`
+		// will return just its `lhs`. This correctly prevents chaining.
 
-			newExprBase := ExprBase{}
-			newExprBase.NodeInfo.StartPos = leftOperand.Pos()
-			newExprBase.NodeInfo.StopPos = currentExpr.End()
+		*opIdx++ // Consume the operator.
 
-			currentExpr = &BinaryExpr{
-				ExprBase: newExprBase,
-				Left:     leftOperand,
-				Operator: opStr,
-				Right:    currentExpr,
-			}
-		}
-		c.UnchainedExpr = currentExpr
+		var rhs Expr
+		var nextMinRecursivePrecedence int
 
-	case 0: // Non-associative (e.g., a == b)
-		if len(c.Operators) == 1 {
-			// Must have exactly two children for one non-associative operator
-			if len(c.Children) != 2 {
-				c.UnchainedExpr = nil // Malformed
-				return nil
-			}
-			leftOperand := c.Children[0]
-			rightOperand := c.Children[1]
-			if leftOperand == nil || rightOperand == nil {
-				c.UnchainedExpr = nil
-				return nil
-			}
-			opStr := c.Operators[0]
-
-			newExprBase := ExprBase{}
-			newExprBase.NodeInfo.StartPos = leftOperand.Pos()
-			newExprBase.NodeInfo.StopPos = rightOperand.End()
-
-			c.UnchainedExpr = &BinaryExpr{
-				ExprBase: newExprBase,
-				Left:     leftOperand,
-				Operator: opStr,
-				Right:    rightOperand,
-			}
+		if opAssoc == AssocLeft {
+			nextMinRecursivePrecedence = opPrec + 1
+		} else if opAssoc == AssocRight {
+			// For right-associative, recurse with the same precedence to allow chaining on the right.
+			nextMinRecursivePrecedence = opPrec
+		} else if opAssoc == AssocNone {
+			// For non-associative, the RHS should not contain another operator of the same precedence.
+			// So, the recursive call for RHS must look for strictly higher precedence.
+			nextMinRecursivePrecedence = opPrec + 1
 		} else {
-			// Non-associative operators cannot be chained (e.g., a == b == c).
-			// This implies a parsing error if ChainedExpr has multiple non-associative ops.
-			c.UnchainedExpr = nil
+			// Unknown associativity - treat as an error.
+			c.UnchainedExpr = nil // Mark error on the ChainedExpr
+			return nil
 		}
 
-	default:
-		// Unknown or unsupported associativity type.
-		c.UnchainedExpr = nil
+		// Check if there's an operand for the RHS.
+		if *childIdx >= len(c.Children) {
+			c.UnchainedExpr = nil // Error: Operator exists, but no RHS operand.
+			return nil
+		}
+
+		rhs = c.parseExpressionRecursive(p, childIdx, opIdx, nextMinRecursivePrecedence)
+		if rhs == nil {
+			// Error parsing RHS (e.g., encountered nil operand or malformed structure deeper).
+			c.UnchainedExpr = nil
+			return nil
+		}
+
+		// Construct the new BinaryExpr node.
+		// The NodeInfo should span from the start of the original lhs of this operation
+		// to the end of the parsed rhs.
+		newExpr := &BinaryExpr{
+			// NodeInfo will be set after lhs_for_new_expr is determined
+			Left:     lhs, // This is the lhs accumulated so far at the current level
+			Operator: currentOp,
+			Right:    rhs,
+		}
+		if newExpr.Left != nil && newExpr.Right != nil {
+			newExpr.NodeInfo = NodeInfo{StartPos: newExpr.Left.Pos(), StopPos: newExpr.Right.End()}
+		}
+		// else: NodeInfo remains zero if operands are problematic, though nil checks should prevent this.
+
+		lhs = newExpr // The new binary expression becomes the lhs for the next iteration.
 	}
-	return c.UnchainedExpr
+	return lhs
 }
