@@ -153,7 +153,7 @@ func (p *LLParser) ParseComponentDecl(out *ComponentDecl) (err error) {
 	}
 
 	peeked := p.PeekToken()
-	out.NodeInfo = newNodeInfo(p.peekedTokenValue.node.Pos(), 0)
+	out.NodeInfo = newNodeInfo(p.peekedTokenValue.node.Pos(), p.peekedTokenValue.node.End())
 	isNative := peeked == NATIVE
 	if isNative {
 		TokenString(p.Advance())

@@ -30,24 +30,24 @@ func parseDuration(numText, unit string) (out float64) {
 
 // Helper to combine position info - assumes lexer provides positions.
 // We'll need to make the lexer accessible, e.g., via yyParseWithLexer.
-func newNodeInfo(startPos, endPos int) NodeInfo {
-	return NodeInfo{StartPos: startPos, StopPos: endPos}
+func newNodeInfo(start, end Location) NodeInfo {
+	return NodeInfo{StartPos: start, StopPos: end}
 }
 
 // Helper function to create a LiteralExpr node
-func newLiteralExpr(value Value, startPos, endPos int) *LiteralExpr {
+func newLiteralExpr(value Value, start, end Location) *LiteralExpr {
 	// For string literals, the lexer should provide the raw unquoted value.
 	out := &LiteralExpr{
-		ExprBase: ExprBase{NodeInfo: newNodeInfo(startPos, endPos)},
+		ExprBase: ExprBase{NodeInfo: newNodeInfo(start, end)},
 		Value:    value,
 	}
 	return out
 }
 
 // Helper function to create an IdentifierExpr node
-func newIdentifierExpr(name string, startPos, endPos int) *IdentifierExpr {
+func newIdentifierExpr(name string, start, end Location) *IdentifierExpr {
 	return &IdentifierExpr{
-		ExprBase: ExprBase{NodeInfo: newNodeInfo(startPos, endPos)},
+		ExprBase: ExprBase{NodeInfo: newNodeInfo(start, end)},
 		Name:     name,
 	}
 }
@@ -192,15 +192,15 @@ type TokenNode struct {
 
 var e Expr = &ChainedExpr{}
 
-func newTokenNode(startPos, endPos int, text string) *TokenNode {
+func newTokenNode(start, end Location, text string) *TokenNode {
 	if strings.TrimSpace(text) == "" {
 		panic("TOken is empty")
 	}
-	return &TokenNode{newNodeInfo(startPos, endPos), text}
+	return &TokenNode{newNodeInfo(start, end), text}
 }
 
-func (tn *TokenNode) Pos() int       { return tn.StartPos }
-func (tn *TokenNode) End() int       { return tn.StopPos }
+func (tn *TokenNode) Pos() Location  { return tn.StartPos }
+func (tn *TokenNode) End() Location  { return tn.StopPos }
 func (tn *TokenNode) String() string { return tn.Text } // fmt.Sprintf("Token[%d:%d]", tn.StartPos, tn.StopPos) }
 func (tn *TokenNode) exprNode()      {}                 // If needed to satisfy Expr for some rules
 func (tn *TokenNode) stmtNode()      {}                 // If needed to satisfy Stmt

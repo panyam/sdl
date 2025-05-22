@@ -279,7 +279,7 @@ func Parse(input io.Reader) (*Lexer, *FileDecl, error) {
 			return lexer, nil, lexer.lastError
 		}
 		// Fallback error message if lexer didn't store one
-		return lexer, nil, fmt.Errorf("syntax error near byte %d", lexer.Pos())
+		return lexer, nil, fmt.Errorf("syntax error near byte %d (Line %d, Col %d)", lexer.location.Pos, lexer.location.Line, lexer.location.Col)
 	}
 
 	// Parsing succeeded

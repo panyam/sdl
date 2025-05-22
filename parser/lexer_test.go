@@ -29,16 +29,16 @@ func runLexerTest(t *testing.T, input string, expectedTokens []expectedToken, ig
 	for i, exp := range expectedTokens {
 		tok := lexer.Lex(lval)
 		// Get position info *after* lexing the token
-		tokenStartLine, tokenStartCol := lexer.Position()
+		tokenStart := lexer.Pos()
 
 		tokStr := TokenString(tok)
 		expTokStr := TokenString(exp.tok)
 		assert.Equal(t, exp.tok, tok, "Test %d: Token type mismatch. Expected %s, got %s ('%s')", i, expTokStr, tokStr, lexer.Text())
 		assert.Equal(t, exp.text, lexer.Text(), "Test %d: Token text mismatch for %s.", i, expTokStr)
-		assert.Equal(t, exp.startPos, lexer.Pos(), "Test %d: Token startPos mismatch for %s.", i, expTokStr)
-		assert.Equal(t, exp.endPos, lexer.End(), "Test %d: Token endPos mismatch for %s.", i, expTokStr)
-		assert.Equal(t, exp.startLine, tokenStartLine, "Test %d: Token startLine mismatch for %s.", i, expTokStr)
-		assert.Equal(t, exp.startCol, tokenStartCol, "Test %d: Token startCol mismatch for %s.", i, expTokStr)
+		assert.Equal(t, exp.startPos, lexer.Pos().Pos, "Test %d: Token startPos mismatch for %s.", i, expTokStr)
+		assert.Equal(t, exp.endPos, lexer.End().Pos, "Test %d: Token endPos mismatch for %s.", i, expTokStr)
+		assert.Equal(t, exp.startLine, tokenStart.Line, "Test %d: Token startLine mismatch for %s.", i, expTokStr)
+		assert.Equal(t, exp.startCol, tokenStart.Col, "Test %d: Token startCol mismatch for %s.", i, expTokStr)
 
 		// Check literal/identifier specific values if provided in expectation
 		if exp.literalVal != nil {
@@ -46,15 +46,15 @@ func runLexerTest(t *testing.T, input string, expectedTokens []expectedToken, ig
 			require.True(t, ok, "Test %d: Expected LiteralExpr for token %s, got %T", i, expTokStr, lval.expr)
 			assert.Equal(t, exp.literalVal.Type.Name, litExpr.Value.Type.Name, "Test %d: Literal value type  mismatch for %s.", i, exp.tok)
 			assert.Equal(t, exp.literalVal.Value, litExpr.Value.Value, "Test %d: Literal value type  mismatch for %s.", i, exp.tok)
-			assert.Equal(t, exp.startPos, litExpr.Pos(), "Test %d: LiteralExpr startPos mismatch for %s.", i, expTokStr)
-			assert.Equal(t, exp.endPos, litExpr.End(), "Test %d: LiteralExpr endPos mismatch for %s.", i, expTokStr)
+			assert.Equal(t, exp.startPos, litExpr.Pos().Pos, "Test %d: LiteralExpr startPos mismatch for %s.", i, expTokStr)
+			assert.Equal(t, exp.endPos, litExpr.End().Pos, "Test %d: LiteralExpr endPos mismatch for %s.", i, expTokStr)
 		}
 		if exp.identName != "" {
 			identExpr := lval.ident
 			require.NotNil(t, identExpr)
 			assert.Equal(t, exp.identName, identExpr.Name, "Test %d: Identifier name mismatch for %s.", i, expTokStr)
-			assert.Equal(t, exp.startPos, identExpr.Pos(), "Test %d: IdentifierExpr startPos mismatch for %s.", i, expTokStr)
-			assert.Equal(t, exp.endPos, identExpr.End(), "Test %d: IdentifierExpr endPos mismatch for %s.", i, expTokStr)
+			assert.Equal(t, exp.startPos, identExpr.Pos().Pos, "Test %d: IdentifierExpr startPos mismatch for %s.", i, expTokStr)
+			assert.Equal(t, exp.endPos, identExpr.End().Pos, "Test %d: IdentifierExpr endPos mismatch for %s.", i, expTokStr)
 		}
 
 		// Check sval for operators that set it
@@ -190,34 +190,33 @@ func TestLexer_LineColumnTracking(t *testing.T) {
 	input := "abc\ndef\n  ghi"
 	lexer := NewLexer(strings.NewReader(input))
 	lval := &SDLSymType{}
-	var tokenStartLine, tokenStartCol int
 
 	// abc
 	tok := lexer.Lex(lval)
-	tokenStartLine, tokenStartCol = lexer.Position() // Get position *after* Lex
+	tokenStart := lexer.Pos() // Get position *after* Lex
 	assert.Equal(t, IDENTIFIER, tok)
-	assert.Equal(t, 1, tokenStartLine)
-	assert.Equal(t, 1, tokenStartCol)
-	assert.Equal(t, 0, lexer.Pos())
-	assert.Equal(t, 3, lexer.End())
+	assert.Equal(t, 1, tokenStart.Line)
+	assert.Equal(t, 1, tokenStart.Col)
+	assert.Equal(t, 0, lexer.Pos().Pos)
+	assert.Equal(t, 3, lexer.End().Pos)
 
 	// def
 	tok = lexer.Lex(lval)
-	tokenStartLine, tokenStartCol = lexer.Position() // Get position *after* Lex
+	tokenStart = lexer.Pos() // Get position *after* Lex
 	assert.Equal(t, IDENTIFIER, tok)
-	assert.Equal(t, 2, tokenStartLine) // After '\n'
-	assert.Equal(t, 1, tokenStartCol)
-	assert.Equal(t, 4, lexer.Pos()) // 'a'(0) 'b'(1) 'c'(2) '\n'(3) 'd'(4)
-	assert.Equal(t, 7, lexer.End())
+	assert.Equal(t, 2, tokenStart.Line) // After '\n'
+	assert.Equal(t, 1, tokenStart.Col)
+	assert.Equal(t, 4, lexer.Pos().Pos) // 'a'(0) 'b'(1) 'c'(2) '\n'(3) 'd'(4)
+	assert.Equal(t, 7, lexer.End().Pos)
 
 	// ghi
 	tok = lexer.Lex(lval)
-	tokenStartLine, tokenStartCol = lexer.Position() // Get position *after* Lex
+	tokenStart = lexer.Pos() // Get position *after* Lex
 	assert.Equal(t, IDENTIFIER, tok)
-	assert.Equal(t, 3, tokenStartLine)
-	assert.Equal(t, 3, tokenStartCol) // After '  '
-	assert.Equal(t, 10, lexer.Pos())  // d(4)e(5)f(6)\n(7) (8) (9)g(10)
-	assert.Equal(t, 13, lexer.End())
+	assert.Equal(t, 3, tokenStart.Line)
+	assert.Equal(t, 3, tokenStart.Col)   // After '  '
+	assert.Equal(t, 10, lexer.Pos().Pos) // d(4)e(5)f(6)\n(7) (8) (9)g(10)
+	assert.Equal(t, 13, lexer.End().Pos)
 
 	tok = lexer.Lex(lval)
 	assert.Equal(t, eof, tok)

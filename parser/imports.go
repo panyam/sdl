@@ -5,6 +5,7 @@ import "github.com/panyam/sdl/decl"
 type NodeInfo = decl.NodeInfo
 type LiteralExpr = decl.LiteralExpr
 type IdentifierExpr = decl.IdentifierExpr
+type Location = decl.Location
 type Expr = decl.Expr
 type ExprBase = decl.ExprBase
 type Stmt = decl.Stmt

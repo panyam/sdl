@@ -19,22 +19,18 @@ type Lexer struct {
 	lookaheadWidths []int
 	reader          *bufio.Reader
 	buf             bytes.Buffer // Temporary buffer for scanned text
-	pos             int          // Current byte offset from the beginning of the input
 	lastError       error
 
 	// Precedecences, associativity of operators
 	Precedences map[int]PrecedenceInfo
 
 	// Position tracking for the current token
-	tokenStartPos  int    // Byte offset where the current token started
-	tokenStartLine int    // Line number (1-based) where the current token started
-	tokenStartCol  int    // Column number (rune-based, 1-based) where the current token started
-	tokenText      string // Raw text of the current token
-	lastTokenCode  int    // <-- Added: Store the last token returned by Lex
+	tokenStart    Location // Byte offset where the current token started
+	tokenText     string   // Raw text of the current token
+	lastTokenCode int      // <-- Added: Store the last token returned by Lex
 
 	// Current line and column (rune-based) in the input
-	line int
-	col  int
+	location Location
 
 	parseResult *FileDecl // Field to store the final AST root, set by the parser
 }
@@ -43,35 +39,31 @@ type Lexer struct {
 func NewLexer(r io.Reader) *Lexer {
 	return &Lexer{
 		reader: bufio.NewReader(r),
-		pos:    0,
-		line:   1,
-		col:    1,
+		location: Location{
+			Pos:  0,
+			Line: 1,
+			Col:  1,
+		},
 	}
 }
 
 // Error is called by the parser (or lexer itself) on an error.
 func (l *Lexer) Error(s string) {
 	if l.Text() != "" {
-		l.lastError = fmt.Errorf("Line: %d, Col: %d - Error near '%s' --- %s", l.tokenStartLine, l.tokenStartCol, l.Text(), s)
+		l.lastError = fmt.Errorf("Line: %d, Col: %d - Error near '%s' --- %s", l.tokenStart.Line, l.tokenStart.Col, l.Text(), s)
 	} else {
-		l.lastError = fmt.Errorf("Line: %d, Col: %d - %s", l.tokenStartLine, l.tokenStartCol, s)
+		l.lastError = fmt.Errorf("Line: %d, Col: %d - %s", l.tokenStart.Line, l.tokenStart.Col, s)
 	}
 	// fmt.Println(s) // For immediate feedback during development
 }
 
-// Position returns the line/col where the last token started
-func (l *Lexer) Position() (line, col int) {
-	return l.tokenStartLine, l.tokenStartCol
-}
-
 // Pos returns the start byte offset of the most recently lexed token.
-func (l *Lexer) Pos() int {
-	return l.tokenStartPos
+func (l *Lexer) Pos() Location {
+	return l.tokenStart
 }
 
-// End returns the end byte offset (current position) after lexing the most recent token.
-func (l *Lexer) End() int {
-	return l.pos
+func (l *Lexer) End() Location {
+	return l.location
 }
 
 // LastToken returns the code of the last token successfully lexed
@@ -96,12 +88,12 @@ func (l *Lexer) read() (r rune, width int) {
 }
 
 func (l *Lexer) updatePosition(r rune, width int) {
-	l.pos += width
+	l.location.Pos += width
 	if r == '\n' {
-		l.line++
-		l.col = 1
+		l.location.Line++
+		l.location.Col = 1
 	} else {
-		l.col++
+		l.location.Col++
 	}
 }
 
@@ -147,9 +139,9 @@ func (l *Lexer) hasPrefix(prefix string, consume bool) bool {
 		return false
 	}
 
-	oldPos := l.pos
-	oldCol := l.col
-	oldLine := l.line
+	oldPos := l.location.Pos
+	oldCol := l.location.Col
+	oldLine := l.location.Line
 	for i := range nchars {
 		if consume {
 			// udpate the position if we need to consume (actual consumption will come later when matched)
@@ -157,9 +149,9 @@ func (l *Lexer) hasPrefix(prefix string, consume bool) bool {
 		}
 		if l.lookaheadRunes[i] != rune(prefix[i]) {
 			// restore old position
-			l.pos = oldPos
-			l.col = oldCol
-			l.line = oldLine
+			l.location.Pos = oldPos
+			l.location.Col = oldCol
+			l.location.Line = oldLine
 			return false
 		}
 	}
@@ -378,9 +370,9 @@ func (l *Lexer) Lex(lval *SDLSymType) int {
 		return eof
 	}
 
-	l.tokenStartPos = l.pos
-	l.tokenStartLine = l.line
-	l.tokenStartCol = l.col
+	l.tokenStart.Pos = l.location.Pos
+	l.tokenStart.Line = l.location.Line
+	l.tokenStart.Col = l.location.Col
 	l.tokenText = "" // Reset for current token
 
 	r := l.peek()
@@ -389,12 +381,12 @@ func (l *Lexer) Lex(lval *SDLSymType) int {
 		return eof
 	}
 
-	startPosSnapshot := l.tokenStartPos // Save start for setting NodeInfo on simple tokens
+	startPosSnapshot := l.tokenStart
 
 	if unicode.IsLetter(r) || r == '_' {
 		tok, text := l.scanIdentifierOrKeyword()
 		l.tokenText = text
-		endPos := l.pos
+		endPos := l.location
 
 		switch tok {
 		case IDENTIFIER:
@@ -414,7 +406,7 @@ func (l *Lexer) Lex(lval *SDLSymType) int {
 
 	if unicode.IsDigit(r) || (r == '.' && unicode.IsDigit(l.peekN(1))) {
 		numTok, numText := l.scanNumber()
-		numEndPos := l.pos
+		numEndPos := l.location
 		l.tokenText = numText
 
 		unit := ""
@@ -443,7 +435,7 @@ func (l *Lexer) Lex(lval *SDLSymType) int {
 				l.tokenText += unit
 				dur := parseDuration(numText, unit)
 				durVal, _ := NewRuntimeValue(FloatType, dur)
-				lval.expr = newLiteralExpr(durVal, startPosSnapshot, l.pos)
+				lval.expr = newLiteralExpr(durVal, startPosSnapshot, l.location)
 				return DURATION_LITERAL
 			}
 		}
@@ -472,13 +464,13 @@ func (l *Lexer) Lex(lval *SDLSymType) int {
 		_, content := l.scanString()
 		// l.tokenText = content
 		strVal, _ := NewRuntimeValue(StrType, content)
-		lval.expr = newLiteralExpr(strVal, startPosSnapshot, l.pos)
+		lval.expr = newLiteralExpr(strVal, startPosSnapshot, l.location)
 		return STRING_LITERAL
 	}
 
 	// Operators and Punctuation - Default to single character token text
 	l.tokenText = string(r)
-	currentEndPos := l.pos // End pos for single char token
+	currentEndPos := l.location
 
 	// Handle multi-character operators
 	switch r {

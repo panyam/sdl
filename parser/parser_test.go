@@ -596,7 +596,8 @@ func TestParseErrors(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			lexer, err := parseStringWithError(t, tc.input)
 			require.NotNil(t, err) // Defensive check
-			line, col := lexer.Position()
+			pos := lexer.Pos()
+			line, col := pos.Line, pos.Col
 			assert.Equal(t, line, tc.errorLine, "Test %d: Expected error line: %d, found: %d", i, tc.errorLine, line)
 			assert.Equal(t, col, tc.errorCol, "Test %d: Expected error col: %d, found: %d", i, tc.errorCol, col)
 			// TODO - enable error messsage checking when we return better error messages

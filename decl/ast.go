@@ -10,21 +10,28 @@ import (
 
 // --- Interfaces ---
 
+type Location struct {
+	Pos  int
+	Line int
+	Col  int
+}
+
 // Node represents any node in the Abstract Syntax Tree.
 type Node interface {
-	Pos() int       // Starting position (for error reporting)
-	End() int       // Ending position
+	Pos() Location  // Starting position (for error reporting)
+	End() Location  // Ending position
 	String() string // String representation for debugging/printing
 }
 
 // --- Base Struct ---
 
 // NodeInfo embeddable struct for position tracking.
-type NodeInfo struct{ StartPos, StopPos int }
+type NodeInfo struct{ StartPos, StopPos Location }
 
-func (n *NodeInfo) Pos() int       { return n.StartPos }
-func (n *NodeInfo) End() int       { return n.StopPos }
+func (n *NodeInfo) Pos() Location  { return n.StartPos }
+func (n *NodeInfo) End() Location  { return n.StopPos }
 func (n *NodeInfo) String() string { return "{Node}" } // Default stringer
+func (n *NodeInfo) stmtNode()      {}
 
 // --- Top Level declarations ---
 

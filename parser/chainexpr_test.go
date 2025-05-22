@@ -20,7 +20,7 @@ func (me *MockExpr) String() string { return me.ID }
 // Helper to create a MockExpr with NodeInfo
 func newMockExpr(id string, start, end int) *MockExpr {
 	return &MockExpr{
-		ExprBase: ExprBase{NodeInfo: NodeInfo{StartPos: start, StopPos: end}},
+		ExprBase: ExprBase{NodeInfo: NodeInfo{StartPos: Location{Pos: start}, StopPos: Location{Pos: end}}},
 		ID:       id,
 	}
 }

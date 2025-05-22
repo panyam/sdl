@@ -10,8 +10,8 @@ import (
 )
 
 type ParseError struct {
-	StartPos int
-	EndPos   int
+	StartPos Location
+	EndPos   Location
 	Msg      string
 }
 
@@ -19,7 +19,7 @@ func (e *ParseError) Error() string {
 	return e.Msg
 }
 
-func NewParseError(start, end int, msg string) *ParseError {
+func NewParseError(start, end Location, msg string) *ParseError {
 	return &ParseError{StartPos: start, EndPos: end, Msg: msg}
 }
 

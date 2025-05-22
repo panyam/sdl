@@ -91,7 +91,7 @@ func (c *ChainedExpr) Unchain(preceder Precedencer) error {
 		if len(c.Children) == 1 {
 			c.UnchainedExpr = c.Children[0]
 			if c.UnchainedExpr == nil { // If the single child itself was nil
-				c.Err = fmt.Errorf("single child in ChainedExpr is nil at pos %d", c.Pos())
+				c.Err = fmt.Errorf("single child in ChainedExpr is nil at Line %d, Col: %d", c.Pos().Line, c.Pos().Col)
 				return c.Err
 			}
 			return nil
@@ -285,14 +285,16 @@ func (c *ChainedExpr) parseExpressionRecursive(p Precedencer, childIdx *int, opI
 // OperatorsStartPos is a helper to estimate operator start positions.
 // This is an approximation as ChainedExpr only stores operator strings.
 // A more accurate system would store token info for operators.
-func (c *ChainedExpr) OperatorsStartPos(opIndex int) int {
+func (c *ChainedExpr) OperatorsStartPos(opIndex int) Location {
 	if opIndex < 0 || opIndex >= len(c.Operators) {
 		return c.Pos() // Fallback
 	}
 	// Operator is between Children[opIndex] and Children[opIndex+1]
 	if opIndex < len(c.Children) && c.Children[opIndex] != nil {
 		// Approx position is after the end of the left child of this operator
-		return c.Children[opIndex].End() + 1 // +1 for space typically
+		e := c.Children[opIndex].End()
+		e.Pos += 1
+		return e
 	}
 	return c.Pos() // Fallback
 }

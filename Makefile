@@ -1,7 +1,7 @@
 
 sdl:
 	cd parser && make build
-	go build -o /tmp/sdl ./cmd/sdl/main.go
+	go build -o ${GOBIN}/sdl ./cmd/sdl/main.go
 
 run:
 	go test

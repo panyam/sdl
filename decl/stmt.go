@@ -21,7 +21,6 @@ type BlockStmt struct {
 	Statements []Stmt
 }
 
-func (b *BlockStmt) stmtNode()      {}
 func (b *BlockStmt) String() string { return "{ ...statements... }" } // Simplified
 
 // ForStmt represents `for expression { stmt }`
@@ -31,7 +30,6 @@ type ForStmt struct {
 	Body      Stmt
 }
 
-func (l *ForStmt) stmtNode()           {}
 func (l *ForStmt) systemBodyItemNode() {} // Allow let at system level
 func (l *ForStmt) String() string {
 	return fmt.Sprintf("for %s { %s }", l.Condition.String(), l.Body.String())
@@ -44,7 +42,6 @@ type LetStmt struct {
 	Value     Expr
 }
 
-func (l *LetStmt) stmtNode()           {}
 func (l *LetStmt) systemBodyItemNode() {} // Allow let at system level
 func (l *LetStmt) String() string {
 	return fmt.Sprintf("let %s = %s;", strings.Join(gfn.Map(l.Variables, func(i *IdentifierExpr) string { return i.String() }), ", "), l.Value)
@@ -56,7 +53,6 @@ type ExprStmt struct {
 	Expression Expr
 }
 
-func (e *ExprStmt) stmtNode()      {}
 func (e *ExprStmt) String() string { return e.Expression.String() + ";" }
 
 // ReturnStmt represents `return expr;`
@@ -65,7 +61,6 @@ type ReturnStmt struct {
 	ReturnValue Expr // Optional? Can be `return;`? Let's require a value for now.
 }
 
-func (r *ReturnStmt) stmtNode()      {}
 func (r *ReturnStmt) String() string { return fmt.Sprintf("return %s;", r.ReturnValue) }
 
 // IfStmt represents `if cond { ... } else { ... }`
@@ -76,7 +71,6 @@ type IfStmt struct {
 	Else      Stmt // Can be another IfStmt or a BlockStmt
 }
 
-func (i *IfStmt) stmtNode()      {}
 func (i *IfStmt) String() string { return fmt.Sprintf("if (%s) { ... } else { ... }", i.Condition) }
 
 // DefaultCase represents `default => { block }`
@@ -93,7 +87,6 @@ type DelayStmt struct {
 	Duration Expr // Must evaluate to Duration outcome
 }
 
-func (d *DelayStmt) stmtNode()      {}
 func (d *DelayStmt) String() string { return fmt.Sprintf("delay %s;", d.Duration) }
 
 // WaitStmt represents `delay durationExpr;`
@@ -102,7 +95,6 @@ type WaitStmt struct {
 	Idents []*IdentifierExpr // Must evaluate to Duration outcome
 }
 
-func (d *WaitStmt) stmtNode() {}
 func (d *WaitStmt) String() string {
 	return fmt.Sprintf("wait %s;", strings.Join(gfn.Map(d.Idents, func(i *IdentifierExpr) string { return i.Name }), ", "))
 }
@@ -124,7 +116,6 @@ type GoStmt struct {
 	Expr Expr
 }
 
-func (p *GoStmt) stmtNode()      {}
 func (p *GoStmt) String() string { return "go { ... }" }
 
 // LogStmt represents `log "message", expr1, expr2;`
@@ -133,7 +124,6 @@ type LogStmt struct {
 	Args []Expr // First arg often StringLiteral, others are values to log
 }
 
-func (l *LogStmt) stmtNode()      {}
 func (l *LogStmt) String() string { return "log ... ;" }
 
 // ExpectStmt represents `targetMetric operator threshold;` (e.g., `result.P99 < 100ms;`)
@@ -144,7 +134,6 @@ type ExpectStmt struct {
 	Threshold Expr
 }
 
-func (p *ExpectStmt) stmtNode() {}
 func (e *ExpectStmt) String() string {
 	return fmt.Sprintf("%s %s %s;", e.Target, e.Operator, e.Threshold)
 }
@@ -159,7 +148,6 @@ type AssignmentStmt struct {
 }
 
 func (p *AssignmentStmt) String() string { return fmt.Sprintf("%s = %s", p.Var.Name, p.Value) }
-func (p *AssignmentStmt) stmtNode()      {}
 
 // SwitchStmt represents the probabilistic choice expression/statement
 type SwitchStmt struct {
@@ -170,7 +158,6 @@ type SwitchStmt struct {
 }
 
 func (d *SwitchStmt) exprNode()      {} // Can be expression
-func (d *SwitchStmt) stmtNode()      {} // Can be statement
 func (d *SwitchStmt) String() string { return "distribute {...}" }
 
 // CaseStmt represents a single case within a SwitchStmt
