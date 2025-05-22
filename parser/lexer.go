@@ -390,10 +390,8 @@ func (l *Lexer) scanString() (tok int, content string) {
 
 // Lex is the main lexing function called by the parser.
 func (l *Lexer) Lex(lval *SDLSymType) int {
-	var tokenCode int
 	if l.skipWhitespace() {
-		tokenCode = eof
-		l.lastTokenCode = tokenCode
+		l.lastTokenCode = eof
 		return eof
 	}
 
@@ -404,8 +402,7 @@ func (l *Lexer) Lex(lval *SDLSymType) int {
 
 	r := l.peek()
 	if r == eof {
-		tokenCode = eof
-		l.lastTokenCode = tokenCode
+		l.lastTokenCode = eof
 		return eof
 	}
 
@@ -415,7 +412,6 @@ func (l *Lexer) Lex(lval *SDLSymType) int {
 		tok, text := l.scanIdentifierOrKeyword()
 		l.tokenText = text
 		endPos := l.pos
-		tokenCode = tok
 
 		switch tok {
 		case IDENTIFIER:
@@ -437,7 +433,6 @@ func (l *Lexer) Lex(lval *SDLSymType) int {
 		numTok, numText := l.scanNumber()
 		numEndPos := l.pos
 		l.tokenText = numText
-		tokenCode = numTok // Assume number token initially
 
 		unit := ""
 		if l.hasPrefix("ms", false) {
@@ -466,7 +461,6 @@ func (l *Lexer) Lex(lval *SDLSymType) int {
 				dur := parseDuration(numText, unit)
 				durVal, _ := NewRuntimeValue(FloatType, dur)
 				lval.expr = newLiteralExpr(durVal, startPosSnapshot, l.pos)
-				tokenCode = DURATION_LITERAL
 				return DURATION_LITERAL
 			}
 		}
@@ -477,7 +471,6 @@ func (l *Lexer) Lex(lval *SDLSymType) int {
 				l.Error(fmt.Sprintf("Invalid integer: %s", numText))
 			}
 			lval.expr = newLiteralExpr(IntValue(intVal), startPosSnapshot, numEndPos)
-			tokenCode = INT_LITERAL
 			return INT_LITERAL
 		} else if numTok == FLOAT_LITERAL {
 			floatVal, err := strconv.ParseFloat(numText, 64)
@@ -485,7 +478,6 @@ func (l *Lexer) Lex(lval *SDLSymType) int {
 				l.Error(fmt.Sprintf("Invalid float: %s", numText))
 			}
 			lval.expr = newLiteralExpr(FloatValue(floatVal), startPosSnapshot, numEndPos)
-			tokenCode = FLOAT_LITERAL
 			return FLOAT_LITERAL
 		} else {
 			l.Error(fmt.Sprintf("Invalid numeric literal: %s", numText))
@@ -522,60 +514,76 @@ func (l *Lexer) Lex(lval *SDLSymType) int {
 			',': COMMA,
 			'.': DOT,
 		}[r]
-	case ':':
-		l.read()
-		if l.peek() == '=' {
-			l.read()
-			l.tokenText = ":="
-			currentEndPos = l.pos
-			lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
-			tokenCode = LET_ASSIGN
-			return tokenCode
-		}
-		lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
-		tokenCode = COLON
-		return tokenCode
-	case '=':
-		l.read()
-		if l.peek() == '>' {
-			l.read()
-			l.tokenText = "=>"
-			currentEndPos = l.pos
-			lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
-			tokenCode = ARROW
-			return tokenCode
-		}
-		if l.peek() == '=' {
-			l.read()
-			l.tokenText = "=="
-			currentEndPos = l.pos
-			lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
-			tokenCode = EQ
-			return tokenCode
-		}
-		lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
-		tokenCode = ASSIGN
-		return tokenCode
+		/*
+			case ':':
+				l.read()
+				if l.peek() == '=' {
+					l.read()
+					l.tokenText = ":="
+					currentEndPos = l.pos
+					lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
+					return LET_ASSIGN
+				}
+				lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
+				return COLON
+			case '=':
+				l.read()
+				if l.peek() == '>' {
+					l.read()
+					l.tokenText = "=>"
+					currentEndPos = l.pos
+					lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
+					return ARROW
+				}
+				if l.peek() == '=' {
+					l.read()
+					l.tokenText = "=="
+					currentEndPos = l.pos
+					lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
+					return EQ
+				}
+				lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
+				return ASSIGN
+		*/
 	default:
 	}
 
 	opchars := "<>&^%$#@!*~=/|:+-"
-	if l.peek() == '-' && strings.IndexRune(opchars, l.peekN(1)) < 0 {
-		l.read()
-		lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
-		tokenCode = MINUS
-		return tokenCode
-	}
+	/*
+		if l.peek() == '-' && strings.IndexRune(opchars, l.peekN(1)) < 0 {
+			l.read()
+			lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
+			return MINUS
+		}
+	*/
 
+	// Collect all operator characters
 	var out []rune
 	for l.peek() > 0 && strings.IndexRune(opchars, l.peek()) >= 0 {
 		out = append(out, l.peek())
 		l.read()
 	}
-	log.Println("At Peek: ", string(l.peek()))
-	lval.node = newTokenNode(startPosSnapshot, currentEndPos, string(out))
-	lval.sval = string(out)
-	tokenCode = BINARY_OP
+	optoken := string(out)
+	log.Println("At Peek: ", string(l.peek()), optoken)
+	if optoken != "" {
+		lval.node = newTokenNode(startPosSnapshot, currentEndPos, string(out))
+		lval.sval = optoken
+		l.tokenText = optoken
+		tokenCode := BINARY_OP
+		if optoken == "-" {
+			tokenCode = MINUS
+			// } else if optoken == "==" { tokenCode = EQ
+		} else if optoken == "=" {
+			tokenCode = ASSIGN
+		} else if optoken == ":=" {
+			tokenCode = LET_ASSIGN
+		} else if optoken == "=>" {
+			tokenCode = ARROW
+		} else if optoken == ":" {
+			tokenCode = COLON
+		}
+		return tokenCode
+	}
 	l.Error(fmt.Sprintf("unexpected character '%c'", r))
 	return eof // Indicate an error that should halt parsing
 }
