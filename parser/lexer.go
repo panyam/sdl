@@ -251,8 +251,6 @@ func (l *Lexer) scanIdentifierOrKeyword() (tok int, text string) {
 		return USES, text
 	case "method":
 		return METHOD, text
-	case "instance":
-		return INSTANCE, text
 	case "analyze":
 		return ANALYZE, text
 	case "expect":
@@ -550,7 +548,6 @@ var testTokenNames = map[int]string{
 	PARAM:            "PARAM",
 	USES:             "USES",
 	METHOD:           "METHOD",
-	INSTANCE:         "INSTANCE",
 	ANALYZE:          "ANALYZE",
 	EXPECT:           "EXPECT",
 	LET:              "LET",

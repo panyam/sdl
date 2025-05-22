@@ -94,7 +94,7 @@ func yyerrok(lexer SDLLexer) {
 
 // --- Tokens ---
 // Keywords (assume lexer returns token type, parser might need pos for some)
-%token<node> SYSTEM USES METHOD INSTANCE ANALYZE EXPECT LET IF ELSE SAMPLE DISTRIBUTE DEFAULT RETURN DELAY WAIT GO LOG SWITCH CASE FOR 
+%token<node> SYSTEM USES METHOD ANALYZE EXPECT LET IF ELSE SAMPLE DISTRIBUTE DEFAULT RETURN DELAY WAIT GO LOG SWITCH CASE FOR 
 
 // Marking these as nodes so can be returned as Node for their locations
 %token<node> USE NATIVE LSQUARE RSQUARE LBRACE RBRACE OPTIONS ENUM COMPONENT PARAM IMPORT FROM AS
@@ -140,7 +140,6 @@ func yyerrok(lexer SDLLexer) {
 // %type <expr>         BinaryExpr NonAssocBinExpr 
 %type <chainedExpr>         ChainedExpr
 // %type <expr> OrExpr AndBoolExpr CmpExpr AddExpr MulExpr UnaryExpr 
-%type <exprList>     CommaExpressionListOpt
 %type <paramDecl>    ParamDecl MethodParamDecl
 %type <paramList>    MethodParamList MethodParamListOpt
 %type <typeDecl>     TypeDecl
@@ -158,7 +157,7 @@ func yyerrok(lexer SDLLexer) {
 // %type <expectStmtList> ExpectStmtList ExpectStmtOptList
 %type <methodSigItemList> MethodSigDeclList MethodSigDeclOptList
 %type <ifStmt>       IfStmt
-%type <exprList>          CommaSepExprList
+%type <exprList>     CommaSepExprListOpt, CommaSepExprList
 // %type <exprList>          OpSepExprList
 %type <expr>          TotalClauseOpt 
 %type <caseExpr> CaseExpr
@@ -569,11 +568,19 @@ ExpectStmt:
 // --- Statements ---
 StmtList: 
             /* empty */       { $$ = []Stmt{} }
-        | StmtList Stmt { $$ = append($1, $2) } ;
+        | StmtList Stmt {
+            $$ = $1
+            if $2 != nil {
+              $$ = append($$, $2)
+            }
+        } ;
 
 Stmt:
       LetStmt        { $$ = $1 }
-    | ExprStmt       { $$ = $1 }
+    | ExprStmt       {
+      log.Println("ExprStmt: ", $1)
+      $$ = $1
+    }
     | ForStmt       { $$ = $1 }
     | ReturnStmt     { $$ = $1 }
     | IfStmt         { $$ = $1 }
@@ -583,8 +590,8 @@ Stmt:
     // | GoStmt         { $$ = $1 }
     | LogStmt        { $$ = $1 }
     | BlockStmt      { $$ = $1 }
+    | SEMICOLON     { $$ = nil }
     // | AssignStmt     { $$ = $1 } // Disallow assignments as statements? Let's require `let` for now.
-    | error SEMICOLON { yyerrok(SDLlex) /* Recover on semicolon */ } // Basic error recovery
     ;
 
 BlockStmt:
@@ -624,7 +631,7 @@ AssignStmt: // Rule for simple assignment `a = b;` if needed as statement
 */
 
 ExprStmt:
-    Expression SEMICOLON { $$ = &ExprStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $2.(Node).End()), Expression: $1 } }
+    CallExpr { $$ = &ExprStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $1.(Node).End()), Expression: $1 } }
     ;
 
 ReturnStmt:
@@ -645,19 +652,21 @@ WaitStmt:
     ;
 
 LogStmt:
-    LOG Expression { // LOG($1) Expression($2) ... 
-         $$ = &LogStmt{Args: []Expr{$2}}
+    LOG CommaSepExprList { // LOG($1) Expression($2) ... 
+         $$ = &LogStmt{Args: $2}
     }
     ;
 
-CommaExpressionListOpt:
-      /* empty */                   { $$ = nil }
-    | COMMA Expression CommaExpressionListOpt {
-        $$ = []Expr{$2}
-        if $3 != nil { $$ = append($$, $3...) }
-    }
+
+CommaSepExprListOpt:
+      /* empty */  { $$ = []Expr{} }
+    | CommaSepExprList { $$ = $1 }
     ;
 
+CommaSepExprList:
+    Expression { $$ = []Expr{$1} }
+    | CommaSepExprList COMMA Expression { $$ = append($1, $3) }
+    ;
 
 // --- Control Flow ---
 IfStmt:
@@ -689,11 +698,6 @@ SampleExpr:
 TotalClauseOpt: /* empty */ { $$=nil } | Expression { $$=$1 };
 
 TupleExpr: LPAREN CommaSepExprList COMMA Expression RPAREN { $$ = &TupleExpr{Children: $2} } ;
-
-CommaSepExprList: 
-   Expression     { $$ = []Expr{$1} }
-  | CommaSepExprList COMMA Expression { $$ = append($1, $3) }
-  ;
 
 GoStmt:
     GO IDENTIFIER ASSIGN Stmt { // GO($1) ... BlockStmt($4)
@@ -850,7 +854,7 @@ MemberAccessExpr:
     ;
 
 CallExpr:
-    IDENTIFIER LPAREN CommaExpressionListOpt RPAREN { // PrimaryExpr($1) LPAREN($2) ArgList($3) RPAREN($4)
+    IDENTIFIER LPAREN CommaSepExprListOpt RPAREN { // PrimaryExpr($1) LPAREN($2) ArgList($3) RPAREN($4)
         endNode := $4.(Node) // End at RPAREN
         if len($3) > 0 {
              exprList := $3
@@ -862,7 +866,7 @@ CallExpr:
         }
         $$.(*CallExpr).NodeInfo = newNodeInfo($1.Pos(), endNode.End())
     }
-    | MemberAccessExpr LPAREN CommaExpressionListOpt RPAREN { // PrimaryExpr($1) LPAREN($2) ArgList($3) RPAREN($4)
+    | MemberAccessExpr LPAREN CommaSepExprListOpt RPAREN { // PrimaryExpr($1) LPAREN($2) ArgList($3) RPAREN($4)
          endNode := $4.(Node) // End at RPAREN
          if len($3) > 0 {
              exprList := $3
