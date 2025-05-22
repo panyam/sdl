@@ -24,7 +24,7 @@ promptsdl:
 	source ~/personal/.shhelpers && files_for_llm `make sdlfiles`
 
 parserfiles:
-	@find . | grep -e "decl" -e "parser" | grep -v ll | grep -v y.output | grep -v parser.go
+	@find . |  grep -v "\.git" | grep -v "\.bak" | grep -e "decl" -e "parser" | grep -v ll | grep -v y.output | grep -v parser.go
 
 prompt4parser:
 	source ~/personal/.shhelpers && files_for_llm `make parserfiles`
