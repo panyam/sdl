@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"log"
 	"strconv"
 	"strings"
 	"unicode"
@@ -510,7 +509,6 @@ func (l *Lexer) Lex(lval *SDLSymType) int {
 		l.read()
 	}
 	optoken := string(out)
-	log.Println("At Peek: ", string(l.peek()), optoken)
 	if optoken != "" {
 		lval.node = newTokenNode(startPosSnapshot, currentEndPos, string(out))
 		lval.sval = optoken

@@ -7,15 +7,6 @@ import (
 	gfn "github.com/panyam/goutils/fn"
 )
 
-type ChainedExpr struct {
-	ExprBase
-	Children  []Expr
-	Operators []string
-
-	// Expression after operators have been taken into account
-	UnchainedExpr Expr
-}
-
 type PrecedenceInfo struct {
 	Precedence int
 	AssocType  int // -1 for left, 0 for non associative, 1 for right associative
@@ -69,120 +60,158 @@ func (dp *defaultPrecedencer) AssociativityFor(operator string) Associativity {
 	}
 }
 
-// Unchain converts the ChainedExpr into a tree of BinaryExpr nodes,
-// respecting operator precedence and associativity provided by the Precedencer.
-// The result is stored in c.UnchainedExpr.
-func (c *ChainedExpr) Unchain(preceder Precedencer) {
+type ChainedExpr struct {
+	ExprBase
+	Children  []Expr
+	Operators []string
+
+	// Expression after operators have been taken into account
+	UnchainedExpr Expr
+	Err           error // Stores parsing error
+}
+
+// Unchain converts the ChainedExpr into a tree of BinaryExpr nodes.
+// It now returns an error if issues are encountered.
+func (c *ChainedExpr) Unchain(preceder Precedencer) error {
 	if c == nil {
-		return // Should not happen if called on a valid object instance
+		return fmt.Errorf("cannot unchain a nil ChainedExpr")
 	}
+
+	// Reset error and result for this unchain attempt
+	c.Err = nil
+	c.UnchainedExpr = nil
+
 	if len(c.Children) == 0 {
-		c.UnchainedExpr = nil
-		return
+		// No children, so no expression to form. Not necessarily an error for Unchain itself,
+		// but UnchainedExpr remains nil. Could be an error if parser forms such a ChainedExpr.
+		return nil
 	}
 
 	if len(c.Operators) == 0 {
 		if len(c.Children) == 1 {
 			c.UnchainedExpr = c.Children[0]
-		} else {
-			// Malformed: multiple children, no operators. Parser should catch this.
-			c.UnchainedExpr = nil
+			if c.UnchainedExpr == nil { // If the single child itself was nil
+				c.Err = fmt.Errorf("single child in ChainedExpr is nil at pos %d", c.Pos())
+				return c.Err
+			}
+			return nil
 		}
-		return
+		// Malformed: multiple children, no operators.
+		c.Err = fmt.Errorf("malformed chain: %d children, 0 operators, starting at pos %d", len(c.Children), c.Pos())
+		return c.Err
 	}
 
-	// A valid chain must have one more child than operators.
 	if len(c.Children) != len(c.Operators)+1 {
-		c.UnchainedExpr = nil // Malformed chain
-		return
+		c.Err = fmt.Errorf("malformed chain: %d children, %d operators, starting at pos %d. Must have one more child than operators", len(c.Children), len(c.Operators), c.Pos())
+		return c.Err
 	}
 
-	// Use provided preceder or a default if nil.
 	p := preceder
 	if p == nil {
 		p = &defaultPrecedencer{}
 	}
 
-	// Initialize indices for stepping through children and operators.
 	childIdx := 0
 	opIdx := 0
-
-	// Start parsing with the lowest possible precedence (0).
-	// The parseExpressionRecursive function will build the tree.
 	c.UnchainedExpr = c.parseExpressionRecursive(p, &childIdx, &opIdx, 0)
 
-	// Post-parsing check: If not all children or operators were consumed,
-	// it might indicate an issue with the input ChainedExpr or parsing logic,
-	// potentially meaning the chain contained multiple independent expressions
-	// or trailing tokens not part of a single valid expression structure.
-	// For now, we assume the ChainedExpr is intended to form one cohesive expression.
-	// If c.UnchainedExpr is nil, an error occurred during the recursive parse.
-	if c.UnchainedExpr != nil {
-		if childIdx != len(c.Children) || opIdx != len(c.Operators) {
-			// This condition suggests that the ChainedExpr might have been formed
-			// with more tokens than constitute a single expression parsable by
-			// precedence climbing from the start. This should ideally be handled
-			// by the parser that creates ChainedExpr instances.
-			// For robustness, one might consider this an error state and set c.UnchainedExpr = nil.
-			// log.Printf("Warning: Unchain did not consume all children/operators. Child: %d/%d, Op: %d/%d",
-			// 	childIdx, len(c.Children), opIdx, len(c.Operators))
+	if c.Err != nil { // An error was set during recursive parsing
+		c.UnchainedExpr = nil // Ensure result is nil on error
+		return c.Err
+	}
+
+	if c.UnchainedExpr == nil {
+		// This case implies parseExpressionRecursive returned nil without setting c.Err.
+		// This typically means an issue like a nil operand was encountered.
+		// Attempt to create a more specific error if possible.
+		if childIdx < len(c.Children) && c.Children[childIdx] == nil {
+			c.Err = fmt.Errorf("encountered nil operand during unchaining at approximate child index %d (related to operator index %d) starting at pos %d", childIdx, opIdx, c.Pos())
+		} else if opIdx < len(c.Operators) && childIdx >= len(c.Children) {
+			// This means an operator was present but its RHS operand was missing.
+			errPos := c.OperatorsStartPos(opIdx) // Helper to get approximate operator position
+			c.Err = fmt.Errorf("operator '%s' (at operator index %d, approx char pos %d) is missing its right-hand operand in chain starting at pos %d", c.Operators[opIdx], opIdx, errPos, c.Pos())
+		} else {
+			c.Err = fmt.Errorf("failed to unchain expression starting at pos %d, result is nil without a more specific error (possible structural issue or unhandled nil operand)", c.Pos())
+		}
+		return c.Err
+	}
+
+	// After successful parsing of an initial expression, check if the entire chain was consumed.
+	if childIdx != len(c.Children) || opIdx != len(c.Operators) {
+		// This means there are leftover tokens that weren't part of the main expression resolved.
+		// This is often the case for "a == b == c" where "(a == b)" is formed,
+		// and "== c" is leftover. The non-associative check should catch this specifically.
+		// If c.Err is already set (e.g., by non-associative check), don't override it.
+		if c.Err == nil {
+			operatorStr := "<end_of_chain>"
+			approxPos := c.End()
+			if opIdx < len(c.Operators) {
+				operatorStr = c.Operators[opIdx]
+				approxPos = c.OperatorsStartPos(opIdx)
+			} else if childIdx < len(c.Children) && c.Children[childIdx] != nil {
+				approxPos = c.Children[childIdx].Pos()
+			}
+			c.Err = fmt.Errorf("expression not fully parsed from chain starting at pos %d; operator '%s' (at index %d, approx char pos %d) and subsequent terms were not incorporated into the main expression tree. This may indicate incorrect chaining of operators with different precedences or disallowed non-associative chaining", c.Pos(), operatorStr, opIdx, approxPos)
+			c.UnchainedExpr = nil // Invalidate partial result
+			return c.Err
 		}
 	}
+
+	return nil
 }
 
-// parseExpressionRecursive implements the core precedence climbing logic.
-// It consumes operands and operators from the ChainedExpr's lists,
-// starting from the current *childIdx and *opIdx.
-// It only processes operators whose precedence is >= minPrecedence.
+// parseExpressionRecursive (with error detection for non-associative)
 func (c *ChainedExpr) parseExpressionRecursive(p Precedencer, childIdx *int, opIdx *int, minPrecedence int) Expr {
-	// Check if there's an initial operand available.
+	if c.Err != nil { // If an error has already been set, bail out.
+		return nil
+	}
+
 	if *childIdx >= len(c.Children) {
-		return nil // Error: Expected an operand, but ran out of children.
+		c.Err = fmt.Errorf("expected an operand for expression starting at pos %d, but ran out of children (child index %d, operator index %d)", c.Pos(), *childIdx, *opIdx)
+		return nil
 	}
 
 	lhs := c.Children[*childIdx]
 	if lhs == nil {
-		return nil // Error: Encountered a nil operand in the chain.
+		c.Err = fmt.Errorf("encountered nil operand at child index %d in chain starting at pos %d (related to operator index %d)", *childIdx, c.Pos(), *opIdx)
+		return nil
 	}
-	*childIdx++ // Consume the lhs operand.
+	*childIdx++
 
 	for {
-		// Check if there are more operators to process.
 		if *opIdx >= len(c.Operators) {
-			break // No more operators, lhs is the result for this level.
+			break
 		}
 
 		currentOp := c.Operators[*opIdx]
 		opPrec := p.PrecedenceFor(currentOp)
 		opAssoc := p.AssociativityFor(currentOp)
 
-		// If the current operator's precedence is less than minPrecedence,
-		// we don't process it at this level; return the lhs accumulated so far.
-		// For left-associative operators of the same precedence:
-		//   If opPrec == minPrecedence, it should NOT be processed by the recursive call for RHS,
-		//   but by this loop iteration. This is handled by nextMinPrecedence = opPrec + 1.
-		// For right-associative operators of the same precedence:
-		//   If opPrec == minPrecedence, it SHOULD be processed by the recursive call for RHS.
-		//   This is handled by nextMinPrecedence = opPrec.
+		if opAssoc == Associativity(99) { // Example of how you might check for an "unknown" enum if your Precedencer can return it
+			c.Err = fmt.Errorf("operator '%s' (at operator index %d, approx char pos %d) has unknown associativity in chain starting at pos %d", currentOp, *opIdx, c.OperatorsStartPos(*opIdx), c.Pos())
+			return nil
+		}
+
 		if opPrec < minPrecedence {
 			break
 		}
 
-		// Specific check for non-associative operators:
-		// If current operator is non-associative, and its precedence is equal to minPrecedence,
-		// it implies an attempt to chain non-associative operators of the same precedence level
-		// (e.g., a < b < c). This is an error.
-		// This loop structure means we've already processed an 'lhs' and are considering 'currentOp'.
-		// If 'minPrecedence' came from a previous non-associative op of the same precedence,
-		// 'nextMinPrecedence' would have been 'opPrec + 1', causing this 'opPrec < minPrecedence' to break.
-		// The only way to hit 'opPrec == minPrecedence' for a non-associative operator in the loop
-		// implies an issue or that the `minPrecedence` wasn't correctly bumped by a prior non-associative op.
-		// However, the core logic is: when we encounter `op`, we parse `rhs` with a potentially higher `minPrecedence`.
-		// If `op` is non-associative, `rhs` is parsed with `opPrec + 1`. If `rhs` itself starts with an operator
-		// of `opPrec`, that inner operator will fail `innerOpPrec < (opPrec + 1)` and the inner `parseExpressionRecursive`
-		// will return just its `lhs`. This correctly prevents chaining.
+		// --- Start: Error check for non-associative operator chaining ---
+		// This check is slightly different: We look *ahead* from the current lhs.
+		// If lhs was formed by a non-associative op (not easily known here without more state)
+		// and currentOp has same precedence, it's an error.
+		// The current precedence climbing handles this implicitly:
+		// If lhs's op was non-assoc, its RHS was parsed with opPrec+1.
+		// If currentOp here has opPrec, it would have failed the opPrec < minPrecedence check earlier.
 
-		*opIdx++ // Consume the operator.
+		// The check is: if *this* currentOp is non-associative, and after forming its BinaryExpr,
+		// the *next* operator in the original chain has the same precedence.
+		// This check needs to be done *after* forming the current BinaryExpr with currentOp.
+
+		// --- End: Error check for non-associative operator chaining (moved) ---
+
+		opIdxConsumed := *opIdx // Store opIdx before recursive call for currentOp
+		*opIdx++
 
 		var rhs Expr
 		var nextMinRecursivePrecedence int
@@ -190,46 +219,80 @@ func (c *ChainedExpr) parseExpressionRecursive(p Precedencer, childIdx *int, opI
 		if opAssoc == AssocLeft {
 			nextMinRecursivePrecedence = opPrec + 1
 		} else if opAssoc == AssocRight {
-			// For right-associative, recurse with the same precedence to allow chaining on the right.
 			nextMinRecursivePrecedence = opPrec
 		} else if opAssoc == AssocNone {
-			// For non-associative, the RHS should not contain another operator of the same precedence.
-			// So, the recursive call for RHS must look for strictly higher precedence.
 			nextMinRecursivePrecedence = opPrec + 1
-		} else {
-			// Unknown associativity - treat as an error.
-			c.UnchainedExpr = nil // Mark error on the ChainedExpr
+		} else { // Should be caught by Associativity(99) check earlier or be a defined default
+			c.Err = fmt.Errorf("operator '%s' (at operator index %d, approx char pos %d) has unsupported associativity type %v in chain starting at pos %d", currentOp, opIdxConsumed, c.OperatorsStartPos(opIdxConsumed), opAssoc, c.Pos())
 			return nil
 		}
 
-		// Check if there's an operand for the RHS.
 		if *childIdx >= len(c.Children) {
-			c.UnchainedExpr = nil // Error: Operator exists, but no RHS operand.
+			c.Err = fmt.Errorf("operator '%s' (at operator index %d, approx char pos %d) is missing its right-hand operand in chain starting at pos %d", currentOp, opIdxConsumed, c.OperatorsStartPos(opIdxConsumed), c.Pos())
 			return nil
 		}
 
 		rhs = c.parseExpressionRecursive(p, childIdx, opIdx, nextMinRecursivePrecedence)
 		if rhs == nil {
-			// Error parsing RHS (e.g., encountered nil operand or malformed structure deeper).
-			c.UnchainedExpr = nil
-			return nil
+			if c.Err == nil { // If recursive call returned nil without setting c.Err
+				c.Err = fmt.Errorf("failed to parse right-hand side for operator '%s' (at operator index %d, approx char pos %d) in chain starting at pos %d", currentOp, opIdxConsumed, c.OperatorsStartPos(opIdxConsumed), c.Pos())
+			}
+			return nil // Error parsing RHS, or c.Err was already set.
 		}
 
-		// Construct the new BinaryExpr node.
-		// The NodeInfo should span from the start of the original lhs of this operation
-		// to the end of the parsed rhs.
 		newExpr := &BinaryExpr{
-			// NodeInfo will be set after lhs_for_new_expr is determined
-			Left:     lhs, // This is the lhs accumulated so far at the current level
+			Left:     lhs,
 			Operator: currentOp,
 			Right:    rhs,
 		}
 		if newExpr.Left != nil && newExpr.Right != nil {
-			newExpr.NodeInfo = NodeInfo{StartPos: newExpr.Left.Pos(), StopPos: newExpr.Right.End()}
+			newExpr.ExprBase.NodeInfo = NodeInfo{StartPos: newExpr.Left.Pos(), StopPos: newExpr.Right.End()}
+		} else {
+			// Should have been caught by nil checks for lhs or rhs returning nil
+			c.Err = fmt.Errorf("internal error: nil operand for BinaryExpr with operator '%s' (at operator index %d, approx char pos %d) in chain starting at pos %d", currentOp, opIdxConsumed, c.OperatorsStartPos(opIdxConsumed), c.Pos())
+			return nil
 		}
-		// else: NodeInfo remains zero if operands are problematic, though nil checks should prevent this.
 
-		lhs = newExpr // The new binary expression becomes the lhs for the next iteration.
+		// --- Moved Error check for non-associative operator chaining ---
+		if opAssoc == AssocNone {
+			// After forming 'newExpr' with 'currentOp' (which was non-associative),
+			// check if there's another operator immediately following in the original chain
+			// that has the same precedence. *opIdx now points to this next operator.
+			if *opIdx < len(c.Operators) {
+				nextToken := c.Operators[*opIdx]
+				nextTokenPrec := p.PrecedenceFor(nextToken)
+				if nextTokenPrec == opPrec {
+					// errPos := newExpr.End() + 1 // Position after the expression just formed
+					opApproxPos := c.OperatorsStartPos(*opIdx)
+					// if *childIdx < len(c.Children) && c.Children[*childIdx] != nil {
+					// errPos = c.Children[*childIdx].Pos() // Position of the operand for the problematic operator
+					// }
+
+					c.Err = fmt.Errorf("invalid chaining: non-associative operator '%s' (forming expression ending at char %d) cannot be directly followed by operator '%s' (at operator index %d, approx char pos %d) of the same precedence %d in chain starting at pos %d",
+						currentOp, newExpr.End(),
+						nextToken, *opIdx, opApproxPos,
+						opPrec, c.Pos())
+					return nil
+				}
+			}
+		}
+		// --- End Moved Error Check ---
+		lhs = newExpr
 	}
 	return lhs
+}
+
+// OperatorsStartPos is a helper to estimate operator start positions.
+// This is an approximation as ChainedExpr only stores operator strings.
+// A more accurate system would store token info for operators.
+func (c *ChainedExpr) OperatorsStartPos(opIndex int) int {
+	if opIndex < 0 || opIndex >= len(c.Operators) {
+		return c.Pos() // Fallback
+	}
+	// Operator is between Children[opIndex] and Children[opIndex+1]
+	if opIndex < len(c.Children) && c.Children[opIndex] != nil {
+		// Approx position is after the end of the left child of this operator
+		return c.Children[opIndex].End() + 1 // +1 for space typically
+	}
+	return c.Pos() // Fallback
 }

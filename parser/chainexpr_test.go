@@ -259,14 +259,14 @@ func TestChainedExpr_Unchain_Associativity(t *testing.T) {
 		preceder.Associativities["=="] = AssocNone
 
 		chain := newTestChainedExpr([]Expr{a, b, c_expr}, []string{"==", "=="})
-		chain.Unchain(preceder)
-		// Expected: (a == b). The second "==" and "c_expr" are effectively ignored by this single
-		// Unchain call because the recursive call for the RHS of the first "==" will have a
-		// minPrecedence that's higher than the precedence of the second "==".
-		assertBinaryExpr(t, chain.UnchainedExpr, "==", a, b)
+		err := chain.Unchain(preceder)
 
-		// A more robust test would be to check if all tokens were consumed,
-		// but Unchain itself doesn't return that. This is more of a parser integration concern.
+		require.Error(t, err, "Expected an error for chaining non-associative operators")
+		assert.Nil(t, chain.UnchainedExpr, "UnchainedExpr should be nil on error")
+		// fmt.Println(err.Error()) // For debugging the error message
+		assert.Contains(t, err.Error(), "invalid chaining: non-associative operator '=='")
+		assert.Contains(t, err.Error(), "cannot be directly followed by operator '==' (at operator index 1")
+		assert.Contains(t, err.Error(), "of the same precedence 1")
 	})
 }
 
@@ -297,11 +297,10 @@ func TestChainedExpr_Unchain_ComplexPrecedence(t *testing.T) {
 		chain.Unchain(preceder)
 		// Expected: (a + (b*c))
 		require.NotNil(t, chain.UnchainedExpr)
-		outerAdd := assertBinaryExpr(t, chain.UnchainedExpr, "+", a, nil)
-		innerMul := assertBinaryExpr(t, outerAdd.Right, "*", b, c_expr)
-		assert.Same(t, innerMul, outerAdd.Right.(*BinaryExpr))
-		assert.Equal(t, a.Pos(), outerAdd.Pos())
-		assert.Equal(t, c_expr.End(), outerAdd.End())
+		assert.Equal(t, chain.UnchainedExpr.String(), "(a + (b * c))")
+		assert.Equal(t, chain.UnchainedExpr.(*BinaryExpr).Left.String(), "a")
+		assert.Equal(t, chain.UnchainedExpr.(*BinaryExpr).Right.String(), "(b * c)")
+		assert.Equal(t, chain.UnchainedExpr.(*BinaryExpr).Operator, "+")
 	})
 
 	t.Run("a * b + c", func(t *testing.T) {
@@ -309,11 +308,10 @@ func TestChainedExpr_Unchain_ComplexPrecedence(t *testing.T) {
 		chain.Unchain(preceder)
 		// Expected: ((a*b) + c)
 		require.NotNil(t, chain.UnchainedExpr)
-		outerAdd := assertBinaryExpr(t, chain.UnchainedExpr, "+", nil, c_expr)
-		innerMul := assertBinaryExpr(t, outerAdd.Left, "*", a, b)
-		assert.Same(t, innerMul, outerAdd.Left.(*BinaryExpr))
-		assert.Equal(t, a.Pos(), outerAdd.Pos())
-		assert.Equal(t, c_expr.End(), outerAdd.End())
+		assert.Equal(t, chain.UnchainedExpr.String(), "((a * b) + c)")
+		assert.Equal(t, chain.UnchainedExpr.(*BinaryExpr).Left.String(), "(a * b)")
+		assert.Equal(t, chain.UnchainedExpr.(*BinaryExpr).Right.String(), "c")
+		assert.Equal(t, chain.UnchainedExpr.(*BinaryExpr).Operator, "+")
 	})
 
 	t.Run("a + b * c - d / e", func(t *testing.T) {
@@ -329,23 +327,10 @@ func TestChainedExpr_Unchain_ComplexPrecedence(t *testing.T) {
 		// Right of "-": (d/e)
 		require.NotNil(t, chain.UnchainedExpr)
 
-		rootMinus := assertBinaryExpr(t, chain.UnchainedExpr, "-", nil, nil) // Root is subtraction
-
-		// Right side of rootMinus: (d/e)
-		rightDiv := assertBinaryExpr(t, rootMinus.Right, "/", d_expr, e_expr)
-		assert.Same(t, rightDiv, rootMinus.Right.(*BinaryExpr))
-
-		// Left side of rootMinus: (a + (b*c))
-		leftAdd := assertBinaryExpr(t, rootMinus.Left, "+", a, nil)
-		assert.Same(t, leftAdd, rootMinus.Left.(*BinaryExpr))
-
-		// Right side of leftAdd: (b*c)
-		innerMul := assertBinaryExpr(t, leftAdd.Right, "*", b, c_expr)
-		assert.Same(t, innerMul, leftAdd.Right.(*BinaryExpr))
-
-		assert.Equal(t, a.Pos(), rootMinus.Pos())
-		assert.Equal(t, e_expr.End(), rootMinus.End())
-		// fmt.Println(chain.UnchainedExpr.String()) // For debugging: ((a + (b * c)) - (d / e))
+		assert.Equal(t, chain.UnchainedExpr.String(), "((a + (b * c)) - (d / e))")
+		assert.Equal(t, chain.UnchainedExpr.(*BinaryExpr).Left.String(), "(a + (b * c))")
+		assert.Equal(t, chain.UnchainedExpr.(*BinaryExpr).Right.String(), "(d / e)")
+		assert.Equal(t, chain.UnchainedExpr.(*BinaryExpr).Operator, "-")
 	})
 
 	t.Run("a > b + c", func(t *testing.T) {
@@ -353,11 +338,10 @@ func TestChainedExpr_Unchain_ComplexPrecedence(t *testing.T) {
 		chain.Unchain(preceder)
 		// Expected: (a > (b+c)) because + is higher precedence than >
 		require.NotNil(t, chain.UnchainedExpr)
-		outerCompare := assertBinaryExpr(t, chain.UnchainedExpr, ">", a, nil)
-		innerAdd := assertBinaryExpr(t, outerCompare.Right, "+", b, c_expr)
-		assert.Same(t, innerAdd, outerCompare.Right.(*BinaryExpr))
-		assert.Equal(t, a.Pos(), outerCompare.Pos())
-		assert.Equal(t, c_expr.End(), outerCompare.End())
+		assert.Equal(t, chain.UnchainedExpr.String(), "(a > (b + c))")
+		assert.Equal(t, chain.UnchainedExpr.(*BinaryExpr).Left.String(), "a")
+		assert.Equal(t, chain.UnchainedExpr.(*BinaryExpr).Right.String(), "(b + c)")
+		assert.Equal(t, chain.UnchainedExpr.(*BinaryExpr).Operator, ">")
 	})
 
 	t.Run("a * b == c - d", func(t *testing.T) {
@@ -365,18 +349,10 @@ func TestChainedExpr_Unchain_ComplexPrecedence(t *testing.T) {
 		chain.Unchain(preceder)
 		// Expected: ((a*b) == (c-d))
 		require.NotNil(t, chain.UnchainedExpr)
-		outerEq := assertBinaryExpr(t, chain.UnchainedExpr, "==", nil, nil) // Root is "=="
-
-		// Left of "==" : (a*b)
-		leftMul := assertBinaryExpr(t, outerEq.Left, "*", a, b)
-		assert.Same(t, leftMul, outerEq.Left.(*BinaryExpr))
-
-		// Right of "==" : (c-d)
-		rightSub := assertBinaryExpr(t, outerEq.Right, "-", c_expr, d_expr)
-		assert.Same(t, rightSub, outerEq.Right.(*BinaryExpr))
-
-		assert.Equal(t, a.Pos(), outerEq.Pos())
-		assert.Equal(t, d_expr.End(), outerEq.End())
+		assert.Equal(t, chain.UnchainedExpr.String(), "((a * b) == (c - d))")
+		assert.Equal(t, chain.UnchainedExpr.(*BinaryExpr).Left.String(), "(a * b)")
+		assert.Equal(t, chain.UnchainedExpr.(*BinaryExpr).Right.String(), "(c - d)")
+		assert.Equal(t, chain.UnchainedExpr.(*BinaryExpr).Operator, "==")
 	})
 }
 
@@ -391,9 +367,10 @@ func TestChainedExpr_Unchain_DefaultPrecederSimple(t *testing.T) {
 		chain.Unchain(nil) // Use default preceder
 		// Expected: (a + (b*c))
 		require.NotNil(t, chain.UnchainedExpr)
-		outerAdd := assertBinaryExpr(t, chain.UnchainedExpr, "+", a, nil)
-		innerMul := assertBinaryExpr(t, outerAdd.Right, "*", b, c_expr)
-		assert.Same(t, innerMul, outerAdd.Right.(*BinaryExpr))
+		assert.Equal(t, chain.UnchainedExpr.String(), "(a + (b * c))")
+		assert.Equal(t, chain.UnchainedExpr.(*BinaryExpr).Left.String(), "a")
+		assert.Equal(t, chain.UnchainedExpr.(*BinaryExpr).Right.String(), "(b * c)")
+		assert.Equal(t, chain.UnchainedExpr.(*BinaryExpr).Operator, "+")
 	})
 
 	t.Run("a * b + c (default)", func(t *testing.T) {
@@ -401,9 +378,10 @@ func TestChainedExpr_Unchain_DefaultPrecederSimple(t *testing.T) {
 		chain.Unchain(nil) // Use default preceder
 		// Expected: ((a*b) + c)
 		require.NotNil(t, chain.UnchainedExpr)
-		outerAdd := assertBinaryExpr(t, chain.UnchainedExpr, "+", nil, c_expr)
-		innerMul := assertBinaryExpr(t, outerAdd.Left, "*", a, b)
-		assert.Same(t, innerMul, outerAdd.Left.(*BinaryExpr))
+		assert.Equal(t, chain.UnchainedExpr.String(), "((a * b) + c)")
+		assert.Equal(t, chain.UnchainedExpr.(*BinaryExpr).Left.String(), "(a * b)")
+		assert.Equal(t, chain.UnchainedExpr.(*BinaryExpr).Right.String(), "c")
+		assert.Equal(t, chain.UnchainedExpr.(*BinaryExpr).Operator, "+")
 	})
 }
 
