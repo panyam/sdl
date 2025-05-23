@@ -20,5 +20,5 @@ type FileResolver interface {
 	// 1. An io.ReadCloser for the content of the resolved file.
 	// 2. The canonical path (e.g., absolute path) of the resolved file, used for caching and cycle detection.
 	// 3. An error if resolution or reading fails.
-	Resolve(importerPath, importPath string) (content io.ReadCloser, canonicalPath string, err error)
+	Resolve(importerPath, importPath string, open bool) (content io.ReadCloser, canonicalPath string, err error)
 }

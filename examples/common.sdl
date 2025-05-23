@@ -1,9 +1,9 @@
 
 enum HttpStatusCode {
-  HttpStatusOk,
-  HttpStatusConflict,
-  HttpStatusNotFound,
-  HttpStatusInternalError
+  StatusOk,
+  StatusConflict,
+  StatusNotFound,
+  StatusInternalError
 }
 
 native component NativeDisk {

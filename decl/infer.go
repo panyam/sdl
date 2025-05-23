@@ -651,62 +651,70 @@ func InferTypesForFile(file *FileDecl) []error {
 
 	rootScope := NewRootTypeScope(file)
 
-	for _, decl := range file.Declarations {
-		switch d := decl.(type) {
-		case *ComponentDecl:
-			// Infer types for default values of parameters first
-			compScope := rootScope.Push(d, nil) // Scope for component itself
-			for _, paramDecl := range d.params {
-				if paramDecl.DefaultValue != nil {
-					valType, err := InferExprType(paramDecl.DefaultValue, compScope)
-					if err != nil {
-						errors = append(errors, err)
-					} else if valType != nil && paramDecl.Type != nil {
-						expectedType := paramDecl.Type.Type()
-						if !valType.Equals(expectedType) {
-							if !(valType.Equals(IntType) && expectedType.Equals(FloatType)) { // allow int to float promotion
-								errors = append(errors, fmt.Errorf("type mismatch for default value of param '%s' in component '%s' at pos %s: expected %s, got %s", paramDecl.Name.Name, d.NameNode.Name, paramDecl.DefaultValue.Pos().LineColStr(), expectedType.String(), valType.String()))
-							}
+	components, err := file.GetComponents()
+	if err != nil {
+		return append(errors, err)
+	}
+
+	systems, err := file.GetSystems()
+	if err != nil {
+		return append(errors, err)
+	}
+	for _, d := range components {
+		// Infer types for default values of parameters first
+		compScope := rootScope.Push(d, nil) // Scope for component itself
+		for _, paramDecl := range d.params {
+			if paramDecl.DefaultValue != nil {
+				valType, err := InferExprType(paramDecl.DefaultValue, compScope)
+				if err != nil {
+					errors = append(errors, err)
+				} else if valType != nil && paramDecl.Type != nil {
+					expectedType := paramDecl.Type.Type()
+					if !valType.Equals(expectedType) {
+						if !(valType.Equals(IntType) && expectedType.Equals(FloatType)) { // allow int to float promotion
+							errors = append(errors, fmt.Errorf("type mismatch for default value of param '%s' in component '%s' at pos %s: expected %s, got %s", paramDecl.Name.Name, d.NameNode.Name, paramDecl.DefaultValue.Pos().LineColStr(), expectedType.String(), valType.String()))
 						}
 					}
 				}
 			}
+		}
 
-			// Infer types within component methods
-			for _, method := range d.methods {
-				methodScope := rootScope.Push(d, method) // New scope for each method
-				// Add parameters to methodScope
-				for _, param := range method.Parameters {
-					if param.Type == nil {
-						errors = append(errors, fmt.Errorf("parameter '%s' of method '%s.%s' at pos %s has no type declaration", param.Name.Name, d.NameNode.Name, method.NameNode.Name, param.Pos().LineColStr()))
-						continue
-					}
-					paramType := param.Type.Type()
-					if paramType == nil {
-						errors = append(errors, fmt.Errorf("parameter '%s' of method '%s.%s' at pos %s has invalid TypeDecl", param.Name.Name, d.NameNode.Name, method.NameNode.Name, param.Pos().LineColStr()))
-						continue
-					}
-					methodScope.Set(param.Name.Name, paramType)
-					param.Name.SetInferredType(paramType) // Also type the identifier node itself
+		// Infer types within component methods
+		for _, method := range d.methods {
+			methodScope := rootScope.Push(d, method) // New scope for each method
+			// Add parameters to methodScope
+			for _, param := range method.Parameters {
+				if param.Type == nil {
+					errors = append(errors, fmt.Errorf("parameter '%s' of method '%s.%s' at pos %s has no type declaration", param.Name.Name, d.NameNode.Name, method.NameNode.Name, param.Pos().LineColStr()))
+					continue
 				}
-				// Add 'uses' dependencies to scope
-				for depName, usesDecl := range d.uses {
-					depCompName := usesDecl.ComponentNode.Name
-					// The type of a dependency is the component type itself.
-					methodScope.Set(depName, &Type{Name: depCompName})
+				paramType := param.Type.Type()
+				if paramType == nil {
+					errors = append(errors, fmt.Errorf("parameter '%s' of method '%s.%s' at pos %s has invalid TypeDecl", param.Name.Name, d.NameNode.Name, method.NameNode.Name, param.Pos().LineColStr()))
+					continue
 				}
-
-				if method.Body != nil {
-					errs := InferTypesForBlockStmt(method.Body, methodScope)
-					errors = append(errors, errs...)
-				}
+				methodScope.Set(param.Name.Name, paramType)
+				param.Name.SetInferredType(paramType) // Also type the identifier node itself
 			}
-		case *SystemDecl:
-			systemScope := rootScope.Push(nil, nil)
-			for _, item := range d.Body {
-				errs := InferTypesForSystemDeclBodyItem(item, systemScope)
+			// Add 'uses' dependencies to scope
+			for depName, usesDecl := range d.uses {
+				depCompName := usesDecl.ComponentNode.Name
+				// The type of a dependency is the component type itself.
+				methodScope.Set(depName, &Type{Name: depCompName})
+			}
+
+			if method.Body != nil {
+				errs := InferTypesForBlockStmt(method.Body, methodScope)
 				errors = append(errors, errs...)
 			}
+		}
+	}
+
+	for _, d := range systems {
+		systemScope := rootScope.Push(nil, nil)
+		for _, item := range d.Body {
+			errs := InferTypesForSystemDeclBodyItem(item, systemScope)
+			errors = append(errors, errs...)
 		}
 	}
 	return errors
@@ -730,7 +738,7 @@ func InferTypesForStmt(stmt Stmt, scope *TypeScope) []error {
 	case *LetStmt:
 		valType, err := InferExprType(s.Value, scope)
 		if err != nil {
-			errors = append(errors, fmt.Errorf("error inferring type for value of let statement variable(s) near pos %d: %w", s.Pos().LineColStr(), err))
+			errors = append(errors, fmt.Errorf("error inferring type for value of let statement variable(s) near pos %s: %w", s.Pos().LineColStr(), err))
 		} else if valType != nil {
 			// For `let x = val;`, x gets type of val.
 			// For `let x, y = val;` (if supported), val must be tuple, x and y get corresponding tuple element types.

@@ -1,5 +1,5 @@
 
-import NativeDisk, HttpStatusCode, HashIndex from "./common.sdl" ;
+import NativeDisk, HttpStatusCode as Http, HashIndex from "./common.sdl" ;
 
 // We could use a custom disk or a NativeDisk
 component Disk {
@@ -89,24 +89,24 @@ component AppServer {
       if not foundDuplicate {
         // Success so try saving a new short ID
         if self.HashIndex.Write() {
-          return HttpStatusOk
+          return Http.StatusOk
         } else {
-          return HttpStatusInternalError
+          return Http.StatusInternalError
         }
       }
     }
 
     // All retries elapsed - too many conflicts
-    return HttpStatusConflict
+    return Http.StatusConflict
   }
 
   method Redirect() HttpStatusCode {
     if self.DB.GetByShortId() {
-      return HttpStatusOk // or may be 302
+      return Http.StatusOk // or may be 302
     }
 
     // Simplified - can model more errors
-    return HttpStatusInternalError
+    return Http.StatusInternalError
   }
 }
 
@@ -130,29 +130,29 @@ component AppServerWithCache {
         // Success so try saving a new short ID
         if self.HashIndex.Write() {
           // .... Write to cache as well
-          return HttpStatusOk
+          return Http.StatusOk
         } else {
-          return HttpStatusInternalError
+          return Http.StatusInternalError
         }
       }
     }
 
     // All retries elapsed - too many conflicts
-    return HttpStatusConflict
+    return Http.StatusConflict
   }
 
   method Redirect() HttpStatusCode {
     // See if there is a cache hit
     if cache.Read() {
-      return HttpStatusOk // or may be 302
+      return Http.StatusOk // or may be 302
     }
 
     if self.DB.GetByShortId() {
-      return HttpStatusOk // or may be 302
+      return Http.StatusOk // or may be 302
     }
 
     // Simplified - can model more errors
-    return HttpStatusInternalError
+    return Http.StatusInternalError
   }
 }
 

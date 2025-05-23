@@ -16,7 +16,7 @@ func NewDefaultFileResolver() *DefaultFileResolver {
 }
 
 // Resolve handles filesystem paths.
-func (r *DefaultFileResolver) Resolve(importerPath, importPath string) (io.ReadCloser, string, error) {
+func (r *DefaultFileResolver) Resolve(importerPath, importPath string, open bool) (io.ReadCloser, string, error) {
 	var resolvedPath string
 
 	if filepath.IsAbs(importPath) {
@@ -34,15 +34,16 @@ func (r *DefaultFileResolver) Resolve(importerPath, importPath string) (io.ReadC
 	}
 
 	// Check if file exists and open
-	file, err := os.Open(canonicalPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, "", fmt.Errorf("file not found: %s (resolved from '%s')", canonicalPath, importPath)
+	var file io.ReadCloser
+	if open {
+		file, err = os.Open(canonicalPath)
+		if err != nil {
+			if os.IsNotExist(err) {
+				return nil, "", fmt.Errorf("file not found: %s (resolved from '%s')", canonicalPath, importPath)
+			}
+			return nil, "", fmt.Errorf("could not open file '%s': %w", canonicalPath, err)
 		}
-		return nil, "", fmt.Errorf("could not open file '%s': %w", canonicalPath, err)
 	}
 
 	return file, canonicalPath, nil
 }
-
-// END_OF_FILE ./loader/resolver.go

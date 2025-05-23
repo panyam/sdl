@@ -3,6 +3,7 @@ package loader
 import (
 	"fmt"
 	"io"
+	"log"
 	"testing"
 
 	"github.com/panyam/sdl/decl"
@@ -14,8 +15,23 @@ import (
 func TestBitly(t *testing.T) {
 	sdlParser := &SDLParserAdapter{}
 	fileResolver := NewDefaultFileResolver()
-	sdlLoader := NewLoader(sdlParser, fileResolver, 10) // Max depth 10
-	sdlLoader.LoadFiles("../examples/bitly.sdl")
+	l := NewLoader(sdlParser, fileResolver, 10) // Max depth 10
+
+	sourceFiles := []string{"../examples/bitly.sdl"}
+	for _, f := range sourceFiles {
+		fs, err := l.LoadFile(f, "", 0)
+		if err != nil {
+			log.Println("Error loading file: ", f, err)
+			continue
+		}
+		log.Println("File Parsed Successfully at: ", fs.LastParsed)
+		l.Validate(fs)
+		if fs.HasErrors() {
+			fs.PrintErrors()
+		} else {
+			log.Println("File Validated Successfully at: ", fs.LastValidated)
+		}
+	}
 }
 
 // SDLParserAdapter adapts the existing parser function to the loader.Parser interface.
