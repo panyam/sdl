@@ -1,5 +1,5 @@
 
-import NativeDisk, HttpStatusCode as Http, HashIndex from "./common.sdl" ;
+import NativeDisk, HttpStatusCode, HashIndex from "./common.sdl" ;
 
 // We could use a custom disk or a NativeDisk
 component Disk {
@@ -56,12 +56,12 @@ component Database {
     param RetryCount = 3
 
     // Tries to get an entry by short URL
-    method GetByShortId() bool {
+    method GetByShortId() Bool {
         return self.HashIndex.Find()
     }
 
     // Adds a new short url into the system
-    method PutShortUrl() bool {
+    method PutShortUrl() Bool {
         return self.HashIndex.Insert()
     }
 
@@ -122,7 +122,7 @@ component AppServerWithCache {
   uses DB Database
   uses cache Cache
 
-  method Shorten() Http.HttpStatusCode {
+  method Shorten() HttpStatusCode {
     for RetryCount {
       let foundDuplicate = self.CheckDuplicateShortId()
 

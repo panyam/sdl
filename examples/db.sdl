@@ -1,0 +1,31 @@
+
+enum DBResult { FOUND, NOT_FOUND, INTERNAL_ERROR }
+enum DuplicateCheck { FOUND, NOTFOUND, ERROR }
+
+component Database {
+    // The DB index for mapping short codes -> urls
+    uses ByShortCode HashIndex
+    param RetryCount = 3
+
+    // Tries to get an entry by short URL
+    method GetByShortId() Bool {
+        return self.HashIndex.Find()
+    }
+
+    // Adds a new short url into the system
+    method PutShortUrl() Bool {
+        return self.HashIndex.Insert()
+    }
+
+    // When generating new IDs use this to check for collissions
+    // Simplistic model - better to use transactions
+    method CheckDuplicateShortId() DBResult {
+      // Reading the DB also incurs a delay
+      if not self.HashIndex.Read() {
+        // Had a database error so fail
+        return ERROR
+      }
+
+      return sample dist { 99999 => FOUND, 1 => NOTFOUND}
+    }
+}

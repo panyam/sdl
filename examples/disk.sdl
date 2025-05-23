@@ -1,0 +1,46 @@
+
+// We could use a custom disk or a NativeDisk
+component Disk {
+  // How about *just* latencies
+  // Option 1 - Define them purely as a single dimentional entities
+  param ReadSuccessLatencies = dist {
+     999 => 10us
+     9 => 50us
+     1 => 10ms
+  }
+
+  param ReadFailureLatencies = dist {
+     999 => 10us
+     1 => 100us
+  }
+
+  // Just a duration of latencies
+  param WriteLatencies = dist 1000 {
+     999 => 10us
+     9 => 50us
+     1 => 10ms
+  }
+
+  // 5 9s of read success!
+  param ReadOutcomes = dist {
+    99999 => (true, ReadSuccessLatencies)
+    1 => (false, ReadFailureLatencies)
+  }
+
+  param WriteOutcomes = dist {
+    99999 => (true, WriteSuccessLatencies)
+    1 => (false, WriteFailureLatencies)
+  }
+
+  method Read() {
+    let outcome, latency = sample ReadOutcomes
+    delay sample latency
+    return outcome
+  }
+
+  method Write() {
+    let outcome, latency = sample WriteOutcomes
+    delay sample latency
+    return outcome
+  }
+}
