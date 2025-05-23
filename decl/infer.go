@@ -182,12 +182,14 @@ func InferBinaryExprType(expr *BinaryExpr, scope *TypeScope) (*Type, error) {
 		}
 		return nil, fmt.Errorf("pos %s: type mismatch for operator '%s': cannot apply to %s and %s",
 			expr.Pos().LineColStr(), expr.Operator, leftType.String(), rightType.String())
+
 	case "%":
 		if leftType.Equals(IntType) && rightType.Equals(IntType) {
 			return IntType, nil
 		}
 		return nil, fmt.Errorf("pos %s: type mismatch for operator '%%': requires two integers, got %s and %s",
 			expr.Pos().LineColStr(), leftType.String(), rightType.String())
+
 	case "==", "!=", "<", "<=", ">", ">=":
 		isLeftNumeric := leftType.Equals(IntType) || leftType.Equals(FloatType)
 		isRightNumeric := rightType.Equals(IntType) || rightType.Equals(FloatType)
@@ -208,12 +210,14 @@ func InferBinaryExprType(expr *BinaryExpr, scope *TypeScope) (*Type, error) {
 		}
 		return nil, fmt.Errorf("pos %s: type mismatch for comparison operator '%s': cannot compare %s and %s",
 			expr.Pos().LineColStr(), expr.Operator, leftType.String(), rightType.String())
+
 	case "&&", "||":
 		if leftType.Equals(BoolType) && rightType.Equals(BoolType) {
 			return BoolType, nil
 		}
 		return nil, fmt.Errorf("pos %s: type mismatch for logical operator '%s': requires two booleans, got %s and %s",
 			expr.Pos().LineColStr(), expr.Operator, leftType.String(), rightType.String())
+
 	default:
 		return nil, fmt.Errorf("pos %s: unsupported binary operator '%s'", expr.Pos().LineColStr(), expr.Operator)
 	}
