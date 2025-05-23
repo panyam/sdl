@@ -15,17 +15,17 @@ native component NativeDisk {
 native component HashIndex {
   // Exposing a dependency that can be configured
   // It is upto the native component to manage setting/getting this
-  method Find() bool
-  method Insert() bool
-  method Delete () bool
+  method Find() Bool
+  method Insert() Bool
+  method Delete () Bool
 }
 
 native component BTreeIndex {
   // Exposing a dependency that can be configured
   // It is upto the native component to manage setting/getting this
-  method Find() bool
-  method Insert() bool
-  method Delete () bool
+  method Find() Bool
+  method Insert() Bool
+  method Delete () Bool
 }
 
 native component BitmapIndex {
@@ -33,37 +33,37 @@ native component BitmapIndex {
   // It is upto the native component to manage setting/getting this
   // uses disk Disk
 
-  method Find() bool
-  method Insert() bool
-  method Delete () bool
-  method Update() bool
+  method Find() Bool
+  method Insert() Bool
+  method Delete () Bool
+  method Update() Bool
 }
 
 native component Cache {
-  method Read() bool
-  method Write() bool
+  method Read() Bool
+  method Write() Bool
 }
 
 native component LSMTree {
-  method Read() bool
-  method Write() bool
+  method Read() Bool
+  method Write() Bool
 }
 
 native component MM1Queue {
-  method Enqueue() bool
-  method Dequeue() bool
+  method Enqueue() Bool
+  method Dequeue() Bool
 }
 
 native component MMCKQueue {
-  method Enqueue() bool
-  method Dequeue() bool
+  method Enqueue() Bool
+  method Dequeue() Bool
 }
 
 native component ResourcePool {
-  method Acquire() bool
+  method Acquire() Bool
 }
 
 native component Link {
-  method Transfer() bool
+  method Transfer() Bool
 }
 

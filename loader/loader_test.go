@@ -17,19 +17,19 @@ func TestBitly(t *testing.T) {
 	fileResolver := NewDefaultFileResolver()
 	l := NewLoader(sdlParser, fileResolver, 10) // Max depth 10
 
-	sourceFiles := []string{"../examples/bitly.sdl"}
+	sourceFiles := []string{"../examples/common.sdl", "../examples/bitly.sdl"}
 	for _, f := range sourceFiles {
 		fs, err := l.LoadFile(f, "", 0)
 		if err != nil {
 			log.Println("Error loading file: ", f, err)
 			continue
 		}
-		log.Println("File Parsed Successfully at: ", fs.LastParsed)
+		log.Printf("File %s - Parsed Successfully at: %v\n", fs.FullPath, fs.LastParsed)
 		l.Validate(fs)
 		if fs.HasErrors() {
 			fs.PrintErrors()
 		} else {
-			log.Println("File Validated Successfully at: ", fs.LastValidated)
+			log.Printf("File %s - Validated Successfully at: %v\n", fs.FullPath, fs.LastValidated)
 		}
 	}
 }

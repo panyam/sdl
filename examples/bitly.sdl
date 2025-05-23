@@ -122,7 +122,7 @@ component AppServerWithCache {
   uses DB Database
   uses cache Cache
 
-  method Shorten() HttpStatusCode {
+  method Shorten() Http.HttpStatusCode {
     for RetryCount {
       let foundDuplicate = self.CheckDuplicateShortId()
 
