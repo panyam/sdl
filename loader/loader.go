@@ -2,6 +2,7 @@ package loader
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"sync" // To handle potential concurrent loads if needed later, though starting sequential.
 
@@ -12,7 +13,7 @@ import (
 type LoadResult struct {
 	RootFile    *decl.FileDecl            // The AST for the initially requested root file.
 	LoadedFiles map[string]*decl.FileDecl // All files loaded, keyed by canonical path.
-	Errors      []error                   // Parsing, resolution, cycle, depth, and type inference errors.
+	Errors      []error
 }
 
 // Loader handles parsing and recursively loading imported SDL files.
@@ -39,16 +40,53 @@ func NewLoader(parser Parser, resolver FileResolver, maxDepth int) *Loader {
 	}
 }
 
+func (l *Loader) LoadFiles(paths ...string) (allValid bool, results map[string]*LoadResult) {
+	allValid = true
+	results = make(map[string]*LoadResult)
+	for _, filePath := range paths {
+		result, errs := l.LoadRootFile(filePath)
+		if len(errs) > 0 {
+			fmt.Fprintf(os.Stderr, "  Error loading file: ")
+			for _, err := range errs {
+				fmt.Fprintln(os.Stderr, err)
+			}
+			allValid = false
+			continue
+		}
+
+		results[filePath] = result
+
+		astRoot := result.RootFile
+
+		// Perform semantic checks (e.g., vm.LoadFile(ast) or astRoot.Resolve())
+		// For now, let's assume FileDecl.Resolve() handles initial semantic checks.
+		if astRoot != nil { // Check if parsing returned a valid AST
+			err := astRoot.Resolve()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "  Error validating semantics in %s: %v\n", filePath, err)
+				allValid = false
+				continue
+			}
+			fmt.Printf("  Successfully validated %s\n", filePath)
+		} else {
+			// This case should ideally be caught by parser error, but defensive check.
+			fmt.Fprintf(os.Stderr, "  Parsing %s did not return a valid AST.\n", filePath)
+			allValid = false
+		}
+	}
+	return
+}
+
 // LoadRootFile parses the specified root file and recursively loads its imports.
 // It performs type inference on the entire loaded set of files afterwards.
-func (l *Loader) LoadRootFile(rootPath string) (*LoadResult, error) {
+func (l *Loader) LoadRootFile(rootPath string) (*LoadResult, []error) {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
 
 	if !filepath.IsAbs(rootPath) {
 		abspath, err := filepath.Abs(rootPath)
 		if err != nil {
-			return nil, err
+			return nil, []error{err}
 		}
 		rootPath = abspath
 	}
@@ -64,7 +102,7 @@ func (l *Loader) LoadRootFile(rootPath string) (*LoadResult, error) {
 	if err != nil {
 		errors = append(errors, fmt.Errorf("failed to load root file '%s': %w", rootPath, err))
 		// Return immediately if the root fails to load/parse
-		return &LoadResult{Errors: errors}, errors[0]
+		return &LoadResult{Errors: errors}, errors
 	}
 
 	// --- Type Inference Pass ---
@@ -92,11 +130,8 @@ func (l *Loader) LoadRootFile(rootPath string) (*LoadResult, error) {
 
 	// Return the first error encountered, or nil if only inference errors occurred.
 	// The caller can inspect result.Errors for all issues.
-	if err != nil {
-		return result, err // The original loading error takes precedence
-	}
 	if len(errors) > 0 {
-		return result, errors[0] // Return the first type inference error as the primary error
+		return result, errors
 	}
 
 	return result, nil
@@ -171,6 +206,8 @@ func (l *Loader) loadFileRecursive(importerPath, filePath string, depth int) (*d
 		// Optional: Link the loaded FileDecl back to importDecl.ResolvedFile = loadedDecl
 		// However, the central l.loadedFiles map is the source of truth.
 	}
+
+	// Once imports are loaded we can perform inference and other checks on this file
 
 	return fileDecl, nil
 }

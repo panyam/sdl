@@ -67,7 +67,7 @@ component Database {
 
     // When generating new IDs use this to check for collissions
     // Simplistic model - better to use transactions
-    method CheckDuplicateShortId() bool {
+    method CheckDuplicateShortId() DBResult {
       // Reading the DB also incurs a delay
       if not self.HashIndex.Read() {
         // Had a database error so fail

@@ -1,12 +1,22 @@
-package commands
+package loader
 
 import (
 	"fmt"
 	"io"
+	"testing"
 
 	"github.com/panyam/sdl/decl"
 	"github.com/panyam/sdl/parser"
+	_ "github.com/stretchr/testify/assert"
+	_ "github.com/stretchr/testify/require"
 )
+
+func TestBitly(t *testing.T) {
+	sdlParser := &SDLParserAdapter{}
+	fileResolver := NewDefaultFileResolver()
+	sdlLoader := NewLoader(sdlParser, fileResolver, 10) // Max depth 10
+	sdlLoader.LoadFiles("../examples/bitly.sdl")
+}
 
 // SDLParserAdapter adapts the existing parser function to the loader.Parser interface.
 type SDLParserAdapter struct{}

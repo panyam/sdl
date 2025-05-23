@@ -17,41 +17,21 @@ correctness and basic semantic validity. It does not run any simulations.`,
 	Args: cobra.MinimumNArgs(1), // Require at least one file path
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("Validating DSL files:")
-		allValid := true
 		sdlParser := &SDLParserAdapter{}
 		fileResolver := loader.NewDefaultFileResolver()
 		sdlLoader := loader.NewLoader(sdlParser, fileResolver, 10) // Max depth 10
-		for _, filePath := range args {
-			result, err := sdlLoader.LoadRootFile(filePath)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "  Error loading file: %v", err)
-				allValid = false
-				continue
-			}
-
-			astRoot := result.RootFile
-			// Perform semantic checks (e.g., vm.LoadFile(ast) or astRoot.Resolve())
-			// For now, let's assume FileDecl.Resolve() handles initial semantic checks.
-			if astRoot != nil { // Check if parsing returned a valid AST
-				err = astRoot.Resolve()
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "  Error validating semantics in %s: %v\n", filePath, err)
-					allValid = false
-					continue
-				}
-				fmt.Printf("  Successfully validated %s\n", filePath)
-			} else {
-				// This case should ideally be caught by parser error, but defensive check.
-				fmt.Fprintf(os.Stderr, "  Parsing %s did not return a valid AST.\n", filePath)
-				allValid = false
-			}
-		}
-
-		if !allValid {
+		allValid, results := sdlLoader.LoadFiles(args...)
+		if allValid {
+			fmt.Println("All specified files validated successfully.")
+		} else {
 			fmt.Fprintln(os.Stderr, "One or more files failed validation.")
-			os.Exit(1)
+			for path, result := range results {
+				fmt.Printf("Errors in: %s\n", path)
+				for _, err := range result.Errors {
+					fmt.Println("    ", err)
+				}
+			}
 		}
-		fmt.Println("All specified files validated successfully.")
 	},
 }
 
