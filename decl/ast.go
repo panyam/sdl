@@ -54,12 +54,14 @@ type FileDecl struct {
 	systems    map[string]*SystemDecl
 }
 
+// Get a map of the all the components encountered in this FileDecl
 func (f *FileDecl) GetComponents() (out map[string]*ComponentDecl, err error) {
 	err = f.Resolve()
 	out = f.components
 	return
 }
 
+// Get a particular component by name in this FileDecl
 func (f *FileDecl) GetComponent(name string) (out *ComponentDecl, err error) {
 	components, err := f.GetComponents()
 	if err == nil {
@@ -68,12 +70,14 @@ func (f *FileDecl) GetComponent(name string) (out *ComponentDecl, err error) {
 	return
 }
 
+// Get a map of the all the enums encountered in this FileDecl
 func (f *FileDecl) GetEnums() (out map[string]*EnumDecl, err error) {
 	err = f.Resolve()
 	out = f.enums
 	return
 }
 
+// Get a particular enum by name in this FileDecl
 func (f *FileDecl) GetEnum(name string) (out *EnumDecl, err error) {
 	enums, err := f.GetEnums()
 	if err == nil {
@@ -82,12 +86,14 @@ func (f *FileDecl) GetEnum(name string) (out *EnumDecl, err error) {
 	return
 }
 
+// Get a map of the all the systems encountered in this FileDecl
 func (f *FileDecl) GetSystems() (out map[string]*SystemDecl, err error) {
 	err = f.Resolve()
 	out = f.systems
 	return
 }
 
+// Get a particular system by name in this FileDecl
 func (f *FileDecl) GetSystem(name string) (out *SystemDecl, err error) {
 	systems, err := f.GetSystems()
 	if err == nil {
@@ -96,6 +102,7 @@ func (f *FileDecl) GetSystem(name string) (out *SystemDecl, err error) {
 	return
 }
 
+// Get a map of the all the imports encountered in this FileDecl
 func (f *FileDecl) Imports() (map[string]*ImportDecl, error) {
 	if err := f.Resolve(); err != nil {
 		return nil, err
