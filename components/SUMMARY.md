@@ -1,4 +1,4 @@
-# SDL Components Package Summary (`sdl/components`)
+# SDL Components Package Summary (`components` package)
 
 **Purpose:**
 
@@ -10,7 +10,7 @@ This package provides concrete Go implementations of common distributed system c
 2.  **Component Models:**
     *   Each component (e.g., `Disk`, `Cache`, `Queue`, `ResourcePool`, `BTreeIndex`, `HashIndex`, `LSMTree`, `NetworkLink`, `Batcher`, `HeapFile`, `SortedFile`) is represented by a Go struct.
     *   They typically have an `Init()` or `New...()` constructor to set default parameters or accept configuration.
-    *   Key methods representing operations (`Read`, `Write`, `Acquire`, `Enqueue`, `Dequeue`, `Find`, `Insert`, `Submit`, `Transfer`, etc.) return `*core.Outcomes[V]` (e.g., `*core.Outcomes[AccessResult]`, `*core.Outcomes[Duration]`, potentially `*core.Outcomes[bool]` in future). These return values encapsulate the probabilistic performance model of that operation.
+    *   Key methods representing operations (`Read`, `Write`, `Acquire`, `Enqueue`, `Dequeue`, `Find`, `Insert`, `Submit`, `Transfer`, etc.) return `*core.Outcomes[V]` (e.g., `*core.Outcomes[AccessResult]`, `*core.Outcomes[Duration]`). These return values encapsulate the probabilistic performance model of that operation.
     *   Models often compose operations on underlying dependencies (e.g., `BTreeIndex.Find` composes multiple `Disk.Read` operations).
 
 3.  **Stateless Analytical Models:**
@@ -19,9 +19,9 @@ This package provides concrete Go implementations of common distributed system c
 
 4.  **Declarative Layer (`decl/` sub-package):**
     *   Contains parallel Go structs for many components (e.g., `decl.Disk`, `decl.BTreeIndex`).
-    *   These structs hold configuration parameters, often as `dsl.Expr` types (defined in `sdl/dsl/ast.go`).
+    *   These structs hold configuration parameters, often as `dsl.Expr` types (defined in `sdl/dsl/ast.go` - *Correction: AST nodes are in `sdl/decl`*).
     *   They provide methods (`Read()`, `Find()`, etc.) that **generate Abstract Syntax Trees (ASTs)**, representing the intended operation logic rather than executing it directly.
-    *   This layer separates the *definition* of component interactions from their *execution* (which is handled by the `sdl/dsl` vm). Includes `components_test.go` verifying AST generation.
+    *   This layer separates the *definition* of component interactions from their *execution* (which is handled by the `sdl/dsl` vm). Includes `components_test.go` (within `decl`) verifying AST generation.
 
 5.  **Testing:**
     *   Component tests (`*_test.go`) consistently use the `core.Analyze` primitive with relevant `Expectation`s (`ExpectAvailability`, `ExpectP99`, etc.) and assertions (`Assert`, `AssertFailure`) to verify the correctness and plausibility of the component models when used via the Go API.
