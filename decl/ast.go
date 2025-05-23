@@ -16,6 +16,10 @@ type Location struct {
 	Col  int
 }
 
+func (l Location) LineColStr() string {
+	return fmt.Sprintf("Line %d, Col %d", l.Line, l.Col)
+}
+
 // Node represents any node in the Abstract Syntax Tree.
 type Node interface {
 	Pos() Location  // Starting position (for error reporting)
