@@ -1,26 +1,36 @@
 package decl
 
+import (
+	"fmt"
+	// "log" // Uncomment for debugging
+)
+
 // TypeScope manages type information for identifiers within a scope.
+// It uses an Env[Node] for storing named declarations (globals, imports, lexical vars)
+// and retains direct references for contextual lookups (self, method params, component params).
 type TypeScope struct {
-	store            map[string]*Type
-	outer            *TypeScope
-	file             *FileDecl // Access to global declarations (enums, components)
+	env              *Env[Node] // Stores LetStmt vars, global decls (Enums, Components), and imported symbols.
 	currentComponent *ComponentDecl
-	currentMethod    *MethodDecl // Useful for 'self' and method params/return
+	currentMethod    *MethodDecl
 }
 
-// NewRootTypeScope creates a top-level scope for a file.
-func NewRootTypeScope(file *FileDecl) *TypeScope {
+// NewRootTypeScope creates a top-level scope, using the provided Env.
+// The env should be pre-populated by the loader with global and imported declarations.
+func NewRootTypeScope(env *Env[Node]) *TypeScope {
+	if env == nil {
+		env = NewEnv[Node](nil)
+		// panic("NewRootTypeScope requires a non-nil Env")
+	}
 	return &TypeScope{
-		store: make(map[string]*Type),
-		outer: nil,
-		file:  file,
+		env:              env,
+		currentComponent: nil,
+		currentMethod:    nil,
 	}
 }
 
-// Push creates a new nested scope.
+// Push creates a new nested lexical scope (e.g., for a block or method).
+// It pushes the environment for lexical scoping of variables defined with 'let'.
 func (ts *TypeScope) Push(currentComponent *ComponentDecl, currentMethod *MethodDecl) *TypeScope {
-	// Inherit component/method context if not overridden
 	effectiveCurrentComponent := ts.currentComponent
 	if currentComponent != nil {
 		effectiveCurrentComponent = currentComponent
@@ -31,64 +41,121 @@ func (ts *TypeScope) Push(currentComponent *ComponentDecl, currentMethod *Method
 	}
 
 	return &TypeScope{
-		store:            make(map[string]*Type),
-		outer:            ts,
-		file:             ts.file, // Propagate file
+		env:              ts.env.Push(), // New lexical scope for 'let' variables
 		currentComponent: effectiveCurrentComponent,
 		currentMethod:    effectiveCurrentMethod,
 	}
 }
 
 // Get retrieves the type of an identifier.
-// Order: local store -> 'self' -> method params -> outer scopes -> file globals.
+// Lookup Order:
+// 1. 'self' (if in component method context).
+// 2. Method parameters (if in method context).
+// 3. Component parameters (if in component context, typically accessed via 'self.param').
+// 4. 'uses' dependencies (if in component context, typically accessed via 'self.dep').
+// 5. Lexically scoped variables (let bindings) and global/imported declarations from the Env.
 func (ts *TypeScope) Get(name string) (*Type, bool) {
-	// 1. Local store
-	if t, ok := ts.store[name]; ok {
-		return t, true
-	}
-
-	// 2. 'self' keyword (if in a method context of a component)
+	// 1. 'self' keyword
 	if ts.currentComponent != nil && name == "self" {
-		return &Type{Name: ts.currentComponent.NameNode.Name /* IsComponent: true */}, true
+		// 'self' refers to the current component type
+		return ComponentTypeInstance(ts.currentComponent), true
 	}
 
-	// 3. Method parameters (if in a method context)
+	// 2. Method parameters
 	if ts.currentMethod != nil {
 		for _, param := range ts.currentMethod.Parameters {
 			if param.Name.Name == name {
-				if param.Type == nil { // Should be caught by an earlier validation pass
-					return nil, false // Or return an error type marker
+				if param.Type == nil { // Should be caught by earlier validation
+					// log.Printf("Warning: Parameter '%s' in method '%s' has no TypeDecl.", name, ts.currentMethod.NameNode.Name)
+					return nil, false
 				}
+				// The Type field of ParamDecl is a TypeDecl node.
+				// Type.Type() resolves it to a *Type, which should include OriginalDecl.
 				return param.Type.Type(), true
 			}
 		}
 	}
-	// Note: Component-level params and 'uses' deps are typically accessed via 'self.member',
-	// which is handled by MemberAccessExpr inference, not direct lookup here.
 
-	// 4. Outer scopes
-	if ts.outer != nil {
-		return ts.outer.Get(name)
-	}
+	// 3. Component parameters (only relevant if we are in a component's direct scope, not method)
+	//    Typically accessed via `self.param_name`, handled by MemberAccessExpr.
+	//    If direct access like `param_name` is allowed from a method, this could be added.
+	//    For now, assuming params are primarily via `self`.
 
-	// 5. File-level declarations (Enums, Components as type names, Instances in SystemDecl)
-	if ts.file != nil {
-		if enumDecl, _ := ts.file.GetEnum(name); enumDecl != nil {
-			// This identifier refers to an enum type itself
-			return &Type{Name: enumDecl.NameNode.Name, IsEnum: true}, true
+	// 4. 'uses' dependencies (similar to component params, typically via `self.dependency_name`)
+
+	// 5. Lexically scoped variables ('let' bindings) and global/imported declarations from Env.
+	//    The Env stores the actual decl.Node.
+	declNode, foundNode := ts.env.Get(name)
+	if foundNode {
+		switch node := declNode.(type) {
+		case *EnumDecl:
+			return EnumType(node), true
+		case *ComponentDecl: // This is for referring to a component *as a type*
+			return ComponentTypeInstance(node), true
+		case *IdentifierExpr: // This is how 'let' bound variables are stored (the LHS Identifier)
+			if node.InferredType() == nil {
+				// This implies a 'let' variable was used before its type could be fully inferred,
+				// or there was an error during its inference.
+				// log.Printf("Warning: Identifier '%s' found in env but its type is not yet inferred.", name)
+				return nil, false // Or return a special "inference pending" type / error
+			}
+			return node.InferredType(), true
+		case *InstanceDecl: // If instance names from SystemDecl are in scope
+			// The type of an instance is its component type.
+			// We need to find the ComponentDecl for node.ComponentType.Name.
+			// This requires the Env to also hold ComponentDecls by their type names.
+			if ts.env != nil { // Check if env is available
+				compDeclNode, compFound := ts.env.Get(node.ComponentType.Name)
+				if compFound {
+					if compDecl, ok := compDeclNode.(*ComponentDecl); ok {
+						return ComponentTypeInstance(compDecl), true
+					}
+				}
+				// log.Printf("Warning: Could not resolve component type '%s' for instance '%s'", node.ComponentType.Name, name)
+			}
+			return nil, false // Could not fully resolve instance type
+			// Add cases for other declarable/typeable nodes if they can be directly named and looked up.
+		default:
+			// log.Printf("Warning: Found node of unexpected type %T for name '%s' in env.", node, name)
+			return nil, false
 		}
-		// An identifier might refer to a component type (e.g. in `instance x: MyComponent;`)
-		// if compDecl, _ := ts.file.GetComponent(name); compDecl != nil {
-		//    return &Type{Name: compDecl.NameNode.Name /* IsComponentType: true */}, true
-		// }
-		// Note: Instance names declared in SystemDecl are added to the scope by inferTypesForSystemDeclBodyItem.
 	}
 
 	return nil, false
 }
 
-// Set defines the type of an identifier in the current local scope.
-func (ts *TypeScope) Set(name string, t *Type) {
-	// log.Printf("Scope (comp: %s, meth: %s): Setting type for '%s' to %s", ts.currentComponent != nil, ts.currentMethod != nil, name, t)
-	ts.store[name] = t
+// Set is used to define the type of a lexically scoped variable (from a LetStmt).
+// It stores the LHS IdentifierExpr node in the current lexical environment (env).
+// The inferred type `t` is set on the IdentifierExpr itself.
+func (ts *TypeScope) Set(name string, identNode *IdentifierExpr, t *Type) error {
+	if ts.env.GetRef(name) != nil { // Check current lexical scope only for 'let' shadowing/redefinition
+		// Distinguish between GetRef on ts.env (for lexical) vs ts.env.Outer().GetRef (for parent scopes)
+		// For 'let', we only care if 'name' is already defined in the *innermost* scope.
+		// Env.GetRef() checks current then outer. We need a way to check current only.
+		// Let's assume for now: if ts.env.store[name] exists.
+		// This requires Env to expose its store or a "GetLocalRef" method.
+		// For simplicity, let's assume Env.Set will overwrite if we allow shadowing,
+		// or if Env.Set itself handles collision in the *same* scope level.
+		// A proper check requires: `if _, definedInCurrentStore := ts.env.store[name]; definedInCurrentStore`
+		// This is a placeholder for proper shadowing/redefinition error handling.
+		// return fmt.Errorf("identifier '%s' already defined in the current lexical scope", name)
+	}
+	if identNode == nil {
+		return fmt.Errorf("cannot set type for nil IdentifierExpr node (name: %s)", name)
+	}
+	identNode.SetInferredType(t)
+	ts.env.Set(name, identNode) // Store the IdentifierExpr node itself.
+	return nil
+}
+
+// Helper for InferTypesForFile to get the file path for error messages
+// (assuming env is the root Env[Node] for the file)
+func (ts *TypeScope) envPath(fileLookingFor *FileDecl) string {
+	// This is tricky as Env[Node] doesn't directly store the file path.
+	// The FileDecl itself has NodeInfo which has StartPos.File.
+	if fileLookingFor != nil {
+		return fileLookingFor.NodeInfo.StartPos.File
+	}
+	// Fallback or error if a path is needed but no FileDecl context is available
+	return "<unknown_file_path_from_env>"
 }
