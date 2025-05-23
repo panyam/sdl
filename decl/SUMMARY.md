@@ -1,66 +1,52 @@
-# SDL Declaration DSL Package Summary (`sdl/decl`)
+# SDL Project Summary & Onboarding Guide
 
-**Purpose:**
+**1. Vision & Goal:**
 
-This package implements the high-level System Design Language (DSL) for defining and analyzing system performance models. It aims to provide a declarative interface, abstracting the direct manipulation of probabilistic outcomes defined in `sdl/core`. It defines the language structure (AST), the runtime environment, and the evaluation mechanism that connects the DSL to the underlying `core` and `components` packages.
+*   **Purpose:** The SDL (System Design Language) library models and analyzes the performance characteristics (latency, availability) of distributed system components using **analytical models** and **probabilistic composition**. It prioritizes **speed** for interactive "what-if" analysis over detailed Discrete Event Simulation (DES), focusing primarily on **steady-state** behavior.
+*   **Use Cases:** Enable rapid analysis of system designs, bottleneck identification, SLO evaluation, performance exploration under different configurations, and potentially educational tools for system design reasoning.
 
-**Evaluation Strategy: Operator Tree**
+**2. Overall Architecture:**
 
-The DSL evaluation employs a two-stage strategy using an intermediate "Operator Tree":
+*   **Probabilistic Core (`core` package):** The foundation, providing generic `Outcomes[V]` distributions, composition operators (`And`, `Map`, `Split`, `Append`), complexity management via reduction (`Trim...`, `Merge...`, etc.), metric calculations (`Availability`, `PercentileLatency`, etc.), and a standardized `Analyze` primitive for testing the Go API.
+*   **Analytical Components (`components` package):** Concrete Go models of system building blocks (Disk, Cache, Queue, Pool, LSM, BTree, etc.) using `sdl/core`. Key components (`ResourcePool`, `Queue`) use stateless analytical formulas (M/M/c, M/M/c/K).
+*   **AST & Declarations (`decl` package):** Defines the Go structures for Abstract Syntax Tree (AST) nodes representing the SDL language (components, systems, operations, statements, expressions). Also includes the SDL type system (`types.go`), type inference logic (`infer.go`), the `TypeScope` helper for inference (`typescope.go`), and the generic environment structure `Env[Node]`.
+*   **DSL Parser (`parser` package):** Parses SDL text into the AST defined in the `decl` package. It uses `goyacc` and a custom lexer.
+*   **DSL Loader (`loader` package):** Manages loading of SDL source files, including resolving imports, handling cyclic dependencies, and orchestrating parsing and validation (including type inference). It now constructs a comprehensive `decl.Env[Node]` scope for type inference, correctly handling aliased imported symbols.
+*   **DSL Execution Engine (`dsl` package - Planned):** This will contain the VM/evaluator to execute ASTs. The target is "Model V4" (implicit outcome handling in DSL syntax, explicit `Outcomes[V]` in Go). This is a major area for future work.
+*   **Command Line Interface (`cmd/sdl` package):** A CLI tool (`sdl`) built with Cobra for interacting with the SDL toolchain (validating, listing, describing, running analyses - most are currently placeholders).
+*   **Examples (`examples` package):** Demonstrates usage of the **Go API** to build and analyze systems (`bitly`, `gpucaller`, `notifier`) and includes some sample `.sdl` files.
 
-1.  **Stage 1: AST Evaluation to Operator Tree (`Eval` function in `eval.go`)**
-    *   The `Eval` function walks the Abstract Syntax Tree (AST).  The ast is split into 3 files (intentional):
-        * `ast.go` - Defines the top level declarations in a compilation unit (File).   These are loaded and processed
-          at parse/load time.  These are not "executable" units like statements and expressions (below) that will be
-          evaluated.
-        * `stmt.go` and `exprs.go` - Defines statements statements and expressions that are executed at runtime by the
-          Evaluators.   These are the units that create results and cause runtime "effects".
-    *   It uses the runtime `Frame` (`frame.go`) for lexical scoping and tracking asynchronous futures.
-    *   It interacts with the `VM` (`vm.go`) which holds registries for native component constructors and DSL definitions.
-    *   It builds an **Operator Tree** (`opnode.go`) representing the computation symbolically.
-        *   **Leaves** (`LeafNode`) hold a `VarState` (`state.go`) (Value + Latency outcomes), created from literals or component method calls.
-        *   **Internal Nodes** (`SequenceNode`, `BinaryOpNode`, `IfChoiceNode`, `InstanceRefNode` etc.) represent operations and structure.
-    *   Component *instantiations* (`InstanceDecl`) are evaluated by calling `vm.CreateInstance`, which handles native vs. DSL creation logic and returns a `ComponentRuntime`.
-    *   `ComponentRuntime` instances (`NativeComponent` or `UDComponent`) are stored directly in the `Frame`.
-    *   Method calls (`CallExpr`) are evaluated (`evalCall`), resolving the target `ComponentRuntime` and calling its `InvokeMethod`.
-        *   Native calls execute Go code via reflection (temporary argument workaround exists).
-        *   DSL calls evaluate the method body AST using `Eval` in an isolated frame.
-    *   Focuses on building the correct symbolic tree and setting up the runtime environment with component instances. *This stage is partially implemented.*
+**3. Code Structure & Key Packages:**
 
-2.  **Stage 2: Operator Tree Execution (Future "Tree Evaluator")**
-    *   *(Not Yet Implemented)* A separate component will process the `OpNode` tree generated by Stage 1.
-    *   It will walk the tree, performing actual `VarState` combinations (using the V4 dual-track model defined in `state.go` and combination logic from `reducers.go`).
-    *   It will interact with `ComponentRuntime` instances (via `InvokeMethod`) to handle method calls, providing evaluated arguments.
-    *   The final result of evaluating an OpNode tree will be a single, combined `VarState`.
+*   **`sdl/core/`**: Fundamental probabilistic modeling types and operations.
+*   **`sdl/components/`**: Concrete Go component models.
+    *   **`sdl/components/decl/`**: Declarative counterparts of components that generate ASTs for the DSL.
+*   **`sdl/decl/`**: AST node definitions, type system, type inference logic, and `Env` structure.
+*   **`sdl/parser/`**: DSL lexer and parser (goyacc-based).
+*   **`sdl/loader/`**: File loading, import resolution, and validation orchestration.
+*   **`sdl/dsl/`**: (Largely future work) DSL VM and execution logic.
+*   **`sdl/cmd/sdl/`**: CLI application and command definitions.
+*   **`sdl/examples/`**: Go API usage examples and sample SDL files.
 
-**Loading vs. Execution:**
+**4. Current Status & Recent Work Summary:**
 
-*   **Loading (`vm.LoadFile`):** Parses a `File` AST, processes top-level `component` and `system` definitions, populates the `VM`'s `ComponentDefRegistry` and `SystemDefs` map.
-*   **Execution (`vm.ExecuteSystem`):** Takes a system name, retrieves its AST from the VM, creates a root `Frame`, and calls `Eval` on the `SystemDecl` AST to begin Stage 1 evaluation.
+*   **Go API**: The `core` and `components` packages provide a functional Go API for probabilistic performance modeling.
+*   **DSL Parsing & Loading**: The `parser` can process SDL syntax into an AST. The `loader` can manage file dependencies, parse them, and has recently been significantly improved to prepare the necessary scope (using `decl.Env[Node]` and `decl.TypeScope`) for type inference. This includes correctly resolving aliased imported symbols.
+*   **Type Inference (`decl/infer.go`)**: Actively being refactored to work with the new `Env`-based `TypeScope`. The goal is to correctly infer types for all language constructs, including those involving imported and aliased symbols (like enums and components).
+*   **DSL VM (`dsl` package)**: Remains largely unimplemented. The design target is "Model V4."
+*   **CLI Commands**: Most commands in `cmd/sdl` are placeholders awaiting VM integration. The `validate` command leverages the loader and the developing type inference.
 
-**Key Components & Files:**
+**5. Known Limitations (Explicitly Acknowledged):**
 
-*   **`ast.go`:** Defines the top level parsed DSL grammar declaration structs (nodes like `FileDecl`, `ComponentDecl`, `SystemDecl`, `InstanceDecl`, `MethodDef`, etc.).
-*   **`stmt.go.go` and `exprs.go`:** Defines the parsed DSL grammar structs (nodes like `CallExpr`, `IfStmt`, `DistributeExpr` etc.).
-*   **`vm.go`:** `VM` structure, holds registries, `CreateInstance` factory, `LoadFile`, `ExecuteSystem`.
-*   **`frame.go`:** `Frame` struct for lexical scope, `locals`, `futures` tracking. `Future` struct.
-*   **`eval.go`:** Implements the Stage 1 `Eval` function (builds `OpNode` tree). Handles various AST nodes, calls `vm.CreateInstance`, `evalCall`.
-*   **`opnode.go`:** Defines the Operator Tree nodes (`OpNode`, `LeafNode`, `BinaryOpNode`, `IfChoiceNode`, `InstanceRefNode`, etc.).
-*   **`state.go`:** Defines `VarState` (dual-track outcomes: `ValueOutcome`, `LatencyOutcome`).
-*   **`component.go`:** Defines `ComponentRuntime` interface, `UDComponent` (for DSL components), and `NativeComponent` (for Go components). Implements `InvokeMethod` for both.
-*   **`analysis.go`:** Defines `AnalysisResultWrapper`. *(Needs update for `VarState` and Tree Evaluator integration)*.
-*   **`reducers.go`:** Manages outcome combination/reduction logic. *(Needs update for `VarState` combination)*.
-*   **Design Docs:** `SYNTAX.md`, `GRAMMAR.ebnf`, `FUTURES.md`, `NATIVE.md`, `EXAMPLES.md`.
+*   **Analytical Steady-State Focus**: Models average performance, not transient dynamics. Accuracy depends on the underlying analytical models (e.g., M/M/c assumptions for queues/pools).
+*   **Stateless Analytical Components**: `ResourcePool`/`Queue` in `components` are primarily configuration-driven.
+*   **VM Incomplete**: The DSL Execution Engine is the largest piece of outstanding work.
+*   **Type Inference WIP**: While significantly improved for scope handling, the `decl/infer.go` logic needs to be completed and thoroughly tested for all language constructs and edge cases.
+*   **Limited DSL Value Access**: The DSL currently focuses on composing `Outcomes` containers. Direct access to inner probabilistic values (e.g., a specific latency from an outcome bucket) within DSL logic is generally not supported, aligning with the "Model V4" philosophy.
 
-**Current Status:**
+**6. Next Steps:**
 
-*   AST, Frame, VM, `VarState`, `ComponentRuntime`, and basic `OpNode` types are defined.
-*   The Operator Tree evaluation strategy and Load/Execute phases are established.
-*   Stage 1 `Eval` handles key structural elements: definitions (processed by `LoadFile`), setup (System execution via `ExecuteSystem`, Instance creation via `vm.CreateInstance`), basic expressions/statements (Literals, Let, Identifiers, Blocks, Binary Ops, If), and method calls (`evalCall`).
-*   Method calls work for native components (via adapter+reflection, with argument workaround) and DSL components (body AST is processed by `Eval`, returning an `OpNode`).
-*   **Missing:**
-    *   The entire Stage 2 "Tree Evaluator" component.
-    *   `Eval` logic for remaining ops: `unary`, `distribute`, `delay`, `go`, `wait`, etc.
-    *   Updates to `reducers.go` for `VarState` combination logic.
-    *   Integration with `analysis.go`.
-    *   Removal of temporary workarounds (argument/parameter evaluation via `extractLeafValue`).
+*   Finalize and test the refactored type inference logic in `decl/infer.go`.
+*   Begin implementation of the DSL VM (`dsl` package).
+*   Implement the actual functionality for the placeholder CLI commands.
+*   (See `NEXTSTEPS.MD` for more detail).
