@@ -12,7 +12,7 @@ type Type struct {
 	ChildTypes   []*Type
 	ChildNames   []string // when we are a record type
 	IsEnum       bool
-	OriginalDecl Node     // Pointer to the original EnumDecl, ComponentDecl, etc.
+	OriginalDecl Node // Pointer to the original EnumDecl, ComponentDecl, etc.
 }
 
 // --- ValueType Factory Functions ---
@@ -76,7 +76,6 @@ func ComponentTypeInstance(decl *ComponentDecl) *Type {
 	return &Type{Name: decl.NameNode.Name, OriginalDecl: decl}
 }
 
-
 // String representation of the type
 func (t *Type) String() string {
 	if t == nil {
@@ -132,10 +131,168 @@ func (v *Type) Equals(other *Type) bool {
 
 // IsComponentType checks if the type represents a component (based on OriginalDecl).
 func (t *Type) IsComponentType() bool {
-    if t == nil {
-        return false
-    }
-    _, ok := t.OriginalDecl.(*ComponentDecl)
-    return ok
+	if t == nil {
+		return false
+	}
+	_, ok := t.OriginalDecl.(*ComponentDecl)
+	return ok
 }
 
+// TypeDecl represents primitive types or registered enum identifiers.
+
+type TypeDecl struct {
+	NodeInfo
+	Name         string      // e.g., "MyEnum", "List", "Int"
+	Args         []*TypeDecl // For generic-like types, e.g., List[Int] -> Args has TypeDecl for "Int"
+	resolvedType *Type       // Cache the resolved *Type
+}
+
+func (t *TypeDecl) String() string {
+	if len(t.Args) == 0 {
+		return fmt.Sprintf("Type { %s ", t.Name)
+	} else {
+		return fmt.Sprintf("Type { %s[%s] } ", t.Name, strings.Join(gfn.Map(t.Args, func(t *TypeDecl) string { return t.String() }), ", "))
+	}
+}
+
+func (td *TypeDecl) SetResolvedType(t *Type) {
+	td.resolvedType = t
+}
+
+func (td *TypeDecl) ResolvedType() *Type {
+	return td.resolvedType
+}
+
+/*
+func (t *TypeDecl) Type() *Type {
+	return &Type{
+		Name:       t.Name,
+		ChildTypes: gfn.Map(t.Args, func(t *TypeDecl) *Type { return t.Type() }),
+	}
+}
+*/
+
+// Type() was the original method, let's make it an alias to TypeUsingScope with a nil scope
+// for backward compatibility or simple cases, though using TypeUsingScope is safer.
+func (td *TypeDecl) Type() *Type {
+	if td.resolvedType != nil {
+		return td.resolvedType
+	}
+	// Fallback for simple types if no scope is needed or for basic resolution.
+	// This might be too simple and could be removed if TypeUsingScope is always used.
+	// For now, let's imagine it tries to resolve basic built-ins.
+	switch td.Name {
+	case "Int":
+		return IntType
+	case "Float":
+		return FloatType
+	case "String":
+		return StrType
+	case "Bool":
+		return BoolType
+	case "Nil":
+		return NilType
+		// Note: "List", "Tuple", "Outcomes" require args and are better handled by TypeUsingScope.
+	}
+	// Cannot resolve without a scope if it's a custom name.
+	return nil
+}
+
+// In decl/ast.go (add this method to TypeDecl)
+
+// TypeUsingScope resolves the TypeDecl to a *Type object within the given scope.
+// It handles built-in types, named types (enums, components from scope), and generic-like types.
+func (td *TypeDecl) TypeUsingScope(scope *TypeScope) *Type {
+	if td == nil {
+		return nil
+	}
+	if td.resolvedType != nil {
+		return td.resolvedType
+	}
+
+	var resultType *Type
+
+	switch td.Name {
+	// Basic known types (can be singletons from types.go)
+	case "Int":
+		resultType = IntType
+	case "Float":
+		resultType = FloatType
+	case "String": // Assuming StrType is the correct singleton name
+		resultType = StrType
+	case "Bool":
+		resultType = BoolType
+	case "Nil": // For void/nil type
+		resultType = NilType
+	// Duration is often treated as Float or a distinct basic type.
+	// If it's just "Duration", it would need to be a known basic type like Int/Float.
+	// If it's from an enum or other decl, it'll be caught by the scope.Get below.
+
+	case "List":
+		if len(td.Args) == 1 {
+			elemTypeDecl := td.Args[0]
+			resolvedElemType := elemTypeDecl.TypeUsingScope(scope)
+			if resolvedElemType != nil {
+				resultType = ListType(resolvedElemType) // From types.go factory
+			} else {
+				// Error: element type of List could not be resolved
+				return nil
+			}
+		} else {
+			// Error: List expects 1 type argument
+			return nil
+		}
+	case "Tuple":
+		if len(td.Args) > 0 {
+			elemTypes := make([]*Type, len(td.Args))
+			for i, argTd := range td.Args {
+				resolvedElemType := argTd.TypeUsingScope(scope)
+				if resolvedElemType == nil {
+					return nil // Error resolving tuple element type
+				}
+				elemTypes[i] = resolvedElemType
+			}
+			resultType = TupleType(elemTypes...) // From types.go factory
+		} else {
+			// Error: Tuple expects at least 1 type argument (as per TupleType factory)
+			return nil
+		}
+	case "Outcomes":
+		if len(td.Args) == 1 {
+			elemTypeDecl := td.Args[0]
+			resolvedElemType := elemTypeDecl.TypeUsingScope(scope)
+			if resolvedElemType != nil {
+				resultType = OutcomesType(resolvedElemType) // From types.go factory
+			} else {
+				// Error: element type of Outcomes could not be resolved
+				return nil
+			}
+		} else {
+			// Error: Outcomes expects 1 type argument
+			return nil
+		}
+	default:
+		// It's a named type (e.g., an enum "MyEnum", a component "MyComponentType").
+		// Look it up in the provided scope.
+		if scope == nil {
+			// Cannot resolve named type without a scope.
+			// This might happen if .Type() is called directly on a complex TypeDecl.
+			return nil
+		}
+		foundType, ok := scope.Get(td.Name)
+		if ok {
+			// scope.Get already returns a *Type, which should have OriginalDecl set
+			// if it came from an EnumDecl or ComponentDecl in the env.
+			resultType = foundType
+		} else {
+			// Type name not found in scope
+			return nil
+		}
+	}
+
+	// Cache the resolved type
+	if resultType != nil {
+		td.resolvedType = resultType
+	}
+	return resultType
+}

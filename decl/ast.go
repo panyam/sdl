@@ -231,29 +231,6 @@ type ComponentDeclBodyItem interface {
 	componentBodyItemNode()
 }
 
-// TypeDecl represents primitive types or registered enum identifiers.
-type TypeDecl struct {
-	NodeInfo
-	// Can be one of the following
-	Name string
-	Args []*TypeDecl
-}
-
-func (t *TypeDecl) Type() *Type {
-	return &Type{
-		Name:       t.Name,
-		ChildTypes: gfn.Map(t.Args, func(t *TypeDecl) *Type { return t.Type() }),
-	}
-}
-
-func (t *TypeDecl) String() string {
-	if len(t.Args) == 0 {
-		return fmt.Sprintf("Type { %s ", t.Name)
-	} else {
-		return fmt.Sprintf("Type { %s[%s] } ", t.Name, strings.Join(gfn.Map(t.Args, func(t *TypeDecl) string { return t.String() }), ", "))
-	}
-}
-
 // ParamDecl represents `param name: TypeDecl [= defaultExpr];`
 type ParamDecl struct {
 	NodeInfo

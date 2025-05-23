@@ -147,15 +147,3 @@ func (ts *TypeScope) Set(name string, identNode *IdentifierExpr, t *Type) error 
 	ts.env.Set(name, identNode) // Store the IdentifierExpr node itself.
 	return nil
 }
-
-// Helper for InferTypesForFile to get the file path for error messages
-// (assuming env is the root Env[Node] for the file)
-func (ts *TypeScope) envPath(fileLookingFor *FileDecl) string {
-	// This is tricky as Env[Node] doesn't directly store the file path.
-	// The FileDecl itself has NodeInfo which has StartPos.File.
-	if fileLookingFor != nil {
-		return fileLookingFor.NodeInfo.StartPos.File
-	}
-	// Fallback or error if a path is needed but no FileDecl context is available
-	return "<unknown_file_path_from_env>"
-}
