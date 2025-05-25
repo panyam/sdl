@@ -21,6 +21,13 @@ type FileDecl struct {
 	systems    map[string]*SystemDecl
 }
 
+func (f *FileDecl) PrettyPrint(cp CodePrinter) {
+	for _, n := range f.Declarations {
+		n.PrettyPrint(cp)
+		cp.Println("")
+	}
+}
+
 // Get a map of the all the components encountered in this FileDecl
 func (f *FileDecl) GetComponents() (out map[string]*ComponentDecl, err error) {
 	err = f.Resolve()

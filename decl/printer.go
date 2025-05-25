@@ -79,6 +79,7 @@ func NewCodePrinter() CodePrinter {
 }
 
 func PPrint(node Node) {
-	cp := NewCodePrinter()
+	cp := &codePrinter{}
 	node.PrettyPrint(cp)
+	fmt.Println(cp.builder.String())
 }

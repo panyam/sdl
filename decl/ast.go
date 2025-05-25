@@ -80,7 +80,7 @@ func (e *EnumDecl) PrettyPrint(cp CodePrinter) {
 			cp.Printf("%s, \n", v.Name)
 		}
 	})
-	cp.Println("}")
+	cp.Print("}")
 }
 
 // ImportDecl represents `import "path";`
@@ -100,7 +100,7 @@ func (i *ImportDecl) String() string {
 }
 
 func (i *ImportDecl) PrettyPrint(cp CodePrinter) {
-	cp.Println(i.String())
+	cp.Print(i.String())
 }
 
 // What the import is imported as if an alias is used
@@ -283,7 +283,6 @@ func (p *ParamDecl) PrettyPrint(cp CodePrinter) {
 		cp.Print(" = ")
 		p.DefaultValue.PrettyPrint(cp)
 	}
-	cp.Println("")
 }
 
 // UsesDecl represents `uses varName: ComponentType [{ overrides }];`
@@ -389,7 +388,7 @@ func (i *InstanceDecl) String() string {
 
 func (i *InstanceDecl) PrettyPrint(cp CodePrinter) {
 	if i.Overrides == nil {
-		cp.Printf("use %s %s\n", i.NameNode.Name, i.ComponentType.Name)
+		cp.Printf("use %s %s", i.NameNode.Name, i.ComponentType.Name)
 	} else {
 		cp.Printf("use %s %s (", i.NameNode.Name, i.ComponentType.Name)
 		for idx, o := range i.Overrides {
@@ -398,7 +397,7 @@ func (i *InstanceDecl) PrettyPrint(cp CodePrinter) {
 			}
 			o.PrettyPrint(cp)
 		}
-		cp.Println(")")
+		cp.Print(" )")
 	}
 }
 

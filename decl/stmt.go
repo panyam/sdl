@@ -24,13 +24,14 @@ type BlockStmt struct {
 func (b *BlockStmt) String() string { return "{ ...statements... }" } // Simplified
 func (b *BlockStmt) PrettyPrint(cp CodePrinter) {
 	cp.Println("{")
-	cp.Indent(1)
-	for _, stmt := range b.Statements {
-		stmt.PrettyPrint(cp)
-		cp.Println("")
+	if b != nil && b.Statements != nil {
+		cp.Indent(1)
+		for _, stmt := range b.Statements {
+			stmt.PrettyPrint(cp)
+		}
+		cp.Unindent(1)
 	}
-	cp.Unindent(1)
-	cp.Println("}")
+	cp.Print("}")
 }
 
 // ForStmt represents `for expression { stmt }`
@@ -52,7 +53,7 @@ func (f *ForStmt) PrettyPrint(cp CodePrinter) {
 	cp.Indent(1)
 	f.Body.PrettyPrint(cp)
 	cp.Unindent(1)
-	cp.Println("}")
+	cp.Print("}")
 }
 
 // LetStmt represents `let var = expr;`
@@ -69,7 +70,7 @@ func (l *LetStmt) String() string {
 }
 
 func (l *LetStmt) PrettyPrint(cp CodePrinter) {
-	cp.Println(l.String())
+	cp.Print(l.String())
 }
 
 // ExprStmt represents an expression used as a statement (e.g., a call)
@@ -81,7 +82,7 @@ type ExprStmt struct {
 func (e *ExprStmt) String() string { return e.Expression.String() + ";" }
 
 func (e *ExprStmt) PrettyPrint(cp CodePrinter) {
-	cp.Println(e.String())
+	cp.Print(e.String())
 }
 
 // ReturnStmt represents `return expr;`
@@ -92,7 +93,7 @@ type ReturnStmt struct {
 
 func (r *ReturnStmt) String() string { return fmt.Sprintf("return %s;", r.ReturnValue) }
 func (r *ReturnStmt) PrettyPrint(cp CodePrinter) {
-	cp.Println(r.String())
+	cp.Print(r.String())
 }
 
 // IfStmt represents `if cond { ... } else { ... }`
@@ -107,18 +108,18 @@ func (i *IfStmt) String() string { return fmt.Sprintf("if (%s) { ... } else { ..
 func (i *IfStmt) PrettyPrint(cp CodePrinter) {
 	cp.Print("if ")
 	i.Condition.PrettyPrint(cp)
-	cp.Println(" {")
+	cp.Print(" {")
 	cp.Indent(1)
 	i.Then.PrettyPrint(cp)
 	cp.Unindent(1)
 	if i.Else == nil {
-		cp.Println("}")
+		cp.Print("}")
 	} else {
 		cp.Println("} else {")
 		cp.Indent(1)
 		i.Else.PrettyPrint(cp)
 		cp.Unindent(1)
-		cp.Println("}")
+		cp.Print("}")
 	}
 }
 
@@ -141,7 +142,7 @@ func (d *DelayStmt) String() string { return fmt.Sprintf("delay %s;", d.Duration
 func (d *DelayStmt) PrettyPrint(cp CodePrinter) {
 	cp.Print("delay ")
 	d.Duration.PrettyPrint(cp)
-	cp.Println("")
+	cp.Print("")
 }
 
 // WaitStmt represents `delay durationExpr;`
@@ -155,7 +156,7 @@ func (d *WaitStmt) String() string {
 }
 
 func (w *WaitStmt) PrettyPrint(cp CodePrinter) {
-	cp.Println(w.String())
+	cp.Print(w.String())
 }
 
 // ExecutionMode determines sequential or parallel execution.
@@ -193,7 +194,6 @@ func (l *LogStmt) PrettyPrint(cp CodePrinter) {
 		}
 		arg.PrettyPrint(cp)
 	}
-	cp.Println("")
 }
 
 // ExpectStmt represents `targetMetric operator threshold;` (e.g., `result.P99 < 100ms;`)
@@ -246,7 +246,7 @@ func (s *SwitchStmt) PrettyPrint(cp CodePrinter) {
 		cp.Println("")
 	}
 	cp.Unindent(1)
-	cp.Println("}")
+	cp.Print("}")
 }
 
 // CaseStmt represents a single case within a SwitchStmt
