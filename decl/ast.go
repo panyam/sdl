@@ -32,10 +32,9 @@ type Node interface {
 // NodeInfo embeddable struct for position tracking.
 type NodeInfo struct{ StartPos, StopPos Location }
 
-func (n *NodeInfo) Pos() Location  { return n.StartPos }
-func (n *NodeInfo) End() Location  { return n.StopPos }
-func (n *NodeInfo) String() string { return "{Node}" } // Default stringer
-func (n *NodeInfo) stmtNode()      {}
+func (n *NodeInfo) Pos() Location { return n.StartPos }
+func (n *NodeInfo) End() Location { return n.StopPos }
+func (n *NodeInfo) stmtNode()     {}
 
 // --- Top Level declarations ---
 

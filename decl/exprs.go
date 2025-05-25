@@ -24,10 +24,6 @@ type ExprBase struct {
 	inferredType *Type
 }
 
-func (e *ExprBase) PrettyPrint(cp CodePrinter) {
-	cp.Print(e.String())
-}
-
 func (e *ExprBase) SetInferredType(t *Type) {
 	e.inferredType = t
 }
@@ -53,10 +49,12 @@ type TupleExpr struct {
 	Children []Expr
 }
 
-func (b *TupleExpr) exprNode() {}
 func (b *TupleExpr) String() string {
 	// Basic, doesn't handle precedence for parentheses
 	return fmt.Sprintf("(%s)", strings.Join(gfn.Map(b.Children, func(e Expr) string { return e.String() }), ", "))
+}
+func (e *TupleExpr) PrettyPrint(cp CodePrinter) {
+	cp.Print(e.String())
 }
 
 // --- Expressions ---
@@ -68,7 +66,6 @@ type BinaryExpr struct {
 	Right    Expr
 }
 
-func (b *BinaryExpr) exprNode() {}
 func (b *BinaryExpr) String() string {
 	leftStr := "nil"
 	if b.Left != nil {
@@ -80,6 +77,9 @@ func (b *BinaryExpr) String() string {
 	}
 	return fmt.Sprintf("(%s %s %s)", leftStr, b.Operator, rightStr)
 }
+func (e *BinaryExpr) PrettyPrint(cp CodePrinter) {
+	cp.Print(e.String())
+}
 
 // UnaryExpr represents `operator operand`
 type UnaryExpr struct {
@@ -88,8 +88,10 @@ type UnaryExpr struct {
 	Right    Expr
 }
 
-func (u *UnaryExpr) exprNode()      {}
-func (u *UnaryExpr) String() string { return fmt.Sprintf("(%s%s)", u.Operator, u.Right) }
+func (u *UnaryExpr) String() string { return fmt.Sprintf("(%s %s)", u.Operator, u.Right) }
+func (e *UnaryExpr) PrettyPrint(cp CodePrinter) {
+	cp.Print(e.String())
+}
 
 // LiteralExpr represents literal values
 type LiteralExpr struct {
@@ -100,9 +102,11 @@ type LiteralExpr struct {
 	// NumericValue float64
 }
 
-func (l *LiteralExpr) exprNode() {}
 func (l *LiteralExpr) String() string {
 	return l.Value.String()
+}
+func (l *LiteralExpr) PrettyPrint(cp CodePrinter) {
+	cp.Print(l.String())
 }
 
 // IdentifierExpr represents variable or function names
@@ -111,9 +115,11 @@ type IdentifierExpr struct {
 	Name string
 }
 
-func (i *IdentifierExpr) exprNode()           {}
 func (i *IdentifierExpr) systemBodyItemNode() {} // Allow bare identifier? Maybe not needed.
 func (i *IdentifierExpr) String() string      { return i.Name }
+func (e *IdentifierExpr) PrettyPrint(cp CodePrinter) {
+	cp.Print(e.String())
+}
 
 // MemberAccessExpr represents `receiver.member` (accessing parameters/fields)
 type MemberAccessExpr struct {
@@ -122,8 +128,10 @@ type MemberAccessExpr struct {
 	Member   *IdentifierExpr
 }
 
-func (m *MemberAccessExpr) exprNode()      {}
 func (m *MemberAccessExpr) String() string { return fmt.Sprintf("%s.%s", m.Receiver, m.Member) }
+func (e *MemberAccessExpr) PrettyPrint(cp CodePrinter) {
+	cp.Print(e.String())
+}
 
 // CallExpr represents `function(arg1, arg2, ...)` (user funcs, component methods, built-ins)
 type CallExpr struct {
@@ -132,13 +140,15 @@ type CallExpr struct {
 	Args     []Expr // Argument expressions
 }
 
-func (c *CallExpr) exprNode() {}
 func (c *CallExpr) String() string {
 	argsStr := []string{}
 	for _, arg := range c.Args {
 		argsStr = append(argsStr, arg.String())
 	}
 	return fmt.Sprintf("%s(%s)", c.Function, strings.Join(argsStr, ", "))
+}
+func (e *CallExpr) PrettyPrint(cp CodePrinter) {
+	cp.Print(e.String())
 }
 
 // DistributeExpr represents the probabilistic choice expression/statement
@@ -149,9 +159,20 @@ type DistributeExpr struct {
 	Default   Expr // default can only exist if TotalProb is given
 }
 
-func (d *DistributeExpr) exprNode()      {} // Can be expression
-func (d *DistributeExpr) stmtNode()      {} // Can be statement
-func (d *DistributeExpr) String() string { return "distribute {...}" }
+func (d *DistributeExpr) stmtNode() {} // Can be statement
+func (d *DistributeExpr) String() string {
+	out := "dist {"
+	for _, cse := range d.Cases {
+		out += "\n" + cse.String()
+	}
+	if d.Default != nil {
+		out += "\n" + d.Default.String()
+	}
+	return out
+}
+func (e *DistributeExpr) PrettyPrint(cp CodePrinter) {
+	cp.Print(e.String())
+}
 
 // SampleExpr represents `delay durationExpr;`
 type SampleExpr struct {
@@ -160,8 +181,10 @@ type SampleExpr struct {
 }
 
 func (d *SampleExpr) stmtNode()      {}
-func (d *SampleExpr) exprNode()      {}
 func (d *SampleExpr) String() string { return fmt.Sprintf("sample %s;", d.FromExpr) }
+func (e *SampleExpr) PrettyPrint(cp CodePrinter) {
+	cp.Print(e.String())
+}
 
 // CaseExpr represents a single case within a SwitchStmt
 type CaseExpr struct {
@@ -170,5 +193,7 @@ type CaseExpr struct {
 	Body      Expr
 }
 
-func (c *CaseExpr) exprNode()      {}
-func (c *CaseExpr) String() string { return fmt.Sprintf("case %s: %s", c.Condition, c.Body) }
+func (c *CaseExpr) String() string { return fmt.Sprintf("case %s => %s", c.Condition, c.Body) }
+func (e *CaseExpr) PrettyPrint(cp CodePrinter) {
+	cp.Print(e.String())
+}

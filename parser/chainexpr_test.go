@@ -3,6 +3,7 @@ package parser
 import (
 	"testing"
 
+	"github.com/panyam/sdl/decl"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -15,7 +16,8 @@ type MockExpr struct {
 	ID string // To identify the mock expression
 }
 
-func (me *MockExpr) String() string { return me.ID }
+func (me *MockExpr) String() string                  { return me.ID }
+func (me *MockExpr) PrettyPrint(cp decl.CodePrinter) {}
 
 // Helper to create a MockExpr with NodeInfo
 func newMockExpr(id string, start, end int) *MockExpr {

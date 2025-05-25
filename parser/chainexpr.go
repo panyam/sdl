@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	gfn "github.com/panyam/goutils/fn"
+	"github.com/panyam/sdl/decl"
 )
 
 type PrecedenceInfo struct {
@@ -15,6 +16,11 @@ type PrecedenceInfo struct {
 func (c *ChainedExpr) String() string {
 	// Basic, doesn't handle precedence for parentheses
 	return fmt.Sprintf("(%s)", strings.Join(gfn.Map(c.Children, func(e Expr) string { return e.String() }), ", "))
+}
+
+func (e *ChainedExpr) PrettyPrint(cp decl.CodePrinter) {
+	panic("Should not be pretty printing this")
+	// cp.Print(e.String())
 }
 
 // Associativity (assuming these are defined in the same package or accessible)
