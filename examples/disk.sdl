@@ -28,17 +28,17 @@ component Disk {
   }
 
   param WriteOutcomes = dist {
-    99999 => (true, WriteSuccessLatencies)
-    1 => (false, WriteFailureLatencies)
+    99999 => (true, WriteLatencies)
+    1 => (false, WriteLatencies)
   }
 
-  method Read() {
+  method Read() Bool {
     let outcome, latency = sample ReadOutcomes
     delay sample latency
     return outcome
   }
 
-  method Write() {
+  method Write() Bool {
     let outcome, latency = sample WriteOutcomes
     delay sample latency
     return outcome

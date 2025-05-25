@@ -698,7 +698,6 @@ SampleExpr:
 TotalClauseOpt: /* empty */ { $$=nil } | Expression { $$=$1 };
 
 TupleExpr: LPAREN CommaSepExprList COMMA Expression RPAREN {
-         log.Println("Parsed CSEL: ", $2, $4)
           $$ = &TupleExpr{Children: append($2, $4)}
 } ;
 

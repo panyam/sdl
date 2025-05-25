@@ -136,49 +136,55 @@ type ComponentDecl struct {
 	// Resolved values so we can work with processed/loaded values instead of resolving
 	// Identify expressions etc
 	resolved bool
-	params   map[string]*ParamDecl  // Processed parameters map[name]*ParamDecl
-	uses     map[string]*UsesDecl   // Processed dependencies map[local_name]*UsesDecl
-	methods  map[string]*MethodDecl // Processed methods map[method_name]*MethodDef
+
+	// Parameters and Dependencies are in the order in which they appear.  This is important unlike
+	// methods parameters can only reer to other parameters if they have been defined first.
+	paramList []*ParamDecl
+	usesList  []*UsesDecl
+
+	params  map[string]*ParamDecl  // Processed parameters map[name]*ParamDecl
+	uses    map[string]*UsesDecl   // Processed dependencies map[local_name]*UsesDecl
+	methods map[string]*MethodDecl // Processed methods map[method_name]*MethodDef
 }
 
-func (d *ComponentDecl) GetParams() (out map[string]*ParamDecl, err error) {
+func (d *ComponentDecl) Params() (out []*ParamDecl, err error) {
 	err = d.Resolve()
-	out = d.params
+	out = d.paramList
 	return
 }
 
 func (d *ComponentDecl) GetParam(name string) (out *ParamDecl, err error) {
-	params, err := d.GetParams()
+	err = d.Resolve()
 	if err == nil {
-		out = params[name]
+		out = d.params[name]
 	}
 	return
 }
 
-func (d *ComponentDecl) GetMethods() (out map[string]*MethodDecl, err error) {
+func (d *ComponentDecl) Methods() (out map[string]*MethodDecl, err error) {
 	err = d.Resolve()
 	out = d.methods
 	return
 }
 
 func (d *ComponentDecl) GetMethod(name string) (out *MethodDecl, err error) {
-	methods, err := d.GetMethods()
+	methods, err := d.Methods()
 	if err == nil {
 		out = methods[name]
 	}
 	return
 }
 
-func (d *ComponentDecl) GetDependencies() (out map[string]*UsesDecl, err error) {
+func (d *ComponentDecl) Dependencies() (out []*UsesDecl, err error) {
 	err = d.Resolve()
-	out = d.uses
+	out = d.usesList
 	return
 }
 
 func (d *ComponentDecl) GetDependency(name string) (out *UsesDecl, err error) {
-	dependencies, err := d.GetDependencies()
+	err = d.Resolve()
 	if err == nil {
-		out = dependencies[name]
+		out = d.uses[name]
 	}
 	return
 }
@@ -200,12 +206,14 @@ func (d *ComponentDecl) Resolve() error {
 				return fmt.Errorf("duplicate parameter '%s'", paramName) // Error relative to component name handled by caller
 			}
 			d.params[paramName] = bodyNode
+			d.paramList = append(d.paramList, bodyNode)
 		case *UsesDecl:
 			usesName := bodyNode.NameNode.Name
 			if _, exists := d.uses[usesName]; exists {
 				return fmt.Errorf("duplicate uses declaration '%s'", usesName)
 			}
 			d.uses[usesName] = bodyNode
+			d.usesList = append(d.usesList, bodyNode)
 		case *MethodDecl:
 			methodName := bodyNode.NameNode.Name
 			if _, exists := d.methods[methodName]; exists {

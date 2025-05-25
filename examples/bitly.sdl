@@ -1,82 +1,10 @@
 
 import NativeDisk, HttpStatusCode, HashIndex from "./common.sdl" ;
-
-// We could use a custom disk or a NativeDisk
-component Disk {
-  // How about *just* latencies
-  // Option 1 - Define them purely as a single dimentional entities
-  param ReadSuccessLatencies = dist {
-     999 => 10us
-     9 => 50us
-     1 => 10ms
-  }
-
-  param ReadFailureLatencies = dist {
-     999 => 10us
-     1 => 100us
-  }
-
-  // Just a duration of latencies
-  param WriteLatencies = dist 1000 {
-     999 => 10us
-     9 => 50us
-     1 => 10ms
-  }
-
-  // 5 9s of read success!
-  param ReadOutcomes = dist {
-    99999 => (true, ReadSuccessLatencies)
-    1 => (false, ReadFailureLatencies)
-  }
-
-  param WriteOutcomes = dist {
-    99999 => (true, WriteSuccessLatencies)
-    1 => (false, WriteFailureLatencies)
-  }
-
-  method Read() {
-    let outcome, latency = sample ReadOutcomes
-    delay sample latency
-    return outcome
-  }
-
-  method Write() {
-    let outcome, latency = sample WriteOutcomes
-    delay sample latency
-    return outcome
-  }
-}
+import Disk from "./disk.sdl"
+import Database from "./db.sdl"
 
 enum DBResult { FOUND, NOT_FOUND, INTERNAL_ERROR }
 enum DuplicateCheck { FOUND, NOTFOUND, ERROR }
-
-component Database {
-    // The DB index for mapping short codes -> urls
-    uses ByShortCode HashIndex
-    param RetryCount = 3
-
-    // Tries to get an entry by short URL
-    method GetByShortId() Bool {
-        return self.HashIndex.Find()
-    }
-
-    // Adds a new short url into the system
-    method PutShortUrl() Bool {
-        return self.HashIndex.Insert()
-    }
-
-    // When generating new IDs use this to check for collissions
-    // Simplistic model - better to use transactions
-    method CheckDuplicateShortId() DBResult {
-      // Reading the DB also incurs a delay
-      if not self.HashIndex.Read() {
-        // Had a database error so fail
-        return ERROR
-      }
-
-      return sample dist { 99999 => FOUND, 1 => NOTFOUND}
-    }
-}
 
 component AppServer {
   // Our main DB
@@ -89,24 +17,24 @@ component AppServer {
       if not foundDuplicate {
         // Success so try saving a new short ID
         if self.HashIndex.Write() {
-          return Http.StatusOk
+          return HttpStatusCode.StatusOk
         } else {
-          return Http.StatusInternalError
+          return HttpStatusCode.StatusInternalError
         }
       }
     }
 
     // All retries elapsed - too many conflicts
-    return Http.StatusConflict
+    return HttpStatusCode.StatusConflict
   }
 
   method Redirect() HttpStatusCode {
     if self.DB.GetByShortId() {
-      return Http.StatusOk // or may be 302
+      return HttpStatusCode.StatusOk // or may be 302
     }
 
     // Simplified - can model more errors
-    return Http.StatusInternalError
+    return HttpStatusCode.StatusInternalError
   }
 }
 
@@ -119,7 +47,7 @@ system Bitly {
 
 component AppServerWithCache {
   // Our main DB
-  uses DB Database
+  uses db Database
   uses cache Cache
 
   method Shorten() HttpStatusCode {
@@ -130,29 +58,29 @@ component AppServerWithCache {
         // Success so try saving a new short ID
         if self.HashIndex.Write() {
           // .... Write to cache as well
-          return Http.StatusOk
+          return HttpStatusCode.StatusOk
         } else {
-          return Http.StatusInternalError
+          return HttpStatusCode.StatusInternalError
         }
       }
     }
 
     // All retries elapsed - too many conflicts
-    return Http.StatusConflict
+    return HttpStatusCode.StatusConflict
   }
 
   method Redirect() HttpStatusCode {
     // See if there is a cache hit
     if cache.Read() {
-      return Http.StatusOk // or may be 302
+      return HttpStatusCode.StatusOk // or may be 302
     }
 
     if self.DB.GetByShortId() {
-      return Http.StatusOk // or may be 302
+      return HttpStatusCode.StatusOk // or may be 302
     }
 
     // Simplified - can model more errors
-    return Http.StatusInternalError
+    return HttpStatusCode.StatusInternalError
   }
 }
 

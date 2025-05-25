@@ -301,7 +301,7 @@ func (l *Loader) validateFileDecl(fs *FileStatus, fileDecl *decl.FileDecl, visit
 
 	// Now, call InferTypesForFile with the populated scope
 	// Assuming decl.InferTypesForFile signature: func(file *decl.FileDecl, typeEnv *decl.Env[decl.Node]) []error
-	PP(fileDecl)
+	// PP(fileDecl)
 	inferenceErrors := decl.InferTypesForFile(fileDecl, currentScope)
 	if len(inferenceErrors) > 0 {
 		fs.AddErrors(inferenceErrors...)

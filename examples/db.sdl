@@ -1,4 +1,6 @@
 
+import HashIndex from "./common.sdl" ;
+
 enum DBResult { FOUND, NOT_FOUND, INTERNAL_ERROR }
 enum DuplicateCheck { FOUND, NOTFOUND, ERROR }
 
@@ -9,23 +11,28 @@ component Database {
 
     // Tries to get an entry by short URL
     method GetByShortId() Bool {
-        return self.HashIndex.Find()
+        return self.ByShortCode.Find()
     }
 
     // Adds a new short url into the system
     method PutShortUrl() Bool {
-        return self.HashIndex.Insert()
+        return self.ByShortCode.Insert()
+    }
+
+    method ReadAndWrite() Bool {
+        self.GetByShortId()
+        self.PutShortUrl()
     }
 
     // When generating new IDs use this to check for collissions
     // Simplistic model - better to use transactions
     method CheckDuplicateShortId() DBResult {
       // Reading the DB also incurs a delay
-      if not self.HashIndex.Read() {
+      if not self.ByShortCode.Find() {
         // Had a database error so fail
-        return ERROR
+        return DBResult.INTERNAL_ERROR
       }
 
-      return sample dist { 99999 => FOUND, 1 => NOTFOUND}
+      return sample dist { 99999 => DBResult.FOUND, 1 => DBResult.NOT_FOUND}
     }
 }

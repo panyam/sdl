@@ -67,10 +67,29 @@ func InferTypesForFile(file *FileDecl, rootEnv *Env[Node]) []error {
 }
 
 func InferTypesForComponent(file *FileDecl, rootScope *TypeScope, compDecl *ComponentDecl) (errors []error) {
-	for _, paramDecl := range compDecl.params { // Assuming direct field access or appropriate getter
+	params, err := compDecl.Params()
+	if err != nil {
+		errors = append(errors, fmt.Errorf("pos %s: error getting parameters for component '%s': %w", compDecl.Pos().LineColStr(), compDecl.NameNode.Name, err))
+		return
+	}
+
+	for _, paramDecl := range params { // Assuming direct field access or appropriate getter
 		errs := InferTypesForParamDecl(file, rootScope, compDecl, paramDecl)
 		errors = append(errors, errs...)
 	}
+
+	// Now look at "uses"
+	/*
+		usesDecls, err := compDecl.Dependencies()
+		if err != nil {
+			errors = append(errors, fmt.Errorf("pos %s: error getting parameters for component '%s': %w", compDecl.Pos().LineColStr(), compDecl.NameNode.Name, err))
+			return
+		}
+		for _, usesDecl := range usesDecls { // Assuming direct field access or appropriate getter
+			errs := InferTypesForUsesDecl(file, rootScope, compDecl, usesDecl)
+			errors = append(errors, errs...)
+		}
+	*/
 
 	// Method signatures
 	for _, method := range compDecl.methods { // Assuming direct field access or appropriate getter
@@ -82,6 +101,13 @@ func InferTypesForComponent(file *FileDecl, rootScope *TypeScope, compDecl *Comp
 
 func InferTypesForParamDecl(file *FileDecl, rootScope *TypeScope, compDecl *ComponentDecl, paramDecl *ParamDecl) (errors []error) {
 	var resolvedParamType *Type
+
+	// Ensure that if all succeeds the type for the param is set in the root scope
+	defer func() {
+		if len(errors) == 0 && resolvedParamType != nil {
+			rootScope.Set(paramDecl.Name.Name, paramDecl.Name, resolvedParamType) // Register the parameter type in the scope
+		}
+	}()
 
 	if paramDecl.Type != nil { // Type is explicitly declared
 		resolvedParamType = paramDecl.Type.TypeUsingScope(rootScope)
@@ -406,7 +432,7 @@ func InferUnaryExprType(expr *UnaryExpr, scope *TypeScope) (*Type, error) {
 	}
 
 	switch expr.Operator {
-	case "!":
+	case "!", "not":
 		if !rightType.Equals(BoolType) {
 			return nil, fmt.Errorf("pos %s: type mismatch for operator '!': requires boolean, got %s",
 				expr.Pos().LineColStr(), rightType.String())
