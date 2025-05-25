@@ -22,6 +22,16 @@ type BlockStmt struct {
 }
 
 func (b *BlockStmt) String() string { return "{ ...statements... }" } // Simplified
+func (b *BlockStmt) PrettyPrint(cp CodePrinter) {
+	cp.Println("{")
+	cp.Indent(1)
+	for _, stmt := range b.Statements {
+		stmt.PrettyPrint(cp)
+		cp.Println("")
+	}
+	cp.Unindent(1)
+	cp.Println("}")
+}
 
 // ForStmt represents `for expression { stmt }`
 type ForStmt struct {
@@ -35,6 +45,16 @@ func (l *ForStmt) String() string {
 	return fmt.Sprintf("for %s { %s }", l.Condition.String(), l.Body.String())
 }
 
+func (f *ForStmt) PrettyPrint(cp CodePrinter) {
+	cp.Print("for ")
+	f.Condition.PrettyPrint(cp)
+	cp.Println(" {")
+	cp.Indent(1)
+	f.Body.PrettyPrint(cp)
+	cp.Unindent(1)
+	cp.Println("}")
+}
+
 // LetStmt represents `let var = expr;`
 type LetStmt struct {
 	NodeInfo
@@ -43,8 +63,13 @@ type LetStmt struct {
 }
 
 func (l *LetStmt) systemBodyItemNode() {} // Allow let at system level
+
 func (l *LetStmt) String() string {
 	return fmt.Sprintf("let %s = %s;", strings.Join(gfn.Map(l.Variables, func(i *IdentifierExpr) string { return i.String() }), ", "), l.Value)
+}
+
+func (l *LetStmt) PrettyPrint(cp CodePrinter) {
+	cp.Println(l.String())
 }
 
 // ExprStmt represents an expression used as a statement (e.g., a call)
@@ -55,6 +80,10 @@ type ExprStmt struct {
 
 func (e *ExprStmt) String() string { return e.Expression.String() + ";" }
 
+func (e *ExprStmt) PrettyPrint(cp CodePrinter) {
+	cp.Println(e.String())
+}
+
 // ReturnStmt represents `return expr;`
 type ReturnStmt struct {
 	NodeInfo
@@ -62,6 +91,9 @@ type ReturnStmt struct {
 }
 
 func (r *ReturnStmt) String() string { return fmt.Sprintf("return %s;", r.ReturnValue) }
+func (r *ReturnStmt) PrettyPrint(cp CodePrinter) {
+	cp.Println(r.String())
+}
 
 // IfStmt represents `if cond { ... } else { ... }`
 type IfStmt struct {
@@ -72,6 +104,23 @@ type IfStmt struct {
 }
 
 func (i *IfStmt) String() string { return fmt.Sprintf("if (%s) { ... } else { ... }", i.Condition) }
+func (i *IfStmt) PrettyPrint(cp CodePrinter) {
+	cp.Print("if ")
+	i.Condition.PrettyPrint(cp)
+	cp.Println(" {")
+	cp.Indent(1)
+	i.Then.PrettyPrint(cp)
+	cp.Unindent(1)
+	if i.Else == nil {
+		cp.Println("}")
+	} else {
+		cp.Println("} else {")
+		cp.Indent(1)
+		i.Else.PrettyPrint(cp)
+		cp.Unindent(1)
+		cp.Println("}")
+	}
+}
 
 // DefaultCase represents `default => { block }`
 type DefaultCase struct {
@@ -89,6 +138,12 @@ type DelayStmt struct {
 
 func (d *DelayStmt) String() string { return fmt.Sprintf("delay %s;", d.Duration) }
 
+func (d *DelayStmt) PrettyPrint(cp CodePrinter) {
+	cp.Print("delay ")
+	d.Duration.PrettyPrint(cp)
+	cp.Println("")
+}
+
 // WaitStmt represents `delay durationExpr;`
 type WaitStmt struct {
 	NodeInfo
@@ -97,6 +152,10 @@ type WaitStmt struct {
 
 func (d *WaitStmt) String() string {
 	return fmt.Sprintf("wait %s;", strings.Join(gfn.Map(d.Idents, func(i *IdentifierExpr) string { return i.Name }), ", "))
+}
+
+func (w *WaitStmt) PrettyPrint(cp CodePrinter) {
+	cp.Println(w.String())
 }
 
 // ExecutionMode determines sequential or parallel execution.
@@ -126,6 +185,17 @@ type LogStmt struct {
 
 func (l *LogStmt) String() string { return "log ... ;" }
 
+func (l *LogStmt) PrettyPrint(cp CodePrinter) {
+	cp.Print("log ")
+	for idx, arg := range l.Args {
+		if idx > 0 {
+			cp.Print(", ")
+		}
+		arg.PrettyPrint(cp)
+	}
+	cp.Println("")
+}
+
 // ExpectStmt represents `targetMetric operator threshold;` (e.g., `result.P99 < 100ms;`)
 type ExpectStmt struct {
 	NodeInfo
@@ -148,6 +218,9 @@ type AssignmentStmt struct {
 }
 
 func (p *AssignmentStmt) String() string { return fmt.Sprintf("%s = %s", p.Var.Name, p.Value) }
+func (p *AssignmentStmt) PrettyPrint(cp CodePrinter) {
+	cp.Print(p.String())
+}
 
 // SwitchStmt represents the probabilistic choice expression/statement
 type SwitchStmt struct {
@@ -157,8 +230,24 @@ type SwitchStmt struct {
 	Default Stmt // default can only exist if TotalProb is given
 }
 
-func (d *SwitchStmt) exprNode()      {} // Can be expression
-func (d *SwitchStmt) String() string { return "distribute {...}" }
+func (s *SwitchStmt) exprNode()      {} // Can be expression
+func (s *SwitchStmt) String() string { return "switch {...}" }
+func (s *SwitchStmt) PrettyPrint(cp CodePrinter) {
+	cp.Print("switch ")
+	s.Expr.PrettyPrint(cp)
+	cp.Println(" {")
+	cp.Indent(1)
+	for _, cse := range s.Cases {
+		cse.PrettyPrint(cp)
+		cp.Println("")
+	}
+	if s.Default != nil {
+		s.Default.PrettyPrint(cp)
+		cp.Println("")
+	}
+	cp.Unindent(1)
+	cp.Println("}")
+}
 
 // CaseStmt represents a single case within a SwitchStmt
 type CaseStmt struct {
@@ -169,3 +258,9 @@ type CaseStmt struct {
 
 func (c *CaseStmt) exprNode()      {}
 func (c *CaseStmt) String() string { return fmt.Sprintf("case %s: %s", c.Condition, c.Body) }
+func (c *CaseStmt) PrettyPrint(cp CodePrinter) {
+	cp.Print("case ")
+	c.Condition.PrettyPrint(cp)
+	cp.Print(" => ")
+	c.Body.PrettyPrint(cp)
+}

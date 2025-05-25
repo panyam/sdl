@@ -46,6 +46,7 @@ This package forms the fundamental layer of the SDL library. It provides the gen
     *   `NewDistributionFromPercentiles`: Creates `Outcomes[AccessResult]` from latency percentiles (P0, P50, P99, etc.), failure rate, and failure latency profile.
 
 9.  **Analysis Primitive (`analyzer.go`):**
+    *   Note this feature is disabled for now and wont be available in the parser, typechecker or in the evaluator.
     *   **Stateless `Analyze` function:** Takes a simulation function `func() *Outcomes[V]`, calculates standard metrics, checks against `Expectation`s (e.g., `ExpectP99(LT, 0.100)`), and returns a `AnalysisResult[V]` struct.
     *   `AnalysisResult[V]`: Holds raw outcomes, calculated metrics, expectation check results, and helper methods (`Assert`, `AssertFailure`, `LogResults`).
     *   Provides a standardized way to execute simulations defined via the **Go API** and assert performance characteristics, used heavily in tests across the project.

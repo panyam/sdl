@@ -11,6 +11,7 @@ import (
 type Expr interface {
 	Node
 	exprNode() // Marker method for expressions
+	PrettyPrint(cp CodePrinter)
 	InferredType() *Type
 	DeclaredType() *Type
 	SetInferredType(*Type)
@@ -21,6 +22,10 @@ type ExprBase struct {
 	NodeInfo
 	declaredType *Type
 	inferredType *Type
+}
+
+func (e *ExprBase) PrettyPrint(cp CodePrinter) {
+	cp.Print(e.String())
 }
 
 func (e *ExprBase) SetInferredType(t *Type) {

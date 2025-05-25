@@ -5,6 +5,179 @@ import (
 	// "log" // Uncomment for debugging
 )
 
+// InferTypesForFile is the main entry point.
+// It now takes the rootEnv populated by the loader.
+func InferTypesForFile(file *FileDecl, rootEnv *Env[Node]) []error {
+	var errors []error
+	if file == nil {
+		errors = append(errors, fmt.Errorf("cannot infer types for nil FileDecl"))
+		return errors
+	}
+
+	if !file.resolved { // Use the 'resolved' field
+		if err := file.Resolve(); err != nil {
+			errors = append(errors, fmt.Errorf("error resolving file before type inference (pos %s): %w", file.Pos().LineColStr(), err))
+			return errors
+		}
+	}
+
+	rootScope := NewRootTypeScope(rootEnv)
+
+	components, err := file.GetComponents()
+	if err != nil {
+		errors = append(errors, fmt.Errorf("error getting components for inference (pos %s): %w", file.Pos().LineColStr(), err))
+		return errors
+	}
+	systems, err := file.GetSystems()
+	if err != nil {
+		errors = append(errors, fmt.Errorf("error getting systems for inference (pos %s): %w", file.Pos().LineColStr(), err))
+		return errors
+	}
+
+	// First pass: Resolve TypeDecls in component parameter defaults, method parameters, and method return types.
+	for _, compDecl := range components {
+		// Parameter defaults
+		errs := InferTypesForComponent(file, rootScope, compDecl)
+		errors = append(errors, errs...)
+	}
+
+	// Second pass: Infer types for component method bodies (now that signatures are resolved)
+	for _, compDecl := range components {
+		for _, method := range compDecl.methods {
+			// methodScope needs to see 'self', method params, component params/uses, and globals/imports via rootEnv
+			// Parameters are added to scope implicitly by TypeScope.Get looking at currentMethod.
+			// 'uses' are also resolved via 'self' access within TypeScope.Get if needed.
+			if method.Body != nil {
+				methodScope := rootScope.Push(compDecl, method)
+				blockErrs := InferTypesForBlockStmt(method.Body, methodScope)
+				errors = append(errors, blockErrs...)
+			}
+		}
+	}
+
+	// Third pass: Infer types for system declarations
+	for _, sysDecl := range systems {
+		systemScope := rootScope.Push(nil, nil) // System scope can see globals/imports from rootEnv
+		for _, item := range sysDecl.Body {
+			itemErrs := InferTypesForSystemDeclBodyItem(item, systemScope)
+			errors = append(errors, itemErrs...)
+		}
+	}
+	return errors
+}
+
+func InferTypesForComponent(file *FileDecl, rootScope *TypeScope, compDecl *ComponentDecl) (errors []error) {
+	for _, paramDecl := range compDecl.params { // Assuming direct field access or appropriate getter
+		errs := InferTypesForParamDecl(file, rootScope, compDecl, paramDecl)
+		errors = append(errors, errs...)
+	}
+
+	// Method signatures
+	for _, method := range compDecl.methods { // Assuming direct field access or appropriate getter
+		errs := InferTypesForMethodSignature(file, rootScope, compDecl, method)
+		errors = append(errors, errs...)
+	}
+	return
+}
+
+func InferTypesForParamDecl(file *FileDecl, rootScope *TypeScope, compDecl *ComponentDecl, paramDecl *ParamDecl) (errors []error) {
+	var resolvedParamType *Type
+
+	if paramDecl.Type != nil { // Type is explicitly declared
+		resolvedParamType = paramDecl.Type.TypeUsingScope(rootScope)
+		if resolvedParamType == nil {
+			errors = append(errors, fmt.Errorf("pos %s: unresolved type '%s' for parameter '%s' in component '%s'", paramDecl.Type.Pos().LineColStr(), paramDecl.Type.Name, paramDecl.Name.Name, compDecl.NameNode.Name))
+			// Even if unresolved, continue to check default value if present, but this param is problematic.
+		} else {
+			paramDecl.Type.SetResolvedType(resolvedParamType)
+		}
+	} else if paramDecl.DefaultValue != nil { // No explicit type, but has default value
+		// Infer type from default value
+		defaultValueType, err_dv := InferExprType(paramDecl.DefaultValue, rootScope)
+		if err_dv != nil {
+			errors = append(errors, fmt.Errorf("pos %s: error inferring type from default value for parameter '%s' in component '%s': %w", paramDecl.DefaultValue.Pos().LineColStr(), paramDecl.Name.Name, compDecl.NameNode.Name, err_dv))
+		} else if defaultValueType != nil {
+			resolvedParamType = defaultValueType
+			// We can create a new TypeDecl node here representing the inferred type,
+			// or simply store the *Type on the paramDecl if it has a field for that.
+			// For now, let's assume we want to ensure paramDecl.Type is populated if possible.
+			// This is a bit tricky as TypeDecl usually comes from parsing.
+			// A simpler approach for now: the effective type is known (defaultValueType).
+			// If the paramDecl.Type field *must* be a TypeDecl, we might need to synthesize one.
+			// Let's assume for now that the primary goal is that `resolvedParamType` is set.
+			// And if we needed to set it back on paramDecl.Type, we'd need a way to create a TypeDecl from a Type.
+			// To keep it simple and consistent with SetResolvedType on TypeDecl:
+			// We could add a field `InferredOrDeclaredType *Type` to ParamDecl itself.
+			// Or, if paramDecl.Type *must* be non-nil for later stages, this is an issue.
+
+			// For now, we have `resolvedParamType`. If `paramDecl.Type` was nil, it remains nil,
+			// but the inference process now knows the type from the default value.
+			// Let's ensure the IdentifierExpr for the param name gets typed.
+			paramDecl.Name.SetInferredType(resolvedParamType)
+		} else {
+			// Default value's type could not be inferred.
+			errors = append(errors, fmt.Errorf("pos %s: could not infer type from default value for parameter '%s' in component '%s'", paramDecl.DefaultValue.Pos().LineColStr(), paramDecl.Name.Name, compDecl.NameNode.Name))
+		}
+	} else { // No explicit type AND no default value
+		errors = append(errors, fmt.Errorf("pos %s: parameter '%s' in component '%s' has no type declaration and no default value", paramDecl.Pos().LineColStr(), paramDecl.Name.Name, compDecl.NameNode.Name))
+		return // Cannot proceed with this parameter
+	}
+
+	// If a default value exists, check its type against the (now hopefully resolved) parameter type.
+	if paramDecl.DefaultValue != nil {
+		defaultValueActualType, err_dv_check := InferExprType(paramDecl.DefaultValue, rootScope)
+		if err_dv_check != nil {
+			// Error already added if type inference for default value failed earlier.
+			// This is a redundant call if it already failed, but harmless.
+			// If it succeeded before but fails now, that's an issue.
+			// To avoid double error: only add if not already present from initial inference.
+			// However, InferExprType caches, so it won't re-infer.
+		} else if defaultValueActualType != nil {
+			// Now, `resolvedParamType` should hold the type of the parameter,
+			// either from its TypeDecl or inferred from the default value itself.
+			if resolvedParamType != nil { // If we have an expected type for the param
+				if !defaultValueActualType.Equals(resolvedParamType) {
+					// Allow int to float promotion for default value
+					isPromotion := defaultValueActualType.Equals(IntType) && resolvedParamType.Equals(FloatType)
+					if !isPromotion {
+						errors = append(errors, fmt.Errorf("pos %s: type mismatch for default value of parameter '%s' in component '%s': parameter type is %s, default value type is %s", paramDecl.DefaultValue.Pos().LineColStr(), paramDecl.Name.Name, compDecl.NameNode.Name, resolvedParamType.String(), defaultValueActualType.String()))
+					}
+				}
+			} else if paramDecl.Type != nil {
+				// This means paramDecl.Type was specified but couldn't be resolved earlier,
+				// yet we have a default value. This is an inconsistent state.
+				// The earlier error about unresolved type for paramDecl.Type should cover this.
+			}
+		}
+	}
+	return
+}
+
+// Infer/Check types for a method signature.  The body is not evaluated here
+func InferTypesForMethodSignature(file *FileDecl, rootScope *TypeScope, compDecl *ComponentDecl, method *MethodDecl) (errors []error) {
+	for _, param := range method.Parameters {
+		if param.Type != nil {
+			resolvedParamType := param.Type.TypeUsingScope(rootScope)
+			if resolvedParamType == nil {
+				errors = append(errors, fmt.Errorf("pos %s: unresolved type '%s' for parameter '%s' in method '%s.%s'", param.Type.Pos().LineColStr(), param.Type.Name, param.Name.Name, compDecl.NameNode.Name, method.NameNode.Name))
+			} else {
+				param.Type.SetResolvedType(resolvedParamType)
+			}
+		} else {
+			errors = append(errors, fmt.Errorf("pos %s: parameter '%s' of method '%s.%s' has no type declaration", param.Pos().LineColStr(), param.Name.Name, compDecl.NameNode.Name, method.NameNode.Name))
+		}
+	}
+	if method.ReturnType != nil {
+		resolvedReturnType := method.ReturnType.TypeUsingScope(rootScope)
+		if resolvedReturnType == nil {
+			errors = append(errors, fmt.Errorf("pos %s: unresolved return type '%s' for method '%s.%s'", method.ReturnType.Pos().LineColStr(), method.ReturnType.Name, compDecl.NameNode.Name, method.NameNode.Name))
+		} else {
+			method.ReturnType.SetResolvedType(resolvedReturnType)
+		}
+	}
+	return
+}
+
 // InferExprType recursively infers the type of an expression and sets its InferredType field.
 func InferExprType(expr Expr, scope *TypeScope) (*Type, error) {
 	if expr == nil {
@@ -547,8 +720,10 @@ func InferTypesForStmt(stmt Stmt, scope *TypeScope) []error {
 				}
 			}
 		}
-	case *ExpectStmt:
-		errors = append(errors, fmt.Errorf("pos %s: ExpectStmt found outside of an analyze block's expectations; type checking skipped here", s.Pos().LineColStr()))
+		/*
+			case *ExpectStmt:
+				errors = append(errors, fmt.Errorf("pos %s: ExpectStmt found outside of an analyze block's expectations; type checking skipped here", s.Pos().LineColStr()))
+		*/
 	default:
 		// errors = append(errors, fmt.Errorf("pos %s: type inference for statement type %T not implemented yet", stmt.Pos().LineColStr(), stmt))
 	}
@@ -727,177 +902,4 @@ func InferTypesForSystemDeclBodyItem(item SystemDeclBodyItem, systemScope *TypeS
 		// errors = append(errors, fmt.Errorf("pos %s: type inference for system body item type %T not implemented yet", item.Pos().LineColStr(), item))
 	}
 	return errors
-}
-
-// InferTypesForFile is the main entry point.
-// It now takes the rootEnv populated by the loader.
-func InferTypesForFile(file *FileDecl, rootEnv *Env[Node]) []error {
-	var errors []error
-	if file == nil {
-		errors = append(errors, fmt.Errorf("cannot infer types for nil FileDecl"))
-		return errors
-	}
-
-	if !file.resolved { // Use the 'resolved' field
-		if err := file.Resolve(); err != nil {
-			errors = append(errors, fmt.Errorf("error resolving file before type inference (pos %s): %w", file.Pos().LineColStr(), err))
-			return errors
-		}
-	}
-
-	rootScope := NewRootTypeScope(rootEnv)
-
-	components, err := file.GetComponents()
-	if err != nil {
-		errors = append(errors, fmt.Errorf("error getting components for inference (pos %s): %w", file.Pos().LineColStr(), err))
-		return errors
-	}
-	systems, err := file.GetSystems()
-	if err != nil {
-		errors = append(errors, fmt.Errorf("error getting systems for inference (pos %s): %w", file.Pos().LineColStr(), err))
-		return errors
-	}
-
-	// First pass: Resolve TypeDecls in component parameter defaults, method parameters, and method return types.
-	for _, compDecl := range components {
-		// Parameter defaults
-		errs := InferTypesForComponent(file, rootScope, compDecl)
-		errors = append(errors, errs...)
-	}
-
-	// Second pass: Infer types for component method bodies (now that signatures are resolved)
-	for _, compDecl := range components {
-		for _, method := range compDecl.methods {
-			// methodScope needs to see 'self', method params, component params/uses, and globals/imports via rootEnv
-			// Parameters are added to scope implicitly by TypeScope.Get looking at currentMethod.
-			// 'uses' are also resolved via 'self' access within TypeScope.Get if needed.
-			if method.Body != nil {
-				methodScope := rootScope.Push(compDecl, method)
-				blockErrs := InferTypesForBlockStmt(method.Body, methodScope)
-				errors = append(errors, blockErrs...)
-			}
-		}
-	}
-
-	// Third pass: Infer types for system declarations
-	for _, sysDecl := range systems {
-		systemScope := rootScope.Push(nil, nil) // System scope can see globals/imports from rootEnv
-		for _, item := range sysDecl.Body {
-			itemErrs := InferTypesForSystemDeclBodyItem(item, systemScope)
-			errors = append(errors, itemErrs...)
-		}
-	}
-	return errors
-}
-
-func InferTypesForComponent(file *FileDecl, rootScope *TypeScope, compDecl *ComponentDecl) (errors []error) {
-	for _, paramDecl := range compDecl.params { // Assuming direct field access or appropriate getter
-		errs := InferTypesForParamDecl(file, rootScope, compDecl, paramDecl)
-		errors = append(errors, errs...)
-	}
-
-	// Method signatures
-	for _, method := range compDecl.methods { // Assuming direct field access or appropriate getter
-		errs := InferTypesForMethodSignature(file, rootScope, compDecl, method)
-		errors = append(errors, errs...)
-	}
-	return
-}
-
-func InferTypesForParamDecl(file *FileDecl, rootScope *TypeScope, compDecl *ComponentDecl, paramDecl *ParamDecl) (errors []error) {
-	var resolvedParamType *Type
-
-	if paramDecl.Type != nil { // Type is explicitly declared
-		resolvedParamType = paramDecl.Type.TypeUsingScope(rootScope)
-		if resolvedParamType == nil {
-			errors = append(errors, fmt.Errorf("pos %s: unresolved type '%s' for parameter '%s' in component '%s'", paramDecl.Type.Pos().LineColStr(), paramDecl.Type.Name, paramDecl.Name.Name, compDecl.NameNode.Name))
-			// Even if unresolved, continue to check default value if present, but this param is problematic.
-		} else {
-			paramDecl.Type.SetResolvedType(resolvedParamType)
-		}
-	} else if paramDecl.DefaultValue != nil { // No explicit type, but has default value
-		// Infer type from default value
-		defaultValueType, err_dv := InferExprType(paramDecl.DefaultValue, rootScope)
-		if err_dv != nil {
-			errors = append(errors, fmt.Errorf("pos %s: error inferring type from default value for parameter '%s' in component '%s': %w", paramDecl.DefaultValue.Pos().LineColStr(), paramDecl.Name.Name, compDecl.NameNode.Name, err_dv))
-		} else if defaultValueType != nil {
-			resolvedParamType = defaultValueType
-			// We can create a new TypeDecl node here representing the inferred type,
-			// or simply store the *Type on the paramDecl if it has a field for that.
-			// For now, let's assume we want to ensure paramDecl.Type is populated if possible.
-			// This is a bit tricky as TypeDecl usually comes from parsing.
-			// A simpler approach for now: the effective type is known (defaultValueType).
-			// If the paramDecl.Type field *must* be a TypeDecl, we might need to synthesize one.
-			// Let's assume for now that the primary goal is that `resolvedParamType` is set.
-			// And if we needed to set it back on paramDecl.Type, we'd need a way to create a TypeDecl from a Type.
-			// To keep it simple and consistent with SetResolvedType on TypeDecl:
-			// We could add a field `InferredOrDeclaredType *Type` to ParamDecl itself.
-			// Or, if paramDecl.Type *must* be non-nil for later stages, this is an issue.
-
-			// For now, we have `resolvedParamType`. If `paramDecl.Type` was nil, it remains nil,
-			// but the inference process now knows the type from the default value.
-			// Let's ensure the IdentifierExpr for the param name gets typed.
-			paramDecl.Name.SetInferredType(resolvedParamType)
-
-		} else {
-			// Default value's type could not be inferred.
-			errors = append(errors, fmt.Errorf("pos %s: could not infer type from default value for parameter '%s' in component '%s'", paramDecl.DefaultValue.Pos().LineColStr(), paramDecl.Name.Name, compDecl.NameNode.Name))
-		}
-	} else { // No explicit type AND no default value
-		errors = append(errors, fmt.Errorf("pos %s: parameter '%s' in component '%s' has no type declaration and no default value", paramDecl.Pos().LineColStr(), paramDecl.Name.Name, compDecl.NameNode.Name))
-		return // Cannot proceed with this parameter
-	}
-
-	// If a default value exists, check its type against the (now hopefully resolved) parameter type.
-	if paramDecl.DefaultValue != nil {
-		defaultValueActualType, err_dv_check := InferExprType(paramDecl.DefaultValue, rootScope)
-		if err_dv_check != nil {
-			// Error already added if type inference for default value failed earlier.
-			// This is a redundant call if it already failed, but harmless.
-			// If it succeeded before but fails now, that's an issue.
-			// To avoid double error: only add if not already present from initial inference.
-			// However, InferExprType caches, so it won't re-infer.
-		} else if defaultValueActualType != nil {
-			// Now, `resolvedParamType` should hold the type of the parameter,
-			// either from its TypeDecl or inferred from the default value itself.
-			if resolvedParamType != nil { // If we have an expected type for the param
-				if !defaultValueActualType.Equals(resolvedParamType) {
-					// Allow int to float promotion for default value
-					isPromotion := defaultValueActualType.Equals(IntType) && resolvedParamType.Equals(FloatType)
-					if !isPromotion {
-						errors = append(errors, fmt.Errorf("pos %s: type mismatch for default value of parameter '%s' in component '%s': parameter type is %s, default value type is %s", paramDecl.DefaultValue.Pos().LineColStr(), paramDecl.Name.Name, compDecl.NameNode.Name, resolvedParamType.String(), defaultValueActualType.String()))
-					}
-				}
-			} else if paramDecl.Type != nil {
-				// This means paramDecl.Type was specified but couldn't be resolved earlier,
-				// yet we have a default value. This is an inconsistent state.
-				// The earlier error about unresolved type for paramDecl.Type should cover this.
-			}
-		}
-	}
-	return
-}
-
-func InferTypesForMethodSignature(file *FileDecl, rootScope *TypeScope, compDecl *ComponentDecl, method *MethodDecl) (errors []error) {
-	for _, param := range method.Parameters {
-		if param.Type != nil {
-			resolvedParamType := param.Type.TypeUsingScope(rootScope)
-			if resolvedParamType == nil {
-				errors = append(errors, fmt.Errorf("pos %s: unresolved type '%s' for parameter '%s' in method '%s.%s'", param.Type.Pos().LineColStr(), param.Type.Name, param.Name.Name, compDecl.NameNode.Name, method.NameNode.Name))
-			} else {
-				param.Type.SetResolvedType(resolvedParamType)
-			}
-		} else {
-			errors = append(errors, fmt.Errorf("pos %s: parameter '%s' of method '%s.%s' has no type declaration", param.Pos().LineColStr(), param.Name.Name, compDecl.NameNode.Name, method.NameNode.Name))
-		}
-	}
-	if method.ReturnType != nil {
-		resolvedReturnType := method.ReturnType.TypeUsingScope(rootScope)
-		if resolvedReturnType == nil {
-			errors = append(errors, fmt.Errorf("pos %s: unresolved return type '%s' for method '%s.%s'", method.ReturnType.Pos().LineColStr(), method.ReturnType.Name, compDecl.NameNode.Name, method.NameNode.Name))
-		} else {
-			method.ReturnType.SetResolvedType(resolvedReturnType)
-		}
-	}
-	return
 }

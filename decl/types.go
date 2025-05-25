@@ -91,6 +91,10 @@ func (t *Type) String() string {
 	}
 }
 
+func (t *Type) PrettyPrint(cp CodePrinter) {
+	cp.Print(t.String())
+}
+
 // Equals checks if two ValueType definitions are equivalent.
 func (v *Type) Equals(other *Type) bool {
 	if v == other { // Pointer equality check (useful for singletons)
@@ -153,6 +157,10 @@ func (t *TypeDecl) String() string {
 	} else {
 		return fmt.Sprintf("Type { %s[%s] } ", t.Name, strings.Join(gfn.Map(t.Args, func(t *TypeDecl) string { return t.String() }), ", "))
 	}
+}
+
+func (t *TypeDecl) PrettyPrint(cp CodePrinter) {
+	cp.Print(t.String())
 }
 
 func (td *TypeDecl) SetResolvedType(t *Type) {

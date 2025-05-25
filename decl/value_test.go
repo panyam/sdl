@@ -8,15 +8,15 @@ import (
 )
 
 func TestValueTypeString(t *testing.T) {
-	assert.Equal(t, "nil", NilType.String())
-	assert.Equal(t, "bool", BoolType.String())
-	assert.Equal(t, "int", IntType.String())
-	assert.Equal(t, "float", FloatType.String())
-	assert.Equal(t, "string", StrType.String())
-	assert.Equal(t, "List[int]", ListType(IntType).String())
-	assert.Equal(t, "Outcomes[string]", OutcomesType(StrType).String())
-	assert.Equal(t, "List[List[bool]]", ListType(ListType(BoolType)).String())
-	assert.Equal(t, "Outcomes[List[int]]", OutcomesType(ListType(IntType)).String())
+	assert.Equal(t, "Nil", NilType.String())
+	assert.Equal(t, "Bool", BoolType.String())
+	assert.Equal(t, "Int", IntType.String())
+	assert.Equal(t, "Float", FloatType.String())
+	assert.Equal(t, "String", StrType.String())
+	assert.Equal(t, "List[Int]", ListType(IntType).String())
+	assert.Equal(t, "Outcomes[String]", OutcomesType(StrType).String())
+	assert.Equal(t, "List[List[Bool]]", ListType(ListType(BoolType)).String())
+	assert.Equal(t, "Outcomes[List[Int]]", OutcomesType(ListType(IntType)).String())
 }
 
 func TestValueTypeEquals(t *testing.T) {
@@ -86,7 +86,7 @@ func TestRuntimeValueSet(t *testing.T) {
 	rvInt, _ := NewRuntimeValue(IntType)
 	err := rvInt.Set(123) // Correct
 	assert.NoError(t, err)
-	assert.Equal(t, 123, rvInt.Value)
+	assert.Equal(t, int64(123), rvInt.Value)
 	err = rvInt.Set("abc") // Incorrect
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "expected int, got string")

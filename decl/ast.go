@@ -24,6 +24,7 @@ type Node interface {
 	Pos() Location  // Starting position (for error reporting)
 	End() Location  // Ending position
 	String() string // String representation for debugging/printing
+	PrettyPrint(cp CodePrinter)
 }
 
 // --- Base Struct ---
@@ -44,8 +45,9 @@ type OptionsDecl struct {
 	Body *BlockStmt // Placeholder for options assignments?
 }
 
-func (o *OptionsDecl) systemBodyItemNode() {}
-func (o *OptionsDecl) String() string      { return "options { ... }" }
+func (o *OptionsDecl) systemBodyItemNode()        {}
+func (o *OptionsDecl) String() string             { return "options { ... }" }
+func (o *OptionsDecl) PrettyPrint(cp CodePrinter) { cp.Println("options { ... }") }
 
 // EnumDecl represents `enum Name { Val1, Val2, ... };`
 type EnumDecl struct {
@@ -71,6 +73,16 @@ func (e *EnumDecl) String() string {
 	return fmt.Sprintf("enum %s { %s };", e.NameNode, strings.Join(vals, ", "))
 }
 
+func (e *EnumDecl) PrettyPrint(cp CodePrinter) {
+	cp.Println("enum {")
+	WithIndent(1, cp, func(cp CodePrinter) {
+		for _, v := range e.ValuesNode {
+			cp.Printf("%s, \n", v.Name)
+		}
+	})
+	cp.Println("}")
+}
+
 // ImportDecl represents `import "path";`
 type ImportDecl struct {
 	NodeInfo
@@ -85,6 +97,10 @@ func (i *ImportDecl) String() string {
 	} else {
 		return fmt.Sprintf("import %s from '%s';", i.ImportedItem.Name, i.Path)
 	}
+}
+
+func (i *ImportDecl) PrettyPrint(cp CodePrinter) {
+	cp.Println(i.String())
 }
 
 // What the import is imported as if an alias is used
@@ -224,6 +240,16 @@ func (d *ComponentDecl) Resolve() error {
 
 func (c *ComponentDecl) String() string         { return fmt.Sprintf("component %s { ... }", c.NameNode) }
 func (c *ComponentDecl) componentBodyItemNode() {}
+func (c *ComponentDecl) PrettyPrint(cp CodePrinter) {
+	cp.Printf("component %s {", c.NameNode.Name)
+	WithIndent(1, cp, func(cp CodePrinter) {
+		for _, item := range c.Body {
+			item.PrettyPrint(cp)
+			cp.Println("")
+		}
+	})
+	cp.Printf("}")
+}
 
 // ComponentDeclBodyItem marker interface for items allowed in ComponentDecl body.
 type ComponentDeclBodyItem interface {
@@ -248,6 +274,18 @@ func (p *ParamDecl) String() string {
 	return s + ";"
 }
 
+func (p *ParamDecl) PrettyPrint(cp CodePrinter) {
+	cp.Printf("param %s ", p.Name.Name)
+	if p.Type != nil {
+		p.Type.PrettyPrint(cp)
+	}
+	if p.DefaultValue != nil {
+		cp.Print(" = ")
+		p.DefaultValue.PrettyPrint(cp)
+	}
+	cp.Println("")
+}
+
 // UsesDecl represents `uses varName: ComponentType [{ overrides }];`
 type UsesDecl struct {
 	NodeInfo
@@ -263,6 +301,10 @@ func (u *UsesDecl) UsedComponent() *ComponentUse {
 
 func (u *UsesDecl) componentBodyItemNode() {}
 func (u *UsesDecl) String() string         { return fmt.Sprintf("uses %s: %s;", u.NameNode, u.ComponentNode) }
+
+func (u *UsesDecl) PrettyPrint(cp CodePrinter) {
+	cp.Printf("uses %s %s\n", u.NameNode.Name, u.ComponentNode.Name)
+}
 
 // MethodDecl represents `method name(params) [: returnType] { body }`
 type MethodDecl struct {
@@ -284,6 +326,27 @@ func (o *MethodDecl) String() string {
 	return fmt.Sprintf("method %s(...) %s { ... }", o.Name, retType)
 }
 
+func (m *MethodDecl) PrettyPrint(cp CodePrinter) {
+	paramStr := ""
+	for idx, param := range m.Parameters {
+		if idx > 0 {
+			paramStr += ", "
+		}
+		paramStr += param.Name.Name
+		paramStr += " "
+		paramStr += param.Type.String()
+	}
+	if m.ReturnType == nil {
+		cp.Printf("method %s(%s) {\n", m.NameNode.Name, paramStr)
+	} else {
+		cp.Printf("method %s(%s) %s {\n", m.NameNode.Name, paramStr, m.ReturnType.String())
+	}
+	cp.Indent(1)
+	m.Body.PrettyPrint(cp)
+	cp.Unindent(1)
+	cp.Printf("}")
+}
+
 // --- SystemDecl Definition ---
 
 // SystemDecl represents `system Name { ... }`
@@ -294,6 +357,16 @@ type SystemDecl struct {
 }
 
 func (s *SystemDecl) String() string { return fmt.Sprintf("system %s { ... }", s.NameNode) }
+func (s *SystemDecl) PrettyPrint(cp CodePrinter) {
+	cp.Printf("system %s {\n", s.NameNode.Name)
+	WithIndent(1, cp, func(cp CodePrinter) {
+		for _, b := range s.Body {
+			b.PrettyPrint(cp)
+			cp.Println("")
+		}
+	})
+	cp.Printf("}")
+}
 
 // SystemDeclBodyItem marker interface for items allowed in SystemDecl body.
 type SystemDeclBodyItem interface {
@@ -312,6 +385,21 @@ type InstanceDecl struct {
 func (i *InstanceDecl) systemBodyItemNode() {}
 func (i *InstanceDecl) String() string {
 	return fmt.Sprintf("instance %s: %s = { ... };", i.NameNode, i.ComponentType)
+}
+
+func (i *InstanceDecl) PrettyPrint(cp CodePrinter) {
+	if i.Overrides == nil {
+		cp.Printf("use %s %s\n", i.NameNode.Name, i.ComponentType.Name)
+	} else {
+		cp.Printf("use %s %s (", i.NameNode.Name, i.ComponentType.Name)
+		for idx, o := range i.Overrides {
+			if idx > 0 {
+				cp.Print(", ")
+			}
+			o.PrettyPrint(cp)
+		}
+		cp.Println(")")
+	}
 }
 
 // AnalyzeDecl represents `analyze name = callExpr expect { ... };`
