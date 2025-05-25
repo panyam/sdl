@@ -4,6 +4,8 @@ import (
 	"log"
 	"strconv"
 	"strings"
+
+	"github.com/panyam/sdl/decl"
 )
 
 func parseDuration(numText, unit string) (out float64) {
@@ -199,8 +201,7 @@ func newTokenNode(start, end Location, text string) *TokenNode {
 	return &TokenNode{newNodeInfo(start, end), text}
 }
 
-func (tn *TokenNode) Pos() Location  { return tn.StartPos }
-func (tn *TokenNode) End() Location  { return tn.StopPos }
-func (tn *TokenNode) String() string { return tn.Text } // fmt.Sprintf("Token[%d:%d]", tn.StartPos, tn.StopPos) }
-func (tn *TokenNode) exprNode()      {}                 // If needed to satisfy Expr for some rules
-func (tn *TokenNode) stmtNode()      {}                 // If needed to satisfy Stmt
+func (tn *TokenNode) Pos() Location                   { return tn.StartPos }
+func (tn *TokenNode) End() Location                   { return tn.StopPos }
+func (tn *TokenNode) String() string                  { return tn.Text }    // fmt.Sprintf("Token[%d:%d]", tn.StartPos, tn.StopPos) }
+func (tn *TokenNode) PrettyPrint(cp decl.CodePrinter) { cp.Print(tn.Text) } // fmt.Sprintf("Token[%d:%d]", tn.StartPos, tn.StopPos) }
