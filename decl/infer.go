@@ -23,6 +23,9 @@ func (i *InferenceError) Error() string {
 }
 
 type Inference struct {
+	// Path of the file being inferred (if provided)
+	filePath string
+
 	// Inference starts the root file
 	rootFile *FileDecl
 
@@ -54,8 +57,9 @@ func (i *Inference) AddErrors(errs ...error) {
 	}
 }
 
-func NewInference(fd *FileDecl) *Inference {
+func NewInference(fp string, fd *FileDecl) *Inference {
 	return &Inference{
+		filePath: fp,
 		rootFile: fd,
 	}
 }
@@ -82,7 +86,7 @@ func (i *Inference) Eval(rootEnv *Env[Node]) bool {
 	// First pass: Resolve TypeDecls in component parameter defaults, method parameters, and method return types.
 	for _, compDecl := range components {
 		// Parameter defaults
-		i.EvalForComponent(rootScope, compDecl)
+		i.EvalForComponent(compDecl, rootScope)
 	}
 
 	// Second pass: Infer types for component method bodies (now that signatures are resolved)
@@ -100,19 +104,16 @@ func (i *Inference) Eval(rootEnv *Env[Node]) bool {
 
 	// Third pass: Infer types for system declarations
 	for _, sysDecl := range systems {
-		systemScope := rootScope.Push(nil, nil) // System scope can see globals/imports from rootEnv
-		for _, item := range sysDecl.Body {
-			i.EvalForSystemDeclBodyItem(item, systemScope)
-		}
+		i.EvalForSystemDecl(sysDecl, rootScope.Push(nil, nil)) // System scope can see globals/imports from rootEnv
 	}
 	return false
 }
 
-func (i *Inference) EvalForComponent(rootScope *TypeScope, compDecl *ComponentDecl) (success bool) {
+func (i *Inference) EvalForComponent(compDecl *ComponentDecl, rootScope *TypeScope) (success bool) {
 	params, _ := compDecl.Params()
 
 	for _, paramDecl := range params { // Assuming direct field access or appropriate getter
-		i.EvalForParamDecl(rootScope, compDecl, paramDecl)
+		i.EvalForParamDecl(paramDecl, compDecl, rootScope)
 	}
 
 	// Now look at "uses"
@@ -137,12 +138,12 @@ func (i *Inference) EvalForComponent(rootScope *TypeScope, compDecl *ComponentDe
 
 	// Method signatures
 	for _, method := range compDecl.methods { // Assuming direct field access or appropriate getter
-		i.EvalForMethodSignature(rootScope, compDecl, method)
+		i.EvalForMethodSignature(method, compDecl, rootScope)
 	}
 	return
 }
 
-func (i *Inference) EvalForParamDecl(rootScope *TypeScope, compDecl *ComponentDecl, paramDecl *ParamDecl) (success bool) {
+func (i *Inference) EvalForParamDecl(paramDecl *ParamDecl, compDecl *ComponentDecl, rootScope *TypeScope) (success bool) {
 	var resolvedParamType *Type
 
 	// Ensure that if all succeeds the type for the param is set in the root scope
@@ -203,7 +204,7 @@ func (i *Inference) EvalForParamDecl(rootScope *TypeScope, compDecl *ComponentDe
 }
 
 // Infer/Check types for a method signature.  The body is not evaluated here
-func (i *Inference) EvalForMethodSignature(rootScope *TypeScope, compDecl *ComponentDecl, method *MethodDecl) (errors []error) {
+func (i *Inference) EvalForMethodSignature(method *MethodDecl, compDecl *ComponentDecl, rootScope *TypeScope) (errors []error) {
 	for _, param := range method.Parameters {
 		if param.Type != nil {
 			resolvedParamType := param.Type.TypeUsingScope(rootScope)
@@ -722,32 +723,56 @@ func (i *Inference) EvalForStmt(stmt Stmt, scope *TypeScope) (ok bool) {
 	return false
 }
 
-func (i *Inference) EvalForSystemDeclBodyItem(item SystemDeclBodyItem, systemScope *TypeScope) (ok bool) {
+func (i *Inference) EvalForSystemDecl(systemDecl *SystemDecl, nodeScope *TypeScope) (ok bool) {
 	ok = true
-	switch it := item.(type) {
-	case *InstanceDecl:
-		compTypeNode, foundCompType := systemScope.env.Get(it.ComponentType.Name)
-		if !foundCompType {
-			return i.Errorf(it.ComponentType.Pos(), "component type '%s' not found for instance '%s'", it.ComponentType.Name, it.NameNode.Name)
+	// Pass 1 - Infer types for all components and instances in the system declaration
+	var instanceDecls []*InstanceDecl
+	for _, item := range systemDecl.Body {
+		switch it := item.(type) {
+		case *InstanceDecl:
+			compTypeNode, foundCompType := nodeScope.env.Get(it.ComponentType.Name)
+			if !foundCompType {
+				return i.Errorf(it.ComponentType.Pos(), "component type '%s' not found for instance '%s'", it.ComponentType.Name, it.NameNode.Name)
+			}
+			compDefinition, ok2 := compTypeNode.(*ComponentDecl)
+			ok = ok && ok2
+			if !ok2 {
+				i.Errorf(it.ComponentType.Pos(), "identifier '%s' used as component type for instance '%s' is not a component declaration (got %T)", it.ComponentType.Name, it.NameNode.Name, compTypeNode)
+				return false
+			}
+			instanceType := ComponentTypeInstance(compDefinition)
+			nodeScope.env.Set(it.NameNode.Name, it) // Store InstanceDecl node in env by its name
+			it.NameNode.SetInferredType(instanceType)
+			instanceDecls = append(instanceDecls, it)
+		case *LetStmt:
+			ok = ok && i.EvalForStmt(it, nodeScope)
+		case *OptionsDecl:
+			if it.Body != nil {
+				optionsScope := nodeScope.Push(nil, nil)
+				ok = ok && i.EvalForBlockStmt(it.Body, optionsScope)
+			}
+		default:
+			// i.Errorf(item.Pos(), "type inference for system body item type %T not implemented yet", item)
 		}
-		compDefinition, ok2 := compTypeNode.(*ComponentDecl)
-		ok = ok && ok2
-		if !ok2 {
-			i.Errorf(it.ComponentType.Pos(), "identifier '%s' used as component type for instance '%s' is not a component declaration (got %T)", it.ComponentType.Name, it.NameNode.Name, compTypeNode)
-			return false
-		}
-		instanceType := ComponentTypeInstance(compDefinition)
-		systemScope.env.Set(it.NameNode.Name, it) // Store InstanceDecl node in env by its name
-		it.NameNode.SetInferredType(instanceType)
+	}
 
+	if !ok {
+		return
+	}
+
+	// Pass 2 - Infer types for all instances and their overrides
+	for _, it := range instanceDecls {
 		for _, assign := range it.Overrides {
-			valType, ok2 := i.EvalForExprType(assign.Value, systemScope)
+			valType, ok2 := i.EvalForExprType(assign.Value, nodeScope)
 			if !ok2 {
 				ok = false
 				continue
 			} else if valType == nil {
 				continue
 			}
+
+			compTypeNode, _ := nodeScope.env.Get(it.ComponentType.Name) // no need to check ok here, it was checked in Pass 1
+			compDefinition, _ := compTypeNode.(*ComponentDecl)
 
 			paramDecl, _ := compDefinition.GetParam(assign.Var.Name)
 			usesDecl, _ := compDefinition.GetDependency(assign.Var.Name)
@@ -757,7 +782,7 @@ func (i *Inference) EvalForSystemDeclBodyItem(item SystemDeclBodyItem, systemSco
 					i.Errorf(paramDecl.Pos(), "param '%s' of component '%s' has no type", paramDecl.Name.Name, compDefinition.NameNode.Name)
 					continue
 				}
-				expectedType := paramDecl.Type.TypeUsingScope(systemScope) // Resolve TypeDecl in the current system scope
+				expectedType := paramDecl.Type.TypeUsingScope(nodeScope) // Resolve TypeDecl in the current system scope
 				if expectedType == nil {
 					i.Errorf(paramDecl.Type.Pos(), "param '%s' of component '%s' has an unresolved TypeDecl '%s'", paramDecl.Name.Name, compDefinition.NameNode.Name, paramDecl.Type.Name)
 					continue
@@ -771,12 +796,12 @@ func (i *Inference) EvalForSystemDeclBodyItem(item SystemDeclBodyItem, systemSco
 				expectedDepCompName := usesDecl.ComponentNode.Name
 				var assignedInstanceType *Type
 				if assignedIdent, isIdent := assign.Value.(*IdentifierExpr); isIdent {
-					assignedNodeFromEnv, foundInstance := systemScope.env.Get(assignedIdent.Name)
+					assignedNodeFromEnv, foundInstance := nodeScope.env.Get(assignedIdent.Name)
 					if foundInstance {
 						if assignedInstDecl, isInst := assignedNodeFromEnv.(*InstanceDecl); isInst {
 							// The type of an instance is its component type.
 							// Retrieve the ComponentDecl for the assigned instance's component type.
-							compTypeOfAssignedInstance, foundComp := systemScope.env.Get(assignedInstDecl.ComponentType.Name)
+							compTypeOfAssignedInstance, foundComp := nodeScope.env.Get(assignedInstDecl.ComponentType.Name)
 							if foundComp {
 								if actualCompDecl, isActualComp := compTypeOfAssignedInstance.(*ComponentDecl); isActualComp {
 									assignedInstanceType = ComponentTypeInstance(actualCompDecl)
@@ -806,15 +831,6 @@ func (i *Inference) EvalForSystemDeclBodyItem(item SystemDeclBodyItem, systemSco
 				i.Errorf(assign.Var.Pos(), "override target '%s' in instance '%s' is not a known parameter or dependency of component '%s'", assign.Var.Name, it.NameNode.Name, compDefinition.NameNode.Name)
 			}
 		}
-	case *LetStmt:
-		ok = ok && i.EvalForStmt(it, systemScope)
-	case *OptionsDecl:
-		if it.Body != nil {
-			optionsScope := systemScope.Push(nil, nil)
-			ok = ok && i.EvalForBlockStmt(it.Body, optionsScope)
-		}
-	default:
-		// i.Errorf(item.Pos(), "type inference for system body item type %T not implemented yet", item)
 	}
-	return ok
+	return
 }

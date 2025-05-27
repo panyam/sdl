@@ -1,5 +1,5 @@
 
-import NativeDisk, HttpStatusCode, HashIndex from "./common.sdl" ;
+import Cache, NativeDisk, HttpStatusCode, HashIndex from "./common.sdl" ;
 import Disk from "./disk.sdl"
 import Database from "./db.sdl"
 
@@ -8,7 +8,7 @@ enum DuplicateCheck { FOUND, NOTFOUND, ERROR }
 
 component AppServer {
   // Our main DB
-  uses DB Database
+  uses db Database
 
   method Shorten() HttpStatusCode {
     for RetryCount {
@@ -29,7 +29,7 @@ component AppServer {
   }
 
   method Redirect() HttpStatusCode {
-    if self.DB.GetByShortId() {
+    if self.db.GetByShortId() {
       return HttpStatusCode.StatusOk // or may be 302
     }
 
@@ -75,7 +75,7 @@ component AppServerWithCache {
       return HttpStatusCode.StatusOk // or may be 302
     }
 
-    if self.DB.GetByShortId() {
+    if self.db.GetByShortId() {
       return HttpStatusCode.StatusOk // or may be 302
     }
 
