@@ -632,12 +632,13 @@ func (i *Inference) EvalForStmt(stmt Stmt, scope *TypeScope) (ok bool) {
 	ok = true
 	switch s := stmt.(type) {
 	case *LetStmt:
-		if valType, ok := i.EvalForExprType(s.Value, scope); ok {
+		if valType, ok2 := i.EvalForExprType(s.Value, scope); ok2 {
+			ok = ok && ok2
 			if valType != nil {
 				if len(s.Variables) == 1 {
 					varIdent := s.Variables[0]
 					if errSet := scope.Set(varIdent.Name, varIdent, valType); errSet != nil {
-						ok = i.Errorf(varIdent.Pos(), "%v", errSet)
+						ok = ok && i.Errorf(varIdent.Pos(), "%v", errSet)
 					}
 				} else if len(s.Variables) > 1 {
 					if valType.Name == "Tuple" && len(valType.ChildTypes) == len(s.Variables) {
@@ -720,7 +721,7 @@ func (i *Inference) EvalForStmt(stmt Stmt, scope *TypeScope) (ok bool) {
 	default:
 		// i.Errorf(stmt.Pos(), "type inference for statement type %T not implemented yet", stmt)
 	}
-	return false
+	return ok
 }
 
 func (i *Inference) EvalForSystemDecl(systemDecl *SystemDecl, nodeScope *TypeScope) (ok bool) {
