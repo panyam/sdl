@@ -1,0 +1,1 @@
+I am continuing with a previous project.  Here are the files and summaries.   Understand it and give me a recap so we can start extending it.   Remember as we are building features if you have to modify or create files only use the tools provided instead of generating entire files.  When updating an existing file always call the read_file tool first to get its latest state.

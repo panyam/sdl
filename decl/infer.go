@@ -2,43 +2,87 @@ package decl
 
 import (
 	"fmt"
+	"os"
 	// "log" // Uncomment for debugging
 )
 
-// InferTypesForFile is the main entry point.
-// It now takes the rootEnv populated by the loader.
-func InferTypesForFile(file *FileDecl, rootEnv *Env[Node]) []error {
-	var errors []error
+type InferenceError struct {
+	Pos Location
+	Msg string
+}
+
+func InfErrorf(pos Location, format string, args ...any) *InferenceError {
+	return &InferenceError{
+		Pos: pos,
+		Msg: fmt.Sprintf(format, args...),
+	}
+}
+
+func (i *InferenceError) Error() string {
+	return fmt.Sprintf("%s: %s", i.Pos.LineColStr(), i.Msg)
+}
+
+type Inference struct {
+	// Inference starts the root file
+	rootFile *FileDecl
+
+	// All the errors collected during inference
+	Errors []error
+}
+
+func (i *Inference) HasErrors() bool {
+	return len(i.Errors) > 0
+}
+
+func (i *Inference) PrintErrors() {
+	for _, err := range i.Errors {
+		fmt.Fprintln(os.Stderr, err)
+	}
+}
+
+func (i *Inference) Errorf(pos Location, format string, args ...any) bool {
+	i.AddErrors(InfErrorf(pos, format, args...))
+	return false
+}
+
+func (i *Inference) AddErrors(errs ...error) {
+	for _, err := range errs {
+		if err != nil {
+			panic(err)
+		}
+		i.Errors = append(i.Errors, err)
+	}
+}
+
+func NewInference(fd *FileDecl) *Inference {
+	return &Inference{
+		rootFile: fd,
+	}
+}
+
+// Begins type inference starting at the root file
+func (i *Inference) Eval(rootEnv *Env[Node]) bool {
+	file := i.rootFile
 	if file == nil {
-		errors = append(errors, fmt.Errorf("cannot infer types for nil FileDecl"))
-		return errors
+		i.AddErrors(fmt.Errorf("cannot infer types for nil FileDecl"))
+		return false
 	}
 
-	if !file.resolved { // Use the 'resolved' field
-		if err := file.Resolve(); err != nil {
-			errors = append(errors, fmt.Errorf("error resolving file before type inference (pos %s): %w", file.Pos().LineColStr(), err))
-			return errors
-		}
+	// Ensure file is resolved
+	if err := file.Resolve(); err != nil {
+		i.AddErrors(err)
+		return false
 	}
 
 	rootScope := NewRootTypeScope(rootEnv)
 
-	components, err := file.GetComponents()
-	if err != nil {
-		errors = append(errors, fmt.Errorf("error getting components for inference (pos %s): %w", file.Pos().LineColStr(), err))
-		return errors
-	}
-	systems, err := file.GetSystems()
-	if err != nil {
-		errors = append(errors, fmt.Errorf("error getting systems for inference (pos %s): %w", file.Pos().LineColStr(), err))
-		return errors
-	}
+	components, _ := file.GetComponents()
+	systems, _ := file.GetSystems()
 
 	// First pass: Resolve TypeDecls in component parameter defaults, method parameters, and method return types.
 	for _, compDecl := range components {
 		// Parameter defaults
-		errs := InferTypesForComponent(file, rootScope, compDecl)
-		errors = append(errors, errs...)
+		i.EvalForComponent(rootScope, compDecl)
 	}
 
 	// Second pass: Infer types for component method bodies (now that signatures are resolved)
@@ -49,8 +93,7 @@ func InferTypesForFile(file *FileDecl, rootEnv *Env[Node]) []error {
 			// 'uses' are also resolved via 'self' access within TypeScope.Get if needed.
 			if method.Body != nil {
 				methodScope := rootScope.Push(compDecl, method)
-				blockErrs := InferTypesForBlockStmt(method.Body, methodScope)
-				errors = append(errors, blockErrs...)
+				i.EvalForBlockStmt(method.Body, methodScope)
 			}
 		}
 	}
@@ -59,52 +102,52 @@ func InferTypesForFile(file *FileDecl, rootEnv *Env[Node]) []error {
 	for _, sysDecl := range systems {
 		systemScope := rootScope.Push(nil, nil) // System scope can see globals/imports from rootEnv
 		for _, item := range sysDecl.Body {
-			itemErrs := InferTypesForSystemDeclBodyItem(item, systemScope)
-			errors = append(errors, itemErrs...)
+			i.EvalForSystemDeclBodyItem(item, systemScope)
 		}
 	}
-	return errors
+	return false
 }
 
-func InferTypesForComponent(file *FileDecl, rootScope *TypeScope, compDecl *ComponentDecl) (errors []error) {
-	params, err := compDecl.Params()
-	if err != nil {
-		errors = append(errors, fmt.Errorf("pos %s: error getting parameters for component '%s': %w", compDecl.Pos().LineColStr(), compDecl.NameNode.Name, err))
-		return
-	}
+func (i *Inference) EvalForComponent(rootScope *TypeScope, compDecl *ComponentDecl) (success bool) {
+	params, _ := compDecl.Params()
 
 	for _, paramDecl := range params { // Assuming direct field access or appropriate getter
-		errs := InferTypesForParamDecl(file, rootScope, compDecl, paramDecl)
-		errors = append(errors, errs...)
+		i.EvalForParamDecl(rootScope, compDecl, paramDecl)
 	}
 
 	// Now look at "uses"
-	/*
-		usesDecls, err := compDecl.Dependencies()
-		if err != nil {
-			errors = append(errors, fmt.Errorf("pos %s: error getting parameters for component '%s': %w", compDecl.Pos().LineColStr(), compDecl.NameNode.Name, err))
-			return
+	usesDecls, _ := compDecl.Dependencies()
+	for _, usesDecl := range usesDecls { // Assuming direct field access or appropriate getter
+		compTypeNode, foundCompType := rootScope.env.Get(usesDecl.ComponentNode.Name)
+		if !foundCompType {
+			i.Errorf(usesDecl.ComponentNode.Pos(),
+				"component type '%s' not found for dependency '%s'",
+				usesDecl.ComponentNode.Name, usesDecl.NameNode.Name)
+			return false
 		}
-		for _, usesDecl := range usesDecls { // Assuming direct field access or appropriate getter
-			errs := InferTypesForUsesDecl(file, rootScope, compDecl, usesDecl)
-			errors = append(errors, errs...)
+		compDefinition, ok := compTypeNode.(*ComponentDecl)
+		if !ok {
+			i.Errorf(usesDecl.ComponentNode.Pos(), "identifier '%s' used as component type for instance '%s' is not a component declaration (got %T)", usesDecl.ComponentNode.Name, usesDecl.NameNode.Name, compTypeNode)
+			return false
 		}
-	*/
+		instanceType := ComponentTypeInstance(compDefinition)
+		rootScope.env.Set(usesDecl.NameNode.Name, compDefinition) // Store InstanceDecl node in env by its name
+		usesDecl.NameNode.SetInferredType(instanceType)
+	}
 
 	// Method signatures
 	for _, method := range compDecl.methods { // Assuming direct field access or appropriate getter
-		errs := InferTypesForMethodSignature(file, rootScope, compDecl, method)
-		errors = append(errors, errs...)
+		i.EvalForMethodSignature(rootScope, compDecl, method)
 	}
 	return
 }
 
-func InferTypesForParamDecl(file *FileDecl, rootScope *TypeScope, compDecl *ComponentDecl, paramDecl *ParamDecl) (errors []error) {
+func (i *Inference) EvalForParamDecl(rootScope *TypeScope, compDecl *ComponentDecl, paramDecl *ParamDecl) (success bool) {
 	var resolvedParamType *Type
 
 	// Ensure that if all succeeds the type for the param is set in the root scope
 	defer func() {
-		if len(errors) == 0 && resolvedParamType != nil {
+		if success && resolvedParamType != nil {
 			rootScope.Set(paramDecl.Name.Name, paramDecl.Name, resolvedParamType) // Register the parameter type in the scope
 		}
 	}()
@@ -112,67 +155,47 @@ func InferTypesForParamDecl(file *FileDecl, rootScope *TypeScope, compDecl *Comp
 	if paramDecl.Type != nil { // Type is explicitly declared
 		resolvedParamType = paramDecl.Type.TypeUsingScope(rootScope)
 		if resolvedParamType == nil {
-			errors = append(errors, fmt.Errorf("pos %s: unresolved type '%s' for parameter '%s' in component '%s'", paramDecl.Type.Pos().LineColStr(), paramDecl.Type.Name, paramDecl.Name.Name, compDecl.NameNode.Name))
+			i.Errorf(paramDecl.Type.Pos(), "unresolved type '%s' for parameter '%s' in component '%s'", paramDecl.Type.Name, paramDecl.Name.Name, compDecl.NameNode.Name)
 			// Even if unresolved, continue to check default value if present, but this param is problematic.
 		} else {
 			paramDecl.Type.SetResolvedType(resolvedParamType)
 		}
 	} else if paramDecl.DefaultValue != nil { // No explicit type, but has default value
 		// Infer type from default value
-		defaultValueType, err_dv := InferExprType(paramDecl.DefaultValue, rootScope)
-		if err_dv != nil {
-			errors = append(errors, fmt.Errorf("pos %s: error inferring type from default value for parameter '%s' in component '%s': %w", paramDecl.DefaultValue.Pos().LineColStr(), paramDecl.Name.Name, compDecl.NameNode.Name, err_dv))
-		} else if defaultValueType != nil {
-			resolvedParamType = defaultValueType
-			// We can create a new TypeDecl node here representing the inferred type,
-			// or simply store the *Type on the paramDecl if it has a field for that.
-			// For now, let's assume we want to ensure paramDecl.Type is populated if possible.
-			// This is a bit tricky as TypeDecl usually comes from parsing.
-			// A simpler approach for now: the effective type is known (defaultValueType).
-			// If the paramDecl.Type field *must* be a TypeDecl, we might need to synthesize one.
-			// Let's assume for now that the primary goal is that `resolvedParamType` is set.
-			// And if we needed to set it back on paramDecl.Type, we'd need a way to create a TypeDecl from a Type.
-			// To keep it simple and consistent with SetResolvedType on TypeDecl:
-			// We could add a field `InferredOrDeclaredType *Type` to ParamDecl itself.
-			// Or, if paramDecl.Type *must* be non-nil for later stages, this is an issue.
-
-			// For now, we have `resolvedParamType`. If `paramDecl.Type` was nil, it remains nil,
-			// but the inference process now knows the type from the default value.
-			// Let's ensure the IdentifierExpr for the param name gets typed.
-			paramDecl.Name.SetInferredType(resolvedParamType)
-		} else {
-			// Default value's type could not be inferred.
-			errors = append(errors, fmt.Errorf("pos %s: could not infer type from default value for parameter '%s' in component '%s'", paramDecl.DefaultValue.Pos().LineColStr(), paramDecl.Name.Name, compDecl.NameNode.Name))
+		resolvedParamType, success = i.EvalForExprType(paramDecl.DefaultValue, rootScope)
+		if success {
+			if resolvedParamType != nil {
+				paramDecl.Name.SetInferredType(resolvedParamType)
+			} else {
+				// Default value's type could not be inferred.
+				i.Errorf(paramDecl.DefaultValue.Pos(), "could not infer type from default value for parameter '%s' in component '%s'", paramDecl.Name.Name, compDecl.NameNode.Name)
+			}
 		}
 	} else { // No explicit type AND no default value
-		errors = append(errors, fmt.Errorf("pos %s: parameter '%s' in component '%s' has no type declaration and no default value", paramDecl.Pos().LineColStr(), paramDecl.Name.Name, compDecl.NameNode.Name))
+		i.Errorf(paramDecl.Pos(), "parameter '%s' in component '%s' has no type declaration and no default value", paramDecl.Name.Name, compDecl.NameNode.Name)
 		return // Cannot proceed with this parameter
 	}
 
 	// If a default value exists, check its type against the (now hopefully resolved) parameter type.
 	if paramDecl.DefaultValue != nil {
-		defaultValueActualType, err_dv_check := InferExprType(paramDecl.DefaultValue, rootScope)
-		if err_dv_check != nil {
-			// Error already added if type inference for default value failed earlier.
-			// This is a redundant call if it already failed, but harmless.
-			// If it succeeded before but fails now, that's an issue.
-			// To avoid double error: only add if not already present from initial inference.
-			// However, InferExprType caches, so it won't re-infer.
-		} else if defaultValueActualType != nil {
-			// Now, `resolvedParamType` should hold the type of the parameter,
-			// either from its TypeDecl or inferred from the default value itself.
-			if resolvedParamType != nil { // If we have an expected type for the param
-				if !defaultValueActualType.Equals(resolvedParamType) {
-					// Allow int to float promotion for default value
-					isPromotion := defaultValueActualType.Equals(IntType) && resolvedParamType.Equals(FloatType)
-					if !isPromotion {
-						errors = append(errors, fmt.Errorf("pos %s: type mismatch for default value of parameter '%s' in component '%s': parameter type is %s, default value type is %s", paramDecl.DefaultValue.Pos().LineColStr(), paramDecl.Name.Name, compDecl.NameNode.Name, resolvedParamType.String(), defaultValueActualType.String()))
+		defaultValueActualType, success := i.EvalForExprType(paramDecl.DefaultValue, rootScope)
+		if success {
+			if defaultValueActualType != nil {
+				// Now, `resolvedParamType` should hold the type of the parameter,
+				// either from its TypeDecl or inferred from the default value itself.
+				if resolvedParamType != nil { // If we have an expected type for the param
+					if !defaultValueActualType.Equals(resolvedParamType) {
+						// Allow int to float promotion for default value
+						isPromotion := defaultValueActualType.Equals(IntType) && resolvedParamType.Equals(FloatType)
+						if !isPromotion {
+							i.Errorf(paramDecl.DefaultValue.Pos(), "type mismatch for default value of parameter '%s' in component '%s': parameter type is %s, default value type is %s", paramDecl.Name.Name, compDecl.NameNode.Name, resolvedParamType.String(), defaultValueActualType.String())
+						}
 					}
+				} else if paramDecl.Type != nil {
+					// This means paramDecl.Type was specified but couldn't be resolved earlier,
+					// yet we have a default value. This is an inconsistent state.
+					// The earlier error about unresolved type for paramDecl.Type should cover this.
 				}
-			} else if paramDecl.Type != nil {
-				// This means paramDecl.Type was specified but couldn't be resolved earlier,
-				// yet we have a default value. This is an inconsistent state.
-				// The earlier error about unresolved type for paramDecl.Type should cover this.
 			}
 		}
 	}
@@ -180,23 +203,23 @@ func InferTypesForParamDecl(file *FileDecl, rootScope *TypeScope, compDecl *Comp
 }
 
 // Infer/Check types for a method signature.  The body is not evaluated here
-func InferTypesForMethodSignature(file *FileDecl, rootScope *TypeScope, compDecl *ComponentDecl, method *MethodDecl) (errors []error) {
+func (i *Inference) EvalForMethodSignature(rootScope *TypeScope, compDecl *ComponentDecl, method *MethodDecl) (errors []error) {
 	for _, param := range method.Parameters {
 		if param.Type != nil {
 			resolvedParamType := param.Type.TypeUsingScope(rootScope)
 			if resolvedParamType == nil {
-				errors = append(errors, fmt.Errorf("pos %s: unresolved type '%s' for parameter '%s' in method '%s.%s'", param.Type.Pos().LineColStr(), param.Type.Name, param.Name.Name, compDecl.NameNode.Name, method.NameNode.Name))
+				i.Errorf(param.Type.Pos(), "unresolved type '%s' for parameter '%s' in method '%s.%s'", param.Type.Name, param.Name.Name, compDecl.NameNode.Name, method.NameNode.Name)
 			} else {
 				param.Type.SetResolvedType(resolvedParamType)
 			}
 		} else {
-			errors = append(errors, fmt.Errorf("pos %s: parameter '%s' of method '%s.%s' has no type declaration", param.Pos().LineColStr(), param.Name.Name, compDecl.NameNode.Name, method.NameNode.Name))
+			i.Errorf(param.Pos(), "parameter '%s' of method '%s.%s' has no type declaration", param.Name.Name, compDecl.NameNode.Name, method.NameNode.Name)
 		}
 	}
 	if method.ReturnType != nil {
 		resolvedReturnType := method.ReturnType.TypeUsingScope(rootScope)
 		if resolvedReturnType == nil {
-			errors = append(errors, fmt.Errorf("pos %s: unresolved return type '%s' for method '%s.%s'", method.ReturnType.Pos().LineColStr(), method.ReturnType.Name, compDecl.NameNode.Name, method.NameNode.Name))
+			i.Errorf(method.ReturnType.Pos(), "unresolved return type '%s' for method '%s.%s'", method.ReturnType.Name, compDecl.NameNode.Name, method.NameNode.Name)
 		} else {
 			method.ReturnType.SetResolvedType(resolvedReturnType)
 		}
@@ -204,53 +227,48 @@ func InferTypesForMethodSignature(file *FileDecl, rootScope *TypeScope, compDecl
 	return
 }
 
-// InferExprType recursively infers the type of an expression and sets its InferredType field.
-func InferExprType(expr Expr, scope *TypeScope) (*Type, error) {
+// i.EvalForExprType recursively infers the type of an expression and sets its InferredType field.
+func (i *Inference) EvalForExprType(expr Expr, scope *TypeScope) (inferred *Type, success bool) {
 	if expr == nil {
-		return nil, fmt.Errorf("cannot infer type for nil expression")
+		i.AddErrors(fmt.Errorf("cannot infer type for nil expression"))
+		return nil, false
 	}
 
 	if expr.InferredType() != nil {
-		return expr.InferredType(), nil
+		return expr.InferredType(), true
 	}
-
-	var inferred *Type
-	var err error
 
 	switch e := expr.(type) {
 	case *LiteralExpr:
-		inferred, err = InferLiteralExprType(e, scope)
+		inferred, success = i.EvalForLiteralExpr(e, scope)
 	case *IdentifierExpr:
-		inferred, err = InferIdentifierExprType(e, scope)
+		inferred, success = i.EvalForIdentifierExpr(e, scope)
 	case *BinaryExpr:
-		inferred, err = InferBinaryExprType(e, scope)
+		inferred, success = i.EvalForBinaryExpr(e, scope)
 	case *UnaryExpr:
-		inferred, err = InferUnaryExprType(e, scope)
+		inferred, success = i.EvalForUnaryExpr(e, scope)
 	case *MemberAccessExpr:
-		inferred, err = InferMemberAccessExprType(e, scope)
+		inferred, success = i.EvalForMemberAccessExpr(e, scope)
 	case *CallExpr:
-		inferred, err = InferCallExprType(e, scope)
+		inferred, success = i.EvalForCallExpr(e, scope)
 	case *TupleExpr:
-		inferred, err = InferTupleExprType(e, scope)
+		inferred, success = i.EvalForTupleExpr(e, scope)
 	case *DistributeExpr:
-		inferred, err = InferDistributeExprType(e, scope)
+		inferred, success = i.EvalForDistributeExpr(e, scope)
 	case *SampleExpr:
-		inferred, err = InferSampleExprType(e, scope)
+		inferred, success = i.EvalForSampleExpr(e, scope)
 	case *CaseExpr:
 		if e.Body == nil {
-			return nil, fmt.Errorf("CaseExpr at pos %s has no body", e.Pos().LineColStr())
+			i.Errorf(e.Pos(), "CaseExpr at has no body")
+			return nil, false
 		}
-		inferred, err = InferExprType(e.Body, scope)
+		inferred, success = i.EvalForExprType(e.Body, scope)
 	default:
-		return nil, fmt.Errorf("type inference not implemented for expression type %T at pos %s", expr, expr.Pos().LineColStr())
+		panic(fmt.Errorf("type inference not implemented for expression type %T at pos %s", expr, expr.Pos().LineColStr()))
 	}
 
-	if err != nil {
-		return nil, err
-	}
-
-	if inferred == nil {
-		return nil, fmt.Errorf("type inference failed for %T at pos %s, but no error reported (inferred type is nil)", expr, expr.Pos().LineColStr())
+	if !success {
+		return
 	}
 
 	expr.SetInferredType(inferred)
@@ -258,38 +276,39 @@ func InferExprType(expr Expr, scope *TypeScope) (*Type, error) {
 	if expr.DeclaredType() != nil && !expr.DeclaredType().Equals(inferred) {
 		isIntToFloatPromotion := expr.DeclaredType().Equals(FloatType) && inferred.Equals(IntType)
 		if !isIntToFloatPromotion {
-			return inferred, fmt.Errorf("pos %s: type mismatch for '%s': inferred type %s, but declared type is %s",
-				expr.Pos().LineColStr(), expr.String(), inferred.String(), expr.DeclaredType().String())
+			i.Errorf(expr.Pos(), "type mismatch for '%s': inferred type %s, but declared type is %s", expr.String(), inferred.String(), expr.DeclaredType().String())
+			return nil, false
 		}
 	}
-	return inferred, nil
+	return
 }
 
-func InferLiteralExprType(expr *LiteralExpr, scope *TypeScope) (*Type, error) {
+func (i *Inference) EvalForLiteralExpr(expr *LiteralExpr, scope *TypeScope) (*Type, bool) {
 	if expr.Value == nil || expr.Value.Type == nil {
-		return nil, fmt.Errorf("pos %s: literal expression has invalid internal RuntimeValue or Type", expr.Pos().LineColStr())
+		i.Errorf(expr.Pos(), "literal expression has invalid internal RuntimeValue or Type")
+		return nil, false
 	}
-	return expr.Value.Type, nil
+	return expr.Value.Type, true
 }
 
-func InferIdentifierExprType(expr *IdentifierExpr, scope *TypeScope) (*Type, error) {
-	t, ok := scope.Get(expr.Name)
+func (i *Inference) EvalForIdentifierExpr(expr *IdentifierExpr, scope *TypeScope) (t *Type, ok bool) {
+	t, ok = scope.Get(expr.Name)
 	if !ok {
-		return nil, fmt.Errorf("pos %s: identifier '%s' not found", expr.Pos().LineColStr(), expr.Name)
+		return nil, i.Errorf(expr.Pos(), "identifier '%s' not found", expr.Name)
 	}
 	if t == nil {
-		return nil, fmt.Errorf("pos %s: identifier '%s' resolved but its type is nil (internal error)", expr.Pos().LineColStr(), expr.Name)
+		return nil, i.Errorf(expr.Pos(), "identifier '%s' resolved but its type is nil (internal error)", expr.Name)
 	}
-	return t, nil
+	return
 }
 
-func InferMemberAccessExprType(expr *MemberAccessExpr, scope *TypeScope) (*Type, error) {
-	receiverType, err := InferExprType(expr.Receiver, scope)
-	if err != nil {
-		return nil, fmt.Errorf("pos %s: error inferring receiver type for member access '.%s': %w", expr.Receiver.Pos().LineColStr(), expr.Member.Name, err)
+func (i *Inference) EvalForMemberAccessExpr(expr *MemberAccessExpr, scope *TypeScope) (t *Type, ok bool) {
+	receiverType, ok := i.EvalForExprType(expr.Receiver, scope)
+	if !ok {
+		return
 	}
 	if receiverType == nil {
-		return nil, fmt.Errorf("pos %s: could not determine receiver type for member access '.%s'", expr.Pos().LineColStr(), expr.Member.Name)
+		return nil, i.Errorf(expr.Pos(), "could not determine receiver type for member access '.%s'", expr.Member.Name)
 	}
 	memberName := expr.Member.Name
 
@@ -297,19 +316,19 @@ func InferMemberAccessExprType(expr *MemberAccessExpr, scope *TypeScope) (*Type,
 		switch decl := receiverType.OriginalDecl.(type) {
 		case *EnumDecl:
 			if !receiverType.IsEnum {
-				return nil, fmt.Errorf("pos %s: internal error: receiver type for '%s' (member '%s') has EnumDecl but IsEnum is false", expr.Pos().LineColStr(), receiverType.Name, memberName)
+				return nil, i.Errorf(expr.Pos(), "internal error: receiver type for '%s' (member '%s') has EnumDecl but IsEnum is false", receiverType.Name, memberName)
 			}
 			for _, valNode := range decl.ValuesNode {
 				if valNode.Name == memberName {
-					return receiverType, nil
+					return receiverType, true
 				}
 			}
-			return nil, fmt.Errorf("pos %s: value '%s' not found in enum '%s'", expr.Pos().LineColStr(), memberName, decl.NameNode.Name)
+			return nil, i.Errorf(expr.Pos(), "value '%s' not found in enum '%s'", memberName, decl.NameNode.Name)
 
 		case *ComponentDecl:
 			if paramDecl, _ := decl.GetParam(memberName); paramDecl != nil {
 				if paramDecl.Type == nil {
-					return nil, fmt.Errorf("pos %s: parameter '%s' in component '%s' lacks a type declaration", paramDecl.Pos().LineColStr(), memberName, decl.NameNode.Name)
+					return nil, i.Errorf(paramDecl.Pos(), "parameter '%s' in component '%s' lacks a type declaration", memberName, decl.NameNode.Name)
 				}
 				paramType := paramDecl.Type.Type() // This should use TypeUsingScope if paramDecl.Type itself needs scope.
 				if paramType == nil {
@@ -317,145 +336,126 @@ func InferMemberAccessExprType(expr *MemberAccessExpr, scope *TypeScope) (*Type,
 					// If paramDecl.Type refers to e.g. an imported enum, Type.Type() must handle it.
 					// Let's assume TypeDecl.Type() can resolve simple names or uses a pre-resolved *Type.
 					paramType = paramDecl.Type.TypeUsingScope(scope) // Use scope to resolve complex types in TypeDecl
-					if paramType == nil {
-						return nil, fmt.Errorf("pos %s: parameter '%s' in component '%s' has an unresolved TypeDecl '%s'", paramDecl.Type.Pos().LineColStr(), memberName, decl.NameNode.Name, paramDecl.Type.Name)
-					}
 				}
-				return paramType, nil
+				if paramType == nil {
+					return nil, i.Errorf(paramDecl.Type.Pos(), "parameter '%s' in component '%s' has an unresolved TypeDecl '%s'", memberName, decl.NameNode.Name, paramDecl.Type.Name)
+				}
+				return paramType, true
 			}
 			if usesDecl, _ := decl.GetDependency(memberName); usesDecl != nil {
 				if scope.env == nil {
-					return nil, fmt.Errorf("pos %s: internal error: TypeScope.env is nil when resolving 'uses' dependency '%s' in component '%s'", usesDecl.Pos().LineColStr(), memberName, decl.NameNode.Name)
+					return nil, i.Errorf(usesDecl.Pos(), "internal error: TypeScope.env is nil when resolving 'uses' dependency '%s' in component '%s'", memberName, decl.NameNode.Name)
 				}
 				depCompName := usesDecl.ComponentNode.Name
 				depCompDeclNode, found := scope.env.Get(depCompName)
 				if !found {
-					return nil, fmt.Errorf("pos %s: 'uses' dependency '%s' in component '%s' refers to unknown component type '%s'", usesDecl.Pos().LineColStr(), memberName, decl.NameNode.Name, depCompName)
+					return nil, i.Errorf(usesDecl.Pos(), "'uses' dependency '%s' in component '%s' refers to unknown component type '%s'", memberName, decl.NameNode.Name, depCompName)
 				}
 				if depCompDecl, ok := depCompDeclNode.(*ComponentDecl); ok {
-					return ComponentTypeInstance(depCompDecl), nil
+					return ComponentTypeInstance(depCompDecl), true
 				}
-				return nil, fmt.Errorf("pos %s: 'uses' dependency '%s' in component '%s' resolved to a non-component type %T for '%s'", usesDecl.Pos().LineColStr(), memberName, decl.NameNode.Name, depCompDeclNode, depCompName)
+				return nil, i.Errorf(usesDecl.Pos(), "'uses' dependency '%s' in component '%s' resolved to a non-component type %T for '%s'", memberName, decl.NameNode.Name, depCompDeclNode, depCompName)
 			}
 			if methodDecl, _ := decl.GetMethod(memberName); methodDecl != nil {
-				return &Type{Name: "MethodReference", OriginalDecl: methodDecl}, nil
+				return &Type{Name: "MethodReference", OriginalDecl: methodDecl}, ok
 			}
-			return nil, fmt.Errorf("pos %s: member '%s' not found in component '%s' (type %s)", expr.Pos().LineColStr(), memberName, decl.NameNode.Name, receiverType.Name)
+			return nil, i.Errorf(expr.Pos(), "member '%s' not found in component '%s' (type %s)", memberName, decl.NameNode.Name, receiverType.Name)
 		default:
-			break
+			panic("Invalid original decl type - only enums and components are supported for now")
 		}
 	}
 
 	if receiverType.Name == "List" && memberName == "Len" {
-		return IntType, nil
+		return IntType, ok
 	}
 
-	return nil, fmt.Errorf("pos %s: cannot access member '%s' on type %s; receiver is not an enum, component, or known type with this member",
-		expr.Pos().LineColStr(), memberName, receiverType.String())
+	return nil, i.Errorf(expr.Pos(), "cannot access member '%s' on type %s; receiver is not an enum, component, or known type with this member", memberName, receiverType.String())
 }
 
-func InferBinaryExprType(expr *BinaryExpr, scope *TypeScope) (*Type, error) {
-	leftType, err := InferExprType(expr.Left, scope)
-	if err != nil {
-		return nil, fmt.Errorf("pos %s: error inferring type for left operand of binary expr ('%s'): %w", expr.Left.Pos().LineColStr(), expr.Operator, err)
-	}
-	rightType, err := InferExprType(expr.Right, scope)
-	if err != nil {
-		return nil, fmt.Errorf("pos %s: error inferring type for right operand of binary expr ('%s'): %w", expr.Right.Pos().LineColStr(), expr.Operator, err)
-	}
-	if leftType == nil || rightType == nil {
-		return nil, fmt.Errorf("pos %s: could not determine type for one or both operands for binary expr ('%s')", expr.Pos().LineColStr(), expr.Operator)
+func (i *Inference) EvalForBinaryExpr(expr *BinaryExpr, scope *TypeScope) (*Type, bool) {
+	leftType, lok := i.EvalForExprType(expr.Left, scope)
+	rightType, rok := i.EvalForExprType(expr.Right, scope)
+	if !lok || !rok || leftType == nil || rightType == nil {
+		return nil, i.Errorf(expr.Pos(), "could not determine type for one or both operands for binary expr ('%s')", expr.Operator)
 	}
 
 	switch expr.Operator {
 	case "+", "-", "*", "/":
 		if leftType.Equals(IntType) && rightType.Equals(IntType) {
-			return IntType, nil
+			return IntType, true
 		}
 		if (leftType.Equals(IntType) || leftType.Equals(FloatType)) &&
 			(rightType.Equals(IntType) || rightType.Equals(FloatType)) {
-			return FloatType, nil
+			return FloatType, true
 		}
 		if expr.Operator == "+" && leftType.Equals(StrType) && rightType.Equals(StrType) {
-			return StrType, nil
+			return StrType, true
 		}
-		return nil, fmt.Errorf("pos %s: type mismatch for operator '%s': cannot apply to %s and %s",
-			expr.Pos().LineColStr(), expr.Operator, leftType.String(), rightType.String())
+		return nil, i.Errorf(expr.Pos(), "type mismatch for operator '%s': cannot apply to %s and %s", expr.Operator, leftType.String(), rightType.String())
 
 	case "%":
 		if leftType.Equals(IntType) && rightType.Equals(IntType) {
-			return IntType, nil
+			return IntType, true
 		}
-		return nil, fmt.Errorf("pos %s: type mismatch for operator '%%': requires two integers, got %s and %s",
-			expr.Pos().LineColStr(), leftType.String(), rightType.String())
+		return nil, i.Errorf(expr.Pos(), "type mismatch for operator '%%': requires two integers, got %s and %s", leftType.String(), rightType.String())
 
 	case "==", "!=", "<", "<=", ">", ">=":
 		isLeftNumeric := leftType.Equals(IntType) || leftType.Equals(FloatType)
 		isRightNumeric := rightType.Equals(IntType) || rightType.Equals(FloatType)
 
 		if isLeftNumeric && isRightNumeric {
-			return BoolType, nil
+			return BoolType, true
 		}
 		if leftType.Equals(rightType) {
 			if leftType.IsEnum {
-				return BoolType, nil
+				return BoolType, true
 			}
 			if leftType.Name == "List" || leftType.Name == "Tuple" || leftType.Name == "Outcomes" ||
 				(leftType.OriginalDecl != nil && leftType.IsComponentType()) ||
 				leftType.Name == "OpNode" || leftType.Name == "MethodReference" {
-				return nil, fmt.Errorf("pos %s: type mismatch for comparison operator '%s': cannot compare complex type %s", expr.Pos().LineColStr(), expr.Operator, leftType.String())
+				return nil, i.Errorf(expr.Pos(), "type mismatch for comparison operator '%s': cannot compare complex type %s", expr.Operator, leftType.String())
 			}
-			return BoolType, nil
+			return BoolType, true
 		}
-		return nil, fmt.Errorf("pos %s: type mismatch for comparison operator '%s': cannot compare %s and %s",
-			expr.Pos().LineColStr(), expr.Operator, leftType.String(), rightType.String())
+		return nil, i.Errorf(expr.Pos(), "type mismatch for comparison operator '%s': cannot compare %s and %s", expr.Operator, leftType.String(), rightType.String())
 
 	case "&&", "||":
 		if leftType.Equals(BoolType) && rightType.Equals(BoolType) {
-			return BoolType, nil
+			return BoolType, true
 		}
-		return nil, fmt.Errorf("pos %s: type mismatch for logical operator '%s': requires two booleans, got %s and %s",
-			expr.Pos().LineColStr(), expr.Operator, leftType.String(), rightType.String())
+		return nil, i.Errorf(expr.Pos(), "type mismatch for logical operator '%s': requires two booleans, got %s and %s", expr.Operator, leftType.String(), rightType.String())
 
 	default:
-		return nil, fmt.Errorf("pos %s: unsupported binary operator '%s'", expr.Pos().LineColStr(), expr.Operator)
+		return nil, i.Errorf(expr.Pos(), "unsupported binary operator '%s'", expr.Operator)
 	}
 }
 
-func InferUnaryExprType(expr *UnaryExpr, scope *TypeScope) (*Type, error) {
-	rightType, err := InferExprType(expr.Right, scope)
-	if err != nil {
-		return nil, fmt.Errorf("pos %s: error inferring type for operand of unary expr ('%s'): %w", expr.Right.Pos().LineColStr(), expr.Operator, err)
-	}
-	if rightType == nil {
-		return nil, fmt.Errorf("pos %s: could not determine type for operand of unary expr ('%s')", expr.Pos().LineColStr(), expr.Operator)
+func (i *Inference) EvalForUnaryExpr(expr *UnaryExpr, scope *TypeScope) (*Type, bool) {
+	rightType, ok := i.EvalForExprType(expr.Right, scope)
+	if !ok || rightType == nil {
+		return nil, i.Errorf(expr.Pos(), "could not determine type for operand of unary expr ('%s')", expr.Operator)
 	}
 
 	switch expr.Operator {
 	case "!", "not":
 		if !rightType.Equals(BoolType) {
-			return nil, fmt.Errorf("pos %s: type mismatch for operator '!': requires boolean, got %s",
-				expr.Pos().LineColStr(), rightType.String())
+			return nil, i.Errorf(expr.Pos(), "type mismatch for operator '!': requires boolean, got %s", rightType.String())
 		}
-		return BoolType, nil
+		return BoolType, true
 	case "-":
 		if rightType.Equals(IntType) || rightType.Equals(FloatType) {
-			return rightType, nil
+			return rightType, true
 		}
-		return nil, fmt.Errorf("pos %s: type mismatch for operator '-': requires integer or float, got %s",
-			expr.Pos().LineColStr(), rightType.String())
+		return nil, i.Errorf(expr.Pos(), "type mismatch for operator '-': requires integer or float, got %s", rightType.String())
 	default:
-		return nil, fmt.Errorf("pos %s: unsupported unary operator '%s'", expr.Pos().LineColStr(), expr.Operator)
+		return nil, i.Errorf(expr.Pos(), "unsupported unary operator '%s'", expr.Operator)
 	}
 }
 
-func InferCallExprType(expr *CallExpr, scope *TypeScope) (*Type, error) {
-	funcType, err := InferExprType(expr.Function, scope)
-	if err != nil {
-		return nil, fmt.Errorf("pos %s: error inferring type of function/method being called ('%s'): %w", expr.Function.Pos().LineColStr(), expr.Function.String(), err)
-	}
-	if funcType == nil {
-		return nil, fmt.Errorf("pos %s: could not determine type of function/method being called ('%s')", expr.Function.Pos().LineColStr(), expr.Function.String())
+func (i *Inference) EvalForCallExpr(expr *CallExpr, scope *TypeScope) (*Type, bool) {
+	funcType, ok := i.EvalForExprType(expr.Function, scope)
+	if !ok || funcType == nil {
+		return nil, i.Errorf(expr.Function.Pos(), "could not determine type of function/method being called ('%s')", expr.Function.String())
 	}
 
 	var returnType *Type = NilType
@@ -465,7 +465,7 @@ func InferCallExprType(expr *CallExpr, scope *TypeScope) (*Type, error) {
 	if funcType.Name == "MethodReference" {
 		methodDecl, ok := funcType.OriginalDecl.(*MethodDecl)
 		if !ok || methodDecl == nil {
-			return nil, fmt.Errorf("pos %s: internal error: 'MethodReference' type for '%s' did not contain a valid MethodDecl", expr.Function.Pos().LineColStr(), funcNameForError)
+			return nil, i.Errorf(expr.Function.Pos(), "internal error: 'MethodReference' type for '%s' did not contain a valid MethodDecl", funcNameForError)
 		}
 
 		// Attempt to construct a more descriptive name for error messages
@@ -486,206 +486,181 @@ func InferCallExprType(expr *CallExpr, scope *TypeScope) (*Type, error) {
 			// For now, assume methodDecl.ReturnType.Type() is sufficient or TypeDecl.Type() handles resolution.
 			resolvedReturnType := methodDecl.ReturnType.TypeUsingScope(scope) // Pass current scope
 			if resolvedReturnType == nil {
-				return nil, fmt.Errorf("pos %s: method '%s' return TypeDecl ('%s') did not resolve to a valid Type", methodDecl.ReturnType.Pos().LineColStr(), funcNameForError, methodDecl.ReturnType.Name)
+				return nil, i.Errorf(methodDecl.ReturnType.Pos(), "method '%s' return TypeDecl ('%s') did not resolve to a valid Type", funcNameForError, methodDecl.ReturnType.Name)
 			}
 			returnType = resolvedReturnType
 		}
 
 		for _, paramDecl := range methodDecl.Parameters {
 			if paramDecl.Type == nil {
-				return nil, fmt.Errorf("pos %s: parameter '%s' of method '%s' has no type declaration", paramDecl.Pos().LineColStr(), paramDecl.Name.Name, funcNameForError)
+				return nil, i.Errorf(paramDecl.Pos(), "parameter '%s' of method '%s' has no type declaration", paramDecl.Name.Name, funcNameForError)
 			}
 			paramSDLType := paramDecl.Type.TypeUsingScope(scope) // Pass current scope
 			if paramSDLType == nil {
-				return nil, fmt.Errorf("pos %s: parameter '%s' of method '%s' has invalid TypeDecl ('%s')", paramDecl.Type.Pos().LineColStr(), paramDecl.Name.Name, funcNameForError, paramDecl.Type.Name)
+				return nil, i.Errorf(paramDecl.Type.Pos(), "parameter '%s' of method '%s' has invalid TypeDecl ('%s')", paramDecl.Name.Name, funcNameForError, paramDecl.Type.Name)
 			}
 			expectedParamTypes = append(expectedParamTypes, paramSDLType)
 		}
 	} else {
-		return nil, fmt.Errorf("pos %s: calling non-method type '%s' as function is not supported or function not found", expr.Function.Pos().LineColStr(), funcType.String())
+		return nil, i.Errorf(expr.Function.Pos(), "calling non-method type '%s' as function is not supported or function not found", funcType.String())
 	}
 
 	if len(expr.Args) != len(expectedParamTypes) {
-		return nil, fmt.Errorf("pos %s: argument count mismatch for call to '%s': expected %d, got %d",
-			expr.Pos().LineColStr(), funcNameForError, len(expectedParamTypes), len(expr.Args))
+		return nil, i.Errorf(expr.Pos(), "argument count mismatch for call to '%s': expected %d, got %d", funcNameForError, len(expectedParamTypes), len(expr.Args))
 	}
 
-	for i, argExpr := range expr.Args {
-		argType, err_arg := InferExprType(argExpr, scope)
-		if err_arg != nil {
-			return nil, fmt.Errorf("pos %s: error inferring type for argument %d of call to '%s': %w",
-				argExpr.Pos().LineColStr(), i+1, funcNameForError, err_arg)
+	for idx, argExpr := range expr.Args {
+		argType, ok := i.EvalForExprType(argExpr, scope)
+		if !ok || argType == nil {
+			return nil, i.Errorf(argExpr.Pos(), "could not determine type for argument %d of call to '%s'", idx+1, funcNameForError)
 		}
-		if argType == nil {
-			return nil, fmt.Errorf("pos %s: could not determine type for argument %d of call to '%s'", argExpr.Pos().LineColStr(), i+1, funcNameForError)
-		}
-		if !argType.Equals(expectedParamTypes[i]) {
-			isIntToFloat := argType.Equals(IntType) && expectedParamTypes[i].Equals(FloatType)
+		if !argType.Equals(expectedParamTypes[idx]) {
+			isIntToFloat := argType.Equals(IntType) && expectedParamTypes[idx].Equals(FloatType)
 			if !isIntToFloat {
-				return nil, fmt.Errorf("pos %s: type mismatch for argument %d of call to '%s': expected %s, got %s",
-					argExpr.Pos().LineColStr(), i+1, funcNameForError, expectedParamTypes[i].String(), argType.String())
+				return nil, i.Errorf(argExpr.Pos(), "type mismatch for argument %d of call to '%s': expected %s, got %s", idx, funcNameForError, expectedParamTypes[idx].String(), argType.String())
 			}
 		}
 	}
-	return returnType, nil
+	return returnType, true
 }
 
-func InferTupleExprType(expr *TupleExpr, scope *TypeScope) (*Type, error) {
+func (i *Inference) EvalForTupleExpr(expr *TupleExpr, scope *TypeScope) (*Type, bool) {
 	if len(expr.Children) == 0 {
-		return nil, fmt.Errorf("pos %s: tuple expression must have at least one child (empty tuples not supported)", expr.Pos().LineColStr())
+		return nil, i.Errorf(expr.Pos(), "tuple expression must have at least one child (empty tuples not supported)")
 	}
-	childTypes, err := InferTypesForExprList(expr.Children, scope)
-	if err == nil {
-		return TupleType(childTypes...), nil
+	childTypes, ok := i.EvalForExprList(expr.Children, scope)
+	if !ok {
+		return nil, ok
 	}
-	return nil, err
+	return TupleType(childTypes...), ok
 }
 
-func InferTypesForExprList(exprlist []Expr, scope *TypeScope) ([]*Type, error) {
+func (inf *Inference) EvalForExprList(exprlist []Expr, scope *TypeScope) ([]*Type, bool) {
 	childTypes := make([]*Type, len(exprlist))
 	for i, childExpr := range exprlist {
-		childType, err := InferExprType(childExpr, scope)
-		if err != nil {
-			return nil, fmt.Errorf("pos %s: error inferring type for tuple element %d: %w", childExpr.Pos().LineColStr(), i+1, err)
-		}
-		if childType == nil {
-			return nil, fmt.Errorf("pos %s: could not determine type for tuple element %d", childExpr.Pos().LineColStr(), i+1)
+		childType, ok := inf.EvalForExprType(childExpr, scope)
+		if !ok || childType == nil {
+			return nil, inf.Errorf(childExpr.Pos(), "could not determine type for tuple element %d", i+1)
 		}
 		childTypes[i] = childType
 	}
-	return childTypes, nil
+	return childTypes, true
 }
 
-func InferDistributeExprType(expr *DistributeExpr, scope *TypeScope) (*Type, error) {
+func (inf *Inference) EvalForDistributeExpr(expr *DistributeExpr, scope *TypeScope) (*Type, bool) {
 	var commonBodyType *Type
 	if len(expr.Cases) == 0 && expr.Default == nil {
-		return nil, fmt.Errorf("pos %s: distribute expression must have at least one case or a default", expr.Pos().LineColStr())
+		return nil, inf.Errorf(expr.Pos(), "distribute expression must have at least one case or a default")
 	}
 	if expr.TotalProb != nil {
-		totalProbType, err := InferExprType(expr.TotalProb, scope)
-		if err != nil {
-			return nil, fmt.Errorf("pos %s: error inferring type for total probability of distribute expr: %w", expr.TotalProb.Pos().LineColStr(), err)
-		}
-		if totalProbType != nil && !(totalProbType.Equals(IntType) || totalProbType.Equals(FloatType)) {
-			return nil, fmt.Errorf("pos %s: total probability of distribute expr must be numeric, got %s", expr.TotalProb.Pos().LineColStr(), totalProbType.String())
+		totalProbType, ok := inf.EvalForExprType(expr.TotalProb, scope)
+		if !ok || (totalProbType != nil && !(totalProbType.Equals(IntType) || totalProbType.Equals(FloatType))) {
+			return nil, inf.Errorf(expr.TotalProb.Pos(), "total probability of distribute expr must be numeric, got %s", totalProbType.String())
 		}
 	}
 
 	for i, caseExpr := range expr.Cases {
 		if caseExpr.Condition == nil { // Should be caught by parser
-			return nil, fmt.Errorf("pos %s: DistributeExpr case %d has no condition", caseExpr.Pos().LineColStr(), i)
+			return nil, inf.Errorf(caseExpr.Pos(), "DistributeExpr case %d has no condition", i)
 		}
-		condType, err := InferExprType(caseExpr.Condition, scope)
-		if err != nil {
-			return nil, fmt.Errorf("pos %s: error inferring type for condition of case %d in distribute expr: %w", caseExpr.Condition.Pos().LineColStr(), i, err)
+		condType, ok := inf.EvalForExprType(caseExpr.Condition, scope)
+		if !ok {
+			return nil, false
 		}
 		if !(condType.Equals(FloatType) || condType.Equals(IntType)) {
-			return nil, fmt.Errorf("pos %s: condition of distribute case %d must be numeric (for weight), got %s", caseExpr.Condition.Pos().LineColStr(), i, condType.String())
+			return nil, inf.Errorf(caseExpr.Condition.Pos(), "condition of distribute case %d must be numeric (for weight), got %s", i, condType.String())
 		}
 		if caseExpr.Body == nil { // Should be caught by parser
-			return nil, fmt.Errorf("pos %s: DistributeExpr case %d has no body", caseExpr.Pos().LineColStr(), i)
+			return nil, inf.Errorf(caseExpr.Pos(), "DistributeExpr case %d has no body", i)
 		}
-		bodyType, err := InferExprType(caseExpr.Body, scope)
-		if err != nil {
-			return nil, fmt.Errorf("pos %s: error inferring type for body of case %d in distribute expr: %w", caseExpr.Body.Pos().LineColStr(), i, err)
+		bodyType, ok := inf.EvalForExprType(caseExpr.Body, scope)
+		if !ok {
+			// return nil, inf.Errorf(caseExpr.Body.Pos(), "error inferring type for body of case %d in distribute expr: %w", i, err)
+			return nil, ok
 		}
 		if bodyType == nil {
-			return nil, fmt.Errorf("pos %s: could not determine type for body of case %d in distribute expr", caseExpr.Pos().LineColStr(), i)
+			return nil, inf.Errorf(caseExpr.Pos(), "could not determine type for body of case %d in distribute expr", i)
 		}
 		if commonBodyType == nil {
 			commonBodyType = bodyType
 		} else if !commonBodyType.Equals(bodyType) {
-			return nil, fmt.Errorf("pos %s: type mismatch in distribute expr cases: expected %s (from case 0), got %s for case %d",
-				expr.Pos().LineColStr(), commonBodyType.String(), bodyType.String(), i)
+			return nil, inf.Errorf(expr.Pos(), "type mismatch in distribute expr cases: expected %s (from case 0), got %s for case %d", commonBodyType.String(), bodyType.String(), i)
 		}
 	}
 
 	if expr.Default != nil {
-		defaultType, err := InferExprType(expr.Default, scope)
-		if err != nil {
-			return nil, fmt.Errorf("pos %s: error inferring type for default case of distribute expr: %w", expr.Default.Pos().LineColStr(), err)
-		}
-		if defaultType == nil {
-			return nil, fmt.Errorf("pos %s: could not determine type for default case of distribute expr", expr.Default.Pos().LineColStr())
+		defaultType, ok := inf.EvalForExprType(expr.Default, scope)
+		if !ok || defaultType == nil {
+			return nil, inf.Errorf(expr.Default.Pos(), "could not determine type for default case of distribute expr")
 		}
 		if commonBodyType == nil {
 			commonBodyType = defaultType
 		} else if !commonBodyType.Equals(defaultType) {
-			return nil, fmt.Errorf("pos %s: type mismatch between distribute expr cases and default: expected %s, got %s for default",
-				expr.Pos().LineColStr(), commonBodyType.String(), defaultType.String())
+			return nil, inf.Errorf(expr.Pos(), "type mismatch between distribute expr cases and default: expected %s, got %s for default", commonBodyType.String(), defaultType.String())
 		}
 	}
 	if commonBodyType == nil {
-		return nil, fmt.Errorf("pos %s: distribute expr has no effective common type", expr.Pos().LineColStr())
+		return nil, inf.Errorf(expr.Pos(), "distribute expr has no effective common type")
 	}
-	return OutcomesType(commonBodyType), nil
+	return OutcomesType(commonBodyType), true
 }
 
-func InferSampleExprType(expr *SampleExpr, scope *TypeScope) (*Type, error) {
-	fromType, err := InferExprType(expr.FromExpr, scope)
-	if err != nil {
-		return nil, fmt.Errorf("pos %s: error inferring type for 'from' expression of sample expr: %w", expr.FromExpr.Pos().LineColStr(), err)
-	}
-	if fromType == nil {
-		return nil, fmt.Errorf("pos %s: could not determine type for 'from' expression of sample expr", expr.Pos().LineColStr())
+func (i *Inference) EvalForSampleExpr(expr *SampleExpr, scope *TypeScope) (*Type, bool) {
+	fromType, ok := i.EvalForExprType(expr.FromExpr, scope)
+	if !ok || fromType == nil {
+		return nil, i.Errorf(expr.Pos(), "could not determine type for 'from' expression of sample expr")
 	}
 	if fromType.Name != "Outcomes" || len(fromType.ChildTypes) != 1 {
-		return nil, fmt.Errorf("pos %s: type mismatch for sample expression: 'from' expression must be Outcomes[T], got %s",
-			expr.Pos().LineColStr(), fromType.String())
+		return nil, i.Errorf(expr.Pos(), "type mismatch for sample expression: 'from' expression must be Outcomes[T], got %s", fromType.String())
 	}
-	return fromType.ChildTypes[0], nil
+	return fromType.ChildTypes[0], true
 }
 
 // --- Statement Type Inference ---
 
-func InferTypesForBlockStmt(block *BlockStmt, parentScope *TypeScope) []error {
-	var errors []error
+func (i *Inference) EvalForBlockStmt(block *BlockStmt, parentScope *TypeScope) (ok bool) {
+	ok = true
 	blockScope := parentScope.Push(parentScope.currentComponent, parentScope.currentMethod)
 	for _, stmt := range block.Statements {
-		errs := InferTypesForStmt(stmt, blockScope)
-		errors = append(errors, errs...)
+		ok = ok && i.EvalForStmt(stmt, blockScope)
 	}
-	return errors
+	return
 }
 
-func InferTypesForStmt(stmt Stmt, scope *TypeScope) []error {
-	var errors []error
+func (i *Inference) EvalForStmt(stmt Stmt, scope *TypeScope) (ok bool) {
+	ok = true
 	switch s := stmt.(type) {
 	case *LetStmt:
-		valType, err := InferExprType(s.Value, scope)
-		if err != nil {
-			errors = append(errors, fmt.Errorf("pos %s: error inferring type for value of let statement variable(s): %w", s.Pos().LineColStr(), err))
-		} else if valType != nil {
-			if len(s.Variables) == 1 {
-				varIdent := s.Variables[0]
-				if errSet := scope.Set(varIdent.Name, varIdent, valType); errSet != nil {
-					errors = append(errors, fmt.Errorf("pos %s: %w", varIdent.Pos().LineColStr(), errSet))
-				}
-			} else if len(s.Variables) > 1 {
-				if valType.Name == "Tuple" && len(valType.ChildTypes) == len(s.Variables) {
-					for i, varIdent := range s.Variables {
-						elemType := valType.ChildTypes[i]
-						if errSet := scope.Set(varIdent.Name, varIdent, elemType); errSet != nil {
-							errors = append(errors, fmt.Errorf("pos %s: %w", varIdent.Pos().LineColStr(), errSet))
-						}
+		if valType, ok := i.EvalForExprType(s.Value, scope); ok {
+			if valType != nil {
+				if len(s.Variables) == 1 {
+					varIdent := s.Variables[0]
+					if errSet := scope.Set(varIdent.Name, varIdent, valType); errSet != nil {
+						ok = i.Errorf(varIdent.Pos(), "%v", errSet)
 					}
-				} else {
-					errors = append(errors, fmt.Errorf("pos %s: let statement assigns to %d variables, but value type %s is not a matching tuple of %d elements", s.Pos().LineColStr(), len(s.Variables), valType.String(), len(s.Variables)))
+				} else if len(s.Variables) > 1 {
+					if valType.Name == "Tuple" && len(valType.ChildTypes) == len(s.Variables) {
+						for idx, varIdent := range s.Variables {
+							elemType := valType.ChildTypes[idx]
+							if errSet := scope.Set(varIdent.Name, varIdent, elemType); errSet != nil {
+								ok = i.Errorf(varIdent.Pos(), "%v", errSet)
+							}
+						}
+					} else {
+						i.Errorf(s.Pos(), "let statement assigns to %d variables, but value type %s is not a matching tuple of %d elements", len(s.Variables), valType.String(), len(s.Variables))
+					}
 				}
 			}
 		}
 	case *ExprStmt:
-		_, err := InferExprType(s.Expression, scope)
-		if err != nil {
-			errors = append(errors, fmt.Errorf("pos %s: error in expression statement: %w", s.Expression.Pos().LineColStr(), err))
-		}
+		_, ok2 := i.EvalForExprType(s.Expression, scope)
+		ok = ok && ok2
 	case *ReturnStmt:
 		var actualReturnType *Type = NilType
 		if s.ReturnValue != nil {
-			infRetType, err := InferExprType(s.ReturnValue, scope)
-			if err != nil {
-				errors = append(errors, fmt.Errorf("pos %s: error inferring type for return value: %w", s.ReturnValue.Pos().LineColStr(), err))
-			} else if infRetType != nil {
+			infRetType, ok2 := i.EvalForExprType(s.ReturnValue, scope)
+			ok = ok && ok2
+			if ok2 && infRetType != nil {
 				actualReturnType = infRetType
 			}
 		}
@@ -695,92 +670,82 @@ func InferTypesForStmt(stmt Stmt, scope *TypeScope) []error {
 				// Ensure the method's ReturnType (a TypeDecl) is resolved to a *Type
 				resolvedExpectedType := scope.currentMethod.ReturnType.ResolvedType() // Or .TypeUsingScope(scope)
 				if resolvedExpectedType == nil {
-					errors = append(errors, fmt.Errorf("pos %s: method '%s' has an unresolvable return TypeDecl", scope.currentMethod.ReturnType.Pos().LineColStr(), scope.currentMethod.NameNode.Name))
-					return errors
+					i.Errorf(scope.currentMethod.ReturnType.Pos(), "method '%s' has an unresolvable return TypeDecl", scope.currentMethod.NameNode.Name)
+					return false
 				}
 				expectedReturnType = resolvedExpectedType
 			}
 			if !actualReturnType.Equals(expectedReturnType) {
 				isPromotion := actualReturnType.Equals(IntType) && expectedReturnType.Equals(FloatType)
 				if !isPromotion {
-					errors = append(errors, fmt.Errorf("pos %s: return type mismatch for method '%s': expected %s, got %s",
-						s.Pos().LineColStr(), scope.currentMethod.NameNode.Name, expectedReturnType.String(), actualReturnType.String()))
+					i.Errorf(s.Pos(), "return type mismatch for method '%s': expected %s, got %s", scope.currentMethod.NameNode.Name, expectedReturnType.String(), actualReturnType.String())
 				}
 			}
 		} else {
-			errors = append(errors, fmt.Errorf("pos %s: return statement found outside of a method definition", s.Pos().LineColStr()))
+			i.Errorf(s.Pos(), "return statement found outside of a method definition")
 		}
 	case *IfStmt:
-		condType, err := InferExprType(s.Condition, scope)
-		if err != nil {
-			errors = append(errors, fmt.Errorf("pos %s: error inferring type for if condition: %w", s.Condition.Pos().LineColStr(), err))
-		} else if condType != nil && !condType.Equals(BoolType) {
-			errors = append(errors, fmt.Errorf("pos %s: if condition must be boolean, got %s", s.Condition.Pos().LineColStr(), condType.String()))
+		condType, ok2 := i.EvalForExprType(s.Condition, scope)
+		ok = ok && ok2
+		if ok2 && condType != nil && !condType.Equals(BoolType) {
+			i.Errorf(s.Condition.Pos(), "if condition must be boolean, got %s", condType.String())
 		}
 		if s.Then != nil {
-			errsThen := InferTypesForBlockStmt(s.Then, scope)
-			errors = append(errors, errsThen...)
+			ok = ok && i.EvalForBlockStmt(s.Then, scope)
 		}
 		if s.Else != nil {
-			errsElse := InferTypesForStmt(s.Else, scope)
-			errors = append(errors, errsElse...)
+			ok = ok && i.EvalForStmt(s.Else, scope)
 		}
 	case *BlockStmt:
-		errs := InferTypesForBlockStmt(s, scope)
-		errors = append(errors, errs...)
+		ok = ok && i.EvalForBlockStmt(s, scope)
 	case *AssignmentStmt: // General assignment, var must exist.
 		existingVarType, varFound := scope.Get(s.Var.Name)
 		if !varFound {
-			errors = append(errors, fmt.Errorf("pos %s: assignment to undeclared variable '%s'", s.Var.Pos().LineColStr(), s.Var.Name))
+			i.Errorf(s.Var.Pos(), "assignment to undeclared variable '%s'", s.Var.Name)
 			break
 		}
 		s.Var.SetInferredType(existingVarType)
-		valType, err := InferExprType(s.Value, scope)
-		if err != nil {
-			errors = append(errors, fmt.Errorf("pos %s: error inferring type for assignment value to '%s': %w", s.Value.Pos().LineColStr(), s.Var.Name, err))
-		} else if valType != nil {
-			if !valType.Equals(existingVarType) {
-				isIntToFloat := valType.Equals(IntType) && existingVarType.Equals(FloatType)
-				if !isIntToFloat {
-					errors = append(errors, fmt.Errorf("pos %s: type mismatch in assignment to '%s': variable is %s, value is %s", s.Pos().LineColStr(), s.Var.Name, existingVarType.String(), valType.String()))
-				}
+		valType, ok := i.EvalForExprType(s.Value, scope)
+		if ok && valType != nil && !valType.Equals(existingVarType) {
+			isIntToFloat := valType.Equals(IntType) && existingVarType.Equals(FloatType)
+			if !isIntToFloat {
+				i.Errorf(s.Pos(), "type mismatch in assignment to '%s': variable is %s, value is %s", s.Var.Name, existingVarType.String(), valType.String())
 			}
 		}
 		/*
 			case *ExpectStmt:
-				errors = append(errors, fmt.Errorf("pos %s: ExpectStmt found outside of an analyze block's expectations; type checking skipped here", s.Pos().LineColStr()))
+				i.Errorf(pos, "ExpectStmt found outside of an analyze block's expectations; type checking skipped here", s.Pos().LineColStr())
 		*/
 	default:
-		// errors = append(errors, fmt.Errorf("pos %s: type inference for statement type %T not implemented yet", stmt.Pos().LineColStr(), stmt))
+		// i.Errorf(stmt.Pos(), "type inference for statement type %T not implemented yet", stmt)
 	}
-	return errors
+	return false
 }
 
-func InferTypesForSystemDeclBodyItem(item SystemDeclBodyItem, systemScope *TypeScope) []error {
-	var errors []error
-	switch i := item.(type) {
+func (i *Inference) EvalForSystemDeclBodyItem(item SystemDeclBodyItem, systemScope *TypeScope) (ok bool) {
+	ok = true
+	switch it := item.(type) {
 	case *InstanceDecl:
-		compTypeNode, foundCompType := systemScope.env.Get(i.ComponentType.Name)
+		compTypeNode, foundCompType := systemScope.env.Get(it.ComponentType.Name)
 		if !foundCompType {
-			errors = append(errors, fmt.Errorf("pos %s: component type '%s' not found for instance '%s'", i.ComponentType.Pos().LineColStr(), i.ComponentType.Name, i.NameNode.Name))
-			return errors
+			return i.Errorf(it.ComponentType.Pos(), "component type '%s' not found for instance '%s'", it.ComponentType.Name, it.NameNode.Name)
 		}
-		compDefinition, ok := compTypeNode.(*ComponentDecl)
-		if !ok {
-			errors = append(errors, fmt.Errorf("pos %s: identifier '%s' used as component type for instance '%s' is not a component declaration (got %T)", i.ComponentType.Pos().LineColStr(), i.ComponentType.Name, i.NameNode.Name, compTypeNode))
-			return errors
+		compDefinition, ok2 := compTypeNode.(*ComponentDecl)
+		ok = ok && ok2
+		if !ok2 {
+			i.Errorf(it.ComponentType.Pos(), "identifier '%s' used as component type for instance '%s' is not a component declaration (got %T)", it.ComponentType.Name, it.NameNode.Name, compTypeNode)
+			return false
 		}
 		instanceType := ComponentTypeInstance(compDefinition)
-		systemScope.env.Set(i.NameNode.Name, i) // Store InstanceDecl node in env by its name
-		i.NameNode.SetInferredType(instanceType)
+		systemScope.env.Set(it.NameNode.Name, it) // Store InstanceDecl node in env by its name
+		it.NameNode.SetInferredType(instanceType)
 
-		for _, assign := range i.Overrides {
-			valType, err := InferExprType(assign.Value, systemScope)
-			if err != nil {
-				errors = append(errors, fmt.Errorf("pos %s: error inferring type for override value of '%s' in instance '%s': %w", assign.Value.Pos().LineColStr(), assign.Var.Name, i.NameNode.Name, err))
+		for _, assign := range it.Overrides {
+			valType, ok2 := i.EvalForExprType(assign.Value, systemScope)
+			if !ok2 {
+				ok = false
 				continue
-			}
-			if valType == nil {
+			} else if valType == nil {
 				continue
 			}
 
@@ -789,18 +754,17 @@ func InferTypesForSystemDeclBodyItem(item SystemDeclBodyItem, systemScope *TypeS
 
 			if paramDecl != nil {
 				if paramDecl.Type == nil {
-					errors = append(errors, fmt.Errorf("pos %s: param '%s' of component '%s' has no type", paramDecl.Pos().LineColStr(), paramDecl.Name.Name, compDefinition.NameNode.Name))
+					i.Errorf(paramDecl.Pos(), "param '%s' of component '%s' has no type", paramDecl.Name.Name, compDefinition.NameNode.Name)
 					continue
 				}
 				expectedType := paramDecl.Type.TypeUsingScope(systemScope) // Resolve TypeDecl in the current system scope
 				if expectedType == nil {
-					errors = append(errors, fmt.Errorf("pos %s: param '%s' of component '%s' has an unresolved TypeDecl '%s'", paramDecl.Type.Pos().LineColStr(), paramDecl.Name.Name, compDefinition.NameNode.Name, paramDecl.Type.Name))
+					i.Errorf(paramDecl.Type.Pos(), "param '%s' of component '%s' has an unresolved TypeDecl '%s'", paramDecl.Name.Name, compDefinition.NameNode.Name, paramDecl.Type.Name)
 					continue
 				}
 				if !valType.Equals(expectedType) {
 					if !(valType.Equals(IntType) && expectedType.Equals(FloatType)) {
-						errors = append(errors, fmt.Errorf("pos %s: type mismatch for override param '%s' in instance '%s': expected %s, got %s",
-							assign.Value.Pos().LineColStr(), assign.Var.Name, i.NameNode.Name, expectedType.String(), valType.String()))
+						i.Errorf(assign.Value.Pos(), "type mismatch for override param '%s' in instance '%s': expected %s, got %s", assign.Var.Name, it.NameNode.Name, expectedType.String(), valType.String())
 					}
 				}
 			} else if usesDecl != nil {
@@ -817,115 +781,40 @@ func InferTypesForSystemDeclBodyItem(item SystemDeclBodyItem, systemScope *TypeS
 								if actualCompDecl, isActualComp := compTypeOfAssignedInstance.(*ComponentDecl); isActualComp {
 									assignedInstanceType = ComponentTypeInstance(actualCompDecl)
 								} else {
-									errors = append(errors, fmt.Errorf("pos %s: assigned instance '%s' for dependency '%s' has non-component type %T for its ComponentType ('%s')", assign.Value.Pos().LineColStr(), assignedIdent.Name, assign.Var.Name, compTypeOfAssignedInstance, assignedInstDecl.ComponentType.Name))
+									i.Errorf(assign.Value.Pos(), "assigned instance '%s' for dependency '%s' has non-component type %T for its ComponentType ('%s')", assignedIdent.Name, assign.Var.Name, compTypeOfAssignedInstance, assignedInstDecl.ComponentType.Name)
 								}
 							} else {
-								errors = append(errors, fmt.Errorf("pos %s: could not find component type '%s' for assigned instance '%s' (dependency '%s')", assign.Value.Pos().LineColStr(), assignedInstDecl.ComponentType.Name, assignedIdent.Name, assign.Var.Name))
+								i.Errorf(assign.Value.Pos(), "could not find component type '%s' for assigned instance '%s' (dependency '%s')", assignedInstDecl.ComponentType.Name, assignedIdent.Name, assign.Var.Name)
 							}
 						} else {
-							errors = append(errors, fmt.Errorf("pos %s: assigned value '%s' for dependency '%s' is not an instance declaration (got %T)", assign.Value.Pos().LineColStr(), assignedIdent.Name, assign.Var.Name, assignedNodeFromEnv))
+							i.Errorf(assign.Value.Pos(), "assigned value '%s' for dependency '%s' is not an instance declaration (got %T)", assignedIdent.Name, assign.Var.Name, assignedNodeFromEnv)
 						}
 					} else {
-						errors = append(errors, fmt.Errorf("pos %s: assigned instance identifier '%s' for dependency '%s' not found in system scope", assign.Value.Pos().LineColStr(), assignedIdent.Name, assign.Var.Name))
+						i.Errorf(assign.Value.Pos(), "assigned instance identifier '%s' for dependency '%s' not found in system scope", assignedIdent.Name, assign.Var.Name)
 					}
 				}
 
 				if assignedInstanceType != nil {
 					if assignedInstanceType.Name != expectedDepCompName {
-						errors = append(errors, fmt.Errorf("pos %s: type mismatch for override dependency '%s' in instance '%s': expected instance of component type %s, got instance of %s",
-							assign.Value.Pos().LineColStr(), assign.Var.Name, i.NameNode.Name, expectedDepCompName, assignedInstanceType.Name))
+						i.Errorf(assign.Value.Pos(), "type mismatch for override dependency '%s' in instance '%s': expected instance of component type %s, got instance of %s", assign.Var.Name, it.NameNode.Name, expectedDepCompName, assignedInstanceType.Name)
 					}
 				} else if valType.Name != expectedDepCompName || valType.OriginalDecl == nil || !valType.IsComponentType() {
 					// This fallback is if assigned value was not an identifier resolving to an InstanceDecl
-					errors = append(errors, fmt.Errorf("pos %s: type mismatch for override dependency '%s' in instance '%s': expected component type %s, got %s (and value was not a known instance of the correct type)",
-						assign.Value.Pos().LineColStr(), assign.Var.Name, i.NameNode.Name, expectedDepCompName, valType.String()))
+					i.Errorf(assign.Value.Pos(), "type mismatch for override dependency '%s' in instance '%s': expected component type %s, got %s (and value was not a known instance of the correct type)", assign.Var.Name, it.NameNode.Name, expectedDepCompName, valType.String())
 				}
 			} else {
-				errors = append(errors, fmt.Errorf("pos %s: override target '%s' in instance '%s' is not a known parameter or dependency of component '%s'",
-					assign.Var.Pos().LineColStr(), assign.Var.Name, i.NameNode.Name, compDefinition.NameNode.Name))
+				i.Errorf(assign.Var.Pos(), "override target '%s' in instance '%s' is not a known parameter or dependency of component '%s'", assign.Var.Name, it.NameNode.Name, compDefinition.NameNode.Name)
 			}
 		}
-		/*
-			case *AnalyzeDecl:
-				targetType, err := InferExprType(i.Target, systemScope)
-				if err != nil {
-					errors = append(errors, fmt.Errorf("pos %s: error inferring type for analyze target '%s': %w", i.Target.Pos().LineColStr(), i.Name.Name, err))
-				}
-				if targetType != nil {
-					i.Name.SetInferredType(targetType)
-					if i.Expectations != nil {
-						expectScope := systemScope.Push(nil, nil)
-						if errSet := expectScope.Set(i.Name.Name, i.Name, targetType); errSet != nil {
-							errors = append(errors, fmt.Errorf("internal error setting analyze result name '%s' in expect scope: %w", i.Name.Name, errSet))
-						}
-
-						for _, expectStmt := range i.Expectations.Expects {
-							if expectStmt.Target == nil {
-								errors = append(errors, fmt.Errorf("pos %s: expect statement is missing a target metric expression", expectStmt.Pos().LineColStr()))
-								continue
-							}
-
-							// Temporarily ensure the receiver of the expectStmt.Target (e.g., "Result" in "Result.P99")
-							// is correctly typed with targetType before inferring the full expectStmt.Target.
-							if mae, ok := expectStmt.Target.(*MemberAccessExpr); ok {
-								if recvIdent, isIdent := mae.Receiver.(*IdentifierExpr); isIdent {
-									if recvIdent.Name == i.Name.Name {
-										// The Get method in TypeScope during InferExprType(mae.Receiver, expectScope)
-										// should find i.Name in expectScope.env and return targetType.
-										// So, explicit SetInferredType might not be needed here if Get works.
-									} else {
-										errors = append(errors, fmt.Errorf("pos %s: expect metric target receiver '%s' must match analyze block name '%s'", recvIdent.Pos().LineColStr(), recvIdent.Name, i.Name.Name))
-									}
-								} else {
-									errors = append(errors, fmt.Errorf("pos %s: expect metric target receiver must be a simple identifier matching analyze block name ('%s')", mae.Receiver.Pos().LineColStr(), i.Name.Name))
-								}
-							}
-
-							metricType, errMetric := InferExprType(expectStmt.Target, expectScope)
-							if errMetric != nil {
-								errors = append(errors, fmt.Errorf("pos %s: error inferring type for expect metric '%s' in analyze block '%s': %w", expectStmt.Target.Pos().LineColStr(), expectStmt.Target.String(), i.Name.Name, errMetric))
-							}
-							if expectStmt.Threshold == nil {
-								errors = append(errors, fmt.Errorf("pos %s: expect statement is missing a threshold expression", expectStmt.Pos().LineColStr()))
-								continue
-							}
-							thresholdType, errThreshold := InferExprType(expectStmt.Threshold, expectScope)
-							if errThreshold != nil {
-								errors = append(errors, fmt.Errorf("pos %s: error inferring type for expect threshold in analyze block '%s': %w", expectStmt.Threshold.Pos().LineColStr(), i.Name.Name, errThreshold))
-							}
-
-							if metricType != nil && thresholdType != nil {
-								isMetricNumeric := metricType.Equals(IntType) || metricType.Equals(FloatType)
-								isThresholdNumeric := thresholdType.Equals(IntType) || thresholdType.Equals(FloatType)
-								isMetricBool := metricType.Equals(BoolType)
-								isThresholdBool := thresholdType.Equals(BoolType)
-								validComparison := false
-								if isMetricNumeric && isThresholdNumeric {
-									validComparison = true
-								}
-								if isMetricBool && isThresholdBool {
-									validComparison = true
-								}
-								if !validComparison {
-									errors = append(errors, fmt.Errorf("pos %s: type mismatch in expect statement for analyze block '%s': cannot compare metric type %s with threshold type %s using operator '%s'",
-										expectStmt.Pos().LineColStr(), i.Name.Name, metricType.String(), thresholdType.String(), expectStmt.Operator))
-								}
-							}
-						}
-					}
-				}
-		*/
 	case *LetStmt:
-		errs := InferTypesForStmt(i, systemScope)
-		errors = append(errors, errs...)
+		ok = ok && i.EvalForStmt(it, systemScope)
 	case *OptionsDecl:
-		if i.Body != nil {
+		if it.Body != nil {
 			optionsScope := systemScope.Push(nil, nil)
-			errs := InferTypesForBlockStmt(i.Body, optionsScope)
-			errors = append(errors, errs...)
+			ok = ok && i.EvalForBlockStmt(it.Body, optionsScope)
 		}
 	default:
-		// errors = append(errors, fmt.Errorf("pos %s: type inference for system body item type %T not implemented yet", item.Pos().LineColStr(), item))
+		// i.Errorf(item.Pos(), "type inference for system body item type %T not implemented yet", item)
 	}
-	return errors
+	return ok
 }
