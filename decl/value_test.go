@@ -51,39 +51,39 @@ func TestValueTypeEquals(t *testing.T) {
 	assert.False(t, outInt1.Equals(listInt1)) // List != Outcomes
 }
 
-func TestNewRuntimeValue(t *testing.T) {
+func TestNewValue(t *testing.T) {
 	// No initial value
-	rv, err := NewRuntimeValue(IntType)
+	rv, err := NewValue(IntType)
 	require.NoError(t, err)
 	assert.True(t, rv.Type.Equals(IntType))
 	assert.Nil(t, rv.Value)
 
 	// Correct initial value
-	rvBool, err := NewRuntimeValue(BoolType, true)
+	rvBool, err := NewValue(BoolType, true)
 	require.NoError(t, err)
 	assert.True(t, rvBool.Type.Equals(BoolType))
 	assert.Equal(t, true, rvBool.Value)
 
 	// Incorrect initial value
-	_, err = NewRuntimeValue(IntType, "hello")
+	_, err = NewValue(IntType, "hello")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "type mismatch: expected int, got string")
 
 	// Nil initial value
-	rvNil, err := NewRuntimeValue(NilType, nil)
+	rvNil, err := NewValue(NilType, nil)
 	require.NoError(t, err)
 	assert.True(t, rvNil.Type.Equals(NilType))
 	assert.Nil(t, rvNil.Value)
 
 	// Nil initial value for non-nil type
-	_, err = NewRuntimeValue(IntType, nil)
+	_, err = NewValue(IntType, nil)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "type mismatch: cannot set nil value")
 }
 
-func TestRuntimeValueSet(t *testing.T) {
+func TestValueSet(t *testing.T) {
 	// --- Basic Types ---
-	rvInt, _ := NewRuntimeValue(IntType)
+	rvInt, _ := NewValue(IntType)
 	err := rvInt.Set(123) // Correct
 	assert.NoError(t, err)
 	assert.Equal(t, int64(123), rvInt.Value)
@@ -95,7 +95,7 @@ func TestRuntimeValueSet(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "cannot set nil value")
 
-	rvFloat, _ := NewRuntimeValue(FloatType)
+	rvFloat, _ := NewValue(FloatType)
 	err = rvFloat.Set(123.45) // Correct
 	assert.NoError(t, err)
 	assert.Equal(t, 123.45, rvFloat.Value)
@@ -103,7 +103,7 @@ func TestRuntimeValueSet(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "expected float64, got int")
 
-	rvNil, _ := NewRuntimeValue(NilType)
+	rvNil, _ := NewValue(NilType)
 	err = rvNil.Set(nil) // Correct
 	assert.NoError(t, err)
 	assert.Nil(t, rvNil.Value)
@@ -113,18 +113,18 @@ func TestRuntimeValueSet(t *testing.T) {
 
 	// --- List Type ---
 	intListType := ListType(IntType)
-	rvList, _ := NewRuntimeValue(intListType)
+	rvList, _ := NewValue(intListType)
 
 	// Correct list
-	rvElem1, _ := NewRuntimeValue(IntType, 10)
-	rvElem2, _ := NewRuntimeValue(IntType, 20)
-	correctList := []*RuntimeValue{rvElem1, rvElem2}
+	rvElem1, _ := NewValue(IntType, 10)
+	rvElem2, _ := NewValue(IntType, 20)
+	correctList := []*Value{rvElem1, rvElem2}
 	err = rvList.Set(correctList)
 	assert.NoError(t, err)
 	assert.Equal(t, correctList, rvList.Value)
 
 	// Empty list
-	emptyList := []*RuntimeValue{}
+	emptyList := []*Value{}
 	err = rvList.Set(emptyList)
 	assert.NoError(t, err)
 	assert.Equal(t, emptyList, rvList.Value)
@@ -135,8 +135,8 @@ func TestRuntimeValueSet(t *testing.T) {
 	// assert.Nil(t, rvList.Value)
 
 	// Incorrect list element type
-	rvStrElem, _ := NewRuntimeValue(StrType, "hello")
-	incorrectList := []*RuntimeValue{rvElem1, rvStrElem}
+	rvStrElem, _ := NewValue(StrType, "hello")
+	incorrectList := []*Value{rvElem1, rvStrElem}
 	err = rvList.Set(incorrectList)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "type error in list/outcomes element 1: expected int, got string")
@@ -146,57 +146,57 @@ func TestRuntimeValueSet(t *testing.T) {
 	wrongSliceType := []int{1, 2}
 	err = rvList.Set(wrongSliceType)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "expected List ([]*RuntimeValue), got []int")
+	assert.Contains(t, err.Error(), "expected List ([]*Value), got []int")
 }
 
-func TestRuntimeValueString(t *testing.T) {
-	rvInt, _ := NewRuntimeValue(IntType, 10)
+func TestValueString(t *testing.T) {
+	rvInt, _ := NewValue(IntType, 10)
 	assert.Equal(t, "RV(int: 10)", rvInt.String())
 
-	rvNil, _ := NewRuntimeValue(NilType, nil)
+	rvNil, _ := NewValue(NilType, nil)
 	assert.Equal(t, "RV(nil: <nil>)", rvNil.String())
 
-	rvList, _ := NewRuntimeValue(ListType(StrType))
-	rvS1, _ := NewRuntimeValue(StrType, "a")
-	rvS2, _ := NewRuntimeValue(StrType, "b")
-	_ = rvList.Set([]*RuntimeValue{rvS1, rvS2})
+	rvList, _ := NewValue(ListType(StrType))
+	rvS1, _ := NewValue(StrType, "a")
+	rvS2, _ := NewValue(StrType, "b")
+	_ = rvList.Set([]*Value{rvS1, rvS2})
 	assert.Equal(t, "RV(List[string]: [RV(string: a), RV(string: b)])", rvList.String())
 
-	rvEmptyList, _ := NewRuntimeValue(ListType(IntType))
-	_ = rvEmptyList.Set([]*RuntimeValue{})
+	rvEmptyList, _ := NewValue(ListType(IntType))
+	_ = rvEmptyList.Set([]*Value{})
 	assert.Equal(t, "RV(List[int]: [])", rvEmptyList.String())
 
-	rvUnitialized, _ := NewRuntimeValue(BoolType)
+	rvUnitialized, _ := NewValue(BoolType)
 	assert.Equal(t, "RV(bool: <nil>)", rvUnitialized.String()) // Shows internal Go nil
 }
 
-func TestRuntimeValueGetters(t *testing.T) {
+func TestValueGetters(t *testing.T) {
 	// --- Setup some values ---
-	rvInt, _ := NewRuntimeValue(IntType, 123)
-	rvBool, _ := NewRuntimeValue(BoolType, true)
-	rvFloat, _ := NewRuntimeValue(FloatType, 98.6)
-	rvStr, _ := NewRuntimeValue(StrType, "hello")
-	rvNil, _ := NewRuntimeValue(NilType, nil)
+	rvInt, _ := NewValue(IntType, 123)
+	rvBool, _ := NewValue(BoolType, true)
+	rvFloat, _ := NewValue(FloatType, 98.6)
+	rvStr, _ := NewValue(StrType, "hello")
+	rvNil, _ := NewValue(NilType, nil)
 
-	rvListInt, _ := NewRuntimeValue(ListType(IntType))
-	elem1, _ := NewRuntimeValue(IntType, 1)
-	listIntVal := []*RuntimeValue{elem1}
+	rvListInt, _ := NewValue(ListType(IntType))
+	elem1, _ := NewValue(IntType, 1)
+	listIntVal := []*Value{elem1}
 	_ = rvListInt.Set(listIntVal)
 
-	rvListStr, _ := NewRuntimeValue(ListType(StrType))
-	elemS, _ := NewRuntimeValue(StrType, "a")
-	listStrVal := []*RuntimeValue{elemS}
+	rvListStr, _ := NewValue(ListType(StrType))
+	elemS, _ := NewValue(StrType, "a")
+	listStrVal := []*Value{elemS}
 	_ = rvListStr.Set(listStrVal)
 
-	rvOutcomes, _ := NewRuntimeValue(OutcomesType(BoolType))
-	elemB, _ := NewRuntimeValue(BoolType, false)
-	outcomesVal := []*RuntimeValue{elemB}
+	rvOutcomes, _ := NewValue(OutcomesType(BoolType))
+	elemB, _ := NewValue(BoolType, false)
+	outcomesVal := []*Value{elemB}
 	_ = rvOutcomes.Set(outcomesVal)
 
-	rvEmptyList, _ := NewRuntimeValue(ListType(FloatType))
-	_ = rvEmptyList.Set([]*RuntimeValue{})
+	rvEmptyList, _ := NewValue(ListType(FloatType))
+	_ = rvEmptyList.Set([]*Value{})
 
-	rvUninitList, _ := NewRuntimeValue(ListType(NilType)) // Uninitialized list
+	rvUninitList, _ := NewValue(ListType(NilType)) // Uninitialized list
 
 	// --- Test GetInt ---
 	valI, errI := rvInt.GetInt()

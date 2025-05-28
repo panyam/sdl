@@ -14,19 +14,19 @@ type EnumValue struct {
 	Option int
 }
 
-// RuntimeValue wraps a Go value with its type definition.
-type RuntimeValue struct {
+// Value wraps a Go value with its type definition.
+type Value struct {
 	Type  *Type
 	Value any // The underlying Go value
 }
 
-// NewRuntimeValue creates a new boxed value, optionally initializing and type-checking.
+// NewValue creates a new boxed value, optionally initializing and type-checking.
 // If initialValue is provided, Set() is called. Only the first initialValue is used.
-func NewRuntimeValue(t *Type, initialValue ...any) (*RuntimeValue, error) {
+func NewValue(t *Type, initialValue ...any) (Value, error) {
 	if t == nil {
-		panic("RuntimeValue type cannot be nil")
+		panic("Value type cannot be nil")
 	}
-	rv := &RuntimeValue{
+	rv := Value{
 		Type:  t,
 		Value: nil, // Default to nil Go value
 	}
@@ -36,19 +36,23 @@ func NewRuntimeValue(t *Type, initialValue ...any) (*RuntimeValue, error) {
 	if len(initialValue) > 0 {
 		err := rv.Set(initialValue[0])
 		if err != nil {
-			return nil, fmt.Errorf("failed to initialize RuntimeValue: %w", err)
+			return rv, fmt.Errorf("failed to initialize Value: %w", err)
 		}
 	}
 	return rv, nil
 }
 
+func (r Value) IsNil() bool {
+	return r.Value == nil
+}
+
 // Tries to set the value by enforcing and checking types.
 // The input 'v' should be the Go representation corresponding to r.Type.
-// For List/Outcomes, 'v' is expected to be '[]*RuntimeValue'.
-func (r *RuntimeValue) Set(v any) error {
+// For List/Outcomes, 'v' is expected to be '[]Value'.
+func (r Value) Set(v any) error {
 	if r.Type == nil {
 		// Should not happen if constructed properly
-		return fmt.Errorf("internal error: RuntimeValue has nil type")
+		return fmt.Errorf("internal error: Value has nil type")
 	}
 
 	// Handle general nil case first
@@ -137,20 +141,20 @@ func (r *RuntimeValue) Set(v any) error {
 	*/
 
 	if r.Type.Name == "List" || r.Type.Name == "Outcomes" {
-		// Expecting a slice of *RuntimeValue for containers
-		listVal, ok := v.([]*RuntimeValue)
+		// Expecting a slice of Value for containers
+		listVal, ok := v.([]Value)
 		if !ok {
 			containerName := "List"
 			if r.Type.Name == "Outcomes" {
 				containerName = "Outcomes"
 			}
-			return fmt.Errorf("type mismatch: expected %s ([]*RuntimeValue), got %T", containerName, v)
+			return fmt.Errorf("type mismatch: expected %s ([]Value), got %T", containerName, v)
 		}
 
 		// Check element types against r.Type.ChildTypes[0]
 		expectedElemType := r.Type.ChildTypes[0]
 		for i, elem := range listVal {
-			if elem == nil {
+			if elem.IsNil() {
 				// Allow nil elements in lists? Decide based on language semantics.
 				// Let's disallow for now unless element type is NilType.
 				if expectedElemType != nil {
@@ -176,9 +180,9 @@ func (r *RuntimeValue) Set(v any) error {
 }
 
 // String representation of the runtime value
-func (r *RuntimeValue) String() string {
-	if r == nil {
-		return "<nil RuntimeValue>"
+func (r Value) String() string {
+	if r.IsNil() {
+		return "<nil Value>"
 	}
 	valStr := fmt.Sprintf("%v", r.Value)
 	typeName := "<nil type>"
@@ -189,9 +193,9 @@ func (r *RuntimeValue) String() string {
 }
 
 // --- Custom getter methods
-func (r *RuntimeValue) GetInt() (int64, error) {
-	if r == nil || r.Type == nil {
-		return 0, fmt.Errorf("cannot get Int from nil RuntimeValue")
+func (r Value) GetInt() (int64, error) {
+	if r.IsNil() || r.Type == nil {
+		return 0, fmt.Errorf("cannot get Int from nil Value")
 	}
 	if r.Type != IntType {
 		return 0, fmt.Errorf("type mismatch: cannot get Int, value is type %s", r.Type.String())
@@ -206,9 +210,9 @@ func (r *RuntimeValue) GetInt() (int64, error) {
 	return val, nil
 }
 
-func (r *RuntimeValue) GetBool() (bool, error) {
-	if r == nil || r.Type == nil {
-		return false, fmt.Errorf("cannot get Bool from nil RuntimeValue")
+func (r Value) GetBool() (bool, error) {
+	if r.IsNil() || r.Type == nil {
+		return false, fmt.Errorf("cannot get Bool from nil Value")
 	}
 	if r.Type != BoolType {
 		return false, fmt.Errorf("type mismatch: cannot get Bool, value is type %s", r.Type.String())
@@ -223,9 +227,9 @@ func (r *RuntimeValue) GetBool() (bool, error) {
 	return val, nil
 }
 
-func (r *RuntimeValue) GetFloat() (float64, error) {
-	if r == nil || r.Type == nil {
-		return 0.0, fmt.Errorf("cannot get Float from nil RuntimeValue")
+func (r Value) GetFloat() (float64, error) {
+	if r.IsNil() || r.Type == nil {
+		return 0.0, fmt.Errorf("cannot get Float from nil Value")
 	}
 	if r.Type != FloatType {
 		return 0.0, fmt.Errorf("type mismatch: cannot get Float, value is type %s", r.Type.String())
@@ -240,9 +244,9 @@ func (r *RuntimeValue) GetFloat() (float64, error) {
 	return val, nil
 }
 
-func (r *RuntimeValue) GetString() (string, error) {
-	if r == nil || r.Type == nil {
-		return "", fmt.Errorf("cannot get String from nil RuntimeValue")
+func (r Value) GetString() (string, error) {
+	if r.IsNil() || r.Type == nil {
+		return "", fmt.Errorf("cannot get String from nil Value")
 	}
 	if r.Type != StrType {
 		return "", fmt.Errorf("type mismatch: cannot get String, value is type %s", r.Type.String())
@@ -259,9 +263,9 @@ func (r *RuntimeValue) GetString() (string, error) {
 	return val, nil
 }
 
-func (r *RuntimeValue) GetList() ([]*RuntimeValue, error) {
-	if r == nil || r.Type == nil {
-		return nil, fmt.Errorf("cannot get List from nil RuntimeValue")
+func (r Value) GetList() ([]Value, error) {
+	if r.IsNil() || r.Type == nil {
+		return nil, fmt.Errorf("cannot get List from nil Value")
 	}
 	if r.Type.Name != "List" {
 		return nil, fmt.Errorf("type mismatch: cannot get List, value is type %s", r.Type.String())
@@ -270,16 +274,16 @@ func (r *RuntimeValue) GetList() ([]*RuntimeValue, error) {
 		// Return nil slice if internal value is nil (representing empty list)
 		return nil, nil
 	}
-	val, ok := r.Value.([]*RuntimeValue)
+	val, ok := r.Value.([]Value)
 	if !ok {
-		return nil, fmt.Errorf("internal error: List value is not Go []*RuntimeValue (%T)", r.Value)
+		return nil, fmt.Errorf("internal error: List value is not Go []Value (%T)", r.Value)
 	}
 	return val, nil
 }
 
-func (r *RuntimeValue) GetTuple() ([]*RuntimeValue, error) {
-	if r == nil || r.Type == nil {
-		return nil, fmt.Errorf("cannot get Tuple from nil RuntimeValue")
+func (r Value) GetTuple() ([]Value, error) {
+	if r.IsNil() || r.Type == nil {
+		return nil, fmt.Errorf("cannot get Tuple from nil Value")
 	}
 	if r.Type.Name != "Tuple" {
 		return nil, fmt.Errorf("type mismatch: cannot get Tuple, value is type %s", r.Type.String())
@@ -288,16 +292,16 @@ func (r *RuntimeValue) GetTuple() ([]*RuntimeValue, error) {
 		// Return nil slice if internal value is nil (representing empty list)
 		return nil, nil
 	}
-	val, ok := r.Value.([]*RuntimeValue)
+	val, ok := r.Value.([]Value)
 	if !ok {
-		return nil, fmt.Errorf("internal error: Tuple value is not Go []*RuntimeValue (%T)", r.Value)
+		return nil, fmt.Errorf("internal error: Tuple value is not Go []Value (%T)", r.Value)
 	}
 	return val, nil
 }
 
-func (r *RuntimeValue) GetOutcomes() ([]*RuntimeValue, error) {
-	if r == nil || r.Type == nil {
-		return nil, fmt.Errorf("cannot get Outcomes from nil RuntimeValue")
+func (r Value) GetOutcomes() ([]Value, error) {
+	if r.IsNil() || r.Type == nil {
+		return nil, fmt.Errorf("cannot get Outcomes from nil Value")
 	}
 	if r.Type.Name != "Outcome" {
 		return nil, fmt.Errorf("type mismatch: cannot get Outcomes, value is type %s", r.Type.String())
@@ -306,18 +310,18 @@ func (r *RuntimeValue) GetOutcomes() ([]*RuntimeValue, error) {
 		// Return nil slice if internal value is nil (representing empty outcomes)
 		return nil, nil
 	}
-	val, ok := r.Value.([]*RuntimeValue)
+	val, ok := r.Value.([]Value)
 	if !ok {
-		return nil, fmt.Errorf("internal error: Outcomes value is not Go []*RuntimeValue (%T)", r.Value)
+		return nil, fmt.Errorf("internal error: Outcomes value is not Go []Value (%T)", r.Value)
 	}
 	return val, nil
 }
 
 // GetNil checks if the value is nil type and holds nil.
 // Returns error if type is not NilType or if value is not nil.
-func (r *RuntimeValue) GetNil() error {
-	if r == nil || r.Type == nil {
-		return fmt.Errorf("cannot get Nil from nil RuntimeValue")
+func (r Value) GetNil() error {
+	if r.IsNil() || r.Type == nil {
+		return fmt.Errorf("cannot get Nil from nil Value")
 	}
 	if r.Type != nil {
 		return fmt.Errorf("type mismatch: cannot get Nil, value is type %s", r.Type.String())
@@ -329,22 +333,22 @@ func (r *RuntimeValue) GetNil() error {
 }
 
 // Helpers to create specific simple values
-func StringValue(val string) (out *RuntimeValue) {
-	out, _ = NewRuntimeValue(StrType, val)
+func StringValue(val string) (out Value) {
+	out, _ = NewValue(StrType, val)
 	return
 }
 
-func IntValue(val int64) (out *RuntimeValue) {
-	out, _ = NewRuntimeValue(IntType, val)
+func IntValue(val int64) (out Value) {
+	out, _ = NewValue(IntType, val)
 	return
 }
 
-func FloatValue(val float64) (out *RuntimeValue) {
-	out, _ = NewRuntimeValue(FloatType, val)
+func FloatValue(val float64) (out Value) {
+	out, _ = NewValue(FloatType, val)
 	return
 }
 
-func BoolValue(val bool) (out *RuntimeValue) {
-	out, _ = NewRuntimeValue(BoolType, val)
+func BoolValue(val bool) (out Value) {
+	out, _ = NewValue(BoolType, val)
 	return
 }

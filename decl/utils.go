@@ -29,12 +29,12 @@ func ParseLiteralValue(lit string) (any, error) {
 
 // Helper to create simple AST nodes for testing
 func newIntLit(val int) *LiteralExpr {
-	v, _ := NewRuntimeValue(IntType, val)
+	v, _ := NewValue(IntType, val)
 	return &LiteralExpr{Value: v}
 }
 
 func newBoolLit(val bool) *LiteralExpr {
-	v, _ := NewRuntimeValue(BoolType, val)
+	v, _ := NewValue(BoolType, val)
 	return &LiteralExpr{Value: v}
 }
 
@@ -43,7 +43,7 @@ func newIdent(name string) *IdentifierExpr {
 }
 
 func newStringLit(val string) *LiteralExpr {
-	v, _ := NewRuntimeValue(StrType, val)
+	v, _ := NewValue(StrType, val)
 	return &LiteralExpr{Value: v}
 }
 

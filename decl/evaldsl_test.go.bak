@@ -139,7 +139,7 @@ func TestEvalIdentifier_Parsed(t *testing.T) {
 	// Setup frame *manually* because `let` is tested separately.
 	// `Eval` itself doesn't modify the passed frame directly for locals,
 	// only the child frames it creates. `evalLetStmt` modifies its frame.
-	expectedNode, _ := NewRuntimeValue(OpNodeType, &LeafNode{State: createNilState()}) // Example node stored in Frame
+	expectedNode, _ := NewValue(OpNodeType, &LeafNode{State: createNilState()}) // Example node stored in Frame
 	frame.Set("myVar", expectedNode)
 
 	// Test Found

@@ -285,8 +285,8 @@ func (i *Inference) EvalForExprType(expr Expr, scope *TypeScope) (inferred *Type
 }
 
 func (i *Inference) EvalForLiteralExpr(expr *LiteralExpr, scope *TypeScope) (*Type, bool) {
-	if expr.Value == nil || expr.Value.Type == nil {
-		i.Errorf(expr.Pos(), "literal expression has invalid internal RuntimeValue or Type")
+	if expr.Value.IsNil() || expr.Value.Type == nil {
+		i.Errorf(expr.Pos(), "literal expression has invalid internal Value or Type")
 		return nil, false
 	}
 	return expr.Value.Type, true

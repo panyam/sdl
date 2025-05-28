@@ -9,16 +9,18 @@ import (
 // FileDecl represents the top-level node of a parsed DSL file.
 type FileDecl struct {
 	NodeInfo
+	FullPath     string
 	Declarations []Node // ComponentDecl, SystemDecl, OptionsDecl, EnumDecl, ImportDecl
 
 	// Resolved values so we can work with processed/loaded values instead of resolving
 	// Identify expressions etc
-	resolved   bool
-	components map[string]*ComponentDecl
-	enums      map[string]*EnumDecl
-	imports    map[string]*ImportDecl
-	importList []*ImportDecl // Keep original list for iteration order if needed
-	systems    map[string]*SystemDecl
+	resolved       bool
+	allDefinitions map[string]Node // All definitions by name, including components, enums, systems, imports
+	components     map[string]*ComponentDecl
+	enums          map[string]*EnumDecl
+	imports        map[string]*ImportDecl
+	importList     []*ImportDecl // Keep original list for iteration order if needed
+	systems        map[string]*SystemDecl
 }
 
 func (f *FileDecl) PrettyPrint(cp CodePrinter) {
@@ -106,15 +108,24 @@ func (f *FileDecl) Resolve() error {
 			if err := f.RegisterComponent(node); err != nil {
 				return err
 			}
+			if err := f.RegisterDefinition(node.NameNode.Name, node); err != nil {
+				return fmt.Errorf("error registering definition '%s': %w", node.NameNode.Name, err)
+			}
 
 		case *SystemDecl:
 			// Store the SystemDecl AST by name for later execution
 			if err := f.RegisterSystem(node); err != nil {
 				return err
 			}
+			if err := f.RegisterDefinition(node.NameNode.Name, node); err != nil {
+				return fmt.Errorf("error registering definition '%s': %w", node.NameNode.Name, err)
+			}
 		case *EnumDecl:
 			if err := f.RegisterEnum(node); err != nil {
 				return err
+			}
+			if err := f.RegisterDefinition(node.NameNode.Name, node); err != nil {
+				return fmt.Errorf("error registering definition '%s': %w", node.NameNode.Name, err)
 			}
 
 		case *OptionsDecl:
@@ -123,6 +134,9 @@ func (f *FileDecl) Resolve() error {
 		case *ImportDecl:
 			if err := f.RegisterImport(node); err != nil {
 				return err
+			}
+			if err := f.RegisterDefinition(node.Alias.Name, node); err != nil {
+				return fmt.Errorf("error registering definition '%s': %w", node.Alias.Name, err)
 			}
 
 		default:
@@ -135,6 +149,34 @@ func (f *FileDecl) Resolve() error {
 	return nil
 }
 
+// GetDefinition retrieves a definition by name from the FileDecl.
+func (f *FileDecl) GetDefinition(name string) (Node, error) {
+	if f.allDefinitions == nil {
+		if err := f.Resolve(); err != nil {
+			return nil, fmt.Errorf("error resolving file definitions: %w", err)
+		}
+	}
+	if decl, exists := f.allDefinitions[name]; exists {
+		return decl, nil
+	}
+	return nil, fmt.Errorf("definition '%s' not found in file '%s'", name, f.FullPath)
+}
+
+// RegisterDefinition registers a definition in the FileDecl.
+func (f *FileDecl) RegisterDefinition(name string, decl Node) error {
+	if f.allDefinitions == nil {
+		f.allDefinitions = make(map[string]Node)
+	}
+	if _, exists := f.allDefinitions[name]; exists {
+		return fmt.Errorf("definition '%s' already registered", name)
+	}
+	f.allDefinitions[name] = decl
+	log.Printf("Registered definition '%s' of type %T", name, decl)
+	return nil
+}
+
+// RegisterComponent registers a component definition in the FileDecl.
+// It checks for duplicates and returns an error if the component is already registered.
 func (f *FileDecl) RegisterComponent(c *ComponentDecl) error {
 	if f.components == nil {
 		f.components = map[string]*ComponentDecl{}

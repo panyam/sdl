@@ -7,8 +7,6 @@ import (
 	"github.com/panyam/sdl/core"
 )
 
-type Value = *RuntimeValue
-
 var (
 	ErrNotImplemented       = errors.New("evaluation for this node type not implemented")
 	ErrNotFound             = errors.New("identifier not found")
@@ -59,7 +57,7 @@ func Eval(node Node, frame *Frame, v *VM) (val Value, err error) {
 	*/
 
 	default:
-		return nil, fmt.Errorf("Eval not implemented for node type %T", node)
+		return val, fmt.Errorf("Eval not implemented for node type %T", node)
 	}
 }
 
@@ -115,7 +113,7 @@ func evalIdentifier(expr *IdentifierExpr, frame *Frame, v *VM) (val Value, err e
 	name := expr.Name
 	value, ok := frame.Get(name)
 	if !ok {
-		return nil, fmt.Errorf("%w: identifier '%s'", ErrNotFound, name)
+		return value, fmt.Errorf("%w: identifier '%s'", ErrNotFound, name)
 	}
 	return value, nil
 }
@@ -124,7 +122,7 @@ func evalLetStmt(stmt *LetStmt, frame *Frame, v *VM) (val Value, err error) {
 	varName := stmt.Variables[0].Name
 	val, err = Eval(stmt.Value, frame, v)
 	if err != nil {
-		return nil, fmt.Errorf("evaluating value for let statement '%s': %w", varName, err)
+		return val, fmt.Errorf("evaluating value for let statement '%s': %w", varName, err)
 	}
 
 	// Store the resulting OpNode in the current frame
@@ -148,18 +146,18 @@ func evalCallExpr(expr *CallExpr, frame *Frame, v *VM) (val Value, err error) {
 			// If the receiver isn't a simple identifier (e.g., nested call result),
 			// this scenario is more complex and might require the Tree Evaluator.
 			// For Stage 1, let's assume simple instance.method calls.
-			return nil, fmt.Errorf("method call receiver must be a simple identifier, found %T", memberAccess.Receiver)
+			return val, fmt.Errorf("method call receiver must be a simple identifier, found %T", memberAccess.Receiver)
 		}
 
 		instanceAny, found := frame.Get(receiverIdent.Name)
 		if !found {
-			return nil, fmt.Errorf("instance '%s' not found for method call '%s'", receiverIdent.Name, memberAccess.Member.Name)
+			return val, fmt.Errorf("instance '%s' not found for method call '%s'", receiverIdent.Name, memberAccess.Member.Name)
 		}
 
 		runtimeInstance, ok = instanceAny.Value.(ComponentRuntime)
 		if !ok {
 			// This indicates an error - something other than a ComponentRuntime was stored for this identifier.
-			return nil, fmt.Errorf("identifier '%s' does not represent a component instance (found type %T)", receiverIdent.Name, instanceAny)
+			return val, fmt.Errorf("identifier '%s' does not represent a component instance (found type %T)", receiverIdent.Name, instanceAny)
 		}
 
 		methodName = memberAccess.Member.Name // Get method name from the AST
@@ -167,11 +165,11 @@ func evalCallExpr(expr *CallExpr, frame *Frame, v *VM) (val Value, err error) {
 	} else if identFunc, ok := expr.Function.(*IdentifierExpr); ok {
 		// Case: Calling a potential global/builtin function (less common for components)
 		// Look up in VM's internal funcs? Defer implementation for now.
-		return nil, fmt.Errorf("calling standalone functions ('%s') not implemented yet", identFunc.Name)
+		return val, fmt.Errorf("calling standalone functions ('%s') not implemented yet", identFunc.Name)
 	} else {
 		// The function part is some other expression - likely invalid DSL structure
 		// or requires evaluation first (Stage 2 Tree Evaluator needed).
-		return nil, fmt.Errorf("invalid function/method expression type %T in call", expr.Function)
+		return val, fmt.Errorf("invalid function/method expression type %T in call", expr.Function)
 	}
 
 	// 2. Evaluate Arguments -> []OpNode
@@ -180,7 +178,7 @@ func evalCallExpr(expr *CallExpr, frame *Frame, v *VM) (val Value, err error) {
 		argOpNodes[i], err = Eval(argExpr, frame, v)
 		if err != nil {
 			// TODO: Improve error reporting (arg index, method name)
-			return nil, fmt.Errorf("evaluating argument %d for method '%s': %w", i, methodName, err)
+			return val, fmt.Errorf("evaluating argument %d for method '%s': %w", i, methodName, err)
 		}
 	}
 
@@ -190,7 +188,7 @@ func evalCallExpr(expr *CallExpr, frame *Frame, v *VM) (val Value, err error) {
 	if err != nil {
 		// Error could be method not found, arg mismatch (checked inside InvokeMethod),
 		// or error during execution (native reflection call fail, DSL body eval fail).
-		return nil, fmt.Errorf("error calling method '%s' on instance '%s': %w", methodName, runtimeInstance.GetInstanceName(), err)
+		return val, fmt.Errorf("error calling method '%s' on instance '%s': %w", methodName, runtimeInstance.GetInstanceName(), err)
 	}
 
 	// 4. Return the resulting OpNode
@@ -207,15 +205,15 @@ func evalMemberAccess(expr *MemberAccessExpr, frame *Frame, v *VM) (val Value, e
 	// Evaluating receiver to ensure it exists might be useful
 	receiverIdent, okIdent := expr.Receiver.(*IdentifierExpr)
 	if !okIdent {
-		return nil, fmt.Errorf("member access receiver must be a simple identifier, found %T", expr.Receiver)
+		return val, fmt.Errorf("member access receiver must be a simple identifier, found %T", expr.Receiver)
 	}
 	instanceAny, found := frame.Get(receiverIdent.Name)
 	if !found {
-		return nil, fmt.Errorf("identifier '%s' not found for member access '%s'", receiverIdent.Name, expr.Member.Name)
+		return val, fmt.Errorf("identifier '%s' not found for member access '%s'", receiverIdent.Name, expr.Member.Name)
 	}
 	_ /*runtimeInstance*/, okRuntime := instanceAny.Value.(ComponentRuntime)
 	if !okRuntime {
-		return nil, fmt.Errorf("identifier '%s' does not represent a component instance (found type %T)", receiverIdent.Name, instanceAny)
+		return val, fmt.Errorf("identifier '%s' does not represent a component instance (found type %T)", receiverIdent.Name, instanceAny)
 	}
 
 	// However, *getting* the parameter might require the Tree Evaluator.
@@ -224,7 +222,7 @@ func evalMemberAccess(expr *MemberAccessExpr, frame *Frame, v *VM) (val Value, e
 	// return a specific OpNode type representing the parameter access?
 	// For now, let's return an error, assuming direct member access isn't handled in Stage 1.
 	// It's primarily used within method calls.
-	return nil, fmt.Errorf("direct evaluation of member access '%s.%s' not supported in Stage 1; use within method calls or assignments", receiverIdent.Name, expr.Member.Name)
+	return val, fmt.Errorf("direct evaluation of member access '%s.%s' not supported in Stage 1; use within method calls or assignments", receiverIdent.Name, expr.Member.Name)
 	// Alternative: Could return runtimeInstance.GetParam(expr.Member.Name) if GetParam is robust.
 }
 
@@ -237,7 +235,7 @@ func evalBlockStmt(stmt *BlockStmt, frame *Frame, v *VM) (val Value, err error) 
 		resultNode, err := Eval(statement, blockFrame, v)
 		if err != nil {
 			// TODO: Improve error reporting with position info from statement
-			return nil, fmt.Errorf("error in block statement: %w", err)
+			return val, fmt.Errorf("error in block statement: %w", err)
 		}
 
 		// Only include non-nil nodes in the sequence
@@ -248,12 +246,12 @@ func evalBlockStmt(stmt *BlockStmt, frame *Frame, v *VM) (val Value, err error) 
 
 	// Determine return value based on collected steps
 	if len(steps) == 0 {
-		return nil, nil // Empty block or only let statements
+		return val, nil // Empty block or only let statements
 	}
 	if len(steps) == 1 {
 		return steps[0], nil // Single effective statement, return its node
 	}
-	return NewRuntimeValue(OpNodeType, &SequenceNode{Steps: steps})
+	return NewValue(OpNodeType, &SequenceNode{Steps: steps})
 }
 
 /** Evaluate a If and return its value */
@@ -262,7 +260,7 @@ func evalIfStmt(stmt *IfStmt, frame *Frame, v *VM) (val Value, err error) {
 	conditionNode, err := Eval(stmt.Condition, frame, v)
 	if err != nil {
 		// TODO: Improve error reporting
-		return nil, fmt.Errorf("evaluating condition for if statement: %w", err)
+		return val, fmt.Errorf("evaluating condition for if statement: %w", err)
 	}
 
 	// Evaluate the 'then' block to get its OpNode representation
@@ -271,7 +269,7 @@ func evalIfStmt(stmt *IfStmt, frame *Frame, v *VM) (val Value, err error) {
 	thenNode, err := Eval(stmt.Then, frame, v)
 	if err != nil {
 		// TODO: Improve error reporting
-		return nil, fmt.Errorf("evaluating 'then' block for if statement: %w", err)
+		return val, fmt.Errorf("evaluating 'then' block for if statement: %w", err)
 	}
 
 	// Evaluate the 'else' block/statement, if it exists
@@ -280,12 +278,12 @@ func evalIfStmt(stmt *IfStmt, frame *Frame, v *VM) (val Value, err error) {
 		elseNode, err = Eval(stmt.Else, frame, v)
 		if err != nil {
 			// TODO: Improve error reporting
-			return nil, fmt.Errorf("evaluating 'else' block for if statement: %w", err)
+			return val, fmt.Errorf("evaluating 'else' block for if statement: %w", err)
 		}
 	}
 
 	// Construct and return the IfChoiceNode representing the structure
-	return NewRuntimeValue(OpNodeType, &IfChoiceNode{
+	return NewValue(OpNodeType, &IfChoiceNode{
 		Condition: conditionNode,
 		Then:      thenNode,
 		Else:      elseNode,
@@ -308,13 +306,13 @@ func evalBinaryExpr(expr *BinaryExpr, frame *Frame, v *VM) (val Value, err error
 	leftNode, err := Eval(expr.Left, frame, v)
 	if err != nil {
 		// TODO: Improve error reporting with position info
-		return nil, fmt.Errorf("evaluating left operand for '%s': %w", expr.Operator, err)
+		return val, fmt.Errorf("evaluating left operand for '%s': %w", expr.Operator, err)
 	}
 
 	rightNode, err := Eval(expr.Right, frame, v)
 	if err != nil {
 		// TODO: Improve error reporting with position info
-		return nil, fmt.Errorf("evaluating right operand for '%s': %w", expr.Operator, err)
+		return val, fmt.Errorf("evaluating right operand for '%s': %w", expr.Operator, err)
 	}
 
 	// Check operator validity if needed (parser should handle this mostly)
@@ -326,7 +324,7 @@ func evalBinaryExpr(expr *BinaryExpr, frame *Frame, v *VM) (val Value, err error
 	// }
 
 	// Construct and return the BinaryOpNode representing the operation
-	return NewRuntimeValue(OpNodeType, &BinaryOpNode{
+	return NewValue(OpNodeType, &BinaryOpNode{
 		Op:    expr.Operator,
 		Left:  leftNode,
 		Right: rightNode,
@@ -344,13 +342,13 @@ func evalSystemDecl(stmt *SystemDecl, frame *Frame, v *VM) (val Value, err error
 		// For now, InstanceDecl modifies the passed frame.
 		_, err := Eval(item, frame, v) // Use passed frame
 		if err != nil {
-			return nil, fmt.Errorf("error evaluating item in system '%s': %w", stmt.NameNode.Name, err)
+			return val, fmt.Errorf("error evaluating item in system '%s': %w", stmt.NameNode.Name, err)
 		}
 		// Ignore the OpNode returned by body items (e.g., InstanceDecl returns NilNode)
 	}
 
 	// System declaration itself doesn't produce a value OpNode
-	return nil, nil
+	return val, nil
 }
 
 // --- evalInstanceDecl (Instantiates Native or DSL component) ---
@@ -360,7 +358,7 @@ func evalInstanceDecl(stmt *InstanceDecl, frame *Frame, v *VM) (val Value, err e
 
 	// Check if instance name already exists in the current scope
 	if _, exists := frame.Get(instanceName); exists {
-		return nil, fmt.Errorf("identifier '%s' already exists in the current scope", instanceName)
+		return val, fmt.Errorf("identifier '%s' already exists in the current scope", instanceName)
 	}
 
 	// First evaluate the value of the overrides before passing them to the instance creator
@@ -369,11 +367,11 @@ func evalInstanceDecl(stmt *InstanceDecl, frame *Frame, v *VM) (val Value, err e
 	runtimeInstance, err := v.CreateInstance(componentTypeName, instanceName, stmt.Overrides, frame)
 	if err != nil {
 		// Wrap error with position info from the InstanceDecl statement
-		return nil, fmt.Errorf("failed to create instance '%s' (type %s) at pos %d: %w", instanceName, componentTypeName, stmt.Pos(), err)
+		return val, fmt.Errorf("failed to create instance '%s' (type %s) at pos %d: %w", instanceName, componentTypeName, stmt.Pos(), err)
 	}
 
 	// Store the resulting ComponentRuntime in the current frame's locals
-	val, err = NewRuntimeValue(ComponentType, runtimeInstance)
+	val, err = NewValue(ComponentType, runtimeInstance)
 	if err != nil {
 		return
 	}

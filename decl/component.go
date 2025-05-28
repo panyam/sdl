@@ -25,28 +25,28 @@ type ComponentRuntime interface {
 	GetComponentTypeName() string
 
 	// GetParam returns the evaluated parameter value for this instance.
-	// For DSL components, this returns the RuntimeValue.
+	// For DSL components, this returns the Value.
 	// For Native components, it needs to retrieve the configured Go value
 	// and potentially wrap it in a LeafNode/VarState for consistency? (TBD)
-	GetParam(name string) (Value, bool) // Returns RuntimeValue, found
+	GetParam(name string) (Value, bool) // Returns Value, found
 
 	// GetDependency returns the runtime instance (another ComponentRuntime)
 	// satisfying a dependency declared via 'uses'.
 	GetDependency(name string) (ComponentRuntime, bool) // Returns ComponentRuntime, found
 
 	// SetParam sets the evaluated parameter value for this instance.
-	// For DSL components, this sets an RuntimeValue.
-	// For Native components, it is upto the component to manage the value of the RuntimeValue
-	SetParam(name string, value Value) error // Returns RuntimeValue, found
+	// For DSL components, this sets an Value.
+	// For Native components, it is upto the component to manage the value of the Value
+	SetParam(name string, value Value) error // Returns Value, found
 
 	// SetDependency sets the runtime instance (another ComponentRuntime)
 	// satisfying a dependency declared via 'uses'.
 	SetDependency(name string, comp ComponentRuntime) error // Returns ComponentRuntime, found
 
 	// InvokeMethod prepares or executes a method call on this component instance.
-	// Args are the evaluated RuntimeValues for the arguments.
-	// Returns an RuntimeValue representing the result of the method call (often a LeafNode
-	// wrapping the *core.Outcomes from a native call, or the RuntimeValue tree
+	// Args are the evaluated Values for the arguments.
+	// Returns an Value representing the result of the method call (often a LeafNode
+	// wrapping the *core.Outcomes from a native call, or the Value tree
 	// resulting from evaluating a DSL method body).
 	InvokeMethod(methodName string, args []Value, vm *VM, callFrame *Frame) (Value, error)
 
@@ -57,19 +57,19 @@ type ComponentRuntime interface {
 // --- Existing UDComponent adapting to ComponentRuntime ---
 
 // UDComponent represents a runtime instance of a component
-// defined purely within the DSL. It holds resolved parameters (as RuntimeValues)
+// defined purely within the DSL. It holds resolved parameters (as Values)
 // and dependencies.
 type UDComponent struct {
 	Definition   *ComponentDecl              // Pointer to the blueprint (AST etc.)
 	InstanceName string                      // The name given in the InstanceDecl
-	Params       map[string]Value            // Evaluated parameter RuntimeValues (override or default)
+	Params       map[string]Value            // Evaluated parameter Values (override or default)
 	Dependencies map[string]ComponentRuntime // *** Unified map ***
 }
 
 // SetParam sets the evaluated parameter value for this instance.
-// For DSL components, this sets an RuntimeValue.
-// For Native components, it is upto the component to manage the value of the RuntimeValue
-func (ci *UDComponent) SetParam(name string, value *RuntimeValue) error {
+// For DSL components, this sets an Value.
+// For Native components, it is upto the component to manage the value of the Value
+func (ci *UDComponent) SetParam(name string, value Value) error {
 	ci.Params[name] = value
 	return nil
 }
@@ -149,18 +149,18 @@ func (ci *UDComponent) InvokeMethod(methodName string, args []Value, vm *VM, cal
 	methodFrame := NewFrame(nil)
 
 	// 3. Bind parameters (args) to local variables in methodFrame.
-	//    (Needs implementation: check arg count, types?, store RuntimeValues in methodFrame)
+	//    (Needs implementation: check arg count, types?, store Values in methodFrame)
 	if len(args) != len(methodDef.Parameters) {
 		err = fmt.Errorf("argument count mismatch for method '%s': expected %d, got %d", methodName, len(methodDef.Parameters), len(args))
 		return
 	}
 	for i, paramDef := range methodDef.Parameters {
-		// Store the provided argument RuntimeValue under the parameter's name
+		// Store the provided argument Value under the parameter's name
 		methodFrame.Set(paramDef.Name.Name, args[i])
 	}
 
 	// 4. Bind 'self'/'this' maybe? Store ci (*UDComponent) itself?
-	val, err = NewRuntimeValue(ComponentType, ci)
+	val, err = NewValue(ComponentType, ci)
 	if err != nil {
 		return
 	}
@@ -168,16 +168,16 @@ func (ci *UDComponent) InvokeMethod(methodName string, args []Value, vm *VM, cal
 
 	// 5. Bind dependencies ('uses') to local variables in methodFrame.
 	for depName, depInstance := range ci.Dependencies {
-		depVal, err := NewRuntimeValue(ComponentType, depInstance)
+		depVal, err := NewValue(ComponentType, depInstance)
 		if err != nil {
-			return nil, err
+			return depVal, err
 		}
 		methodFrame.Set(depName, depVal) // Store the ComponentRuntime dependency
 	}
 
 	// 6. Evaluate the method body (BlockStmt) using the methodFrame.
 	//    The result of the block is the result of the method.
-	resultRuntimeValue, err := Eval(methodDef.Body, methodFrame, vm)
+	resultValue, err := Eval(methodDef.Body, methodFrame, vm)
 	if err != nil {
 		err = fmt.Errorf("error executing method '%s' body for instance '%s': %w", methodName, ci.InstanceName, err)
 		return
@@ -186,7 +186,7 @@ func (ci *UDComponent) InvokeMethod(methodName string, args []Value, vm *VM, cal
 	// TODO: Handle 'return' statements within the block? Eval needs modification.
 	// TODO: Check return type compatibility?
 
-	return resultRuntimeValue, nil
+	return resultValue, nil
 }
 
 // NativeComponent wraps a Go component instance to implement ComponentRuntime.
@@ -199,18 +199,18 @@ type NativeComponent struct {
 	// When writing native components, we just enforce these so we can avoid reflection
 	GoInstance interface {
 		// GetParam returns the evaluated parameter value for this instance.
-		// For DSL components, this returns the RuntimeValue.
+		// For DSL components, this returns the Value.
 		// For Native components, it needs to retrieve the configured Go value
 		// and potentially wrap it in a LeafNode/VarState for consistency? (TBD)
-		// GetParam(name string) (RuntimeValue, bool) // Returns RuntimeValue, found
+		// GetParam(name string) (Value, bool) // Returns Value, found
 
 		// GetDependency returns the runtime instance (another ComponentRuntime)
 		// satisfying a dependency declared via 'uses'.
 		// GetDependency(name string) (ComponentRuntime, bool) // Returns ComponentRuntime, found
 
 		// SetParam sets the evaluated parameter value for this instance.
-		// For DSL components, this sets an RuntimeValue.
-		// For Native components, it is upto the component to manage the value of the RuntimeValue
+		// For DSL components, this sets an Value.
+		// For Native components, it is upto the component to manage the value of the Value
 		// SetParam(name string, value any) error
 
 		// SetDependency sets the runtime instance (another ComponentRuntime)
@@ -228,7 +228,7 @@ func (na *NativeComponent) GetComponentTypeName() string {
 	return na.TypeName
 }
 
-// GetParam for native components is tricky. How do we map a Go field back to an RuntimeValue?
+// GetParam for native components is tricky. How do we map a Go field back to an Value?
 // Option 1: Don't support GetParam directly for native components via the interface.
 // Option 2: Use reflection, get the Go field value, wrap it in LeafNode/VarState. (Complex)
 // Let's go with Option 2 for now, but only for simple types.
@@ -297,8 +297,8 @@ func (na *NativeComponent) GetDependency(name string) (ComponentRuntime, bool) {
 }
 
 // SetParam sets the evaluated parameter value for this instance.
-// For DSL components, this sets an RuntimeValue.
-// For Native components, it is upto the component to manage the value of the RuntimeValue
+// For DSL components, this sets an Value.
+// For Native components, it is upto the component to manage the value of the Value
 func (na *NativeComponent) SetParam(name string, value Value) error {
 	instanceVal := reflect.ValueOf(na.GoInstance)
 	if instanceVal.Kind() == reflect.Ptr {
@@ -321,7 +321,7 @@ func (na *NativeComponent) SetParam(name string, value Value) error {
 		return fmt.Errorf("cannot set value of param '%s'", name)
 	}
 
-	/* TODO - Convert RuntimeValue -> Go Value
+	/* TODO - Convert Value -> Go Value
 	switch value.Type {
 	case ValueTypeNil:
 		fieldVal.SetPointer(nil)
@@ -355,7 +355,7 @@ func (na *NativeComponent) SetParam(name string, value Value) error {
 		}
 		break
 	case ValueTypeOpNode:
-			// case *BinaryRuntimeValue:
+			// case *BinaryValue:
 			// case *IfChoiceNode:
 			// case *SequenceNode:
 		return fmt.Errorf("node (%s) must be evaluated before setting param ('%s')", reflect.TypeOf(value.Value), name)
@@ -395,11 +395,11 @@ func (na *NativeComponent) InvokeMethod(methodName string, args []Value, vm *VM,
 	}
 	// TODO: Handle variadic methods
 
-	// Convert RuntimeValue to go values
+	// Convert Value to go values
 	for i := 0; i < methodType.NumIn(); i++ {
-		argRuntimeValue := args[i].Value
+		argValue := args[i].Value
 		paramType := methodType.In(i)
-		argVal := reflect.ValueOf(argRuntimeValue)
+		argVal := reflect.ValueOf(argValue)
 
 		// Check type compatibility (more robust check needed)
 		if !argVal.Type().ConvertibleTo(paramType) {
