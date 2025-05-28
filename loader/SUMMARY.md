@@ -31,6 +31,20 @@ This package is responsible for managing the loading of SDL source files. Its ke
 3.  **`resolver.go`**:
     *   `DefaultFileResolver`: An implementation of `FileResolver` that works with the local filesystem, handling relative and absolute paths.
 
+4.  **Type Inference (`infer.go`):
+    *   `InferTypesForFile(file *FileDecl, rootEnv *Env[Node]) []error`: The main entry point for type checking an entire file's AST. It takes the `FileDecl` and a pre-populated `Env[Node]` (from the loader) containing all visible global and imported declarations.
+    *   It performs multiple passes, first resolving types in signatures and parameter defaults, then inferring types for method bodies and system definitions.
+    *   Relies on `TypeScope` to manage contextual symbol lookups.
+    *   Recursive helper functions (`InferExprType`, `InferTypesForStmt`, etc.) traverse the AST, infer types for expressions, and check type compatibility for operations, assignments, function calls, etc.
+    *   Errors encountered during inference are collected and returned.
+
+5.  **Type Scope (`typescope.go`):
+    *   `TypeScope` struct: Assists `infer.go` by providing a structured way to look up the type of identifiers.
+    *   It uses an `env *Env[Node]` (passed from the loader via `InferTypesForFile` and pushed for lexical blocks) to find named declarations (local `let` variables, global/imported enums, components).
+    *   It also uses `currentComponent` and `currentMethod` context to resolve `self`, method parameters, and component members (params/uses).
+    *   `Get(name string) (*Type, bool)`: The primary lookup method.
+    *   `Set(name string, identNode *IdentifierExpr, t *Type)`: Used to record the inferred type of `let`-defined variables into the current lexical `env`.
+
 **Process Flow (Loading & Validation):**
 
 1.  `LoadFile(filePath, ...)` is called for a root file.

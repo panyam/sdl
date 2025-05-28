@@ -221,7 +221,7 @@ func (l *Loader) GetFileStatus(filePath string, importerPath string) *FileStatus
 	return fileStatus
 }
 
-// Validates a file
+// Validates an already loaded file
 // Performs all kinds of static checks like type checking/inference etc
 // If the file is not loaded it is also loaded.
 // Validation for any imports from this file are also kicked off if they are not already validated.

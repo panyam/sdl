@@ -17,29 +17,20 @@ This package is central to the System Design Language (SDL) processing. It defin
 
 2.  **SDL Type System (`types.go`):
     *   `Type` struct: Represents a type in SDL (e.g., `Int`, `Bool`, `List[String]`, `Outcomes[AccessResult]`, an enum type like `HttpStatusCode`, or a component type like `MyCache`).
-    *   Includes fields for `Name`, `ChildTypes` (for generics/composites), `IsEnum`, and importantly `OriginalDecl Node` which links a `Type` instance back to its defining AST node (e.g., the `*EnumDecl` for an enum type, or `*ComponentDecl` for a component type).
-    *   Singleton instances for basic types (`IntType`, `StrType`, etc.) and factory functions (`ListType`, `OutcomesType`, `EnumType`, `ComponentTypeInstance`) for creating `Type` objects.
+    *   Includes fields for `Tag`, `Info` for type tag and type info.  Type Tag tells what kind of type it i, (eg:
+        * SimpleType for int, bool, float, string etc
+        * ListType for lists (.Info would be the type of item in the list)
+        * ComponentType for denoting component types - where Info would be the corresponding ComponentDecl
+        * EnumType - Info is the EnumDecl
+        * so on
+    *   Singleton instances for basic types (`IntType`, `StrType`, etc.) and factory functions (`ListType`, `OutcomesType`, `EnumType`, `ComponentType`, `EnumType`) for creating `Type` objects.
 
-3.  **Type Inference (`infer.go`):
-    *   `InferTypesForFile(file *FileDecl, rootEnv *Env[Node]) []error`: The main entry point for type checking an entire file's AST. It takes the `FileDecl` and a pre-populated `Env[Node]` (from the loader) containing all visible global and imported declarations.
-    *   It performs multiple passes, first resolving types in signatures and parameter defaults, then inferring types for method bodies and system definitions.
-    *   Relies on `TypeScope` to manage contextual symbol lookups.
-    *   Recursive helper functions (`InferExprType`, `InferTypesForStmt`, etc.) traverse the AST, infer types for expressions, and check type compatibility for operations, assignments, function calls, etc.
-    *   Errors encountered during inference are collected and returned.
-
-4.  **Type Scope (`typescope.go`):
-    *   `TypeScope` struct: Assists `infer.go` by providing a structured way to look up the type of identifiers.
-    *   It uses an `env *Env[Node]` (passed from the loader via `InferTypesForFile` and pushed for lexical blocks) to find named declarations (local `let` variables, global/imported enums, components).
-    *   It also uses `currentComponent` and `currentMethod` context to resolve `self`, method parameters, and component members (params/uses).
-    *   `Get(name string) (*Type, bool)`: The primary lookup method.
-    *   `Set(name string, identNode *IdentifierExpr, t *Type)`: Used to record the inferred type of `let`-defined variables into the current lexical `env`.
-
-5.  **Generic Environment (`env.go`):
+3.  **Generic Environment (`env.go`):
     *   `Env[T any]` struct: A general-purpose, nestable environment for storing key-value pairs, where keys are strings (names) and values are of generic type `T` (in type inference, `T` is `Node`).
     *   Supports `Get`, `Set`, and `Push` (for creating nested scopes).
     *   Used by the `loader` to build the initial symbol table for a file and by `TypeScope` to manage lexical scoping during inference.
 
-6.  **File Declaration Resolution (`ast.go` - within `FileDecl` methods):
+4.  **File Declaration Resolution (`ast.go` - within `FileDecl` methods):
     *   `FileDecl.Resolve()`: Parses the `Declarations` list in a `FileDecl` to populate internal maps (`components`, `enums`, `imports`, `systems`). This makes looking up locally defined symbols efficient.
     *   `FileDecl.Get<Type>()` methods (e.g., `GetEnum`, `GetComponent`) provide access to these resolved local declarations.
 
@@ -47,14 +38,6 @@ This package is central to the System Design Language (SDL) processing. It defin
 
 *   The AST node definitions are largely in place, covering most of the intended SDL syntax.
 *   The `Type` system and `Env` structure are defined.
-*   **Significant Refactoring Underway/Completed for Type Inference:**
-    *   `TypeScope` has been redesigned to work with an `Env[Node]` passed from the `loader`. This `Env` contains all global and imported symbols, correctly aliased.
-    *   `TypeScope.Get` now correctly prioritizes lookups (locals, self, params, env) and can return `*Type` objects that include `OriginalDecl` for enums and components, enabling more accurate member access resolution.
-    *   `TypeScope.Set` correctly registers `let`-defined variables in the lexical environment.
-    *   `InferTypesForFile` has been updated to use this new `TypeScope` and `Env` structure.
-    *   `TypeDecl` has been enhanced with `TypeUsingScope(*TypeScope) *Type` and `SetResolvedType(*Type)` to allow `TypeDecl` nodes (e.g., in parameter lists or return types) to resolve their names to full `*Type` objects within a given scope, caching the result.
-    *   Parameter type inference (`InferTypesForParamDecl`) has been improved to infer a parameter's type from its default value if no explicit type is given.
-*   The goal of these refactorings is to correctly handle type resolution for imported and aliased symbols, particularly for cases like `Http.StatusOk` where `Http` is an alias for an imported enum.
 
 **Next Steps (for this package):**
 
