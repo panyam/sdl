@@ -19,9 +19,9 @@ func TestBitly(t *testing.T) {
 			log.Println("Error loading file: ", f, err)
 			continue
 		}
-		log.Printf("\nFile %s - Parsed Successfully at: %v\n", fs.FullPath, fs.LastParsed)
 		l.Validate(fs)
 		if fs.HasErrors() {
+			log.Printf("\nError Validating File %s\n", fs.FullPath)
 			fs.PrintErrors()
 		} else {
 			log.Printf("\nFile %s - Validated Successfully at: %v\n", fs.FullPath, fs.LastValidated)
