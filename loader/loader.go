@@ -71,6 +71,12 @@ type Loader struct {
 // NewLoader creates a new SDL loader.
 // maxDepth specifies the maximum import recursion depth (0 means no limit, 1 means root only, etc.).
 func NewLoader(parser Parser, resolver FileResolver, maxDepth int) *Loader {
+	if parser == nil {
+		parser = &SDLParserAdapter{}
+	}
+	if resolver == nil {
+		resolver = NewDefaultFileResolver()
+	}
 	return &Loader{
 		parser:       parser,
 		resolver:     resolver,
@@ -154,6 +160,7 @@ func (l *Loader) LoadFile(filePath string, importerPath string, depth int) (*Fil
 	}
 
 	// 7. Store the successfully parsed file
+	fileDecl.FullPath = filePath
 	fileStatus.FileDecl = fileDecl
 	fileStatus.LastParsed = time.Now()
 
