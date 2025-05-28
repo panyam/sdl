@@ -115,6 +115,14 @@ func (r *Value) Set(v any) error {
 	default:
 	}
 
+	if r.Type.Tag == TypeTagExpr {
+		if le, ok := v.(Expr); !ok {
+			return fmt.Errorf("TypeTagExpr needs an Expr value")
+		} else {
+			r.Value = le
+		}
+	}
+
 	// Take care of the complex types now
 	if r.Type.Tag == TypeTagComponent {
 		/*

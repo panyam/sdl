@@ -73,6 +73,23 @@ func (l *LetStmt) PrettyPrint(cp CodePrinter) {
 	cp.Print(l.String())
 }
 
+// SetStmt represents `MemberAccessExpr = value`
+type SetStmt struct {
+	NodeInfo
+	TargetExpr Expr
+	Value      Expr
+}
+
+func (l *SetStmt) systemBodyItemNode() {} // Allow let at system level
+
+func (l *SetStmt) String() string {
+	return fmt.Sprintf("set %s = %s;", l.TargetExpr, l.Value)
+}
+
+func (l *SetStmt) PrettyPrint(cp CodePrinter) {
+	cp.Print(l.String())
+}
+
 // ExprStmt represents an expression used as a statement (e.g., a call)
 type ExprStmt struct {
 	NodeInfo

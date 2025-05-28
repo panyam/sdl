@@ -42,6 +42,14 @@ func (e *ExprBase) DeclaredType() *Type {
 
 func (me *ExprBase) exprNode() {}
 
+// LazyExpr is a thunk/holder of another expression that is evaluated when needed.
+// It is usually reference and is shared
+type LazyExpr struct {
+	ExprBase
+	TargetExpr Expr
+	Evaluated  bool
+}
+
 // --- Expressions ---
 // TupleExpr represents `left operator right`
 type TupleExpr struct {
@@ -79,6 +87,18 @@ func (b *BinaryExpr) String() string {
 }
 func (e *BinaryExpr) PrettyPrint(cp CodePrinter) {
 	cp.Print(e.String())
+}
+
+// An expression to create an instance of a component
+// InstanceDecls are compiled down to a combination of NewExpr and SetExpr expression types
+type NewExpr struct {
+	ExprBase
+	ComponentExpr *IdentifierExpr
+}
+
+func (n *NewExpr) String() string { return fmt.Sprintf("(new %s)", n.ComponentExpr.Name) }
+func (n *NewExpr) PrettyPrint(cp CodePrinter) {
+	cp.Print(n.String())
 }
 
 // UnaryExpr represents `operator operand`

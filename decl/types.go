@@ -19,6 +19,7 @@ const (
 	TypeTagComponent
 	TypeTagMethod
 	TypeTagOutcomes
+	TypeTagExpr
 )
 
 type Type struct {
@@ -65,6 +66,13 @@ func TupleType(elementTypes ...*Type) *Type {
 		Tag: TypeTagTuple,
 		// Name: "Tuple",
 		Info: elementTypes,
+	}
+}
+
+func ExprType(elementType *Type) *Type {
+	return &Type{
+		Tag:  TypeTagExpr,
+		Info: elementType,
 	}
 }
 
@@ -177,10 +185,8 @@ func (v *Type) Equals(other *Type) bool {
 		c2 := other.Info.(*ComponentDecl)
 		// TODO - a more deeper check
 		return c1.NameNode.Name == c2.NameNode.Name
-	} else {
-		panic(fmt.Sprintf("Invalid types... %d, %v, %d, %v", v.Tag, v.Info, other.Tag, other.Info))
 	}
-	return false
+	panic(fmt.Sprintf("Invalid types... %d, %v, %d, %v", v.Tag, v.Info, other.Tag, other.Info))
 }
 
 // IsComponentType checks if the type represents a component (based on OriginalDecl).

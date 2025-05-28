@@ -118,13 +118,13 @@ func TestValueSet(t *testing.T) {
 	// Correct list
 	rvElem1, _ := NewValue(IntType, 10)
 	rvElem2, _ := NewValue(IntType, 20)
-	correctList := []*Value{rvElem1, rvElem2}
+	correctList := []Value{rvElem1, rvElem2}
 	err = rvList.Set(correctList)
 	assert.NoError(t, err)
 	assert.Equal(t, correctList, rvList.Value)
 
 	// Empty list
-	emptyList := []*Value{}
+	emptyList := []Value{}
 	err = rvList.Set(emptyList)
 	assert.NoError(t, err)
 	assert.Equal(t, emptyList, rvList.Value)
@@ -136,7 +136,7 @@ func TestValueSet(t *testing.T) {
 
 	// Incorrect list element type
 	rvStrElem, _ := NewValue(StrType, "hello")
-	incorrectList := []*Value{rvElem1, rvStrElem}
+	incorrectList := []Value{rvElem1, rvStrElem}
 	err = rvList.Set(incorrectList)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "type error in list/outcomes element 1: expected int, got string")
@@ -146,7 +146,7 @@ func TestValueSet(t *testing.T) {
 	wrongSliceType := []int{1, 2}
 	err = rvList.Set(wrongSliceType)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "expected List ([]*Value), got []int")
+	assert.Contains(t, err.Error(), "expected List ([]Value), got []int")
 }
 
 func TestValueString(t *testing.T) {
@@ -159,11 +159,11 @@ func TestValueString(t *testing.T) {
 	rvList, _ := NewValue(ListType(StrType))
 	rvS1, _ := NewValue(StrType, "a")
 	rvS2, _ := NewValue(StrType, "b")
-	_ = rvList.Set([]*Value{rvS1, rvS2})
+	_ = rvList.Set([]Value{rvS1, rvS2})
 	assert.Equal(t, "RV(List[string]: [RV(string: a), RV(string: b)])", rvList.String())
 
 	rvEmptyList, _ := NewValue(ListType(IntType))
-	_ = rvEmptyList.Set([]*Value{})
+	_ = rvEmptyList.Set([]Value{})
 	assert.Equal(t, "RV(List[int]: [])", rvEmptyList.String())
 
 	rvUnitialized, _ := NewValue(BoolType)
@@ -180,21 +180,21 @@ func TestValueGetters(t *testing.T) {
 
 	rvListInt, _ := NewValue(ListType(IntType))
 	elem1, _ := NewValue(IntType, 1)
-	listIntVal := []*Value{elem1}
+	listIntVal := []Value{elem1}
 	_ = rvListInt.Set(listIntVal)
 
 	rvListStr, _ := NewValue(ListType(StrType))
 	elemS, _ := NewValue(StrType, "a")
-	listStrVal := []*Value{elemS}
+	listStrVal := []Value{elemS}
 	_ = rvListStr.Set(listStrVal)
 
 	rvOutcomes, _ := NewValue(OutcomesType(BoolType))
 	elemB, _ := NewValue(BoolType, false)
-	outcomesVal := []*Value{elemB}
+	outcomesVal := []Value{elemB}
 	_ = rvOutcomes.Set(outcomesVal)
 
 	rvEmptyList, _ := NewValue(ListType(FloatType))
-	_ = rvEmptyList.Set([]*Value{})
+	_ = rvEmptyList.Set([]Value{})
 
 	rvUninitList, _ := NewValue(ListType(NilType)) // Uninitialized list
 
