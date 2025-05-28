@@ -62,6 +62,14 @@ func (e *Env[T]) Push() *Env[T] {
 	return NewEnv(e)
 }
 
+// Copies values from another Env (only top most layer for now)
+func (e *Env[T]) CopyFrom(another *Env[T]) *Env[T] {
+	for k, v := range another.store {
+		e.Set(k, v.Value)
+	}
+	return e
+}
+
 // Extends our environment by creating a new environment and setting values in it
 func (e *Env[T]) Extend(kvpairs map[string]T) *Env[T] {
 	out := e.Push()

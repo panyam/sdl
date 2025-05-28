@@ -93,7 +93,7 @@ type IfChoiceNode struct {
 func (n *IfChoiceNode) opNode() {}
 func (n *IfChoiceNode) String() string {
 	elseStr := "Nil"
-	if n.Else != nil {
+	if !n.Else.IsNil() {
 		elseStr = n.Else.String()
 	}
 	return fmt.Sprintf("If(%s) Then:{%s} Else:{%s}", n.Condition.String(), n.Then.String(), elseStr)

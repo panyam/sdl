@@ -39,6 +39,10 @@ func newNodeInfo(start, end Location) NodeInfo {
 // Helper function to create a LiteralExpr node
 func newLiteralExpr(value Value, start, end Location) *LiteralExpr {
 	// For string literals, the lexer should provide the raw unquoted value.
+	// log.Println("Creating Value with: ", value)
+	if value.IsNil() {
+		panic("Value shoudl not be nil")
+	}
 	out := &LiteralExpr{
 		ExprBase: ExprBase{NodeInfo: newNodeInfo(start, end)},
 		Value:    value,

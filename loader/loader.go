@@ -179,7 +179,7 @@ func (l *Loader) LoadFile(filePath string, importerPath string, depth int) (*Fil
 	}
 
 	for _, importDecl := range imports { // Assuming FileDecl has an Imports() method
-		if importDecl.Path == nil || importDecl.Path.Value == nil {
+		if importDecl.Path == nil || importDecl.Path.Value.IsNil() {
 			err := fmt.Errorf("invalid import statement (missing path) in '%s' at pos %d", canonicalPath, importDecl.Pos())
 			fileStatus.Errors = append(fileStatus.Errors, err)
 			return fileStatus, err
@@ -255,7 +255,7 @@ func (l *Loader) validateFileDecl(fs *FileStatus, fileDecl *decl.FileDecl, visit
 	for alias, importDeclNode := range resolvedImports {
 		// Ensure import path is valid string
 		importPathValue := importDeclNode.Path.Value
-		if importPathValue == nil {
+		if importPathValue.IsNil() {
 			err := fmt.Errorf("in file %s: import for alias '%s' has nil path value", fs.FullPath, alias)
 			fs.AddErrors(err)
 			log.Println(err)
@@ -309,7 +309,7 @@ func (l *Loader) validateFileDecl(fs *FileStatus, fileDecl *decl.FileDecl, visit
 	// Now, call InferTypesForFile with the populated scope
 	// Assuming decl.InferTypesForFile signature: func(file *decl.FileDecl, typeEnv *decl.Env[decl.Node]) []error
 	// PP(fileDecl)
-	inf := decl.NewInference(fs.FullPath, fileDecl)
+	inf := NewInference(fs.FullPath, fileDecl)
 	inf.Eval(currentScope)
 	if inf.HasErrors() {
 		fs.AddErrors(inf.Errors...)

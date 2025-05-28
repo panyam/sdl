@@ -7,34 +7,53 @@ import (
 	gfn "github.com/panyam/goutils/fn"
 )
 
+type TypeTag int
+
+const (
+	TypeTagUnknown TypeTag = iota
+	TypeTagNil
+	TypeTagSimple
+	TypeTagTuple
+	TypeTagList
+	TypeTagEnum
+	TypeTagComponent
+	TypeTagMethod
+	TypeTagOutcomes
+)
+
 type Type struct {
-	Name         string
-	ChildTypes   []*Type
-	ChildNames   []string // when we are a record type
-	IsEnum       bool
-	OriginalDecl Node // Pointer to the original EnumDecl, ComponentDecl, etc.
+	Tag  TypeTag
+	Info any
 }
 
 // --- ValueType Factory Functions ---
 
 var (
 	// Use singletons for basic types for efficiency
-	NilType       = &Type{Name: "Nil"} // Changed from {} to have a name for clarity
-	BoolType      = &Type{Name: "Bool"}
-	IntType       = &Type{Name: "Int"}
-	FloatType     = &Type{Name: "Float"}
-	StrType       = &Type{Name: "String"}
-	ComponentType = &Type{Name: "Component"} // Represents the type "Component" itself, not an instance
-	OpNodeType    = &Type{Name: "OpNode"}
+	NilType   = SimpleType("Nil")
+	BoolType  = SimpleType("Bool")
+	IntType   = SimpleType("Int")
+	FloatType = SimpleType("Float")
+	StrType   = SimpleType("String")
 )
 
-func ListType(elementType *Type) *Type {
-	if elementType == nil {
-		panic("List element type cannot be nil")
+func SimpleType(name string) *Type {
+	return &Type{Tag: TypeTagSimple, Info: name} // Changed from {} to have a name for clarity
+}
+
+type MethodTypeInfo struct {
+	Component *ComponentDecl
+	Method    *MethodDecl
+}
+
+func MethodType(componentDecl *ComponentDecl, methodDecl *MethodDecl) *Type {
+	if componentDecl == nil || methodDecl == nil {
+		panic("Component and Method Decls cannot be nil")
 	}
 	return &Type{
-		Name:       "List",
-		ChildTypes: []*Type{elementType},
+		Tag: TypeTagMethod,
+		// Name: "Method",
+		Info: &MethodTypeInfo{componentDecl, methodDecl},
 	}
 }
 
@@ -43,8 +62,20 @@ func TupleType(elementTypes ...*Type) *Type {
 		panic("Tuple element type cannot be nil or 0 length")
 	}
 	return &Type{
-		Name:       "Tuple",
-		ChildTypes: elementTypes,
+		Tag: TypeTagTuple,
+		// Name: "Tuple",
+		Info: elementTypes,
+	}
+}
+
+func ListType(elementType *Type) *Type {
+	if elementType == nil {
+		panic("Outcomes element type cannot be nil")
+	}
+	return &Type{
+		Tag: TypeTagList,
+		// Name: "Outcomes",
+		Info: elementType,
 	}
 }
 
@@ -53,8 +84,9 @@ func OutcomesType(elementType *Type) *Type {
 		panic("Outcomes element type cannot be nil")
 	}
 	return &Type{
-		Name:       "Outcomes",
-		ChildTypes: []*Type{elementType},
+		Tag: TypeTagOutcomes,
+		// Name: "Outcomes",
+		Info: elementType,
 	}
 }
 
@@ -63,32 +95,38 @@ func EnumType(decl *EnumDecl) *Type {
 	if decl == nil || decl.NameNode == nil {
 		panic("EnumDecl and its NameNode cannot be nil when creating EnumType")
 	}
-	return &Type{Name: decl.NameNode.Name, IsEnum: true, OriginalDecl: decl}
+	return &Type{Tag: TypeTagEnum /*, Name: decl.NameNode.Name*/, Info: decl}
 }
 
 // Helper to create a Type instance for a Component declaration (representing the type)
-func ComponentTypeInstance(decl *ComponentDecl) *Type {
+func ComponentType(decl *ComponentDecl) *Type {
 	if decl == nil || decl.NameNode == nil {
 		panic("ComponentDecl and its NameNode cannot be nil when creating ComponentTypeInstance")
 	}
 	// This represents the "type" of a component, e.g. "MyComponentType"
 	// Distinguish from `ComponentType` singleton which means "any component".
-	return &Type{Name: decl.NameNode.Name, OriginalDecl: decl}
+	return &Type{Tag: TypeTagComponent /*Name: decl.NameNode.Name,*/, Info: decl}
 }
 
 // String representation of the type
 func (t *Type) String() string {
 	if t == nil {
 		return "<nil_type>"
+	} else if t.Tag == TypeTagSimple {
+		return t.Info.(string)
+	} else if t.Tag == TypeTagTuple {
+		return fmt.Sprintf("Tuple(%s)", gfn.Map(t.Info.([]*Type), func(t *Type) string { return t.String() }))
+	} else if t.Tag == TypeTagList {
+		return fmt.Sprintf("List(%s)", t.Info.(*Type).String())
+	} else if t.Tag == TypeTagEnum {
+		enumDecl := t.Info.(*EnumDecl)
+		return enumDecl.String()
+	} else if t.Tag == TypeTagComponent {
+		return fmt.Sprintf("Component(%s)", t.Info.(*ComponentDecl).NameNode.Name)
+	} else if t.Tag == TypeTagMethod {
+	} else if t.Tag == TypeTagOutcomes {
 	}
-	if t.Name == "Nil" && len(t.ChildTypes) == 0 { // Handle NilType specifically
-		return "Nil"
-	}
-	if len(t.ChildTypes) == 0 {
-		return fmt.Sprintf("%s", t.Name)
-	} else {
-		return fmt.Sprintf("%s[%s]", t.Name, strings.Join(gfn.Map(t.ChildTypes, func(ct *Type) string { return ct.String() }), ", "))
-	}
+	return "Unknown Type"
 }
 
 func (t *Type) PrettyPrint(cp CodePrinter) {
@@ -103,34 +141,46 @@ func (v *Type) Equals(other *Type) bool {
 	if v == nil || other == nil {
 		return false
 	}
-	if v.Name != other.Name || v.IsEnum != other.IsEnum {
-		return false
-	}
 	// For OriginalDecl, we might not want to compare them for general type equality,
 	// as two types can be structurally "MyComponent" even if from different instances of type analysis.
 	// However, if Name matches and IsEnum matches, and OriginalDecl *kinds* match (e.g. both are EnumDecl),
 	// it implies type equality for named types like enums and components.
 	// For now, direct comparison of OriginalDecl is omitted for simplicity in general Equals,
 	// but specific checks might need it. The primary check is Name and IsEnum.
-
-	if len(v.ChildTypes) != len(other.ChildTypes) {
-		return false
-	}
-	if len(v.ChildNames) != len(other.ChildNames) {
+	if v.Tag != other.Tag {
 		return false
 	}
 
-	for i, t1 := range v.ChildTypes {
-		if !t1.Equals(other.ChildTypes[i]) {
+	if v.Tag == TypeTagSimple {
+		return v.Info.(string) == other.Info.(string)
+	} else if v.Tag == TypeTagTuple {
+		c1 := v.Info.([]*Type)
+		c2 := other.Info.([]*Type)
+		if len(c1) != len(c2) {
 			return false
 		}
-	}
-	for i, n1 := range v.ChildNames {
-		if n1 != other.ChildNames[i] {
-			return false
+		for i1, t1 := range c1 {
+			t2 := c2[i1]
+			if !t1.Equals(t2) {
+				return false
+			}
 		}
+		return true
+	} else if v.Tag == TypeTagEnum {
+		e1 := v.Info.(*EnumDecl)
+		e2 := other.Info.(*EnumDecl)
+		return e1.NameNode.Name == e2.NameNode.Name
+	} else if v.Tag == TypeTagList || v.Tag == TypeTagOutcomes {
+		return v.Info.(*Type).Equals(other.Info.(*Type))
+	} else if v.Tag == TypeTagComponent {
+		c1 := v.Info.(*ComponentDecl)
+		c2 := other.Info.(*ComponentDecl)
+		// TODO - a more deeper check
+		return c1.NameNode.Name == c2.NameNode.Name
+	} else {
+		panic(fmt.Sprintf("Invalid types... %d, %v, %d, %v", v.Tag, v.Info, other.Tag, other.Info))
 	}
-	return true
+	return false
 }
 
 // IsComponentType checks if the type represents a component (based on OriginalDecl).
@@ -138,8 +188,7 @@ func (t *Type) IsComponentType() bool {
 	if t == nil {
 		return false
 	}
-	_, ok := t.OriginalDecl.(*ComponentDecl)
-	return ok
+	return t.Tag == TypeTagComponent
 }
 
 // TypeDecl represents primitive types or registered enum identifiers.
@@ -175,7 +224,7 @@ func (td *TypeDecl) ResolvedType() *Type {
 func (t *TypeDecl) Type() *Type {
 	return &Type{
 		Name:       t.Name,
-		ChildTypes: gfn.Map(t.Args, func(t *TypeDecl) *Type { return t.Type() }),
+		Info: gfn.Map(t.Args, func(t *TypeDecl) *Type { return t.Type() }),
 	}
 }
 */
@@ -207,100 +256,3 @@ func (td *TypeDecl) Type() *Type {
 }
 
 // In decl/ast.go (add this method to TypeDecl)
-
-// TypeUsingScope resolves the TypeDecl to a *Type object within the given scope.
-// It handles built-in types, named types (enums, components from scope), and generic-like types.
-func (td *TypeDecl) TypeUsingScope(scope *TypeScope) *Type {
-	if td == nil {
-		return nil
-	}
-	if td.resolvedType != nil {
-		return td.resolvedType
-	}
-
-	var resultType *Type
-
-	switch td.Name {
-	// Basic known types (can be singletons from types.go)
-	case "Int":
-		resultType = IntType
-	case "Float":
-		resultType = FloatType
-	case "String": // Assuming StrType is the correct singleton name
-		resultType = StrType
-	case "Bool":
-		resultType = BoolType
-	case "Nil": // For void/nil type
-		resultType = NilType
-	// Duration is often treated as Float or a distinct basic type.
-	// If it's just "Duration", it would need to be a known basic type like Int/Float.
-	// If it's from an enum or other decl, it'll be caught by the scope.Get below.
-
-	case "List":
-		if len(td.Args) == 1 {
-			elemTypeDecl := td.Args[0]
-			resolvedElemType := elemTypeDecl.TypeUsingScope(scope)
-			if resolvedElemType != nil {
-				resultType = ListType(resolvedElemType) // From types.go factory
-			} else {
-				// Error: element type of List could not be resolved
-				return nil
-			}
-		} else {
-			// Error: List expects 1 type argument
-			return nil
-		}
-	case "Tuple":
-		if len(td.Args) > 0 {
-			elemTypes := make([]*Type, len(td.Args))
-			for i, argTd := range td.Args {
-				resolvedElemType := argTd.TypeUsingScope(scope)
-				if resolvedElemType == nil {
-					return nil // Error resolving tuple element type
-				}
-				elemTypes[i] = resolvedElemType
-			}
-			resultType = TupleType(elemTypes...) // From types.go factory
-		} else {
-			// Error: Tuple expects at least 1 type argument (as per TupleType factory)
-			return nil
-		}
-	case "Outcomes":
-		if len(td.Args) == 1 {
-			elemTypeDecl := td.Args[0]
-			resolvedElemType := elemTypeDecl.TypeUsingScope(scope)
-			if resolvedElemType != nil {
-				resultType = OutcomesType(resolvedElemType) // From types.go factory
-			} else {
-				// Error: element type of Outcomes could not be resolved
-				return nil
-			}
-		} else {
-			// Error: Outcomes expects 1 type argument
-			return nil
-		}
-	default:
-		// It's a named type (e.g., an enum "MyEnum", a component "MyComponentType").
-		// Look it up in the provided scope.
-		if scope == nil {
-			// Cannot resolve named type without a scope.
-			// This might happen if .Type() is called directly on a complex TypeDecl.
-			return nil
-		}
-		foundType, ok := scope.Get(td.Name)
-		if ok {
-			// scope.Get already returns a *Type, which should have OriginalDecl set
-			// if it came from an EnumDecl or ComponentDecl in the env.
-			resultType = foundType
-		} else {
-			// Type name not found in scope
-			return nil
-		}
-	}
-
-	// Cache the resolved type
-	if resultType != nil {
-		td.resolvedType = resultType
-	}
-	return resultType
-}

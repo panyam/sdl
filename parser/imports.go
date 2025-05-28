@@ -55,7 +55,6 @@ type CallExpr = decl.CallExpr
 type TupleExpr = decl.TupleExpr
 type SampleExpr = decl.SampleExpr
 
-var NewRuntimeValue = decl.NewRuntimeValue
 var BoolType = decl.BoolType
 var StrType = decl.StrType
 var IntType = decl.IntType
@@ -65,3 +64,5 @@ var BoolValue = decl.BoolValue
 var StringValue = decl.StringValue
 var IntValue = decl.IntValue
 var FloatValue = decl.FloatValue
+var NewValue = decl.NewValue
+var Nil = decl.Nil

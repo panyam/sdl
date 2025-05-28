@@ -4,16 +4,6 @@ import (
 	"fmt"
 )
 
-type Enum struct {
-	Name    string
-	Options []string
-}
-
-type EnumValue struct {
-	Enum   *Enum
-	Option int
-}
-
 // Value wraps a Go value with its type definition.
 type Value struct {
 	Type  *Type
@@ -42,14 +32,18 @@ func NewValue(t *Type, initialValue ...any) (Value, error) {
 	return rv, nil
 }
 
-func (r Value) IsNil() bool {
+func Nil() Value {
+	return Value{Type: NilType}
+}
+
+func (r *Value) IsNil() bool {
 	return r.Value == nil
 }
 
 // Tries to set the value by enforcing and checking types.
 // The input 'v' should be the Go representation corresponding to r.Type.
 // For List/Outcomes, 'v' is expected to be '[]Value'.
-func (r Value) Set(v any) error {
+func (r *Value) Set(v any) error {
 	if r.Type == nil {
 		// Should not happen if constructed properly
 		return fmt.Errorf("internal error: Value has nil type")
@@ -57,7 +51,7 @@ func (r Value) Set(v any) error {
 
 	// Handle general nil case first
 	if v == nil {
-		if r.Type.Name == "" {
+		if r.Type.Tag == TypeTagNil {
 			r.Value = nil
 			return nil
 		} else {
@@ -118,41 +112,34 @@ func (r Value) Set(v any) error {
 		r.Value = val
 		return nil
 
-	case ComponentType:
-		val, ok := v.(*ComponentRuntime)
-		if !ok {
-			return fmt.Errorf("type mismatch: expected ComponentRuntime, got %T", v)
-		}
-		r.Value = val
-		return nil
-
 	default:
 	}
 
-	/* TODO - How to handle unions/enums?
-	if r.Type.IsUnion {
-		val, ok := v.(*EnumValue)
-		if !ok {
-			return fmt.Errorf("type mismatch: expected EnumValue, got %T", v)
-		}
-		r.Value = val
+	// Take care of the complex types now
+	if r.Type.Tag == TypeTagComponent {
+		/*
+			val, ok := v.(*ComponentInstance)
+			if !ok {
+				return fmt.Errorf("type mismatch: expected ComponentInstance, got %T", v)
+			}
+		*/
+		r.Value = v
 		return nil
 	}
-	*/
 
-	if r.Type.Name == "List" || r.Type.Name == "Outcomes" {
+	if r.Type.Tag == TypeTagList || r.Type.Tag == TypeTagOutcomes {
 		// Expecting a slice of Value for containers
 		listVal, ok := v.([]Value)
 		if !ok {
 			containerName := "List"
-			if r.Type.Name == "Outcomes" {
+			if r.Type.Tag == TypeTagOutcomes {
 				containerName = "Outcomes"
 			}
 			return fmt.Errorf("type mismatch: expected %s ([]Value), got %T", containerName, v)
 		}
 
 		// Check element types against r.Type.ChildTypes[0]
-		expectedElemType := r.Type.ChildTypes[0]
+		expectedElemType := r.Type.Info.(*Type)
 		for i, elem := range listVal {
 			if elem.IsNil() {
 				// Allow nil elements in lists? Decide based on language semantics.
@@ -176,11 +163,11 @@ func (r Value) Set(v any) error {
 		return nil
 	}
 
-	return fmt.Errorf("internal error: unhandled type tag %v in Set", r.Type.Name)
+	return fmt.Errorf("internal error: unhandled type tag %v in Set", r.Type.Tag)
 }
 
 // String representation of the runtime value
-func (r Value) String() string {
+func (r *Value) String() string {
 	if r.IsNil() {
 		return "<nil Value>"
 	}
@@ -193,7 +180,7 @@ func (r Value) String() string {
 }
 
 // --- Custom getter methods
-func (r Value) GetInt() (int64, error) {
+func (r *Value) GetInt() (int64, error) {
 	if r.IsNil() || r.Type == nil {
 		return 0, fmt.Errorf("cannot get Int from nil Value")
 	}
@@ -210,7 +197,7 @@ func (r Value) GetInt() (int64, error) {
 	return val, nil
 }
 
-func (r Value) GetBool() (bool, error) {
+func (r *Value) GetBool() (bool, error) {
 	if r.IsNil() || r.Type == nil {
 		return false, fmt.Errorf("cannot get Bool from nil Value")
 	}
@@ -227,7 +214,7 @@ func (r Value) GetBool() (bool, error) {
 	return val, nil
 }
 
-func (r Value) GetFloat() (float64, error) {
+func (r *Value) GetFloat() (float64, error) {
 	if r.IsNil() || r.Type == nil {
 		return 0.0, fmt.Errorf("cannot get Float from nil Value")
 	}
@@ -244,7 +231,7 @@ func (r Value) GetFloat() (float64, error) {
 	return val, nil
 }
 
-func (r Value) GetString() (string, error) {
+func (r *Value) GetString() (string, error) {
 	if r.IsNil() || r.Type == nil {
 		return "", fmt.Errorf("cannot get String from nil Value")
 	}
@@ -263,11 +250,11 @@ func (r Value) GetString() (string, error) {
 	return val, nil
 }
 
-func (r Value) GetList() ([]Value, error) {
+func (r *Value) GetList() ([]Value, error) {
 	if r.IsNil() || r.Type == nil {
 		return nil, fmt.Errorf("cannot get List from nil Value")
 	}
-	if r.Type.Name != "List" {
+	if r.Type.Tag != TypeTagList {
 		return nil, fmt.Errorf("type mismatch: cannot get List, value is type %s", r.Type.String())
 	}
 	if r.Value == nil {
@@ -281,11 +268,11 @@ func (r Value) GetList() ([]Value, error) {
 	return val, nil
 }
 
-func (r Value) GetTuple() ([]Value, error) {
+func (r *Value) GetTuple() ([]Value, error) {
 	if r.IsNil() || r.Type == nil {
 		return nil, fmt.Errorf("cannot get Tuple from nil Value")
 	}
-	if r.Type.Name != "Tuple" {
+	if r.Type.Tag != TypeTagTuple {
 		return nil, fmt.Errorf("type mismatch: cannot get Tuple, value is type %s", r.Type.String())
 	}
 	if r.Value == nil {
@@ -299,11 +286,11 @@ func (r Value) GetTuple() ([]Value, error) {
 	return val, nil
 }
 
-func (r Value) GetOutcomes() ([]Value, error) {
+func (r *Value) GetOutcomes() ([]Value, error) {
 	if r.IsNil() || r.Type == nil {
 		return nil, fmt.Errorf("cannot get Outcomes from nil Value")
 	}
-	if r.Type.Name != "Outcome" {
+	if r.Type.Tag != TypeTagOutcomes {
 		return nil, fmt.Errorf("type mismatch: cannot get Outcomes, value is type %s", r.Type.String())
 	}
 	if r.Value == nil {
@@ -315,21 +302,6 @@ func (r Value) GetOutcomes() ([]Value, error) {
 		return nil, fmt.Errorf("internal error: Outcomes value is not Go []Value (%T)", r.Value)
 	}
 	return val, nil
-}
-
-// GetNil checks if the value is nil type and holds nil.
-// Returns error if type is not NilType or if value is not nil.
-func (r Value) GetNil() error {
-	if r.IsNil() || r.Type == nil {
-		return fmt.Errorf("cannot get Nil from nil Value")
-	}
-	if r.Type != nil {
-		return fmt.Errorf("type mismatch: cannot get Nil, value is type %s", r.Type.String())
-	}
-	if r.Value != nil {
-		return fmt.Errorf("internal error: Nil type has non-nil Go value (%v)", r.Value)
-	}
-	return nil // Success, it's nil type and holds nil
 }
 
 // Helpers to create specific simple values

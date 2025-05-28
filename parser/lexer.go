@@ -392,7 +392,7 @@ func (l *Lexer) Lex(lval *SDLSymType) int {
 		case IDENTIFIER:
 			lval.ident = newIdentifierExpr(text, startPosSnapshot, endPos)
 		case BOOL_LITERAL:
-			boolVal, _ := NewRuntimeValue(BoolType, text == "true")
+			boolVal, _ := NewValue(BoolType, text == "true")
 			lval.expr = newLiteralExpr(boolVal, startPosSnapshot, endPos)
 		case INT, FLOAT, BOOL, STRING, DURATION: // Type keywords
 			lval.node = newTokenNode(startPosSnapshot, endPos, text)
@@ -434,7 +434,7 @@ func (l *Lexer) Lex(lval *SDLSymType) int {
 				}
 				l.tokenText += unit
 				dur := parseDuration(numText, unit)
-				durVal, _ := NewRuntimeValue(FloatType, dur)
+				durVal, _ := NewValue(FloatType, dur)
 				lval.expr = newLiteralExpr(durVal, startPosSnapshot, l.location)
 				return DURATION_LITERAL
 			}
@@ -463,7 +463,7 @@ func (l *Lexer) Lex(lval *SDLSymType) int {
 	if r == '"' {
 		_, content := l.scanString()
 		// l.tokenText = content
-		strVal, _ := NewRuntimeValue(StrType, content)
+		strVal, _ := NewValue(StrType, content)
 		lval.expr = newLiteralExpr(strVal, startPosSnapshot, l.location)
 		return STRING_LITERAL
 	}

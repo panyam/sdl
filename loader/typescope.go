@@ -1,7 +1,9 @@
-package decl
+package loader
 
 import (
 	"fmt"
+
+	"github.com/panyam/sdl/decl"
 	// "log" // Uncomment for debugging
 )
 
@@ -18,7 +20,7 @@ type TypeScope struct {
 // The env should be pre-populated by the loader with global and imported declarations.
 func NewRootTypeScope(env *Env[Node]) *TypeScope {
 	if env == nil {
-		env = NewEnv[Node](nil)
+		env = decl.NewEnv[Node](nil)
 		// panic("NewRootTypeScope requires a non-nil Env")
 	}
 	return &TypeScope{
@@ -58,7 +60,7 @@ func (ts *TypeScope) Push(currentComponent *ComponentDecl, currentMethod *Method
 func (ts *TypeScope) Get(name string) (*Type, bool) {
 	// 1. 'self' keyword
 	if ts.currentComponent != nil && name == "self" {
-		return ComponentTypeInstance(ts.currentComponent), true
+		return ComponentType(ts.currentComponent), true
 	}
 
 	// 2. Method parameters
@@ -68,11 +70,11 @@ func (ts *TypeScope) Get(name string) (*Type, bool) {
 				if param.Type == nil {
 					return nil, false // Error: No TypeDecl
 				}
-				// Use TypeUsingScope to ensure the TypeDecl is resolved.
+				// Use ResolveType to ensure the TypeDecl is resolved.
 				// The TypeDecl's resolvedType should have been set in the first pass of InferTypesForFile.
 				resolvedType := param.Type.ResolvedType()
 				if resolvedType == nil { // Fallback if not pre-resolved for some reason
-					resolvedType = param.Type.TypeUsingScope(ts) // Pass current TypeScope
+					resolvedType = ts.ResolveType(param.Type) // Pass current TypeScope
 				}
 				if resolvedType == nil {
 					// log.Printf("Warning: Parameter '%s' in method '%s' has an unresolved TypeDecl '%s'.", name, ts.currentMethod.NameNode.Name, param.Type.Name)
@@ -92,7 +94,7 @@ func (ts *TypeScope) Get(name string) (*Type, bool) {
 				// Its resolvedType should have been set in the first pass of InferTypesForFile.
 				resolvedType := paramDecl.Type.ResolvedType()
 				if resolvedType == nil { // Fallback
-					resolvedType = paramDecl.Type.TypeUsingScope(ts)
+					resolvedType = ts.ResolveType(paramDecl.Type)
 				}
 				if resolvedType == nil {
 					// log.Printf("Warning: Component parameter '%s' in component '%s' has an unresolved TypeDecl '%s'.", name, ts.currentComponent.NameNode.Name, paramDecl.Type.Name)
@@ -124,7 +126,7 @@ func (ts *TypeScope) Get(name string) (*Type, bool) {
 		case *EnumDecl:
 			return EnumType(node), true
 		case *ComponentDecl:
-			return ComponentTypeInstance(node), true
+			return ComponentType(node), true
 		case *IdentifierExpr: // This is how 'let' bound variables are stored
 			if node.InferredType() == nil {
 				// log.Printf("Warning: Identifier '%s' (let variable) found in env but its type is not yet inferred.", name)
@@ -136,7 +138,7 @@ func (ts *TypeScope) Get(name string) (*Type, bool) {
 				compDeclNode, compFound := ts.env.Get(node.ComponentType.Name)
 				if compFound {
 					if compDecl, ok := compDeclNode.(*ComponentDecl); ok {
-						return ComponentTypeInstance(compDecl), true
+						return ComponentType(compDecl), true
 					}
 				}
 			}
@@ -172,4 +174,101 @@ func (ts *TypeScope) Set(name string, identNode *IdentifierExpr, t *Type) error 
 	identNode.SetInferredType(t)
 	ts.env.Set(name, identNode) // Store the IdentifierExpr node itself.
 	return nil
+}
+
+// Resolves resolves the TypeDecl to a *Type object within the given scope.
+// It handles built-in types, named types (enums, components from scope), and generic-like types.
+func (scope *TypeScope) ResolveType(td *TypeDecl) *Type {
+	if td == nil {
+		return nil
+	}
+	if td.ResolvedType() != nil {
+		return td.ResolvedType()
+	}
+
+	var resultType *Type
+
+	switch td.Name {
+	// Basic known types (can be singletons from types.go)
+	case "Int":
+		resultType = IntType
+	case "Float":
+		resultType = FloatType
+	case "String": // Assuming StrType is the correct singleton name
+		resultType = StrType
+	case "Bool":
+		resultType = BoolType
+	case "Nil": // For void/nil type
+		resultType = NilType
+	// Duration is often treated as Float or a distinct basic type.
+	// If it's just "Duration", it would need to be a known basic type like Int/Float.
+	// If it's from an enum or other decl, it'll be caught by the scope.Get below.
+
+	case "List":
+		if len(td.Args) == 1 {
+			elemTypeDecl := td.Args[0]
+			resolvedElemType := scope.ResolveType(elemTypeDecl)
+			if resolvedElemType != nil {
+				resultType = ListType(resolvedElemType) // From types.go factory
+			} else {
+				// Error: element type of List could not be resolved
+				return nil
+			}
+		} else {
+			// Error: List expects 1 type argument
+			return nil
+		}
+	case "Tuple":
+		if len(td.Args) > 0 {
+			elemTypes := make([]*Type, len(td.Args))
+			for i, argTd := range td.Args {
+				resolvedElemType := scope.ResolveType(argTd)
+				if resolvedElemType == nil {
+					return nil // Error resolving tuple element type
+				}
+				elemTypes[i] = resolvedElemType
+			}
+			resultType = TupleType(elemTypes...) // From types.go factory
+		} else {
+			// Error: Tuple expects at least 1 type argument (as per TupleType factory)
+			return nil
+		}
+	case "Outcomes":
+		if len(td.Args) == 1 {
+			elemTypeDecl := td.Args[0]
+			resolvedElemType := scope.ResolveType(elemTypeDecl)
+			if resolvedElemType != nil {
+				resultType = OutcomesType(resolvedElemType) // From types.go factory
+			} else {
+				// Error: element type of Outcomes could not be resolved
+				return nil
+			}
+		} else {
+			// Error: Outcomes expects 1 type argument
+			return nil
+		}
+	default:
+		// It's a named type (e.g., an enum "MyEnum", a component "MyComponentType").
+		// Look it up in the provided scope.
+		if scope == nil {
+			// Cannot resolve named type without a scope.
+			// This might happen if .Type() is called directly on a complex TypeDecl.
+			return nil
+		}
+		foundType, ok := scope.Get(td.Name)
+		if ok {
+			// scope.Get already returns a *Type, which should have OriginalDecl set
+			// if it came from an EnumDecl or ComponentDecl in the env.
+			resultType = foundType
+		} else {
+			// Type name not found in scope
+			return nil
+		}
+	}
+
+	// Cache the resolved type
+	if resultType != nil {
+		td.SetResolvedType(resultType)
+	}
+	return resultType
 }
