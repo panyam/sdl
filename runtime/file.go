@@ -42,7 +42,21 @@ func (f *FileInstance) NewComponent(name string) (*ComponentInstance, error) {
 		return nil, err
 	}
 
-	compDecl := def.(*decl.ComponentDecl)
+	compDecl, ok := def.(*decl.ComponentDecl)
+	if !ok {
+		// see if it is an import
+		importDecl, ok := def.(*decl.ImportDecl)
+		if ok {
+			importedFS, err := f.Runtime.Loader.LoadFile(importDecl.ResolvedFullPath, f.Decl.FullPath, 0)
+			if err != nil {
+				return nil, err
+			}
+			log.Println("IFS: ", importedFS)
+			def, _ = importedFS.FileDecl.GetDefinition(importDecl.ImportedItem.Name)
+			compDecl, _ = def.(*decl.ComponentDecl)
+		}
+	}
+
 	if compDecl == nil {
 		log.Println("error getting component definition: ", name, " is not a component")
 		return nil, fmt.Errorf("definition is not a component")

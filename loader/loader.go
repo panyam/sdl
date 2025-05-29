@@ -160,7 +160,7 @@ func (l *Loader) LoadFile(filePath string, importerPath string, depth int) (*Fil
 	}
 
 	// 7. Store the successfully parsed file
-	fileDecl.FullPath = filePath
+	fileDecl.FullPath = canonicalPath
 	fileStatus.FileDecl = fileDecl
 	fileStatus.LastParsed = time.Now()
 
@@ -198,6 +198,7 @@ func (l *Loader) LoadFile(filePath string, importerPath string, depth int) (*Fil
 			fileStatus.Errors = append(fileStatus.Errors, err)
 			return fileStatus, err
 		}
+		importDecl.ResolvedFullPath = importedFS.FullPath // Store the resolved path in the import declaration
 		fileStatus.AddImports(importedFS.FullPath)
 	}
 

@@ -11,6 +11,7 @@ type Env[T any] = decl.Env[T]
 type ExprBase = decl.ExprBase
 type Stmt = decl.Stmt
 type LetStmt = decl.LetStmt
+type SetStmt = decl.SetStmt
 type ForStmt = decl.ForStmt
 type ReturnStmt = decl.ReturnStmt
 type ExprStmt = decl.ExprStmt

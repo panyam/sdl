@@ -1,7 +1,6 @@
 package runtime
 
 import (
-	"github.com/panyam/sdl/core"
 	"github.com/panyam/sdl/loader"
 )
 
@@ -35,7 +34,4 @@ func (r *Runtime) LoadFile(filePath string) *FileInstance {
 	out := NewFileInstance(r, file)
 	r.fileInstances[fs.FullPath] = out
 	return out
-}
-func (r *Runtime) Eval(stmt Stmt, env *Env[Value]) (result Value, duration core.Duration, err error) {
-	return
 }

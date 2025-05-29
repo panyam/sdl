@@ -36,6 +36,14 @@ func Nil() Value {
 	return Value{Type: NilType}
 }
 
+func (r *Value) IsTrue() bool {
+	return r.Value == true
+}
+
+func (r *Value) IsFalse() bool {
+	return r.Value == false
+}
+
 func (r *Value) IsNil() bool {
 	return r.Value == nil
 }

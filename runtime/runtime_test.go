@@ -22,6 +22,7 @@ func TestBitly(t *testing.T) {
 
 	log.Println("Compiled statements:")
 	decl.PPrint(stmts)
-	env := fi.Env.Push()
-	rt.Eval(stmts, env)
+
+	se := SimpleEval{fi}
+	log.Println(se.Eval(stmts, nil))
 }

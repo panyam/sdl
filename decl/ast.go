@@ -88,6 +88,8 @@ type ImportDecl struct {
 	Path         *LiteralExpr // Should be a STRING literal
 	Alias        *IdentifierExpr
 	ImportedItem *IdentifierExpr
+
+	ResolvedFullPath string // Full path to the imported item, resolved after loading
 }
 
 func (i *ImportDecl) String() string {
