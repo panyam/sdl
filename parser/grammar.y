@@ -577,10 +577,7 @@ StmtList:
 
 Stmt:
       LetStmt        { $$ = $1 }
-    | ExprStmt       {
-      log.Println("ExprStmt: ", $1)
-      $$ = $1
-    }
+    | ExprStmt       { $$ = $1 }
     | ForStmt       { $$ = $1 }
     | ReturnStmt     { $$ = $1 }
     | IfStmt         { $$ = $1 }
