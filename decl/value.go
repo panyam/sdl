@@ -12,6 +12,12 @@ type Value struct {
 	Value any // The underlying Go value
 }
 
+// Value specific to references of members inside components
+type RefValue struct {
+	Receiver Value
+	Attrib   string
+}
+
 // NewValue creates a new boxed value, optionally initializing and type-checking.
 // If initialValue is provided, Set() is called. Only the first initialValue is used.
 func NewValue(t *Type, initialValue ...any) (Value, error) {

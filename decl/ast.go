@@ -270,13 +270,13 @@ type ComponentDeclBodyItem interface {
 type ParamDecl struct {
 	NodeInfo
 	Name         *IdentifierExpr
-	Type         *TypeDecl
+	TypeDecl     *TypeDecl
 	DefaultValue Expr // Optional
 }
 
 func (p *ParamDecl) componentBodyItemNode() {}
 func (p *ParamDecl) String() string {
-	s := fmt.Sprintf("param %s: %s", p.Name, p.Type)
+	s := fmt.Sprintf("param %s: %s", p.Name, p.TypeDecl)
 	if p.DefaultValue != nil {
 		s += fmt.Sprintf(" = %s", p.DefaultValue)
 	}
@@ -285,8 +285,8 @@ func (p *ParamDecl) String() string {
 
 func (p *ParamDecl) PrettyPrint(cp CodePrinter) {
 	cp.Printf("param %s ", p.Name.Name)
-	if p.Type != nil {
-		p.Type.PrettyPrint(cp)
+	if p.TypeDecl != nil {
+		p.TypeDecl.PrettyPrint(cp)
 	}
 	if p.DefaultValue != nil {
 		cp.Print(" = ")
@@ -342,7 +342,7 @@ func (m *MethodDecl) PrettyPrint(cp CodePrinter) {
 		}
 		paramStr += param.Name.Name
 		paramStr += " "
-		paramStr += param.Type.String()
+		paramStr += param.TypeDecl.String()
 	}
 	if m.ReturnType == nil {
 		cp.Printf("method %s(%s) {\n", m.NameNode.Name, paramStr)

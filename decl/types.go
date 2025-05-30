@@ -18,6 +18,7 @@ const (
 	TypeTagEnum
 	TypeTagComponent
 	TypeTagMethod
+	TypeTagRef
 	TypeTagOutcomes
 	TypeTagExpr
 )
@@ -55,6 +56,21 @@ func MethodType(componentDecl *ComponentDecl, methodDecl *MethodDecl) *Type {
 		Tag: TypeTagMethod,
 		// Name: "Method",
 		Info: &MethodTypeInfo{componentDecl, methodDecl},
+	}
+}
+
+type RefTypeInfo struct {
+	Component *ComponentDecl
+	ParamType *Type
+}
+
+func RefType(componentDecl *ComponentDecl, paramType *Type) *Type {
+	if componentDecl == nil || paramType == nil {
+		panic("Component and Param Type cannot be nil")
+	}
+	return &Type{
+		Tag:  TypeTagRef,
+		Info: &RefTypeInfo{componentDecl, paramType},
 	}
 }
 

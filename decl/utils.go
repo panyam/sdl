@@ -101,7 +101,7 @@ func newParamDeclWithDefault(varName, typeName string, defaultVal Expr) *ParamDe
 func newParamDecl(varName, typeName string) *ParamDecl {
 	// Assuming TypeDecl handling can be simple for now
 	tn := &TypeDecl{Name: typeName}
-	return &ParamDecl{Name: newIdent(varName), Type: tn}
+	return &ParamDecl{Name: newIdent(varName), TypeDecl: tn}
 }
 
 // Helper function to create a MethodDecl AST node for testing
