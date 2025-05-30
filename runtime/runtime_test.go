@@ -2,7 +2,9 @@ package runtime
 
 import (
 	"log"
+	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/panyam/sdl/core"
 	"github.com/panyam/sdl/decl"
@@ -24,7 +26,10 @@ func TestBitly(t *testing.T) {
 	log.Println("Compiled statements:")
 	decl.PPrint(stmts)
 
-	se := SimpleEval{fi}
+	se := SimpleEval{
+		fi,
+		rand.New(rand.NewSource(time.Now().UnixMicro())),
+	}
 	var currTime core.Duration
 	env := fi.Env.Push()
 	for _, item := range stmts.Statements {

@@ -151,6 +151,7 @@ func (r *Value) Set(v any) error {
 			return fmt.Errorf("Expected Outcomes[value], got %T", v)
 		}
 		r.Value = outval
+		return nil
 	}
 
 	if r.Type.Tag == TypeTagList {
@@ -216,6 +217,14 @@ func (r *Value) IntVal() int64 {
 
 func (r *Value) FloatVal() float64 {
 	out, err := r.GetFloat()
+	if err != nil {
+		panic(err)
+	}
+	return out
+}
+
+func (r *Value) OutcomesVal() *core.Outcomes[Value] {
+	out, err := r.GetOutcomes()
 	if err != nil {
 		panic(err)
 	}
@@ -328,7 +337,7 @@ func (r *Value) GetTuple() ([]Value, error) {
 	return val, nil
 }
 
-func (r *Value) GetOutcomes() ([]Value, error) {
+func (r *Value) GetOutcomes() (*core.Outcomes[Value], error) {
 	if r.IsNil() || r.Type == nil {
 		return nil, fmt.Errorf("cannot get Outcomes from nil Value")
 	}
@@ -339,7 +348,7 @@ func (r *Value) GetOutcomes() ([]Value, error) {
 		// Return nil slice if internal value is nil (representing empty outcomes)
 		return nil, nil
 	}
-	val, ok := r.Value.([]Value)
+	val, ok := r.Value.(*core.Outcomes[Value])
 	if !ok {
 		return nil, fmt.Errorf("internal error: Outcomes value is not Go []Value (%T)", r.Value)
 	}

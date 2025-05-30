@@ -3,6 +3,7 @@ package runtime
 import (
 	"fmt"
 	"log"
+	"math/rand"
 
 	"github.com/panyam/sdl/core"
 	"github.com/panyam/sdl/decl"
@@ -20,6 +21,7 @@ func ensureTypes(t *Type, types ...*Type) {
 // A simple evaluator
 type SimpleEval struct {
 	RootFile *FileInstance
+	Rand     *rand.Rand
 }
 
 // The main Eval loop of an expression/statement
@@ -252,10 +254,14 @@ func (s *SimpleEval) evalDistributeExpr(dist *decl.DistributeExpr, env *Env[Valu
 // Evaluate a sample expression that evaluates a random value based on the child
 // distribution
 func (s *SimpleEval) evalSampleExpr(samp *decl.SampleExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
-	s.Eval(samp.FromExpr, env, currTime)
+	res, _ := s.Eval(samp.FromExpr, env, currTime)
 
+	outcomes := res.OutcomesVal()
+	result, ok := outcomes.Sample(s.Rand)
+	log.Println("Sampled from: ", outcomes, result, ok)
+	return
 	// res should be an Outcome type
-	panic("Not sure whats next")
+	// panic("Not sure whats next")
 	/*
 		outcomes, err := res.GetOutcomes()
 		if err != nil {
