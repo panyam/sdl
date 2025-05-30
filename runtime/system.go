@@ -22,7 +22,7 @@ func NewSystemInstance(file *FileInstance, system *SystemDecl) *SystemInstance {
 	return sysinst
 }
 
-func (s *SystemInstance) Compile() (result Stmt, err error) {
+func (s *SystemInstance) Compile() (blockStmt *BlockStmt, err error) {
 	// 1. a New Expression for constructing a componet
 	// 2. a set expression for setting params/dependencies in a component - this way we can avoid the two pass approach?
 	// This two passs approach needs to be repeated in every stage (eg type checking)
@@ -78,5 +78,5 @@ func (s *SystemInstance) Compile() (result Stmt, err error) {
 			})
 		}
 	}
-	return &decl.BlockStmt{Statements: stmts}, nil
+	return &BlockStmt{Statements: stmts}, nil
 }

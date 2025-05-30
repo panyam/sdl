@@ -8,6 +8,15 @@ import (
 	"github.com/panyam/sdl/decl"
 )
 
+func ensureTypes(t *Type, types ...*Type) {
+	for _, typ := range types {
+		if t.Equals(typ) {
+			return
+		}
+	}
+	panic("Expected given type but failed")
+}
+
 // A simple evaluator
 type SimpleEval struct {
 	RootFile *FileInstance
@@ -29,6 +38,10 @@ func (s *SimpleEval) Eval(node Node, env *Env[Value], currTime *core.Duration) (
 		return s.evalLetStmt(n, env, currTime)
 	case *SetStmt:
 		return s.evalSetStmt(n, env, currTime)
+	case *ForStmt:
+		return s.evalForStmt(n, env, currTime)
+	case *ReturnStmt:
+		return s.evalReturnStmt(n, env, currTime)
 	case *ExprStmt:
 		return s.evalExprStmt(n, env, currTime)
 	case *IfStmt:
@@ -119,6 +132,46 @@ func (s *SimpleEval) evalSetStmt(set *SetStmt, env *Env[Value], currTime *core.D
 	return
 }
 
+func (s *SimpleEval) evalReturnStmt(r *ReturnStmt, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
+	result, _ = s.Eval(r.ReturnValue, env, currTime)
+	return result, true
+}
+
+func (s *SimpleEval) evalForStmt(f *ForStmt, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
+	var err error
+	counter := int64(0)
+
+	// now evaluate the body
+	for {
+		condVal, _ := s.Eval(f.Condition, env, currTime)
+		isCondInt := condVal.Type.Equals(IntType)
+		condIntVal := int64(0)
+		condBoolVal := true
+		if isCondInt {
+			condIntVal, err = condVal.GetInt()
+		} else {
+			condBoolVal, err = condVal.GetBool()
+		}
+		if err != nil {
+			panic(err)
+		}
+		if isCondInt {
+			if condIntVal > 0 && counter >= condIntVal {
+				return
+			}
+		} else if !condBoolVal {
+			return
+		}
+
+		// Evaluate body and see if it returned
+		bodyRes, bodyReturned := s.Eval(f.Body, env, currTime)
+		if bodyReturned {
+			return bodyRes, bodyReturned
+		}
+		counter += 1
+	}
+}
+
 func (s *SimpleEval) evalLetStmt(l *LetStmt, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
 	// evaluate the Expression and unzip and assign to variables in the same environment
 	result, returned = s.Eval(l.Value, env, currTime)
@@ -135,8 +188,65 @@ func (s *SimpleEval) evalLetStmt(l *LetStmt, env *Env[Value], currTime *core.Dur
 }
 
 // Evaluates a distrbute expression that returns an Outcomes value type.
-func (s *SimpleEval) evalDistributeExpr(_ *decl.DistributeExpr, _ *Env[Value], _ *core.Duration) (result Value, returned bool) {
-	panic("not implemented")
+func (s *SimpleEval) evalDistributeExpr(dist *decl.DistributeExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
+	var totalValue Value
+	totalProb := 0.0
+	if dist.TotalProb != nil {
+		totalValue, _ = s.Eval(dist.TotalProb, env, currTime)
+		ensureTypes(totalValue.Type, IntType, FloatType)
+		if totalValue.Type.Equals(IntType) {
+			totalProb = float64(totalValue.IntVal())
+		} else {
+			totalProb = totalValue.FloatVal()
+		}
+	}
+	var caseConds []Value
+	var caseBodies []Value
+	var totalCasesProb = 0.0
+	outcomes := &core.Outcomes[Value]{}
+	var outcomeType *decl.Type
+	for idx, caseExp := range dist.Cases {
+		condVal, _ := s.Eval(caseExp.Condition, env, currTime)
+		caseConds = append(caseConds, condVal)
+		ensureTypes(condVal.Type, IntType, FloatType)
+		condProb := 0.0
+		if condVal.Type.Equals(IntType) {
+			condProb = float64(condVal.IntVal())
+		} else {
+			condProb = condVal.FloatVal()
+		}
+		totalCasesProb += condProb
+
+		bodyVal, _ := s.Eval(caseExp.Body, env, currTime)
+		if idx == 0 {
+			outcomeType = bodyVal.Type
+		} else if !bodyVal.Type.Equals(outcomeType) {
+			panic("type mismatch - should have been checked by type checker")
+		}
+		caseBodies = append(caseBodies, bodyVal)
+		outcomes.Add(condProb, bodyVal)
+	}
+
+	// check default
+	if dist.Default != nil {
+		if dist.TotalProb == nil {
+			panic("Default cannot exist when total prob exists - type checker cannot check this??")
+		}
+		defaultValue, _ := s.Eval(dist.Default, env, currTime)
+		if !defaultValue.Type.Equals(outcomeType) {
+			panic("type mismatch - should have been checked by type checker")
+		}
+		defaultProb := totalProb - totalCasesProb
+		if defaultProb > 0 {
+			outcomes.Add(defaultProb, defaultValue)
+		}
+	}
+	outVal, err := NewValue(decl.OutcomesType(outcomeType), outcomes)
+	if err != nil {
+		log.Println("unexpected error.  should have been caught by validator?")
+		panic(err)
+	}
+	return outVal, false
 }
 
 // Evaluate a sample expression that evaluates a random value based on the child
@@ -174,6 +284,16 @@ func (s *SimpleEval) evalNewExpr(n *decl.NewExpr, env *Env[Value], currTime *cor
 	result, err = NewValue(compType, compInst)
 	if err != nil {
 		panic(err)
+	}
+
+	// Also set the initial env for the component
+	// copy all params with default values first followed by overrides (UDParams)
+	params, _ := compInst.ComponentDecl.Params()
+	for _, param := range params {
+		if param.DefaultValue != nil {
+			pval, _ := s.Eval(param.DefaultValue, env, currTime)
+			compInst.InitialEnv.Set(param.Name.Name, pval)
+		}
 	}
 	return
 }
@@ -235,7 +355,53 @@ func (s *SimpleEval) evalDelayStmt(d *DelayStmt, env *Env[Value], currTime *core
 // Call expression are of the form a.b.c.d(params)
 // The a.b.c.d must resolve to a callable (either a component method or a native function)
 func (s *SimpleEval) evalCallExpr(expr *CallExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
-	panic("TBD")
+	// Now find *where* it needs to be set, it can be:
+	// 1. A var in the local env
+	// 2. A member access expression - of the form a.b.c.d.e where a, b, c, d are components and e is a field/param name
+	// or a component instance - either way it should have the same type as the RHS
+
+	switch fexpr := expr.Function.(type) {
+	case *IdentifierExpr:
+		// Try to resolve the expression based on
+		receiver, _ := s.Eval(fexpr, env, currTime)
+		// receiver is a single identifier - this is probably a native method?
+		// or "self".
+		log.Println("Not sure how to handle Identifier receiver in call expr: ", receiver)
+		panic("TBD")
+	case *MemberAccessExpr:
+		maeTarget, _ := s.Eval(fexpr.Receiver, env, currTime)
+		if maeTarget.Type.Tag != decl.TypeTagComponent {
+			panic(fmt.Sprintf("Expected mae to be a component, found: %s -> %s", maeTarget, maeTarget.Type))
+		}
+
+		// Now we have the target component instance, we can invoke the method
+		// Evaluate the arguments
+		argValues := make([]Value, len(expr.Args))
+		for i, argExpr := range expr.Args {
+			argValue, _ := s.Eval(argExpr, env, currTime)
+			argValues[i] = argValue
+		}
+
+		compInstance := maeTarget.Value.(*ComponentInstance)
+		methodDecl, err := compInstance.ComponentDecl.GetMethod(fexpr.Member.Name)
+		if err != nil {
+			panic(err)
+		}
+		newEnv := compInstance.InitialEnv.Push()
+
+		if compInstance.IsNative {
+			// Native method invocation to be handled differently
+			panic("TBD3")
+		} else {
+			s.Eval(methodDecl.Body, newEnv, currTime)
+			// We can assume method exists on the component instance as it would have been validated durint inference phase
+		}
+	default:
+		panic(fmt.Sprintf("Expected Identifier or MAE, Expected: %v", fexpr))
+	}
+	// only duration increases - no change in result or returned status
+	return
+
 	/*
 		var runtimeInstance ComponentRuntime
 		var methodName string

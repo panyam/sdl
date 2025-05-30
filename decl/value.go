@@ -2,6 +2,8 @@ package decl
 
 import (
 	"fmt"
+
+	"github.com/panyam/sdl/core"
 )
 
 // Value wraps a Go value with its type definition.
@@ -143,7 +145,15 @@ func (r *Value) Set(v any) error {
 		return nil
 	}
 
-	if r.Type.Tag == TypeTagList || r.Type.Tag == TypeTagOutcomes {
+	if r.Type.Tag == TypeTagOutcomes {
+		outval, ok := v.(*core.Outcomes[Value])
+		if !ok {
+			return fmt.Errorf("Expected Outcomes[value], got %T", v)
+		}
+		r.Value = outval
+	}
+
+	if r.Type.Tag == TypeTagList {
 		// Expecting a slice of Value for containers
 		listVal, ok := v.([]Value)
 		if !ok {
@@ -196,6 +206,22 @@ func (r *Value) String() string {
 }
 
 // --- Custom getter methods
+func (r *Value) IntVal() int64 {
+	out, err := r.GetInt()
+	if err != nil {
+		panic(err)
+	}
+	return out
+}
+
+func (r *Value) FloatVal() float64 {
+	out, err := r.GetFloat()
+	if err != nil {
+		panic(err)
+	}
+	return out
+}
+
 func (r *Value) GetInt() (int64, error) {
 	if r.IsNil() || r.Type == nil {
 		return 0, fmt.Errorf("cannot get Int from nil Value")

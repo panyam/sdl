@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+
+	"github.com/panyam/sdl/decl"
 )
 
 // The runtime instance of a component. This could be Native or a UserDefined component
@@ -25,6 +27,9 @@ type ComponentInstance struct {
 	// Runtme data for user defined parameters
 	UDParams       map[string]Value              // Evaluated parameter Values (override or default)
 	UDDependencies map[string]*ComponentInstance // *** Unified map ***
+
+	// Initial env for this component instance
+	InitialEnv *Env[Value]
 }
 
 // NewComponentInstance creates a new component instanceof the given type.
@@ -34,7 +39,14 @@ func NewComponentInstance(file *FileInstance, compDecl *ComponentDecl) (*Compone
 		File:          file,
 		ComponentDecl: compDecl,
 		IsNative:      compDecl.IsNative,
+		InitialEnv:    decl.NewEnv[Value](nil), // should parent be File.Env?
 	}
+	compType := decl.ComponentType(compDecl)
+	compValue, err := NewValue(compType, compInst)
+	if err != nil {
+		panic(err)
+	}
+	compInst.InitialEnv.Set("self", compValue)
 
 	// Initialize the runtime based on whether it is native or user-defined
 	if compInst.IsNative {
@@ -63,6 +75,7 @@ func (ci *ComponentInstance) Set(name string, value Value) error {
 			ci.UDDependencies[name] = value.Value.(*ComponentInstance)
 		} else {
 			ci.UDParams[name] = value
+			ci.InitialEnv.Set(name, value)
 		}
 		return nil
 	}

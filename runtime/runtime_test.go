@@ -26,5 +26,13 @@ func TestBitly(t *testing.T) {
 
 	se := SimpleEval{fi}
 	var currTime core.Duration
-	log.Println(se.Eval(stmts, nil, &currTime))
+	env := fi.Env.Push()
+	for _, item := range stmts.Statements {
+		se.Eval(item, env, &currTime)
+	}
+
+	mae := &MemberAccessExpr{Receiver: &IdentifierExpr{Name: "app"}, Member: &IdentifierExpr{Name: "Shorten"}}
+	ce := &CallExpr{Function: mae}
+	res2, ret2 := se.Eval(ce, env, &currTime) // reuse env to continue
+	log.Println("Now Runnign System.App.Shorten(), ", res2, ret2, currTime)
 }

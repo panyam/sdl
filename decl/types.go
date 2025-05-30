@@ -92,8 +92,7 @@ func OutcomesType(elementType *Type) *Type {
 		panic("Outcomes element type cannot be nil")
 	}
 	return &Type{
-		Tag: TypeTagOutcomes,
-		// Name: "Outcomes",
+		Tag:  TypeTagOutcomes,
 		Info: elementType,
 	}
 }
