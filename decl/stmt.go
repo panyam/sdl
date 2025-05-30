@@ -23,15 +23,19 @@ type BlockStmt struct {
 
 func (b *BlockStmt) String() string { return "{ ...statements... }" } // Simplified
 func (b *BlockStmt) PrettyPrint(cp CodePrinter) {
-	cp.Println("{")
 	if b != nil && b.Statements != nil {
-		cp.Indent(1)
-		for _, stmt := range b.Statements {
-			stmt.PrettyPrint(cp)
+		if len(b.Statements) == 1 {
+			b.Statements[0].PrettyPrint(cp)
+		} else {
+			cp.Println("{")
+			cp.Indent(1)
+			for _, stmt := range b.Statements {
+				stmt.PrettyPrint(cp)
+			}
+			cp.Unindent(1)
+			cp.Print("}")
 		}
-		cp.Unindent(1)
 	}
-	cp.Print("}")
 }
 
 // ForStmt represents `for expression { stmt }`

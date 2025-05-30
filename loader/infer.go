@@ -53,6 +53,7 @@ func (i *Inference) Errorf(pos Location, format string, args ...any) bool {
 
 func (i *Inference) AddErrors(errs ...error) {
 	for _, err := range errs {
+		// TODO - Remove after testing - right now we fail on first error to detect and fix with call stack
 		if err != nil {
 			panic(err)
 		}
@@ -616,6 +617,63 @@ func (i *Inference) EvalForSampleExpr(expr *SampleExpr, scope *TypeScope) (*Type
 
 // --- Statement Type Inference ---
 
+func (i *Inference) EvalForDelayStmt(d *DelayStmt, scope *TypeScope) (ok bool) {
+	// Evaluate the type for the duration expr - it should resolve to int or float
+	childType, ok := i.EvalForExprType(d.Duration, scope)
+	if ok {
+		if !childType.Equals(IntType) && !childType.Equals(FloatType) {
+			return i.Errorf(d.Pos(), "Delay expression should be int or float, found: %s", childType.String())
+		}
+	}
+	return
+}
+
+func (i *Inference) EvalForLetStmt(l *LetStmt, scope *TypeScope) (ok bool) {
+	valType, ok := i.EvalForExprType(l.Value, scope)
+	if !ok {
+		return ok
+	}
+
+	if valType == nil {
+		return false
+	}
+	if len(l.Variables) == 1 {
+		varIdent := l.Variables[0]
+		if errSet := scope.Set(varIdent.Name, varIdent, valType); errSet != nil {
+			ok = ok && i.Errorf(varIdent.Pos(), "%v", errSet)
+		}
+	} else if len(l.Variables) > 1 {
+		if valType.Tag == decl.TypeTagTuple && len(valType.Info.([]*Type)) == len(l.Variables) {
+			childTypes := valType.Info.([]*Type)
+			for idx, varIdent := range l.Variables {
+				elemType := childTypes[idx]
+				if errSet := scope.Set(varIdent.Name, varIdent, elemType); errSet != nil {
+					ok = i.Errorf(varIdent.Pos(), "%v", errSet)
+				}
+			}
+		} else {
+			i.Errorf(l.Pos(), "let statement assigns to %d variables, but value type %s is not a matching tuple of %d elements", len(l.Variables), valType.String(), len(l.Variables))
+		}
+	}
+	return
+}
+
+func (i *Inference) EvalForForStmt(f *ForStmt, scope *TypeScope) (ok bool) {
+	ok = true
+	condType, condOk := i.EvalForExprType(f.Condition, scope)
+	if !condOk {
+		return false
+	}
+	if !condType.Equals(BoolType) && !condType.Equals(IntType) {
+		ok = i.Errorf(f.Pos(), "For loop condition can be bool or int, found: %s", condType.String())
+	}
+
+	// Evaluate block
+	bodyScope := scope.Push(scope.currentComponent, scope.currentMethod)
+	ok = ok && i.EvalForStmt(f.Body, bodyScope)
+	return
+}
+
 func (i *Inference) EvalForBlockStmt(block *BlockStmt, parentScope *TypeScope) (ok bool) {
 	ok = true
 	blockScope := parentScope.Push(parentScope.currentComponent, parentScope.currentMethod)
@@ -629,29 +687,7 @@ func (i *Inference) EvalForStmt(stmt Stmt, scope *TypeScope) (ok bool) {
 	ok = true
 	switch s := stmt.(type) {
 	case *LetStmt:
-		if valType, ok2 := i.EvalForExprType(s.Value, scope); ok2 {
-			ok = ok && ok2
-			if valType != nil {
-				if len(s.Variables) == 1 {
-					varIdent := s.Variables[0]
-					if errSet := scope.Set(varIdent.Name, varIdent, valType); errSet != nil {
-						ok = ok && i.Errorf(varIdent.Pos(), "%v", errSet)
-					}
-				} else if len(s.Variables) > 1 {
-					if valType.Tag == decl.TypeTagTuple && len(valType.Info.([]*Type)) == len(s.Variables) {
-						childTypes := valType.Info.([]*Type)
-						for idx, varIdent := range s.Variables {
-							elemType := childTypes[idx]
-							if errSet := scope.Set(varIdent.Name, varIdent, elemType); errSet != nil {
-								ok = i.Errorf(varIdent.Pos(), "%v", errSet)
-							}
-						}
-					} else {
-						i.Errorf(s.Pos(), "let statement assigns to %d variables, but value type %s is not a matching tuple of %d elements", len(s.Variables), valType.String(), len(s.Variables))
-					}
-				}
-			}
-		}
+		ok = ok && i.EvalForLetStmt(s, scope)
 	case *ExprStmt:
 		_, ok2 := i.EvalForExprType(s.Expression, scope)
 		ok = ok && ok2
@@ -696,6 +732,10 @@ func (i *Inference) EvalForStmt(stmt Stmt, scope *TypeScope) (ok bool) {
 		if s.Else != nil {
 			ok = ok && i.EvalForStmt(s.Else, scope)
 		}
+	case *ForStmt:
+		ok = ok && i.EvalForForStmt(s, scope)
+	case *DelayStmt:
+		ok = ok && i.EvalForDelayStmt(s, scope)
 	case *BlockStmt:
 		ok = ok && i.EvalForBlockStmt(s, scope)
 	case *AssignmentStmt: // General assignment, var must exist.
@@ -717,7 +757,7 @@ func (i *Inference) EvalForStmt(stmt Stmt, scope *TypeScope) (ok bool) {
 				i.Errorf(pos, "ExpectStmt found outside of an analyze block's expectations; type checking skipped here", s.Pos().LineColStr())
 		*/
 	default:
-		// i.Errorf(stmt.Pos(), "type inference for statement type %T not implemented yet", stmt)
+		i.Errorf(stmt.Pos(), "type inference for statement type %T not implemented yet: %v", stmt, stmt)
 	}
 	return ok
 }

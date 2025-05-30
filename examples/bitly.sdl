@@ -9,6 +9,7 @@ enum DuplicateCheck { FOUND, NOTFOUND, ERROR }
 component AppServer {
   // Our main DB
   uses db Database
+  param RetryCount = 3
 
   method Shorten() HttpStatusCode {
     for RetryCount {
@@ -50,9 +51,11 @@ component AppServerWithCache {
   uses db Database
   uses cache Cache
 
+  param RetryCount = 3
+
   method Shorten() HttpStatusCode {
     for RetryCount {
-      let foundDuplicate = self.CheckDuplicateShortId()
+      let foundDuplicate = xyz.CheckDuplicateShortId()
 
       if not foundDuplicate {
         // Success so try saving a new short ID
