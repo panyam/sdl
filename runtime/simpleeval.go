@@ -14,7 +14,7 @@ type SimpleEval struct {
 }
 
 // The main Eval loop of an expression/statement
-func (s *SimpleEval) Eval(node Node, env *Env[Value]) (result Value, duration core.Duration, returned bool) {
+func (s *SimpleEval) Eval(node Node, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
 	if env == nil {
 		env = s.RootFile.Env.Push()
 	}
@@ -24,37 +24,37 @@ func (s *SimpleEval) Eval(node Node, env *Env[Value]) (result Value, duration co
 	case *BlockStmt:
 		// With a block statement we usually push an extra context so it can be removed
 		// at the end of the block
-		return s.evalBlockStmt(n, env.Push()) // Pass nil context
+		return s.evalBlockStmt(n, env.Push(), currTime) // Pass nil context
 	case *LetStmt:
-		return s.evalLetStmt(n, env)
+		return s.evalLetStmt(n, env, currTime)
 	case *SetStmt:
-		return s.evalSetStmt(n, env)
+		return s.evalSetStmt(n, env, currTime)
 	case *ExprStmt:
-		return s.evalExprStmt(n, env)
+		return s.evalExprStmt(n, env, currTime)
 	case *IfStmt:
-		return s.evalIfStmt(n, env)
+		return s.evalIfStmt(n, env, currTime)
 	case *DelayStmt:
-		return s.evalDelayStmt(n, env)
+		return s.evalDelayStmt(n, env, currTime)
 	case *AssignmentStmt:
-		return s.evalAssignmentStmt(n, env)
+		return s.evalAssignmentStmt(n, env, currTime)
 
 	// --- Expression Nodes ---
 	case *LiteralExpr:
-		return s.evalLiteralExpr(n, env)
+		return s.evalLiteralExpr(n, env, currTime)
 	case *IdentifierExpr:
-		return s.evalIdentifierExpr(n, env)
+		return s.evalIdentifierExpr(n, env, currTime)
 	case *BinaryExpr:
-		return s.evalBinaryExpr(n, env)
+		return s.evalBinaryExpr(n, env, currTime)
 	case *UnaryExpr:
-		return s.evalUnaryExpr(n, env)
+		return s.evalUnaryExpr(n, env, currTime)
 	case *decl.NewExpr:
-		return s.evalNewExpr(n, env)
+		return s.evalNewExpr(n, env, currTime)
 	case *decl.SampleExpr:
-		return s.evalSampleExpr(n, env)
+		return s.evalSampleExpr(n, env, currTime)
 	case *decl.DistributeExpr:
-		return s.evalDistributeExpr(n, env)
+		return s.evalDistributeExpr(n, env, currTime)
 	case *CallExpr:
-		return s.evalCallExpr(n, env)
+		return s.evalCallExpr(n, env, currTime)
 	/* - TODO
 	case *SwitchStmt: // <-- Will be implemented now
 		return s.evalSwitchStmt(n, env)
@@ -65,11 +65,9 @@ func (s *SimpleEval) Eval(node Node, env *Env[Value]) (result Value, duration co
 	}
 }
 
-func (s *SimpleEval) evalBlockStmt(b *BlockStmt, env *Env[Value]) (result Value, duration core.Duration, returned bool) {
+func (s *SimpleEval) evalBlockStmt(b *BlockStmt, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
 	for _, statement := range b.Statements {
-		var timeTaken core.Duration
-		result, timeTaken, returned = s.Eval(statement, env)
-		duration += timeTaken
+		result, returned = s.Eval(statement, env, currTime)
 		if returned {
 			break
 		}
@@ -78,7 +76,7 @@ func (s *SimpleEval) evalBlockStmt(b *BlockStmt, env *Env[Value]) (result Value,
 }
 
 // Evaluates the value of an Identifier Expression
-func (s *SimpleEval) evalIdentifierExpr(i *IdentifierExpr, env *Env[Value]) (result Value, duration core.Duration, returned bool) {
+func (s *SimpleEval) evalIdentifierExpr(i *IdentifierExpr, env *Env[Value], _ *core.Duration) (result Value, returned bool) {
 	name := i.Name
 	value, ok := env.Get(name)
 	if !ok {
@@ -91,14 +89,14 @@ func (s *SimpleEval) evalIdentifierExpr(i *IdentifierExpr, env *Env[Value]) (res
 }
 
 // Evaluates the value of a Literal Expression
-func (s *SimpleEval) evalLiteralExpr(e *LiteralExpr, _ *Env[Value]) (result Value, duration core.Duration, returned bool) {
+func (s *SimpleEval) evalLiteralExpr(e *LiteralExpr, _ *Env[Value], _ *core.Duration) (result Value, returned bool) {
 	result = e.Value
 	return
 }
 
-func (s *SimpleEval) evalSetStmt(set *SetStmt, env *Env[Value]) (result Value, duration core.Duration, returned bool) {
+func (s *SimpleEval) evalSetStmt(set *SetStmt, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
 	// evaluate the Expression and unzip and assign to variables in the same environment
-	result, duration, _ = s.Eval(set.Value, env)
+	result, _ = s.Eval(set.Value, env, currTime)
 
 	// Now find *where* it needs to be set, it can be:
 	// 1. A var in the local env
@@ -109,7 +107,7 @@ func (s *SimpleEval) evalSetStmt(set *SetStmt, env *Env[Value]) (result Value, d
 	case *IdentifierExpr:
 		env.Set(lhs.Name, result)
 	case *MemberAccessExpr:
-		maeTarget, _, _ := s.Eval(lhs.Receiver, env)
+		maeTarget, _ := s.Eval(lhs.Receiver, env, currTime)
 		if maeTarget.Type.Tag != decl.TypeTagComponent {
 			panic(fmt.Sprintf("Expected mae to be a component, found: %s -> %s", maeTarget, maeTarget.Type))
 		}
@@ -121,9 +119,9 @@ func (s *SimpleEval) evalSetStmt(set *SetStmt, env *Env[Value]) (result Value, d
 	return
 }
 
-func (s *SimpleEval) evalLetStmt(l *LetStmt, env *Env[Value]) (result Value, duration core.Duration, returned bool) {
+func (s *SimpleEval) evalLetStmt(l *LetStmt, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
 	// evaluate the Expression and unzip and assign to variables in the same environment
-	result, duration, returned = s.Eval(l.Value, env)
+	result, returned = s.Eval(l.Value, env, currTime)
 
 	tupleValues, err := result.GetTuple()
 	if err != nil {
@@ -137,15 +135,14 @@ func (s *SimpleEval) evalLetStmt(l *LetStmt, env *Env[Value]) (result Value, dur
 }
 
 // Evaluates a distrbute expression that returns an Outcomes value type.
-func (s *SimpleEval) evalDistributeExpr(d *decl.DistributeExpr, env *Env[Value]) (result Value, duration core.Duration, returned bool) {
-	return
+func (s *SimpleEval) evalDistributeExpr(_ *decl.DistributeExpr, _ *Env[Value], _ *core.Duration) (result Value, returned bool) {
+	panic("not implemented")
 }
 
 // Evaluate a sample expression that evaluates a random value based on the child
 // distribution
-func (s *SimpleEval) evalSampleExpr(samp *decl.SampleExpr, env *Env[Value]) (result Value, duration core.Duration, returned bool) {
-	/*res*/ _, d, _ := s.Eval(samp.FromExpr, env)
-	duration += d
+func (s *SimpleEval) evalSampleExpr(samp *decl.SampleExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
+	s.Eval(samp.FromExpr, env, currTime)
 
 	// res should be an Outcome type
 	panic("Not sure whats next")
@@ -166,7 +163,7 @@ func (s *SimpleEval) evalSampleExpr(samp *decl.SampleExpr, env *Env[Value]) (res
 }
 
 // Evaluate a component construction expression
-func (s *SimpleEval) evalNewExpr(n *decl.NewExpr, env *Env[Value]) (result Value, duration core.Duration, returned bool) {
+func (s *SimpleEval) evalNewExpr(n *decl.NewExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
 	// New contains the name of the component to instantiate
 	// Since exection begins from a single File the File's env should contain the identifer
 	compInst, err := s.RootFile.NewComponent(n.ComponentExpr.Name)
@@ -181,20 +178,17 @@ func (s *SimpleEval) evalNewExpr(n *decl.NewExpr, env *Env[Value]) (result Value
 	return
 }
 
-func (s *SimpleEval) evalUnaryExpr(u *UnaryExpr, env *Env[Value]) (result Value, duration core.Duration, returned bool) {
-	lr, ld, _ := s.Eval(u.Right, env)
-	duration += ld
+func (s *SimpleEval) evalUnaryExpr(u *UnaryExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
+	lr, _ := s.Eval(u.Right, env, currTime)
 
 	// TODO - Evaluate based on the operator
 	log.Println("Child Result: ", lr)
 	return
 }
 
-func (s *SimpleEval) evalBinaryExpr(b *BinaryExpr, env *Env[Value]) (result Value, duration core.Duration, returned bool) {
-	lr, ld, _ := s.Eval(b.Left, env)
-	duration += ld
-	rr, rd, _ := s.Eval(b.Right, env)
-	duration += rd
+func (s *SimpleEval) evalBinaryExpr(b *BinaryExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
+	lr, _ := s.Eval(b.Left, env, currTime)
+	rr, _ := s.Eval(b.Right, env, currTime)
 
 	// TODO - Evaluate based on the operator
 	log.Println("Left Result: ", lr)
@@ -203,29 +197,35 @@ func (s *SimpleEval) evalBinaryExpr(b *BinaryExpr, env *Env[Value]) (result Valu
 }
 
 /** Evaluate a Expr as a statement and return its value */
-func (s *SimpleEval) evalExprStmt(stmt *ExprStmt, env *Env[Value]) (result Value, duration core.Duration, returned bool) {
-	return s.Eval(stmt.Expression, env)
+func (s *SimpleEval) evalExprStmt(stmt *ExprStmt, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
+	return s.Eval(stmt.Expression, env, currTime)
 }
 
 /** Evaluate a If and return its value */
-func (s *SimpleEval) evalIfStmt(stmt *IfStmt, env *Env[Value]) (result Value, duration core.Duration, returned bool) {
+func (s *SimpleEval) evalIfStmt(stmt *IfStmt, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
 	// Evaluate the condition expression to get its OpNode representation
-	condResult, condDuration, _ := s.Eval(stmt.Condition, env)
-	duration += condDuration
+	condResult, _ := s.Eval(stmt.Condition, env, currTime)
 
 	if condResult.IsTrue() {
-		thenResult, thenDuration, returned := s.Eval(stmt.Then, env)
-		return thenResult, duration + thenDuration, returned
+		thenResult, returned := s.Eval(stmt.Then, env, currTime)
+		return thenResult, returned
 	} else {
-		elseResult, elseDuration, returned := s.Eval(stmt.Then, env)
-		return elseResult, duration + elseDuration, returned
+		elseResult, returned := s.Eval(stmt.Then, env, currTime)
+		return elseResult, returned
 	}
 }
 
 // Delay expressions
-func (s *SimpleEval) evalDelayStmt(d *DelayStmt, env *Env[Value]) (result Value, duration core.Duration, returned bool) {
+func (s *SimpleEval) evalDelayStmt(d *DelayStmt, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
 	// Evaluate the condition expression to get its OpNode representation
-	_, duration, _ = s.Eval(d.Duration, env)
+	result, _ = s.Eval(d.Duration, env, currTime)
+	if i, err := result.GetInt(); err == nil {
+		*currTime += core.Duration(i)
+	} else if f, err := result.GetFloat(); err == nil {
+		*currTime += f
+	} else {
+		panic("delay value should have been int or float.  type checking failed")
+	}
 	return
 }
 
@@ -234,7 +234,7 @@ func (s *SimpleEval) evalDelayStmt(d *DelayStmt, env *Env[Value]) (result Value,
 // Evaluate a Call and return its value
 // Call expression are of the form a.b.c.d(params)
 // The a.b.c.d must resolve to a callable (either a component method or a native function)
-func (s *SimpleEval) evalCallExpr(expr *CallExpr, env *Env[Value]) (result Value, duration core.Duration, returned bool) {
+func (s *SimpleEval) evalCallExpr(expr *CallExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
 	panic("TBD")
 	/*
 		var runtimeInstance ComponentRuntime
@@ -300,6 +300,6 @@ func (s *SimpleEval) evalCallExpr(expr *CallExpr, env *Env[Value]) (result Value
 }
 
 /** Evaluate a Assignment as a statement and return its value */
-func (s *SimpleEval) evalAssignmentStmt(stmt *AssignmentStmt, env *Env[Value]) (result Value, duration core.Duration, returned bool) {
+func (s *SimpleEval) evalAssignmentStmt(stmt *AssignmentStmt, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
 	panic("to be implemented")
 }

@@ -4,6 +4,7 @@ import (
 	"log"
 	"testing"
 
+	"github.com/panyam/sdl/core"
 	"github.com/panyam/sdl/decl"
 	"github.com/panyam/sdl/loader"
 	_ "github.com/stretchr/testify/assert"
@@ -24,5 +25,6 @@ func TestBitly(t *testing.T) {
 	decl.PPrint(stmts)
 
 	se := SimpleEval{fi}
-	log.Println(se.Eval(stmts, nil))
+	var currTime core.Duration
+	log.Println(se.Eval(stmts, nil, &currTime))
 }
