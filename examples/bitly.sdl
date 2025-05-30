@@ -11,13 +11,21 @@ component AppServer {
   uses db Database
   param RetryCount = 3
 
+  method CheckDuplicateShortId() Bool {
+    // 0.01% chance of collissions
+    return sample dist {
+      9999 => false
+      1 => true
+    }
+  }
+
   method Shorten() HttpStatusCode {
     for RetryCount {
       let foundDuplicate = self.CheckDuplicateShortId()
 
       if not foundDuplicate {
         // Success so try saving a new short ID
-        if self.HashIndex.Write() {
+        if self.db.PutShortUrl() {
           return HttpStatusCode.StatusOk
         } else {
           return HttpStatusCode.StatusInternalError
@@ -55,11 +63,9 @@ component AppServerWithCache {
 
   method Shorten() HttpStatusCode {
     for RetryCount {
-      let foundDuplicate = xyz.CheckDuplicateShortId()
-
-      if not foundDuplicate {
+      if not self.CheckDuplicateShortId() {
         // Success so try saving a new short ID
-        if self.HashIndex.Write() {
+        if self.db.PutShortUrl() {
           // .... Write to cache as well
           return HttpStatusCode.StatusOk
         } else {
@@ -84,6 +90,14 @@ component AppServerWithCache {
 
     // Simplified - can model more errors
     return HttpStatusCode.StatusInternalError
+  }
+
+  method CheckDuplicateShortId() Bool {
+    // 0.001% chance of collissions
+    return sample dist {
+      99999 => false
+      1 => true
+    }
   }
 }
 

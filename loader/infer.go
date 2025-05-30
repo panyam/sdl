@@ -34,6 +34,10 @@ type Inference struct {
 
 	// All the errors collected during inference
 	Errors []error
+
+	// Max errors before we panic
+	// 0 => no limit
+	MaxErrors int
 }
 
 func (i *Inference) HasErrors() bool {
@@ -54,10 +58,10 @@ func (i *Inference) Errorf(pos Location, format string, args ...any) bool {
 func (i *Inference) AddErrors(errs ...error) {
 	for _, err := range errs {
 		// TODO - Remove after testing - right now we fail on first error to detect and fix with call stack
-		if err != nil {
+		i.Errors = append(i.Errors, err)
+		if i.MaxErrors > 0 && len(i.Errors) >= i.MaxErrors {
 			panic(err)
 		}
-		i.Errors = append(i.Errors, err)
 	}
 }
 

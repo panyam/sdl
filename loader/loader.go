@@ -311,6 +311,7 @@ func (l *Loader) validateFileDecl(fs *FileStatus, fileDecl *decl.FileDecl, visit
 	// Assuming decl.InferTypesForFile signature: func(file *decl.FileDecl, typeEnv *decl.Env[decl.Node]) []error
 	// PP(fileDecl)
 	inf := NewInference(fs.FullPath, fileDecl)
+	inf.MaxErrors = 1
 	inf.Eval(currentScope)
 	if inf.HasErrors() {
 		fs.AddErrors(inf.Errors...)

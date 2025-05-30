@@ -1,6 +1,8 @@
 package runtime
 
 import (
+	"log"
+
 	"github.com/panyam/sdl/loader"
 )
 
@@ -28,6 +30,13 @@ func (r *Runtime) LoadFile(filePath string) *FileInstance {
 	fs, err := r.Loader.LoadFile(filePath, "", 0)
 	if err != nil {
 		panic(err)
+	}
+	r.Loader.Validate(fs)
+	if fs.HasErrors() {
+		log.Printf("\nError Validating File %s\n", fs.FullPath)
+		fs.PrintErrors()
+	} else {
+		log.Printf("\nFile %s - Validated Successfully at: %v\n", fs.FullPath, fs.LastValidated)
 	}
 
 	file := fs.FileDecl
