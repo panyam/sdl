@@ -35,11 +35,11 @@ func (f *FileInstance) NewSystem(systemName string) *SystemInstance {
 // Creates a new instance of a component
 // Note that a component can be native or user defined.
 // We want the same semantics regardless
-func (f *FileInstance) NewComponent(name string) (*ComponentInstance, error) {
+func (f *FileInstance) NewComponent(name string) (*ComponentInstance, Value, error) {
 	def, err := f.Decl.GetDefinition(name)
 	if err != nil {
 		log.Println("error getting component definition: ", err)
-		return nil, err
+		return nil, Nil, err
 	}
 
 	compDecl, ok := def.(*decl.ComponentDecl)
@@ -49,7 +49,7 @@ func (f *FileInstance) NewComponent(name string) (*ComponentInstance, error) {
 		if ok {
 			importedFS, err := f.Runtime.Loader.LoadFile(importDecl.ResolvedFullPath, f.Decl.FullPath, 0)
 			if err != nil {
-				return nil, err
+				return nil, Nil, err
 			}
 			log.Println("IFS: ", importedFS)
 			def, _ = importedFS.FileDecl.GetDefinition(importDecl.ImportedItem.Value)
@@ -59,7 +59,7 @@ func (f *FileInstance) NewComponent(name string) (*ComponentInstance, error) {
 
 	if compDecl == nil {
 		log.Println("error getting component definition: ", name, " is not a component")
-		return nil, fmt.Errorf("definition is not a component")
+		return nil, Nil, fmt.Errorf("definition is not a component")
 	}
 
 	return NewComponentInstance(f, compDecl)

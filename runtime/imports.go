@@ -1,6 +1,9 @@
 package runtime
 
-import "github.com/panyam/sdl/decl"
+import (
+	"github.com/panyam/sdl/decl"
+	"github.com/panyam/sdl/loader"
+)
 
 type NodeInfo = decl.NodeInfo
 type LiteralExpr = decl.LiteralExpr
@@ -67,3 +70,6 @@ var BoolValue = decl.BoolValue
 var StringValue = decl.StringValue
 var IntValue = decl.IntValue
 var FloatValue = decl.FloatValue
+var Nil = decl.Nil
+
+type ErrorCollector = loader.ErrorCollector

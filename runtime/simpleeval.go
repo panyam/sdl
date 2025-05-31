@@ -4,32 +4,64 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"slices"
 	"time"
 
 	"github.com/panyam/sdl/core"
 	"github.com/panyam/sdl/decl"
 )
 
-func ensureTypes(t *Type, types ...*Type) {
-	for _, typ := range types {
-		if t.Equals(typ) {
-			return
-		}
+func ensureTypes(typ *Type, types ...*Type) {
+	if !slices.ContainsFunc(types, func(t *Type) bool { return t.Equals(typ) }) {
+		panic("Expected given type but failed")
 	}
-	panic("Expected given type but failed")
 }
 
 // A simple evaluator
 type SimpleEval struct {
+	ErrorCollector
 	RootFile *FileInstance
 	Rand     *rand.Rand
+	Errors   []error
 }
 
 func NewSimpleEval(fi *FileInstance) *SimpleEval {
-	return &SimpleEval{
+	out := &SimpleEval{
 		RootFile: fi,
 		Rand:     rand.New(rand.NewSource(time.Now().UnixMicro())),
 	}
+	out.MaxErrors = 1
+	return out
+}
+
+func (s *SimpleEval) EvalInitSystem(sys *SystemInstance, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
+	stmts, err := sys.Initializer()
+	if err != nil {
+		panic(err)
+	}
+	_, returned, timeTaken := s.EvalStatements(stmts.Statements, env)
+	*currTime += timeTaken
+
+	log.Println("Compiled statements:")
+	decl.PPrint(stmts)
+
+	// Now check if all things are initialized
+	uninited := sys.GetUninitializedComponents(env)
+	for _, unin := range uninited {
+		log.Println("Uninitialized Dependency: ", unin.Attrib)
+		curr := unin.From
+		out := unin.Attrib
+		errorFile := sys.System.ParentFileDecl.FullPath
+		errorLoc := unin.Pos
+		for curr != nil {
+			errorLoc = curr.Pos
+			out = curr.CompInst.ComponentDecl.Name.Value + "." + out
+			log.Printf("    From %s, Line: %d, Column %d", curr.CompInst.ComponentDecl.ParentFileDecl.FullPath, curr.Pos.Line, curr.Pos.Col)
+			curr = curr.From
+		}
+		s.AddErrors(fmt.Errorf("%s, Line: %d, Col: %d - Uninitialized Dependency: %s", errorFile, errorLoc.Line, errorLoc.Col, out))
+	}
+	return
 }
 
 func (s *SimpleEval) EvalStatements(stmts []Stmt, env *Env[Value]) (result []Value, returned bool, timeTaken core.Duration) {
@@ -46,9 +78,6 @@ func (s *SimpleEval) EvalStatements(stmts []Stmt, env *Env[Value]) (result []Val
 
 // The main Eval loop of an expression/statement
 func (s *SimpleEval) Eval(node Node, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
-	if env == nil {
-		env = s.RootFile.Env.Push()
-	}
 	// fmt.Printf("Eval entry: %T - %s\n", node, node) // Debug entry
 	switch n := node.(type) {
 	// --- Statement Nodes ---
@@ -310,12 +339,7 @@ func (s *SimpleEval) evalSampleExpr(samp *decl.SampleExpr, env *Env[Value], curr
 func (s *SimpleEval) evalNewExpr(n *decl.NewExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
 	// New contains the name of the component to instantiate
 	// Since exection begins from a single File the File's env should contain the identifer
-	compInst, err := s.RootFile.NewComponent(n.ComponentExpr.Value)
-	if err != nil {
-		panic(err)
-	}
-	compType := decl.ComponentType(compInst.ComponentDecl)
-	result, err = NewValue(compType, compInst)
+	compInst, result, err := s.RootFile.NewComponent(n.ComponentExpr.Value)
 	if err != nil {
 		panic(err)
 	}
@@ -327,6 +351,16 @@ func (s *SimpleEval) evalNewExpr(n *decl.NewExpr, env *Env[Value], currTime *cor
 		if param.DefaultValue != nil {
 			pval, _ := s.Eval(param.DefaultValue, env, currTime)
 			compInst.InitialEnv.Set(param.Name.Value, pval)
+		}
+	}
+
+	// Now for any "instantiated" components set it here
+	if !compInst.IsNative {
+		deps, _ := compInst.ComponentDecl.Dependencies()
+		for _, decl := range deps {
+			if decl.Overrides != nil {
+				log.Println("Dependency to be overridden: ", decl)
+			}
 		}
 	}
 	return
@@ -397,13 +431,16 @@ func (s *SimpleEval) evalMemberAccessExpr(m *MemberAccessExpr, env *Env[Value], 
 	if maeTarget.Type.Tag == decl.TypeTagRef {
 		refVal := maeTarget.Value.(*decl.RefValue)
 		compInst = refVal.Receiver.Value.(*ComponentInstance)
-		compInst, _ = compInst.GetDependency(refVal.Attrib)
-		if compInst == nil {
+		usedInst, _ := compInst.GetDependency(refVal.Attrib)
+		if usedInst == nil {
 			// TODO - This is a runtime error - but a user one so we should flag instead of panicking
 			// This means a "set" needs to be called - for example in DB, the ByShortCode dependency is not
 			// set - should we require that these are set manually each time or allow default values somehow for components too?
-			panic(fmt.Sprintf("Expected mae to be a component, found: %s -> %s", maeTarget, maeTarget.Type))
+			err := fmt.Errorf("Depenendency %s not set.  Either override it or set it", refVal.Attrib)
+			s.AddErrors(err)
+			panic(err)
 		}
+		compInst = usedInst
 	} else if maeTarget.Type.Tag != decl.TypeTagComponent {
 		panic(fmt.Sprintf("Expected mae to be a component, found: %s -> %s", maeTarget, maeTarget.Type))
 	} else {
@@ -467,7 +504,6 @@ func (s *SimpleEval) evalMemberAccessExpr(m *MemberAccessExpr, env *Env[Value], 
 
 	// Return the reference value here
 	panic("Invalid member type")
-	return // decl.NewValue(maeTarget.Type, RefValue(maeTarget, m.Member.Value)), false
 }
 
 // Evaluate a Call and return its value

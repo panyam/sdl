@@ -40,9 +40,7 @@ func NewValue(t *Type, initialValue ...any) (Value, error) {
 	return rv, nil
 }
 
-func Nil() Value {
-	return Value{Type: NilType}
-}
+var Nil = Value{Type: NilType}
 
 func (r *Value) IsTrue() bool {
 	return r.Value == true

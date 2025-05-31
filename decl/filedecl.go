@@ -185,6 +185,7 @@ func (f *FileDecl) RegisterComponent(c *ComponentDecl) error {
 		return fmt.Errorf("component definition '%s' already registered", c.Name.Value)
 	}
 	f.components[c.Name.Value] = c
+	c.ParentFileDecl = f
 	return nil
 }
 
@@ -196,6 +197,7 @@ func (f *FileDecl) RegisterSystem(c *SystemDecl) error {
 		return fmt.Errorf("system definition '%s' already registered", c.Name.Value)
 	}
 	f.systems[c.Name.Value] = c
+	c.ParentFileDecl = f
 	return nil
 }
 

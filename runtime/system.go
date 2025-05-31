@@ -48,19 +48,6 @@ func (s *SystemInstance) Initializer() (blockStmt *BlockStmt, err error) {
 				TargetExpr: it.Name,
 				Value:      &decl.NewExpr{ComponentExpr: &IdentifierExpr{Value: it.ComponentName.Value}},
 			})
-
-			/*
-				comp, err := NewComponentInstance(s.File, compDecl)
-				if err != nil {
-					// let us come back to this later
-					panic(err)
-				}
-				cv, err := NewValue(decl.ComponentType(compDecl), comp)
-				if err != nil {
-					panic(err)
-				}
-				s.Env.Set(it.Name.Value, cv)
-			*/
 		case *LetStmt:
 			// Add this as is
 			stmts = append(stmts, it)
@@ -83,4 +70,62 @@ func (s *SystemInstance) Initializer() (blockStmt *BlockStmt, err error) {
 		}
 	}
 	return &BlockStmt{Statements: stmts}, nil
+}
+
+type InitStmt struct {
+	From     *InitStmt
+	Pos      Location
+	Attrib   string
+	CompInst *ComponentInstance // this should be From.CompInst.Attrib.  If From == nil then this is a System level component
+}
+
+// Goes through all components and gets uninitialized components so user knows what/how to set them
+// This is usually called after the Initializer expression is called but before any other expressions are called.
+func (s *SystemInstance) GetUninitializedComponents(env *Env[Value]) (items []*InitStmt) {
+	var visit func(i *InitStmt)
+	visit = func(i *InitStmt) {
+		compDecl := i.CompInst.ComponentDecl
+		deps, _ := compDecl.Dependencies()
+		for _, dep := range deps {
+			depInst, ok := i.CompInst.GetDependency(dep.Name.Value)
+			if !ok || depInst == nil {
+				items = append(items, &InitStmt{
+					From:   i,
+					Pos:    compDecl.Pos(),
+					Attrib: dep.Name.Value,
+				})
+			} else {
+				visit(&InitStmt{
+					From:     i,
+					Pos:      compDecl.Pos(),
+					Attrib:   dep.Name.Value,
+					CompInst: depInst,
+				})
+			}
+		}
+	}
+
+	for _, item := range s.System.Body {
+		it, ok := item.(*InstanceDecl)
+		if !ok {
+			continue
+		}
+
+		compValue, ok := env.Get(it.Name.Value)
+		if !ok {
+			items = append(items, &InitStmt{
+				Pos:    item.Pos(),
+				Attrib: it.Name.Value,
+			})
+			continue
+		}
+
+		compInst := compValue.Value.(*ComponentInstance)
+		visit(&InitStmt{
+			Pos:      item.Pos(),
+			Attrib:   it.Name.Value,
+			CompInst: compInst,
+		})
+	}
+	return
 }

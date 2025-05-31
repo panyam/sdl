@@ -11,14 +11,13 @@ import (
 )
 
 type FileStatus struct {
+	ErrorCollector
+
 	// The canonical path of a file
 	FullPath string
 
 	// The AST Node corresponding to this file
 	FileDecl *decl.FileDecl
-
-	// Errors for this file
-	Errors []error
 
 	// When the file was last parsed
 	LastParsed time.Time
@@ -36,22 +35,6 @@ func (f *FileStatus) AddImports(imported ...string) {
 	}
 	for _, path := range imported {
 		f.ImportedFiles[path] = true
-	}
-}
-
-func (f *FileStatus) HasErrors() bool {
-	return len(f.Errors) > 0
-}
-
-func (f *FileStatus) PrintErrors() {
-	for _, err := range f.Errors {
-		fmt.Fprintln(os.Stderr, err)
-	}
-}
-
-func (f *FileStatus) AddErrors(errs ...error) {
-	for _, err := range errs {
-		f.Errors = append(f.Errors, err)
 	}
 }
 

@@ -119,6 +119,9 @@ type SystemDecl struct {
 	NodeInfo
 	Name *IdentifierExpr
 	Body []SystemDeclBodyItem // InstanceDecl, AnalyzeDecl, OptionsDecl, LetStmt
+
+	// File declaration this Component is declared in
+	ParentFileDecl *FileDecl
 }
 
 func (s *SystemDecl) String() string { return fmt.Sprintf("system %s { ... }", s.Name) }

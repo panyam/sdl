@@ -3,7 +3,6 @@ package loader
 import (
 	"fmt"
 	"log"
-	"os"
 
 	"github.com/panyam/sdl/decl"
 	// "log" // Uncomment for debugging
@@ -26,43 +25,13 @@ func (i *InferenceError) Error() string {
 }
 
 type Inference struct {
+	ErrorCollector
+
 	// Path of the file being inferred (if provided)
 	filePath string
 
 	// Inference starts the root file
 	rootFile *FileDecl
-
-	// All the errors collected during inference
-	Errors []error
-
-	// Max errors before we panic
-	// 0 => no limit
-	MaxErrors int
-}
-
-func (i *Inference) HasErrors() bool {
-	return len(i.Errors) > 0
-}
-
-func (i *Inference) PrintErrors() {
-	for _, err := range i.Errors {
-		fmt.Fprintln(os.Stderr, err)
-	}
-}
-
-func (i *Inference) Errorf(pos Location, format string, args ...any) bool {
-	i.AddErrors(InfErrorf(pos, format, args...))
-	return false
-}
-
-func (i *Inference) AddErrors(errs ...error) {
-	for _, err := range errs {
-		// TODO - Remove after testing - right now we fail on first error to detect and fix with call stack
-		i.Errors = append(i.Errors, err)
-		if i.MaxErrors > 0 && len(i.Errors) >= i.MaxErrors {
-			panic(err)
-		}
-	}
 }
 
 func NewInference(fp string, fd *FileDecl) *Inference {

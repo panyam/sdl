@@ -33,7 +33,7 @@ type ComponentInstance struct {
 }
 
 // NewComponentInstance creates a new component instanceof the given type.
-func NewComponentInstance(file *FileInstance, compDecl *ComponentDecl) (*ComponentInstance, error) {
+func NewComponentInstance(file *FileInstance, compDecl *ComponentDecl) (*ComponentInstance, Value, error) {
 	// Create the component instance
 	compInst := &ComponentInstance{
 		File:          file,
@@ -57,7 +57,7 @@ func NewComponentInstance(file *FileInstance, compDecl *ComponentDecl) (*Compone
 		compInst.UDParams = make(map[string]Value)                    // Evaluated parameter Values (override or default)
 		compInst.UDDependencies = make(map[string]*ComponentInstance) // Unified map for dependencies
 	}
-	return compInst, nil
+	return compInst, compValue, nil
 }
 
 // ===================

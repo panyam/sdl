@@ -32,6 +32,9 @@ type ComponentDecl struct {
 	params  map[string]*ParamDecl  // Processed parameters map[name]*ParamDecl
 	uses    map[string]*UsesDecl   // Processed dependencies map[local_name]*UsesDecl
 	methods map[string]*MethodDecl // Processed methods map[method_name]*MethodDef
+
+	// File declaration this Component is declared in
+	ParentFileDecl *FileDecl
 }
 
 func (d *ComponentDecl) Params() (out []*ParamDecl, err error) {
