@@ -56,7 +56,7 @@ func assertIdentifier(t *testing.T, node Node, expectedName string) {
 	t.Helper()
 	ident, ok := node.(*IdentifierExpr)
 	require.True(t, ok, "Expected *IdentifierExpr, got %T", node)
-	assert.Equal(t, expectedName, ident.Name)
+	assert.Equal(t, expectedName, ident.Value)
 }
 
 // Helper to get the first declaration if it exists
@@ -151,13 +151,13 @@ func TestParseDeclarations(t *testing.T) {
 		ast := parseString(t, input)
 		decl := firstDecl(t, ast).(*EnumDecl)
 		assertPosition(t, decl, 0, 32)
-		assertIdentifier(t, decl.NameNode, "Status")
-		require.Len(t, decl.ValuesNode, 3)
-		assertIdentifier(t, decl.ValuesNode[0], "OK")
-		assertIdentifier(t, decl.ValuesNode[1], "FAIL")
-		assertIdentifier(t, decl.ValuesNode[2], "UNKNOWN")
-		assertPosition(t, decl.ValuesNode[0], 14, 16)
-		assertPosition(t, decl.ValuesNode[2], 24, 31)
+		assertIdentifier(t, decl.Name, "Status")
+		require.Len(t, decl.Values, 3)
+		assertIdentifier(t, decl.Values[0], "OK")
+		assertIdentifier(t, decl.Values[1], "FAIL")
+		assertIdentifier(t, decl.Values[2], "UNKNOWN")
+		assertPosition(t, decl.Values[0], 14, 16)
+		assertPosition(t, decl.Values[2], 24, 31)
 	})
 
 	t.Run("Options", func(t *testing.T) {
@@ -199,13 +199,13 @@ func TestParseComponentParams(t *testing.T) {
 	require.Len(t, comp.Body, 2)
 
 	p1 := comp.Body[0].(*ParamDecl)
-	assert.Equal(t, "p1", p1.Name.Name)
+	assert.Equal(t, "p1", p1.Name.Value)
 	assert.Equal(t, "int", p1.TypeDecl.Name)
 	assert.Nil(t, p1.DefaultValue)
 	// Add position check if needed
 
 	p2 := comp.Body[1].(*ParamDecl)
-	assert.Equal(t, "p2", p2.Name.Name)
+	assert.Equal(t, "p2", p2.Name.Value)
 	assert.Equal(t, "string", p2.TypeDecl.Name)
 	require.NotNil(t, p2.DefaultValue)
 	// Check the default value using the new literal structure
@@ -247,7 +247,7 @@ func TestParseSystemInstancesWithLiteralOverride(t *testing.T) {
 	inst := sys.Body[0].(*InstanceDecl)
 	require.Len(t, inst.Overrides, 1)
 	assign := inst.Overrides[0]
-	assert.Equal(t, "p", assign.Var.Name)
+	assert.Equal(t, "p", assign.Var.Value)
 	// Assert the assigned value is a LiteralExpr containing an Int RuntimeValue
 	assertLiteralWithValue(t, assign.Value, IntType, int64(5))
 }
@@ -258,7 +258,7 @@ func TestParseComponent(t *testing.T) {
 		ast := parseString(t, input)
 		comp := firstDecl(t, ast).(*ComponentDecl)
 		assertPosition(t, comp, 0, 17)
-		assertIdentifier(t, comp.NameNode, "Empty")
+		assertIdentifier(t, comp.Name, "Empty")
 		assert.Empty(t, comp.Body)
 	})
 
@@ -274,13 +274,13 @@ func TestParseComponent(t *testing.T) {
 		require.Len(t, comp.Body, 2)
 
 		p1 := comp.Body[0].(*ParamDecl)
-		assert.Equal(t, "p1", p1.Name.Name)
+		assert.Equal(t, "p1", p1.Name.Value)
 		assert.Equal(t, "int", p1.TypeDecl.Name)
 		assert.Nil(t, p1.DefaultValue)
 		assertPosition(t, p1, 35, 0) // Fix this to get the correct end position
 
 		p2 := comp.Body[1].(*ParamDecl)
-		assert.Equal(t, "p2", p2.Name.Name)
+		assert.Equal(t, "p2", p2.Name.Value)
 		assert.Equal(t, "string", p2.TypeDecl.Name)
 		require.NotNil(t, p2.DefaultValue)
 		assertLiteralWithValue(t, p2.DefaultValue, StrType, "default")
@@ -295,8 +295,8 @@ func TestParseComponent(t *testing.T) {
 		require.Len(t, comp.Body, 1)
 		uses := comp.Body[0].(*UsesDecl)
 		assertPosition(t, uses, 21, 46)
-		assertIdentifier(t, uses.NameNode, "dep")
-		assertIdentifier(t, uses.ComponentNode, "OtherComponent")
+		assertIdentifier(t, uses.Name, "dep")
+		assertIdentifier(t, uses.ComponentName, "OtherComponent")
 	})
 
 	t.Run("Methods", func(t *testing.T) {
@@ -312,7 +312,7 @@ func TestParseComponent(t *testing.T) {
 
 		m1 := comp.Body[0].(*MethodDecl)
 		assertPosition(t, m1, 33, 48)
-		assertIdentifier(t, m1.NameNode, "m1")
+		assertIdentifier(t, m1.Name, "m1")
 		assert.Empty(t, m1.Parameters)
 		assert.Nil(t, m1.ReturnType)
 		assert.Empty(t, m1.Body.Statements)
@@ -320,9 +320,9 @@ func TestParseComponent(t *testing.T) {
 
 		m2 := comp.Body[1].(*MethodDecl)
 		assertPosition(t, m2, 60, 117)
-		assertIdentifier(t, m2.NameNode, "m2")
+		assertIdentifier(t, m2.Name, "m2")
 		require.Len(t, m2.Parameters, 1)
-		assert.Equal(t, "a", m2.Parameters[0].Name.Name)
+		assert.Equal(t, "a", m2.Parameters[0].Name.Value)
 		assert.Equal(t, "int", m2.Parameters[0].TypeDecl.Name)
 		require.NotNil(t, m2.ReturnType)
 		assert.Equal(t, "bool", m2.ReturnType.Name)
@@ -342,8 +342,8 @@ func TestParseSystem(t *testing.T) {
 		require.Len(t, sys.Body, 1)
 		inst := sys.Body[0].(*InstanceDecl)
 		assertPosition(t, inst, 11, 22)
-		assertIdentifier(t, inst.NameNode, "i1")
-		assertIdentifier(t, inst.ComponentType, "MyComp")
+		assertIdentifier(t, inst.Name, "i1")
+		assertIdentifier(t, inst.ComponentName, "MyComp")
 		assert.Empty(t, inst.Overrides)
 	})
 
@@ -355,12 +355,12 @@ func TestParseSystem(t *testing.T) {
 		require.Len(t, sys.Body, 1)
 		inst := sys.Body[0].(*InstanceDecl)
 		assertPosition(t, inst, 11, 38)
-		assertIdentifier(t, inst.NameNode, "i2")
-		assertIdentifier(t, inst.ComponentType, "D")
+		assertIdentifier(t, inst.Name, "i2")
+		assertIdentifier(t, inst.ComponentName, "D")
 		require.Len(t, inst.Overrides, 2)
-		assert.Equal(t, "p1", inst.Overrides[0].Var.Name)
+		assert.Equal(t, "p1", inst.Overrides[0].Var.Value)
 		assertLiteralWithValue(t, inst.Overrides[0].Value, IntType, int64(5))
-		assert.Equal(t, "p2", inst.Overrides[1].Var.Name)
+		assert.Equal(t, "p2", inst.Overrides[1].Var.Value)
 		assertLiteralWithValue(t, inst.Overrides[1].Value, StrType, "a")
 	})
 

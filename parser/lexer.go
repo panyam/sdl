@@ -35,7 +35,7 @@ type Lexer struct {
 	parseResult *FileDecl // Field to store the final AST root, set by the parser
 }
 
-// NewLexer creates a new lexer instance
+// NewLexer creates a New lexer instance
 func NewLexer(r io.Reader) *Lexer {
 	return &Lexer{
 		reader: bufio.NewReader(r),
@@ -390,15 +390,15 @@ func (l *Lexer) Lex(lval *SDLSymType) int {
 
 		switch tok {
 		case IDENTIFIER:
-			lval.ident = newIdentifierExpr(text, startPosSnapshot, endPos)
+			lval.ident = NewIdentExpr(text, startPosSnapshot, endPos)
 		case BOOL_LITERAL:
 			boolVal, _ := NewValue(BoolType, text == "true")
-			lval.expr = newLiteralExpr(boolVal, startPosSnapshot, endPos)
+			lval.expr = NewLiteralExpr(boolVal, startPosSnapshot, endPos)
 		case INT, FLOAT, BOOL, STRING, DURATION: // Type keywords
-			lval.node = newTokenNode(startPosSnapshot, endPos, text)
+			lval.node = NewTokenNode(startPosSnapshot, endPos, text)
 		default: // Other keywords
 			// Pass position via Node, if grammar expects Node for keywords
-			lval.node = newTokenNode(startPosSnapshot, endPos, text)
+			lval.node = NewTokenNode(startPosSnapshot, endPos, text)
 			lval.sval = text // Keep sval too for compatibility if rules use it for ops
 		}
 		return tok
@@ -435,7 +435,7 @@ func (l *Lexer) Lex(lval *SDLSymType) int {
 				l.tokenText += unit
 				dur := parseDuration(numText, unit)
 				durVal, _ := NewValue(FloatType, dur)
-				lval.expr = newLiteralExpr(durVal, startPosSnapshot, l.location)
+				lval.expr = NewLiteralExpr(durVal, startPosSnapshot, l.location)
 				return DURATION_LITERAL
 			}
 		}
@@ -445,14 +445,14 @@ func (l *Lexer) Lex(lval *SDLSymType) int {
 			if err != nil {
 				l.Error(fmt.Sprintf("Invalid integer: %s", numText))
 			}
-			lval.expr = newLiteralExpr(IntValue(intVal), startPosSnapshot, numEndPos)
+			lval.expr = NewLiteralExpr(IntValue(intVal), startPosSnapshot, numEndPos)
 			return INT_LITERAL
 		} else if numTok == FLOAT_LITERAL {
 			floatVal, err := strconv.ParseFloat(numText, 64)
 			if err != nil {
 				l.Error(fmt.Sprintf("Invalid float: %s", numText))
 			}
-			lval.expr = newLiteralExpr(FloatValue(floatVal), startPosSnapshot, numEndPos)
+			lval.expr = NewLiteralExpr(FloatValue(floatVal), startPosSnapshot, numEndPos)
 			return FLOAT_LITERAL
 		} else {
 			l.Error(fmt.Sprintf("Invalid numeric literal: %s", numText))
@@ -464,7 +464,7 @@ func (l *Lexer) Lex(lval *SDLSymType) int {
 		_, content := l.scanString()
 		// l.tokenText = content
 		strVal, _ := NewValue(StrType, content)
-		lval.expr = newLiteralExpr(strVal, startPosSnapshot, l.location)
+		lval.expr = NewLiteralExpr(strVal, startPosSnapshot, l.location)
 		return STRING_LITERAL
 	}
 
@@ -476,7 +476,7 @@ func (l *Lexer) Lex(lval *SDLSymType) int {
 	switch r {
 	case ';', '{', '}', '(', ')', ',', '.', '[', ']':
 		l.read()
-		lval.node = newTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
+		lval.node = NewTokenNode(startPosSnapshot, currentEndPos, l.tokenText)
 		return map[rune]int{
 			';': SEMICOLON,
 			'{': LBRACE,
@@ -500,7 +500,7 @@ func (l *Lexer) Lex(lval *SDLSymType) int {
 	}
 	optoken := string(out)
 	if optoken != "" {
-		lval.node = newTokenNode(startPosSnapshot, currentEndPos, string(out))
+		lval.node = NewTokenNode(startPosSnapshot, currentEndPos, string(out))
 		lval.sval = optoken
 		l.tokenText = optoken
 		tokenCode := BINARY_OP

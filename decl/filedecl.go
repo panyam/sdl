@@ -103,13 +103,13 @@ func (f *FileDecl) Resolve() error {
 			// Process and register the component definition
 			err := node.Resolve() // Use a helper function
 			if err != nil {
-				return fmt.Errorf("error processing component '%s' at pos %d: %w", node.NameNode.Name, node.Pos(), err)
+				return fmt.Errorf("error processing component '%s' at pos %d: %w", node.Name.Value, node.Pos(), err)
 			}
 			if err := f.RegisterComponent(node); err != nil {
 				return err
 			}
-			if err := f.RegisterDefinition(node.NameNode.Name, node); err != nil {
-				return fmt.Errorf("error registering definition '%s': %w", node.NameNode.Name, err)
+			if err := f.RegisterDefinition(node.Name.Value, node); err != nil {
+				return fmt.Errorf("error registering definition '%s': %w", node.Name.Value, err)
 			}
 
 		case *SystemDecl:
@@ -117,15 +117,15 @@ func (f *FileDecl) Resolve() error {
 			if err := f.RegisterSystem(node); err != nil {
 				return err
 			}
-			if err := f.RegisterDefinition(node.NameNode.Name, node); err != nil {
-				return fmt.Errorf("error registering definition '%s': %w", node.NameNode.Name, err)
+			if err := f.RegisterDefinition(node.Name.Value, node); err != nil {
+				return fmt.Errorf("error registering definition '%s': %w", node.Name.Value, err)
 			}
 		case *EnumDecl:
 			if err := f.RegisterEnum(node); err != nil {
 				return err
 			}
-			if err := f.RegisterDefinition(node.NameNode.Name, node); err != nil {
-				return fmt.Errorf("error registering definition '%s': %w", node.NameNode.Name, err)
+			if err := f.RegisterDefinition(node.Name.Value, node); err != nil {
+				return fmt.Errorf("error registering definition '%s': %w", node.Name.Value, err)
 			}
 
 		case *OptionsDecl:
@@ -135,8 +135,8 @@ func (f *FileDecl) Resolve() error {
 			if err := f.RegisterImport(node); err != nil {
 				return err
 			}
-			if err := f.RegisterDefinition(node.Alias.Name, node); err != nil {
-				return fmt.Errorf("error registering definition '%s': %w", node.Alias.Name, err)
+			if err := f.RegisterDefinition(node.Alias.Value, node); err != nil {
+				return fmt.Errorf("error registering definition '%s': %w", node.Alias.Value, err)
 			}
 
 		default:
@@ -181,10 +181,10 @@ func (f *FileDecl) RegisterComponent(c *ComponentDecl) error {
 	if f.components == nil {
 		f.components = map[string]*ComponentDecl{}
 	}
-	if _, exists := f.components[c.NameNode.Name]; exists {
-		return fmt.Errorf("component definition '%s' already registered", c.NameNode.Name)
+	if _, exists := f.components[c.Name.Value]; exists {
+		return fmt.Errorf("component definition '%s' already registered", c.Name.Value)
 	}
-	f.components[c.NameNode.Name] = c
+	f.components[c.Name.Value] = c
 	return nil
 }
 
@@ -192,10 +192,10 @@ func (f *FileDecl) RegisterSystem(c *SystemDecl) error {
 	if f.systems == nil {
 		f.systems = map[string]*SystemDecl{}
 	}
-	if _, exists := f.systems[c.NameNode.Name]; exists {
-		return fmt.Errorf("system definition '%s' already registered", c.NameNode.Name)
+	if _, exists := f.systems[c.Name.Value]; exists {
+		return fmt.Errorf("system definition '%s' already registered", c.Name.Value)
 	}
-	f.systems[c.NameNode.Name] = c
+	f.systems[c.Name.Value] = c
 	return nil
 }
 
@@ -203,10 +203,10 @@ func (f *FileDecl) RegisterEnum(c *EnumDecl) error {
 	if f.enums == nil {
 		f.enums = map[string]*EnumDecl{}
 	}
-	if _, exists := f.enums[c.NameNode.Name]; exists {
-		return fmt.Errorf("enum definition '%s' already registered", c.NameNode.Name)
+	if _, exists := f.enums[c.Name.Value]; exists {
+		return fmt.Errorf("enum definition '%s' already registered", c.Name.Value)
 	}
-	f.enums[c.NameNode.Name] = c
+	f.enums[c.Name.Value] = c
 	return nil
 }
 

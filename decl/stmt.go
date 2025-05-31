@@ -173,7 +173,7 @@ type WaitStmt struct {
 }
 
 func (d *WaitStmt) String() string {
-	return fmt.Sprintf("wait %s;", strings.Join(gfn.Map(d.Idents, func(i *IdentifierExpr) string { return i.Name }), ", "))
+	return fmt.Sprintf("wait %s;", strings.Join(gfn.Map(d.Idents, func(i *IdentifierExpr) string { return i.Value }), ", "))
 }
 
 func (w *WaitStmt) PrettyPrint(cp CodePrinter) {
@@ -238,7 +238,7 @@ type AssignmentStmt struct {
 	IsFuture string // whether this is a future
 }
 
-func (p *AssignmentStmt) String() string { return fmt.Sprintf("%s = %s", p.Var.Name, p.Value) }
+func (p *AssignmentStmt) String() string { return fmt.Sprintf("%s = %s", p.Var.Value, p.Value) }
 func (p *AssignmentStmt) PrettyPrint(cp CodePrinter) {
 	cp.Print(p.String())
 }

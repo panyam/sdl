@@ -333,7 +333,7 @@ func (l *Loader) AddImportedAliasesToScope(fs *FileStatus, currentScope *decl.En
 		fs.AddErrors(fmt.Errorf("in file %s: error re-getting resolved imports for scope population: %w", fs.FullPath, err))
 	} else {
 		for aliasName, importDeclNode := range resolvedImportsAfterLocal {
-			importedItemOriginalName := importDeclNode.ImportedItem.Name
+			importedItemOriginalName := importDeclNode.ImportedItem.Value
 
 			importPathValue := importDeclNode.Path.Value
 			importPathStr, _ := importPathValue.Value.(string) // Already checked validity

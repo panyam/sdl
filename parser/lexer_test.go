@@ -52,7 +52,7 @@ func runLexerTest(t *testing.T, input string, expectedTokens []expectedToken, ig
 		if exp.identName != "" {
 			identExpr := lval.ident
 			require.NotNil(t, identExpr)
-			assert.Equal(t, exp.identName, identExpr.Name, "Test %d: Identifier name mismatch for %s.", i, expTokStr)
+			assert.Equal(t, exp.identName, identExpr.Value, "Test %d: Identifier name mismatch for %s.", i, expTokStr)
 			assert.Equal(t, exp.startPos, identExpr.Pos().Pos, "Test %d: IdentifierExpr startPos mismatch for %s.", i, expTokStr)
 			assert.Equal(t, exp.endPos, identExpr.End().Pos, "Test %d: IdentifierExpr endPos mismatch for %s.", i, expTokStr)
 		}

@@ -94,7 +94,7 @@ func (s *SimpleEval) evalBlockStmt(b *BlockStmt, env *Env[Value], currTime *core
 
 // Evaluates the value of an Identifier Expression
 func (s *SimpleEval) evalIdentifierExpr(i *IdentifierExpr, env *Env[Value], _ *core.Duration) (result Value, returned bool) {
-	name := i.Name
+	name := i.Value
 	value, ok := env.Get(name)
 	if !ok {
 		err := fmt.Errorf("identifier not found '%s'", name)
@@ -122,13 +122,13 @@ func (s *SimpleEval) evalSetStmt(set *SetStmt, env *Env[Value], currTime *core.D
 
 	switch lhs := set.TargetExpr.(type) {
 	case *IdentifierExpr:
-		env.Set(lhs.Name, result)
+		env.Set(lhs.Value, result)
 	case *MemberAccessExpr:
 		maeTarget, _ := s.Eval(lhs.Receiver, env, currTime)
 		if maeTarget.Type.Tag != decl.TypeTagComponent {
 			panic(fmt.Sprintf("Expected mae to be a component, found: %s -> %s", maeTarget, maeTarget.Type))
 		}
-		maeTarget.Value.(*ComponentInstance).Set(lhs.Member.Name, result)
+		maeTarget.Value.(*ComponentInstance).Set(lhs.Member.Value, result)
 	default:
 		panic(fmt.Sprintf("Expected Identifier or MAE, Expected: %v", lhs))
 	}
@@ -181,7 +181,7 @@ func (s *SimpleEval) evalLetStmt(l *LetStmt, env *Env[Value], currTime *core.Dur
 	result, returned = s.Eval(l.Value, env, currTime)
 
 	if len(l.Variables) == 1 {
-		letvar := l.Variables[0].Name
+		letvar := l.Variables[0].Value
 		env.Set(letvar, result)
 	} else {
 		// If there are multiple variables, we expect the result to be a tuple
@@ -190,7 +190,7 @@ func (s *SimpleEval) evalLetStmt(l *LetStmt, env *Env[Value], currTime *core.Dur
 			panic(err)
 		}
 		for i, val := range tupleValues {
-			letvar := l.Variables[i].Name
+			letvar := l.Variables[i].Value
 			env.Set(letvar, val)
 		}
 	}
@@ -290,7 +290,7 @@ func (s *SimpleEval) evalSampleExpr(samp *decl.SampleExpr, env *Env[Value], curr
 func (s *SimpleEval) evalNewExpr(n *decl.NewExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
 	// New contains the name of the component to instantiate
 	// Since exection begins from a single File the File's env should contain the identifer
-	compInst, err := s.RootFile.NewComponent(n.ComponentExpr.Name)
+	compInst, err := s.RootFile.NewComponent(n.ComponentExpr.Value)
 	if err != nil {
 		panic(err)
 	}
@@ -306,7 +306,7 @@ func (s *SimpleEval) evalNewExpr(n *decl.NewExpr, env *Env[Value], currTime *cor
 	for _, param := range params {
 		if param.DefaultValue != nil {
 			pval, _ := s.Eval(param.DefaultValue, env, currTime)
-			compInst.InitialEnv.Set(param.Name.Name, pval)
+			compInst.InitialEnv.Set(param.Name.Value, pval)
 		}
 	}
 	return
@@ -400,32 +400,32 @@ func (s *SimpleEval) evalMemberAccessExpr(m *MemberAccessExpr, env *Env[Value], 
 	if err != nil {
 		panic(err)
 	}
-	paramDecl, _ := compDecl.GetParam(m.Member.Name)
+	paramDecl, _ := compDecl.GetParam(m.Member.Value)
 	if paramDecl != nil {
 		paramType := paramDecl.Name.InferredType()
 		refType := decl.RefType(compDecl, paramType)
-		result, err = NewValue(refType, &decl.RefValue{Receiver: finalReceiver, Attrib: m.Member.Name})
+		result, err = NewValue(refType, &decl.RefValue{Receiver: finalReceiver, Attrib: m.Member.Value})
 		if err != nil {
 			panic(err)
 		}
 		return
 	}
 
-	usesDecl, _ := compDecl.GetDependency(m.Member.Name)
+	usesDecl, _ := compDecl.GetDependency(m.Member.Value)
 	if usesDecl != nil {
 		depType := decl.ComponentType(usesDecl.ResolvedComponent)
 		refType := decl.RefType(compDecl, depType)
-		result, err = NewValue(refType, &decl.RefValue{Receiver: finalReceiver, Attrib: m.Member.Name})
+		result, err = NewValue(refType, &decl.RefValue{Receiver: finalReceiver, Attrib: m.Member.Value})
 		if err != nil {
 			panic(err)
 		}
 		return
 	}
 
-	methodDecl, _ := compDecl.GetMethod(m.Member.Name)
+	methodDecl, _ := compDecl.GetMethod(m.Member.Value)
 	if methodDecl != nil {
 		methodType := decl.MethodType(compDecl, methodDecl)
-		result, err = NewValue(methodType, &decl.RefValue{Receiver: finalReceiver, Attrib: m.Member.Name})
+		result, err = NewValue(methodType, &decl.RefValue{Receiver: finalReceiver, Attrib: m.Member.Value})
 		if err != nil {
 			panic(err)
 		}
@@ -434,10 +434,10 @@ func (s *SimpleEval) evalMemberAccessExpr(m *MemberAccessExpr, env *Env[Value], 
 
 	// Otherwise see if it is a uses field
 	/*
-		usesDecl, _ := compDecl.GetDependency(m.Member.Name)
+		usesDecl, _ := compDecl.GetDependency(m.Member.Value)
 		if usesDecl != nil {
 			refType := decl.RefType(compDecl, usesDecl.Type.ResolvedType())
-			result, err = NewValue(refType, &decl.RefValue{Receiver: maeTarget, Attrib: m.Member.Name})
+			result, err = NewValue(refType, &decl.RefValue{Receiver: maeTarget, Attrib: m.Member.Value})
 			if err != nil {
 				panic(err)
 			}
@@ -447,7 +447,7 @@ func (s *SimpleEval) evalMemberAccessExpr(m *MemberAccessExpr, env *Env[Value], 
 
 	// Return the reference value here
 	panic("Invalid member type")
-	return // decl.NewValue(maeTarget.Type, RefValue(maeTarget, m.Member.Name)), false
+	return // decl.NewValue(maeTarget.Type, RefValue(maeTarget, m.Member.Value)), false
 }
 
 // Evaluate a Call and return its value
@@ -476,9 +476,9 @@ func (s *SimpleEval) evalCallExpr(expr *CallExpr, env *Env[Value], currTime *cor
 
 		refValue := maeResult.Value.(*decl.RefValue)
 		compInstance := refValue.Receiver.Value.(*ComponentInstance)
-		methodDecl, err := compInstance.ComponentDecl.GetMethod(fexpr.Member.Name)
+		methodDecl, err := compInstance.ComponentDecl.GetMethod(fexpr.Member.Value)
 		if err != nil {
-			panic(fmt.Sprintf("Method %s not found in component %s: %v", fexpr.Member.Name, compInstance.ComponentDecl.NameNode.Name, err))
+			panic(fmt.Sprintf("Method %s not found in component %s: %v", fexpr.Member.Value, compInstance.ComponentDecl.Name.Value, err))
 		}
 
 		// Now we have the target component instance, we can invoke the method
@@ -522,7 +522,7 @@ func (s *SimpleEval) evalCallExpr(expr *CallExpr, env *Env[Value], currTime *cor
 
 			instanceAny, found := frame.Get(receiverIdent.Name)
 			if !found {
-				return val, fmt.Errorf("instance '%s' not found for method call '%s'", receiverIdent.Name, memberAccess.Member.Name)
+				return val, fmt.Errorf("instance '%s' not found for method call '%s'", receiverIdent.Name, memberAccess.Member.Value)
 			}
 
 			runtimeInstance, ok = instanceAny.Value.(ComponentRuntime)
@@ -531,7 +531,7 @@ func (s *SimpleEval) evalCallExpr(expr *CallExpr, env *Env[Value], currTime *cor
 				return val, fmt.Errorf("identifier '%s' does not represent a component instance (found type %T)", receiverIdent.Name, instanceAny)
 			}
 
-			methodName = memberAccess.Member.Name // Get method name from the AST
+			methodName = memberAccess.Member.Value // Get method name from the AST
 
 		} else if identFunc, ok := expr.Function.(*IdentifierExpr); ok {
 			// Case: Calling a potential global/builtin function (less common for components)

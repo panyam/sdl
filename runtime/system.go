@@ -41,8 +41,8 @@ func (s *SystemInstance) Compile() (blockStmt *BlockStmt, err error) {
 			instanceDecls = append(instanceDecls, it)
 			// stmts = append(stmts, &ExprStmt{ Expression: })
 			stmts = append(stmts, &decl.SetStmt{
-				TargetExpr: it.NameNode,
-				Value:      &decl.NewExpr{ComponentExpr: &IdentifierExpr{Name: it.ComponentType.Name}},
+				TargetExpr: it.Name,
+				Value:      &decl.NewExpr{ComponentExpr: &IdentifierExpr{Value: it.ComponentName.Value}},
 			})
 
 			/*
@@ -55,7 +55,7 @@ func (s *SystemInstance) Compile() (blockStmt *BlockStmt, err error) {
 				if err != nil {
 					panic(err)
 				}
-				s.Env.Set(it.NameNode.Name, cv)
+				s.Env.Set(it.Name.Value, cv)
 			*/
 		case *LetStmt:
 			// Add this as is
@@ -71,7 +71,7 @@ func (s *SystemInstance) Compile() (blockStmt *BlockStmt, err error) {
 		for _, assign := range it.Overrides {
 			stmts = append(stmts, &decl.SetStmt{
 				TargetExpr: &MemberAccessExpr{
-					Receiver: it.NameNode,
+					Receiver: it.Name,
 					Member:   assign.Var,
 				},
 				Value: assign.Value,

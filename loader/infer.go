@@ -128,21 +128,21 @@ func (i *Inference) EvalForComponent(compDecl *ComponentDecl, rootScope *TypeSco
 	// Now look at "uses"
 	usesDecls, _ := compDecl.Dependencies()
 	for _, usesDecl := range usesDecls { // Assuming direct field access or appropriate getter
-		compTypeNode, foundCompType := rootScope.env.Get(usesDecl.ComponentNode.Name)
+		compTypeNode, foundCompType := rootScope.env.Get(usesDecl.ComponentName.Value)
 		if !foundCompType {
-			i.Errorf(usesDecl.ComponentNode.Pos(),
+			i.Errorf(usesDecl.ComponentName.Pos(),
 				"component type '%s' not found for dependency '%s'",
-				usesDecl.ComponentNode.Name, usesDecl.NameNode.Name)
+				usesDecl.ComponentName.Value, usesDecl.Name.Value)
 			return false
 		}
 		compDefinition, ok := compTypeNode.(*ComponentDecl)
 		if !ok {
-			i.Errorf(usesDecl.ComponentNode.Pos(), "identifier '%s' used as component type for instance '%s' is not a component declaration (got %T)", usesDecl.ComponentNode.Name, usesDecl.NameNode.Name, compTypeNode)
+			i.Errorf(usesDecl.ComponentName.Pos(), "identifier '%s' used as component type for instance '%s' is not a component declaration (got %T)", usesDecl.ComponentName.Value, usesDecl.Name.Value, compTypeNode)
 			return false
 		}
 		instanceType := ComponentType(compDefinition)
-		rootScope.env.Set(usesDecl.NameNode.Name, compDefinition) // Store InstanceDecl node in env by its name
-		usesDecl.NameNode.SetInferredType(instanceType)
+		rootScope.env.Set(usesDecl.Name.Value, compDefinition) // Store InstanceDecl node in env by its name
+		usesDecl.Name.SetInferredType(instanceType)
 	}
 
 	// Method signatures
@@ -159,14 +159,14 @@ func (i *Inference) EvalForParamDecl(paramDecl *ParamDecl, compDecl *ComponentDe
 	// Ensure that if all succeeds the type for the param is set in the root scope
 	defer func() {
 		if success && resolvedParamType != nil {
-			rootScope.Set(paramDecl.Name.Name, paramDecl.Name, resolvedParamType) // Register the parameter type in the scope
+			rootScope.Set(paramDecl.Name.Value, paramDecl.Name, resolvedParamType) // Register the parameter type in the scope
 		}
 	}()
 
 	if paramDecl.TypeDecl != nil { // Type is explicitly declared
 		resolvedParamType = rootScope.ResolveType(paramDecl.TypeDecl)
 		if resolvedParamType == nil {
-			i.Errorf(paramDecl.TypeDecl.Pos(), "unresolved type '%s' for parameter '%s' in component '%s'", paramDecl.TypeDecl.Name, paramDecl.Name.Name, compDecl.NameNode.Name)
+			i.Errorf(paramDecl.TypeDecl.Pos(), "unresolved type '%s' for parameter '%s' in component '%s'", paramDecl.TypeDecl.Name, paramDecl.Name.Value, compDecl.Name.Value)
 			// Even if unresolved, continue to check default value if present, but this param is problematic.
 		} else {
 			paramDecl.TypeDecl.SetResolvedType(resolvedParamType)
@@ -180,11 +180,11 @@ func (i *Inference) EvalForParamDecl(paramDecl *ParamDecl, compDecl *ComponentDe
 				paramDecl.Name.SetInferredType(resolvedParamType)
 			} else {
 				// Default value's type could not be inferred.
-				i.Errorf(paramDecl.DefaultValue.Pos(), "could not infer type from default value for parameter '%s' in component '%s'", paramDecl.Name.Name, compDecl.NameNode.Name)
+				i.Errorf(paramDecl.DefaultValue.Pos(), "could not infer type from default value for parameter '%s' in component '%s'", paramDecl.Name.Value, compDecl.Name.Value)
 			}
 		}
 	} else { // No explicit type AND no default value
-		i.Errorf(paramDecl.Pos(), "parameter '%s' in component '%s' has no type declaration and no default value", paramDecl.Name.Name, compDecl.NameNode.Name)
+		i.Errorf(paramDecl.Pos(), "parameter '%s' in component '%s' has no type declaration and no default value", paramDecl.Name.Value, compDecl.Name.Value)
 		return // Cannot proceed with this parameter
 	}
 
@@ -200,7 +200,7 @@ func (i *Inference) EvalForParamDecl(paramDecl *ParamDecl, compDecl *ComponentDe
 						// Allow int to float promotion for default value
 						isPromotion := defaultValueActualType.Equals(IntType) && resolvedParamType.Equals(FloatType)
 						if !isPromotion {
-							i.Errorf(paramDecl.DefaultValue.Pos(), "type mismatch for default value of parameter '%s' in component '%s': parameter type is %s, default value type is %s", paramDecl.Name.Name, compDecl.NameNode.Name, resolvedParamType.String(), defaultValueActualType.String())
+							i.Errorf(paramDecl.DefaultValue.Pos(), "type mismatch for default value of parameter '%s' in component '%s': parameter type is %s, default value type is %s", paramDecl.Name.Value, compDecl.Name.Value, resolvedParamType.String(), defaultValueActualType.String())
 						}
 					}
 				} else if paramDecl.TypeDecl != nil {
@@ -220,18 +220,18 @@ func (i *Inference) EvalForMethodSignature(method *MethodDecl, compDecl *Compone
 		if param.TypeDecl != nil {
 			resolvedParamType := rootScope.ResolveType(param.TypeDecl)
 			if resolvedParamType == nil {
-				i.Errorf(param.TypeDecl.Pos(), "unresolved type '%s' for parameter '%s' in method '%s.%s'", param.TypeDecl.Name, param.Name.Name, compDecl.NameNode.Name, method.NameNode.Name)
+				i.Errorf(param.TypeDecl.Pos(), "unresolved type '%s' for parameter '%s' in method '%s.%s'", param.TypeDecl.Name, param.Name.Value, compDecl.Name.Value, method.Name.Value)
 			} else {
 				param.TypeDecl.SetResolvedType(resolvedParamType)
 			}
 		} else {
-			i.Errorf(param.Pos(), "parameter '%s' of method '%s.%s' has no type declaration", param.Name.Name, compDecl.NameNode.Name, method.NameNode.Name)
+			i.Errorf(param.Pos(), "parameter '%s' of method '%s.%s' has no type declaration", param.Name.Value, compDecl.Name.Value, method.Name.Value)
 		}
 	}
 	if method.ReturnType != nil {
 		resolvedReturnType := rootScope.ResolveType(method.ReturnType)
 		if resolvedReturnType == nil {
-			i.Errorf(method.ReturnType.Pos(), "unresolved return type '%s' for method '%s.%s'", method.ReturnType.Name, compDecl.NameNode.Name, method.NameNode.Name)
+			i.Errorf(method.ReturnType.Pos(), "unresolved return type '%s' for method '%s.%s'", method.ReturnType.Name, compDecl.Name.Value, method.Name.Value)
 		} else {
 			method.ReturnType.SetResolvedType(resolvedReturnType)
 		}
@@ -307,12 +307,12 @@ func (i *Inference) EvalForLiteralExpr(expr *LiteralExpr, scope *TypeScope) (*Ty
 }
 
 func (i *Inference) EvalForIdentifierExpr(expr *IdentifierExpr, scope *TypeScope) (t *Type, ok bool) {
-	t, ok = scope.Get(expr.Name)
+	t, ok = scope.Get(expr.Value)
 	if !ok {
-		return nil, i.Errorf(expr.Pos(), "identifier '%s' not found", expr.Name)
+		return nil, i.Errorf(expr.Pos(), "identifier '%s' not found", expr.Value)
 	}
 	if t == nil {
-		return nil, i.Errorf(expr.Pos(), "identifier '%s' resolved but its type is nil (internal error)", expr.Name)
+		return nil, i.Errorf(expr.Pos(), "identifier '%s' resolved but its type is nil (internal error)", expr.Value)
 	}
 	return
 }
@@ -323,19 +323,19 @@ func (i *Inference) EvalForMemberAccessExpr(expr *MemberAccessExpr, scope *TypeS
 		return
 	}
 	if receiverType == nil {
-		return nil, i.Errorf(expr.Pos(), "could not determine receiver type for member access '.%s'", expr.Member.Name)
+		return nil, i.Errorf(expr.Pos(), "could not determine receiver type for member access '.%s'", expr.Member.Value)
 	}
-	memberName := expr.Member.Name
+	memberName := expr.Member.Value
 
 	// Enums are easy - they have a fixed set of values.
 	if receiverType.Tag == decl.TypeTagEnum {
 		decl := receiverType.Info.(*EnumDecl)
-		for _, valNode := range decl.ValuesNode {
-			if valNode.Name == memberName {
+		for _, valNode := range decl.Values {
+			if valNode.Value == memberName {
 				return receiverType, true
 			}
 		}
-		return nil, i.Errorf(expr.Pos(), "value '%s' not found in enum '%s'", memberName, decl.NameNode.Name)
+		return nil, i.Errorf(expr.Pos(), "value '%s' not found in enum '%s'", memberName, decl.Name.Value)
 	}
 
 	// before we drill into specific types, check if the receiver is a RefType
@@ -359,27 +359,27 @@ func (i *Inference) EvalForMemberAccessExpr(expr *MemberAccessExpr, scope *TypeS
 	if paramDecl, _ := decl.GetParam(memberName); paramDecl != nil {
 		paramType := paramDecl.Name.InferredType()
 		if paramType == nil {
-			panic("internal error: parameter type for '" + memberName + "' in component '" + decl.NameNode.Name + "' is nil")
+			panic("internal error: parameter type for '" + memberName + "' in component '" + decl.Name.Value + "' is nil")
 		}
 		return RefType(decl, paramType), true
 	} else if usesDecl, _ := decl.GetDependency(memberName); usesDecl != nil {
 		if scope.env == nil {
-			return nil, i.Errorf(usesDecl.Pos(), "internal error: TypeScope.env is nil when resolving 'uses' dependency '%s' in component '%s'", memberName, decl.NameNode.Name)
+			return nil, i.Errorf(usesDecl.Pos(), "internal error: TypeScope.env is nil when resolving 'uses' dependency '%s' in component '%s'", memberName, decl.Name.Value)
 		}
-		depCompName := usesDecl.ComponentNode.Name
+		depCompName := usesDecl.ComponentName.Value
 		depCompDeclNode, found := scope.env.Get(depCompName)
 		if !found {
-			return nil, i.Errorf(usesDecl.Pos(), "'uses' dependency '%s' in component '%s' refers to unknown component type '%s'", memberName, decl.NameNode.Name, depCompName)
+			return nil, i.Errorf(usesDecl.Pos(), "'uses' dependency '%s' in component '%s' refers to unknown component type '%s'", memberName, decl.Name.Value, depCompName)
 		}
 		if depCompDecl, ok := depCompDeclNode.(*ComponentDecl); ok {
 			usesDecl.ResolvedComponent = depCompDecl
 			return RefType(decl, ComponentType(depCompDecl)), true
 		}
-		return nil, i.Errorf(usesDecl.Pos(), "'uses' dependency '%s' in component '%s' resolved to a non-component type %T for '%s'", memberName, decl.NameNode.Name, depCompDeclNode, depCompName)
+		return nil, i.Errorf(usesDecl.Pos(), "'uses' dependency '%s' in component '%s' resolved to a non-component type %T for '%s'", memberName, decl.Name.Value, depCompDeclNode, depCompName)
 	} else if methodDecl, _ := decl.GetMethod(memberName); methodDecl != nil {
 		return MethodType(decl, methodDecl), ok
 	}
-	return nil, i.Errorf(expr.Pos(), "member '%s' not found in component '%s' (type %s)", memberName, decl.NameNode.Name, receiverType)
+	return nil, i.Errorf(expr.Pos(), "member '%s' not found in component '%s' (type %s)", memberName, decl.Name.Value, receiverType)
 }
 
 func (i *Inference) EvalForBinaryExpr(expr *BinaryExpr, scope *TypeScope) (*Type, bool) {
@@ -486,12 +486,12 @@ func (i *Inference) EvalForCallExpr(expr *CallExpr, scope *TypeScope) (*Type, bo
 	if mae, isMae := expr.Function.(*MemberAccessExpr); isMae {
 		receiverStr := mae.Receiver.String() // Assuming String() is safe for resolved expressions
 		if receiverStr != "" {
-			funcNameForError = fmt.Sprintf("%s.%s", receiverStr, methodDecl.NameNode.Name)
+			funcNameForError = fmt.Sprintf("%s.%s", receiverStr, methodDecl.Name.Value)
 		} else { // Fallback if receiver string is empty (e.g. if it was complex and String() was minimal)
-			funcNameForError = methodDecl.NameNode.Name
+			funcNameForError = methodDecl.Name.Value
 		}
 	} else { // Not a MemberAccessExpr, use method name directly
-		funcNameForError = methodDecl.NameNode.Name
+		funcNameForError = methodDecl.Name.Value
 	}
 
 	if methodDecl.ReturnType != nil {
@@ -507,11 +507,11 @@ func (i *Inference) EvalForCallExpr(expr *CallExpr, scope *TypeScope) (*Type, bo
 
 	for _, paramDecl := range methodDecl.Parameters {
 		if paramDecl.TypeDecl == nil {
-			return nil, i.Errorf(paramDecl.Pos(), "parameter '%s' of method '%s' has no type declaration", paramDecl.Name.Name, funcNameForError)
+			return nil, i.Errorf(paramDecl.Pos(), "parameter '%s' of method '%s' has no type declaration", paramDecl.Name.Value, funcNameForError)
 		}
 		paramSDLType := scope.ResolveType(paramDecl.TypeDecl) // Pass current scope
 		if paramSDLType == nil {
-			return nil, i.Errorf(paramDecl.TypeDecl.Pos(), "parameter '%s' of method '%s' has invalid TypeDecl ('%s')", paramDecl.Name.Name, funcNameForError, paramDecl.TypeDecl.Name)
+			return nil, i.Errorf(paramDecl.TypeDecl.Pos(), "parameter '%s' of method '%s' has invalid TypeDecl ('%s')", paramDecl.Name.Value, funcNameForError, paramDecl.TypeDecl.Name)
 		}
 		expectedParamTypes = append(expectedParamTypes, paramSDLType)
 	}
@@ -682,7 +682,7 @@ func (i *Inference) EvalForLetStmt(l *LetStmt, scope *TypeScope) (ok bool) {
 	}
 	if len(l.Variables) == 1 {
 		varIdent := l.Variables[0]
-		if errSet := scope.Set(varIdent.Name, varIdent, valType); errSet != nil {
+		if errSet := scope.Set(varIdent.Value, varIdent, valType); errSet != nil {
 			ok = ok && i.Errorf(varIdent.Pos(), "%v", errSet)
 		}
 	} else if len(l.Variables) > 1 {
@@ -690,7 +690,7 @@ func (i *Inference) EvalForLetStmt(l *LetStmt, scope *TypeScope) (ok bool) {
 			childTypes := valType.Info.([]*Type)
 			for idx, varIdent := range l.Variables {
 				elemType := childTypes[idx]
-				if errSet := scope.Set(varIdent.Name, varIdent, elemType); errSet != nil {
+				if errSet := scope.Set(varIdent.Value, varIdent, elemType); errSet != nil {
 					ok = i.Errorf(varIdent.Pos(), "%v", errSet)
 				}
 			}
@@ -751,7 +751,7 @@ func (i *Inference) EvalForStmt(stmt Stmt, scope *TypeScope) (ok bool) {
 				// Ensure the method's ReturnType (a TypeDecl) is resolved to a *Type
 				resolvedExpectedType := scope.currentMethod.ReturnType.ResolvedType() // Or .ResolveType(scope)
 				if resolvedExpectedType == nil {
-					i.Errorf(scope.currentMethod.ReturnType.Pos(), "method '%s' has an unresolvable return TypeDecl", scope.currentMethod.NameNode.Name)
+					i.Errorf(scope.currentMethod.ReturnType.Pos(), "method '%s' has an unresolvable return TypeDecl", scope.currentMethod.Name.Value)
 					return false
 				}
 				expectedReturnType = resolvedExpectedType
@@ -759,7 +759,7 @@ func (i *Inference) EvalForStmt(stmt Stmt, scope *TypeScope) (ok bool) {
 			if !actualReturnType.Equals(expectedReturnType) {
 				isPromotion := actualReturnType.Equals(IntType) && expectedReturnType.Equals(FloatType)
 				if !isPromotion {
-					i.Errorf(s.Pos(), "return type mismatch for method '%s': expected %s, got %s", scope.currentMethod.NameNode.Name, expectedReturnType.String(), actualReturnType.String())
+					i.Errorf(s.Pos(), "return type mismatch for method '%s': expected %s, got %s", scope.currentMethod.Name.Value, expectedReturnType.String(), actualReturnType.String())
 				}
 			}
 		} else {
@@ -784,9 +784,9 @@ func (i *Inference) EvalForStmt(stmt Stmt, scope *TypeScope) (ok bool) {
 	case *BlockStmt:
 		ok = ok && i.EvalForBlockStmt(s, scope)
 	case *AssignmentStmt: // General assignment, var must exist.
-		existingVarType, varFound := scope.Get(s.Var.Name)
+		existingVarType, varFound := scope.Get(s.Var.Value)
 		if !varFound {
-			i.Errorf(s.Var.Pos(), "assignment to undeclared variable '%s'", s.Var.Name)
+			i.Errorf(s.Var.Pos(), "assignment to undeclared variable '%s'", s.Var.Value)
 			break
 		}
 		s.Var.SetInferredType(existingVarType)
@@ -794,7 +794,7 @@ func (i *Inference) EvalForStmt(stmt Stmt, scope *TypeScope) (ok bool) {
 		if ok && valType != nil && !valType.Equals(existingVarType) {
 			isIntToFloat := valType.Equals(IntType) && existingVarType.Equals(FloatType)
 			if !isIntToFloat {
-				i.Errorf(s.Pos(), "type mismatch in assignment to '%s': variable is %s, value is %s", s.Var.Name, existingVarType.String(), valType.String())
+				i.Errorf(s.Pos(), "type mismatch in assignment to '%s': variable is %s, value is %s", s.Var.Value, existingVarType.String(), valType.String())
 			}
 		}
 		/*
@@ -814,19 +814,19 @@ func (i *Inference) EvalForSystemDecl(systemDecl *SystemDecl, nodeScope *TypeSco
 	for _, item := range systemDecl.Body {
 		switch it := item.(type) {
 		case *InstanceDecl:
-			compTypeNode, foundCompType := nodeScope.env.Get(it.ComponentType.Name)
+			compTypeNode, foundCompType := nodeScope.env.Get(it.ComponentName.Value)
 			if !foundCompType {
-				return i.Errorf(it.ComponentType.Pos(), "component type '%s' not found for instance '%s'", it.ComponentType.Name, it.NameNode.Name)
+				return i.Errorf(it.ComponentName.Pos(), "component type '%s' not found for instance '%s'", it.ComponentName.Value, it.Name.Value)
 			}
 			compDefinition, ok2 := compTypeNode.(*ComponentDecl)
 			ok = ok && ok2
 			if !ok2 {
-				i.Errorf(it.ComponentType.Pos(), "identifier '%s' used as component type for instance '%s' is not a component declaration (got %T)", it.ComponentType.Name, it.NameNode.Name, compTypeNode)
+				i.Errorf(it.ComponentName.Pos(), "identifier '%s' used as component type for instance '%s' is not a component declaration (got %T)", it.ComponentName.Value, it.Name.Value, compTypeNode)
 				return false
 			}
 			instanceType := ComponentType(compDefinition)
-			nodeScope.env.Set(it.NameNode.Name, it) // Store InstanceDecl node in env by its name
-			it.NameNode.SetInferredType(instanceType)
+			nodeScope.env.Set(it.Name.Value, it) // Store InstanceDecl node in env by its name
+			it.Name.SetInferredType(instanceType)
 			instanceDecls = append(instanceDecls, it)
 		case *LetStmt:
 			ok = ok && i.EvalForStmt(it, nodeScope)
@@ -857,65 +857,65 @@ func (i *Inference) EvalForSystemDecl(systemDecl *SystemDecl, nodeScope *TypeSco
 				continue
 			}
 
-			compTypeNode, _ := nodeScope.env.Get(it.ComponentType.Name) // no need to check ok here, it was checked in Pass 1
+			compTypeNode, _ := nodeScope.env.Get(it.ComponentName.Value) // no need to check ok here, it was checked in Pass 1
 			compDefinition, _ := compTypeNode.(*ComponentDecl)
 
-			paramDecl, _ := compDefinition.GetParam(assign.Var.Name)
-			usesDecl, _ := compDefinition.GetDependency(assign.Var.Name)
+			paramDecl, _ := compDefinition.GetParam(assign.Var.Value)
+			usesDecl, _ := compDefinition.GetDependency(assign.Var.Value)
 
 			if paramDecl != nil {
 				if paramDecl.TypeDecl == nil {
-					i.Errorf(paramDecl.Pos(), "param '%s' of component '%s' has no type", paramDecl.Name.Name, compDefinition.NameNode.Name)
+					i.Errorf(paramDecl.Pos(), "param '%s' of component '%s' has no type", paramDecl.Name.Value, compDefinition.Name.Value)
 					continue
 				}
 				expectedType := nodeScope.ResolveType(paramDecl.TypeDecl) // Resolve TypeDecl in the current system scope
 				if expectedType == nil {
-					i.Errorf(paramDecl.TypeDecl.Pos(), "param '%s' of component '%s' has an unresolved TypeDecl '%s'", paramDecl.Name.Name, compDefinition.NameNode.Name, paramDecl.TypeDecl.Name)
+					i.Errorf(paramDecl.TypeDecl.Pos(), "param '%s' of component '%s' has an unresolved TypeDecl '%s'", paramDecl.Name.Value, compDefinition.Name.Value, paramDecl.TypeDecl.Name)
 					continue
 				}
 				if !valType.Equals(expectedType) {
 					if !(valType.Equals(IntType) && expectedType.Equals(FloatType)) {
-						i.Errorf(assign.Value.Pos(), "type mismatch for override param '%s' in instance '%s': expected %s, got %s", assign.Var.Name, it.NameNode.Name, expectedType.String(), valType.String())
+						i.Errorf(assign.Value.Pos(), "type mismatch for override param '%s' in instance '%s': expected %s, got %s", assign.Var.Value, it.Name.Value, expectedType.String(), valType.String())
 					}
 				}
 			} else if usesDecl != nil {
 				var assignedInstanceType *Type
 				if assignedIdent, isIdent := assign.Value.(*IdentifierExpr); isIdent {
-					assignedNodeFromEnv, foundInstance := nodeScope.env.Get(assignedIdent.Name)
+					assignedNodeFromEnv, foundInstance := nodeScope.env.Get(assignedIdent.Value)
 					if foundInstance {
 						if assignedInstDecl, isInst := assignedNodeFromEnv.(*InstanceDecl); isInst {
 							// The type of an instance is its component type.
 							// Retrieve the ComponentDecl for the assigned instance's component type.
-							compTypeOfAssignedInstance, foundComp := nodeScope.env.Get(assignedInstDecl.ComponentType.Name)
+							compTypeOfAssignedInstance, foundComp := nodeScope.env.Get(assignedInstDecl.ComponentName.Value)
 							if foundComp {
 								if actualCompDecl, isActualComp := compTypeOfAssignedInstance.(*ComponentDecl); isActualComp {
 									assignedInstanceType = ComponentType(actualCompDecl)
 								} else {
-									i.Errorf(assign.Value.Pos(), "assigned instance '%s' for dependency '%s' has non-component type %T for its ComponentType ('%s')", assignedIdent.Name, assign.Var.Name, compTypeOfAssignedInstance, assignedInstDecl.ComponentType.Name)
+									i.Errorf(assign.Value.Pos(), "assigned instance '%s' for dependency '%s' has non-component type %T for its ComponentName ('%s')", assignedIdent.Value, assign.Var.Value, compTypeOfAssignedInstance, assignedInstDecl.ComponentName.Value)
 								}
 							} else {
-								i.Errorf(assign.Value.Pos(), "could not find component type '%s' for assigned instance '%s' (dependency '%s')", assignedInstDecl.ComponentType.Name, assignedIdent.Name, assign.Var.Name)
+								i.Errorf(assign.Value.Pos(), "could not find component type '%s' for assigned instance '%s' (dependency '%s')", assignedInstDecl.ComponentName.Value, assignedIdent.Value, assign.Var.Value)
 							}
 						} else {
-							i.Errorf(assign.Value.Pos(), "assigned value '%s' for dependency '%s' is not an instance declaration (got %T)", assignedIdent.Name, assign.Var.Name, assignedNodeFromEnv)
+							i.Errorf(assign.Value.Pos(), "assigned value '%s' for dependency '%s' is not an instance declaration (got %T)", assignedIdent.Value, assign.Var.Value, assignedNodeFromEnv)
 						}
 					} else {
-						i.Errorf(assign.Value.Pos(), "assigned instance identifier '%s' for dependency '%s' not found in system scope", assignedIdent.Name, assign.Var.Name)
+						i.Errorf(assign.Value.Pos(), "assigned instance identifier '%s' for dependency '%s' not found in system scope", assignedIdent.Value, assign.Var.Value)
 					}
 				}
 
-				expectedDepComp := usesDecl.ComponentNode
+				expectedDepComp := usesDecl.ComponentName
 				if assignedInstanceType != nil {
 					assignedCompDecl := assignedInstanceType.Info.(*ComponentDecl)
-					if assignedCompDecl.NameNode.Name != expectedDepComp.Name {
-						i.Errorf(assign.Value.Pos(), "type mismatch for override dependency '%s' in instance '%s': expected instance of component type %s, got instance of %s", assign.Var.Name, it.NameNode.Name, expectedDepComp.Name, assignedCompDecl.NameNode.Name)
+					if assignedCompDecl.Name.Value != expectedDepComp.Value {
+						i.Errorf(assign.Value.Pos(), "type mismatch for override dependency '%s' in instance '%s': expected instance of component type %s, got instance of %s", assign.Var.Value, it.Name.Value, expectedDepComp.Value, assignedCompDecl.Name.Value)
 					}
-				} else if valType.Tag != decl.TypeTagComponent || valType.Info.(*ComponentDecl).NameNode.Name != expectedDepComp.Name {
+				} else if valType.Tag != decl.TypeTagComponent || valType.Info.(*ComponentDecl).Name.Value != expectedDepComp.Value {
 					// This fallback is if assigned value was not an identifier resolving to an InstanceDecl
-					i.Errorf(assign.Value.Pos(), "type mismatch for override dependency '%s' in instance '%s': expected component type %s, got %s (and value was not a known instance of the correct type)", assign.Var.Name, it.NameNode.Name, expectedDepComp.Name, valType.String())
+					i.Errorf(assign.Value.Pos(), "type mismatch for override dependency '%s' in instance '%s': expected component type %s, got %s (and value was not a known instance of the correct type)", assign.Var.Value, it.Name.Value, expectedDepComp.Value, valType.String())
 				}
 			} else {
-				i.Errorf(assign.Var.Pos(), "override target '%s' in instance '%s' is not a known parameter or dependency of component '%s'", assign.Var.Name, it.NameNode.Name, compDefinition.NameNode.Name)
+				i.Errorf(assign.Var.Pos(), "override target '%s' in instance '%s' is not a known parameter or dependency of component '%s'", assign.Var.Value, it.Name.Value, compDefinition.Name.Value)
 			}
 		}
 	}

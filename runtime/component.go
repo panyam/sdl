@@ -51,7 +51,7 @@ func NewComponentInstance(file *FileInstance, compDecl *ComponentDecl) (*Compone
 	// Initialize the runtime based on whether it is native or user-defined
 	if compInst.IsNative {
 		// Create a NativeComponent instance
-		compInst.NativeInstance = file.Runtime.CreateNativeComponent(compDecl.NameNode.Name)
+		compInst.NativeInstance = file.Runtime.CreateNativeComponent(compDecl.Name.Value)
 	} else {
 		// Create a ComponentInstance instance
 		compInst.UDParams = make(map[string]Value)                    // Evaluated parameter Values (override or default)
@@ -99,12 +99,12 @@ func (ci *ComponentInstance) String() string {
 	}
 	sort.Strings(depNames)
 
-	if ci.Definition.NameNode.Name == "" {
+	if ci.Definition.Name.Value == "" {
 		panic("component not yet resolved")
 	}
 
 	return fmt.Sprintf("DSLInstance<%s name=%s, params=%v, deps=%v>",
-		ci.Definition.NameNode.Name,
+		ci.Definition.Name.Value,
 		ci.InstanceName,
 		paramNames,
 		depNames,

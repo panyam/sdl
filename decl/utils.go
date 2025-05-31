@@ -8,128 +8,157 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var ZL = Location{}
+
 // ParseLiteralValue converts a LiteralExpr value string to a basic Go type.
-/*
-func ParseLiteralValue(lit string) (any, error) {
-	switch lit.Value.Type.Tag {
-	case ValueTypeString:
-		return lit.Value, nil
-	case ValueTypeInt:
-		return strconv.ParseInt(lit.Value, 10, 64)
-	case ValueTypeFloat:
-		return strconv.ParseFloat(lit.Value, 64)
-	case ValueTypeBool:
-		return strconv.ParseBool(lit.Value)
-	// TODO: case "DURATION":
-	default:
-		return nil, fmt.Errorf("cannot parse literal kind %s yet", lit.Kind)
-	}
+func NewNodeInfo(start, end Location) NodeInfo {
+	return NodeInfo{StartPos: start, StopPos: end}
 }
-*/
 
 // Helper to create simple AST nodes for testing
-func newIntLit(val int) *LiteralExpr {
+func NewIntLit(val int) *LiteralExpr {
 	v, _ := NewValue(IntType, val)
 	return &LiteralExpr{Value: v}
 }
 
-func newBoolLit(val bool) *LiteralExpr {
+func NewBoolLit(val bool) *LiteralExpr {
 	v, _ := NewValue(BoolType, val)
 	return &LiteralExpr{Value: v}
 }
 
-func newIdent(name string) *IdentifierExpr {
-	return &IdentifierExpr{Name: name}
-}
-
-func newStringLit(val string) *LiteralExpr {
+func NewStringLit(val string) *LiteralExpr {
 	v, _ := NewValue(StrType, val)
 	return &LiteralExpr{Value: v}
 }
 
-func newLetStmt(varName string, value Expr) *LetStmt {
-	return &LetStmt{Variables: []*IdentifierExpr{newIdent(varName)}, Value: value}
+func NewIdent(name string) *IdentifierExpr {
+	return NewIdentExpr(name, ZL, ZL)
 }
 
-func newBinExpr(left Expr, op string, right Expr) *BinaryExpr {
+func NewIdentExpr(name string, start, end Location) *IdentifierExpr {
+	return &IdentifierExpr{
+		ExprBase: ExprBase{NodeInfo: NewNodeInfo(start, end)},
+		Value:    name,
+	}
+}
+
+func NewLetStmt(varName string, value Expr) *LetStmt {
+	return &LetStmt{Variables: []*IdentifierExpr{NewIdent(varName)}, Value: value}
+}
+
+func NewBinExpr(left Expr, op string, right Expr) *BinaryExpr {
 	return &BinaryExpr{Left: left, Operator: op, Right: right}
 }
 
-func newExprStmt(expr Expr) *ExprStmt {
+func NewUnaryExpr(op string, right Expr) *UnaryExpr {
+	return &UnaryExpr{Operator: op, Right: right}
+}
+
+func NewExprStmt(expr Expr) *ExprStmt {
 	return &ExprStmt{Expression: expr}
 }
 
-func newBlockStmt(stmts ...Stmt) *BlockStmt {
+func NewReturnStmt(returnValue Expr) *ReturnStmt {
+	// NodeInfo is cleaned
+	return &ReturnStmt{ReturnValue: returnValue}
+}
+
+func NewBlockStmt(stmts ...Stmt) *BlockStmt {
 	return &BlockStmt{Statements: stmts}
 }
 
-func newIfStmt(cond Expr, then *BlockStmt, elseStmt Stmt) *IfStmt { // elseStmt can be nil
+func NewIfStmt(cond Expr, then *BlockStmt, elseStmt Stmt) *IfStmt { // elseStmt can be nil
 	return &IfStmt{Condition: cond, Then: then, Else: elseStmt}
 }
 
-func newSysDecl(name string, body ...SystemDeclBodyItem) *SystemDecl {
-	return &SystemDecl{NameNode: newIdent(name), Body: body}
+func NewSysDecl(name string, body ...SystemDeclBodyItem) *SystemDecl {
+	return &SystemDecl{Name: NewIdent(name), Body: body}
 }
 
-func newInstDecl(name, compType string, overrides ...*AssignmentStmt) *InstanceDecl {
-	return &InstanceDecl{NameNode: newIdent(name), ComponentType: newIdent(compType), Overrides: overrides}
+func NewInstDecl(name, compType string, overrides ...*AssignmentStmt) *InstanceDecl {
+	return &InstanceDecl{Name: NewIdent(name), ComponentName: NewIdent(compType), Overrides: overrides}
 }
 
-func newAssignStmt(varName string, value Expr) *AssignmentStmt {
-	return &AssignmentStmt{Var: newIdent(varName), Value: value}
+func NewAssignmentStmt(varName string, value Expr) *AssignmentStmt {
+	return &AssignmentStmt{Var: NewIdent(varName), Value: value}
+}
+
+func NewAssignStmt(varName string, value Expr) *AssignmentStmt {
+	return &AssignmentStmt{Var: NewIdent(varName), Value: value}
 }
 
 // Helper for ComponentDecl AST
-func newCompDecl(name string, body ...ComponentDeclBodyItem) *ComponentDecl {
-	return &ComponentDecl{NameNode: newIdent(name), Body: body}
+func NewCompDecl(name string, isNative bool, body ...ComponentDeclBodyItem) *ComponentDecl {
+	return &ComponentDecl{Name: NewIdent(name), IsNative: isNative, Body: body}
 }
 
 // Helper for UsesDecl AST
-func newUsesDecl(varName, compType string) *UsesDecl {
+func NewUsesDecl(varName, compType string) *UsesDecl {
 	// Note: AST doesn't have overrides here, matches current struct
-	return &UsesDecl{NameNode: newIdent(varName), ComponentNode: newIdent(compType)}
-}
-
-// Helper for ParamDecl with default value
-func newParamDeclWithDefault(varName, typeName string, defaultVal Expr) *ParamDecl {
-	p := newParamDecl(varName, typeName) // Use existing helper to create base param
-	p.DefaultValue = defaultVal          // Set the default value expression
-	return p
-}
-
-// Helper for ParamDecl AST (without default for now)
-func newParamDecl(varName, typeName string) *ParamDecl {
-	// Assuming TypeDecl handling can be simple for now
-	tn := &TypeDecl{Name: typeName}
-	return &ParamDecl{Name: newIdent(varName), TypeDecl: tn}
+	return &UsesDecl{Name: NewIdent(varName), ComponentName: NewIdent(compType)}
 }
 
 // Helper function to create a MethodDecl AST node for testing
-func newMethodDecl(name string, params []*ParamDecl, returnType *TypeDecl, body *BlockStmt) *MethodDecl {
+func NewMethodDecl(name string, params []*ParamDecl, returnType *TypeDecl, body *BlockStmt) *MethodDecl {
+	if params == nil {
+		params = []*ParamDecl{}
+	}
 	return &MethodDecl{
-		NameNode:   newIdent(name),
+		Name:       NewIdent(name),
 		Parameters: params,
 		ReturnType: returnType, // Can be nil
 		Body:       body,
 	}
 }
 
-func newMemberAccessExpr(receiver Expr, memberName string) *MemberAccessExpr {
+func NewTypeDecl(name string, args []*TypeDecl) *TypeDecl {
+	// NodeInfo is cleaned
+	return &TypeDecl{Name: name, Args: args}
+}
+
+// Helper for ParamDecl AST
+func NewParamDecl(name string, typeName *TypeDecl, defaultValue Expr) *ParamDecl {
+	// NodeInfo is cleaned
+	return &ParamDecl{Name: NewIdent(name), TypeDecl: typeName, DefaultValue: defaultValue}
+}
+
+func NewMemberAccessExpr(receiver Expr, memberName string) *MemberAccessExpr {
 	return &MemberAccessExpr{
 		Receiver: receiver,
-		Member:   newIdent(memberName),
+		Member:   NewIdent(memberName),
 	}
 }
 
 // Helper to create a CallExpr AST node for testing
-func newCallExpr(receiver Expr, methodName string, args ...Expr) *CallExpr {
+func NewCallExpr2(receiver Expr, methodName string, args ...Expr) *CallExpr {
 	return &CallExpr{
 		Function: &MemberAccessExpr{
 			Receiver: receiver,
-			Member:   newIdent(methodName),
+			Member:   NewIdent(methodName),
 		},
 		Args: args,
 	}
+}
+
+func NewCallExpr(fn Expr, args ...Expr) *CallExpr {
+	// NodeInfo is cleaned by cleanNodeInfo
+	return &CallExpr{Function: fn, Args: args}
+}
+
+func NewDistributeExpr(total Expr, defaultCase Expr, cases ...*CaseExpr) *DistributeExpr {
+	return &DistributeExpr{TotalProb: total, Cases: cases, Default: defaultCase}
+}
+
+func NewGoStmt(varName *IdentifierExpr, stmt Stmt, expr Expr) *GoStmt {
+	return &GoStmt{VarName: varName, Stmt: stmt, Expr: expr}
+}
+
+func NewDelayStmt(duration Expr) *DelayStmt {
+	return &DelayStmt{Duration: duration}
+}
+
+func NewWaitStmt(idents ...*IdentifierExpr) *WaitStmt {
+	return &WaitStmt{Idents: idents}
 }
 
 // Helper assertion for BinaryOpNode structure

@@ -36,7 +36,7 @@ func TestBitly(t *testing.T) {
 		se.Eval(item, env, &currTime)
 	}
 
-	mae := &MemberAccessExpr{Receiver: &IdentifierExpr{Name: "app"}, Member: &IdentifierExpr{Name: "Shorten"}}
+	mae := &MemberAccessExpr{Receiver: &IdentifierExpr{Value: "app"}, Member: &IdentifierExpr{Value: "Shorten"}}
 	ce := &CallExpr{Function: mae}
 	res2, ret2 := se.Eval(ce, env, &currTime) // reuse env to continue
 	log.Println("Now Runnign System.App.Shorten(), ", res2, ret2, currTime)

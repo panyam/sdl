@@ -66,7 +66,7 @@ func (ts *TypeScope) Get(name string) (*Type, bool) {
 	// 2. Method parameters
 	if ts.currentMethod != nil {
 		for _, param := range ts.currentMethod.Parameters {
-			if param.Name.Name == name {
+			if param.Name.Value == name {
 				if param.TypeDecl == nil {
 					return nil, false // Error: No TypeDecl
 				}
@@ -135,7 +135,7 @@ func (ts *TypeScope) Get(name string) (*Type, bool) {
 			return node.InferredType(), true
 		case *InstanceDecl:
 			if ts.env != nil {
-				compDeclNode, compFound := ts.env.Get(node.ComponentType.Name)
+				compDeclNode, compFound := ts.env.Get(node.ComponentName.Value)
 				if compFound {
 					if compDecl, ok := compDeclNode.(*ComponentDecl); ok {
 						return ComponentType(compDecl), true

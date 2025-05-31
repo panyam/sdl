@@ -52,7 +52,7 @@ func (f *FileInstance) NewComponent(name string) (*ComponentInstance, error) {
 				return nil, err
 			}
 			log.Println("IFS: ", importedFS)
-			def, _ = importedFS.FileDecl.GetDefinition(importDecl.ImportedItem.Name)
+			def, _ = importedFS.FileDecl.GetDefinition(importDecl.ImportedItem.Value)
 			compDecl, _ = def.(*decl.ComponentDecl)
 		}
 	}

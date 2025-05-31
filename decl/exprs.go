@@ -96,7 +96,7 @@ type NewExpr struct {
 	ComponentExpr *IdentifierExpr
 }
 
-func (n *NewExpr) String() string { return fmt.Sprintf("(new %s)", n.ComponentExpr.Name) }
+func (n *NewExpr) String() string { return fmt.Sprintf("(new %s)", n.ComponentExpr.Value) }
 func (n *NewExpr) PrettyPrint(cp CodePrinter) {
 	cp.Print(n.String())
 }
@@ -132,11 +132,11 @@ func (l *LiteralExpr) PrettyPrint(cp CodePrinter) {
 // IdentifierExpr represents variable or function names
 type IdentifierExpr struct {
 	ExprBase
-	Name string
+	Value string
 }
 
 func (i *IdentifierExpr) systemBodyItemNode() {} // Allow bare identifier? Maybe not needed.
-func (i *IdentifierExpr) String() string      { return i.Name }
+func (i *IdentifierExpr) String() string      { return i.Value }
 func (e *IdentifierExpr) PrettyPrint(cp CodePrinter) {
 	cp.Print(e.String())
 }

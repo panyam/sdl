@@ -115,20 +115,20 @@ func OutcomesType(elementType *Type) *Type {
 
 // Helper to create a Type instance for an Enum declaration
 func EnumType(decl *EnumDecl) *Type {
-	if decl == nil || decl.NameNode == nil {
+	if decl == nil || decl.Name == nil {
 		panic("EnumDecl and its NameNode cannot be nil when creating EnumType")
 	}
-	return &Type{Tag: TypeTagEnum /*, Name: decl.NameNode.Name*/, Info: decl}
+	return &Type{Tag: TypeTagEnum /*, Name: decl.Name.Value*/, Info: decl}
 }
 
 // Helper to create a Type instance for a Component declaration (representing the type)
 func ComponentType(decl *ComponentDecl) *Type {
-	if decl == nil || decl.NameNode == nil {
+	if decl == nil || decl.Name == nil {
 		panic("ComponentDecl and its NameNode cannot be nil when creating ComponentTypeInstance")
 	}
 	// This represents the "type" of a component, e.g. "MyComponentType"
 	// Distinguish from `ComponentType` singleton which means "any component".
-	return &Type{Tag: TypeTagComponent /*Name: decl.NameNode.Name,*/, Info: decl}
+	return &Type{Tag: TypeTagComponent /*Name: decl.Name.Value,*/, Info: decl}
 }
 
 // String representation of the type
@@ -145,7 +145,7 @@ func (t *Type) String() string {
 		enumDecl := t.Info.(*EnumDecl)
 		return enumDecl.String()
 	} else if t.Tag == TypeTagComponent {
-		return fmt.Sprintf("Component(%s)", t.Info.(*ComponentDecl).NameNode.Name)
+		return fmt.Sprintf("Component(%s)", t.Info.(*ComponentDecl).Name.Value)
 	} else if t.Tag == TypeTagMethod {
 	} else if t.Tag == TypeTagOutcomes {
 	}
@@ -192,14 +192,14 @@ func (v *Type) Equals(other *Type) bool {
 	} else if v.Tag == TypeTagEnum {
 		e1 := v.Info.(*EnumDecl)
 		e2 := other.Info.(*EnumDecl)
-		return e1.NameNode.Name == e2.NameNode.Name
+		return e1.Name.Value == e2.Name.Value
 	} else if v.Tag == TypeTagList || v.Tag == TypeTagOutcomes {
 		return v.Info.(*Type).Equals(other.Info.(*Type))
 	} else if v.Tag == TypeTagComponent {
 		c1 := v.Info.(*ComponentDecl)
 		c2 := other.Info.(*ComponentDecl)
 		// TODO - a more deeper check
-		return c1.NameNode.Name == c2.NameNode.Name
+		return c1.Name.Value == c2.Name.Value
 	}
 	panic(fmt.Sprintf("Invalid types... %d, %v, %d, %v", v.Tag, v.Info, other.Tag, other.Info))
 }

@@ -234,9 +234,9 @@ OptionsDecl:
         }
 */
         $$ = &OptionsDecl{
-            NodeInfo: newNodeInfo($1.(Node).Pos(), $4.(Node).End()), // Pos of OPTIONS, End of RBRACE
+            NodeInfo: NewNodeInfo($1.(Node).Pos(), $4.(Node).End()), // Pos of OPTIONS, End of RBRACE
             Body: &BlockStmt{
-                 NodeInfo: newNodeInfo($2.(Node).Pos(), $4.(Node).End()),
+                 NodeInfo: NewNodeInfo($2.(Node).Pos(), $4.(Node).End()),
                  Statements: $3,
              },
          }
@@ -246,15 +246,15 @@ OptionsDecl:
 ComponentDecl:
     NATIVE COMPONENT IDENTIFIER LBRACE MethodSigDeclOptList RBRACE { // COMPONENT($1) ... RBRACE($5)
         $$ = &ComponentDecl{
-            NodeInfo: newNodeInfo($1.(Node).Pos(), $6.(Node).End()),
-            NameNode: $3,
+            NodeInfo: NewNodeInfo($1.(Node).Pos(), $6.(Node).End()),
+            Name: $3,
             Body: gfn.Map($5, func(m *MethodDecl) ComponentDeclBodyItem { return m }),
          }
     }
     | COMPONENT IDENTIFIER LBRACE ComponentBodyItemOptList RBRACE { // COMPONENT($1) ... RBRACE($5)
         $$ = &ComponentDecl{
-            NodeInfo: newNodeInfo($1.(Node).Pos(), $5.(Node).End()),
-            NameNode: $2,
+            NodeInfo: NewNodeInfo($1.(Node).Pos(), $5.(Node).End()),
+            Name: $2,
             Body: $4,
          }
     }
@@ -263,9 +263,9 @@ ComponentDecl:
 EnumDecl:
     ENUM IDENTIFIER LBRACE CommaIdentifierList RBRACE { // ENUM($1) IDENTIFIER($2) ... RBRACE($5)
         $$ = &EnumDecl{
-            NodeInfo: newNodeInfo($1.(Node).Pos(), $5.(Node).End()),
-            NameNode: $2, // $2 is an IdentifierExpr from lexer, has Pos/End
-            ValuesNode: $4,
+            NodeInfo: NewNodeInfo($1.(Node).Pos(), $5.(Node).End()),
+            Name: $2, // $2 is an IdentifierExpr from lexer, has Pos/End
+            Values: $4,
         }
     }
     ;
@@ -305,15 +305,15 @@ MethodSigDeclList:
 MethodSigDecl:
     METHOD IDENTIFIER LPAREN MethodParamListOpt RPAREN { // METHOD($1) ... BlockStmt($6)
         $$ = &MethodDecl{
-            NodeInfo: newNodeInfo($1.(Node).Pos(), $5.End()),
-            NameNode: $2,
+            NodeInfo: NewNodeInfo($1.(Node).Pos(), $5.End()),
+            Name: $2,
             Parameters: $4,
         }
     }
     | METHOD IDENTIFIER LPAREN MethodParamListOpt RPAREN TypeDecl { // METHOD($1) ... BlockStmt($8)
         $$ = &MethodDecl{
-            NodeInfo: newNodeInfo($1.(Node).Pos(), $6.End()),
-            NameNode: $2,
+            NodeInfo: NewNodeInfo($1.(Node).Pos(), $6.End()),
+            Name: $2,
             Parameters: $4,
             ReturnType: $6,
          }
@@ -340,21 +340,21 @@ ComponentBodyItem:
 ParamDecl:
     PARAM IDENTIFIER TypeDecl { // PARAM($1) ... 
         $$ = &ParamDecl{
-            NodeInfo: newNodeInfo($1.(Node).Pos(), $3.End()),
+            NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.End()),
             Name: $2,
             TypeDecl: $3, // TypeDecl also needs to have NodeInfo
         }
     }
     | PARAM IDENTIFIER ASSIGN Expression { // PARAM($1) ... 
         $$ = &ParamDecl{
-            NodeInfo: newNodeInfo($1.(Node).Pos(), $4.End()),
+            NodeInfo: NewNodeInfo($1.(Node).Pos(), $4.End()),
             Name: $2,
             DefaultValue: $4,
         }
     }
     | PARAM IDENTIFIER TypeDecl ASSIGN Expression { // PARAM($1) ... 
         $$ = &ParamDecl{
-            NodeInfo: newNodeInfo($1.(Node).Pos(), $5.End()),
+            NodeInfo: NewNodeInfo($1.(Node).Pos(), $5.End()),
             Name: $2,
             TypeDecl: $3,
             DefaultValue: $5,
@@ -368,14 +368,14 @@ TypeDecl:
       identNode := $1
       $$ = &TypeDecl{
         NodeInfo: identNode.NodeInfo,
-        Name: identNode.Name,
+        Name: identNode.Value,
         }
       }
     | IDENTIFIER LSQUARE TypeDeclList RSQUARE {
       identNode := $1
       $$ = &TypeDecl{
         NodeInfo: identNode.NodeInfo,
-        Name: identNode.Name,
+        Name: identNode.Value,
         Args: $3,
       }
     }
@@ -394,13 +394,20 @@ TypeDeclList:
 UsesDecl:
     USES IDENTIFIER IDENTIFIER { // USES($1) ... 
         $$ = &UsesDecl{
-            NodeInfo: newNodeInfo($1.(Node).Pos(), $3.End()),
-            NameNode: $2,
-            ComponentNode: $3,
+            NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.End()),
+            Name: $2,
+            ComponentName: $3,
          }
     }
     // Optional: Add syntax for overrides within uses? Like `uses x: T { p1 = v1; }`
-    // USES IDENTIFIER IDENTIFIER LBRACE AssignListOpt RBRACE { ... }
+    | USES IDENTIFIER IDENTIFIER LPAREN AssignListOpt RPAREN {
+        $$ = &UsesDecl{
+             NodeInfo: NewNodeInfo($1.(Node).Pos(), $6.End()),
+             Name: $2,
+             ComponentName: $3,
+             Overrides: $5,
+         }
+    }
     ;
 
 MethodDecl:
@@ -424,14 +431,14 @@ MethodParamList:
 MethodParamDecl:    // thse dont need "param" unlike param decls in components
     IDENTIFIER TypeDecl { // PARAM($1) ... 
         $$ = &ParamDecl{
-            NodeInfo: newNodeInfo($1.Pos(), $2.End()),
+            NodeInfo: NewNodeInfo($1.Pos(), $2.End()),
             Name: $1,
             TypeDecl: $2, // TypeDecl also needs to have NodeInfo
         }
     }
     | IDENTIFIER TypeDecl ASSIGN Expression { // PARAM($1) ... 
         $$ = &ParamDecl{
-            NodeInfo: newNodeInfo($1.Pos(), $4.End()),
+            NodeInfo: NewNodeInfo($1.Pos(), $4.End()),
             Name: $1,
             TypeDecl: $2,
             DefaultValue: $4,
@@ -443,8 +450,8 @@ MethodParamDecl:    // thse dont need "param" unlike param decls in components
 SystemDecl:
     SYSTEM IDENTIFIER LBRACE SystemBodyItemOptList RBRACE { // SYSTEM($1) ... RBRACE($5)
         $$ = &SystemDecl{
-             NodeInfo: newNodeInfo($1.(Node).Pos(), $5.(Node).End()),
-             NameNode: $2,
+             NodeInfo: NewNodeInfo($1.(Node).Pos(), $5.(Node).End()),
+             Name: $2,
              Body: $4,
         }
     }
@@ -465,17 +472,17 @@ SystemBodyItem:
 InstanceDecl:
     USE IDENTIFIER IDENTIFIER { // IDENTIFIER($1) ... 
          $$ = &InstanceDecl{
-             NodeInfo: newNodeInfo($1.(Node).Pos(), $3.End()),
-             NameNode: $2,
-             ComponentType: $3,
+             NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.End()),
+             Name: $2,
+             ComponentName: $3,
              Overrides: []*AssignmentStmt{},
          }
     }
     | USE IDENTIFIER IDENTIFIER LPAREN AssignListOpt RPAREN { // IDENTIFIER($1) ... 
         $$ = &InstanceDecl{
-             NodeInfo: newNodeInfo($1.(Node).Pos(), $6.End()),
-             NameNode: $2,
-             ComponentType: $3,
+             NodeInfo: NewNodeInfo($1.(Node).Pos(), $6.End()),
+             Name: $2,
+             ComponentName: $3,
              Overrides: $5,
          }
     }
@@ -494,7 +501,7 @@ AssignList:
 Assignment:
     IDENTIFIER ASSIGN Expression { // IDENTIFIER($1) ... 
         $$ = &AssignmentStmt{
-            NodeInfo: newNodeInfo($1.Pos(), $3.End()),
+            NodeInfo: NewNodeInfo($1.Pos(), $3.End()),
             Var: $1,
             Value: $3,
          }
@@ -515,7 +522,7 @@ AnalyzeDecl:
           endPos = $4.End()
         }
         $$ = &AnalyzeDecl{
-             NodeInfo: newNodeInfo($1.(Node).Pos(), endPos),
+             NodeInfo: NewNodeInfo($1.(Node).Pos(), endPos),
              Name: $2,
              Target: callExpr,
              Expectations: $5,
@@ -531,7 +538,7 @@ ExpectBlock:
     EXPECT LBRACE ExpectStmtOptList RBRACE { // EXPECT($1) ... RBRACE($4)
         log.Println("Did Expect Block Hit?")
         $$ = &ExpectationsDecl{
-            NodeInfo: newNodeInfo($1.(Node).Pos(), $4.(Node).End()),
+            NodeInfo: NewNodeInfo($1.(Node).Pos(), $4.(Node).End()),
             Expects: $3,
         }
     }
@@ -550,18 +557,18 @@ ExpectStmtList:
     | ExpectStmtList SEMICOLON Expression {
       log.Println("Why not here Did we come here????")
         cmpExp := $3.(*BinaryExpr);
-        expct := &ExpectStmt{ NodeInfo: newNodeInfo($1[0].Pos(), $3.End()), Target: cmpExp.Left.(*MemberAccessExpr), Operator: cmpExp.Operator, Threshold: cmpExp.Right}
+        expct := &ExpectStmt{ NodeInfo: NewNodeInfo($1[0].Pos(), $3.End()), Target: cmpExp.Left.(*MemberAccessExpr), Operator: cmpExp.Operator, Threshold: cmpExp.Right}
         $$ = append($1, expct)
     }
     ;
 
 ExpectStmt:
-    Expression EQ Expression { $$ = &ExpectStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.End()), Target: $1.(*MemberAccessExpr), Operator: "==", Threshold: $3} }
-    | Expression NEQ Expression { $$ = &ExpectStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.End()), Target: $1.(*MemberAccessExpr), Operator: "!=", Threshold: $3} }
-    | Expression LT Expression { $$ = &ExpectStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.End()), Target: $1.(*MemberAccessExpr), Operator: "<", Threshold: $3} }
-    | Expression LTE Expression { $$ = &ExpectStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.End()), Target: $1.(*MemberAccessExpr), Operator: "<=", Threshold: $3} }
-    | Expression GT Expression { $$ = &ExpectStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.End()), Target: $1.(*MemberAccessExpr), Operator: ">", Threshold: $3} }
-    | Expression GTE Expression { $$ = &ExpectStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.End()), Target: $1.(*MemberAccessExpr), Operator: ">=", Threshold: $3} }
+    Expression EQ Expression { $$ = &ExpectStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.End()), Target: $1.(*MemberAccessExpr), Operator: "==", Threshold: $3} }
+    | Expression NEQ Expression { $$ = &ExpectStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.End()), Target: $1.(*MemberAccessExpr), Operator: "!=", Threshold: $3} }
+    | Expression LT Expression { $$ = &ExpectStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.End()), Target: $1.(*MemberAccessExpr), Operator: "<", Threshold: $3} }
+    | Expression LTE Expression { $$ = &ExpectStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.End()), Target: $1.(*MemberAccessExpr), Operator: "<=", Threshold: $3} }
+    | Expression GT Expression { $$ = &ExpectStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.End()), Target: $1.(*MemberAccessExpr), Operator: ">", Threshold: $3} }
+    | Expression GTE Expression { $$ = &ExpectStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.End()), Target: $1.(*MemberAccessExpr), Operator: ">=", Threshold: $3} }
     ;
 */
 
@@ -593,19 +600,19 @@ Stmt:
 
 BlockStmt:
     LBRACE StmtList RBRACE {
-      $$ = &BlockStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Statements: $2 }
+      $$ = &BlockStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.(Node).End()), Statements: $2 }
     }
     ;
 
 ForStmt: FOR Expression Stmt {
-        $$ = &ForStmt{NodeInfo: newNodeInfo($1.(Node).Pos(), $3.End()), Condition: $2, Body: $3 }
+        $$ = &ForStmt{NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.End()), Condition: $2, Body: $3 }
        }
        ;
 
 LetStmt:
     LET CommaIdentifierList ASSIGN Expression { // LET($1) ... 
          $$ = &LetStmt{
-             NodeInfo: newNodeInfo($1.(Node).Pos(), $4.End()),
+             NodeInfo: NewNodeInfo($1.(Node).Pos(), $4.End()),
              Variables: $2,
              Value: $4,
           }
@@ -619,7 +626,7 @@ AssignStmt: // Rule for simple assignment `a = b;` if needed as statement
          // Let's prefer LetStmt for variables. This rule might be removed.
          // For now, map it to AssignmentStmt AST node used by InstanceDecl.
          $$ = &AssignmentStmt{
-             NodeInfo: newNodeInfo($1.Pos(), $3.Pos()),
+             NodeInfo: NewNodeInfo($1.Pos(), $3.Pos()),
              Var: $1,
              Value: $3,
          }
@@ -628,23 +635,23 @@ AssignStmt: // Rule for simple assignment `a = b;` if needed as statement
 */
 
 ExprStmt:
-    CallExpr { $$ = &ExprStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $1.(Node).End()), Expression: $1 } }
+    CallExpr { $$ = &ExprStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $1.(Node).End()), Expression: $1 } }
     ;
 
 ReturnStmt:
-    RETURN Expression { $$ = &ReturnStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $2.(Node).End()), ReturnValue: $2 } }
-    | RETURN SEMICOLON          { $$ = &ReturnStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $2.(Node).End()), ReturnValue: nil } }
+    RETURN Expression { $$ = &ReturnStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $2.(Node).End()), ReturnValue: $2 } }
+    | RETURN SEMICOLON          { $$ = &ReturnStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $2.(Node).End()), ReturnValue: nil } }
     ;
 
 DelayStmt:
-    DELAY Expression { $$ = &DelayStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $2.End()), Duration: $2 } }
+    DELAY Expression { $$ = &DelayStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $2.End()), Duration: $2 } }
     ;
 
 WaitStmt:
     WAIT CommaIdentifierList { // WAIT($1) IDENTIFIER($2) ... 
          idents := $2
          endNode := idents[len(idents)-1] // End at the last identifier in the list
-         $$ = &WaitStmt{ NodeInfo: newNodeInfo($1.Pos(), endNode.End()), Idents: idents }
+         $$ = &WaitStmt{ NodeInfo: NewNodeInfo($1.Pos(), endNode.End()), Idents: idents }
     }
     ;
 
@@ -671,7 +678,7 @@ IfStmt:
         endNode := Stmt($3)
         if $4 != nil { endNode = $4 } // End of Else block/IfStmt
         $$ = &IfStmt{
-          NodeInfo: newNodeInfo($1.(Node).Pos(), endNode.End()),
+          NodeInfo: NewNodeInfo($1.(Node).Pos(), endNode.End()),
           Condition: $2,
           Then: $3,
           Else: $4,
@@ -688,7 +695,7 @@ IfStmtElseOpt:
 SampleExpr:
     SAMPLE Expression { // DISTRIBUTE($1) ... RBRACE($6)
         $$ = &SampleExpr{ FromExpr: $2 }
-        $$.NodeInfo = newNodeInfo($1.(Node).Pos(), $2.(Node).End())
+        $$.NodeInfo = NewNodeInfo($1.(Node).Pos(), $2.(Node).End())
     }
     ;
 
@@ -700,10 +707,10 @@ TupleExpr: LPAREN CommaSepExprList COMMA Expression RPAREN {
 
 GoStmt:
     GO IDENTIFIER ASSIGN Stmt { // GO($1) ... BlockStmt($4)
-        $$ = &GoStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $4.End()), VarName: $2, Stmt: $4 }
+        $$ = &GoStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $4.End()), VarName: $2, Stmt: $4 }
     }
     | GO BlockStmt { // GO($1) BlockStmt($2)
-        $$ = &GoStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $2.End()), VarName: nil, Stmt: $2 }
+        $$ = &GoStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $2.End()), VarName: nil, Stmt: $2 }
     }
     | GO IDENTIFIER ASSIGN Expression {
          yyerror(SDLlex, fmt.Sprintf("`go` currently only supports assigning blocks, not expressions, at pos %d", $1.(Node).Pos()))
@@ -725,7 +732,7 @@ NonAssocBinExpr:
     BinaryExpr  { $$ = $1 }
     | BinaryExpr BINARY_NC_OP BinaryExpr { 
         $$ = &BinaryExpr{ Left: $1, Operator: $2.String(), Right: $3} 
-        $$.(*BinaryExpr).NodeInfo = newNodeInfo($1.(Node).Pos(), $3.(Node).End())
+        $$.(*BinaryExpr).NodeInfo = NewNodeInfo($1.(Node).Pos(), $3.(Node).End())
     }
     ;
 
@@ -733,11 +740,11 @@ BinaryExpr:
     UnaryExpr  { $$ = $1 }
   | BinaryExpr BINARY_OP UnaryExpr {
      $$ = &BinaryExpr{ Left: $1, Operator: $2.(Node).String(), Right: $3}
-     $$.(*BinaryExpr).NodeInfo = newNodeInfo($1.(Node).Pos(), $3.(Node).End())
+     $$.(*BinaryExpr).NodeInfo = NewNodeInfo($1.(Node).Pos(), $3.(Node).End())
   }
   | BinaryExpr MINUS UnaryExpr {
      $$ = &BinaryExpr{ Left: $1, Operator: $2.(Node).String(), Right: $3}
-     $$.(*BinaryExpr).NodeInfo = newNodeInfo($1.(Node).Pos(), $3.(Node).End())
+     $$.(*BinaryExpr).NodeInfo = NewNodeInfo($1.(Node).Pos(), $3.(Node).End())
   }
   // | For each operator that can be BOTH binary and unary add it here explicitly
 */
@@ -762,12 +769,12 @@ UnaryExpr: PrimaryExpr { $$=$1 }
     // For Unary, $1 is operator token, $2 is operand Expr node
     | UNARY_OP UnaryExpr { 
         $$ = &UnaryExpr{ Operator: $1.String(), Right: $2} 
-        $$.(*UnaryExpr).NodeInfo = newNodeInfo($1.(Node).Pos(), $2.(Node).End())
+        $$.(*UnaryExpr).NodeInfo = NewNodeInfo($1.(Node).Pos(), $2.(Node).End())
     }
   // | For each operator that can be BOTH binary and unary add it here explicitly
     | MINUS UnaryExpr %prec UMINUS { 
         $$ = &UnaryExpr{ Operator: $1.String(), Right: $2} 
-        $$.(*UnaryExpr).NodeInfo = newNodeInfo($1.(Node).Pos(), $2.(Node).End())
+        $$.(*UnaryExpr).NodeInfo = NewNodeInfo($1.(Node).Pos(), $2.(Node).End())
     }
     // For each OPERATOR  that can be binary or unary add a rule like the above MINUS and add a U<OPERATOR> as well
     ;
@@ -777,33 +784,33 @@ UnaryExpr: PrimaryExpr { $$=$1 }
 /*
 Expression: OrExpr { $$ = $1 } ;
 OrExpr: AndBoolExpr { $$=$1 }
-      | OrExpr OR AndBoolExpr { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
+      | OrExpr OR AndBoolExpr { $$ = &BinaryExpr{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
       ;
 
 AndBoolExpr:
        CmpExpr { $$=$1 }
-      | AndBoolExpr AND CmpExpr { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.(Node).String(), Right: $3} }
+      | AndBoolExpr AND CmpExpr { $$ = &BinaryExpr{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.(Node).String(), Right: $3} }
       ;
 
 CmpExpr: AddExpr { $$=$1 }
-    | AddExpr EQ AddExpr  { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
-    | AddExpr NEQ AddExpr { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
-    | AddExpr LT AddExpr  { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
-    | AddExpr LTE AddExpr { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
-    | AddExpr GT AddExpr  { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
-    | AddExpr GTE AddExpr { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
+    | AddExpr EQ AddExpr  { $$ = &BinaryExpr{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
+    | AddExpr NEQ AddExpr { $$ = &BinaryExpr{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
+    | AddExpr LT AddExpr  { $$ = &BinaryExpr{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
+    | AddExpr LTE AddExpr { $$ = &BinaryExpr{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
+    | AddExpr GT AddExpr  { $$ = &BinaryExpr{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
+    | AddExpr GTE AddExpr { $$ = &BinaryExpr{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
     ;
 
 AddExpr:
       MulExpr { $$=$1 }
-    | AddExpr PLUS MulExpr { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
-    | AddExpr MINUS MulExpr { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
+    | AddExpr PLUS MulExpr { $$ = &BinaryExpr{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
+    | AddExpr MINUS MulExpr { $$ = &BinaryExpr{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
     ;
 
 MulExpr: UnaryExpr { $$=$1 }
-    | MulExpr MUL UnaryExpr { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
-    | MulExpr DIV UnaryExpr { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
-    | MulExpr MOD UnaryExpr { $$ = &BinaryExpr{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
+    | MulExpr MUL UnaryExpr { $$ = &BinaryExpr{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
+    | MulExpr DIV UnaryExpr { $$ = &BinaryExpr{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
+    | MulExpr MOD UnaryExpr { $$ = &BinaryExpr{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
     ;
 */
 
@@ -841,14 +848,14 @@ MemberAccessExpr:
              Receiver: $1,
              Member: $3,
         }
-        $$.(*MemberAccessExpr).NodeInfo = newNodeInfo($1.Pos(), $3.End())
+        $$.(*MemberAccessExpr).NodeInfo = NewNodeInfo($1.Pos(), $3.End())
     }
     | MemberAccessExpr DOT IDENTIFIER { // PrimaryExpr($1) DOT($2) IDENTIFIER($3)
         $$ = &MemberAccessExpr{
             Receiver: $1,
             Member: $3,
         }
-        $$.(*MemberAccessExpr).NodeInfo = newNodeInfo($1.Pos(), $3.End())
+        $$.(*MemberAccessExpr).NodeInfo = NewNodeInfo($1.Pos(), $3.End())
     }
     ;
 
@@ -863,7 +870,7 @@ CallExpr:
              Function: $1,
              Args: $3,
         }
-        $$.(*CallExpr).NodeInfo = newNodeInfo($1.Pos(), endNode.End())
+        $$.(*CallExpr).NodeInfo = NewNodeInfo($1.Pos(), endNode.End())
     }
     | MemberAccessExpr LPAREN CommaSepExprListOpt RPAREN { // PrimaryExpr($1) LPAREN($2) ArgList($3) RPAREN($4)
          endNode := $4.(Node) // End at RPAREN
@@ -875,7 +882,7 @@ CallExpr:
              Function: $1,
              Args: $3,
          }
-        $$.(*CallExpr).NodeInfo = newNodeInfo($1.Pos(), endNode.End())
+        $$.(*CallExpr).NodeInfo = NewNodeInfo($1.Pos(), endNode.End())
     }
     ;
 
@@ -931,7 +938,7 @@ CaseStmtList:
     ;
 
 CaseStmt:
-    Expression ARROW Stmt { $$ = &CaseStmt{ NodeInfo: newNodeInfo($1.(Node).Pos(), $3.End()), Condition: $1, Body: $3 } }
+    Expression ARROW Stmt { $$ = &CaseStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.End()), Condition: $1, Body: $3 } }
     ;
 
 DefaultCaseStmtOpt:

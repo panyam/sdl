@@ -51,32 +51,32 @@ func (o *OptionsDecl) PrettyPrint(cp CodePrinter) { cp.Println("options { ... }"
 // EnumDecl represents `enum Name { Val1, Val2, ... };`
 type EnumDecl struct {
 	NodeInfo
-	NameNode   *IdentifierExpr   // EnumDecl type name
-	ValuesNode []*IdentifierExpr // List of enum value names
+	Name   *IdentifierExpr   // EnumDecl type name
+	Values []*IdentifierExpr // List of enum value names
 
 	// Resolved values so we can work with processed/loaded values instead of resolving
 	// Identify expressions etc
 	values []string
 }
 
-func (d *EnumDecl) Values() []string {
+func (d *EnumDecl) Variants() []string {
 	// TODO - save this
-	return gfn.Map(d.ValuesNode, func(e *IdentifierExpr) string { return e.Name })
+	return gfn.Map(d.Values, func(e *IdentifierExpr) string { return e.Value })
 }
 
 func (e *EnumDecl) String() string {
 	vals := []string{}
-	for _, v := range e.ValuesNode {
-		vals = append(vals, v.Name)
+	for _, v := range e.Values {
+		vals = append(vals, v.Value)
 	}
-	return fmt.Sprintf("enum %s { %s };", e.NameNode, strings.Join(vals, ", "))
+	return fmt.Sprintf("enum %s { %s };", e.Name, strings.Join(vals, ", "))
 }
 
 func (e *EnumDecl) PrettyPrint(cp CodePrinter) {
 	cp.Println("enum {")
 	WithIndent(1, cp, func(cp CodePrinter) {
-		for _, v := range e.ValuesNode {
-			cp.Printf("%s, \n", v.Name)
+		for _, v := range e.Values {
+			cp.Printf("%s, \n", v.Value)
 		}
 	})
 	cp.Print("}")
@@ -94,9 +94,9 @@ type ImportDecl struct {
 
 func (i *ImportDecl) String() string {
 	if i.Alias != nil {
-		return fmt.Sprintf("import %s as %s from '%s';", i.ImportedItem.Name, i.Alias.Name, i.Path)
+		return fmt.Sprintf("import %s as %s from '%s';", i.ImportedItem.Value, i.Alias.Value, i.Path)
 	} else {
-		return fmt.Sprintf("import %s from '%s';", i.ImportedItem.Name, i.Path)
+		return fmt.Sprintf("import %s from '%s';", i.ImportedItem.Value, i.Path)
 	}
 }
 
@@ -107,9 +107,9 @@ func (i *ImportDecl) PrettyPrint(cp CodePrinter) {
 // What the import is imported as if an alias is used
 func (i *ImportDecl) ImportedAs() string {
 	if i.Alias != nil {
-		return i.Alias.Name
+		return i.Alias.Value
 	}
-	return i.ImportedItem.Name
+	return i.ImportedItem.Value
 }
 
 // --- ComponentDecl Definition ---
@@ -117,17 +117,12 @@ func (i *ImportDecl) ImportedAs() string {
 // Keeps track of a component ref for lazy resolution after file has been loaded
 // For example, components in a file can be declared in any order and can use other
 // components declared in a file.
-type ComponentUse struct {
-	Name         string         // Name/FQN of the component being used/referred to
-	ResolvedDecl *ComponentDecl // The resolved component when needed
-	Error        error          // Errors in resolution
-}
 
 // ComponentDecl represents `component Name { ... }`
 type ComponentDecl struct {
 	NodeInfo
-	NameNode *IdentifierExpr         // ComponentDecl type name
-	Body     []ComponentDeclBodyItem // ParamDecl, UsesDecl, MethodDecl
+	Name *IdentifierExpr         // ComponentDecl type name
+	Body []ComponentDeclBodyItem // ParamDecl, UsesDecl, MethodDecl
 
 	// Marks whether a component is native or not
 	// Native components should still be declared if not defined.
@@ -203,21 +198,21 @@ func (d *ComponentDecl) Resolve() error {
 	for _, item := range d.Body {
 		switch bodyNode := item.(type) {
 		case *ParamDecl:
-			paramName := bodyNode.Name.Name
+			paramName := bodyNode.Name.Value
 			if _, exists := d.params[paramName]; exists {
 				return fmt.Errorf("duplicate parameter '%s'", paramName) // Error relative to component name handled by caller
 			}
 			d.params[paramName] = bodyNode
 			d.paramList = append(d.paramList, bodyNode)
 		case *UsesDecl:
-			usesName := bodyNode.NameNode.Name
+			usesName := bodyNode.Name.Value
 			if _, exists := d.uses[usesName]; exists {
 				return fmt.Errorf("duplicate uses declaration '%s'", usesName)
 			}
 			d.uses[usesName] = bodyNode
 			d.usesList = append(d.usesList, bodyNode)
 		case *MethodDecl:
-			methodName := bodyNode.NameNode.Name
+			methodName := bodyNode.Name.Value
 			if _, exists := d.methods[methodName]; exists {
 				return fmt.Errorf("duplicate method definition '%s'", methodName)
 			}
@@ -227,7 +222,7 @@ func (d *ComponentDecl) Resolve() error {
 				// Handle nested definitions - recursive processing
 				nestedCompDef, err := v.processComponentDecl(bodyNode)
 				if err != nil {
-					return fmt.Errorf("error processing nested component '%s': %w", bodyNode.Name.Name, err)
+					return fmt.Errorf("error processing nested component '%s': %w", bodyNode.Name.Value, err)
 				}
 				// How to register nested? Maybe prefix name? Or store within outer compDef?
 				// For now, let's register globally with potentially full name? Needs design.
@@ -235,7 +230,7 @@ func (d *ComponentDecl) Resolve() error {
 				// We could register it here:
 				err = v.RegisterComponentDef(nestedCompDef)
 				if err != nil {
-					return fmt.Errorf("error registering nested component '%s': %w", nestedCompDef.Node.Name.Name, err)
+					return fmt.Errorf("error registering nested component '%s': %w", nestedCompDef.Node.Name.Value, err)
 				}
 			*/
 
@@ -247,10 +242,10 @@ func (d *ComponentDecl) Resolve() error {
 	return nil
 }
 
-func (c *ComponentDecl) String() string         { return fmt.Sprintf("component %s { ... }", c.NameNode) }
+func (c *ComponentDecl) String() string         { return fmt.Sprintf("component %s { ... }", c.Name) }
 func (c *ComponentDecl) componentBodyItemNode() {}
 func (c *ComponentDecl) PrettyPrint(cp CodePrinter) {
-	cp.Printf("component %s {", c.NameNode.Name)
+	cp.Printf("component %s {", c.Name.Value)
 	WithIndent(1, cp, func(cp CodePrinter) {
 		for _, item := range c.Body {
 			item.PrettyPrint(cp)
@@ -284,7 +279,7 @@ func (p *ParamDecl) String() string {
 }
 
 func (p *ParamDecl) PrettyPrint(cp CodePrinter) {
-	cp.Printf("param %s ", p.Name.Name)
+	cp.Printf("param %s ", p.Name.Value)
 	if p.TypeDecl != nil {
 		p.TypeDecl.PrettyPrint(cp)
 	}
@@ -297,35 +292,28 @@ func (p *ParamDecl) PrettyPrint(cp CodePrinter) {
 // UsesDecl represents `uses varName: ComponentType [{ overrides }];`
 type UsesDecl struct {
 	NodeInfo
-	NameNode      *IdentifierExpr
-	ComponentNode *IdentifierExpr // Type name of the dependency
+	Name          *IdentifierExpr
+	ComponentName *IdentifierExpr   // Type name of the dependency
+	Overrides     []*AssignmentStmt // When overrides are specified - the component is also instantiated otherwise it must be set in a system or in the enclosing component's uses decl
 
 	// Resolved ComponentDecl after type checking
 	ResolvedComponent *ComponentDecl
 }
 
-func (u *UsesDecl) UsedComponent() *ComponentUse {
-	return &ComponentUse{
-		Name: u.ComponentNode.Name,
-	}
-}
-
 func (u *UsesDecl) componentBodyItemNode() {}
-func (u *UsesDecl) String() string         { return fmt.Sprintf("uses %s: %s;", u.NameNode, u.ComponentNode) }
+func (u *UsesDecl) String() string         { return fmt.Sprintf("uses %s: %s;", u.Name, u.ComponentName) }
 
 func (u *UsesDecl) PrettyPrint(cp CodePrinter) {
-	cp.Printf("uses %s %s\n", u.NameNode.Name, u.ComponentNode.Name)
+	cp.Printf("uses %s %s\n", u.Name.Value, u.ComponentName.Value)
 }
 
 // MethodDecl represents `method name(params) [: returnType] { body }`
 type MethodDecl struct {
 	NodeInfo
-	NameNode   *IdentifierExpr
+	Name       *IdentifierExpr
 	Parameters []*ParamDecl // Signature parameters (can be empty)
 	ReturnType *TypeDecl    // Optional return type (primitive or enum)
 	Body       *BlockStmt
-
-	Name string
 }
 
 func (o *MethodDecl) componentBodyItemNode() {}
@@ -343,14 +331,14 @@ func (m *MethodDecl) PrettyPrint(cp CodePrinter) {
 		if idx > 0 {
 			paramStr += ", "
 		}
-		paramStr += param.Name.Name
+		paramStr += param.Name.Value
 		paramStr += " "
 		paramStr += param.TypeDecl.String()
 	}
 	if m.ReturnType == nil {
-		cp.Printf("method %s(%s) {\n", m.NameNode.Name, paramStr)
+		cp.Printf("method %s(%s) {\n", m.Name.Value, paramStr)
 	} else {
-		cp.Printf("method %s(%s) %s {\n", m.NameNode.Name, paramStr, m.ReturnType.String())
+		cp.Printf("method %s(%s) %s {\n", m.Name.Value, paramStr, m.ReturnType.String())
 	}
 	cp.Indent(1)
 	m.Body.PrettyPrint(cp)
@@ -363,13 +351,13 @@ func (m *MethodDecl) PrettyPrint(cp CodePrinter) {
 // SystemDecl represents `system Name { ... }`
 type SystemDecl struct {
 	NodeInfo
-	NameNode *IdentifierExpr
-	Body     []SystemDeclBodyItem // InstanceDecl, AnalyzeDecl, OptionsDecl, LetStmt
+	Name *IdentifierExpr
+	Body []SystemDeclBodyItem // InstanceDecl, AnalyzeDecl, OptionsDecl, LetStmt
 }
 
-func (s *SystemDecl) String() string { return fmt.Sprintf("system %s { ... }", s.NameNode) }
+func (s *SystemDecl) String() string { return fmt.Sprintf("system %s { ... }", s.Name) }
 func (s *SystemDecl) PrettyPrint(cp CodePrinter) {
-	cp.Printf("system %s {\n", s.NameNode.Name)
+	cp.Printf("system %s {\n", s.Name.Value)
 	WithIndent(1, cp, func(cp CodePrinter) {
 		for _, b := range s.Body {
 			b.PrettyPrint(cp)
@@ -385,24 +373,24 @@ type SystemDeclBodyItem interface {
 	systemBodyItemNode()
 }
 
-// InstanceDecl represents `instanceName: ComponentType = { overrides };`
+// InstanceDecl represents `instanceName ComponentType ( overrides );`
 type InstanceDecl struct {
 	NodeInfo
-	NameNode      *IdentifierExpr
-	ComponentType *IdentifierExpr
+	Name          *IdentifierExpr
+	ComponentName *IdentifierExpr
 	Overrides     []*AssignmentStmt
 }
 
 func (i *InstanceDecl) systemBodyItemNode() {}
 func (i *InstanceDecl) String() string {
-	return fmt.Sprintf("instance %s: %s = { ... };", i.NameNode, i.ComponentType)
+	return fmt.Sprintf("instance %s: %s = { ... };", i.Name, i.ComponentName)
 }
 
 func (i *InstanceDecl) PrettyPrint(cp CodePrinter) {
 	if i.Overrides == nil {
-		cp.Printf("use %s %s", i.NameNode.Name, i.ComponentType.Name)
+		cp.Printf("use %s %s", i.Name.Value, i.ComponentName.Value)
 	} else {
-		cp.Printf("use %s %s (", i.NameNode.Name, i.ComponentType.Name)
+		cp.Printf("use %s %s (", i.Name.Value, i.ComponentName.Value)
 		for idx, o := range i.Overrides {
 			if idx > 0 {
 				cp.Print(", ")
