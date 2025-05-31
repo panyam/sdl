@@ -1110,7 +1110,7 @@ SDLdefault:
 			SDLVAL.paramDecl = &ParamDecl{
 				NodeInfo: newNodeInfo(SDLDollar[1].node.(Node).Pos(), SDLDollar[3].typeDecl.End()),
 				Name:     SDLDollar[2].ident,
-				Type:     SDLDollar[3].typeDecl, // TypeDecl also needs to have NodeInfo
+				TypeDecl: SDLDollar[3].typeDecl, // TypeDecl also needs to have NodeInfo
 			}
 		}
 	case 36:
@@ -1130,7 +1130,7 @@ SDLdefault:
 			SDLVAL.paramDecl = &ParamDecl{
 				NodeInfo:     newNodeInfo(SDLDollar[1].node.(Node).Pos(), SDLDollar[5].expr.End()),
 				Name:         SDLDollar[2].ident,
-				Type:         SDLDollar[3].typeDecl,
+				TypeDecl:     SDLDollar[3].typeDecl,
 				DefaultValue: SDLDollar[5].expr,
 			}
 		}
@@ -1216,7 +1216,7 @@ SDLdefault:
 			SDLVAL.paramDecl = &ParamDecl{
 				NodeInfo: newNodeInfo(SDLDollar[1].ident.Pos(), SDLDollar[2].typeDecl.End()),
 				Name:     SDLDollar[1].ident,
-				Type:     SDLDollar[2].typeDecl, // TypeDecl also needs to have NodeInfo
+				TypeDecl: SDLDollar[2].typeDecl, // TypeDecl also needs to have NodeInfo
 			}
 		}
 	case 49:
@@ -1226,7 +1226,7 @@ SDLdefault:
 			SDLVAL.paramDecl = &ParamDecl{
 				NodeInfo:     newNodeInfo(SDLDollar[1].ident.Pos(), SDLDollar[4].expr.End()),
 				Name:         SDLDollar[1].ident,
-				Type:         SDLDollar[2].typeDecl,
+				TypeDecl:     SDLDollar[2].typeDecl,
 				DefaultValue: SDLDollar[4].expr,
 			}
 		}

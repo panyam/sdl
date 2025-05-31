@@ -342,7 +342,7 @@ ParamDecl:
         $$ = &ParamDecl{
             NodeInfo: newNodeInfo($1.(Node).Pos(), $3.End()),
             Name: $2,
-            Type: $3, // TypeDecl also needs to have NodeInfo
+            TypeDecl: $3, // TypeDecl also needs to have NodeInfo
         }
     }
     | PARAM IDENTIFIER ASSIGN Expression { // PARAM($1) ... 
@@ -356,7 +356,7 @@ ParamDecl:
         $$ = &ParamDecl{
             NodeInfo: newNodeInfo($1.(Node).Pos(), $5.End()),
             Name: $2,
-            Type: $3,
+            TypeDecl: $3,
             DefaultValue: $5,
         }
     }
@@ -426,14 +426,14 @@ MethodParamDecl:    // thse dont need "param" unlike param decls in components
         $$ = &ParamDecl{
             NodeInfo: newNodeInfo($1.Pos(), $2.End()),
             Name: $1,
-            Type: $2, // TypeDecl also needs to have NodeInfo
+            TypeDecl: $2, // TypeDecl also needs to have NodeInfo
         }
     }
     | IDENTIFIER TypeDecl ASSIGN Expression { // PARAM($1) ... 
         $$ = &ParamDecl{
             NodeInfo: newNodeInfo($1.Pos(), $4.End()),
             Name: $1,
-            Type: $2,
+            TypeDecl: $2,
             DefaultValue: $4,
         }
     }

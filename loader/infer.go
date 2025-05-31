@@ -163,13 +163,14 @@ func (i *Inference) EvalForParamDecl(paramDecl *ParamDecl, compDecl *ComponentDe
 		}
 	}()
 
-	if paramDecl.Type != nil { // Type is explicitly declared
-		resolvedParamType = rootScope.ResolveType(paramDecl.Type)
+	if paramDecl.TypeDecl != nil { // Type is explicitly declared
+		resolvedParamType = rootScope.ResolveType(paramDecl.TypeDecl)
 		if resolvedParamType == nil {
-			i.Errorf(paramDecl.Type.Pos(), "unresolved type '%s' for parameter '%s' in component '%s'", paramDecl.Type.Name, paramDecl.Name.Name, compDecl.NameNode.Name)
+			i.Errorf(paramDecl.TypeDecl.Pos(), "unresolved type '%s' for parameter '%s' in component '%s'", paramDecl.TypeDecl.Name, paramDecl.Name.Name, compDecl.NameNode.Name)
 			// Even if unresolved, continue to check default value if present, but this param is problematic.
 		} else {
-			paramDecl.Type.SetResolvedType(resolvedParamType)
+			paramDecl.TypeDecl.SetResolvedType(resolvedParamType)
+			paramDecl.Name.SetInferredType(resolvedParamType)
 		}
 	} else if paramDecl.DefaultValue != nil { // No explicit type, but has default value
 		// Infer type from default value
@@ -202,10 +203,10 @@ func (i *Inference) EvalForParamDecl(paramDecl *ParamDecl, compDecl *ComponentDe
 							i.Errorf(paramDecl.DefaultValue.Pos(), "type mismatch for default value of parameter '%s' in component '%s': parameter type is %s, default value type is %s", paramDecl.Name.Name, compDecl.NameNode.Name, resolvedParamType.String(), defaultValueActualType.String())
 						}
 					}
-				} else if paramDecl.Type != nil {
-					// This means paramDecl.Type was specified but couldn't be resolved earlier,
+				} else if paramDecl.TypeDecl != nil {
+					// This means paramDecl.TypeDecl was specified but couldn't be resolved earlier,
 					// yet we have a default value. This is an inconsistent state.
-					// The earlier error about unresolved type for paramDecl.Type should cover this.
+					// The earlier error about unresolved type for paramDecl.TypeDecl should cover this.
 				}
 			}
 		}
@@ -216,12 +217,12 @@ func (i *Inference) EvalForParamDecl(paramDecl *ParamDecl, compDecl *ComponentDe
 // Infer/Check types for a method signature.  The body is not evaluated here
 func (i *Inference) EvalForMethodSignature(method *MethodDecl, compDecl *ComponentDecl, rootScope *TypeScope) (errors []error) {
 	for _, param := range method.Parameters {
-		if param.Type != nil {
-			resolvedParamType := rootScope.ResolveType(param.Type)
+		if param.TypeDecl != nil {
+			resolvedParamType := rootScope.ResolveType(param.TypeDecl)
 			if resolvedParamType == nil {
-				i.Errorf(param.Type.Pos(), "unresolved type '%s' for parameter '%s' in method '%s.%s'", param.Type.Name, param.Name.Name, compDecl.NameNode.Name, method.NameNode.Name)
+				i.Errorf(param.TypeDecl.Pos(), "unresolved type '%s' for parameter '%s' in method '%s.%s'", param.TypeDecl.Name, param.Name.Name, compDecl.NameNode.Name, method.NameNode.Name)
 			} else {
-				param.Type.SetResolvedType(resolvedParamType)
+				param.TypeDecl.SetResolvedType(resolvedParamType)
 			}
 		} else {
 			i.Errorf(param.Pos(), "parameter '%s' of method '%s.%s' has no type declaration", param.Name.Name, compDecl.NameNode.Name, method.NameNode.Name)
@@ -326,42 +327,8 @@ func (i *Inference) EvalForMemberAccessExpr(expr *MemberAccessExpr, scope *TypeS
 	}
 	memberName := expr.Member.Name
 
-	// Receiver MUST be a Component or Enum
-	if receiverType.Tag == decl.TypeTagComponent {
-		decl := receiverType.Info.(*ComponentDecl)
-		if paramDecl, _ := decl.GetParam(memberName); paramDecl != nil {
-			if paramDecl.Type == nil {
-				return nil, i.Errorf(paramDecl.Pos(), "parameter '%s' in component '%s' lacks a type declaration", memberName, decl.NameNode.Name)
-			}
-			paramType := paramDecl.Type.Type() // This should use ResolveType if paramDecl.Type itself needs scope.
-			if paramType == nil {
-				// paramDecl.Type.Type() needs to be robust or ResolveType if it can resolve complex types.
-				// If paramDecl.Type refers to e.g. an imported enum, Type.Type() must handle it.
-				// Let's assume TypeDecl.Type() can resolve simple names or uses a pre-resolved *Type.
-				paramType = scope.ResolveType(paramDecl.Type) // Use scope to resolve complex types in TypeDecl
-			}
-			if paramType == nil {
-				return nil, i.Errorf(paramDecl.Type.Pos(), "parameter '%s' in component '%s' has an unresolved TypeDecl '%s'", memberName, decl.NameNode.Name, paramDecl.Type.Name)
-			}
-			return paramType, true
-		} else if usesDecl, _ := decl.GetDependency(memberName); usesDecl != nil {
-			if scope.env == nil {
-				return nil, i.Errorf(usesDecl.Pos(), "internal error: TypeScope.env is nil when resolving 'uses' dependency '%s' in component '%s'", memberName, decl.NameNode.Name)
-			}
-			depCompName := usesDecl.ComponentNode.Name
-			depCompDeclNode, found := scope.env.Get(depCompName)
-			if !found {
-				return nil, i.Errorf(usesDecl.Pos(), "'uses' dependency '%s' in component '%s' refers to unknown component type '%s'", memberName, decl.NameNode.Name, depCompName)
-			}
-			if depCompDecl, ok := depCompDeclNode.(*ComponentDecl); ok {
-				return ComponentType(depCompDecl), true
-			}
-			return nil, i.Errorf(usesDecl.Pos(), "'uses' dependency '%s' in component '%s' resolved to a non-component type %T for '%s'", memberName, decl.NameNode.Name, depCompDeclNode, depCompName)
-		} else if methodDecl, _ := decl.GetMethod(memberName); methodDecl != nil {
-			return MethodType(decl, methodDecl), ok
-		}
-		return nil, i.Errorf(expr.Pos(), "member '%s' not found in component '%s' (type %s)", memberName, decl.NameNode.Name, receiverType)
-	} else if receiverType.Tag == decl.TypeTagEnum {
+	// Enums are easy - they have a fixed set of values.
+	if receiverType.Tag == decl.TypeTagEnum {
 		decl := receiverType.Info.(*EnumDecl)
 		for _, valNode := range decl.ValuesNode {
 			if valNode.Name == memberName {
@@ -369,9 +336,50 @@ func (i *Inference) EvalForMemberAccessExpr(expr *MemberAccessExpr, scope *TypeS
 			}
 		}
 		return nil, i.Errorf(expr.Pos(), "value '%s' not found in enum '%s'", memberName, decl.NameNode.Name)
-	} else {
+	}
+
+	// before we drill into specific types, check if the receiver is a RefType
+	// In this case resolve the specific component or value and then create a Ref value from this.
+	// With memberAccessExpr, we always want to return References so they are resolved by the caller.
+	// This will make Set statements work correctly.
+	if receiverType.Tag == decl.TypeTagRef {
+		refTypeInfo := receiverType.Info.(*decl.RefTypeInfo)
+		if refTypeInfo.ParamType == nil {
+			return nil, i.Errorf(expr.Pos(), "ref type '%s' has no parameter type declared", receiverType.String())
+		}
+		receiverType = refTypeInfo.ParamType // Use the parameter type as the receiver type
+	}
+
+	// Receiver MUST be a Component now
+	if receiverType.Tag != decl.TypeTagComponent {
 		return nil, i.Errorf(expr.Pos(), "cannot access member '%s' on type %s; receiver is not an enum, component, or known type with this member", memberName, receiverType.String())
 	}
+
+	decl := receiverType.Info.(*ComponentDecl)
+	if paramDecl, _ := decl.GetParam(memberName); paramDecl != nil {
+		paramType := paramDecl.Name.InferredType()
+		if paramType == nil {
+			panic("internal error: parameter type for '" + memberName + "' in component '" + decl.NameNode.Name + "' is nil")
+		}
+		return RefType(decl, paramType), true
+	} else if usesDecl, _ := decl.GetDependency(memberName); usesDecl != nil {
+		if scope.env == nil {
+			return nil, i.Errorf(usesDecl.Pos(), "internal error: TypeScope.env is nil when resolving 'uses' dependency '%s' in component '%s'", memberName, decl.NameNode.Name)
+		}
+		depCompName := usesDecl.ComponentNode.Name
+		depCompDeclNode, found := scope.env.Get(depCompName)
+		if !found {
+			return nil, i.Errorf(usesDecl.Pos(), "'uses' dependency '%s' in component '%s' refers to unknown component type '%s'", memberName, decl.NameNode.Name, depCompName)
+		}
+		if depCompDecl, ok := depCompDeclNode.(*ComponentDecl); ok {
+			usesDecl.ResolvedComponent = depCompDecl
+			return RefType(decl, ComponentType(depCompDecl)), true
+		}
+		return nil, i.Errorf(usesDecl.Pos(), "'uses' dependency '%s' in component '%s' resolved to a non-component type %T for '%s'", memberName, decl.NameNode.Name, depCompDeclNode, depCompName)
+	} else if methodDecl, _ := decl.GetMethod(memberName); methodDecl != nil {
+		return MethodType(decl, methodDecl), ok
+	}
+	return nil, i.Errorf(expr.Pos(), "member '%s' not found in component '%s' (type %s)", memberName, decl.NameNode.Name, receiverType)
 }
 
 func (i *Inference) EvalForBinaryExpr(expr *BinaryExpr, scope *TypeScope) (*Type, bool) {
@@ -498,12 +506,12 @@ func (i *Inference) EvalForCallExpr(expr *CallExpr, scope *TypeScope) (*Type, bo
 	}
 
 	for _, paramDecl := range methodDecl.Parameters {
-		if paramDecl.Type == nil {
+		if paramDecl.TypeDecl == nil {
 			return nil, i.Errorf(paramDecl.Pos(), "parameter '%s' of method '%s' has no type declaration", paramDecl.Name.Name, funcNameForError)
 		}
-		paramSDLType := scope.ResolveType(paramDecl.Type) // Pass current scope
+		paramSDLType := scope.ResolveType(paramDecl.TypeDecl) // Pass current scope
 		if paramSDLType == nil {
-			return nil, i.Errorf(paramDecl.Type.Pos(), "parameter '%s' of method '%s' has invalid TypeDecl ('%s')", paramDecl.Name.Name, funcNameForError, paramDecl.Type.Name)
+			return nil, i.Errorf(paramDecl.TypeDecl.Pos(), "parameter '%s' of method '%s' has invalid TypeDecl ('%s')", paramDecl.Name.Name, funcNameForError, paramDecl.TypeDecl.Name)
 		}
 		expectedParamTypes = append(expectedParamTypes, paramSDLType)
 	}
@@ -632,6 +640,37 @@ func (i *Inference) EvalForDelayStmt(d *DelayStmt, scope *TypeScope) (ok bool) {
 	return
 }
 
+func (i *Inference) EvalForSetStmt(s *SetStmt, scope *TypeScope) (ok bool) {
+	valType, ok := i.EvalForExprType(s.Value, scope)
+	if !ok {
+		return ok
+	}
+
+	if valType == nil {
+		return false
+	}
+
+	// Evaluate the lhs type
+	lhsType, ok := i.EvalForExprType(s.TargetExpr, scope)
+	if !ok {
+		return ok
+	}
+	if lhsType == nil {
+		return false
+	}
+
+	// LHS MUST be a RefType
+	if lhsType.Tag != decl.TypeTagRef {
+		return i.Errorf(s.Pos(), "Cannot assign to a non ref type lhs.  Found: %s", lhsType.String())
+	}
+
+	// Make sure lhs ref type's param type and valtype match
+	if !lhsType.Info.(*decl.RefTypeInfo).ParamType.Equals(valType) {
+		return i.Errorf(s.Pos(), "LHS Type (%s) != RHS Type (%s)", lhsType.String(), valType.String())
+	}
+	return
+}
+
 func (i *Inference) EvalForLetStmt(l *LetStmt, scope *TypeScope) (ok bool) {
 	valType, ok := i.EvalForExprType(l.Value, scope)
 	if !ok {
@@ -692,6 +731,8 @@ func (i *Inference) EvalForStmt(stmt Stmt, scope *TypeScope) (ok bool) {
 	switch s := stmt.(type) {
 	case *LetStmt:
 		ok = ok && i.EvalForLetStmt(s, scope)
+	case *SetStmt:
+		ok = ok && i.EvalForSetStmt(s, scope)
 	case *ExprStmt:
 		_, ok2 := i.EvalForExprType(s.Expression, scope)
 		ok = ok && ok2
@@ -789,6 +830,8 @@ func (i *Inference) EvalForSystemDecl(systemDecl *SystemDecl, nodeScope *TypeSco
 			instanceDecls = append(instanceDecls, it)
 		case *LetStmt:
 			ok = ok && i.EvalForStmt(it, nodeScope)
+		case *SetStmt:
+			ok = ok && i.EvalForSetStmt(it, nodeScope)
 		case *OptionsDecl:
 			if it.Body != nil {
 				optionsScope := nodeScope.Push(nil, nil)
@@ -821,13 +864,13 @@ func (i *Inference) EvalForSystemDecl(systemDecl *SystemDecl, nodeScope *TypeSco
 			usesDecl, _ := compDefinition.GetDependency(assign.Var.Name)
 
 			if paramDecl != nil {
-				if paramDecl.Type == nil {
+				if paramDecl.TypeDecl == nil {
 					i.Errorf(paramDecl.Pos(), "param '%s' of component '%s' has no type", paramDecl.Name.Name, compDefinition.NameNode.Name)
 					continue
 				}
-				expectedType := nodeScope.ResolveType(paramDecl.Type) // Resolve TypeDecl in the current system scope
+				expectedType := nodeScope.ResolveType(paramDecl.TypeDecl) // Resolve TypeDecl in the current system scope
 				if expectedType == nil {
-					i.Errorf(paramDecl.Type.Pos(), "param '%s' of component '%s' has an unresolved TypeDecl '%s'", paramDecl.Name.Name, compDefinition.NameNode.Name, paramDecl.Type.Name)
+					i.Errorf(paramDecl.TypeDecl.Pos(), "param '%s' of component '%s' has an unresolved TypeDecl '%s'", paramDecl.Name.Name, compDefinition.NameNode.Name, paramDecl.TypeDecl.Name)
 					continue
 				}
 				if !valType.Equals(expectedType) {

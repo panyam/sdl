@@ -299,6 +299,9 @@ type UsesDecl struct {
 	NodeInfo
 	NameNode      *IdentifierExpr
 	ComponentNode *IdentifierExpr // Type name of the dependency
+
+	// Resolved ComponentDecl after type checking
+	ResolvedComponent *ComponentDecl
 }
 
 func (u *UsesDecl) UsedComponent() *ComponentUse {

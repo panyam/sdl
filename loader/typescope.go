@@ -67,17 +67,17 @@ func (ts *TypeScope) Get(name string) (*Type, bool) {
 	if ts.currentMethod != nil {
 		for _, param := range ts.currentMethod.Parameters {
 			if param.Name.Name == name {
-				if param.Type == nil {
+				if param.TypeDecl == nil {
 					return nil, false // Error: No TypeDecl
 				}
 				// Use ResolveType to ensure the TypeDecl is resolved.
 				// The TypeDecl's resolvedType should have been set in the first pass of InferTypesForFile.
-				resolvedType := param.Type.ResolvedType()
+				resolvedType := param.TypeDecl.ResolvedType()
 				if resolvedType == nil { // Fallback if not pre-resolved for some reason
-					resolvedType = ts.ResolveType(param.Type) // Pass current TypeScope
+					resolvedType = ts.ResolveType(param.TypeDecl) // Pass current TypeScope
 				}
 				if resolvedType == nil {
-					// log.Printf("Warning: Parameter '%s' in method '%s' has an unresolved TypeDecl '%s'.", name, ts.currentMethod.NameNode.Name, param.Type.Name)
+					// log.Printf("Warning: Parameter '%s' in method '%s' has an unresolved TypeDecl '%s'.", name, // ts.currentMethod.NameNode.Name, param.TypeDecl.Name)
 					return nil, false
 				}
 				return resolvedType, true
@@ -89,15 +89,15 @@ func (ts *TypeScope) Get(name string) (*Type, bool) {
 	if ts.currentComponent != nil {
 		// Check if 'name' is a parameter of the current component.
 		if paramDecl, _ := ts.currentComponent.GetParam(name); paramDecl != nil {
-			if paramDecl.Type != nil {
+			if paramDecl.TypeDecl != nil {
 				// Similar to method parameters, ensure the TypeDecl is resolved.
 				// Its resolvedType should have been set in the first pass of InferTypesForFile.
-				resolvedType := paramDecl.Type.ResolvedType()
+				resolvedType := paramDecl.TypeDecl.ResolvedType()
 				if resolvedType == nil { // Fallback
-					resolvedType = ts.ResolveType(paramDecl.Type)
+					resolvedType = ts.ResolveType(paramDecl.TypeDecl)
 				}
 				if resolvedType == nil {
-					// log.Printf("Warning: Component parameter '%s' in component '%s' has an unresolved TypeDecl '%s'.", name, ts.currentComponent.NameNode.Name, paramDecl.Type.Name)
+					// log.Printf("Warning: Component parameter '%s' in component '%s' has an unresolved TypeDecl '%s'.", name, // ts.currentComponent.NameNode.Name, paramDecl.TypeDecl.Name)
 					return nil, false
 				}
 				return resolvedType, true

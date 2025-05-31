@@ -151,10 +151,19 @@ func (r *Value) Set(v any) error {
 		return nil
 	}
 
+	if r.Type.Tag == TypeTagRef || r.Type.Tag == TypeTagMethod {
+		refval, ok := v.(*RefValue)
+		if !ok {
+			return fmt.Errorf("expected RefVal, got %T", v)
+		}
+		r.Value = refval
+		return nil
+	}
+
 	if r.Type.Tag == TypeTagOutcomes {
 		outval, ok := v.(*core.Outcomes[Value])
 		if !ok {
-			return fmt.Errorf("Expected Outcomes[value], got %T", v)
+			return fmt.Errorf("expected Outcomes[value], got %T", v)
 		}
 		r.Value = outval
 		return nil

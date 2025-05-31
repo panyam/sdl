@@ -151,7 +151,7 @@ func newMethodDecl(name string, returnTypeDecl *TypeDecl, body *BlockStmt, param
 
 func newParamDecl(name string, typeName *TypeDecl, defaultValue Expr) *ParamDecl {
 	// NodeInfo is cleaned
-	return &ParamDecl{Name: newIdent(name), Type: typeName, DefaultValue: defaultValue}
+	return &ParamDecl{Name: newIdent(name), TypeDecl: typeName, DefaultValue: defaultValue}
 }
 
 func newTypeDecl(name string, args []*TypeDecl) *TypeDecl {

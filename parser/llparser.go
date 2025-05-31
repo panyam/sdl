@@ -646,12 +646,12 @@ func (p *LLParser) ParseParamDecl(out *ParamDecl) (err error) {
 		return p.Errorf("expected identifier for param name after PARAM, found %s (%s): %v", TokenString(p.PeekToken()), p.lexer.Text(), err)
 	}
 
-	out.Type, err = p.ParseTypeDecl() // Assumes this function is defined
+	out.TypeDecl, err = p.ParseTypeDecl() // Assumes this function is defined
 	if err != nil {
 		return p.Errorf("expected type name for param '%s', found %s (%s): %v", out.Name.Name, TokenString(p.PeekToken()), p.lexer.Text(), err)
 	}
 
-	endPos := out.Type.End() // End position if no default value
+	endPos := out.TypeDecl.End() // End position if no default value
 
 	// Check for optional default value
 	if p.PeekToken() == ASSIGN {
@@ -806,12 +806,12 @@ func (p *LLParser) ParseMethodParamDecl() (out *ParamDecl, err error) {
 	// Store start position from the first token of the declaration
 	startPos := identNode.Pos()
 
-	out.Type, err = p.ParseTypeDecl() // You'll need to implement ParseTypeDecl
+	out.TypeDecl, err = p.ParseTypeDecl() // You'll need to implement ParseTypeDecl
 	if err != nil {
 		return nil, err
 	}
 
-	endPos := out.Type.End() // End position so far
+	endPos := out.TypeDecl.End() // End position so far
 
 	// Optional: Parse default value if your grammar supports it here
 	// if p.PeekToken() == ASSIGN {

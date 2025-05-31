@@ -70,6 +70,8 @@ func (s *SimpleEval) Eval(node Node, env *Env[Value], currTime *core.Duration) (
 		return s.evalDistributeExpr(n, env, currTime)
 	case *CallExpr:
 		return s.evalCallExpr(n, env, currTime)
+	case *MemberAccessExpr:
+		return s.evalMemberAccessExpr(n, env, currTime)
 	/* - TODO
 	case *SwitchStmt: // <-- Will be implemented now
 		return s.evalSwitchStmt(n, env)
@@ -178,13 +180,19 @@ func (s *SimpleEval) evalLetStmt(l *LetStmt, env *Env[Value], currTime *core.Dur
 	// evaluate the Expression and unzip and assign to variables in the same environment
 	result, returned = s.Eval(l.Value, env, currTime)
 
-	tupleValues, err := result.GetTuple()
-	if err != nil {
-		return
-	}
-	for i, val := range tupleValues {
-		letvar := l.Variables[i].Name
-		env.Set(letvar, val)
+	if len(l.Variables) == 1 {
+		letvar := l.Variables[0].Name
+		env.Set(letvar, result)
+	} else {
+		// If there are multiple variables, we expect the result to be a tuple
+		tupleValues, err := result.GetTuple()
+		if err != nil {
+			panic(err)
+		}
+		for i, val := range tupleValues {
+			letvar := l.Variables[i].Name
+			env.Set(letvar, val)
+		}
 	}
 	return
 }
@@ -357,6 +365,91 @@ func (s *SimpleEval) evalDelayStmt(d *DelayStmt, env *Env[Value], currTime *core
 
 ///////////////////////////////////////////////////////
 
+// MemberAccessExprs are used to access fields/params of a component instance
+// In most cases they are straightforward - however when used as a set target
+// we somehow need to capture a reference to it so the value can be set later.
+// Right now it is being solved by special casing SetStmt and CallExpr
+func (s *SimpleEval) evalMemberAccessExpr(m *MemberAccessExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
+	var err error
+	maeTarget, _ := s.Eval(m.Receiver, env, currTime)
+	finalReceiver := maeTarget
+	var compInst *ComponentInstance
+	if maeTarget.Type.Tag == decl.TypeTagRef {
+		refVal := maeTarget.Value.(*decl.RefValue)
+		compInst = refVal.Receiver.Value.(*ComponentInstance)
+		compInst, _ = compInst.GetDependency(refVal.Attrib)
+		if compInst == nil {
+			// TODO - This is a runtime error - but a user one so we should flag instead of panicking
+			// This means a "set" needs to be called - for example in DB, the ByShortCode dependency is not
+			// set - should we require that these are set manually each time or allow default values somehow for components too?
+			panic(fmt.Sprintf("Expected mae to be a component, found: %s -> %s", maeTarget, maeTarget.Type))
+		}
+	} else if maeTarget.Type.Tag != decl.TypeTagComponent {
+		panic(fmt.Sprintf("Expected mae to be a component, found: %s -> %s", maeTarget, maeTarget.Type))
+	} else {
+		compInst = maeTarget.Value.(*ComponentInstance)
+	}
+
+	if compInst == nil {
+		panic(fmt.Sprintf("Expected mae to be a component, found: %s -> %s", maeTarget, maeTarget.Type))
+	}
+
+	compDecl := compInst.ComponentDecl
+	compType := decl.ComponentType(compDecl)
+	finalReceiver, err = NewValue(compType, compInst)
+	if err != nil {
+		panic(err)
+	}
+	paramDecl, _ := compDecl.GetParam(m.Member.Name)
+	if paramDecl != nil {
+		paramType := paramDecl.Name.InferredType()
+		refType := decl.RefType(compDecl, paramType)
+		result, err = NewValue(refType, &decl.RefValue{Receiver: finalReceiver, Attrib: m.Member.Name})
+		if err != nil {
+			panic(err)
+		}
+		return
+	}
+
+	usesDecl, _ := compDecl.GetDependency(m.Member.Name)
+	if usesDecl != nil {
+		depType := decl.ComponentType(usesDecl.ResolvedComponent)
+		refType := decl.RefType(compDecl, depType)
+		result, err = NewValue(refType, &decl.RefValue{Receiver: finalReceiver, Attrib: m.Member.Name})
+		if err != nil {
+			panic(err)
+		}
+		return
+	}
+
+	methodDecl, _ := compDecl.GetMethod(m.Member.Name)
+	if methodDecl != nil {
+		methodType := decl.MethodType(compDecl, methodDecl)
+		result, err = NewValue(methodType, &decl.RefValue{Receiver: finalReceiver, Attrib: m.Member.Name})
+		if err != nil {
+			panic(err)
+		}
+		return result, false
+	}
+
+	// Otherwise see if it is a uses field
+	/*
+		usesDecl, _ := compDecl.GetDependency(m.Member.Name)
+		if usesDecl != nil {
+			refType := decl.RefType(compDecl, usesDecl.Type.ResolvedType())
+			result, err = NewValue(refType, &decl.RefValue{Receiver: maeTarget, Attrib: m.Member.Name})
+			if err != nil {
+				panic(err)
+			}
+			return
+		}
+	*/
+
+	// Return the reference value here
+	panic("Invalid member type")
+	return // decl.NewValue(maeTarget.Type, RefValue(maeTarget, m.Member.Name)), false
+}
+
 // Evaluate a Call and return its value
 // Call expression are of the form a.b.c.d(params)
 // The a.b.c.d must resolve to a callable (either a component method or a native function)
@@ -375,9 +468,17 @@ func (s *SimpleEval) evalCallExpr(expr *CallExpr, env *Env[Value], currTime *cor
 		log.Println("Not sure how to handle Identifier receiver in call expr: ", receiver)
 		panic("TBD")
 	case *MemberAccessExpr:
-		maeTarget, _ := s.Eval(fexpr.Receiver, env, currTime)
-		if maeTarget.Type.Tag != decl.TypeTagComponent {
-			panic(fmt.Sprintf("Expected mae to be a component, found: %s -> %s", maeTarget, maeTarget.Type))
+		maeResult, _ := s.evalMemberAccessExpr(fexpr, env, currTime)
+		maeType := maeResult.Type
+		if maeType.Tag != decl.TypeTagMethod {
+			panic(fmt.Sprintf("Expected MemberAccessExpr to resolve to a method, found: %s -> %s", maeResult, maeType))
+		}
+
+		refValue := maeResult.Value.(*decl.RefValue)
+		compInstance := refValue.Receiver.Value.(*ComponentInstance)
+		methodDecl, err := compInstance.ComponentDecl.GetMethod(fexpr.Member.Name)
+		if err != nil {
+			panic(fmt.Sprintf("Method %s not found in component %s: %v", fexpr.Member.Name, compInstance.ComponentDecl.NameNode.Name, err))
 		}
 
 		// Now we have the target component instance, we can invoke the method
@@ -388,18 +489,13 @@ func (s *SimpleEval) evalCallExpr(expr *CallExpr, env *Env[Value], currTime *cor
 			argValues[i] = argValue
 		}
 
-		compInstance := maeTarget.Value.(*ComponentInstance)
-		methodDecl, err := compInstance.ComponentDecl.GetMethod(fexpr.Member.Name)
-		if err != nil {
-			panic(err)
-		}
 		newEnv := compInstance.InitialEnv.Push()
 
 		if compInstance.IsNative {
 			// Native method invocation to be handled differently
 			panic("TBD3")
 		} else {
-			s.Eval(methodDecl.Body, newEnv, currTime)
+			result, _ = s.Eval(methodDecl.Body, newEnv, currTime)
 			// We can assume method exists on the component instance as it would have been validated durint inference phase
 		}
 	default:

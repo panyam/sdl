@@ -11,6 +11,7 @@ type Expr = decl.Expr
 type ExprBase = decl.ExprBase
 type Stmt = decl.Stmt
 type LetStmt = decl.LetStmt
+type SetStmt = decl.SetStmt
 type ForStmt = decl.ForStmt
 type ReturnStmt = decl.ReturnStmt
 type ExprStmt = decl.ExprStmt
@@ -67,6 +68,7 @@ var TupleType = decl.TupleType
 var OutcomesType = decl.OutcomesType
 var ComponentType = decl.ComponentType
 var MethodType = decl.MethodType
+var RefType = decl.RefType
 
 var BoolValue = decl.BoolValue
 var StringValue = decl.StringValue
