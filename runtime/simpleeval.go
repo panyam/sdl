@@ -346,6 +346,7 @@ func (s *SimpleEval) evalNewExpr(n *decl.NewExpr, env *Env[Value], currTime *cor
 
 	// Also set the initial env for the component
 	// copy all params with default values first followed by overrides (UDParams)
+	/* No longer needed as the Initializer will take care of this
 	params, _ := compInst.ComponentDecl.Params()
 	for _, param := range params {
 		if param.DefaultValue != nil {
@@ -353,15 +354,18 @@ func (s *SimpleEval) evalNewExpr(n *decl.NewExpr, env *Env[Value], currTime *cor
 			compInst.InitialEnv.Set(param.Name.Value, pval)
 		}
 	}
+	*/
 
 	// Now for any "instantiated" components set it here
+	// For native components we dont need this as they will take care of it themselves - ie initialization is "entire"
+	// Later on we can also have native components expose their dependencies so we can take care of it but out of scope for now
 	if !compInst.IsNative {
-		deps, _ := compInst.ComponentDecl.Dependencies()
-		for _, decl := range deps {
-			if decl.Overrides != nil {
-				log.Println("Dependency to be overridden: ", decl)
-			}
+		stmts, err := compInst.Initializer()
+		if err != nil {
+			panic(err)
 		}
+		_, _, timeTaken := s.EvalStatements(stmts.Statements, compInst.InitialEnv)
+		*currTime += timeTaken
 	}
 	return
 }
@@ -431,8 +435,8 @@ func (s *SimpleEval) evalMemberAccessExpr(m *MemberAccessExpr, env *Env[Value], 
 	if maeTarget.Type.Tag == decl.TypeTagRef {
 		refVal := maeTarget.Value.(*decl.RefValue)
 		compInst = refVal.Receiver.Value.(*ComponentInstance)
-		usedInst, _ := compInst.GetDependency(refVal.Attrib)
-		if usedInst == nil {
+		usedInst, _ := compInst.Get(refVal.Attrib)
+		if usedInst.IsNil() {
 			// TODO - This is a runtime error - but a user one so we should flag instead of panicking
 			// This means a "set" needs to be called - for example in DB, the ByShortCode dependency is not
 			// set - should we require that these are set manually each time or allow default values somehow for components too?
@@ -440,7 +444,7 @@ func (s *SimpleEval) evalMemberAccessExpr(m *MemberAccessExpr, env *Env[Value], 
 			s.AddErrors(err)
 			panic(err)
 		}
-		compInst = usedInst
+		compInst = usedInst.Value.(*ComponentInstance)
 	} else if maeTarget.Type.Tag != decl.TypeTagComponent {
 		panic(fmt.Sprintf("Expected mae to be a component, found: %s -> %s", maeTarget, maeTarget.Type))
 	} else {

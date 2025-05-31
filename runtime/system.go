@@ -11,7 +11,7 @@ type SystemInstance struct {
 	// Where the system is defined
 	File   *FileInstance
 	System *SystemDecl
-	Name   string
+
 	// Holds the component instances and parameters
 	Env *Env[Value]
 }
@@ -87,8 +87,8 @@ func (s *SystemInstance) GetUninitializedComponents(env *Env[Value]) (items []*I
 		compDecl := i.CompInst.ComponentDecl
 		deps, _ := compDecl.Dependencies()
 		for _, dep := range deps {
-			depInst, ok := i.CompInst.GetDependency(dep.Name.Value)
-			if !ok || depInst == nil {
+			depInst, ok := i.CompInst.Get(dep.Name.Value)
+			if !ok || depInst.IsNil() {
 				items = append(items, &InitStmt{
 					From:   i,
 					Pos:    compDecl.Pos(),
@@ -99,7 +99,7 @@ func (s *SystemInstance) GetUninitializedComponents(env *Env[Value]) (items []*I
 					From:     i,
 					Pos:      compDecl.Pos(),
 					Attrib:   dep.Name.Value,
-					CompInst: depInst,
+					CompInst: depInst.Value.(*ComponentInstance),
 				})
 			}
 		}

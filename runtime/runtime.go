@@ -7,9 +7,9 @@ import (
 )
 
 type Runtime struct {
-	Loader           *loader.Loader
-	NativeComponents []any
-	fileInstances    map[string]*FileInstance
+	Loader        *loader.Loader
+	NativeObjects []any
+	fileInstances map[string]*FileInstance
 }
 
 func NewRuntime(loader *loader.Loader) (r *Runtime) {
@@ -17,7 +17,7 @@ func NewRuntime(loader *loader.Loader) (r *Runtime) {
 	return
 }
 
-func (r *Runtime) CreateNativeComponent(name string) *NativeComponent {
+func (r *Runtime) CreateNativeComponent(name string) *NativeObject {
 	return nil
 }
 

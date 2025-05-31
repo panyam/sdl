@@ -6,7 +6,7 @@ enum DuplicateCheck { FOUND, NOTFOUND, ERROR }
 
 component Database {
     // The DB index for mapping short codes -> urls
-    uses ByShortCode HashIndex
+    uses ByShortCode HashIndex()
     param RetryCount = 3
 
     // Tries to get an entry by short URL
