@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"time"
 
 	"github.com/panyam/sdl/core"
 	"github.com/panyam/sdl/decl"
@@ -22,6 +23,25 @@ func ensureTypes(t *Type, types ...*Type) {
 type SimpleEval struct {
 	RootFile *FileInstance
 	Rand     *rand.Rand
+}
+
+func NewSimpleEval(fi *FileInstance) *SimpleEval {
+	return &SimpleEval{
+		RootFile: fi,
+		Rand:     rand.New(rand.NewSource(time.Now().UnixMicro())),
+	}
+}
+
+func (s *SimpleEval) EvalStatements(stmts []Stmt, env *Env[Value]) (result []Value, returned bool, timeTaken core.Duration) {
+	for _, item := range stmts {
+		res, ret := s.Eval(item, env, &timeTaken)
+		result = append(result, res)
+		if ret {
+			returned = true
+			break
+		}
+	}
+	return
 }
 
 // The main Eval loop of an expression/statement

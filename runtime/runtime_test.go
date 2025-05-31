@@ -2,11 +2,8 @@ package runtime
 
 import (
 	"log"
-	"math/rand"
 	"testing"
-	"time"
 
-	"github.com/panyam/sdl/core"
 	"github.com/panyam/sdl/decl"
 	"github.com/panyam/sdl/loader"
 	_ "github.com/stretchr/testify/assert"
@@ -18,7 +15,7 @@ func TestBitly(t *testing.T) {
 	rt := NewRuntime(l)
 	fi := rt.LoadFile("../examples/bitly.sdl")
 	sys := fi.NewSystem("Bitly")
-	stmts, err := sys.Compile()
+	stmts, err := sys.Initializer()
 	if err != nil {
 		panic(err)
 	}
@@ -26,15 +23,9 @@ func TestBitly(t *testing.T) {
 	log.Println("Compiled statements:")
 	decl.PPrint(stmts)
 
-	se := SimpleEval{
-		fi,
-		rand.New(rand.NewSource(time.Now().UnixMicro())),
-	}
-	var currTime core.Duration
+	se := NewSimpleEval(fi)
 	env := fi.Env.Push()
-	for _, item := range stmts.Statements {
-		se.Eval(item, env, &currTime)
-	}
+	_, _, currTime := se.EvalStatements(stmts.Statements, env)
 
 	mae := &MemberAccessExpr{Receiver: &IdentifierExpr{Value: "app"}, Member: &IdentifierExpr{Value: "Shorten"}}
 	ce := &CallExpr{Function: mae}

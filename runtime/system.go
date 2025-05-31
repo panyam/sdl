@@ -22,7 +22,11 @@ func NewSystemInstance(file *FileInstance, system *SystemDecl) *SystemInstance {
 	return sysinst
 }
 
-func (s *SystemInstance) Compile() (blockStmt *BlockStmt, err error) {
+// A system declaration contains instantiations of components and other statemetns.
+// Specifically in initializers it is important to not be bound by order.
+// This method compiles the System into a set of statements that can be executed so that
+// all components are intantiated first and then their properties/params are set.
+func (s *SystemInstance) Initializer() (blockStmt *BlockStmt, err error) {
 	// 1. a New Expression for constructing a componet
 	// 2. a set expression for setting params/dependencies in a component - this way we can avoid the two pass approach?
 	// This two passs approach needs to be repeated in every stage (eg type checking)
