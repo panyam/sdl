@@ -3,15 +3,25 @@ package runtime
 import (
 	"github.com/panyam/sdl/core"
 	sc "github.com/panyam/sdl/core"
+	"github.com/panyam/sdl/decl"
 )
 
 // TestNative represents a hash-based index structure (e.g., static, extendible, linear)
 type TestNative struct {
+	Name string
+}
+
+func (n *TestNative) Set(name string, value decl.Value) error {
+	return nil
+}
+
+func (n *TestNative) Get(name string) (v decl.Value, ok bool) {
+	return
 }
 
 // NewTestNative creates and initializes a new TestNative component.
-func NewTestNative() *TestNative {
-	out := &TestNative{}
+func NewTestNative(name string) *TestNative {
+	out := &TestNative{Name: name}
 	return out.Init()
 }
 
@@ -20,32 +30,32 @@ func (t *TestNative) Init() *TestNative {
 	return t
 }
 
-func (t *TestNative) ReadBool() bool {
-	return true
+func (t *TestNative) ReadBool() Value {
+	return BoolValue(true)
 }
 
-func (t *TestNative) ReadInt() int {
-	return 42
+func (t *TestNative) ReadInt() Value {
+	return IntValue(42)
 }
 
-func (t *TestNative) ReadInt32() int32 {
-	return 42
+func (t *TestNative) ReadInt32() Value {
+	return IntValue(42)
 }
 
-func (t *TestNative) ReadFloat32() float32 {
-	return 42
+func (t *TestNative) ReadFloat32() Value {
+	return FloatValue(42)
 }
 
-func (t *TestNative) ReadInt64() int64 {
-	return 42
+func (t *TestNative) ReadInt64() Value {
+	return FloatValue(42)
 }
 
-func (t *TestNative) ReadFloat64() float64 {
-	return 42
+func (t *TestNative) ReadFloat64() Value {
+	return FloatValue(42)
 }
 
-func (t *TestNative) ReadString() string {
-	return "Hello World"
+func (t *TestNative) ReadString() Value {
+	return StringValue("Hello World")
 }
 
 // This will test if AccessResult can be converted to a Value - and if so how

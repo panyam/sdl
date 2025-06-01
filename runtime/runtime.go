@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/panyam/sdl/components"
+	cd "github.com/panyam/sdl/components/decl"
 	"github.com/panyam/sdl/loader"
 )
 
@@ -21,11 +21,14 @@ func NewRuntime(loader *loader.Loader) (r *Runtime) {
 
 func (r *Runtime) CreateNativeComponent(compDecl *ComponentDecl) NativeObject {
 	name := compDecl.Name.Value
+	if name == "Disk" {
+		return cd.NewDisk(name)
+	}
 	if name == "HashIndex" {
-		return &NativeWrapper{name, (&components.HashIndex{}).Init()}
+		return cd.NewHashIndex(name)
 	}
 	if name == "TestNative" {
-		return &NativeWrapper{name, NewTestNative()}
+		return NewTestNative(name)
 	}
 	panic(fmt.Sprintf("Native component not registered: %s", name))
 }
