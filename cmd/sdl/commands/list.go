@@ -50,14 +50,14 @@ Entity types: components, systems, analyses, enums.`,
 			fmt.Printf("Components in %s:\n", dslFilePath)
 			components, _ := astRoot.GetComponents()
 			for _, comp := range components {
-				items = append(items, comp.NameNode.Name)
+				items = append(items, comp.Name.Value)
 			}
 			dataToMarshal = items
 		case "systems":
 			fmt.Printf("Systems in %s:\n", dslFilePath)
 			systems, _ := astRoot.GetSystems()
 			for _, sys := range systems {
-				items = append(items, sys.NameNode.Name)
+				items = append(items, sys.Name.Value)
 			}
 			dataToMarshal = items
 		case "analyses":
@@ -75,7 +75,7 @@ Entity types: components, systems, analyses, enums.`,
 			fmt.Printf("Enums in %s:\n", dslFilePath)
 			enums, _ := astRoot.GetEnums()
 			for _, enum := range enums {
-				items = append(items, enum.NameNode.Name)
+				items = append(items, enum.Name.Value)
 			}
 			dataToMarshal = items
 		default:

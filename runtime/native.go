@@ -3,7 +3,6 @@ package runtime
 import (
 	"errors"
 	"fmt"
-	"log"
 	"math/rand"
 	"reflect"
 
@@ -224,7 +223,6 @@ func InvokeMethod(nativeValue any, methodName string, args []Value, env *Env[Val
 
 	// 3. Call the method using reflection.
 	results := methodVal.Call(goArgs)
-	log.Println("Results: ", results)
 
 	/*
 		// 4. Process the result. Assume native methods return *core.Outcomes[V] or (result, error).
@@ -269,7 +267,6 @@ func InvokeMethod(nativeValue any, methodName string, args []Value, env *Env[Val
 		}
 	}
 	*currTime += val.Time
-	log.Println("Native method returned: ", val, reflect.TypeOf(returnVal))
 	// Convert the return value (expected *core.Outcomes[V]) to a VarState -> LeafNode
 	/*
 		resultVarState, err := outcomeToVarState(returnVal)

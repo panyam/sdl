@@ -1,7 +1,6 @@
 package runtime
 
 import (
-	"log"
 	"testing"
 
 	"github.com/panyam/sdl/core"
@@ -24,19 +23,11 @@ func TestNativeAndBitly(t *testing.T) {
 	sysbitly := fi.NewSystem("Bitly")
 	se.EvalInitSystem(sysbitly, env, &currTime)
 
-	RunTestCall(systest, env, "test", "ReadBool")
-	RunTestCall(sysbitly, env, "app", "Shorten")
+	RunTestCall(systest, env, "test", "ReadBool", 100)
+	RunTestCall(sysbitly, env, "app", "Shorten", 1000)
 	/*
 		RunTestCall(sys, env, "test", "ReadBool")
 			ce := &CallExpr{Function: &MemberAccessExpr{Receiver: &IdentifierExpr{Value: "app"}, Member: &IdentifierExpr{Value: "Shorten"}}}
 			res2, ret2 := se.Eval(ce, env, &currTime) // reuse env to continue
 	*/
-}
-
-func RunTestCall(system *SystemInstance, env *Env[Value], obj, method string) {
-	var currTime core.Duration
-	se := NewSimpleEval(system.File)
-	ce := &CallExpr{Function: &MemberAccessExpr{Receiver: &IdentifierExpr{Value: obj}, Member: &IdentifierExpr{Value: method}}}
-	res2, ret2 := se.Eval(ce, env, &currTime) // reuse env to continue
-	log.Printf("Now Running %s.%s.%s: %v, %v @ %v", system.System.Name.Value, obj, method, res2, ret2, currTime)
 }

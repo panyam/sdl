@@ -29,7 +29,7 @@ component AppServer {
       let foundDuplicate = self.CheckDuplicateShortId()
 
       if not foundDuplicate {
-        log "hello world", foundDuplicate, self.db.PutShortUrl()
+        // log "hello world", foundDuplicate, self.db.PutShortUrl()
         // Success so try saving a new short ID
         if self.db.PutShortUrl() {
           return HttpStatusCode.StatusOk

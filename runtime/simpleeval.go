@@ -5,6 +5,7 @@ import (
 	"log"
 	"math/rand"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/panyam/sdl/core"
@@ -149,11 +150,6 @@ func (s *SimpleEval) evalIdentifierExpr(i *IdentifierExpr, env *Env[Value], _ *c
 	name := i.Value
 	value, ok := env.Get(name)
 	if !ok {
-		if i.InferredType().Tag == decl.TypeTagEnum {
-			// We have an enum type
-			def, _ := s.RootFile.Decl.GetDefinition(name)
-			log.Println("Def: ", def)
-		}
 		err := fmt.Errorf("identifier not found '%s'", name)
 		panic(err) // or register and continue?
 	} else {
@@ -236,7 +232,7 @@ func (s *SimpleEval) evalForStmt(f *ForStmt, env *Env[Value], currTime *core.Dur
 func (s *SimpleEval) evalLogStmt(l *LogStmt, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
 	for _, arg := range l.Args {
 		val, _ := s.Eval(arg, env, currTime)
-		log.Println("Time: ", *currTime, ", Arg: ", decl.PPrint(arg), ", Value: ", val.String())
+		log.Println("Time: ", *currTime, ", Arg: ", strings.TrimSpace(decl.PPrint(arg)), ", Value: ", val.String())
 	}
 	return
 }
@@ -330,8 +326,8 @@ func (s *SimpleEval) evalSampleExpr(samp *decl.SampleExpr, env *Env[Value], curr
 	res, _ := s.Eval(samp.FromExpr, env, currTime)
 
 	outcomes := res.OutcomesVal()
-	result, ok := outcomes.Sample(s.Rand)
-	log.Println("Sampled from: ", outcomes, result, ok)
+	result, _ = outcomes.Sample(s.Rand)
+	// log.Println("Sampled from: ", outcomes, result, ok)
 	return
 	// TODO - Need a "Samplable or Distribution type"
 	// Outcomes are essentially weight => Value.  When Values are discrete its not an issue.
@@ -387,7 +383,6 @@ func (s *SimpleEval) evalUnaryExpr(u *UnaryExpr, env *Env[Value], currTime *core
 	} else {
 		panic(fmt.Sprintf("Unary operator not supported: %s", u.Operator))
 	}
-	log.Println("Child Result: ", lr)
 	return
 }
 
@@ -453,7 +448,7 @@ func (s *SimpleEval) evalMemberAccessExpr(m *MemberAccessExpr, env *Env[Value], 
 			if err != nil {
 				panic(fmt.Sprintf("Enum value %s not found in enum %s", m.Member.Value, idexpr.Value))
 			}
-			log.Println("Enum Value: ", enumDecl)
+			// log.Println("Enum Value: ", enumDecl)
 			idx := enumDecl.IndexOfVariant(m.Member.Value)
 			result, err = NewValue(idexprType, idx)
 			if err != nil {
@@ -588,7 +583,9 @@ func (s *SimpleEval) evalCallExpr(expr *CallExpr, env *Env[Value], currTime *cor
 		if compInstance.IsNative {
 			// Native method invocation to be handled differently
 			result, err := InvokeMethod(compInstance.NativeInstance, fexpr.Member.Value, argValues, env, currTime, s.Rand)
-			log.Println("Method CalRes, Err: ", result, err)
+			if err != nil {
+				log.Println("Error calling method: ", err)
+			}
 			return result, false
 		} else {
 			result, _ = s.Eval(methodDecl.Body, newEnv, currTime)

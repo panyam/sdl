@@ -56,21 +56,21 @@ Entity types: component, system, analysis.`,
 			if !outputJSON {
 				fmt.Printf("Description for Component '%s':\n", entityName)
 				// Placeholder for pretty printing component details
-				fmt.Printf("  Name: %s\n", comp.NameNode.Name)
+				fmt.Printf("  Name: %s\n", comp.Name.Value)
 				fmt.Println("  Params:")
-				params, _ := comp.GetParams()
+				params, _ := comp.Params()
 				for _, p := range params { // Assuming GetParams()
-					fmt.Printf("    - %s: %s\n", p.Name.Name, p.Type.Name)
+					fmt.Printf("    - %s: %s\n", p.Name.Value, p.TypeDecl.Name)
 				}
 				fmt.Println("  Uses:")
-				uses, _ := comp.GetDependencies()
+				uses, _ := comp.Dependencies()
 				for _, u := range uses { // Assuming GetUses()
-					fmt.Printf("    - %s: %s\n", u.NameNode.Name, u.ComponentNode.Name)
+					fmt.Printf("    - %s: %s\n", u.Name.Value, u.ComponentName.Value)
 				}
 				fmt.Println("  Methods:")
-				methods, _ := comp.GetMethods()
+				methods, _ := comp.Methods()
 				for _, m := range methods {
-					fmt.Printf("    - %s()\n", m.NameNode.Name)
+					fmt.Printf("    - %s()\n", m.Name.Value)
 				}
 			}
 		case "system":
@@ -83,12 +83,12 @@ Entity types: component, system, analysis.`,
 			if !outputJSON {
 				fmt.Printf("Description for System '%s':\n", entityName)
 				// Placeholder for pretty printing system details
-				fmt.Printf("  Name: %s\n", sys.NameNode.Name)
+				fmt.Printf("  Name: %s\n", sys.Name.Value)
 				fmt.Println("  Instances:")
 				// Iterate through sys.Body for InstanceDecls
 				// for _, item := range sys.Body {
 				// 	if inst, ok := item.(*decl.InstanceDecl); ok {
-				// 		fmt.Printf("    - %s: %s\n", inst.NameNode.Name, inst.ComponentType.Name)
+				// 		fmt.Printf("    - %s: %s\n", inst.Name.Value, inst.ComponentType.Name)
 				// 	}
 				// }
 				fmt.Println("  (Instance details placeholder)")
