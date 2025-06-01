@@ -32,6 +32,7 @@ func plotCmd() *cobra.Command {
 			componentName := args[1]
 			methodName := args[2]
 
+			numWorkers, _ := cmd.Flags().GetInt("numworkers")
 			numBatches, _ := cmd.Flags().GetInt("numbatches")
 			batchSize, _ := cmd.Flags().GetInt("batchsize")
 
@@ -58,7 +59,7 @@ func plotCmd() *cobra.Command {
 			now := time.Now()
 			timeDelta := time.Second * 1
 			var lastReported time.Time
-			runtime.RunCallInBatches(system, componentName, methodName, numBatches, batchSize, 20, func(batch int, batchVals []decl.Value) {
+			runtime.RunCallInBatches(system, componentName, methodName, numBatches, batchSize, numWorkers, func(batch int, batchVals []decl.Value) {
 				log.Println("Generating batch: ", batch)
 				if time.Now().Sub(lastReported) < time.Second*5 {
 					lastReported = time.Now()
@@ -71,10 +72,12 @@ func plotCmd() *cobra.Command {
 				t := now.Add(time.Duration(batch) * timeDelta)
 
 				p50Idx := int(float64(batchSize) * 0.5)
-				p90Idx := int(float64(batchSize) * 0.9)
-				p99Idx := int(float64(batchSize) * 0.99)
 				p50Vals[batch].Y = batchVals[p50Idx].Time // FloatVal()
+
+				p90Idx := int(float64(batchSize) * 0.9)
 				p90Vals[batch].Y = batchVals[p90Idx].Time // FloatVal()
+
+				p99Idx := int(float64(batchSize) * 0.99)
 				p99Vals[batch].Y = batchVals[p99Idx].Time // FloatVal()
 				for _, bv := range batchVals {
 					avgVals[batch].Y += bv.Time // FloatVal()
@@ -107,6 +110,7 @@ func plotCmd() *cobra.Command {
 	plotCmd.Flags().String("xlabel", "Time", "Label for the X-axis")
 	plotCmd.Flags().String("ylabel", "Latency", "Label for the Y-axis")
 	plotCmd.Flags().Int("numbatches", 1000, "Size of each batch")
+	plotCmd.Flags().Int("numworkers", 50, "Number of parallel workers")
 	plotCmd.Flags().Int("batchsize", 1000, "Size of each batch")
 	plotCmd.Flags().String("percentiles", "0.5,0.9,0.99", "Comma-separated percentiles to mark on CDF (e.g., '0.5,0.99').  Each percentile will be shown in its own graph.")
 	return plotCmd
