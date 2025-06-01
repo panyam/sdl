@@ -36,10 +36,19 @@ func (f *FileInstance) NewSystem(systemName string) *SystemInstance {
 // Note that a component can be native or user defined.
 // We want the same semantics regardless
 func (f *FileInstance) NewComponent(name string) (*ComponentInstance, Value, error) {
+	compDecl, err := f.GetComponentDecl(name)
+	if compDecl == nil || err != nil {
+		return nil, Nil, err
+	}
+	return NewComponentInstance(f, compDecl)
+}
+
+// GetComponentDecl returns the ComponentDecl for the given name even if it is an import by resolving to the original source
+func (f *FileInstance) GetComponentDecl(name string) (*ComponentDecl, error) {
 	def, err := f.Decl.GetDefinition(name)
 	if err != nil {
 		log.Println("error getting component definition: ", err)
-		return nil, Nil, err
+		return nil, err
 	}
 
 	compDecl, ok := def.(*decl.ComponentDecl)
@@ -49,9 +58,8 @@ func (f *FileInstance) NewComponent(name string) (*ComponentInstance, Value, err
 		if ok {
 			importedFS, err := f.Runtime.Loader.LoadFile(importDecl.ResolvedFullPath, f.Decl.FullPath, 0)
 			if err != nil {
-				return nil, Nil, err
+				return nil, err
 			}
-			log.Println("IFS: ", importedFS)
 			def, _ = importedFS.FileDecl.GetDefinition(importDecl.ImportedItem.Value)
 			compDecl, _ = def.(*decl.ComponentDecl)
 		}
@@ -59,8 +67,36 @@ func (f *FileInstance) NewComponent(name string) (*ComponentInstance, Value, err
 
 	if compDecl == nil {
 		log.Println("error getting component definition: ", name, " is not a component")
-		return nil, Nil, fmt.Errorf("definition is not a component")
+		return nil, fmt.Errorf("definition is not a component")
+	}
+	return compDecl, nil
+}
+
+// GetEnumDecl returns the EnumDecl for the given name even if it is an import by resolving to the original source
+func (f *FileInstance) GetEnumDecl(name string) (*EnumDecl, error) {
+	def, err := f.Decl.GetDefinition(name)
+	if err != nil {
+		log.Println("error getting enum definition: ", err)
+		return nil, err
 	}
 
-	return NewComponentInstance(f, compDecl)
+	enumDecl, ok := def.(*decl.EnumDecl)
+	if !ok {
+		// see if it is an import
+		importDecl, ok := def.(*decl.ImportDecl)
+		if ok {
+			importedFS, err := f.Runtime.Loader.LoadFile(importDecl.ResolvedFullPath, f.Decl.FullPath, 0)
+			if err != nil {
+				return nil, err
+			}
+			def, _ = importedFS.FileDecl.GetDefinition(importDecl.ImportedItem.Value)
+			enumDecl, _ = def.(*decl.EnumDecl)
+		}
+	}
+
+	if enumDecl == nil {
+		log.Println("error getting enum definition: ", name, " is not a enum")
+		return nil, fmt.Errorf("definition is not a enum")
+	}
+	return enumDecl, nil
 }

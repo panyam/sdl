@@ -147,6 +147,11 @@ func (s *SimpleEval) evalIdentifierExpr(i *IdentifierExpr, env *Env[Value], _ *c
 	name := i.Value
 	value, ok := env.Get(name)
 	if !ok {
+		if i.InferredType().Tag == decl.TypeTagEnum {
+			// We have an enum type
+			def, _ := s.RootFile.Decl.GetDefinition(name)
+			log.Println("Def: ", def)
+		}
 		err := fmt.Errorf("identifier not found '%s'", name)
 		panic(err) // or register and continue?
 	} else {
@@ -429,6 +434,25 @@ func (s *SimpleEval) evalDelayStmt(d *DelayStmt, env *Env[Value], currTime *core
 // Right now it is being solved by special casing SetStmt and CallExpr
 func (s *SimpleEval) evalMemberAccessExpr(m *MemberAccessExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
 	var err error
+	// check if receive is an enum
+	if idexpr, ok := m.Receiver.(*IdentifierExpr); ok && idexpr.InferredType() != nil {
+		idexprType := idexpr.InferredType()
+		if idexprType.Tag == decl.TypeTagEnum {
+			// This is an enum - so we can return the value directly
+			enumDecl := idexprType.Info.(*EnumDecl)
+			if err != nil {
+				panic(fmt.Sprintf("Enum value %s not found in enum %s", m.Member.Value, idexpr.Value))
+			}
+			log.Println("Enum Value: ", enumDecl)
+			idx := enumDecl.IndexOfVariant(m.Member.Value)
+			result, err = NewValue(idexprType, idx)
+			if err != nil {
+				panic(fmt.Sprintf("Error creating enum value: %v", err))
+			}
+			return
+		}
+	}
+
 	maeTarget, _ := s.Eval(m.Receiver, env, currTime)
 	finalReceiver := maeTarget
 	var compInst *ComponentInstance

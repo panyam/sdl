@@ -19,6 +19,11 @@ component AppServer {
     }
   }
 
+  method SimpleHttp() HttpStatusCode {
+    delay 20ms
+    return HttpStatusCode.StatusOk
+  }
+
   method Shorten() HttpStatusCode {
     for RetryCount {
       let foundDuplicate = self.CheckDuplicateShortId()

@@ -59,6 +59,16 @@ type EnumDecl struct {
 	values []string
 }
 
+func (d *EnumDecl) IndexOfVariant(variant string) int {
+	// TODO - save this
+	for idx, v := range d.Values {
+		if v.Value == variant {
+			return idx
+		}
+	}
+	return -1 // Not found
+}
+
 func (d *EnumDecl) Variants() []string {
 	// TODO - save this
 	return gfn.Map(d.Values, func(e *IdentifierExpr) string { return e.Value })

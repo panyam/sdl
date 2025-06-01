@@ -150,6 +150,15 @@ func (r *Value) Set(v any) error {
 		return nil
 	}
 
+	if r.Type.Tag == TypeTagEnum {
+		val, ok := v.(int)
+		if !ok {
+			return fmt.Errorf("type mismatch: expected enum value as int, got %T", v)
+		}
+		r.Value = val
+		return nil
+	}
+
 	if r.Type.Tag == TypeTagRef || r.Type.Tag == TypeTagMethod {
 		refval, ok := v.(*RefValue)
 		if !ok {
