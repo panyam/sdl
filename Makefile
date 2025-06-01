@@ -18,7 +18,7 @@ watch:
 testall: test bench
 
 sdlfiles:
-	@find . | grep -v "\.git" | grep -v "\.sh" | grep -v "\..decl" | grep -v attic | grep -v prompt | grep -v vscode | grep -v dsl | grep -v _test.go | grep -v "\.bak" | grep -v debug | grep -v "\.output"
+	@find . | grep -v "\.git" | grep -v "\.sh" | grep -v "\..decl" | grep -v attic | grep -v prompt | grep -v vscode | grep -v dsl | grep -v _test.go | grep -v "\.bak" | grep -v debug | grep -v "\.output" | grep -v "\.svg" | grep -v parser.go
 
 promptsdl:
 	source ~/personal/.shhelpers && files_for_llm `make sdlfiles`

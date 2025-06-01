@@ -19,9 +19,8 @@ This package provides concrete Go implementations of common distributed system c
 
 4.  **Declarative Layer (`decl/` sub-package):**
     *   Contains parallel Go structs for many components (e.g., `decl.Disk`, `decl.BTreeIndex`).
-    *   These structs hold configuration parameters, often as `dsl.Expr` types (defined in `sdl/dsl/ast.go` - *Correction: AST nodes are in `sdl/decl`*).
-    *   They provide methods (`Read()`, `Find()`, etc.) that **generate Abstract Syntax Trees (ASTs)**, representing the intended operation logic rather than executing it directly.
-    *   This layer separates the *definition* of component interactions from their *execution* (which is handled by the `sdl/dsl` vm). Includes `components_test.go` (within `decl`) verifying AST generation.
+    *   The decl layer acts as a "wrapper" for the core components so that it can be accessed via FFI from the evaluators in the Runtime package.
+    *   They provide methods (`Read()`, `Find()`, etc.) that **generate Value objects**, allowing the native implementations to perform any optimizations needed
 
 5.  **Testing:**
     *   Component tests (`*_test.go`) consistently use the `core.Analyze` primitive with relevant `Expectation`s (`ExpectAvailability`, `ExpectP99`, etc.) and assertions (`Assert`, `AssertFailure`) to verify the correctness and plausibility of the component models when used via the Go API.
@@ -31,5 +30,3 @@ This package provides concrete Go implementations of common distributed system c
 *   Provides a reasonably comprehensive suite of standard system components with defined performance models based on `sdl/core`.
 *   Key components model steady-state behavior analytically (Queues, Pools) or via probabilistic composition (Indexes, Cache, Disk).
 *   The `decl` sub-package provides the AST generation capabilities needed for the DSL front-end.
-*   Testing via `core.Analyze` validates the Go API usage and component behavior.
-*   The components are ready to be instantiated and called by the DSL VM as it executes ASTs.
