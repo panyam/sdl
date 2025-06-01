@@ -1,6 +1,10 @@
 package decl
 
-import "github.com/panyam/sdl/decl"
+import (
+	"github.com/panyam/sdl/decl"
+)
+
+type Value = decl.Value
 
 type NWBase struct {
 	Name     string

@@ -9,7 +9,8 @@ import (
 // Value wraps a Go value with its type definition.
 type Value struct {
 	Type  *Type
-	Value any // The underlying Go value
+	Value any           // The underlying Go value
+	Time  core.Duration // The time duration incurred for this value
 }
 
 // Value specific to references of members inside components
@@ -216,7 +217,7 @@ func (r *Value) String() string {
 	if r.Type != nil {
 		typeName = r.Type.String()
 	}
-	return fmt.Sprintf("RV(%s: %s)", typeName, valStr)
+	return fmt.Sprintf("Val(%s: %s)", typeName, valStr)
 }
 
 // --- Custom getter methods

@@ -3,7 +3,11 @@ package runtime
 import (
 	"errors"
 	"fmt"
+	"log"
 	"reflect"
+
+	"github.com/panyam/sdl/core"
+	"github.com/panyam/sdl/decl"
 )
 
 type NativeWrapper struct {
@@ -142,7 +146,7 @@ func (n *NativeWrapper) Set(name string, value Value) error {
 	return nil
 }
 
-// InvokeMethod uses reflection to call the method on the underlying GoInstance.
+// InvokeMethod uses reflection to call the method on the underlying NativeValue.
 // We need to place some restrictions on the kinds of values that can be returned by the native object
 // Options are:
 //
@@ -166,46 +170,62 @@ func (n *NativeWrapper) Set(name string, value Value) error {
 //
 // We could allow option 1 AND option 2 - and do the right conversion in the Wrapper.  Eg if Outcoems[Value] was
 // returned the wrapper would convert it to an Value{Value: returnedVal, Type: ..}
+//
+// There is another aspect ot consider.  That is time.  In SDL, delays are first class citizens.  However when calling
+// native methods it is not clear how time moves.   Ie the method returns Outcomes (or Values) but the time is part of
+// the "value" within the Outcome.   So the return value MUST be explicitly timed as well well valued instead of
+// implicitlly.
+//
+// We have a few options to do this:
+// 1. Have native functions returned a Tuple (or Outcome[Tuple]) of the form (Value, Time).  Ie the given value "incurs"
+// a certain delay.   Having the time be part of every value means it is now a first class citizen!  A small distinction
+// is the Time can either a fixed value or a function that returns value - but this is a minor interface detail.
+//
+// 2. Since we need time to be every where (and we are also passing currTime everywhere) - why not just make our Value
+// object also take a Time as a member - this way every Value has this built in and no need to think about tuples etc?
+//
+// Taking a middle ground - we have now added a Time member to the Value type - this is only used by native functions.
+// If this works well we can port the rest too
 
-func (n *NativeWrapper) InvokeMethod(methodName string, args []Value, env *Env[Value]) (val Value, err error) {
-	return
+func InvokeMethod(nativeValue any, methodName string, args []Value, env *Env[Value], currTime *core.Duration) (val Value, err error) {
+	// 1. Find the method on the GoInstance using reflection.
+	instanceVal := reflect.ValueOf(nativeValue)
+	methodVal := instanceVal.MethodByName(methodName)
+	if !methodVal.IsValid() {
+		err = fmt.Errorf("method '%s' not found on native component '%s' (type %T)", methodName, "NoName", nativeValue)
+		return
+	}
+	methodType := methodVal.Type()
+
+	// 2. Here we assume that the caller already has all the values evaluated before entering here.
+	// Temporary Workaround - Only caveat is the OpNode types - we will assume those are not what are being passed around for now.
+	goArgs := make([]reflect.Value, methodType.NumIn()) // NumIn includes receiver if method value is bound
+	if !methodType.IsVariadic() && len(args) != methodType.NumIn() {
+		err = fmt.Errorf("argument count mismatch for native method '%s': expected %d, got %d", methodName, methodType.NumIn(), len(args))
+		return
+	}
+	// TODO: Handle variadic methods
+
+	// Convert Value to go values
+	for i := range methodType.NumIn() {
+		argValue := args[i].Value
+		paramType := methodType.In(i)
+		argVal := reflect.ValueOf(argValue)
+
+		// Check type compatibility (more robust check needed)
+		if !argVal.Type().ConvertibleTo(paramType) {
+			err = fmt.Errorf("type mismatch for argument %d of native method '%s': expected %s, got %s", i, methodName, paramType, argVal.Type())
+			return
+		}
+		// Convert if necessary (e.g., int64 to int)
+		goArgs[i] = argVal.Convert(paramType)
+	}
+
+	// 3. Call the method using reflection.
+	results := methodVal.Call(goArgs)
+	log.Println("Results: ", results)
+
 	/*
-		// 1. Find the method on the GoInstance using reflection.
-		instanceVal := reflect.ValueOf(n.NativeValue)
-		methodVal := instanceVal.MethodByName(methodName)
-		if !methodVal.IsValid() {
-			err = fmt.Errorf("method '%s' not found on native component '%s' (type %T)", methodName, n.Name, n.NativeValue)
-			return
-		}
-		methodType := methodVal.Type()
-
-		// 2. Here we assume that the caller already has all the values evaluated before entering here.
-		// Temporary Workaround - Only caveat is the OpNode types - we will assume those are not what are being passed around for now.
-		goArgs := make([]reflect.Value, methodType.NumIn()) // NumIn includes receiver if method value is bound
-		if !methodType.IsVariadic() && len(args) != methodType.NumIn() {
-			err = fmt.Errorf("argument count mismatch for native method '%s': expected %d, got %d", methodName, methodType.NumIn(), len(args))
-			return
-		}
-		// TODO: Handle variadic methods
-
-		// Convert Value to go values
-		for i := 0; i < methodType.NumIn(); i++ {
-			argValue := args[i].Value
-			paramType := methodType.In(i)
-			argVal := reflect.ValueOf(argValue)
-
-			// Check type compatibility (more robust check needed)
-			if !argVal.Type().ConvertibleTo(paramType) {
-				err = fmt.Errorf("type mismatch for argument %d of native method '%s': expected %s, got %s", i, methodName, paramType, argVal.Type())
-				return
-			}
-			// Convert if necessary (e.g., int64 to int)
-			goArgs[i] = argVal.Convert(paramType)
-		}
-
-		// 3. Call the method using reflection.
-		results := methodVal.Call(goArgs)
-
 		// 4. Process the result. Assume native methods return *core.Outcomes[V] or (result, error).
 		if len(results) == 0 {
 			// Method returns void, treat as NilNode? Or maybe identity state?
@@ -213,40 +233,42 @@ func (n *NativeWrapper) InvokeMethod(methodName string, args []Value, env *Env[V
 			val.Value = &LeafNode{State: createIdentityState()}
 			return
 		}
+	*/
 
-		// Assume first result is the main one (*core.Outcomes or value)
-		// Check for (result, error) pattern
-		var returnVal any = results[0].Interface()
-		var returnErr error = nil
-		if len(results) > 1 {
-			if errInter, ok := results[len(results)-1].Interface().(error); ok {
-				returnErr = errInter // Last value is error
-				if len(results) > 1 {
-					returnVal = results[0].Interface() // First is main result
-				} else {
-					returnVal = nil // Only error was returned
-				}
+	var returnVal any = results[0].Interface()
+	var returnErr error = nil
+	if len(results) > 1 {
+		if errInter, ok := results[len(results)-1].Interface().(error); ok {
+			returnErr = errInter // Last value is error
+			if len(results) > 1 {
+				returnVal = results[0].Interface() // First is main result
+			} else {
+				returnVal = nil // Only error was returned
 			}
 		}
-		if returnErr != nil {
-			err = fmt.Errorf("native method '%s' call failed: %w", methodName, returnErr)
-			return
-		}
-		if returnVal == nil {
-			val.Type = OpNodeType
-			val.Value = &LeafNode{State: createNilState()}
-			return
-		}
+	}
+	if returnErr != nil {
+		err = fmt.Errorf("native method '%s' call failed: %w", methodName, returnErr)
+		return
+	}
+	if returnVal == nil {
+		val.Type = decl.NilType
+		val.Value = Nil
+		return
+	}
 
-		// Convert the return value (expected *core.Outcomes[V]) to a VarState -> LeafNode
+	val = returnVal.(Value)
+	*currTime += val.Time
+	log.Println("Native method returned: ", val, reflect.TypeOf(returnVal))
+	// Convert the return value (expected *core.Outcomes[V]) to a VarState -> LeafNode
+	/*
 		resultVarState, err := outcomeToVarState(returnVal)
 		if err != nil {
 			err = fmt.Errorf("failed to convert result of native method '%s' (type %T) to VarState: %w", methodName, returnVal, err)
 			return
 		}
-
 		val.Type = OpNodeType
 		val.Value = &LeafNode{State: resultVarState}
-		return
 	*/
+	return
 }

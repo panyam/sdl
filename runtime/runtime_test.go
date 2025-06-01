@@ -24,8 +24,9 @@ func TestBitly(t *testing.T) {
 
 	RunTestCall(sys, env, "test", "ReadBool")
 	/*
-		ce := &CallExpr{Function: &MemberAccessExpr{Receiver: &IdentifierExpr{Value: "app"}, Member: &IdentifierExpr{Value: "Shorten"}}}
-		res2, ret2 := se.Eval(ce, env, &currTime) // reuse env to continue
+		RunTestCall(sys, env, "test", "ReadBool")
+			ce := &CallExpr{Function: &MemberAccessExpr{Receiver: &IdentifierExpr{Value: "app"}, Member: &IdentifierExpr{Value: "Shorten"}}}
+			res2, ret2 := se.Eval(ce, env, &currTime) // reuse env to continue
 	*/
 }
 

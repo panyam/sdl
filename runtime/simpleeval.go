@@ -41,6 +41,7 @@ func (s *SimpleEval) EvalInitSystem(sys *SystemInstance, env *Env[Value], currTi
 	}
 	_, returned, timeTaken := s.EvalStatements(stmts.Statements, env)
 	*currTime += timeTaken
+	result.Time = timeTaken
 
 	log.Println("Compiled statements:")
 	decl.PPrint(stmts)
@@ -175,7 +176,7 @@ func (s *SimpleEval) evalSetStmt(set *SetStmt, env *Env[Value], currTime *core.D
 	case *MemberAccessExpr:
 		maeTarget, _ := s.Eval(lhs.Receiver, env, currTime)
 		if maeTarget.Type.Tag != decl.TypeTagComponent {
-			panic(fmt.Sprintf("Expected mae to be a component, found: %s -> %s", maeTarget, maeTarget.Type))
+			panic(fmt.Sprintf("Expected mae to be a component, found: %s -> %s", maeTarget.String(), maeTarget.Type))
 		}
 		maeTarget.Value.(*ComponentInstance).Set(lhs.Member.Value, result)
 	default:
@@ -353,6 +354,7 @@ func (s *SimpleEval) evalNewExpr(n *decl.NewExpr, env *Env[Value], currTime *cor
 		}
 		_, _, timeTaken := s.EvalStatements(stmts.Statements, compInst.InitialEnv)
 		*currTime += timeTaken
+		result.Time += timeTaken
 	}
 	return
 }
@@ -400,8 +402,10 @@ func (s *SimpleEval) evalDelayStmt(d *DelayStmt, env *Env[Value], currTime *core
 	result, _ = s.Eval(d.Duration, env, currTime)
 	if i, err := result.GetInt(); err == nil {
 		*currTime += core.Duration(i)
+		result.Time += core.Duration(i)
 	} else if f, err := result.GetFloat(); err == nil {
 		*currTime += f
+		result.Time += f
 	} else {
 		panic("delay value should have been int or float.  type checking failed")
 	}
@@ -433,13 +437,13 @@ func (s *SimpleEval) evalMemberAccessExpr(m *MemberAccessExpr, env *Env[Value], 
 		}
 		compInst = usedInst.Value.(*ComponentInstance)
 	} else if maeTarget.Type.Tag != decl.TypeTagComponent {
-		panic(fmt.Sprintf("Expected mae to be a component, found: %s -> %s", maeTarget, maeTarget.Type))
+		panic(fmt.Sprintf("Expected mae to be a component, found: %s -> %s", maeTarget.String(), maeTarget.Type))
 	} else {
 		compInst = maeTarget.Value.(*ComponentInstance)
 	}
 
 	if compInst == nil {
-		panic(fmt.Sprintf("Expected mae to be a component, found: %s -> %s", maeTarget, maeTarget.Type))
+		panic(fmt.Sprintf("Expected mae to be a component, found: %s -> %s", maeTarget.String(), maeTarget.Type))
 	}
 
 	compDecl := compInst.ComponentDecl
@@ -518,7 +522,7 @@ func (s *SimpleEval) evalCallExpr(expr *CallExpr, env *Env[Value], currTime *cor
 		maeResult, _ := s.evalMemberAccessExpr(fexpr, env, currTime)
 		maeType := maeResult.Type
 		if maeType.Tag != decl.TypeTagMethod {
-			panic(fmt.Sprintf("Expected MemberAccessExpr to resolve to a method, found: %s -> %s", maeResult, maeType))
+			panic(fmt.Sprintf("Expected MemberAccessExpr to resolve to a method, found: %s -> %s", maeResult.String(), maeType))
 		}
 
 		refValue := maeResult.Value.(*decl.RefValue)
@@ -540,7 +544,8 @@ func (s *SimpleEval) evalCallExpr(expr *CallExpr, env *Env[Value], currTime *cor
 
 		if compInstance.IsNative {
 			// Native method invocation to be handled differently
-			panic("Native component method call TBD")
+			result, err := InvokeMethod(compInstance.NativeInstance, fexpr.Member.Value, argValues, env, currTime)
+			log.Println("Method CalRes, Err: ", result, err)
 		} else {
 			result, _ = s.Eval(methodDecl.Body, newEnv, currTime)
 			// We can assume method exists on the component instance as it would have been validated durint inference phase
