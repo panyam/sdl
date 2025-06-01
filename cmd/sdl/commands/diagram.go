@@ -1,10 +1,12 @@
 package commands
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 
-	// "github.com/panyam/sdl/decl"
+	"github.com/panyam/sdl/decl"
+	"github.com/panyam/sdl/loader" // Added loader import
 	"github.com/spf13/cobra"
 )
 
@@ -42,44 +44,126 @@ Diagram types:
 		}
 		fmt.Printf("Format: %s, Output: %s\n", format, outputFile)
 
-		// --- Placeholder for actual diagram generation ---
-		// 1. Parse dslFilePath -> astRoot
-		// 2. Find SystemDecl
-		// 3. For 'static':
-		//    - Analyze astRoot.GetSystem(systemName) for InstanceDecls and their UsesDecls.
-		//    - Generate DOT or Mermaid content.
-		//    - If format is png/svg, use Graphviz CLI to convert DOT.
-		// 4. For 'dynamic':
-		//    - Requires 'sdl trace' output or VM to run in tracing mode.
-		//    - Parse trace data.
-		//    - Generate sequence diagram (Mermaid) or call graph (DOT).
+		var diagramContent string
 
-		mockDiagramContent := ""
-		switch diagramType {
-		case "static":
-			if format == "dot" {
-				mockDiagramContent = fmt.Sprintf("digraph %s {\n  label=\"Static Diagram for %s (Placeholder)\";\n  A -> B;\n  B -> C;\n}", systemName, systemName)
-			} else if format == "mermaid" {
-				mockDiagramContent = fmt.Sprintf("graph TD\n  subgraph System %s\n    A-->B\n    B-->C\n  end", systemName)
-			} else {
-				fmt.Fprintf(os.Stderr, "Static diagram for format '%s' placeholder.\n", format)
+		if diagramType == "static" {
+			// 1. Load the SDL file
+			sdlLoader := loader.NewLoader(nil, nil, 10) // Use default parser & resolver, depth 10
+			fileStatus, err := sdlLoader.LoadFile(dslFilePath, "", 0)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error loading SDL file '%s': %v\n", dslFilePath, err)
+				if fileStatus != nil {
+					for _, e := range fileStatus.Errors {
+						fmt.Fprintln(os.Stderr, "  ", e)
+					}
+				}
+				os.Exit(1)
 			}
-		case "dynamic":
+			if fileStatus.HasErrors() {
+				fmt.Fprintf(os.Stderr, "Errors found while loading SDL file '%s':\n", dslFilePath)
+				for _, e := range fileStatus.Errors {
+					fmt.Fprintln(os.Stderr, "  ", e)
+				}
+				os.Exit(1)
+			}
+
+			astRoot := fileStatus.FileDecl
+			if astRoot == nil {
+				fmt.Fprintf(os.Stderr, "Error: Parsed AST is nil for '%s'.\n", dslFilePath)
+				os.Exit(1)
+			}
+
+			// 2. Find SystemDecl
+			sysDecl, err := astRoot.GetSystem(systemName)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error finding system '%s' in '%s': %v\n", systemName, dslFilePath, err)
+				os.Exit(1)
+			}
+			if sysDecl == nil {
+				fmt.Fprintf(os.Stderr, "Error: System '%s' not found in '%s'.\n", systemName, dslFilePath)
+				os.Exit(1)
+			}
+
+			// 3. For 'static':
+			//    - Analyze SystemDecl for InstanceDecls and their Overrides.
+			//    - Generate DOT or Mermaid content.
+			var b bytes.Buffer
+			instanceNames := make(map[string]string) // Map instance name to component type for node labels
+
+			if format == "dot" {
+				b.WriteString(fmt.Sprintf("digraph \"%s\" {\n", sysDecl.Name.Value))
+				b.WriteString("  rankdir=LR;\n") // Left to right ranking
+				b.WriteString(fmt.Sprintf("  label=\"Static Diagram for System: %s\";\n", sysDecl.Name.Value))
+				b.WriteString("  node [shape=record];\n")
+
+				// First pass: define all nodes (instances)
+				for _, item := range sysDecl.Body {
+					if instDecl, ok := item.(*decl.InstanceDecl); ok {
+						instanceNames[instDecl.Name.Value] = instDecl.ComponentName.Value
+						// Define the node with its type
+						b.WriteString(fmt.Sprintf("  \"%s\" [label=\"%s\\n(%s)\"];\n", instDecl.Name.Value, instDecl.Name.Value, instDecl.ComponentName.Value))
+					}
+				}
+
+				// Second pass: define edges from overrides
+				for _, item := range sysDecl.Body {
+					if instDecl, ok := item.(*decl.InstanceDecl); ok {
+						for _, assignment := range instDecl.Overrides {
+							if targetIdent, okIdent := assignment.Value.(*decl.IdentifierExpr); okIdent {
+								// Check if the targetIdent is one of the defined instances
+								if _, isInstance := instanceNames[targetIdent.Value]; isInstance {
+									b.WriteString(fmt.Sprintf("  \"%s\" -> \"%s\" [label=\"%s\"];\n", instDecl.Name.Value, targetIdent.Value, assignment.Var.Value))
+								}
+							}
+						}
+					}
+				}
+				b.WriteString("}\n")
+			} else if format == "mermaid" {
+				b.WriteString("graph TD;\n")
+				b.WriteString(fmt.Sprintf("  subgraph System %s\n", sysDecl.Name.Value))
+				// First pass: define all nodes (instances)
+				for _, item := range sysDecl.Body {
+					if instDecl, ok := item.(*decl.InstanceDecl); ok {
+						instanceNames[instDecl.Name.Value] = instDecl.ComponentName.Value
+						b.WriteString(fmt.Sprintf("    %s[\"%s (%s)\"];\n", instDecl.Name.Value, instDecl.Name.Value, instDecl.ComponentName.Value))
+					}
+				}
+				// Second pass: define edges
+				for _, item := range sysDecl.Body {
+					if instDecl, ok := item.(*decl.InstanceDecl); ok {
+						for _, assignment := range instDecl.Overrides {
+							if targetIdent, okIdent := assignment.Value.(*decl.IdentifierExpr); okIdent {
+								if _, isInstance := instanceNames[targetIdent.Value]; isInstance {
+									b.WriteString(fmt.Sprintf("    %s -- \"%s\" --> %s;\n", instDecl.Name.Value, assignment.Var.Value, targetIdent.Value))
+								}
+							}
+						}
+					}
+				}
+				b.WriteString("  end\n")
+			} else {
+				fmt.Fprintf(os.Stderr, "Static diagram for format '%s' placeholder or not supported by this basic implementation.\n", format)
+			}
+			diagramContent = b.String()
+
+		} else if diagramType == "dynamic" {
+			// Placeholder for dynamic diagrams
 			if format == "mermaid" {
-				mockDiagramContent = fmt.Sprintf("sequenceDiagram\n  participant User\n  User->>ServiceA: %s\n  ServiceA->>ServiceB: call\n", dynamicTarget)
+				diagramContent = fmt.Sprintf("sequenceDiagram\n  participant User\n  User->>ServiceA: %s\n  ServiceA->>ServiceB: call\n", dynamicTarget)
 			} else if format == "dot" {
-				mockDiagramContent = fmt.Sprintf("digraph %s_dynamic {\n label=\"Dynamic Diagram for %s (Placeholder)\";\n  User -> ServiceA [label=\"%s\"];\n ServiceA -> ServiceB;\n}", systemName, dynamicTarget, dynamicTarget)
+				diagramContent = fmt.Sprintf("digraph %s_dynamic {\n label=\"Dynamic Diagram for %s (Placeholder)\";\n  User -> ServiceA [label=\"%s\"];\n ServiceA -> ServiceB;\n}", systemName, dynamicTarget, dynamicTarget)
 			} else {
 				fmt.Fprintf(os.Stderr, "Dynamic diagram for format '%s' placeholder.\n", format)
 			}
-		default:
+		} else {
 			fmt.Fprintf(os.Stderr, "Error: Unknown diagram type '%s'.\n", diagramType)
 			os.Exit(1)
 		}
 
-		if mockDiagramContent != "" {
+		if diagramContent != "" {
 			if outputFile != "" {
-				err := os.WriteFile(outputFile, []byte(mockDiagramContent), 0644)
+				err := os.WriteFile(outputFile, []byte(diagramContent), 0644)
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "Error writing diagram to %s: %v\n", outputFile, err)
 					os.Exit(1)
@@ -87,25 +171,14 @@ Diagram types:
 				fmt.Printf("Diagram content written to %s\n", outputFile)
 			} else {
 				fmt.Println("\nDiagram Content (stdout):")
-				fmt.Println(mockDiagramContent)
+				fmt.Println(diagramContent)
 			}
 		}
-		// --- End Placeholder ---
 	},
 }
 
 func init() {
-	// 'visualize diagram' is effectively a subcommand.
-	// We can register 'visualize' first and then add 'diagram' to it,
-	// or just register 'diagram' directly if 'visualize' itself does nothing.
-	// For simplicity, let's register 'diagram' directly for now.
-	// If we had a `visualizeCmd`, it would be:
-	// visualizeCmd := &cobra.Command{Use: "visualize", Short: "Generate diagrams or plots"}
-	// visualizeCmd.AddCommand(diagramCmd)
-	// AddCommand(visualizeCmd)
 	AddCommand(diagramCmd)
-
 	diagramCmd.Flags().StringP("output", "o", "", "Output file path for the diagram")
 	diagramCmd.Flags().String("format", "dot", "Output format (dot, mermaid, png, svg)")
-	// Note: png/svg might require external tools like Graphviz CLI if not generating directly.
 }
