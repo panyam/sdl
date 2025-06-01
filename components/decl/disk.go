@@ -17,12 +17,12 @@ func NewDisk(name string) *Disk {
 // Read returns an  expression representing a disk read operation.
 // It instructs the VM to look up the read profile based on d.ProfileName.
 func (d *Disk) Read() decl.Value {
-	return OutcomesToValue(h.Wrapped.Read())
+	return OutcomesToValue(d.Wrapped.Read())
 }
 
 // Write returns an  expression representing a disk write operation.
 func (d *Disk) Write() decl.Value {
-	return OutcomesToValue(h.Wrapped.Write())
+	return OutcomesToValue(d.Wrapped.Write())
 }
 
 // ReadProcessWrite returns an  expression for Read -> Process -> Write.

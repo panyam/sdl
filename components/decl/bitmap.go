@@ -16,20 +16,20 @@ func NewBitmapIndex(name string) *BitmapIndex {
 
 // Find builds  for BitmapIndex Find.
 func (d *BitmapIndex) Find() decl.Value {
-	return OutcomesToValue(h.Wrapped.Find())
+	return OutcomesToValue(d.Wrapped.Find())
 }
 
 // Insert builds  for BitmapIndex Insert.
-func (d *BitmapIndex) Read() decl.Value {
-	return OutcomesToValue(h.Wrapped.Read())
+func (d *BitmapIndex) Insert() decl.Value {
+	return OutcomesToValue(d.Wrapped.Insert())
 }
 
 // Delete builds  for BitmapIndex Delete.
 func (d *BitmapIndex) Delete() decl.Value {
-	return OutcomesToValue(h.Wrapped.Delete())
+	return OutcomesToValue(d.Wrapped.Delete())
 }
 
 // Update builds  for BitmapIndex Update.
 func (d *BitmapIndex) Update() decl.Value {
-	return OutcomesToValue(h.Wrapped.Update())
+	return OutcomesToValue(d.Wrapped.Update())
 }

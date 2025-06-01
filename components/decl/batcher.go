@@ -17,5 +17,5 @@ func NewBatcher(name string) *Batcher {
 
 // Submit generates  for submitting one item.
 func (d *Batcher) Submit() decl.Value {
-	return OutcomesToValue(h.Wrapped.Submit())
+	return OutcomesToValue(d.Wrapped.Submit())
 }

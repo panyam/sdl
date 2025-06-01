@@ -21,5 +21,5 @@ func (b *MM1Queue) Enqueue() decl.Value {
 
 // Delete builds  for MM1Queue Delete.
 func (b *MM1Queue) Dequeue() decl.Value {
-	return OutcomesToValue(b.Wrapped.Dequeue())
+	return OutcomesOfDurationsToValue(b.Wrapped.Dequeue())
 }

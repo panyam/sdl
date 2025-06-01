@@ -22,5 +22,5 @@ func (b *Queue) Enqueue() decl.Value {
 
 // Removes from the queue
 func (b *Queue) Dequeue() decl.Value {
-	return OutcomesToValue(b.Wrapped.Dequeue())
+	return OutcomesOfDurationsToValue(b.Wrapped.Dequeue())
 }

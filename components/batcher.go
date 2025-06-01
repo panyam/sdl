@@ -136,7 +136,7 @@ func (b *Batcher) Submit() *Outcomes[sc.AccessResult] {
 		percentiles := []float64{0.10, 0.30, 0.50, 0.70, 0.90}
 		bucketWeights := []float64{0.20, 0.20, 0.20, 0.20, 0.20}
 
-		for i := 0; i < numBuckets; i++ {
+		for i := range numBuckets {
 			p := percentiles[i]
 			waitTime := 0.0
 			if p < 0.999999 && avgWait > 1e-12 {
