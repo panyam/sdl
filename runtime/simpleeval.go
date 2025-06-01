@@ -587,7 +587,7 @@ func (s *SimpleEval) evalCallExpr(expr *CallExpr, env *Env[Value], currTime *cor
 
 		if compInstance.IsNative {
 			// Native method invocation to be handled differently
-			result, err := InvokeMethod(compInstance.NativeInstance, fexpr.Member.Value, argValues, env, currTime)
+			result, err := InvokeMethod(compInstance.NativeInstance, fexpr.Member.Value, argValues, env, currTime, s.Rand)
 			log.Println("Method CalRes, Err: ", result, err)
 			return result, false
 		} else {

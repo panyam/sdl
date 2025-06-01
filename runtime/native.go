@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math/rand"
 	"reflect"
 
 	"github.com/panyam/sdl/core"
@@ -187,7 +188,7 @@ func (n *NativeWrapper) Set(name string, value Value) error {
 // Taking a middle ground - we have now added a Time member to the Value type - this is only used by native functions.
 // If this works well we can port the rest too
 
-func InvokeMethod(nativeValue any, methodName string, args []Value, env *Env[Value], currTime *core.Duration) (val Value, err error) {
+func InvokeMethod(nativeValue any, methodName string, args []Value, env *Env[Value], currTime *core.Duration, rnd *rand.Rand) (val Value, err error) {
 	// 1. Find the method on the GoInstance using reflection.
 	instanceVal := reflect.ValueOf(nativeValue)
 	methodVal := instanceVal.MethodByName(methodName)
@@ -258,6 +259,15 @@ func InvokeMethod(nativeValue any, methodName string, args []Value, env *Env[Val
 	}
 
 	val = returnVal.(Value)
+	if val.Type.Tag == decl.TypeTagOutcomes {
+		// Then sample it
+		var ok bool
+		val, ok = val.OutcomesVal().Sample(rnd)
+		if !ok {
+			err = fmt.Errorf("failed to sample outcomes from native method '%s' (type %T)", methodName, returnVal)
+			return
+		}
+	}
 	*currTime += val.Time
 	log.Println("Native method returned: ", val, reflect.TypeOf(returnVal))
 	// Convert the return value (expected *core.Outcomes[V]) to a VarState -> LeafNode
