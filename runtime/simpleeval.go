@@ -86,6 +86,8 @@ func (s *SimpleEval) Eval(node Node, env *Env[Value], currTime *core.Duration) (
 		// With a block statement we usually push an extra context so it can be removed
 		// at the end of the block
 		return s.evalBlockStmt(n, env.Push(), currTime) // Pass nil context
+	case *LogStmt:
+		return s.evalLogStmt(n, env, currTime)
 	case *LetStmt:
 		return s.evalLetStmt(n, env, currTime)
 	case *SetStmt:
@@ -229,6 +231,14 @@ func (s *SimpleEval) evalForStmt(f *ForStmt, env *Env[Value], currTime *core.Dur
 		}
 		counter += 1
 	}
+}
+
+func (s *SimpleEval) evalLogStmt(l *LogStmt, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
+	for _, arg := range l.Args {
+		val, _ := s.Eval(arg, env, currTime)
+		log.Println("Time: ", *currTime, ", Arg: ", decl.PPrint(arg), ", Value: ", val.String())
+	}
+	return
 }
 
 func (s *SimpleEval) evalLetStmt(l *LetStmt, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {

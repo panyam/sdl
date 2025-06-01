@@ -640,6 +640,15 @@ func (i *Inference) EvalForSetStmt(s *SetStmt, scope *TypeScope) (ok bool) {
 	return
 }
 
+func (i *Inference) EvalForLogStmt(l *LogStmt, scope *TypeScope) (ok bool) {
+	ok = true
+	for _, expr := range l.Args {
+		_, ok2 := i.EvalForExprType(expr, scope)
+		ok = ok && ok2
+	}
+	return
+}
+
 func (i *Inference) EvalForLetStmt(l *LetStmt, scope *TypeScope) (ok bool) {
 	valType, ok := i.EvalForExprType(l.Value, scope)
 	if !ok {
@@ -700,6 +709,8 @@ func (i *Inference) EvalForStmt(stmt Stmt, scope *TypeScope) (ok bool) {
 	switch s := stmt.(type) {
 	case *LetStmt:
 		ok = ok && i.EvalForLetStmt(s, scope)
+	case *LogStmt:
+		ok = ok && i.EvalForLogStmt(s, scope)
 	case *SetStmt:
 		ok = ok && i.EvalForSetStmt(s, scope)
 	case *ExprStmt:
