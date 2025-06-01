@@ -1,28 +1,21 @@
 package decl
 
-import "github.com/panyam/sdl/dsl"
+import (
+	"github.com/panyam/sdl/components"
+	"github.com/panyam/sdl/decl"
+)
 
 // --- ResourcePool (Stateless) ---
 type ResourcePool struct {
-	Name        string
-	Size        dsl.Expr // c (INT)
-	ArrivalRate dsl.Expr // Lambda (FLOAT)
-	AvgHoldTime dsl.Expr // Ts (Duration Expr)
+	NWBase
+	Wrapped components.ResourcePool
 }
 
-func NewResourcePool(name string, size, lambda, ts dsl.Expr) *ResourcePool {
-	return &ResourcePool{Name: name, Size: size, ArrivalRate: lambda, AvgHoldTime: ts}
+func NewResourcePool(name string) *ResourcePool {
+	return &ResourcePool{NWBase: NewNWBase(name)}
 }
 
 // Acquire predicts queueing delay based on MMc model.
-func (rp *ResourcePool) Acquire() dsl.Expr {
-	// VM calculates Wq distribution or rejection based on params
-	return &dsl.InternalCallExpr{
-		FuncName: "PoolAcquireMMc", // Returns Outcomes[AccessResult]
-		Args: []dsl.Expr{
-			rp.Size,
-			rp.ArrivalRate,
-			rp.AvgHoldTime,
-		},
-	}
+func (b *ResourcePool) Acquire() decl.Value {
+	return OutcomesToValue(b.Wrapped.Acquire())
 }
