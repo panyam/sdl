@@ -6,12 +6,11 @@ import (
 )
 
 type BTreeIndex struct {
-	NWBase
-	Wrapped components.BTreeIndex
+	NWBase[*components.BTreeIndex]
 }
 
 func NewBTreeIndex(name string) *BTreeIndex {
-	return &BTreeIndex{NWBase: NewNWBase(name)}
+	return &BTreeIndex{NWBase: NewNWBase(name, components.NewBTreeIndex())}
 }
 
 // Find builds  for BTreeIndex Find.

@@ -20,19 +20,20 @@ type BTreeIndex struct {
 	AvgMergePropCost float64
 }
 
-func NewBTreeIndex() *BTreeIndex {
-	out := &BTreeIndex{}
-	return out.Init()
+func NewBTreeIndex() (out *BTreeIndex) {
+	out = &BTreeIndex{}
+	out.Init()
+	return
 }
 
 // Init initializes the BTreeIndex with defaults.
-func (bt *BTreeIndex) Init() *BTreeIndex {
+func (bt *BTreeIndex) Init() {
 	bt.Index.Init()
 	bt.NodeFanout = 100       // Default fanout (e.g., for 8KB pages, ~100 keys/pointers)
 	bt.Occupancy = 0.67       // Default occupancy (B-Trees aim for >50%)
 	bt.AvgSplitPropCost = 0.1 // Default: Avg 0.1 extra R/W pairs per insert (low split chance)
 	bt.AvgMergePropCost = 0.1 // Default: Avg 0.1 extra R/W pairs per delete (low merge chance)
-	return bt
+	return
 }
 
 // RecordsPerPage estimates how many records fit in a leaf page based on occupancy.

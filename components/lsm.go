@@ -53,7 +53,7 @@ type LSMTree struct {
 }
 
 // Init initializes the LSMTree with default or provided parameters.
-func (lsm *LSMTree) Init() *LSMTree {
+func (lsm *LSMTree) Init() {
 	lsm.Index.Init() // Initialize base Index (Disk, sizes etc.)
 
 	// --- Set Default LSM Parameters ---
@@ -74,14 +74,13 @@ func (lsm *LSMTree) Init() *LSMTree {
 	}
 	// Ensure CompactionSlowdown has an And func if needed for composition later
 	// lsm.CompactionSlowdown.And = func(a,b Duration) Duration { return a+b } // If needed
-
-	return lsm
 }
 
 // NewLSMTree creates and initializes a new LSMTree component.
 func NewLSMTree() *LSMTree {
 	lsm := &LSMTree{}
-	return lsm.Init()
+	lsm.Init()
+	return lsm
 }
 
 // Write simulates inserting or updating data in the LSM tree.

@@ -6,12 +6,11 @@ import (
 )
 
 type HashIndex struct {
-	NWBase
-	Wrapped components.HashIndex
+	NWBase[*components.HashIndex]
 }
 
 func NewHashIndex(name string) *HashIndex {
-	return &HashIndex{NWBase: NewNWBase(name)}
+	return &HashIndex{NWBase: NewNWBase(name, components.NewHashIndex())}
 }
 
 func (h *HashIndex) Find() (v decl.Value) {

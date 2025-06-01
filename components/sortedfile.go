@@ -21,11 +21,16 @@ func (h *SortedFile) NumPages() uint {
 	return uint(1 + uint64(h.NumRecords*h.RecordSize)/h.PageSize)
 }
 
-func (s *SortedFile) Init() *SortedFile {
+func NewSortedFile() *SortedFile {
+	s := &SortedFile{}
+	s.Init()
+	return s
+}
+
+func (s *SortedFile) Init() {
 	s.Index.Init()
 	// Say size of a page is 1MB
 	s.MaxOutcomeLen = 5
-	return s
 }
 
 // Visits every page - for a scanning through all entries

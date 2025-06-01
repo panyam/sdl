@@ -21,19 +21,19 @@ type HashIndex struct {
 }
 
 // NewHashIndex creates and initializes a new HashIndex component.
-func NewHashIndex() *HashIndex {
-	out := &HashIndex{}
-	return out.Init()
+func NewHashIndex() (out *HashIndex) {
+	out = &HashIndex{}
+	out.Init()
+	return
 }
 
 // Init initializes the HashIndex with defaults.
-func (h *HashIndex) Init() *HashIndex {
+func (h *HashIndex) Init() {
 	h.Index.Init()
 	// h.LoadFactorThreshold = 0.75 // Typical threshold for resizing
 	h.AvgOverflowReads = 0.2 // Default: 20% chance of needing 1 extra read on avg
 	h.ResizeCostFactor = 1.5 // Default: Resize costs 1.5x a full scan/write
 	// h.rng = rand.New(rand.NewSource(time.Now().UnixNano()))
-	return h
 }
 
 // Probability of collision needing overflow access

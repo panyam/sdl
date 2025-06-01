@@ -120,20 +120,11 @@ type Queue struct {
 }
 
 // Init initializes the M/M/c/K Queue component.
-func (q *Queue) Init(name string, lambda float64, ts float64, c uint, k uint) *Queue {
-	q.Name = name
-
-	// --- Validate Inputs ---
-	if lambda <= 0 {
-		lambda = 1e-9
-	}
-	if ts <= 0 {
-		ts = 1e-9
-	}
-	if c == 0 {
-		// log.Printf("Error: Queue '%s' initialized with c=0 servers.", name)
-		c = 1 // Default to 1 server to avoid errors, log warning
-	}
+func (q *Queue) Init() {
+	lambda := 1e-9
+	ts := 1e-9
+	c := uint(1)
+	k := uint(0)
 	isBounded := k > 0
 	if isBounded && k < c {
 		// log.Printf("Warning: Queue '%s' has Capacity K (%d) < Servers c (%d). Effective capacity is c. Blocking is high.", name, k, c)
@@ -210,14 +201,13 @@ func (q *Queue) Init(name string, lambda float64, ts float64, c uint, k uint) *Q
 
 	// log.Printf("Queue '%s' Init: lambda=%.2f, Ts=%.4f, c=%d, k=%d(eff:%d), mu=%.2f, a=%.3f, rho=%.3f, P0=%.4f, PK=%.4f, Lq=%.3f, lambdaEff=%.3f, Wq=%.4f",
 	//      q.Name, q.ArrivalRate, q.AvgServiceTime, q.Servers, q.Capacity, uintK, q.serviceRate, q.offeredLoad, q.utilization, q.p0, q.pk, lq, q.lambdaEff, q.avgWaitTimeQ)
-
-	return q
 }
 
 // NewMMCKQueue creates and initializes a new M/M/c/K Queue component.
-func NewMMCKQueue(name string, arrivalRate float64, avgServiceTime float64, servers uint, capacity uint) *Queue {
-	q := &Queue{}
-	return q.Init(name, arrivalRate, avgServiceTime, servers, capacity)
+func NewMMCKQueue(name string) *Queue {
+	q := &Queue{Name: name}
+	q.Init()
+	return q
 }
 
 // Enqueue simulates adding an item to the queue.

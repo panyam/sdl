@@ -6,12 +6,11 @@ import (
 )
 
 type LSMTree struct {
-	NWBase
-	Wrapped components.LSMTree
+	NWBase[*components.LSMTree]
 }
 
 func NewLSMTree(name string) *LSMTree {
-	return &LSMTree{NWBase: NewNWBase(name)}
+	return &LSMTree{NWBase: NewNWBase(name, components.NewLSMTree())}
 }
 
 // Insert builds for LSMTree Insert.

@@ -363,6 +363,15 @@ func (s *SimpleEval) evalUnaryExpr(u *UnaryExpr, env *Env[Value], currTime *core
 	lr, _ := s.Eval(u.Right, env, currTime)
 
 	// TODO - Evaluate based on the operator
+	if u.Operator == "not" {
+		if lr.Type.Equals(BoolType) {
+			lr.Value = !lr.Value.(bool)
+		} else {
+			panic(fmt.Sprintf("Unary operator not supported for type: %s", lr.Type))
+		}
+	} else {
+		panic(fmt.Sprintf("Unary operator not supported: %s", u.Operator))
+	}
 	log.Println("Child Result: ", lr)
 	return
 }

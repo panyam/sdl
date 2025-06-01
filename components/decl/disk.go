@@ -6,12 +6,11 @@ import (
 )
 
 type Disk struct {
-	NWBase
-	Wrapped components.Disk
+	NWBase[*components.Disk]
 }
 
 func NewDisk(name string) *Disk {
-	return &Disk{NWBase: NewNWBase(name)}
+	return &Disk{NWBase: NewNWBase(name, components.NewDisk(""))}
 }
 
 // Read returns an  expression representing a disk read operation.

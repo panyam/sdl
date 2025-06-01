@@ -6,12 +6,11 @@ import (
 )
 
 type MM1Queue struct {
-	NWBase
-	Wrapped components.MM1Queue
+	NWBase[*components.MM1Queue]
 }
 
 func NewMM1Queue(name string) *MM1Queue {
-	return &MM1Queue{NWBase: NewNWBase(name)}
+	return &MM1Queue{NWBase: NewNWBase(name, components.NewMM1Queue(name))}
 }
 
 // Insert builds for MM1Queue Insert.

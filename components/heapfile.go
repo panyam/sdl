@@ -10,10 +10,15 @@ func (h *HeapFile) RecordsPerPage() uint64 {
 	return h.PageSize / uint64(h.RecordSize)
 }
 
-func (h *HeapFile) Init() *HeapFile {
+func NewHeapFile() (h *HeapFile) {
+	h = &HeapFile{}
+	h.Init()
+	return
+}
+
+func (h *HeapFile) Init() {
 	// Say size of a page is 1MB
 	h.Index.Init()
-	return h
 }
 
 // Visits every page - for a scanning through all entries

@@ -6,22 +6,27 @@ import (
 
 type Value = decl.Value
 
-type NWBase struct {
+type WrappedComponent interface {
+	Init()
+}
+
+type NWBase[W WrappedComponent] struct {
 	Name     string
 	Modified bool
+	Wrapped  W
 }
 
-func NewNWBase(name string) NWBase {
-	return NWBase{Name: name, Modified: true}
+func NewNWBase[W WrappedComponent](name string, wrapped W) NWBase[W] {
+	return NWBase[W]{Name: name, Modified: true, Wrapped: wrapped}
 }
 
-func (n *NWBase) Set(name string, value decl.Value) error {
+func (n *NWBase[W]) Set(name string, value decl.Value) error {
 	n.Modified = true
 	panic("TBD")
 	return nil
 }
 
-func (n *NWBase) Get(name string) (v decl.Value, ok bool) {
+func (n *NWBase[W]) Get(name string) (v decl.Value, ok bool) {
 	panic("TBD")
 	return
 }

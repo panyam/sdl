@@ -35,7 +35,7 @@ type Cache struct {
 }
 
 // Init initializes the Cache component with provided parameters or defaults.
-func (c *Cache) Init() *Cache {
+func (c *Cache) Init() {
 	// --- Set Defaults ---
 	c.HitRate = 0.80 // Default: 80% hit rate
 
@@ -76,15 +76,14 @@ func (c *Cache) Init() *Cache {
 	// Pre-calculate outcomes
 	c.calculateReadOutcomes()
 	c.calculateWriteOutcomes()
-
-	return c
 }
 
 // NewCache creates and initializes a new Cache component with defaults.
 // Configuration methods can be added later (e.g., ConfigureHitRate(rate float64)).
 func NewCache() *Cache {
 	c := &Cache{}
-	return c.Init()
+	c.Init()
+	return c
 }
 
 // calculateReadOutcomes generates the probabilistic outcomes for a cache read attempt.

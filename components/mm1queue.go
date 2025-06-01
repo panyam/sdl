@@ -31,20 +31,9 @@ type MM1Queue struct {
 
 // Init initializes the Queue component.
 // Requires average arrival rate (lambda, items/sec) and average service time (Ts, seconds/item).
-func (q *MM1Queue) Init(name string, lambda float64, ts float64) *MM1Queue {
-	q.Name = name
-
-	if lambda <= 0 {
-		// log.Printf("Warning: Queue '%s' initialized with non-positive arrival rate (%.2f). Assuming near-zero.", name, lambda)
-		lambda = 1e-9 // Use a very small positive number
-	}
-	if ts <= 0 {
-		// log.Printf("Warning: Queue '%s' initialized with non-positive service time (%.4f). Assuming near-zero.", name, ts)
-		ts = 1e-9 // Use a very small positive number
-	}
-
-	q.ArrivalRate = lambda
-	q.AvgServiceTime = ts
+func (q *MM1Queue) Init() {
+	q.ArrivalRate = 1e-9
+	q.AvgServiceTime = 1e-9
 	q.serviceRate = 1.0 / q.AvgServiceTime        // mu = 1 / Ts
 	q.utilization = q.ArrivalRate / q.serviceRate // rho = lambda / mu
 	q.isStable = q.utilization < 1.0
@@ -54,14 +43,13 @@ func (q *MM1Queue) Init(name string, lambda float64, ts float64) *MM1Queue {
 	}
 
 	// Note: Enqueue/Dequeue outcomes depend on these parameters, calculated on the fly.
-
-	return q
 }
 
 // NewMM1Queue creates and initializes a new Queue component.
-func NewMM1Queue(name string, arrivalRate float64, avgServiceTime float64) *MM1Queue {
+func NewMM1Queue(name string) *MM1Queue {
 	q := &MM1Queue{}
-	return q.Init(name, arrivalRate, avgServiceTime)
+	q.Init()
+	return q
 }
 
 // Enqueue simulates adding an item to the queue.

@@ -4,6 +4,7 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/panyam/sdl/core"
 	sc "github.com/panyam/sdl/core"
 	// "log"
 )
@@ -33,10 +34,10 @@ type NetworkLink struct {
 }
 
 // Init initializes the NetworkLink with provided parameters or defaults.
-func (nl *NetworkLink) Init(baseLatency, maxJitter Duration, packetLoss float64) *NetworkLink {
-	nl.BaseLatency = baseLatency
-	nl.MaxJitter = maxJitter
-	nl.PacketLossProb = packetLoss
+func (nl *NetworkLink) Init() {
+	nl.BaseLatency = core.Millis(1)
+	nl.MaxJitter = 0
+	nl.PacketLossProb = 0.01
 	nl.LatencyBuckets = 5 // Default number of buckets for jitter distribution
 
 	// Ensure probabilities are valid
@@ -56,22 +57,14 @@ func (nl *NetworkLink) Init(baseLatency, maxJitter Duration, packetLoss float64)
 
 	// Pre-calculate the outcomes distribution
 	nl.calculateTransferOutcomes()
-
-	return nl
 }
 
 // NewNetworkLink creates and initializes a new NetworkLink component.
 // Uses some reasonable defaults if parameters are zero/invalid.
-func NewNetworkLink(baseLatency, maxJitter Duration, packetLoss float64) *NetworkLink {
-	// Basic defaults if needed
-	if baseLatency <= 0 {
-		baseLatency = Millis(10) // Default to 10ms latency
-	}
-	if maxJitter <= 0 {
-		maxJitter = baseLatency * 0.2 // Default to 20% jitter
-	}
+func NewNetworkLink() *NetworkLink {
 	nl := &NetworkLink{}
-	return nl.Init(baseLatency, maxJitter, packetLoss)
+	nl.Init()
+	return nl
 }
 
 // calculateTransferOutcomes generates the probabilistic outcomes for a transfer.

@@ -7,12 +7,11 @@ import (
 )
 
 type Batcher struct {
-	NWBase
-	Wrapped components.Batcher
+	NWBase[*components.Batcher]
 }
 
 func NewBatcher(name string) *Batcher {
-	return &Batcher{NWBase: NewNWBase(name)}
+	return &Batcher{NWBase: NewNWBase(name, components.NewBatcher(name))}
 }
 
 // Submit generates  for submitting one item.

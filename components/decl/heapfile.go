@@ -6,12 +6,11 @@ import (
 )
 
 type HeapFile struct {
-	NWBase
-	Wrapped components.HeapFile
+	NWBase[*components.HeapFile]
 }
 
 func NewHeapFile(name string) *HeapFile {
-	return &HeapFile{NWBase: NewNWBase(name)}
+	return &HeapFile{NWBase: NewNWBase(name, components.NewHeapFile())}
 }
 
 func (b *HeapFile) Scan() decl.Value {

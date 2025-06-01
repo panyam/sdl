@@ -1,7 +1,6 @@
 package components
 
 import (
-	"fmt"
 	"math"
 	"math/rand"
 	"time"
@@ -49,25 +48,10 @@ type Batcher struct {
 }
 
 // Init initializes the Batcher component.
-func (b *Batcher) Init(name string, policy BatchingPolicy, batchSize uint, timeout Duration, arrivalRate float64, downstream BatchProcessor) *Batcher {
-	b.Name = name
-	b.Policy = policy
-	if batchSize == 0 {
-		batchSize = 1
-	}
-	b.BatchSize = batchSize
-	if timeout <= 0 {
-		timeout = 1.0
-	} // Default 1 sec timeout if invalid
-	b.Timeout = timeout
-	if arrivalRate <= 0 {
-		arrivalRate = 1e-9
-	}
-	b.ArrivalRate = arrivalRate
-	if downstream == nil {
-		panic(fmt.Sprintf("Batcher '%s' initialized without a Downstream processor", name))
-	}
-	b.Downstream = downstream
+func (b *Batcher) Init() {
+	b.BatchSize = 1
+	b.Timeout = 1.0
+	b.ArrivalRate = 1e-9
 	b.rng = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	// --- Calculate estimated average values based on policy ---
@@ -107,14 +91,13 @@ func (b *Batcher) Init(name string, policy BatchingPolicy, batchSize uint, timeo
 
 	// log.Printf("Batcher '%s' Init: Policy=%v, N=%d, T=%.3fs, lambda=%.2f, AvgWait=%.6fs, AvgN=%.2f",
 	//      b.Name, b.Policy, b.BatchSize, b.Timeout, b.ArrivalRate, b.avgWaitTime, b.avgBatchSize)
-
-	return b
 }
 
 // NewBatcher creates and initializes a new Batcher component.
-func NewBatcher(name string, policy BatchingPolicy, batchSize uint, timeout Duration, arrivalRate float64, downstream BatchProcessor) *Batcher {
-	b := &Batcher{}
-	return b.Init(name, policy, batchSize, timeout, arrivalRate, downstream)
+func NewBatcher(name string) (out *Batcher) {
+	out = &Batcher{Name: name}
+	out.Init()
+	return
 }
 
 // Submit simulates submitting a single item to the batcher.

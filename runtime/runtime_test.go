@@ -10,19 +10,22 @@ import (
 	_ "github.com/stretchr/testify/require"
 )
 
-func TestBitly(t *testing.T) {
+func TestNativeAndBitly(t *testing.T) {
 	l := loader.NewLoader(nil, nil, 10) // Max depth 10
 	rt := NewRuntime(l)
 	fi := rt.LoadFile("../examples/bitly.sdl")
-	sys := fi.NewSystem("TestSystem")
 
+	systest := fi.NewSystem("TestSystem")
+	var currTime core.Duration
 	se := NewSimpleEval(fi)
 	env := fi.Env.Push()
-	var currTime core.Duration
+	se.EvalInitSystem(systest, env, &currTime)
 
-	se.EvalInitSystem(sys, env, &currTime)
+	sysbitly := fi.NewSystem("Bitly")
+	se.EvalInitSystem(sysbitly, env, &currTime)
 
-	RunTestCall(sys, env, "test", "ReadBool")
+	RunTestCall(systest, env, "test", "ReadBool")
+	RunTestCall(sysbitly, env, "app", "Shorten")
 	/*
 		RunTestCall(sys, env, "test", "ReadBool")
 			ce := &CallExpr{Function: &MemberAccessExpr{Receiver: &IdentifierExpr{Value: "app"}, Member: &IdentifierExpr{Value: "Shorten"}}}

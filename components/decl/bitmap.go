@@ -6,12 +6,11 @@ import (
 )
 
 type BitmapIndex struct {
-	NWBase
-	Wrapped components.BitmapIndex
+	NWBase[*components.BitmapIndex]
 }
 
 func NewBitmapIndex(name string) *BitmapIndex {
-	return &BitmapIndex{NWBase: NewNWBase(name)}
+	return &BitmapIndex{NWBase: NewNWBase(name, components.NewBitmapIndex())}
 }
 
 // Find builds  for BitmapIndex Find.

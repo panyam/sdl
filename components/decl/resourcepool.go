@@ -7,12 +7,11 @@ import (
 
 // --- ResourcePool (Stateless) ---
 type ResourcePool struct {
-	NWBase
-	Wrapped components.ResourcePool
+	NWBase[*components.ResourcePool]
 }
 
 func NewResourcePool(name string) *ResourcePool {
-	return &ResourcePool{NWBase: NewNWBase(name)}
+	return &ResourcePool{NWBase: NewNWBase(name, components.NewResourcePool(name))}
 }
 
 // Acquire predicts queueing delay based on MMc model.

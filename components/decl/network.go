@@ -6,12 +6,11 @@ import (
 )
 
 type NetworkLink struct {
-	NWBase
-	Wrapped components.NetworkLink
+	NWBase[*components.NetworkLink]
 }
 
 func NewNetworkLink(name string) *NetworkLink {
-	return &NetworkLink{NWBase: NewNWBase(name)}
+	return &NetworkLink{NWBase: NewNWBase(name, components.NewNetworkLink())}
 }
 
 // Insert builds for NetworkLink Insert.

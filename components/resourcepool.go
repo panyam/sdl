@@ -43,25 +43,12 @@ type ResourcePool struct {
 }
 
 // Init initializes the ResourcePool, calculating steady-state M/M/c metrics.
-func (rp *ResourcePool) Init(name string, size uint, lambda float64, ts float64) *ResourcePool {
-	rp.Name = name
-	if size == 0 {
-		// log.Printf("Warning: ResourcePool '%s' initialized with size=0. Using size=1.", name)
-		size = 1
-	}
-	rp.Size = size
+func (rp *ResourcePool) Init() {
+	rp.Size = 1
 
 	// Validate and Store Config
-	if lambda <= 0 {
-		// log.Printf("Warning: ResourcePool '%s' initialized with lambda <= 0 (%.3f). Using small positive.", name, lambda)
-		lambda = 1e-9
-	}
-	if ts <= 0 {
-		// log.Printf("Warning: ResourcePool '%s' initialized with AvgHoldTime <= 0 (%.6f). Using small positive.", name, ts)
-		ts = 1e-9
-	}
-	rp.ArrivalRate = lambda
-	rp.AvgHoldTime = ts
+	rp.ArrivalRate = 1e-9
+	rp.AvgHoldTime = 1e-9
 
 	// Calculate Derived M/M/c Metrics
 	rp.serviceRate = 1.0 / rp.AvgHoldTime              // mu = 1 / Ts
@@ -129,14 +116,13 @@ EndWqCalc:
 	if rp.avgWaitTimeQ < 0 { // Should not happen, but safety check
 		rp.avgWaitTimeQ = 0
 	}
-
-	return rp
 }
 
 // NewResourcePool creates and initializes a new ResourcePool component.
-func NewResourcePool(name string, size uint, arrivalRate float64, avgHoldTime float64) *ResourcePool {
-	rp := &ResourcePool{}
-	return rp.Init(name, size, arrivalRate, avgHoldTime)
+func NewResourcePool(name string) *ResourcePool {
+	rp := &ResourcePool{Name: name}
+	rp.Init()
+	return rp
 }
 
 // Acquire predicts the outcome of attempting to acquire one resource from the pool

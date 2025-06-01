@@ -6,12 +6,11 @@ import (
 )
 
 type Cache struct {
-	NWBase
-	Wrapped components.Cache
+	NWBase[*components.Cache]
 }
 
 func NewCache(name string) *Cache {
-	return &Cache{NWBase: NewNWBase(name)}
+	return &Cache{NWBase: NewNWBase(name, components.NewCache())}
 }
 
 func (h *Cache) Read() (v decl.Value) {

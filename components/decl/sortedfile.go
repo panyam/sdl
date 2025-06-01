@@ -7,12 +7,11 @@ import (
 
 // --- SortedFile (Stateless) ---
 type SortedFile struct {
-	NWBase
-	Wrapped components.SortedFile
+	NWBase[*components.SortedFile]
 }
 
 func NewSortedFile(name string) *SortedFile {
-	return &SortedFile{NWBase: NewNWBase(name)}
+	return &SortedFile{NWBase: NewNWBase(name, components.NewSortedFile())}
 }
 
 func (b *SortedFile) Scan() decl.Value {

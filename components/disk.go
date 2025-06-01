@@ -68,7 +68,7 @@ type Disk struct {
 
 // Init initializes a Disk based on the ProfileName.
 // Defaults to SSD if profileName is empty or unrecognized.
-func (d *Disk) Init() *Disk {
+func (d *Disk) Init() {
 	switch d.ProfileName {
 	case ProfileHDD:
 		d.ReadOutcomes = hddReadOutcomes
@@ -92,15 +92,14 @@ func (d *Disk) Init() *Disk {
 		// This should not happen if init() works correctly
 		panic(fmt.Sprintf("Disk profile '%s' failed to load outcomes.", d.ProfileName))
 	}
-
-	return d
 }
 
 // NewDisk creates and initializes a new Disk component with the specified profile.
 // Defaults to SSD if profileName is empty or unrecognized.
 func NewDisk(profileName string) *Disk {
 	d := &Disk{ProfileName: profileName}
-	return d.Init()
+	d.Init()
+	return d
 }
 
 // Read returns the read performance profile for this disk.

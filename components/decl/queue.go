@@ -7,12 +7,11 @@ import (
 
 // --- Queue (MMCK) ---
 type Queue struct {
-	NWBase
-	Wrapped components.Queue
+	NWBase[*components.Queue]
 }
 
 func NewQueue(name string) *Queue {
-	return &Queue{NWBase: NewNWBase(name)}
+	return &Queue{NWBase: NewNWBase(name, components.NewMMCKQueue(name))}
 }
 
 // Inserts into the queue

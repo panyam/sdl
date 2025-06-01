@@ -36,7 +36,7 @@ type BitmapIndex struct {
 }
 
 // Init initializes the BitmapIndex with default or provided parameters.
-func (bmi *BitmapIndex) Init() *BitmapIndex {
+func (bmi *BitmapIndex) Init() {
 	bmi.Index.Init() // Initialize base Index
 
 	// --- Set Default Bitmap Parameters ---
@@ -56,14 +56,13 @@ func (bmi *BitmapIndex) Init() *BitmapIndex {
 	if bmi.Index.RecordProcessingTime.Len() == 0 {
 		bmi.Index.RecordProcessingTime.Add(100, Nanos(100))
 	}
-
-	return bmi
 }
 
 // NewBitmapIndex creates and initializes a new BitmapIndex component.
 func NewBitmapIndex() *BitmapIndex {
 	bmi := &BitmapIndex{}
-	return bmi.Init()
+	bmi.Init()
+	return bmi
 }
 
 func (bmi *BitmapIndex) Find() *Outcomes[sc.AccessResult] {
