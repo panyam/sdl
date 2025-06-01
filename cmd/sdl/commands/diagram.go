@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	// "strings"
 
 	"github.com/panyam/sdl/decl"
-	"github.com/panyam/sdl/loader" // Added loader import
+	"github.com/panyam/sdl/loader"
 	"github.com/spf13/cobra"
 )
 
@@ -44,7 +45,7 @@ Diagram types:
 		}
 		fmt.Printf("Format: %s, Output: %s\n", format, outputFile)
 
-		var diagramContent string
+		var diagramOutput string
 
 		if diagramType == "static" {
 			// 1. Load the SDL file
@@ -84,75 +85,64 @@ Diagram types:
 				os.Exit(1)
 			}
 
-			// 3. For 'static':
-			//    - Analyze SystemDecl for InstanceDecls and their Overrides.
-			//    - Generate DOT or Mermaid content.
-			var b bytes.Buffer
-			instanceNames := make(map[string]string) // Map instance name to component type for node labels
+			// 3. Populate DiagramNode and DiagramEdge slices
+			var diagramNodes []DiagramNode
+			var diagramEdges []DiagramEdge
+			instanceNameToID := make(map[string]string)
 
-			if format == "dot" {
-				b.WriteString(fmt.Sprintf("digraph \"%s\" {\n", sysDecl.Name.Value))
-				b.WriteString("  rankdir=LR;\n") // Left to right ranking
-				b.WriteString(fmt.Sprintf("  label=\"Static Diagram for System: %s\";\n", sysDecl.Name.Value))
-				b.WriteString("  node [shape=record];\n")
-
-				// First pass: define all nodes (instances)
-				for _, item := range sysDecl.Body {
-					if instDecl, ok := item.(*decl.InstanceDecl); ok {
-						instanceNames[instDecl.Name.Value] = instDecl.ComponentName.Value
-						// Define the node with its type
-						b.WriteString(fmt.Sprintf("  \"%s\" [label=\"%s\\n(%s)\"];\n", instDecl.Name.Value, instDecl.Name.Value, instDecl.ComponentName.Value))
-					}
+			for _, item := range sysDecl.Body {
+				if instDecl, ok := item.(*decl.InstanceDecl); ok {
+					nodeID := instDecl.Name.Value // Use instance name as unique ID for diagram nodes
+					instanceNameToID[instDecl.Name.Value] = nodeID
+					diagramNodes = append(diagramNodes, DiagramNode{
+						ID:   nodeID,
+						Name: instDecl.Name.Value,
+						Type: instDecl.ComponentName.Value,
+					})
 				}
-
-				// Second pass: define edges from overrides
-				for _, item := range sysDecl.Body {
-					if instDecl, ok := item.(*decl.InstanceDecl); ok {
-						for _, assignment := range instDecl.Overrides {
-							if targetIdent, okIdent := assignment.Value.(*decl.IdentifierExpr); okIdent {
-								// Check if the targetIdent is one of the defined instances
-								if _, isInstance := instanceNames[targetIdent.Value]; isInstance {
-									b.WriteString(fmt.Sprintf("  \"%s\" -> \"%s\" [label=\"%s\"];\n", instDecl.Name.Value, targetIdent.Value, assignment.Var.Value))
-								}
-							}
-						}
-					}
-				}
-				b.WriteString("}\n")
-			} else if format == "mermaid" {
-				b.WriteString("graph TD;\n")
-				b.WriteString(fmt.Sprintf("  subgraph System %s\n", sysDecl.Name.Value))
-				// First pass: define all nodes (instances)
-				for _, item := range sysDecl.Body {
-					if instDecl, ok := item.(*decl.InstanceDecl); ok {
-						instanceNames[instDecl.Name.Value] = instDecl.ComponentName.Value
-						b.WriteString(fmt.Sprintf("    %s[\"%s (%s)\"];\n", instDecl.Name.Value, instDecl.Name.Value, instDecl.ComponentName.Value))
-					}
-				}
-				// Second pass: define edges
-				for _, item := range sysDecl.Body {
-					if instDecl, ok := item.(*decl.InstanceDecl); ok {
-						for _, assignment := range instDecl.Overrides {
-							if targetIdent, okIdent := assignment.Value.(*decl.IdentifierExpr); okIdent {
-								if _, isInstance := instanceNames[targetIdent.Value]; isInstance {
-									b.WriteString(fmt.Sprintf("    %s -- \"%s\" --> %s;\n", instDecl.Name.Value, assignment.Var.Value, targetIdent.Value))
-								}
-							}
-						}
-					}
-				}
-				b.WriteString("  end\n")
-			} else {
-				fmt.Fprintf(os.Stderr, "Static diagram for format '%s' placeholder or not supported by this basic implementation.\n", format)
 			}
-			diagramContent = b.String()
+
+			for _, item := range sysDecl.Body {
+				if instDecl, ok := item.(*decl.InstanceDecl); ok {
+					fromNodeID := instanceNameToID[instDecl.Name.Value]
+					for _, assignment := range instDecl.Overrides {
+						if targetIdent, okIdent := assignment.Value.(*decl.IdentifierExpr); okIdent {
+							if toNodeID, isInstance := instanceNameToID[targetIdent.Value]; isInstance {
+								diagramEdges = append(diagramEdges, DiagramEdge{
+									FromID: fromNodeID,
+									ToID:   toNodeID,
+									Label:  assignment.Var.Value,
+								})
+							}
+						}
+					}
+				}
+			}
+
+			// 4. Generate output based on format
+			switch format {
+			case "dot":
+				diagramOutput = generateDotOutput(sysDecl.Name.Value, diagramNodes, diagramEdges)
+			case "mermaid":
+				diagramOutput = generateMermaidOutput(sysDecl.Name.Value, diagramNodes, diagramEdges)
+			// case "excalidraw":
+			// 	diagramOutput = generateExcalidrawOutput(sysDecl.Name.Value, diagramNodes, diagramEdges)
+			// case "svg":
+			// 	diagramOutput = generateSvgOutput(sysDecl.Name.Value, diagramNodes, diagramEdges)
+			default:
+				fmt.Fprintf(os.Stderr, "Static diagram for format '%s' not supported or placeholder.\n", format)
+				os.Exit(1)
+			}
 
 		} else if diagramType == "dynamic" {
-			// Placeholder for dynamic diagrams
+			// Placeholder for dynamic diagrams - this part remains the same for now
+			var b bytes.Buffer
 			if format == "mermaid" {
-				diagramContent = fmt.Sprintf("sequenceDiagram\n  participant User\n  User->>ServiceA: %s\n  ServiceA->>ServiceB: call\n", dynamicTarget)
+				b.WriteString(fmt.Sprintf("sequenceDiagram\n  participant User\n  User->>ServiceA: %s\n  ServiceA->>ServiceB: call\n", dynamicTarget))
+				diagramOutput = b.String()
 			} else if format == "dot" {
-				diagramContent = fmt.Sprintf("digraph %s_dynamic {\n label=\"Dynamic Diagram for %s (Placeholder)\";\n  User -> ServiceA [label=\"%s\"];\n ServiceA -> ServiceB;\n}", systemName, dynamicTarget, dynamicTarget)
+				b.WriteString(fmt.Sprintf("digraph %s_dynamic {\n label=\"Dynamic Diagram for %s (Placeholder)\";\n  User -> ServiceA [label=\"%s\"];\n ServiceA -> ServiceB;\n}", systemName, dynamicTarget, dynamicTarget))
+				diagramOutput = b.String()
 			} else {
 				fmt.Fprintf(os.Stderr, "Dynamic diagram for format '%s' placeholder.\n", format)
 			}
@@ -161,9 +151,9 @@ Diagram types:
 			os.Exit(1)
 		}
 
-		if diagramContent != "" {
+		if diagramOutput != "" {
 			if outputFile != "" {
-				err := os.WriteFile(outputFile, []byte(diagramContent), 0644)
+				err := os.WriteFile(outputFile, []byte(diagramOutput), 0644)
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "Error writing diagram to %s: %v\n", outputFile, err)
 					os.Exit(1)
@@ -171,7 +161,7 @@ Diagram types:
 				fmt.Printf("Diagram content written to %s\n", outputFile)
 			} else {
 				fmt.Println("\nDiagram Content (stdout):")
-				fmt.Println(diagramContent)
+				fmt.Println(diagramOutput)
 			}
 		}
 	},
