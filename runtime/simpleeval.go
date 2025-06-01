@@ -317,22 +317,9 @@ func (s *SimpleEval) evalSampleExpr(samp *decl.SampleExpr, env *Env[Value], curr
 	result, ok := outcomes.Sample(s.Rand)
 	log.Println("Sampled from: ", outcomes, result, ok)
 	return
-	// res should be an Outcome type
-	// panic("Not sure whats next")
-	/*
-		outcomes, err := res.GetOutcomes()
-		if err != nil {
-			panic(err)
-		}
-		// TODO - Need a "Samplable or Distribution type"
-		// Outcomes are essentially weight => Value.  When Values are discrete its not an issue.
-		// But when you have Values that could be continuous (eg latencies) we need these to be sampled
-				result, err = NewValue(outcomes.Sample())
-				if err != nil {
-					panic(err)
-				}
-			return
-	*/
+	// TODO - Need a "Samplable or Distribution type"
+	// Outcomes are essentially weight => Value.  When Values are discrete its not an issue.
+	// But when you have Values that could be continuous (eg latencies) we need these to be sampled
 }
 
 // Evaluate a component construction expression
@@ -526,7 +513,7 @@ func (s *SimpleEval) evalCallExpr(expr *CallExpr, env *Env[Value], currTime *cor
 		// receiver is a single identifier - this is probably a native method?
 		// or "self".
 		log.Println("Not sure how to handle Identifier receiver in call expr: ", receiver)
-		panic("TBD")
+		panic("Native func call TBD")
 	case *MemberAccessExpr:
 		maeResult, _ := s.evalMemberAccessExpr(fexpr, env, currTime)
 		maeType := maeResult.Type
@@ -553,7 +540,7 @@ func (s *SimpleEval) evalCallExpr(expr *CallExpr, env *Env[Value], currTime *cor
 
 		if compInstance.IsNative {
 			// Native method invocation to be handled differently
-			panic("TBD3")
+			panic("Native component method call TBD")
 		} else {
 			result, _ = s.Eval(methodDecl.Body, newEnv, currTime)
 			// We can assume method exists on the component instance as it would have been validated durint inference phase

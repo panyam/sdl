@@ -14,7 +14,7 @@ func TestBitly(t *testing.T) {
 	l := loader.NewLoader(nil, nil, 10) // Max depth 10
 	rt := NewRuntime(l)
 	fi := rt.LoadFile("../examples/bitly.sdl")
-	sys := fi.NewSystem("Bitly")
+	sys := fi.NewSystem("TestSystem")
 
 	se := NewSimpleEval(fi)
 	env := fi.Env.Push()
@@ -22,7 +22,17 @@ func TestBitly(t *testing.T) {
 
 	se.EvalInitSystem(sys, env, &currTime)
 
-	ce := &CallExpr{Function: &MemberAccessExpr{Receiver: &IdentifierExpr{Value: "app"}, Member: &IdentifierExpr{Value: "Shorten"}}}
+	RunTestCall(sys, env, "test", "ReadBool")
+	/*
+		ce := &CallExpr{Function: &MemberAccessExpr{Receiver: &IdentifierExpr{Value: "app"}, Member: &IdentifierExpr{Value: "Shorten"}}}
+		res2, ret2 := se.Eval(ce, env, &currTime) // reuse env to continue
+	*/
+}
+
+func RunTestCall(system *SystemInstance, env *Env[Value], obj, method string) {
+	var currTime core.Duration
+	se := NewSimpleEval(system.File)
+	ce := &CallExpr{Function: &MemberAccessExpr{Receiver: &IdentifierExpr{Value: obj}, Member: &IdentifierExpr{Value: method}}}
 	res2, ret2 := se.Eval(ce, env, &currTime) // reuse env to continue
 	log.Println("Now Running System.App.Shorten(), ", res2, ret2, currTime)
 }

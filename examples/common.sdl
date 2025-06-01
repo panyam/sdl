@@ -6,6 +6,18 @@ enum HttpStatusCode {
   StatusInternalError
 }
 
+native component TestNative {
+  method ReadBool() Bool
+  method ReadString() Bool
+  method ReadInt32() Int
+  method ReadInt64() Int
+  method ReadInt() Int
+  method ReadFloat32() Float
+  method ReadFloat64() Float
+
+  method ReadOutcomes() Outcomes[Int]
+}
+
 native component NativeDisk {
   method Read()
 }

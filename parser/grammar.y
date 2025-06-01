@@ -249,6 +249,7 @@ ComponentDecl:
             NodeInfo: NewNodeInfo($1.(Node).Pos(), $6.(Node).End()),
             Name: $3,
             Body: gfn.Map($5, func(m *MethodDecl) ComponentDeclBodyItem { return m }),
+            IsNative: true,
          }
     }
     | COMPONENT IDENTIFIER LBRACE ComponentBodyItemOptList RBRACE { // COMPONENT($1) ... RBRACE($5)

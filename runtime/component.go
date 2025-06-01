@@ -15,11 +15,17 @@ type ComponentInstance struct {
 // NewComponentInstance creates a new component instanceof the given type.
 func NewComponentInstance(file *FileInstance, compDecl *ComponentDecl) (*ComponentInstance, Value, error) {
 	// Create the component instance
+	var nativeValue NativeObject
+	if compDecl.IsNative {
+		nativeValue = file.Runtime.CreateNativeComponent(compDecl)
+	}
 	compInst := &ComponentInstance{
+		//ObjectInstance: NewObjectInstance(file, nativeValue),
 		ObjectInstance: ObjectInstance{
-			File:       file,
-			IsNative:   compDecl.IsNative,
-			InitialEnv: decl.NewEnv[Value](nil), // should parent be File.Env?
+			File:           file,
+			IsNative:       compDecl.IsNative,
+			InitialEnv:     decl.NewEnv[Value](nil), // should parent be File.Env?
+			NativeInstance: nativeValue,
 		},
 		ComponentDecl: compDecl,
 	}
@@ -31,12 +37,9 @@ func NewComponentInstance(file *FileInstance, compDecl *ComponentDecl) (*Compone
 	compInst.InitialEnv.Set("self", compValue)
 
 	// Initialize the runtime based on whether it is native or user-defined
-	if compInst.IsNative {
-		// Create a NativeComponent instance
-		compInst.NativeInstance = file.Runtime.CreateNativeComponent(compDecl.Name.Value)
-	} else {
+	if !compInst.IsNative {
 		// Create a ComponentInstance instance
-		compInst.Params = make(map[string]Value) // Evaluated parameter Values (override or default)
+		compInst.params = make(map[string]Value) // Evaluated parameter Values (override or default)
 	}
 	return compInst, compValue, nil
 }
@@ -54,8 +57,11 @@ func (ci *ComponentInstance) Initializer() (blockStmt *BlockStmt, err error) {
 	for _, param := range params {
 		if param.DefaultValue != nil {
 			stmts = append(stmts, &decl.SetStmt{
-				TargetExpr: param.Name,
-				Value:      param.DefaultValue,
+				TargetExpr: &MemberAccessExpr{
+					Receiver: decl.NewIdent("self"),
+					Member:   param.Name,
+				},
+				Value: param.DefaultValue,
 			})
 		}
 	}
@@ -70,8 +76,11 @@ func (ci *ComponentInstance) Initializer() (blockStmt *BlockStmt, err error) {
 
 		usesDecls = append(usesDecls, usesdecl)
 		stmts = append(stmts, &decl.SetStmt{
-			TargetExpr: usesdecl.Name,
-			Value:      &decl.NewExpr{ComponentExpr: usesdecl.ResolvedComponent.Name}},
+			TargetExpr: &MemberAccessExpr{
+				Receiver: decl.NewIdent("self"),
+				Member:   usesdecl.Name,
+			},
+			Value: &decl.NewExpr{ComponentExpr: usesdecl.ResolvedComponent.Name}},
 		)
 	}
 

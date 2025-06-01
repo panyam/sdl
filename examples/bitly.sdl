@@ -1,5 +1,5 @@
 
-import Cache, NativeDisk, HttpStatusCode, HashIndex from "./common.sdl" ;
+import TestNative, Cache, NativeDisk, HttpStatusCode, HashIndex from "./common.sdl" ;
 import Disk from "./disk.sdl"
 import Database from "./db.sdl"
 
@@ -105,4 +105,8 @@ system BitlyWithCache {
     use cache Cache
     use db Database
     use app AppServerWithCache ( db = db, cache = cache )
+}
+
+system TestSystem {
+    use test TestNative
 }

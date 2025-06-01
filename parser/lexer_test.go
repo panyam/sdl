@@ -87,12 +87,12 @@ func runLexerTest(t *testing.T, input string, expectedTokens []expectedToken, ig
 func TestLexer_KeywordsAndIdentifiers(t *testing.T) {
 	input := "component MyComp system _sys1 let foo_bar123"
 	expected := []expectedToken{
-		{COMPONENT, "component", 0, 9, 1, 1, Nil(), ""},
-		{IDENTIFIER, "MyComp", 10, 16, 1, 11, Nil(), "MyComp"},
-		{SYSTEM, "system", 17, 23, 1, 18, Nil(), ""},
-		{IDENTIFIER, "_sys1", 24, 29, 1, 25, Nil(), "_sys1"},
-		{LET, "let", 30, 33, 1, 31, Nil(), ""},
-		{IDENTIFIER, "foo_bar123", 34, 44, 1, 35, Nil(), "foo_bar123"},
+		{COMPONENT, "component", 0, 9, 1, 1, Nil, ""},
+		{IDENTIFIER, "MyComp", 10, 16, 1, 11, Nil, "MyComp"},
+		{SYSTEM, "system", 17, 23, 1, 18, Nil, ""},
+		{IDENTIFIER, "_sys1", 24, 29, 1, 25, Nil, "_sys1"},
+		{LET, "let", 30, 33, 1, 31, Nil, ""},
+		{IDENTIFIER, "foo_bar123", 34, 44, 1, 35, Nil, "foo_bar123"},
 	}
 	runLexerTest(t, input, expected, false)
 }
@@ -121,34 +121,34 @@ func TestLexer_OperatorsAndPunctuation(t *testing.T) {
 	// Single ops like +, -, *, /, %, <, > will also be BINARY_OP.
 	input := `:= = == != < <= > >= + - * / % => . , ; : ( ) { } || && !`
 	expected := []expectedToken{
-		{LET_ASSIGN, ":=", 0, 2, 1, 1, Nil(), ""}, // Keep as is, it has a specific token type in grammar.y
-		{ASSIGN, "=", 3, 4, 1, 4, Nil(), ""},
+		{LET_ASSIGN, ":=", 0, 2, 1, 1, Nil, ""}, // Keep as is, it has a specific token type in grammar.y
+		{ASSIGN, "=", 3, 4, 1, 4, Nil, ""},
 		// All subsequent operators are now BINARY_OP
-		{BINARY_OP, "==", 5, 7, 1, 6, Nil(), ""},
-		{BINARY_OP, "!=", 8, 10, 1, 9, Nil(), ""},
-		{BINARY_OP, "<", 11, 12, 1, 12, Nil(), ""},
-		{BINARY_OP, "<=", 13, 15, 1, 14, Nil(), ""},
-		{BINARY_OP, ">", 16, 17, 1, 17, Nil(), ""},
-		{BINARY_OP, ">=", 18, 20, 1, 19, Nil(), ""},
-		{BINARY_OP, "+", 21, 22, 1, 22, Nil(), ""},
-		{MINUS, "-", 23, 24, 1, 24, Nil(), ""},
-		{BINARY_OP, "*", 25, 26, 1, 26, Nil(), ""},
-		{BINARY_OP, "/", 27, 28, 1, 28, Nil(), ""},
-		{BINARY_OP, "%", 29, 30, 1, 30, Nil(), ""},
-		{ARROW, "=>", 31, 33, 1, 32, Nil(), ""}, // Keep as is, it has a specific token type
+		{BINARY_OP, "==", 5, 7, 1, 6, Nil, ""},
+		{BINARY_OP, "!=", 8, 10, 1, 9, Nil, ""},
+		{BINARY_OP, "<", 11, 12, 1, 12, Nil, ""},
+		{BINARY_OP, "<=", 13, 15, 1, 14, Nil, ""},
+		{BINARY_OP, ">", 16, 17, 1, 17, Nil, ""},
+		{BINARY_OP, ">=", 18, 20, 1, 19, Nil, ""},
+		{BINARY_OP, "+", 21, 22, 1, 22, Nil, ""},
+		{MINUS, "-", 23, 24, 1, 24, Nil, ""},
+		{BINARY_OP, "*", 25, 26, 1, 26, Nil, ""},
+		{BINARY_OP, "/", 27, 28, 1, 28, Nil, ""},
+		{BINARY_OP, "%", 29, 30, 1, 30, Nil, ""},
+		{ARROW, "=>", 31, 33, 1, 32, Nil, ""}, // Keep as is, it has a specific token type
 		// Punctuation remains the same
-		{DOT, ".", 34, 35, 1, 35, Nil(), ""},
-		{COMMA, ",", 36, 37, 1, 37, Nil(), ""},
-		{SEMICOLON, ";", 38, 39, 1, 39, Nil(), ""},
-		{COLON, ":", 40, 41, 1, 41, Nil(), ""},
-		{LPAREN, "(", 42, 43, 1, 43, Nil(), ""},
-		{RPAREN, ")", 44, 45, 1, 45, Nil(), ""},
-		{LBRACE, "{", 46, 47, 1, 47, Nil(), ""},
-		{RBRACE, "}", 48, 49, 1, 49, Nil(), ""},
+		{DOT, ".", 34, 35, 1, 35, Nil, ""},
+		{COMMA, ",", 36, 37, 1, 37, Nil, ""},
+		{SEMICOLON, ";", 38, 39, 1, 39, Nil, ""},
+		{COLON, ":", 40, 41, 1, 41, Nil, ""},
+		{LPAREN, "(", 42, 43, 1, 43, Nil, ""},
+		{RPAREN, ")", 44, 45, 1, 45, Nil, ""},
+		{LBRACE, "{", 46, 47, 1, 47, Nil, ""},
+		{RBRACE, "}", 48, 49, 1, 49, Nil, ""},
 		// Logical operators are also BINARY_OP now
-		{BINARY_OP, "||", 50, 52, 1, 51, Nil(), ""},
-		{BINARY_OP, "&&", 53, 55, 1, 54, Nil(), ""},
-		{BINARY_OP, "!", 56, 57, 1, 57, Nil(), ""}, // NOT could be UNARY_OP if lexer distinguishes
+		{BINARY_OP, "||", 50, 52, 1, 51, Nil, ""},
+		{BINARY_OP, "&&", 53, 55, 1, 54, Nil, ""},
+		{BINARY_OP, "!", 56, 57, 1, 57, Nil, ""}, // NOT could be UNARY_OP if lexer distinguishes
 	}
 	runLexerTest(t, input, expected, false)
 }
@@ -164,15 +164,15 @@ component Abc // another comment
 } // final
 `
 	expected := []expectedToken{
-		{COMPONENT, "component", 22, 31, 3, 1, Nil(), ""},
-		{IDENTIFIER, "Abc", 32, 35, 3, 11, Nil(), "Abc"},
-		{LBRACE, "{", 83, 84, 5, 15, Nil(), ""},
-		{PARAM, "param", 86, 91, 6, 2, Nil(), ""},
-		{IDENTIFIER, "X", 92, 93, 6, 8, Nil(), "X"},
-		{COLON, ":", 93, 94, 6, 9, Nil(), ""},
-		{IDENTIFIER, "int", 95, 98, 6, 11, Nil(), "int"}, // Corrected: INT keyword is lexed as IDENTIFIER
-		{SEMICOLON, ";", 98, 99, 6, 14, Nil(), ""},
-		{RBRACE, "}", 125, 126, 8, 1, Nil(), ""},
+		{COMPONENT, "component", 22, 31, 3, 1, Nil, ""},
+		{IDENTIFIER, "Abc", 32, 35, 3, 11, Nil, "Abc"},
+		{LBRACE, "{", 83, 84, 5, 15, Nil, ""},
+		{PARAM, "param", 86, 91, 6, 2, Nil, ""},
+		{IDENTIFIER, "X", 92, 93, 6, 8, Nil, "X"},
+		{COLON, ":", 93, 94, 6, 9, Nil, ""},
+		{IDENTIFIER, "int", 95, 98, 6, 11, Nil, "int"}, // Corrected: INT keyword is lexed as IDENTIFIER
+		{SEMICOLON, ";", 98, 99, 6, 14, Nil, ""},
+		{RBRACE, "}", 125, 126, 8, 1, Nil, ""},
 	}
 	runLexerTest(t, input, expected, false)
 }
@@ -249,7 +249,7 @@ func TestLexer_ComplexDurations(t *testing.T) {
 		{INT_LITERAL, "10", 0, 2, 1, 1, IntValue(10), ""},
 		{DURATION_LITERAL, "10.5ms", 3, 9, 1, 4, FloatValue(parseDuration("10.5", "ms")), ""},
 		{INT_LITERAL, "1", 10, 11, 1, 11, IntValue(1), ""},
-		{IDENTIFIER, "s2", 11, 13, 1, 12, Nil(), "s2"},
+		{IDENTIFIER, "s2", 11, 13, 1, 12, Nil, "s2"},
 	}
 	lexer := runLexerTest(t, input, expected, true)
 	require.Error(t, lexer.lastError)
@@ -258,7 +258,7 @@ func TestLexer_ComplexDurations(t *testing.T) {
 	input2 := `1msident`
 	expected2 := []expectedToken{
 		{INT_LITERAL, "1", 0, 1, 1, 1, IntValue(1), ""},
-		{IDENTIFIER, "msident", 1, 8, 1, 2, Nil(), "msident"},
+		{IDENTIFIER, "msident", 1, 8, 1, 2, Nil, "msident"},
 	}
 	runLexerTest(t, input2, expected2, true)
 }
@@ -266,12 +266,12 @@ func TestLexer_ComplexDurations(t *testing.T) {
 func TestLexer_DivisionAndMultilineComments(t *testing.T) {
 	input := "a / b /* comment * test */ c /**/ d"
 	expected := []expectedToken{
-		{IDENTIFIER, "a", 0, 1, 1, 1, Nil(), "a"},
+		{IDENTIFIER, "a", 0, 1, 1, 1, Nil, "a"},
 		// Since / is an opchar, it will be BINARY_OP
-		{BINARY_OP, "/", 2, 3, 1, 3, Nil(), ""},
-		{IDENTIFIER, "b", 4, 5, 1, 5, Nil(), "b"},
-		{IDENTIFIER, "c", 27, 28, 1, 28, Nil(), "c"},
-		{IDENTIFIER, "d", 34, 35, 1, 35, Nil(), "d"},
+		{BINARY_OP, "/", 2, 3, 1, 3, Nil, ""},
+		{IDENTIFIER, "b", 4, 5, 1, 5, Nil, "b"},
+		{IDENTIFIER, "c", 27, 28, 1, 28, Nil, "c"},
+		{IDENTIFIER, "d", 34, 35, 1, 35, Nil, "d"},
 	}
 	runLexerTest(t, input, expected, false)
 
@@ -284,10 +284,10 @@ func TestLexer_DivisionAndMultilineComments(t *testing.T) {
 
 	input3 := "a * /* b */ c"
 	expected3 := []expectedToken{
-		{IDENTIFIER, "a", 0, 1, 1, 1, Nil(), "a"},
+		{IDENTIFIER, "a", 0, 1, 1, 1, Nil, "a"},
 		// Since * is an opchar, it will be BINARY_OP
-		{BINARY_OP, "*", 2, 3, 1, 3, Nil(), ""},
-		{IDENTIFIER, "c", 12, 13, 1, 13, Nil(), "c"},
+		{BINARY_OP, "*", 2, 3, 1, 3, Nil, ""},
+		{IDENTIFIER, "c", 12, 13, 1, 13, Nil, "c"},
 	}
 	runLexerTest(t, input3, expected3, false)
 }

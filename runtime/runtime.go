@@ -1,8 +1,10 @@
 package runtime
 
 import (
+	"fmt"
 	"log"
 
+	"github.com/panyam/sdl/components"
 	"github.com/panyam/sdl/loader"
 )
 
@@ -17,8 +19,15 @@ func NewRuntime(loader *loader.Loader) (r *Runtime) {
 	return
 }
 
-func (r *Runtime) CreateNativeComponent(name string) *NativeObject {
-	return nil
+func (r *Runtime) CreateNativeComponent(compDecl *ComponentDecl) NativeObject {
+	name := compDecl.Name.Value
+	if name == "HashIndex" {
+		return &NativeWrapper{name, (&components.HashIndex{}).Init()}
+	}
+	if name == "TestNative" {
+		return &NativeWrapper{name, NewTestNative()}
+	}
+	panic(fmt.Sprintf("Native component not registered: %s", name))
 }
 
 // Gets the initial run time environment for a File which would include its parameters and component creators
