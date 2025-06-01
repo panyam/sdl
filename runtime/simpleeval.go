@@ -546,6 +546,7 @@ func (s *SimpleEval) evalCallExpr(expr *CallExpr, env *Env[Value], currTime *cor
 			// Native method invocation to be handled differently
 			result, err := InvokeMethod(compInstance.NativeInstance, fexpr.Member.Value, argValues, env, currTime)
 			log.Println("Method CalRes, Err: ", result, err)
+			return result, false
 		} else {
 			result, _ = s.Eval(methodDecl.Body, newEnv, currTime)
 			// We can assume method exists on the component instance as it would have been validated durint inference phase

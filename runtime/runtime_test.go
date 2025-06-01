@@ -35,5 +35,5 @@ func RunTestCall(system *SystemInstance, env *Env[Value], obj, method string) {
 	se := NewSimpleEval(system.File)
 	ce := &CallExpr{Function: &MemberAccessExpr{Receiver: &IdentifierExpr{Value: obj}, Member: &IdentifierExpr{Value: method}}}
 	res2, ret2 := se.Eval(ce, env, &currTime) // reuse env to continue
-	log.Println("Now Running System.App.Shorten(), ", res2, ret2, currTime)
+	log.Printf("Now Running %s.%s.%s: %v, %v @ %v", system.System.Name.Value, obj, method, res2, ret2, currTime)
 }
