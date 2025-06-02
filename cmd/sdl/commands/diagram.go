@@ -5,10 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	// "encoding/json" // Added for Excalidraw
-	// "math/rand"     // Added for Excalidraw element IDs
-	// "strconv"       // Added for Excalidraw element IDs
-	// "time"          // Added for Excalidraw element IDs
+	// No longer need encoding/json, math/rand, strconv, time here
+	// as they are handled by the specific generator files (e.g., excalidraw.go)
 
 	"github.com/panyam/sdl/decl"
 	"github.com/panyam/sdl/loader"
@@ -49,27 +47,23 @@ Diagram types:
 		}
 		fmt.Printf("Format: %s, Output: %s\n", format, outputFile)
 
-		var diagramOutput string // Will store string for dot/mermaid, or JSON string for excalidraw
+		var diagramOutput string 
 		var errGen error = nil
 
 		if diagramType == "static" {
 			// 1. Load the SDL file
-			sdlLoader := loader.NewLoader(nil, nil, 10)
+			sdlLoader := loader.NewLoader(nil, nil, 10) 
 			fileStatus, err := sdlLoader.LoadFile(dslFilePath, "", 0)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error loading SDL file '%s': %v\n", dslFilePath, err)
 				if fileStatus != nil {
-					for _, e := range fileStatus.Errors {
-						fmt.Fprintln(os.Stderr, "  ", e)
-					}
+					for _, e := range fileStatus.Errors { fmt.Fprintln(os.Stderr, "  ", e) }
 				}
 				os.Exit(1)
 			}
 			if fileStatus.HasErrors() {
 				fmt.Fprintf(os.Stderr, "Errors found while loading SDL file '%s':\n", dslFilePath)
-				for _, e := range fileStatus.Errors {
-					fmt.Fprintln(os.Stderr, "  ", e)
-				}
+				for _, e := range fileStatus.Errors { fmt.Fprintln(os.Stderr, "  ", e) }
 				os.Exit(1)
 			}
 
@@ -128,8 +122,8 @@ Diagram types:
 				diagramOutput = generateMermaidOutput(sysDecl.Name.Value, diagramNodes, diagramEdges)
 			case "excalidraw":
 				diagramOutput, errGen = generateExcalidrawOutput(sysDecl.Name.Value, diagramNodes, diagramEdges)
-			// case "svg":
-			// 	diagramOutput, errGen = generateSvgOutput(sysDecl.Name.Value, diagramNodes, diagramEdges)
+			case "svg":
+				diagramOutput, errGen = generateSvgOutput(sysDecl.Name.Value, diagramNodes, diagramEdges)
 			default:
 				fmt.Fprintf(os.Stderr, "Static diagram for format '%s' not supported or placeholder.\n", format)
 				os.Exit(1)
@@ -174,6 +168,6 @@ Diagram types:
 func init() {
 	AddCommand(diagramCmd)
 	diagramCmd.Flags().StringP("output", "o", "", "Output file path for the diagram")
-	// Updated to include excalidraw, and eventually svg, png
+	// Updated to include excalidraw and svg
 	diagramCmd.Flags().String("format", "dot", "Output format (dot, mermaid, excalidraw, svg, png)")
 }
