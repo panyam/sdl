@@ -1,46 +1,54 @@
-# SDL Declarations Package Summary (`decl` package)
+# SDL Declarations Package Summary (`decl`)
 
 **Purpose:**
 
-This package is central to the System Design Language (SDL) processing. It defines:
-1.  The Go structures for all Abstract Syntax Tree (AST) nodes that represent the parsed SDL code.
-2.  The SDL type system, including primitive types, composite types (List, Tuple, Outcomes), and how user-defined types like Enums and Components are represented.
-3.  The logic for type inference and static semantic checking of the AST.
-4.  Supporting structures like `TypeScope` for managing symbols during inference and `Env[Node]` for generic environment/symbol storage.
+This package defines the core data structures for representing the System Design Language (SDL) Abstract Syntax Tree (AST). It provides the building blocks for all language constructs, including type definitions, expressions, statements, and top-level declarations like components and systems. It also defines the `Value` type system used during runtime evaluation and type inference.
 
 **Key Concepts & Components:**
 
-1.  **AST Node Definitions (`ast.go` - *implicitly, as definitions are spread across files like `exprs.go`, `stmts.go`, `toplevel.go` within `decl`*):
-    *   Defines interfaces (`Node`, `Expr`, `Stmt`, `TopLevelDeclaration`, etc.) and concrete structs (`ComponentDecl`, `SystemDecl`, `EnumDecl`, `ImportDecl`, `MethodDecl`, `ParamDecl`, `UsesDecl`, `InstanceDecl`, `AnalyzeDecl`, `LetStmt`, `IfStmt`, `ReturnStmt`, `CallExpr`, `MemberAccessExpr`, `LiteralExpr`, `IdentifierExpr`, `BinaryExpr`, `UnaryExpr`, `DistributeExpr`, `SampleExpr`, etc.) representing all language constructs.
-    *   Each AST node includes `NodeInfo` for tracking its position (line, column) in the source file.
-    *   Expressions implement the `Expr` interface, which includes methods for getting/setting declared and inferred types.
+*   **AST Node Hierarchy:**
+    *   A comprehensive set of Go structs representing every element of the SDL grammar (e.g., `FileDecl`, `ComponentDecl`, `SystemDecl`, `MethodDecl`, `InstanceDecl`, `LetStmt`, `CallExpr`, `LiteralExpr`, `IdentifierExpr`, `BinaryExpr`, `IfStmt`, `ForStmt`, `DistributeExpr`, `SampleExpr`, `ImportDecl`, `EnumDecl`, etc.).
+    *   Most AST nodes embed `NodeInfo` (or a similar structure) to track their source code position (line, column, byte offset) for error reporting and analysis.
+    *   Nodes often have methods for resolving internal references (e.g., `FileDecl.Resolve()`, `FileDecl.GetSystem()`, `ComponentDecl.GetMethod()`) and for type inference support (e.g., `SetInferredType()`, `InferredType()`).
 
-2.  **SDL Type System (`types.go`):
-    *   `Type` struct: Represents a type in SDL (e.g., `Int`, `Bool`, `List[String]`, `Outcomes[AccessResult]`, an enum type like `HttpStatusCode`, or a component type like `MyCache`).
-    *   Includes fields for `Tag`, `Info` for type tag and type info.  Type Tag tells what kind of type it i, (eg:
-        * SimpleType for int, bool, float, string etc
-        * ListType for lists (.Info would be the type of item in the list)
-        * ComponentType for denoting component types - where Info would be the corresponding ComponentDecl
-        * EnumType - Info is the EnumDecl
-        * so on
-    *   Singleton instances for basic types (`IntType`, `StrType`, etc.) and factory functions (`ListType`, `OutcomesType`, `EnumType`, `ComponentType`, `EnumType`) for creating `Type` objects.
+*   **Type System (`Type`, `TypeDecl`):**
+    *   `TypeDecl`: Represents a type annotation as it appears in the source code (e.g., "Int", "MyComponent", "List[String]"). It can include arguments for generic-like types.
+    *   `Type`: Represents the resolved, canonical type information. Includes a `Tag` (e.g., `TypeTagInt`, `TypeTagComponent`, `TypeTagEnum`, `TypeTagOutcomes`) and `Info` (holding specific details like the `ComponentDecl` for a component type, or the element type for `Outcomes`).
+    *   Factory functions (e.g., `IntType`, `StrType`, `ComponentType`, `EnumType`, `OutcomesType`, `ListType`, `TupleType`, `RefType`) create canonical `Type` instances.
 
-3.  **Generic Environment (`env.go`):
-    *   `Env[T any]` struct: A general-purpose, nestable environment for storing key-value pairs, where keys are strings (names) and values are of generic type `T` (in type inference, `T` is `Node`).
-    *   Supports `Get`, `Set`, and `Push` (for creating nested scopes).
-    *   Used by the `loader` to build the initial symbol table for a file and by `TypeScope` to manage lexical scoping during inference.
+*   **Runtime Value System (`Value`):**
+    *   The `Value` struct is the primary representation of data during SDL program evaluation (interpretation or simulation).
+    *   It holds the actual Go data (`Value.Value`) and its corresponding SDL `Type` (`Value.Type`).
+    *   Crucially, `Value` now includes a `Time float64` field, intended to accumulate or represent the latency/duration associated with the operation that produced this value. This is particularly important for native function calls and performance modeling.
+    *   Helper functions (e.g., `IntValue()`, `BoolValue()`, `NewValue()`) for creating `Value` instances.
 
-4.  **File Declaration Resolution (`ast.go` - within `FileDecl` methods):
-    *   `FileDecl.Resolve()`: Parses the `Declarations` list in a `FileDecl` to populate internal maps (`components`, `enums`, `imports`, `systems`). This makes looking up locally defined symbols efficient.
-    *   `FileDecl.Get<Type>()` methods (e.g., `GetEnum`, `GetComponent`) provide access to these resolved local declarations.
+*   **Symbol Management (`Env[T]`):**
+    *   A generic `Env[T]` type provides a hierarchical environment for managing named symbols (variables, parameters, component/enum definitions) and their associated data (e.g., `Node` for type scopes, `Value` for runtime scopes).
+    *   Supports `Push()` for creating nested scopes and `Get()`/`Set()` for symbol lookup and definition.
 
-**Current Status & Recent Work:**
+*   **Interfaces & Utilities:**
+    *   `Node` interface (likely): Common interface for all AST nodes, providing methods like `Pos()`, `End()`, `String()`, `PrettyPrint()`.
+    *   Helper functions for AST manipulation and inspection.
 
-*   The AST node definitions are largely in place, covering most of the intended SDL syntax.
-*   The `Type` system and `Env` structure are defined.
+**Role in the Project:**
 
-**Next Steps (for this package):**
+*   **Parser (`parser` package):** The parser's primary output is an AST composed of nodes defined in this `decl` package.
+*   **Loader (`loader` package):** The loader traverses and validates the AST. Type inference (in `loader/infer.go` and `loader/typescope.go`) heavily relies on and annotates the `Type` and `Value` information within these AST nodes. The loader also uses `Env[Node]` to build type scopes.
+*   **Runtime (`runtime` package):** The runtime evaluator (e.g., `SimpleEval`) interprets the AST nodes. It uses the `Value` system for computations and `Env[Value]` for managing runtime variable states.
+*   **Commands (`cmd/sdl/commands`):** CLI commands interact with these AST structures to perform validation, listing, description, and diagramming.
 
-*   Complete and thoroughly test the refactored type inference logic in `infer.go` to cover all language constructs and edge cases, ensuring it correctly utilizes the new `TypeScope` and `Env`.
-*   Ensure `TypeDecl.TypeUsingScope()` is robust for all kinds of type declarations (primitives, generics, named types from scope).
-*   Add any missing AST nodes or refine existing ones as DSL features evolve.
+**Current Status:**
+
+*   The `decl` package appears to be well-established and provides a comprehensive representation of the SDL.
+*   The `Value` system, including the recent addition of the `Time` field, is central to enabling performance-aware evaluation.
+*   The type system is sophisticated enough to support features like generics (via `TypeDecl` arguments) and reference types.
+
+**Key Dependencies:**
+
+*   Relied upon by `parser`, `loader`, `runtime`, and `cmd/sdl`.
+*   Has minimal external dependencies itself, focusing on core language structure.
+
+**Future Considerations:**
+
+*   Further refinement of the visitor pattern for AST traversal if not already comprehensive.
+*   Serialization/deserialization of ASTs (e.g., for caching parsed files or for language server protocols) might be a future need.
