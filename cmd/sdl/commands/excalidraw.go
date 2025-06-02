@@ -11,46 +11,46 @@ import (
 // ExcalidrawElement defines the structure for an individual Excalidraw element.
 // It includes common fields and uses `omitempty` for optional ones.
 type ExcalidrawElement struct {
-	ID              string      `json:"id"`
-	Type            string      `json:"type"`
-	X               float64     `json:"x"`
-	Y               float64     `json:"y"`
-	Width           float64     `json:"width"`
-	Height          float64     `json:"height"`
-	Angle           float64     `json:"angle,omitempty"`
-	StrokeColor     string      `json:"strokeColor,omitempty"`
-	BackgroundColor string      `json:"backgroundColor,omitempty"`
-	FillStyle       string      `json:"fillStyle,omitempty"`
-	StrokeWidth     int         `json:"strokeWidth,omitempty"`
-	StrokeStyle     string      `json:"strokeStyle,omitempty"`
-	Roughness       int         `json:"roughness,omitempty"`
-	Opacity         int         `json:"opacity,omitempty"` // Default is 100
-	Seed            int64       `json:"seed"`
-	Version         int         `json:"version"`
-	VersionNonce    int64       `json:"versionNonce"`
-	IsDeleted       bool        `json:"isDeleted,omitempty"`
+	ID              string          `json:"id"`
+	Type            string          `json:"type"`
+	X               float64         `json:"x"`
+	Y               float64         `json:"y"`
+	Width           float64         `json:"width"`
+	Height          float64         `json:"height"`
+	Angle           float64         `json:"angle,omitempty"`
+	StrokeColor     string          `json:"strokeColor,omitempty"`
+	BackgroundColor string          `json:"backgroundColor,omitempty"`
+	FillStyle       string          `json:"fillStyle,omitempty"`
+	StrokeWidth     int             `json:"strokeWidth,omitempty"`
+	StrokeStyle     string          `json:"strokeStyle,omitempty"`
+	Roughness       int             `json:"roughness,omitempty"`
+	Opacity         int             `json:"opacity,omitempty"` // Default is 100
+	Seed            int64           `json:"seed"`
+	Version         int             `json:"version"`
+	VersionNonce    int64           `json:"versionNonce"`
+	IsDeleted       bool            `json:"isDeleted,omitempty"`
 	BoundElements   []*BoundElement `json:"boundElements,omitempty"`
-	StartBinding    *Binding    `json:"startBinding,omitempty"`
-	EndBinding      *Binding    `json:"endBinding,omitempty"`
-	Points          [][]float64 `json:"points,omitempty"`
-	Text            string      `json:"text,omitempty"`
-	FontSize        float64     `json:"fontSize,omitempty"`
-	FontFamily      int         `json:"fontFamily,omitempty"`
-	TextAlign       string      `json:"textAlign,omitempty"`
-	VerticalAlign   string      `json:"verticalAlign,omitempty"`
-	Baseline        int         `json:"baseline,omitempty"`
-	ContainerId     *string     `json:"containerId,omitempty"`
-	OriginalText    string      `json:"originalText,omitempty"`
-	StrokeSharpness string      `json:"strokeSharpness,omitempty"`
-	StartArrowhead  *string     `json:"startArrowhead,omitempty"`
-	EndArrowhead    *string     `json:"endArrowhead,omitempty"`
+	StartBinding    *Binding        `json:"startBinding,omitempty"`
+	EndBinding      *Binding        `json:"endBinding,omitempty"`
+	Points          [][]float64     `json:"points,omitempty"`
+	Text            string          `json:"text,omitempty"`
+	FontSize        float64         `json:"fontSize,omitempty"`
+	FontFamily      int             `json:"fontFamily,omitempty"`
+	TextAlign       string          `json:"textAlign,omitempty"`
+	VerticalAlign   string          `json:"verticalAlign,omitempty"`
+	Baseline        int             `json:"baseline,omitempty"`
+	ContainerId     *string         `json:"containerId,omitempty"`
+	OriginalText    string          `json:"originalText,omitempty"`
+	StrokeSharpness string          `json:"strokeSharpness,omitempty"`
+	StartArrowhead  *string         `json:"startArrowhead,omitempty"`
+	EndArrowhead    *string         `json:"endArrowhead,omitempty"`
 }
 
 // Binding defines how an arrow binds to another element.
 type Binding struct {
 	ElementID string  `json:"elementId"`
-	Focus     float64 `json:"focus,omitempty"` // How much into the shape, default usually 0.5 (center-ish)
-	Gap       float64 `json:"gap,omitempty"`   // Default is 1 for arrows
+	Focus     float64 `json:"focus,omitempty"`
+	Gap       float64 `json:"gap,omitempty"`
 }
 
 // BoundElement links an element (like text) to its container or vice-versa.
@@ -61,10 +61,10 @@ type BoundElement struct {
 
 // ExcalidrawFile is the top-level structure for an .excalidraw file.
 type ExcalidrawFile struct {
-	Type     string               `json:"type"`
-	Version  int                  `json:"version"`
-	Source   string               `json:"source,omitempty"`
-	Elements []*ExcalidrawElement `json:"elements"`
+	Type     string                 `json:"type"`
+	Version  int                    `json:"version"`
+	Source   string                 `json:"source,omitempty"`
+	Elements []*ExcalidrawElement   `json:"elements"`
 	AppState map[string]interface{} `json:"appState,omitempty"`
 	Files    map[string]interface{} `json:"files,omitempty"`
 }
@@ -93,8 +93,6 @@ func (s *ExcalidrawScene) newElementID(prefix string) string {
 	return prefix + "_" + strconv.FormatInt(s.newSeed(), 36) + "_" + strconv.FormatInt(s.randSource.Int63n(1000), 36)
 }
 
-// AddElement adds a pre-configured ExcalidrawElement to the scene.
-// If element.ID is empty, a new one is generated.
 func (s *ExcalidrawScene) AddElement(element *ExcalidrawElement) error {
 	if element == nil {
 		return fmt.Errorf("cannot add nil element")
@@ -109,27 +107,43 @@ func (s *ExcalidrawScene) AddElement(element *ExcalidrawElement) error {
 	if _, exists := s.elementIDMap[element.ID]; exists {
 		return fmt.Errorf("element with ID '%s' already exists in the scene", element.ID)
 	}
-
-	// Ensure common defaults if not set
 	if element.Seed == 0 {
 		element.Seed = s.newSeed()
 	}
 	if element.Version == 0 {
-		element.Version = 2 // Excalidraw default version for elements
+		element.Version = 2
 	}
 	if element.VersionNonce == 0 {
-		element.VersionNonce = s.newSeed() // Or time based for more uniqueness
+		element.VersionNonce = s.newSeed()
 	}
-	if element.Opacity == 0 {
-        element.Opacity = 100 // Default to fully opaque if not specified
-    }
+	if element.Opacity == 0 { // Check if opacity is explicitly set to 0, otherwise default to 100
+		element.Opacity = 100
+		/*
+			var opacitySet bool
+			// This is a trick: marshal to see if Opacity was present. Not ideal for performance.
+			empJSON, _ := json.Marshal(element)
+			var tempMap map[string]interface{}
+			json.Unmarshal(tempJSON, &tempMap)
+			if _, ok := tempMap["opacity"]; ok {
+				opacitySet = true
+			}
+			if !opacitySet {
+				element.Opacity = 100
+			}
+		*/
+	} else if element.Opacity > 100 || element.Opacity < 0 { // clamp if set out of bounds
+		element.Opacity = 100
+	}
 
 	s.elements = append(s.elements, element)
 	s.elementIDMap[element.ID] = element
 	return nil
 }
 
-// AddRectangle creates a rectangle element and an optional bound text label.
+func (s *ExcalidrawScene) GetElement(id string) *ExcalidrawElement {
+	return s.elementIDMap[id]
+}
+
 func (s *ExcalidrawScene) AddRectangle(x, y, width, height float64, labelText string, rectProps *ExcalidrawElement, labelTextProps *ExcalidrawElement) (*ExcalidrawElement, *ExcalidrawElement, error) {
 	rect := &ExcalidrawElement{
 		Type:            "rectangle",
@@ -139,17 +153,22 @@ func (s *ExcalidrawScene) AddRectangle(x, y, width, height float64, labelText st
 		Height:          height,
 		StrokeColor:     "#1e1e1e",
 		BackgroundColor: "#f8f9fa",
-		FillStyle:       "solid",
+		FillStyle:       "hachure", // Default fill style
 		StrokeWidth:     1,
 		StrokeStyle:     "solid",
-		Roughness:       0,
+		Roughness:       1, // Default roughness
 		StrokeSharpness: "round",
 		BoundElements:   make([]*BoundElement, 0),
 	}
-	if rectProps != nil { // Apply overrides
-		// TODO: selectively override fields, not just Type, X, Y, etc.
-		if rectProps.StrokeColor != "" { rect.StrokeColor = rectProps.StrokeColor }
-		// ... other properties
+	if rectProps != nil {
+		// Simple override for now, can be made more sophisticated
+		if rectProps.StrokeColor != "" {
+			rect.StrokeColor = rectProps.StrokeColor
+		}
+		if rectProps.BackgroundColor != "" {
+			rect.BackgroundColor = rectProps.BackgroundColor
+		}
+		// ... other properties ...
 	}
 	if err := s.AddElement(rect); err != nil {
 		return nil, nil, err
@@ -159,11 +178,11 @@ func (s *ExcalidrawScene) AddRectangle(x, y, width, height float64, labelText st
 	if labelText != "" {
 		defaultFontSize := 16.0
 		lineHeightFactor := 1.2
-		textHeight := defaultFontSize * lineHeightFactor * float64(len(labelText)/20+1) // rough estimate
+		textHeight := defaultFontSize * lineHeightFactor * float64(len(labelText)/20+1)
 
 		textLabel = &ExcalidrawElement{
 			Type:            "text",
-			X:               x + 10, // Position will be relative to container anyway
+			X:               x + 10,
 			Y:               y + (height-textHeight)/2,
 			Width:           width - 20,
 			Height:          textHeight,
@@ -178,11 +197,10 @@ func (s *ExcalidrawScene) AddRectangle(x, y, width, height float64, labelText st
 			Baseline:        int(defaultFontSize * 0.8),
 			ContainerId:     &rect.ID,
 		}
-		if labelTextProps != nil { // Apply overrides
-			// TODO: selectively override fields
+		if labelTextProps != nil {
+			// ... override labelTextProps ...
 		}
 		if err := s.AddElement(textLabel); err != nil {
-			// Potentially remove 'rect' if adding its label fails? Or leave as is?
 			return rect, nil, err
 		}
 		rect.BoundElements = append(rect.BoundElements, &BoundElement{Type: "text", ID: textLabel.ID})
@@ -190,23 +208,23 @@ func (s *ExcalidrawScene) AddRectangle(x, y, width, height float64, labelText st
 	return rect, textLabel, nil
 }
 
-// AddArrow creates an arrow between two elements, with an optional label.
 func (s *ExcalidrawScene) AddArrow(sourceElementID, targetElementID string, labelText string, arrowProps *ExcalidrawElement, labelTextProps *ExcalidrawElement) (*ExcalidrawElement, *ExcalidrawElement, error) {
-	// Validate source and target elements exist (optional, bindings might handle it)
-	// if _, ok := s.elementIdMap[sourceElementID]; !ok {
-	// 	return nil, nil, fmt.Errorf("source element ID '%s' for arrow not found in scene", sourceElementID)
-	// }
-	// if _, ok := s.elementIdMap[targetElementID]; !ok {
-	// 	return nil, nil, fmt.Errorf("target element ID '%s' for arrow not found in scene", targetElementID)
-	// }
+	sourceElement := s.GetElement(sourceElementID)
+	targetElement := s.GetElement(targetElementID)
+	if sourceElement == nil {
+		return nil, nil, fmt.Errorf("source element ID '%s' for arrow not found in scene", sourceElementID)
+	}
+	if targetElement == nil {
+		return nil, nil, fmt.Errorf("target element ID '%s' for arrow not found in scene", targetElementID)
+	}
 
 	arrowHeadStyle := "arrow"
 	arrow := &ExcalidrawElement{
 		Type:            "arrow",
-		X:               0,
+		X:               0, // Position determined by bindings
 		Y:               0,
-		Width:           0,
-		Height:          0,
+		Width:           1, // Minimal size, actual determined by bindings
+		Height:          1,
 		StrokeColor:     "#1e1e1e",
 		BackgroundColor: "transparent",
 		StrokeWidth:     1,
@@ -219,12 +237,16 @@ func (s *ExcalidrawScene) AddArrow(sourceElementID, targetElementID string, labe
 		EndBinding:      &Binding{ElementID: targetElementID, Focus: 0.5, Gap: 1},
 		BoundElements:   make([]*BoundElement, 0),
 	}
-	if arrowProps != nil { // Apply overrides
-		// TODO: selectively override fields
+	if arrowProps != nil {
+		// ... override arrowProps ...
 	}
 	if err := s.AddElement(arrow); err != nil {
 		return nil, nil, err
 	}
+
+	// Add this arrow to the boundElements of the source and target shapes
+	sourceElement.BoundElements = append(sourceElement.BoundElements, &BoundElement{Type: "arrow", ID: arrow.ID})
+	targetElement.BoundElements = append(targetElement.BoundElements, &BoundElement{Type: "arrow", ID: arrow.ID})
 
 	var textLabel *ExcalidrawElement
 	if labelText != "" {
@@ -247,8 +269,8 @@ func (s *ExcalidrawScene) AddArrow(sourceElementID, targetElementID string, labe
 			Baseline:        int(defaultFontSize * 0.8),
 			ContainerId:     &arrow.ID,
 		}
-		if labelTextProps != nil { // Apply overrides
-			// TODO: selectively override fields
+		if labelTextProps != nil {
+			// ... override labelTextProps ...
 		}
 		if err := s.AddElement(textLabel); err != nil {
 			return arrow, nil, err
@@ -259,16 +281,15 @@ func (s *ExcalidrawScene) AddArrow(sourceElementID, targetElementID string, labe
 	return arrow, textLabel, nil
 }
 
-// ToJSON marshals the scene into an ExcalidrawFile JSON string.
 func (s *ExcalidrawScene) ToJSON() (string, error) {
 	exFile := ExcalidrawFile{
 		Type:    "excalidraw",
 		Version: 2,
-		Source:  "https://github.com/panyam/sdl", // Or make configurable
+		Source:  "https://github.com/panyam/sdl",
 		AppState: map[string]interface{}{
-			"gridSize":          nil,
-			"viewBackgroundColor": "#FFFFFF",
-			"currentItemStrokeColor": "#1e1e1e", // Default stroke color for new items in UI
+			"gridSize":               nil,
+			"viewBackgroundColor":    "#FFFFFF",
+			"currentItemStrokeColor": "#1e1e1e",
 		},
 		Elements: s.elements,
 	}
@@ -279,35 +300,31 @@ func (s *ExcalidrawScene) ToJSON() (string, error) {
 	return string(jsonData), nil
 }
 
-// generateExcalidrawOutput is now the adapter function that uses the generic ExcalidrawScene.
-// This function will typically live in a different file (e.g., diagram.go or sdl_to_excalidraw_adapter.go)
-// but is kept here for now as we are modifying excalidraw.go directly.
 func generateExcalidrawOutput(systemName string, sdlNodes []DiagramNode, sdlEdges []DiagramEdge) (string, error) {
 	scene := NewExcalidrawScene()
-	
-	// Layout parameters for SDL nodes
+
 	layoutState := struct {
-		currentX      float64
-		currentY      float64
-		startX        float64
-		startY        float64
-		elementWidth  float64
-		elementHeight float64
-		gapX          float64
-		gapY          float64
+		currentX       float64
+		currentY       float64
+		startX         float64
+		startY         float64
+		elementWidth   float64
+		elementHeight  float64
+		gapX           float64
+		gapY           float64
 		elementsPerRow int
-		countInRow    int
+		countInRow     int
 	}{
-		startX:        50.0,
-		startY:        50.0,
-		currentX:      50.0,
-		currentY:      50.0,
-		elementWidth:  200.0,
-		elementHeight: 80.0,
-		gapX:          60.0,
-		gapY:          70.0,
+		startX:         50.0,
+		startY:         50.0,
+		currentX:       50.0,
+		currentY:       50.0,
+		elementWidth:   200.0,
+		elementHeight:  80.0,
+		gapX:           60.0,
+		gapY:           70.0,
 		elementsPerRow: 3,
-		countInRow:    0,
+		countInRow:     0,
 	}
 
 	sdlNodeToExcalidrawRectID := make(map[string]string)
