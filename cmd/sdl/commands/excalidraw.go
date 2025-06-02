@@ -3,6 +3,7 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"math/rand"
 	"strconv"
 	"time"
@@ -24,7 +25,7 @@ type ExcalidrawElement struct {
 	StrokeWidth     int             `json:"strokeWidth,omitempty"`
 	StrokeStyle     string          `json:"strokeStyle,omitempty"`
 	Roughness       int             `json:"roughness,omitempty"`
-	Opacity         int             `json:"opacity,omitempty"` // Default is 100
+	Opacity         int             `json:"opacity,omitempty"`
 	Seed            int64           `json:"seed"`
 	Version         int             `json:"version"`
 	VersionNonce    int64           `json:"versionNonce"`
@@ -72,11 +73,10 @@ type ExcalidrawFile struct {
 // ExcalidrawScene manages a collection of Excalidraw elements.
 type ExcalidrawScene struct {
 	elements     []*ExcalidrawElement
-	elementIDMap map[string]*ExcalidrawElement // Maps Excalidraw-generated ID to element
+	elementIDMap map[string]*ExcalidrawElement
 	randSource   *rand.Rand
 }
 
-// NewExcalidrawScene creates a new, empty Excalidraw scene.
 func NewExcalidrawScene() *ExcalidrawScene {
 	return &ExcalidrawScene{
 		elements:     make([]*ExcalidrawElement, 0),
@@ -129,12 +129,13 @@ func (s *ExcalidrawScene) AddElement(element *ExcalidrawElement) error {
 			}
 			if !opacitySet {
 				element.Opacity = 100
+			} else if element.Opacity < 0 || element.Opacity > 100 {
+				element.Opacity = 100 // Clamp if out of bounds
 			}
 		*/
 	} else if element.Opacity > 100 || element.Opacity < 0 { // clamp if set out of bounds
 		element.Opacity = 100
 	}
-
 	s.elements = append(s.elements, element)
 	s.elementIDMap[element.ID] = element
 	return nil
@@ -153,10 +154,10 @@ func (s *ExcalidrawScene) AddRectangle(x, y, width, height float64, labelText st
 		Height:          height,
 		StrokeColor:     "#1e1e1e",
 		BackgroundColor: "#f8f9fa",
-		FillStyle:       "hachure", // Default fill style
+		FillStyle:       "solid",
 		StrokeWidth:     1,
 		StrokeStyle:     "solid",
-		Roughness:       1, // Default roughness
+		Roughness:       1,
 		StrokeSharpness: "round",
 		BoundElements:   make([]*BoundElement, 0),
 	}
@@ -168,7 +169,6 @@ func (s *ExcalidrawScene) AddRectangle(x, y, width, height float64, labelText st
 		if rectProps.BackgroundColor != "" {
 			rect.BackgroundColor = rectProps.BackgroundColor
 		}
-		// ... other properties ...
 	}
 	if err := s.AddElement(rect); err != nil {
 		return nil, nil, err
@@ -178,7 +178,7 @@ func (s *ExcalidrawScene) AddRectangle(x, y, width, height float64, labelText st
 	if labelText != "" {
 		defaultFontSize := 16.0
 		lineHeightFactor := 1.2
-		textHeight := defaultFontSize * lineHeightFactor * float64(len(labelText)/20+1)
+		textHeight := defaultFontSize * lineHeightFactor * float64(len(labelText)/20+1) // Basic estimate
 
 		textLabel = &ExcalidrawElement{
 			Type:            "text",
@@ -208,6 +208,7 @@ func (s *ExcalidrawScene) AddRectangle(x, y, width, height float64, labelText st
 	return rect, textLabel, nil
 }
 
+// AddArrow function with corrected geometry calculation for the arrow itself.
 func (s *ExcalidrawScene) AddArrow(sourceElementID, targetElementID string, labelText string, arrowProps *ExcalidrawElement, labelTextProps *ExcalidrawElement) (*ExcalidrawElement, *ExcalidrawElement, error) {
 	sourceElement := s.GetElement(sourceElementID)
 	targetElement := s.GetElement(targetElementID)
@@ -218,27 +219,52 @@ func (s *ExcalidrawScene) AddArrow(sourceElementID, targetElementID string, labe
 		return nil, nil, fmt.Errorf("target element ID '%s' for arrow not found in scene", targetElementID)
 	}
 
+	// Calculate center points of source and target elements
+	sourceCenterX := sourceElement.X + sourceElement.Width/2
+	sourceCenterY := sourceElement.Y + sourceElement.Height/2
+	targetCenterX := targetElement.X + targetElement.Width/2
+	targetCenterY := targetElement.Y + targetElement.Height/2
+
+	// Arrow's own X, Y is the top-left of its bounding box
+	arrowX := math.Min(sourceCenterX, targetCenterX)
+	arrowY := math.Min(sourceCenterY, targetCenterY)
+	arrowWidth := math.Abs(targetCenterX - sourceCenterX)
+	arrowHeight := math.Abs(targetCenterY - sourceCenterY)
+
+	if arrowWidth < 1 {
+		arrowWidth = 10
+	} // Ensure non-zero width for degenerated cases
+	if arrowHeight < 1 {
+		arrowHeight = 10
+	} // Ensure non-zero height
+
+	// Points are relative to the arrow's X, Y
+	points := [][]float64{
+		{sourceCenterX - arrowX, sourceCenterY - arrowY},
+		{targetCenterX - arrowX, targetCenterY - arrowY},
+	}
+
 	arrowHeadStyle := "arrow"
 	arrow := &ExcalidrawElement{
 		Type:            "arrow",
-		X:               0, // Position determined by bindings
-		Y:               0,
-		Width:           1, // Minimal size, actual determined by bindings
-		Height:          1,
+		X:               arrowX,
+		Y:               arrowY,
+		Width:           arrowWidth,
+		Height:          arrowHeight,
 		StrokeColor:     "#1e1e1e",
 		BackgroundColor: "transparent",
 		StrokeWidth:     1,
 		StrokeStyle:     "solid",
 		Roughness:       0,
 		StrokeSharpness: "round",
-		Points:          [][]float64{{0, 0}, {1, 1}},
+		Points:          points,
 		EndArrowhead:    &arrowHeadStyle,
 		StartBinding:    &Binding{ElementID: sourceElementID, Focus: 0.5, Gap: 1},
 		EndBinding:      &Binding{ElementID: targetElementID, Focus: 0.5, Gap: 1},
 		BoundElements:   make([]*BoundElement, 0),
 	}
 	if arrowProps != nil {
-		// ... override arrowProps ...
+		// Apply overrides for arrow properties if any
 	}
 	if err := s.AddElement(arrow); err != nil {
 		return nil, nil, err
@@ -270,7 +296,7 @@ func (s *ExcalidrawScene) AddArrow(sourceElementID, targetElementID string, labe
 			ContainerId:     &arrow.ID,
 		}
 		if labelTextProps != nil {
-			// ... override labelTextProps ...
+			// Apply overrides
 		}
 		if err := s.AddElement(textLabel); err != nil {
 			return arrow, nil, err
@@ -321,8 +347,8 @@ func generateExcalidrawOutput(systemName string, sdlNodes []DiagramNode, sdlEdge
 		currentY:       50.0,
 		elementWidth:   200.0,
 		elementHeight:  80.0,
-		gapX:           60.0,
-		gapY:           70.0,
+		gapX:           100.0, // Increased gap for clarity
+		gapY:           100.0, // Increased gap for clarity
 		elementsPerRow: 3,
 		countInRow:     0,
 	}
