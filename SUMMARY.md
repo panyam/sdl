@@ -1,54 +1,67 @@
-# SDL Project Summary & Onboarding Guide
+# SDL (System Design Language) Project Summary
+
+**Version:** As of current interactions (Post-Static Diagramming Enhancements)
 
 **1. Vision & Goal:**
 
-*   **Purpose:** The SDL (System Design Language) library models and analyzes the performance characteristics (latency, availability) of distributed system components using **analytical models** and **probabilistic composition**. It prioritizes **speed** for interactive "what-if" analysis over detailed Discrete Event Simulation (DES), focusing primarily on **steady-state** behavior.
+*   **Purpose:** The SDL project aims to provide a language and toolchain for modeling and analyzing the performance characteristics (e.g., latency, availability) of distributed systems. It focuses on enabling rapid, interactive "what-if" analysis primarily through analytical models and probabilistic composition for steady-state behavior. It also supports simulation-like execution for single-path analysis and metric gathering.
 *   **Use Cases:** Enable rapid analysis of system designs, bottleneck identification, SLO evaluation, performance exploration under different configurations, and potentially educational tools for system design reasoning.
 
-**2. Overall Architecture:**
+**2. Overall Architecture & Key Packages:**
 
-*   **Probabilistic Core (`./core`):** The foundation, providing generic `Outcomes[V]` distributions, composition operators (`And`, `Map`, `Split`, `Append`), complexity management via reduction (`Trim...`, `Merge...`, etc.), metric calculations (`Availability`, `PercentileLatency`, etc.), and a standardized `Analyze` primitive for testing the Go API. Relies on external reducers for composition.
-*   **Declarative Layer(`./decl`):** This represents the constructs for a parse tree and some runtime values for describing a system.  
-*   **Analytical Components (`./components`):** Concrete Go models of system building blocks (Disk, Cache, Queue, Pool, LSM, BTree, etc.) using `./core`. Key components (`ResourcePool`, `Queue`) use stateless analytical formulas (M/M/c, M/M/c/K).
-*   **Declarative Layer (`./components/decl`):** Defines component structures and methods (`Read()`, `Find()`, etc.) that generate Abstract Syntax Trees (ASTs) representing operation logic, separating definition from execution.
-*   **Parser(`./parser`):** A parser with the grammer (`grammar.y`) that loads a system defined in our DSL and represents using the parse and syntax trees represented in the decl module.
-*   **Loader Layer (`./loader`):** The loader takes a grammer parsed by the parser module and performs load time checks (like resolving files, package managing, type inference, missing/valid methods etc).  The output of the loader phase is a well formed expression tree that can be evaluated in various forms.
-*   **Runtime Layer (`./runtime`):** The runtime module facilitates execution of loaded system design expression trees.  It holds a loader (for resolving and loading packages) and environments for performing various runs.  Currently a SimpleEval type performs a "simulation" run where a single call end to end is sampled.  Other kinds of Evals will be added (eg an E2E probabilistic evaluator instead of a single E2E call sampler).
-*   **Examples (`./examples`):** Demonstrates usage of the **Go API** to build and analyze systems (`bitly`, `gpucaller`, `notifier`).
+The project is a Go-based system composed of several key packages:
 
-**3. Code Structure & Package Overview:**
+*   **`./core` (Probabilistic Core):**
+    *   Provides the fundamental Go API for probabilistic performance modeling. Key features include `Outcomes[V]` for discrete probability distributions, `AccessResult` for success/latency modeling, composition operators (`And`, `Map`), complexity reduction (`TrimToSize`), and metric calculations (`Availability`, `PercentileLatency`). It defines the `Metricable` interface for types whose performance can be measured.
 
-*   **`./` (Root)**
-    *   `go.mod`, `go.sum`: Go module definitions.
-    *   `Makefile`: Build/test/watch commands.
-    *   `DSL.md`, `ROADMAP.MD` (Potentially outdated): Design notes and future plans.
-    *   `SUMMARY.md`: (This document) Project overview.
-    *   `NEXTSTEPS.md`: Outstanding tasks and future work.
-    *   `./SYNTAX.md`: DSL syntax design discussion and decisions.
-    *   *(Future)* `README.md`: High-level description and usage examples.
+*   **`./components` (Concrete Analytical Components):**
+    *   Offers Go implementations of common system building blocks (Disk, Cache, Queue, ResourcePool, HashIndex, BTreeIndex, LSMTree, etc.) using `./core` primitives.
+    *   Many components, like `Queue` and `ResourcePool`, use stateless analytical models (M/M/c, M/M/1) for performance prediction.
+    *   Includes a `decl/` sub-package (`./components/decl`) containing Go wrappers for these components. These wrappers make the core Go components callable as "native" components from the SDL runtime, handling the translation between `core.Outcomes` and `decl.Value` (including latency).
 
-*   **`./core/`**: Fundamental, generic types and operations. (See `./core/SUMMARY.md`).
-*   **`./components/`**: Concrete system building blocks using `./core`. Includes `decl/` sub-package for AST generation. (See `./components/SUMMARY.md`).
-*   **`./decl/`**: Declarative/Syntax Tree representation of our DSL. (See `./decl/SUMMARY.md`).
-*   **`./parser/`**: A parser written in goyacc for parsing systems in our DSL. (See `./parser/SUMMARY.md`).
-*   **`./loader/`**: The package loader and name space resolver for our DSL files organized in various ways. The loader also invokes the Parser when loading resolved files and then performs various validations (like Inference - `./loader/infer.go`) (See `./loader/SUMMARY.md`).
-*   **`./runtime/`**: The runtime manager for loading (using a Loader) various files/modules and resolving them and preparing environments for kicking off Evaluations (SimpleEval for now). (See `./runtime/SUMMARY.md`).
-*   **`./examples/`**: Examples using the Go API. (See `./examples/SUMMARY.md`).
+*   **`./decl` (DSL Declarations & Types):**
+    *   Defines the Go structs for the Abstract Syntax Tree (AST) of the SDL. This includes all language constructs (components, systems, methods, statements, expressions, types).
+    *   Defines the core `Value` type system used by the SDL runtime, which notably includes a `Time` field to track latency during evaluation. It also defines the `Type` system for representing SDL types (e.g., `Int`, `ComponentType`, `OutcomesType`).
+    *   Provides `Env[T]` for managing scoped symbols.
 
-**4. Current Status & Recent Work Summary:**
+*   **`./parser` (DSL Parser):**
+    *   A `goyacc`-based parser that translates SDL text into the AST defined in the `./decl` package.
+    *   Includes a lexer (`lexer.go`) and grammar (`grammar.y`).
 
-*   The core analytical library (`./core`, `components`) is functional for modelling steady-state performance via probabilistic composition using the **Go API**. Standardized testing via `core.Analyze` is implemented. Key components are stateless and rate-driven.
-*   The declarative layer (`./decl`) generates ASTs for component operations.
-*   The **DSL Parser (`./parser`) and Loader (`./loader`)** are now implemented.
-*   **Recent Work:** Focused on implementing DSL Runtime and Evaluator.   The plot command (`cmd/sdl/commands/plot.go`) shows how a example SDL file can be loaded a particular system within it can be invoked to obtain various runtime plots of a system in action.
+*   **`./loader` (File Loading & Validation):**
+    *   Manages loading of parsed SDL files, resolving import paths, and handling cyclic dependencies.
+    *   Crucially, it orchestrates the validation process, including **type inference** (`infer.go`, `typescope.go`) which populates a type environment (`Env[Node]`) and checks the semantic correctness of the AST.
 
-**5. Known Limitations (Explicitly Acknowledged):**
+*   **`./runtime` (DSL Execution Engine):**
+    *   Responsible for executing loaded and validated SDL models.
+    *   Features `SimpleEval`, an interpreter that traverses the AST to evaluate expressions and statements, managing runtime state in an `Env[Value]`. It supports calls to both SDL-defined methods and native Go components (via reflection and the wrappers in `components/decl`).
+    *   The `Value.Time` field is used to accumulate latency during `SimpleEval` execution.
+    *   Includes helpers like `RunCallInBatches` (used by the `plot` CLI command) to execute specific methods repeatedly.
 
-*   **Analytical Steady-State:** Models average performance, not transient bursts/dynamics. Accuracy depends on analytical models (e.g., M/M/c assumptions).
-*   **Stateless Components:** `ResourcePool`/`Queue` rely purely on configured rates.
-*   **Profile Accuracy:** Depends on realistic input `Outcomes` distributions (especially for leaf components like `Disk` or work profiles like `gpuwork`).
-*   **Approximations:** Batcher wait time, parallel execution modeling (pending), fan-out costs in examples.
+*   **`./cmd/sdl` (Command Line Interface):**
+    *   The main user-facing tool, `sdl`, built with Cobra.
+    *   Provides commands for:
+        *   `validate`: Parses and type-checks SDL files.
+        *   `list`: Lists entities within an SDL file.
+        *   `describe`: Shows details of a specific entity.
+        *   `plot`: Executes a system method multiple times (using `./runtime`) and generates SVG latency plots (using `./cmd/sdl/plotter.go`).
+        *   `diagram static`: Generates static system diagrams from SDL definitions, showing component instances and their connections. Supports DOT, Mermaid, Excalidraw (JSON), and direct SVG output formats. (Recent work focused heavily on implementing and refining this).
+    *   Placeholder commands for `run`, dynamic `diagram`, and `trace` exist for future implementation.
 
-**6. Next Steps:**
+*   **`./examples`:**
+    *   Contains Go API examples (`native/`) demonstrating the use of `./core` and `./components`.
+    *   Includes sample `.sdl` files used for testing the parser, loader, and other SDL features.
 
-*   See `NEXTSTEPS.md` for a detailed breakdown.
+**3. Current Status & Recent Work Summary:**
+
+*   **Core Libraries (`core`, `components` Go API):** Mature and functional for modeling steady-state performance.
+*   **DSL Frontend (`parser`, `loader`):** Robust parsing, loading, import resolution, and type inference capabilities are in place. Type inference scoping has been a focus of recent refinement.
+*   **Runtime (`runtime`):** `SimpleEval` provides a functional interpreter for a significant subset of SDL, capable of single-path simulation and latency tracking. It powers the `plot` command.
+*   **CLI (`cmd/sdl`):** `validate`, `list`, `describe` are functional. The `plot` command provides performance visualization. **Static diagram generation (`diagram static`) is now implemented with support for multiple output formats (DOT, Mermaid, Excalidraw, SVG).**
+*   **Known Limitations:** The primary analytical model is for steady-state behavior. Current `SimpleEval` is for single-path simulation rather than full probabilistic outcome calculation across all paths (which would be an `OutcomesEval`). Concurrency features (`go`/`wait`) in the DSL are not yet fully implemented in the runtime.
+
+**4. Build & Test:**
+
+*   `Makefile` provides targets for building the `sdl` CLI tool (`make sdl`), running tests (`make test`), and goyacc generation for the parser.
+
+This summary provides a high-level overview of the SDL project, its architecture, current capabilities, and recent developments.
