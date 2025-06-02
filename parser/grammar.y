@@ -136,7 +136,7 @@ func yyerrok(lexer SDLLexer) {
 %type <blockStmt>    BlockStmt
 %type <stmtList>     StmtList 
 %type <tupleExpr>         TupleExpr
-%type <expr>         Expression UnaryExpr PrimaryExpr LiteralExpr CallExpr MemberAccessExpr LeafExpr ParenExpr
+%type <expr>         Expression UnaryExpr PrimaryExpr LiteralExpr CallExpr MemberAccessExpr IndexExpr LeafExpr ParenExpr
 // %type <expr>         BinaryExpr NonAssocBinExpr 
 %type <chainedExpr>         ChainedExpr
 // %type <expr> OrExpr AndBoolExpr CmpExpr AddExpr MulExpr UnaryExpr 
@@ -175,6 +175,7 @@ func yyerrok(lexer SDLLexer) {
 // --- Operator Precedence and Associativity (Lowest to Highest) ---
 %left BINARY_OP MINUS
 %nonassoc BINARY_NC_OP 
+%left LSQUARE
 /*
 %left OR
 %left AND
@@ -828,6 +829,7 @@ LeafExpr:
     | TupleExpr           { $$ = $1 }
     | ParenExpr           { $$ = $1 }
     | MemberAccessExpr        { $$ = $1 }
+    | IndexExpr        { $$ = $1 }
     ;
 
 ParenExpr: LPAREN Expression RPAREN { $$ = $2 } // Grouping
@@ -841,6 +843,16 @@ LiteralExpr:
     | STRING_LITERAL          { $$ = $1 }
     | BOOL_LITERAL            { $$ = $1 }
     | DURATION_LITERAL        { $$ = $1 }
+    ;
+
+IndexExpr:
+    LeafExpr LSQUARE Expression RSQUARE { // Expression "[" Key "]"
+        $$ = &IndexExpr{
+             Receiver: $1,
+             Key: $3,
+        }
+        $$.(*IndexExpr).NodeInfo = NewNodeInfo($1.Pos(), $4.End())
+    }
     ;
 
 MemberAccessExpr:

@@ -141,6 +141,18 @@ func (e *IdentifierExpr) PrettyPrint(cp CodePrinter) {
 	cp.Print(e.String())
 }
 
+// IndexExpr represents `receiver[key]`
+type IndexExpr struct {
+	ExprBase
+	Receiver Expr // The object/instance being accessed
+	Key      Expr
+}
+
+func (m *IndexExpr) String() string { return fmt.Sprintf("%s[%s]", m.Receiver, m.Key) }
+func (e *IndexExpr) PrettyPrint(cp CodePrinter) {
+	cp.Print(e.String())
+}
+
 // MemberAccessExpr represents `receiver.member` (accessing parameters/fields)
 type MemberAccessExpr struct {
 	ExprBase

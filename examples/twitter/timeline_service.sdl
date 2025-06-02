@@ -1,0 +1,95 @@
+import OpStatus from "./common.sdl"
+import UserService from "./user_service.sdl"
+import TweetService from "./tweet_service.sdl"
+import StdCache from "std_native.sdl"
+
+component TimelineService {
+  uses userService UserService
+  uses tweetService TweetService
+  uses timelineCache StdCache (DefaultTTL = 60s) // Cache timelines for 1 minute
+
+  param TweetsPerUserInTimeline Int = 10 // Max recent tweets to fetch from each followed user
+  param MaxTimelineSize Int = 100       // Max tweets in the generated timeline
+
+  method GetUserTimeline(userID String) List[String] { // Returns list of TweetDataJSON strings
+    delay 1ms // Initial service overhead
+
+    // 1. Check Cache
+    let cachedTimeline = self.timelineCache.Get("timeline_" + userID)
+    if cachedTimeline != "" { // Assuming empty string means cache miss
+      // For MVP, assume cachedTimeline is a simple string that is List[TweetDataJSON]
+      // SDL lacks string splitting or JSON parsing to List[String] for now.
+      // This part is a simplification.
+      // return ParseStringToList(cachedTimeline) 
+      // Let's assume if cache hit, it's the List[String] directly (conceptual)
+      // For this SDL, if cache is hit we return a placeholder.
+      // A more realistic cache would store List[String] or List[TweetID]
+      return ["cached_tweet_placeholder_1", "cached_tweet_placeholder_2"]
+    }
+
+    // 2. Cache Miss: Get following list
+    let followingList = self.userService.GetFollowingList(userID)
+    if len(followingList) == 0 {
+      return [] // No one followed, empty timeline
+    }
+
+    // 3. Fetch recent tweets for each followed user
+    // This part is complex for SDL without advanced loop/map/reduce over lists.
+    // We'll simulate fetching for a few users and then merging.
+    // This is a major simplification for MVP in SDL.
+    // A real system would do this concurrently and merge efficiently.
+
+    let allTweetIDs = [] // Placeholder for List[String] of TweetIDs
+    let tweetsData = []  // Placeholder for List[String] of TweetDataJSON
+
+    // Conceptual loop: for each followedUserID in followingList:
+    //   let userTweets = self.tweetService.GetTweetsForUser(followedUserID, self.TweetsPerUserInTimeline, 0)
+    //   allTweetIDs = Append(allTweetIDs, userTweets)
+
+    // Simplified: fetch for first user in list if exists (conceptual)
+    if len(followingList) > 0 {
+        let firstFollowedID = followingList[0] // SDL needs list access
+        delay 2ms // Simulate loop overhead for one user
+        let userTweetIDs = self.tweetService.GetTweetsForUser(firstFollowedID, self.TweetsPerUserInTimeline, 0)
+        // allTweetIDs = userTweetIDs // Replace, not append for this simplification
+        
+        // Fetch details for these tweet IDs
+        // Conceptual loop: for each tweetID in userTweetIDs
+        if len(userTweetIDs) > 0 {
+            delay 1ms // Simulate fetch for one tweet
+            let tweetDetail = self.tweetService.GetTweetDetails(userTweetIDs[0])
+            if tweetDetail != "" {
+                // tweetsData = Prepend(tweetDetail, tweetsData) // Prepend for reverse chrono
+                tweetsData = [tweetDetail] // simplification
+            }
+        }
+         if len(userTweetIDs) > 1 { // Fetch one more for demo
+            delay 1ms
+            let tweetDetail2 = self.tweetService.GetTweetDetails(userTweetIDs[1])
+            if tweetDetail2 != "" {
+                // tweetsData = Prepend(tweetDetail2, tweetsData)
+                // For simplicity, just add if different.
+                if len(tweetsData) == 1 && tweetsData[0] != tweetDetail2 {
+                     tweetsData = [tweetDetail2, tweetsData[0]] // pseudo prepend
+                } else if len(tweetsData) == 0 {
+                     tweetsData = [tweetDetail2]
+                }
+            }
+        }
+    }
+
+
+    // 4. Sort all fetched tweets by timestamp (conceptually, data is JSON string)
+    //    SortTweetsByTimestamp(allTweetIDs converted to List[TweetData])
+    //    This is a major simplification. The sorting logic is complex with JSON strings.
+    delay 2ms // Simulate sorting overhead
+
+    // 5. Trim to MaxTimelineSize
+    //    tweetsData = TrimList(tweetsData, self.MaxTimelineSize)
+
+    // 6. Write to Cache
+    //    self.timelineCache.Put("timeline_" + userID, ConvertListToString(tweetsData)) // Conceptual
+
+    return tweetsData // Return the list of TweetDataJSON strings
+  }
+}

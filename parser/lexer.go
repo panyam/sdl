@@ -418,12 +418,16 @@ func (l *Lexer) Lex(lval *SDLSymType) int {
 			unit = "us"
 		} else if l.hasPrefix("ns", false) {
 			unit = "ns"
+		} else if l.hasPrefix("min", false) {
+			unit = "min"
+		} else if l.hasPrefix("hr", false) {
+			unit = "hr"
 		} else {
 			// Invalid unit, so throw an error or just ignore?
 			// For now, just leave unit as empty string
 			// l.Error(fmt.Sprintf("Invalid duration unit: %s", unit))
 		}
-		if nconsume, ok := map[string]int{"ns": 2, "us": 2, "ms": 2, "s": 1}[unit]; ok && nconsume > 0 {
+		if nconsume, ok := map[string]int{"ns": 2, "us": 2, "ms": 2, "s": 1, "hr": 2, "min": 3}[unit]; ok && nconsume > 0 {
 			// Make sure we have a non digit and non ident char *after* the unit
 			peekedAfter := l.peekN(nconsume)
 			if peekedAfter == '_' || unicode.IsDigit(peekedAfter) || unicode.IsLetter(peekedAfter) {

@@ -1,0 +1,20 @@
+// twitter_common.sdl
+
+enum OpStatus {
+  SUCCESS,
+  FAILURE,
+  NOT_FOUND,
+  ALREADY_EXISTS,
+  INVALID_INPUT
+}
+
+// Data structure representations (conceptual, types used in method signatures)
+// We don't have struct types in SDL yet, so we'll use basic types or Tuples.
+// For example, a Tweet might be identified by a TweetID (String),
+// and user by UserID (String).
+
+// For MVP, let's assume:
+// UserID: String
+// TweetID: String
+// TweetText: String
+// Timestamp: String (or Int for Unix timestamp)

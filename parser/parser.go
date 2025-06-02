@@ -249,7 +249,7 @@ const SDLEofCode = 1
 const SDLErrCode = 2
 const SDLInitialStackSize = 16
 
-//line grammar.y:954
+//line grammar.y:966
 // --- Go Code Section ---
 
 // Interface for the lexer required by the parser.
@@ -331,94 +331,95 @@ var SDLExca = [...]int8{
 
 const SDLPrivate = 57344
 
-const SDLLast = 288
+const SDLLast = 292
 
 var SDLAct = [...]uint8{
-	121, 105, 98, 49, 131, 187, 195, 185, 164, 177,
-	59, 30, 54, 93, 153, 154, 139, 132, 140, 112,
-	111, 188, 133, 165, 166, 157, 155, 45, 152, 136,
-	73, 134, 72, 62, 74, 83, 133, 81, 80, 34,
-	18, 27, 23, 21, 20, 113, 32, 229, 112, 111,
-	50, 115, 8, 221, 218, 204, 82, 106, 107, 108,
-	109, 110, 100, 77, 91, 114, 116, 126, 118, 119,
-	125, 127, 124, 137, 113, 123, 13, 128, 95, 96,
-	234, 233, 122, 128, 208, 120, 106, 107, 108, 109,
-	110, 100, 90, 72, 62, 138, 11, 117, 88, 190,
-	87, 14, 15, 12, 130, 10, 205, 95, 96, 141,
-	142, 24, 144, 145, 147, 150, 3, 25, 171, 128,
-	206, 227, 219, 207, 72, 62, 189, 148, 181, 146,
-	180, 172, 192, 159, 161, 135, 212, 209, 167, 158,
-	38, 156, 26, 19, 228, 220, 129, 78, 170, 149,
-	178, 179, 70, 168, 169, 35, 61, 65, 31, 182,
-	29, 28, 64, 67, 66, 184, 69, 68, 22, 63,
-	191, 196, 197, 65, 70, 151, 160, 178, 79, 17,
-	216, 202, 174, 46, 61, 199, 203, 198, 200, 42,
-	70, 60, 6, 201, 210, 196, 175, 176, 89, 211,
-	213, 217, 71, 84, 14, 33, 72, 62, 222, 57,
-	225, 223, 214, 226, 224, 215, 101, 193, 194, 230,
-	143, 61, 65, 72, 62, 231, 75, 64, 67, 66,
-	232, 69, 68, 76, 63, 61, 65, 186, 52, 70,
-	48, 64, 67, 66, 86, 69, 68, 41, 63, 44,
-	46, 40, 183, 70, 162, 163, 60, 39, 92, 104,
-	97, 99, 94, 103, 102, 56, 55, 71, 11, 58,
-	60, 53, 51, 173, 16, 12, 43, 5, 9, 47,
-	36, 71, 37, 7, 4, 85, 2, 1,
+	122, 105, 98, 49, 132, 190, 199, 188, 166, 180,
+	59, 30, 54, 93, 155, 156, 140, 133, 141, 113,
+	112, 191, 134, 167, 168, 159, 157, 45, 154, 137,
+	73, 135, 72, 62, 74, 83, 134, 81, 80, 34,
+	18, 27, 23, 21, 20, 114, 32, 233, 113, 112,
+	50, 116, 8, 225, 222, 208, 82, 107, 108, 109,
+	110, 111, 100, 77, 91, 115, 117, 127, 119, 120,
+	126, 128, 125, 138, 114, 124, 13, 129, 95, 96,
+	238, 237, 123, 129, 212, 121, 107, 108, 109, 110,
+	111, 100, 90, 72, 62, 139, 11, 118, 88, 193,
+	87, 14, 15, 12, 131, 10, 209, 95, 96, 142,
+	143, 61, 65, 146, 147, 149, 3, 64, 67, 66,
+	210, 69, 68, 152, 63, 72, 62, 24, 150, 70,
+	148, 174, 129, 25, 161, 231, 223, 211, 192, 169,
+	184, 195, 158, 183, 175, 172, 60, 163, 136, 38,
+	216, 213, 181, 182, 170, 171, 160, 71, 61, 65,
+	26, 185, 19, 232, 64, 67, 66, 187, 69, 68,
+	224, 63, 194, 130, 200, 201, 70, 153, 65, 78,
+	181, 44, 46, 173, 151, 70, 35, 79, 203, 207,
+	202, 31, 29, 60, 28, 70, 22, 214, 196, 200,
+	11, 220, 215, 217, 71, 221, 162, 12, 43, 144,
+	72, 62, 226, 17, 229, 227, 206, 230, 228, 177,
+	46, 42, 204, 234, 6, 61, 65, 72, 62, 235,
+	205, 64, 67, 66, 236, 69, 68, 61, 63, 33,
+	178, 179, 57, 70, 48, 218, 219, 101, 197, 198,
+	145, 89, 75, 76, 189, 52, 84, 14, 86, 41,
+	60, 40, 186, 164, 165, 39, 92, 104, 97, 106,
+	99, 71, 94, 103, 102, 56, 55, 58, 53, 51,
+	176, 16, 5, 9, 47, 36, 37, 7, 4, 85,
+	2, 1,
 }
 
 var SDLPact = [...]int16{
 	-1000, -1000, 72, -1000, -1000, -1000, -1000, -1000, -1000, -1000,
-	-15, 112, -11, -12, 141, -13, 77, -1000, 107, -14,
-	134, 133, -1000, 131, -6, -15, -16, 128, 244, -1000,
-	212, -21, -1000, -1000, -1000, 177, 119, 244, -1000, -1000,
-	-1000, -1000, -1000, -17, -18, 125, -20, 175, -1000, -1000,
+	-15, 131, -11, -12, 169, -13, 93, -1000, 125, -14,
+	167, 165, -1000, 164, -6, -15, -16, 159, 176, -1000,
+	216, -21, -1000, -1000, -1000, 214, 151, 176, -1000, -1000,
+	-1000, -1000, -1000, -17, -18, 158, -20, 228, -1000, -1000,
 	-1000, -1000, -1000, -1000, -1000, -1000, -1000, -1000, -1000, -1000,
 	-1000, -21, -1000, 36, 7, 36, -21, 36, 36, 36,
-	-1000, 34, 29, 43, -1000, 118, 177, -1000, -1000, -1000,
-	-19, -24, -1000, 97, -1000, -1000, -1000, -1000, -1000, -26,
-	37, 226, -54, -1000, -1000, 36, 36, -1000, -1000, -1000,
+	-1000, 34, 29, 43, -1000, 145, 214, -1000, -1000, -1000,
+	-19, -24, -1000, 110, -1000, -1000, -1000, -1000, -1000, -26,
+	37, 102, -54, -1000, -1000, 36, 36, 184, -1000, -1000,
 	34, -1000, -1000, -1000, -1000, 29, -1000, -1000, -1000, -1000,
-	-1000, 36, 36, 36, -1000, -1000, 125, 79, -1000, 122,
-	75, -1000, 147, -27, 36, -29, 36, -1000, -30, -1000,
-	-1000, 103, 36, 151, 96, -32, -31, 36, -1000, 36,
-	36, -1000, -1000, 121, -1000, -1000, 78, 92, 171, 36,
-	36, -1000, -1000, 91, 75, -1000, 89, -1000, 36, -1000,
-	-33, -34, 87, 59, -1000, -33, 94, -1000, -1000, -1000,
-	36, 36, -1000, -1000, 163, 167, 36, -1000, 13, -1000,
-	-1000, -1000, -1000, 80, -1000, 84, 44, -1000, 101, -33,
-	-32, 100, -34, 166, 36, -1000, 12, 83, -1000, -1000,
-	117, -1000, 11, -1000, 226, -1000, -33, -1000, -34, 36,
-	-1000, -1000, 36, 82, 116, -1000, 5, -1000, 36, -1000,
-	-1000, 226, -1000, -1000, -1000, -1000, -1000, -1000, -1000, 36,
-	41, -1000, 40, -1000, -1000,
+	-1000, -1000, 36, 36, 36, -1000, -1000, 158, 92, -1000,
+	157, 83, -1000, 149, -27, 36, -29, 36, -1000, -30,
+	-1000, -1000, 120, 36, 181, 109, -32, -31, 36, -1000,
+	36, 36, -1000, -1000, 36, 156, -1000, -1000, 91, 105,
+	208, 36, 36, -1000, -1000, 104, 83, -1000, 101, -1000,
+	36, -1000, -33, -34, 99, 59, -1000, -33, 103, -1000,
+	-1000, -1000, 172, 36, 36, -1000, -1000, 168, 202, 36,
+	-1000, 13, -1000, -1000, -1000, -1000, 80, -1000, 98, 44,
+	-1000, 115, -33, -32, 114, -34, -1000, 187, 36, -1000,
+	12, 97, -1000, -1000, 142, -1000, 11, -1000, 102, -1000,
+	-33, -1000, -34, 36, -1000, -1000, 36, 96, 135, -1000,
+	5, -1000, 36, -1000, -1000, 102, -1000, -1000, -1000, -1000,
+	-1000, -1000, -1000, 36, 41, -1000, 40, -1000, -1000,
 }
 
 var SDLPgo = [...]int16{
-	0, 287, 286, 285, 284, 189, 283, 140, 282, 280,
-	279, 52, 278, 30, 179, 277, 274, 3, 273, 50,
-	272, 271, 269, 266, 265, 264, 10, 11, 263, 0,
-	13, 262, 261, 2, 1, 260, 259, 258, 257, 8,
-	255, 254, 4, 252, 251, 247, 27, 244, 238, 5,
-	237, 7, 233, 226, 12, 14, 15, 220, 6, 218,
-	217, 216, 215, 212, 209, 9, 197, 196, 193, 188,
-	188,
+	0, 291, 290, 289, 288, 221, 287, 149, 286, 285,
+	284, 52, 283, 30, 213, 282, 281, 3, 280, 50,
+	279, 278, 277, 276, 275, 274, 10, 11, 273, 0,
+	13, 272, 270, 2, 1, 269, 268, 267, 266, 265,
+	8, 264, 263, 4, 262, 261, 259, 27, 258, 255,
+	5, 254, 7, 253, 252, 12, 14, 15, 250, 6,
+	249, 248, 247, 246, 245, 242, 9, 241, 240, 230,
+	222, 222,
 }
 
 var SDLR1 = [...]int8{
 	0, 1, 2, 2, 2, 2, 4, 4, 4, 4,
 	11, 5, 5, 12, 13, 13, 15, 16, 16, 14,
-	14, 53, 53, 52, 52, 46, 46, 9, 9, 8,
-	8, 7, 7, 7, 7, 38, 38, 38, 42, 42,
-	43, 43, 44, 44, 45, 41, 41, 40, 40, 39,
-	39, 6, 10, 10, 3, 3, 3, 47, 47, 51,
-	51, 50, 50, 49, 27, 27, 17, 17, 17, 17,
-	17, 17, 17, 17, 17, 17, 17, 26, 48, 19,
-	20, 21, 21, 24, 23, 22, 55, 55, 56, 56,
-	54, 18, 18, 18, 25, 57, 57, 28, 70, 70,
-	70, 29, 37, 37, 37, 30, 30, 30, 31, 31,
-	35, 35, 35, 35, 35, 35, 35, 36, 32, 32,
-	32, 32, 32, 34, 34, 33, 33, 61, 60, 60,
-	59, 59, 58, 58, 63, 63, 62, 62, 64, 67,
-	67, 66, 66, 65, 69, 69, 68,
+	14, 54, 54, 53, 53, 47, 47, 9, 9, 8,
+	8, 7, 7, 7, 7, 39, 39, 39, 43, 43,
+	44, 44, 45, 45, 46, 42, 42, 41, 41, 40,
+	40, 6, 10, 10, 3, 3, 3, 48, 48, 52,
+	52, 51, 51, 50, 27, 27, 17, 17, 17, 17,
+	17, 17, 17, 17, 17, 17, 17, 26, 49, 19,
+	20, 21, 21, 24, 23, 22, 56, 56, 57, 57,
+	55, 18, 18, 18, 25, 58, 58, 28, 71, 71,
+	71, 29, 38, 38, 38, 30, 30, 30, 31, 31,
+	36, 36, 36, 36, 36, 36, 36, 36, 37, 32,
+	32, 32, 32, 32, 35, 34, 34, 33, 33, 62,
+	61, 61, 60, 60, 59, 59, 64, 64, 63, 63,
+	65, 68, 68, 67, 67, 66, 70, 70, 69,
 }
 
 var SDLR2 = [...]int8{
@@ -433,37 +434,37 @@ var SDLR2 = [...]int8{
 	1, 2, 2, 2, 2, 2, 0, 1, 1, 3,
 	4, 0, 2, 2, 2, 0, 1, 5, 4, 2,
 	4, 1, 1, 3, 3, 1, 2, 2, 1, 1,
-	1, 1, 1, 1, 1, 1, 1, 3, 1, 1,
-	1, 1, 1, 3, 3, 4, 4, 6, 0, 1,
-	1, 2, 3, 4, 0, 1, 3, 4, 6, 0,
-	1, 1, 2, 3, 0, 1, 3,
+	1, 1, 1, 1, 1, 1, 1, 1, 3, 1,
+	1, 1, 1, 1, 4, 3, 3, 4, 4, 6,
+	0, 1, 1, 2, 3, 4, 0, 1, 3, 4,
+	6, 0, 1, 1, 2, 3, 0, 1, 3,
 }
 
 var SDLChk = [...]int16{
 	-1000, -1, -2, 44, -4, -15, -5, -6, -11, -12,
 	33, 24, 31, 4, 29, 30, -16, -14, 55, 31,
 	55, 55, 27, 55, 34, 40, 35, 55, 27, 27,
-	-27, 27, 52, -14, 55, 27, -9, -8, -7, -38,
-	-44, -45, -5, 32, 5, -46, 6, -10, 28, -17,
-	-19, -20, -48, -21, -54, -23, -24, -64, -22, -26,
+	-27, 27, 52, -14, 55, 27, -9, -8, -7, -39,
+	-45, -46, -5, 32, 5, -47, 6, -10, 28, -17,
+	-19, -20, -49, -21, -55, -23, -24, -65, -22, -26,
 	44, 9, -33, 22, 15, 10, 17, 16, 20, 19,
-	27, 55, -34, -13, 55, -53, -52, -46, 28, -7,
-	55, 55, -26, 55, 28, -3, -47, -11, -19, 23,
-	-13, -29, -37, -30, -31, 71, 72, -35, -33, -32,
-	55, -61, -25, -28, -36, -34, 50, 51, 52, 53,
-	54, 13, 12, 38, -29, 44, -29, -13, -29, -29,
-	-56, -29, -27, 41, 38, 41, 38, 28, 40, 28,
-	-46, -42, 36, 55, 55, 38, 55, 36, -17, 70,
-	72, -30, -30, -57, -29, -29, -56, -29, -26, 27,
-	40, 28, 55, -55, -56, 55, -55, 55, 36, -29,
-	25, 38, -41, -40, -39, 55, 55, -29, -30, -30,
-	27, 40, 39, -18, 11, -67, -66, -65, -29, -29,
-	39, 39, -29, -43, -42, -51, -50, -49, 55, 39,
-	40, -42, 38, -60, -59, -58, -29, -29, -54, -26,
-	-69, -68, 14, -65, 42, 26, 40, 39, 40, 36,
-	-42, -39, 36, -51, -63, -62, 14, -58, 42, 39,
-	28, 42, -17, -42, -49, -29, -29, 39, 28, 42,
-	-29, -17, -29, 40, 40,
+	27, 55, -34, -13, 55, -54, -53, -47, 28, -7,
+	55, 55, -26, 55, 28, -3, -48, -11, -19, 23,
+	-13, -29, -38, -30, -31, 71, 72, -36, -33, -32,
+	55, -62, -25, -28, -37, -34, -35, 50, 51, 52,
+	53, 54, 13, 12, 38, -29, 44, -29, -13, -29,
+	-29, -57, -29, -27, 41, 38, 41, 38, 28, 40,
+	28, -47, -43, 36, 55, 55, 38, 55, 36, -17,
+	70, 72, -30, -30, 25, -58, -29, -29, -57, -29,
+	-26, 27, 40, 28, 55, -56, -57, 55, -56, 55,
+	36, -29, 25, 38, -42, -41, -40, 55, 55, -29,
+	-30, -30, -29, 27, 40, 39, -18, 11, -68, -67,
+	-66, -29, -29, 39, 39, -29, -44, -43, -52, -51,
+	-50, 55, 39, 40, -43, 38, 26, -61, -60, -59,
+	-29, -29, -55, -26, -70, -69, 14, -66, 42, 26,
+	40, 39, 40, 36, -43, -40, 36, -52, -64, -63,
+	14, -59, 42, 39, 28, 42, -17, -43, -50, -29,
+	-29, 39, 28, 42, -29, -17, -29, 40, 40,
 }
 
 var SDLDef = [...]int16{
@@ -477,20 +478,20 @@ var SDLDef = [...]int16{
 	64, 0, 0, 0, 14, 0, 22, 23, 12, 30,
 	0, 0, 44, 0, 51, 53, 54, 55, 56, 0,
 	0, 0, 101, 102, 105, 0, 0, 108, 109, 110,
-	111, 112, 113, 114, 115, 116, 118, 119, 120, 121,
-	122, 95, 0, 0, 81, 82, 0, 84, 83, 0,
-	85, 88, 0, 0, 86, 0, 86, 13, 0, 11,
-	24, 35, 0, 38, 42, 45, 0, 0, 78, 0,
-	0, 106, 107, 0, 96, 94, 0, 88, 91, 139,
-	0, 77, 123, 0, 87, 124, 0, 15, 0, 36,
-	0, 59, 0, 46, 47, 0, 57, 79, 103, 104,
-	128, 0, 117, 90, 0, 144, 140, 141, 0, 89,
-	125, 126, 37, 0, 40, 0, 60, 61, 0, 25,
-	0, 49, 59, 134, 129, 130, 0, 89, 92, 93,
-	0, 145, 0, 142, 0, 39, 0, 43, 0, 0,
-	26, 48, 0, 0, 0, 135, 0, 131, 0, 97,
-	138, 0, 143, 41, 62, 63, 50, 58, 127, 0,
-	132, 146, 136, 133, 137,
+	111, 112, 113, 114, 115, 116, 117, 119, 120, 121,
+	122, 123, 95, 0, 0, 81, 82, 0, 84, 83,
+	0, 85, 88, 0, 0, 86, 0, 86, 13, 0,
+	11, 24, 35, 0, 38, 42, 45, 0, 0, 78,
+	0, 0, 106, 107, 0, 0, 96, 94, 0, 88,
+	91, 141, 0, 77, 125, 0, 87, 126, 0, 15,
+	0, 36, 0, 59, 0, 46, 47, 0, 57, 79,
+	103, 104, 0, 130, 0, 118, 90, 0, 146, 142,
+	143, 0, 89, 127, 128, 37, 0, 40, 0, 60,
+	61, 0, 25, 0, 49, 59, 124, 136, 131, 132,
+	0, 89, 92, 93, 0, 147, 0, 144, 0, 39,
+	0, 43, 0, 0, 26, 48, 0, 0, 0, 137,
+	0, 133, 0, 97, 140, 0, 145, 41, 62, 63,
+	50, 58, 129, 0, 134, 148, 138, 135, 139,
 }
 
 var SDLTok1 = [...]int8{
@@ -851,7 +852,7 @@ SDLdefault:
 
 	case 1:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:192
+//line grammar.y:193
 		{
 			ni := NodeInfo{}
 			if len(SDLDollar[1].nodeList) > 0 {
@@ -863,25 +864,25 @@ SDLdefault:
 		}
 	case 2:
 		SDLDollar = SDLS[SDLpt-0 : SDLpt+1]
-//line grammar.y:204
+//line grammar.y:205
 		{
 			SDLVAL.nodeList = []Node{}
 		}
 	case 3:
 		SDLDollar = SDLS[SDLpt-2 : SDLpt+1]
-//line grammar.y:205
+//line grammar.y:206
 		{
 			SDLVAL.nodeList = SDLDollar[1].nodeList
 		}
 	case 4:
 		SDLDollar = SDLS[SDLpt-2 : SDLpt+1]
-//line grammar.y:206
+//line grammar.y:207
 		{
 			SDLVAL.nodeList = append(SDLDollar[1].nodeList, SDLDollar[2].node)
 		}
 	case 5:
 		SDLDollar = SDLS[SDLpt-2 : SDLpt+1]
-//line grammar.y:209
+//line grammar.y:210
 		{
 			for _, imp := range SDLDollar[2].importDeclList {
 				SDLDollar[1].nodeList = append(SDLDollar[1].nodeList, imp)
@@ -890,31 +891,31 @@ SDLdefault:
 		}
 	case 6:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:218
+//line grammar.y:219
 		{
 			SDLVAL.node = SDLDollar[1].componentDecl
 		}
 	case 7:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:219
+//line grammar.y:220
 		{
 			SDLVAL.node = SDLDollar[1].systemDecl
 		}
 	case 8:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:220
+//line grammar.y:221
 		{
 			SDLVAL.node = SDLDollar[1].optionsDecl
 		}
 	case 9:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:221
+//line grammar.y:222
 		{
 			SDLVAL.node = SDLDollar[1].enumDecl
 		}
 	case 10:
 		SDLDollar = SDLS[SDLpt-4 : SDLpt+1]
-//line grammar.y:225
+//line grammar.y:226
 		{ // OPTIONS ($1) LBRACE ($2) StmtList ($3) RBRACE ($4)
 			// Assume OPTIONS token itself doesn't carry complex NodeInfo from lexer for this example.
 			// Span from LBRACE to RBRACE for body. If StmtList is empty, Body.NodeInfo might be tricky.
@@ -936,7 +937,7 @@ SDLdefault:
 		}
 	case 11:
 		SDLDollar = SDLS[SDLpt-6 : SDLpt+1]
-//line grammar.y:247
+//line grammar.y:248
 		{ // COMPONENT($1) ... RBRACE($5)
 			SDLVAL.componentDecl = &ComponentDecl{
 				NodeInfo: NewNodeInfo(SDLDollar[1].node.(Node).Pos(), SDLDollar[6].node.(Node).End()),
@@ -947,7 +948,7 @@ SDLdefault:
 		}
 	case 12:
 		SDLDollar = SDLS[SDLpt-5 : SDLpt+1]
-//line grammar.y:255
+//line grammar.y:256
 		{ // COMPONENT($1) ... RBRACE($5)
 			SDLVAL.componentDecl = &ComponentDecl{
 				NodeInfo: NewNodeInfo(SDLDollar[1].node.(Node).Pos(), SDLDollar[5].node.(Node).End()),
@@ -957,7 +958,7 @@ SDLdefault:
 		}
 	case 13:
 		SDLDollar = SDLS[SDLpt-5 : SDLpt+1]
-//line grammar.y:265
+//line grammar.y:266
 		{ // ENUM($1) IDENTIFIER($2) ... RBRACE($5)
 			SDLVAL.enumDecl = &EnumDecl{
 				NodeInfo: NewNodeInfo(SDLDollar[1].node.(Node).Pos(), SDLDollar[5].node.(Node).End()),
@@ -967,19 +968,19 @@ SDLdefault:
 		}
 	case 14:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:275
+//line grammar.y:276
 		{
 			SDLVAL.identList = []*IdentifierExpr{SDLDollar[1].ident}
 		}
 	case 15:
 		SDLDollar = SDLS[SDLpt-3 : SDLpt+1]
-//line grammar.y:276
+//line grammar.y:277
 		{
 			SDLVAL.identList = append(SDLDollar[1].identList, SDLDollar[3].ident)
 		}
 	case 16:
 		SDLDollar = SDLS[SDLpt-4 : SDLpt+1]
-//line grammar.y:280
+//line grammar.y:281
 		{ // IMPORT($1) STRING_LITERAL($2)
 			path := SDLDollar[4].expr.(*LiteralExpr)
 			for _, imp := range SDLDollar[2].importDeclList {
@@ -989,55 +990,55 @@ SDLdefault:
 		}
 	case 17:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:289
+//line grammar.y:290
 		{
 			SDLVAL.importDeclList = []*ImportDecl{SDLDollar[1].importDecl}
 		}
 	case 18:
 		SDLDollar = SDLS[SDLpt-3 : SDLpt+1]
-//line grammar.y:290
+//line grammar.y:291
 		{
 			SDLVAL.importDeclList = append(SDLVAL.importDeclList, SDLDollar[3].importDecl)
 		}
 	case 19:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:293
+//line grammar.y:294
 		{
 			SDLVAL.importDecl = &ImportDecl{ImportedItem: SDLDollar[1].ident, Alias: SDLDollar[1].ident}
 		}
 	case 20:
 		SDLDollar = SDLS[SDLpt-3 : SDLpt+1]
-//line grammar.y:294
+//line grammar.y:295
 		{
 			SDLVAL.importDecl = &ImportDecl{ImportedItem: SDLDollar[1].ident, Alias: SDLDollar[3].ident}
 		}
 	case 21:
 		SDLDollar = SDLS[SDLpt-0 : SDLpt+1]
-//line grammar.y:298
+//line grammar.y:299
 		{
 			SDLVAL.methodSigItemList = []*MethodDecl{}
 		}
 	case 22:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:299
+//line grammar.y:300
 		{
 			SDLVAL.methodSigItemList = SDLDollar[1].methodSigItemList
 		}
 	case 23:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:303
+//line grammar.y:304
 		{
 			SDLVAL.methodSigItemList = []*MethodDecl{SDLDollar[1].methodDef}
 		}
 	case 24:
 		SDLDollar = SDLS[SDLpt-2 : SDLpt+1]
-//line grammar.y:304
+//line grammar.y:305
 		{
 			SDLVAL.methodSigItemList = append(SDLDollar[1].methodSigItemList, SDLDollar[2].methodDef)
 		}
 	case 25:
 		SDLDollar = SDLS[SDLpt-5 : SDLpt+1]
-//line grammar.y:307
+//line grammar.y:308
 		{ // METHOD($1) ... BlockStmt($6)
 			SDLVAL.methodDef = &MethodDecl{
 				NodeInfo:   NewNodeInfo(SDLDollar[1].node.(Node).Pos(), SDLDollar[5].node.End()),
@@ -1047,7 +1048,7 @@ SDLdefault:
 		}
 	case 26:
 		SDLDollar = SDLS[SDLpt-6 : SDLpt+1]
-//line grammar.y:314
+//line grammar.y:315
 		{ // METHOD($1) ... BlockStmt($8)
 			SDLVAL.methodDef = &MethodDecl{
 				NodeInfo:   NewNodeInfo(SDLDollar[1].node.(Node).Pos(), SDLDollar[6].typeDecl.End()),
@@ -1058,55 +1059,55 @@ SDLdefault:
 		}
 	case 27:
 		SDLDollar = SDLS[SDLpt-0 : SDLpt+1]
-//line grammar.y:325
+//line grammar.y:326
 		{
 			SDLVAL.compBodyItemList = []ComponentDeclBodyItem{}
 		}
 	case 28:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:326
+//line grammar.y:327
 		{
 			SDLVAL.compBodyItemList = SDLDollar[1].compBodyItemList
 		}
 	case 29:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:330
+//line grammar.y:331
 		{
 			SDLVAL.compBodyItemList = []ComponentDeclBodyItem{SDLDollar[1].compBodyItem}
 		}
 	case 30:
 		SDLDollar = SDLS[SDLpt-2 : SDLpt+1]
-//line grammar.y:331
+//line grammar.y:332
 		{
 			SDLVAL.compBodyItemList = append(SDLDollar[1].compBodyItemList, SDLDollar[2].compBodyItem)
 		}
 	case 31:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:335
+//line grammar.y:336
 		{
 			SDLVAL.compBodyItem = SDLDollar[1].paramDecl
 		}
 	case 32:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:336
+//line grammar.y:337
 		{
 			SDLVAL.compBodyItem = SDLDollar[1].usesDecl
 		}
 	case 33:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:337
+//line grammar.y:338
 		{
 			SDLVAL.compBodyItem = SDLDollar[1].methodDef
 		}
 	case 34:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:338
+//line grammar.y:339
 		{
 			SDLVAL.compBodyItem = SDLDollar[1].componentDecl
 		}
 	case 35:
 		SDLDollar = SDLS[SDLpt-3 : SDLpt+1]
-//line grammar.y:342
+//line grammar.y:343
 		{ // PARAM($1) ...
 			SDLVAL.paramDecl = &ParamDecl{
 				NodeInfo: NewNodeInfo(SDLDollar[1].node.(Node).Pos(), SDLDollar[3].typeDecl.End()),
@@ -1116,7 +1117,7 @@ SDLdefault:
 		}
 	case 36:
 		SDLDollar = SDLS[SDLpt-4 : SDLpt+1]
-//line grammar.y:349
+//line grammar.y:350
 		{ // PARAM($1) ...
 			SDLVAL.paramDecl = &ParamDecl{
 				NodeInfo:     NewNodeInfo(SDLDollar[1].node.(Node).Pos(), SDLDollar[4].expr.End()),
@@ -1126,7 +1127,7 @@ SDLdefault:
 		}
 	case 37:
 		SDLDollar = SDLS[SDLpt-5 : SDLpt+1]
-//line grammar.y:356
+//line grammar.y:357
 		{ // PARAM($1) ...
 			SDLVAL.paramDecl = &ParamDecl{
 				NodeInfo:     NewNodeInfo(SDLDollar[1].node.(Node).Pos(), SDLDollar[5].expr.End()),
@@ -1137,7 +1138,7 @@ SDLdefault:
 		}
 	case 38:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:368
+//line grammar.y:369
 		{
 			identNode := SDLDollar[1].ident
 			SDLVAL.typeDecl = &TypeDecl{
@@ -1147,7 +1148,7 @@ SDLdefault:
 		}
 	case 39:
 		SDLDollar = SDLS[SDLpt-4 : SDLpt+1]
-//line grammar.y:375
+//line grammar.y:376
 		{
 			identNode := SDLDollar[1].ident
 			SDLVAL.typeDecl = &TypeDecl{
@@ -1158,19 +1159,19 @@ SDLdefault:
 		}
 	case 40:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:391
+//line grammar.y:392
 		{
 			SDLVAL.typeDeclList = []*TypeDecl{SDLDollar[1].typeDecl}
 		}
 	case 41:
 		SDLDollar = SDLS[SDLpt-3 : SDLpt+1]
-//line grammar.y:392
+//line grammar.y:393
 		{
 			SDLVAL.typeDeclList = append(SDLDollar[1].typeDeclList, SDLDollar[3].typeDecl)
 		}
 	case 42:
 		SDLDollar = SDLS[SDLpt-3 : SDLpt+1]
-//line grammar.y:396
+//line grammar.y:397
 		{ // USES($1) ...
 			SDLVAL.usesDecl = &UsesDecl{
 				NodeInfo:      NewNodeInfo(SDLDollar[1].node.(Node).Pos(), SDLDollar[3].ident.End()),
@@ -1180,7 +1181,7 @@ SDLdefault:
 		}
 	case 43:
 		SDLDollar = SDLS[SDLpt-6 : SDLpt+1]
-//line grammar.y:404
+//line grammar.y:405
 		{
 			SDLVAL.usesDecl = &UsesDecl{
 				NodeInfo:      NewNodeInfo(SDLDollar[1].node.(Node).Pos(), SDLDollar[6].node.End()),
@@ -1191,7 +1192,7 @@ SDLdefault:
 		}
 	case 44:
 		SDLDollar = SDLS[SDLpt-2 : SDLpt+1]
-//line grammar.y:415
+//line grammar.y:416
 		{ // METHOD($1) ... BlockStmt($6)
 			SDLDollar[1].methodDef.Body = SDLDollar[2].blockStmt
 			SDLDollar[1].methodDef.NodeInfo.StopPos = SDLDollar[2].blockStmt.End()
@@ -1199,31 +1200,31 @@ SDLdefault:
 		}
 	case 45:
 		SDLDollar = SDLS[SDLpt-0 : SDLpt+1]
-//line grammar.y:423
+//line grammar.y:424
 		{
 			SDLVAL.paramList = []*ParamDecl{}
 		}
 	case 46:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:424
+//line grammar.y:425
 		{
 			SDLVAL.paramList = SDLDollar[1].paramList
 		}
 	case 47:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:428
+//line grammar.y:429
 		{
 			SDLVAL.paramList = []*ParamDecl{SDLDollar[1].paramDecl}
 		}
 	case 48:
 		SDLDollar = SDLS[SDLpt-3 : SDLpt+1]
-//line grammar.y:429
+//line grammar.y:430
 		{
 			SDLVAL.paramList = append(SDLDollar[1].paramList, SDLDollar[3].paramDecl)
 		}
 	case 49:
 		SDLDollar = SDLS[SDLpt-2 : SDLpt+1]
-//line grammar.y:433
+//line grammar.y:434
 		{ // PARAM($1) ...
 			SDLVAL.paramDecl = &ParamDecl{
 				NodeInfo: NewNodeInfo(SDLDollar[1].ident.Pos(), SDLDollar[2].typeDecl.End()),
@@ -1233,7 +1234,7 @@ SDLdefault:
 		}
 	case 50:
 		SDLDollar = SDLS[SDLpt-4 : SDLpt+1]
-//line grammar.y:440
+//line grammar.y:441
 		{ // PARAM($1) ...
 			SDLVAL.paramDecl = &ParamDecl{
 				NodeInfo:     NewNodeInfo(SDLDollar[1].ident.Pos(), SDLDollar[4].expr.End()),
@@ -1244,7 +1245,7 @@ SDLdefault:
 		}
 	case 51:
 		SDLDollar = SDLS[SDLpt-5 : SDLpt+1]
-//line grammar.y:452
+//line grammar.y:453
 		{ // SYSTEM($1) ... RBRACE($5)
 			SDLVAL.systemDecl = &SystemDecl{
 				NodeInfo: NewNodeInfo(SDLDollar[1].node.(Node).Pos(), SDLDollar[5].node.(Node).End()),
@@ -1254,37 +1255,37 @@ SDLdefault:
 		}
 	case 52:
 		SDLDollar = SDLS[SDLpt-0 : SDLpt+1]
-//line grammar.y:462
+//line grammar.y:463
 		{
 			SDLVAL.sysBodyItemList = []SystemDeclBodyItem{}
 		}
 	case 53:
 		SDLDollar = SDLS[SDLpt-2 : SDLpt+1]
-//line grammar.y:463
+//line grammar.y:464
 		{
 			SDLVAL.sysBodyItemList = append(SDLDollar[1].sysBodyItemList, SDLDollar[2].node.(SystemDeclBodyItem))
 		}
 	case 54:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:467
+//line grammar.y:468
 		{
 			SDLVAL.node = SDLDollar[1].instanceDecl
 		}
 	case 55:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:469
+//line grammar.y:470
 		{
 			SDLVAL.node = SDLDollar[1].optionsDecl
 		}
 	case 56:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:470
+//line grammar.y:471
 		{
 			SDLVAL.node = SDLDollar[1].stmt
 		}
 	case 57:
 		SDLDollar = SDLS[SDLpt-3 : SDLpt+1]
-//line grammar.y:474
+//line grammar.y:475
 		{ // IDENTIFIER($1) ...
 			SDLVAL.instanceDecl = &InstanceDecl{
 				NodeInfo:      NewNodeInfo(SDLDollar[1].node.(Node).Pos(), SDLDollar[3].ident.End()),
@@ -1295,7 +1296,7 @@ SDLdefault:
 		}
 	case 58:
 		SDLDollar = SDLS[SDLpt-6 : SDLpt+1]
-//line grammar.y:482
+//line grammar.y:483
 		{ // IDENTIFIER($1) ...
 			SDLVAL.instanceDecl = &InstanceDecl{
 				NodeInfo:      NewNodeInfo(SDLDollar[1].node.(Node).Pos(), SDLDollar[6].node.End()),
@@ -1306,31 +1307,31 @@ SDLdefault:
 		}
 	case 59:
 		SDLDollar = SDLS[SDLpt-0 : SDLpt+1]
-//line grammar.y:493
+//line grammar.y:494
 		{
 			SDLVAL.assignList = []*AssignmentStmt{}
 		}
 	case 60:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:494
+//line grammar.y:495
 		{
 			SDLVAL.assignList = SDLDollar[1].assignList
 		}
 	case 61:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:498
+//line grammar.y:499
 		{
 			SDLVAL.assignList = []*AssignmentStmt{SDLDollar[1].assignStmt}
 		}
 	case 62:
 		SDLDollar = SDLS[SDLpt-3 : SDLpt+1]
-//line grammar.y:499
+//line grammar.y:500
 		{
 			SDLVAL.assignList = append(SDLDollar[1].assignList, SDLDollar[3].assignStmt)
 		}
 	case 63:
 		SDLDollar = SDLS[SDLpt-3 : SDLpt+1]
-//line grammar.y:503
+//line grammar.y:504
 		{ // IDENTIFIER($1) ...
 			SDLVAL.assignStmt = &AssignmentStmt{
 				NodeInfo: NewNodeInfo(SDLDollar[1].ident.Pos(), SDLDollar[3].expr.End()),
@@ -1340,13 +1341,13 @@ SDLdefault:
 		}
 	case 64:
 		SDLDollar = SDLS[SDLpt-0 : SDLpt+1]
-//line grammar.y:578
+//line grammar.y:579
 		{
 			SDLVAL.stmtList = []Stmt{}
 		}
 	case 65:
 		SDLDollar = SDLS[SDLpt-2 : SDLpt+1]
-//line grammar.y:579
+//line grammar.y:580
 		{
 			SDLVAL.stmtList = SDLDollar[1].stmtList
 			if SDLDollar[2].stmt != nil {
@@ -1355,85 +1356,85 @@ SDLdefault:
 		}
 	case 66:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:587
+//line grammar.y:588
 		{
 			SDLVAL.stmt = SDLDollar[1].stmt
 		}
 	case 67:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:588
+//line grammar.y:589
 		{
 			SDLVAL.stmt = SDLDollar[1].stmt
 		}
 	case 68:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:589
+//line grammar.y:590
 		{
 			SDLVAL.stmt = SDLDollar[1].forStmt
 		}
 	case 69:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:590
+//line grammar.y:591
 		{
 			SDLVAL.stmt = SDLDollar[1].stmt
 		}
 	case 70:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:591
+//line grammar.y:592
 		{
 			SDLVAL.stmt = SDLDollar[1].ifStmt
 		}
 	case 71:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:592
+//line grammar.y:593
 		{
 			SDLVAL.stmt = SDLDollar[1].waitStmt
 		}
 	case 72:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:593
+//line grammar.y:594
 		{
 			SDLVAL.stmt = SDLDollar[1].delayStmt
 		}
 	case 73:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:594
+//line grammar.y:595
 		{
 			SDLVAL.stmt = SDLDollar[1].switchStmt
 		}
 	case 74:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:596
+//line grammar.y:597
 		{
 			SDLVAL.stmt = SDLDollar[1].stmt
 		}
 	case 75:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:597
+//line grammar.y:598
 		{
 			SDLVAL.stmt = SDLDollar[1].blockStmt
 		}
 	case 76:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:598
+//line grammar.y:599
 		{
 			SDLVAL.stmt = nil
 		}
 	case 77:
 		SDLDollar = SDLS[SDLpt-3 : SDLpt+1]
-//line grammar.y:603
+//line grammar.y:604
 		{
 			SDLVAL.blockStmt = &BlockStmt{NodeInfo: NewNodeInfo(SDLDollar[1].node.(Node).Pos(), SDLDollar[3].node.(Node).End()), Statements: SDLDollar[2].stmtList}
 		}
 	case 78:
 		SDLDollar = SDLS[SDLpt-3 : SDLpt+1]
-//line grammar.y:608
+//line grammar.y:609
 		{
 			SDLVAL.forStmt = &ForStmt{NodeInfo: NewNodeInfo(SDLDollar[1].node.(Node).Pos(), SDLDollar[3].stmt.End()), Condition: SDLDollar[2].expr, Body: SDLDollar[3].stmt}
 		}
 	case 79:
 		SDLDollar = SDLS[SDLpt-4 : SDLpt+1]
-//line grammar.y:614
+//line grammar.y:615
 		{ // LET($1) ...
 			SDLVAL.stmt = &LetStmt{
 				NodeInfo:  NewNodeInfo(SDLDollar[1].node.(Node).Pos(), SDLDollar[4].expr.End()),
@@ -1443,31 +1444,31 @@ SDLdefault:
 		}
 	case 80:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:639
+//line grammar.y:640
 		{
 			SDLVAL.stmt = &ExprStmt{NodeInfo: NewNodeInfo(SDLDollar[1].expr.(Node).Pos(), SDLDollar[1].expr.(Node).End()), Expression: SDLDollar[1].expr}
 		}
 	case 81:
 		SDLDollar = SDLS[SDLpt-2 : SDLpt+1]
-//line grammar.y:643
+//line grammar.y:644
 		{
 			SDLVAL.stmt = &ReturnStmt{NodeInfo: NewNodeInfo(SDLDollar[1].node.(Node).Pos(), SDLDollar[2].expr.(Node).End()), ReturnValue: SDLDollar[2].expr}
 		}
 	case 82:
 		SDLDollar = SDLS[SDLpt-2 : SDLpt+1]
-//line grammar.y:644
+//line grammar.y:645
 		{
 			SDLVAL.stmt = &ReturnStmt{NodeInfo: NewNodeInfo(SDLDollar[1].node.(Node).Pos(), SDLDollar[2].node.(Node).End()), ReturnValue: nil}
 		}
 	case 83:
 		SDLDollar = SDLS[SDLpt-2 : SDLpt+1]
-//line grammar.y:648
+//line grammar.y:649
 		{
 			SDLVAL.delayStmt = &DelayStmt{NodeInfo: NewNodeInfo(SDLDollar[1].node.(Node).Pos(), SDLDollar[2].expr.End()), Duration: SDLDollar[2].expr}
 		}
 	case 84:
 		SDLDollar = SDLS[SDLpt-2 : SDLpt+1]
-//line grammar.y:652
+//line grammar.y:653
 		{ // WAIT($1) IDENTIFIER($2) ...
 			idents := SDLDollar[2].identList
 			endNode := idents[len(idents)-1] // End at the last identifier in the list
@@ -1475,37 +1476,37 @@ SDLdefault:
 		}
 	case 85:
 		SDLDollar = SDLS[SDLpt-2 : SDLpt+1]
-//line grammar.y:660
+//line grammar.y:661
 		{ // LOG($1) Expression($2) ...
 			SDLVAL.stmt = &LogStmt{Args: SDLDollar[2].exprList}
 		}
 	case 86:
 		SDLDollar = SDLS[SDLpt-0 : SDLpt+1]
-//line grammar.y:667
+//line grammar.y:668
 		{
 			SDLVAL.exprList = []Expr{}
 		}
 	case 87:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:668
+//line grammar.y:669
 		{
 			SDLVAL.exprList = SDLDollar[1].exprList
 		}
 	case 88:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:672
+//line grammar.y:673
 		{
 			SDLVAL.exprList = []Expr{SDLDollar[1].expr}
 		}
 	case 89:
 		SDLDollar = SDLS[SDLpt-3 : SDLpt+1]
-//line grammar.y:673
+//line grammar.y:674
 		{
 			SDLVAL.exprList = append(SDLDollar[1].exprList, SDLDollar[3].expr)
 		}
 	case 90:
 		SDLDollar = SDLS[SDLpt-4 : SDLpt+1]
-//line grammar.y:678
+//line grammar.y:679
 		{ // IF($1) ...
 			endNode := Stmt(SDLDollar[3].blockStmt)
 			if SDLDollar[4].stmt != nil {
@@ -1520,82 +1521,82 @@ SDLdefault:
 		}
 	case 91:
 		SDLDollar = SDLS[SDLpt-0 : SDLpt+1]
-//line grammar.y:691
+//line grammar.y:692
 		{
 			SDLVAL.stmt = nil
 		}
 	case 92:
 		SDLDollar = SDLS[SDLpt-2 : SDLpt+1]
-//line grammar.y:692
+//line grammar.y:693
 		{
 			SDLVAL.stmt = SDLDollar[2].ifStmt
 		}
 	case 93:
 		SDLDollar = SDLS[SDLpt-2 : SDLpt+1]
-//line grammar.y:693
+//line grammar.y:694
 		{
 			SDLVAL.stmt = SDLDollar[2].blockStmt
 		}
 	case 94:
 		SDLDollar = SDLS[SDLpt-2 : SDLpt+1]
-//line grammar.y:697
+//line grammar.y:698
 		{ // DISTRIBUTE($1) ... RBRACE($6)
 			SDLVAL.sampleExpr = &SampleExpr{FromExpr: SDLDollar[2].expr}
 			SDLVAL.sampleExpr.NodeInfo = NewNodeInfo(SDLDollar[1].node.(Node).Pos(), SDLDollar[2].expr.(Node).End())
 		}
 	case 95:
 		SDLDollar = SDLS[SDLpt-0 : SDLpt+1]
-//line grammar.y:703
+//line grammar.y:704
 		{
 			SDLVAL.expr = nil
 		}
 	case 96:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:703
+//line grammar.y:704
 		{
 			SDLVAL.expr = SDLDollar[1].expr
 		}
 	case 97:
 		SDLDollar = SDLS[SDLpt-5 : SDLpt+1]
-//line grammar.y:705
+//line grammar.y:706
 		{
 			SDLVAL.tupleExpr = &TupleExpr{Children: append(SDLDollar[2].exprList, SDLDollar[4].expr)}
 		}
 	case 98:
 		SDLDollar = SDLS[SDLpt-4 : SDLpt+1]
-//line grammar.y:710
+//line grammar.y:711
 		{ // GO($1) ... BlockStmt($4)
 			SDLVAL.goStmt = &GoStmt{NodeInfo: NewNodeInfo(SDLDollar[1].node.(Node).Pos(), SDLDollar[4].stmt.End()), VarName: SDLDollar[2].ident, Stmt: SDLDollar[4].stmt}
 		}
 	case 99:
 		SDLDollar = SDLS[SDLpt-2 : SDLpt+1]
-//line grammar.y:713
+//line grammar.y:714
 		{ // GO($1) BlockStmt($2)
 			SDLVAL.goStmt = &GoStmt{NodeInfo: NewNodeInfo(SDLDollar[1].node.(Node).Pos(), SDLDollar[2].blockStmt.End()), VarName: nil, Stmt: SDLDollar[2].blockStmt}
 		}
 	case 100:
 		SDLDollar = SDLS[SDLpt-4 : SDLpt+1]
-//line grammar.y:716
+//line grammar.y:717
 		{
 			yyerror(SDLlex, fmt.Sprintf("`go` currently only supports assigning blocks, not expressions, at pos %d", SDLDollar[1].node.(Node).Pos()))
 			SDLVAL.goStmt = &GoStmt{}
 		}
 	case 101:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:725
+//line grammar.y:726
 		{
 			SDLDollar[1].chainedExpr.Unchain(nil)
 			SDLVAL.expr = SDLDollar[1].chainedExpr.UnchainedExpr
 		}
 	case 102:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:754
+//line grammar.y:755
 		{
 			SDLVAL.chainedExpr = &ChainedExpr{Children: []Expr{SDLDollar[1].expr}}
 		}
 	case 103:
 		SDLDollar = SDLS[SDLpt-3 : SDLpt+1]
-//line grammar.y:757
+//line grammar.y:758
 		{
 			SDLDollar[1].chainedExpr.Children = append(SDLDollar[1].chainedExpr.Children, SDLDollar[3].expr)
 			SDLDollar[1].chainedExpr.Operators = append(SDLDollar[1].chainedExpr.Operators, SDLDollar[2].node.String())
@@ -1603,7 +1604,7 @@ SDLdefault:
 		}
 	case 104:
 		SDLDollar = SDLS[SDLpt-3 : SDLpt+1]
-//line grammar.y:762
+//line grammar.y:763
 		{
 			SDLDollar[1].chainedExpr.Children = append(SDLDollar[1].chainedExpr.Children, SDLDollar[3].expr)
 			SDLDollar[1].chainedExpr.Operators = append(SDLDollar[1].chainedExpr.Operators, SDLDollar[2].node.String())
@@ -1611,118 +1612,134 @@ SDLdefault:
 		}
 	case 105:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:769
+//line grammar.y:770
 		{
 			SDLVAL.expr = SDLDollar[1].expr
 		}
 	case 106:
 		SDLDollar = SDLS[SDLpt-2 : SDLpt+1]
-//line grammar.y:771
+//line grammar.y:772
 		{
 			SDLVAL.expr = &UnaryExpr{Operator: SDLDollar[1].node.String(), Right: SDLDollar[2].expr}
 			SDLVAL.expr.(*UnaryExpr).NodeInfo = NewNodeInfo(SDLDollar[1].node.(Node).Pos(), SDLDollar[2].expr.(Node).End())
 		}
 	case 107:
 		SDLDollar = SDLS[SDLpt-2 : SDLpt+1]
-//line grammar.y:776
+//line grammar.y:777
 		{
 			SDLVAL.expr = &UnaryExpr{Operator: SDLDollar[1].node.String(), Right: SDLDollar[2].expr}
 			SDLVAL.expr.(*UnaryExpr).NodeInfo = NewNodeInfo(SDLDollar[1].node.(Node).Pos(), SDLDollar[2].expr.(Node).End())
 		}
 	case 108:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:819
+//line grammar.y:820
 		{
 			SDLVAL.expr = SDLDollar[1].expr
 		}
 	case 109:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:820
+//line grammar.y:821
 		{
 			SDLVAL.expr = SDLDollar[1].expr
 		}
 	case 110:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:824
+//line grammar.y:825
 		{
 			SDLVAL.expr = SDLDollar[1].expr
 		}
 	case 111:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:825
+//line grammar.y:826
 		{
 			SDLVAL.expr = SDLDollar[1].ident
 		}
 	case 112:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:826
+//line grammar.y:827
 		{
 			SDLVAL.expr = SDLDollar[1].distributeExpr
 		}
 	case 113:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:827
+//line grammar.y:828
 		{
 			SDLVAL.expr = SDLDollar[1].sampleExpr
 		}
 	case 114:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:828
+//line grammar.y:829
 		{
 			SDLVAL.expr = SDLDollar[1].tupleExpr
 		}
 	case 115:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:829
+//line grammar.y:830
 		{
 			SDLVAL.expr = SDLDollar[1].expr
 		}
 	case 116:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:830
+//line grammar.y:831
 		{
 			SDLVAL.expr = SDLDollar[1].expr
 		}
 	case 117:
+		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
+//line grammar.y:832
+		{
+			SDLVAL.expr = SDLDollar[1].expr
+		}
+	case 118:
 		SDLDollar = SDLS[SDLpt-3 : SDLpt+1]
-//line grammar.y:833
+//line grammar.y:835
 		{
 			SDLVAL.expr = SDLDollar[2].expr
 		}
-	case 118:
+	case 119:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:836
+//line grammar.y:838
 		{
 			// SDLlex.(*Lexer).lval)
 			SDLVAL.expr = SDLDollar[1].expr
 		}
-	case 119:
-		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:840
-		{
-			SDLVAL.expr = SDLDollar[1].expr
-		}
 	case 120:
-		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:841
-		{
-			SDLVAL.expr = SDLDollar[1].expr
-		}
-	case 121:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
 //line grammar.y:842
 		{
 			SDLVAL.expr = SDLDollar[1].expr
 		}
-	case 122:
+	case 121:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
 //line grammar.y:843
 		{
 			SDLVAL.expr = SDLDollar[1].expr
 		}
+	case 122:
+		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
+//line grammar.y:844
+		{
+			SDLVAL.expr = SDLDollar[1].expr
+		}
 	case 123:
+		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
+//line grammar.y:845
+		{
+			SDLVAL.expr = SDLDollar[1].expr
+		}
+	case 124:
+		SDLDollar = SDLS[SDLpt-4 : SDLpt+1]
+//line grammar.y:849
+		{ // Expression "[" Key "]"
+			SDLVAL.expr = &IndexExpr{
+				Receiver: SDLDollar[1].expr,
+				Key:      SDLDollar[3].expr,
+			}
+			SDLVAL.expr.(*IndexExpr).NodeInfo = NewNodeInfo(SDLDollar[1].expr.Pos(), SDLDollar[4].node.End())
+		}
+	case 125:
 		SDLDollar = SDLS[SDLpt-3 : SDLpt+1]
-//line grammar.y:847
+//line grammar.y:859
 		{ // PrimaryExpr($1) DOT($2) IDENTIFIER($3)
 			SDLVAL.expr = &MemberAccessExpr{
 				Receiver: SDLDollar[1].ident,
@@ -1730,9 +1747,9 @@ SDLdefault:
 			}
 			SDLVAL.expr.(*MemberAccessExpr).NodeInfo = NewNodeInfo(SDLDollar[1].ident.Pos(), SDLDollar[3].ident.End())
 		}
-	case 124:
+	case 126:
 		SDLDollar = SDLS[SDLpt-3 : SDLpt+1]
-//line grammar.y:854
+//line grammar.y:866
 		{ // PrimaryExpr($1) DOT($2) IDENTIFIER($3)
 			SDLVAL.expr = &MemberAccessExpr{
 				Receiver: SDLDollar[1].expr,
@@ -1740,9 +1757,9 @@ SDLdefault:
 			}
 			SDLVAL.expr.(*MemberAccessExpr).NodeInfo = NewNodeInfo(SDLDollar[1].expr.Pos(), SDLDollar[3].ident.End())
 		}
-	case 125:
+	case 127:
 		SDLDollar = SDLS[SDLpt-4 : SDLpt+1]
-//line grammar.y:864
+//line grammar.y:876
 		{ // PrimaryExpr($1) LPAREN($2) ArgList($3) RPAREN($4)
 			endNode := SDLDollar[4].node.(Node) // End at RPAREN
 			if len(SDLDollar[3].exprList) > 0 {
@@ -1755,9 +1772,9 @@ SDLdefault:
 			}
 			SDLVAL.expr.(*CallExpr).NodeInfo = NewNodeInfo(SDLDollar[1].ident.Pos(), endNode.End())
 		}
-	case 126:
+	case 128:
 		SDLDollar = SDLS[SDLpt-4 : SDLpt+1]
-//line grammar.y:876
+//line grammar.y:888
 		{ // PrimaryExpr($1) LPAREN($2) ArgList($3) RPAREN($4)
 			endNode := SDLDollar[4].node.(Node) // End at RPAREN
 			if len(SDLDollar[3].exprList) > 0 {
@@ -1770,123 +1787,123 @@ SDLdefault:
 			}
 			SDLVAL.expr.(*CallExpr).NodeInfo = NewNodeInfo(SDLDollar[1].expr.Pos(), endNode.End())
 		}
-	case 127:
+	case 129:
 		SDLDollar = SDLS[SDLpt-6 : SDLpt+1]
-//line grammar.y:891
+//line grammar.y:903
 		{
 			SDLVAL.distributeExpr = &DistributeExpr{TotalProb: SDLDollar[2].expr, Cases: SDLDollar[4].caseExprList, Default: SDLDollar[5].expr} /* TODO: Pos */
 		}
-	case 128:
+	case 130:
 		SDLDollar = SDLS[SDLpt-0 : SDLpt+1]
-//line grammar.y:897
+//line grammar.y:909
 		{
 			SDLVAL.caseExprList = []*CaseExpr{}
 		}
-	case 129:
+	case 131:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:898
+//line grammar.y:910
 		{
 			SDLVAL.caseExprList = SDLDollar[1].caseExprList
 		}
-	case 130:
+	case 132:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:902
+//line grammar.y:914
 		{
 			SDLVAL.caseExprList = []*CaseExpr{SDLDollar[1].caseExpr}
 		}
-	case 131:
+	case 133:
 		SDLDollar = SDLS[SDLpt-2 : SDLpt+1]
-//line grammar.y:903
+//line grammar.y:915
 		{
 			SDLVAL.caseExprList = append(SDLDollar[1].caseExprList, SDLDollar[2].caseExpr)
 		}
-	case 132:
+	case 134:
 		SDLDollar = SDLS[SDLpt-3 : SDLpt+1]
-//line grammar.y:907
+//line grammar.y:919
 		{
 			SDLVAL.caseExpr = &CaseExpr{Condition: SDLDollar[1].expr, Body: SDLDollar[3].expr}
 		}
-	case 133:
+	case 135:
 		SDLDollar = SDLS[SDLpt-4 : SDLpt+1]
-//line grammar.y:910
+//line grammar.y:922
 		{ // allow optional comma
 			SDLVAL.caseExpr = &CaseExpr{Condition: SDLDollar[1].expr, Body: SDLDollar[3].expr}
 		}
-	case 134:
+	case 136:
 		SDLDollar = SDLS[SDLpt-0 : SDLpt+1]
-//line grammar.y:916
+//line grammar.y:928
 		{
 			SDLVAL.expr = nil
 		}
-	case 135:
+	case 137:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:917
+//line grammar.y:929
 		{
 			SDLVAL.expr = SDLDollar[1].expr
 		}
-	case 136:
-		SDLDollar = SDLS[SDLpt-3 : SDLpt+1]
-//line grammar.y:921
-		{
-			SDLVAL.expr = SDLDollar[3].expr
-		}
-	case 137:
-		SDLDollar = SDLS[SDLpt-4 : SDLpt+1]
-//line grammar.y:922
-		{
-			SDLVAL.expr = SDLDollar[3].expr
-		}
 	case 138:
+		SDLDollar = SDLS[SDLpt-3 : SDLpt+1]
+//line grammar.y:933
+		{
+			SDLVAL.expr = SDLDollar[3].expr
+		}
+	case 139:
+		SDLDollar = SDLS[SDLpt-4 : SDLpt+1]
+//line grammar.y:934
+		{
+			SDLVAL.expr = SDLDollar[3].expr
+		}
+	case 140:
 		SDLDollar = SDLS[SDLpt-6 : SDLpt+1]
-//line grammar.y:926
+//line grammar.y:938
 		{
 			SDLVAL.switchStmt = &SwitchStmt{Expr: SDLDollar[2].expr, Cases: SDLDollar[4].caseStmtList, Default: SDLDollar[5].stmt} /* TODO: Pos */
 		}
-	case 139:
+	case 141:
 		SDLDollar = SDLS[SDLpt-0 : SDLpt+1]
-//line grammar.y:932
+//line grammar.y:944
 		{
 			SDLVAL.caseStmtList = []*CaseStmt{}
 		}
-	case 140:
+	case 142:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:933
+//line grammar.y:945
 		{
 			SDLVAL.caseStmtList = SDLDollar[1].caseStmtList
 		}
-	case 141:
+	case 143:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:937
+//line grammar.y:949
 		{
 			SDLVAL.caseStmtList = []*CaseStmt{SDLDollar[1].caseStmt}
 		}
-	case 142:
+	case 144:
 		SDLDollar = SDLS[SDLpt-2 : SDLpt+1]
-//line grammar.y:938
+//line grammar.y:950
 		{
 			SDLVAL.caseStmtList = append(SDLDollar[1].caseStmtList, SDLDollar[2].caseStmt)
 		}
-	case 143:
+	case 145:
 		SDLDollar = SDLS[SDLpt-3 : SDLpt+1]
-//line grammar.y:942
+//line grammar.y:954
 		{
 			SDLVAL.caseStmt = &CaseStmt{NodeInfo: NewNodeInfo(SDLDollar[1].expr.(Node).Pos(), SDLDollar[3].stmt.End()), Condition: SDLDollar[1].expr, Body: SDLDollar[3].stmt}
 		}
-	case 144:
+	case 146:
 		SDLDollar = SDLS[SDLpt-0 : SDLpt+1]
-//line grammar.y:946
+//line grammar.y:958
 		{
 			SDLVAL.stmt = nil
 		}
-	case 145:
+	case 147:
 		SDLDollar = SDLS[SDLpt-1 : SDLpt+1]
-//line grammar.y:947
+//line grammar.y:959
 		{
 			SDLVAL.stmt = SDLDollar[1].stmt
 		}
-	case 146:
+	case 148:
 		SDLDollar = SDLS[SDLpt-3 : SDLpt+1]
-//line grammar.y:951
+//line grammar.y:963
 		{
 			SDLVAL.stmt = SDLDollar[3].stmt
 		}

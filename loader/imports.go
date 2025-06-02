@@ -56,6 +56,7 @@ type MemberAccessExpr = decl.MemberAccessExpr
 type CallExpr = decl.CallExpr
 type TupleExpr = decl.TupleExpr
 type SampleExpr = decl.SampleExpr
+type IndexExpr = decl.IndexExpr
 
 var BoolType = decl.BoolType
 var StrType = decl.StrType

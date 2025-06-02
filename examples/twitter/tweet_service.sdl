@@ -1,0 +1,39 @@
+import OpStatus from "./common.sdl"
+import TweetStore from "./storage.sdl"
+
+component TweetService {
+  uses tweetStore TweetStore
+
+  // Generates a unique TweetID (conceptual for now, could be a call to an IDGen service)
+  method generateTweetID() String {
+    delay 100us // Simulate fast ID generation
+    // Placeholder for actual unique ID generation logic
+    return "tweet_" + sample dist { 99 => "123", 1 => "456" } // Just to make it a string
+  }
+
+  // UserID posts a tweet with given text.
+  // TweetData is a string (e.g., JSON containing text, timestamp)
+  method PostTweet(userID String, tweetText String) Tuple[OpStatus, String] { // Returns OpStatus, TweetID
+    delay 500us // service logic overhead
+
+    let tweetID = self.generateTweetID()
+    let timestamp = "2024-07-27T10:00:00Z" // Placeholder timestamp
+    let tweetData = "{'text':'" + tweetText + "', 'timestamp':'" + timestamp + "'}" // Simplified JSON
+
+    let status = self.tweetStore.SaveTweet(tweetID, userID, tweetData)
+    return (status, tweetID)
+  }
+
+  // Fetches multiple tweets by their IDs.
+  // For MVP, timeline service will call GetTweet individually.
+  // A batch GetTweets(List[String]) List[String] would be more realistic.
+  method GetTweetDetails(tweetID String) String { // Returns TweetDataJSON
+    delay 200us
+    return self.tweetStore.GetTweet(tweetID)
+  }
+
+  method GetTweetsForUser(userID String, count Int, offset Int) List[String] { // Returns list of TweetIDs
+    delay 300us
+    return self.tweetStore.GetUserTweets(userID, count, offset)
+  }
+}

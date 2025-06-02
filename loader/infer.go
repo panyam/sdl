@@ -238,6 +238,8 @@ func (i *Inference) EvalForExprType(expr Expr, scope *TypeScope) (inferred *Type
 		inferred, success = i.EvalForDistributeExpr(e, scope)
 	case *SampleExpr:
 		inferred, success = i.EvalForSampleExpr(e, scope)
+	case *IndexExpr:
+		inferred, success = i.EvalForIndexExpr(e, scope)
 	case *CaseExpr:
 		if e.Body == nil {
 			i.Errorf(e.Pos(), "CaseExpr at has no body")
@@ -594,6 +596,78 @@ func (i *Inference) EvalForSampleExpr(expr *SampleExpr, scope *TypeScope) (*Type
 		return nil, i.Errorf(expr.Pos(), "type mismatch for sample expression: 'from' expression must be Outcomes[T], got %s", fromType.String())
 	}
 	return fromType.Info.(*Type), true
+}
+
+// EvalForIndexExpr infers the type of an IndexExpr (e.g., list[0], string[1]).
+func (i *Inference) EvalForIndexExpr(expr *IndexExpr, scope *TypeScope) (*Type, bool) {
+	receiverType, ok := i.EvalForExprType(expr.Receiver, scope)
+	if !ok || receiverType == nil {
+		return nil, i.Errorf(expr.Receiver.Pos(), "could not determine type of receiver for index expression")
+	}
+
+	keyType, ok := i.EvalForExprType(expr.Key, scope)
+	if !ok || keyType == nil {
+		return nil, i.Errorf(expr.Key.Pos(), "could not determine type of key for index expression")
+	}
+
+	switch receiverType.Tag {
+	case decl.TypeTagList:
+		if !keyType.Equals(IntType) {
+			return nil, i.Errorf(expr.Key.Pos(), "list index must be an integer, got %s", keyType.String())
+		}
+		// The element type is stored in receiverType.Info for ListType
+		elementType, isType := receiverType.Info.(*Type)
+		if !isType || elementType == nil {
+			return nil, i.Errorf(expr.Receiver.Pos(), "internal error: ListType has invalid element type information")
+		}
+		return elementType, true
+
+	case decl.TypeTagSimple:
+		if !receiverType.Equals(decl.StrType) {
+			return nil, i.Errorf(expr.Key.Pos(), "receiver for Simple types must be a string, got %s", receiverType.String())
+		}
+
+		if !keyType.Equals(IntType) {
+			return nil, i.Errorf(expr.Key.Pos(), "string index must be an integer, got %s", keyType.String())
+		}
+		// Indexing a string results in a string (character)
+		return StrType, true
+
+	case decl.TypeTagTuple:
+		if !keyType.Equals(IntType) {
+			return nil, i.Errorf(expr.Key.Pos(), "tuple index must be an integer, got %s", keyType.String())
+		}
+		// For tuples, we can only determine the specific element type if the key is a compile-time integer literal.
+		if keyLiteral, isLiteral := expr.Key.(*LiteralExpr); isLiteral && keyLiteral.Value.Type.Equals(IntType) {
+			indexVal, err := keyLiteral.Value.GetInt()
+			if err != nil {
+				// Should not happen if type is IntType, but defensive
+				return nil, i.Errorf(expr.Key.Pos(), "internal error: could not get int value from int literal for tuple index")
+			}
+
+			tupleElementTypes, isTypeList := receiverType.Info.([]*Type)
+			if !isTypeList {
+				return nil, i.Errorf(expr.Receiver.Pos(), "internal error: TupleType has invalid element type information")
+			}
+
+			if indexVal < 0 || int(indexVal) >= len(tupleElementTypes) {
+				return nil, i.Errorf(expr.Key.Pos(), "tuple index %d out of bounds (len %d)", indexVal, len(tupleElementTypes))
+			}
+			return tupleElementTypes[indexVal], true
+		}
+		// If the key is not an integer literal, we cannot statically determine which tuple element is accessed.
+		// For now, we'll disallow non-literal integer indexing for tuples in type inference.
+		// A more advanced system might return a union type or a generic "any_tuple_element" type.
+		return nil, i.Errorf(expr.Key.Pos(), "tuple index must be an integer literal for precise type inference")
+
+	case decl.TypeTagOutcomes:
+		// It's generally an error to directly index an Outcomes[T] type.
+		// The user should use 'sample' first to get a concrete value.
+		return nil, i.Errorf(expr.Receiver.Pos(), "cannot directly index an Outcomes type; use 'sample' first to get a concrete value (e.g., 'let concrete_list = sample my_outcomes_list; concrete_list[0]')")
+
+	default:
+		return nil, i.Errorf(expr.Receiver.Pos(), "type %s is not indexable", receiverType.String())
+	}
 }
 
 // --- Statement Type Inference ---

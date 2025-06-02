@@ -1,0 +1,23 @@
+
+native component StdCache {
+  param MaxItems Int
+  param DefaultTTL Duration
+
+  method Get(key String) String // Returns empty string on miss
+  method Put(key String, value String) Bool
+  method Delete(key String) Bool
+}
+
+// A flexible key-value store, capable of storing simple values and lists.
+native component StdKVStore { // Could be backed by HashIndex, LSMTree etc.
+  param DiskProfile String // "SSD" or "HDD"
+
+  method Get(key String) String
+  method Put(key String, value String) Bool
+  method Delete(key String) Bool
+
+  method AppendToList(listKey String, valueToAdd String) Bool
+  method GetList(listKey String) List[String] // Returns list, could be empty
+  method RemoveFromList(listKey String, valueToRemove String) Bool
+  method GetListRange(listKey String, offset Int, count Int) List[String] // For pagination
+}

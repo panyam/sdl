@@ -51,6 +51,7 @@ type SystemDeclBodyItem = decl.SystemDeclBodyItem
 type BinaryExpr = decl.BinaryExpr
 type UnaryExpr = decl.UnaryExpr
 type MemberAccessExpr = decl.MemberAccessExpr
+type IndexExpr = decl.IndexExpr
 type CallExpr = decl.CallExpr
 type TupleExpr = decl.TupleExpr
 type SampleExpr = decl.SampleExpr

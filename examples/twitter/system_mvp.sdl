@@ -1,0 +1,75 @@
+import UserStore, TweetStore from "./storage.sdl"
+import UserService from "./user_service.sdl"
+import TweetService from "./tweet_service.sdl"
+import TimelineService from "./timeline_service.sdl"
+import StdCache from "std_native.sdl"
+import OpStatus from "./common.sdl"
+
+// To encapsulate system-level test flows with the current grammar,
+// we define a component that orchestrates other services.
+component TestClient {
+  uses userService UserService
+  uses tweetService TweetService
+  uses timelineService TimelineService
+
+  method RegisterAndPost(userID String, profileData String, tweetText String) OpStatus {
+    log "Registering user:", userID
+    let regStatus = self.userService.RegisterUser(userID, profileData)
+    if regStatus != OpStatus.SUCCESS {
+      log "User registration failed:", regStatus
+      return regStatus
+    }
+    log "User registered. Posting tweet for:", userID
+    let postStatus, tweetID = self.tweetService.PostTweet(userID, tweetText)
+    log "Tweet posted:", postStatus, "TweetID:", tweetID
+    return postStatus
+  }
+
+  method FollowAndGetTimeline(followerID String, followeeID String, viewerID String) OpStatus {
+    log "User", followerID, "following", followeeID
+    let followStatus = self.userService.Follow(followerID, followeeID)
+    if followStatus != OpStatus.SUCCESS {
+      log "Follow failed:", followStatus
+      return followStatus
+    }
+    log "Follow successful. Getting timeline for:", viewerID
+    let timeline = self.timelineService.GetUserTimeline(viewerID)
+
+    if len(timeline) > 0 {
+        log "Timeline for", viewerID, "contains", len(timeline), "tweets. First tweet:", timeline[0]
+    } else {
+        log "Timeline for", viewerID, "is empty."
+    }
+    return OpStatus.SUCCESS
+  }
+}
+
+system TwitterMVP {
+  // Storage Components
+  use userStore UserStore
+  use tweetStore TweetStore
+
+  // Cache (shared or could be specific per service)
+  use mainCache StdCache (MaxItems = 10000, DefaultTTL = 5min) // Corrected: 5min for 5 minutes
+
+  // Services
+  use userService UserService (userStore = userStore)
+  use tweetService TweetService (tweetStore = tweetStore)
+  use timelineService TimelineService (
+    userService = userService,
+    tweetService = tweetService,
+    timelineCache = mainCache
+  )
+
+  // Test Client instance to run scenarios
+  use client TestClient (
+    userService = userService,
+    tweetService = tweetService,
+    timelineService = timelineService
+  )
+
+  // Options block for example, if needed by the system itself
+  // options {
+  //   let DefaultPlotTarget = "client.RegisterAndPost" 
+  // }
+}
