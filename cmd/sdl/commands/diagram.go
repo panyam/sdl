@@ -4,7 +4,11 @@ import (
 	"bytes"
 	"fmt"
 	"os"
-	// "strings"
+
+	// "encoding/json" // Added for Excalidraw
+	// "math/rand"     // Added for Excalidraw element IDs
+	// "strconv"       // Added for Excalidraw element IDs
+	// "time"          // Added for Excalidraw element IDs
 
 	"github.com/panyam/sdl/decl"
 	"github.com/panyam/sdl/loader"
@@ -45,11 +49,12 @@ Diagram types:
 		}
 		fmt.Printf("Format: %s, Output: %s\n", format, outputFile)
 
-		var diagramOutput string
+		var diagramOutput string // Will store string for dot/mermaid, or JSON string for excalidraw
+		var errGen error = nil
 
 		if diagramType == "static" {
 			// 1. Load the SDL file
-			sdlLoader := loader.NewLoader(nil, nil, 10) // Use default parser & resolver, depth 10
+			sdlLoader := loader.NewLoader(nil, nil, 10)
 			fileStatus, err := sdlLoader.LoadFile(dslFilePath, "", 0)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error loading SDL file '%s': %v\n", dslFilePath, err)
@@ -76,12 +81,8 @@ Diagram types:
 
 			// 2. Find SystemDecl
 			sysDecl, err := astRoot.GetSystem(systemName)
-			if err != nil {
+			if err != nil || sysDecl == nil {
 				fmt.Fprintf(os.Stderr, "Error finding system '%s' in '%s': %v\n", systemName, dslFilePath, err)
-				os.Exit(1)
-			}
-			if sysDecl == nil {
-				fmt.Fprintf(os.Stderr, "Error: System '%s' not found in '%s'.\n", systemName, dslFilePath)
 				os.Exit(1)
 			}
 
@@ -92,7 +93,7 @@ Diagram types:
 
 			for _, item := range sysDecl.Body {
 				if instDecl, ok := item.(*decl.InstanceDecl); ok {
-					nodeID := instDecl.Name.Value // Use instance name as unique ID for diagram nodes
+					nodeID := instDecl.Name.Value
 					instanceNameToID[instDecl.Name.Value] = nodeID
 					diagramNodes = append(diagramNodes, DiagramNode{
 						ID:   nodeID,
@@ -125,17 +126,20 @@ Diagram types:
 				diagramOutput = generateDotOutput(sysDecl.Name.Value, diagramNodes, diagramEdges)
 			case "mermaid":
 				diagramOutput = generateMermaidOutput(sysDecl.Name.Value, diagramNodes, diagramEdges)
-			// case "excalidraw":
-			// 	diagramOutput = generateExcalidrawOutput(sysDecl.Name.Value, diagramNodes, diagramEdges)
+			case "excalidraw":
+				diagramOutput, errGen = generateExcalidrawOutput(sysDecl.Name.Value, diagramNodes, diagramEdges)
 			// case "svg":
-			// 	diagramOutput = generateSvgOutput(sysDecl.Name.Value, diagramNodes, diagramEdges)
+			// 	diagramOutput, errGen = generateSvgOutput(sysDecl.Name.Value, diagramNodes, diagramEdges)
 			default:
 				fmt.Fprintf(os.Stderr, "Static diagram for format '%s' not supported or placeholder.\n", format)
 				os.Exit(1)
 			}
+			if errGen != nil {
+				fmt.Fprintf(os.Stderr, "Error generating %s diagram: %v\n", format, errGen)
+				os.Exit(1)
+			}
 
 		} else if diagramType == "dynamic" {
-			// Placeholder for dynamic diagrams - this part remains the same for now
 			var b bytes.Buffer
 			if format == "mermaid" {
 				b.WriteString(fmt.Sprintf("sequenceDiagram\n  participant User\n  User->>ServiceA: %s\n  ServiceA->>ServiceB: call\n", dynamicTarget))
@@ -170,5 +174,6 @@ Diagram types:
 func init() {
 	AddCommand(diagramCmd)
 	diagramCmd.Flags().StringP("output", "o", "", "Output file path for the diagram")
-	diagramCmd.Flags().String("format", "dot", "Output format (dot, mermaid, png, svg)")
+	// Updated to include excalidraw, and eventually svg, png
+	diagramCmd.Flags().String("format", "dot", "Output format (dot, mermaid, excalidraw, svg, png)")
 }
