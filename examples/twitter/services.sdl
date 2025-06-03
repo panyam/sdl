@@ -1,0 +1,97 @@
+
+import HttpStatusCode from "../common.sdl"
+import Database from "./dbs.sdl"
+
+component TweetService {
+  uses TweetsDB Database
+
+  method CreateTweet() HttpStatusCode {
+    if self.TweetsDB.Create() {
+      return HttpStatusCode.Ok
+    } else {
+      return HttpStatusCode.InternalError
+    }
+  }
+
+  // Gets a tweet by ID
+  method GetTweet() HttpStatusCode {
+    if self.TweetsDB.GetById() {
+      return HttpStatusCode.Ok
+    } else {
+      return HttpStatusCode.InternalError
+    }
+  }
+
+  /**
+   * List tweets for a user - assume Database's ItemList index is by user
+   * and with a secondary index on creation time
+   */
+  method ListTweets() HttpStatusCode {
+    if self.TweetsDB.ListItems() {
+      return HttpStatusCode.Ok
+    } else {
+      return HttpStatusCode.InternalError
+    }
+  }
+}
+
+
+component FollowsService {
+  uses FollowsDB Database
+
+  method FollowUser() HttpStatusCode {
+    if self.FollowsDB.Create() {
+      return HttpStatusCode.Ok
+    } else {
+      return HttpStatusCode.InternalError
+    }
+  }
+
+  // Get followers - assume ItemList is btree index with a pkey of follwee-id
+  method GetFollowers() HttpStatusCode {
+    if self.FollowsDB.ListItems() {
+      return HttpStatusCode.Ok
+    } else {
+      return HttpStatusCode.InternalError
+    }
+  }
+
+  // Gets the follower count of a user
+  // This is needed to know how many times to "iterate" to build a timeline
+  // Note how this returns a distribution instead
+  //
+  // This could also be a parameter 
+  method GetFollowerCount() (HttpStatusCode, Outcomes[Int]) {
+    delay sample dist {
+      89 => 10ms
+      5 => 100ms
+      1 => 1s
+    }
+    return (HttpStatusCode.Ok, dist {
+      900 => 1000,      // 90% of users have < 1k followers
+      40  => 10000,     // 4% of users have < 10k followers
+      10  => 1000000,   // 1% users have upto 1M followers
+      1   => 100000000, // .1% users have upto 100M followers
+    })
+  }
+}
+
+// The main timeline service
+component TimelineService {
+  uses TweetsDB Database
+  uses Follows FollowsService
+
+  /**
+   * Gets the timeline for a user by merging tweets from users they are following:
+   *
+   * ```
+   * followees = 
+   * select * from tweets where owner in 
+   * (select leader from follows where follows.follower = id)
+   * order by created_at desc limit N
+   * ```
+   */
+  method GetTimeline() HttpStatusCode {
+    let _, followCount = Follows.GetFollowerCount()
+  }
+}

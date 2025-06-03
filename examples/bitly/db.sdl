@@ -1,5 +1,5 @@
 
-import HashIndex from "./common.sdl" ;
+import HashIndex from "../common.sdl" ;
 
 enum DBResult { FOUND, NOT_FOUND, INTERNAL_ERROR }
 enum DuplicateCheck { FOUND, NOTFOUND, ERROR }

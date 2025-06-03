@@ -110,6 +110,7 @@ func (d *ComponentDecl) Resolve() error {
 				return fmt.Errorf("duplicate method definition '%s'", methodName)
 			}
 			d.methods[methodName] = bodyNode
+			bodyNode.Parent = d
 			/* Disable recursive components for now
 			case *ComponentDecl:
 				// Handle nested definitions - recursive processing
@@ -207,6 +208,9 @@ type MethodDecl struct {
 	Parameters []*ParamDecl // Signature parameters (can be empty)
 	ReturnType *TypeDecl    // Optional return type (primitive or enum)
 	Body       *BlockStmt
+
+	// Resolved/Checked items
+	Parent *ComponentDecl
 }
 
 func (o *MethodDecl) componentBodyItemNode() {}

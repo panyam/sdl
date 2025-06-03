@@ -12,7 +12,7 @@ func TestBitly(t *testing.T) {
 	l := NewLoader(nil, nil, 10) // Max depth 10
 
 	// sourceFiles := []string{"../examples/disk.sdl", "../examples/db.sdl", "../examples/common.sdl", "../examples/bitly.sdl"}
-	sourceFiles := []string{"../examples/bitly.sdl"}
+	sourceFiles := []string{"../examples/bitly/mvp.sdl"}
 	for _, f := range sourceFiles {
 		fs, err := l.LoadFile(f, "", 0)
 		if err != nil {

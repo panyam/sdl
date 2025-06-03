@@ -63,26 +63,14 @@ func (i *Inference) Eval(rootEnv *Env[Node]) bool {
 	// First pass: Resolve TypeDecls in component parameter defaults, method parameters, and method return types.
 	for _, compDecl := range components {
 		// Parameter defaults
-		i.EvalForComponent(compDecl, rootScope)
+		// start a new scope here
+		scope := rootScope.PushComponent(compDecl)
+		i.EvalForComponent(compDecl, scope)
 	}
 
-	// Second pass: Infer types for component method bodies (now that signatures are resolved)
-	for _, compDecl := range components {
-		methods, _ := compDecl.Methods()
-		for _, method := range methods {
-			// methodScope needs to see 'self', method params, component params/uses, and globals/imports via rootEnv
-			// Parameters are added to scope implicitly by TypeScope.Get looking at currentMethod.
-			// 'uses' are also resolved via 'self' access within TypeScope.Get if needed.
-			if method.Body != nil {
-				methodScope := rootScope.Push(compDecl, method)
-				i.EvalForBlockStmt(method.Body, methodScope)
-			}
-		}
-	}
-
-	// Third pass: Infer types for system declarations
+	// Second pass: Infer types for system declarations
 	for _, sysDecl := range systems {
-		i.EvalForSystemDecl(sysDecl, rootScope.Push(nil, nil)) // System scope can see globals/imports from rootEnv
+		i.EvalForSystemDecl(sysDecl, rootScope.Push()) // System scope can see globals/imports from rootEnv
 	}
 	return false
 }
@@ -117,7 +105,14 @@ func (i *Inference) EvalForComponent(compDecl *ComponentDecl, rootScope *TypeSco
 	// Method signatures
 	methods, _ := compDecl.Methods()
 	for _, method := range methods {
+		// First see if signatures are well typed
 		i.EvalForMethodSignature(method, compDecl, rootScope)
+
+		// Then enter body with a new scope
+		if method.Body != nil {
+			methodScope := rootScope.PushMethod(compDecl, method)
+			i.EvalForBlockStmt(method.Body, methodScope)
+		}
 	}
 	return
 }
@@ -764,14 +759,14 @@ func (i *Inference) EvalForForStmt(f *ForStmt, scope *TypeScope) (ok bool) {
 	}
 
 	// Evaluate block
-	bodyScope := scope.Push(scope.currentComponent, scope.currentMethod)
+	bodyScope := scope.Push()
 	ok = ok && i.EvalForStmt(f.Body, bodyScope)
 	return
 }
 
 func (i *Inference) EvalForBlockStmt(block *BlockStmt, parentScope *TypeScope) (ok bool) {
 	ok = true
-	blockScope := parentScope.Push(parentScope.currentComponent, parentScope.currentMethod)
+	blockScope := parentScope.Push()
 	for _, stmt := range block.Statements {
 		ok = ok && i.EvalForStmt(stmt, blockScope)
 	}
@@ -799,13 +794,13 @@ func (i *Inference) EvalForStmt(stmt Stmt, scope *TypeScope) (ok bool) {
 				actualReturnType = infRetType
 			}
 		}
-		if scope.currentMethod != nil {
+		if currentMethod := scope.Method(); currentMethod != nil {
 			var expectedReturnType *Type = NilType
-			if scope.currentMethod.ReturnType != nil {
+			if currentMethod.ReturnType != nil {
 				// Ensure the method's ReturnType (a TypeDecl) is resolved to a *Type
-				resolvedExpectedType := scope.currentMethod.ReturnType.ResolvedType() // Or .ResolveType(scope)
+				resolvedExpectedType := currentMethod.ReturnType.ResolvedType() // Or .ResolveType(scope)
 				if resolvedExpectedType == nil {
-					i.Errorf(scope.currentMethod.ReturnType.Pos(), "method '%s' has an unresolvable return TypeDecl", scope.currentMethod.Name.Value)
+					i.Errorf(currentMethod.ReturnType.Pos(), "method '%s' has an unresolvable return TypeDecl", currentMethod.Name.Value)
 					return false
 				}
 				expectedReturnType = resolvedExpectedType
@@ -813,7 +808,7 @@ func (i *Inference) EvalForStmt(stmt Stmt, scope *TypeScope) (ok bool) {
 			if !actualReturnType.Equals(expectedReturnType) {
 				isPromotion := actualReturnType.Equals(IntType) && expectedReturnType.Equals(FloatType)
 				if !isPromotion {
-					i.Errorf(s.Pos(), "return type mismatch for method '%s': expected %s, got %s", scope.currentMethod.Name.Value, expectedReturnType.String(), actualReturnType.String())
+					i.Errorf(s.Pos(), "return type mismatch for method '%s': expected %s, got %s", currentMethod.Name.Value, expectedReturnType.String(), actualReturnType.String())
 				}
 			}
 		} else {
@@ -888,7 +883,7 @@ func (i *Inference) EvalForSystemDecl(systemDecl *SystemDecl, nodeScope *TypeSco
 			ok = ok && i.EvalForSetStmt(it, nodeScope)
 		case *OptionsDecl:
 			if it.Body != nil {
-				optionsScope := nodeScope.Push(nil, nil)
+				optionsScope := nodeScope.Push()
 				ok = ok && i.EvalForBlockStmt(it.Body, optionsScope)
 			}
 		default:

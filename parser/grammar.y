@@ -392,6 +392,17 @@ TypeDecl:
         Name: identNode.Value,
       }
     }
+    | LPAREN TypeDeclList RPAREN {  // Tuple type
+      if len($2) == 1 {
+        $$ = $2[0]
+      } else {
+        $$ = &TypeDecl{
+          NodeInfo: NewNodeInfo($1.Pos(), $3.Pos()),
+          Name: "Tuple",
+          Args: $2,
+        }
+      }
+    }
     | IDENTIFIER LSQUARE TypeDeclList RSQUARE {
       identNode := $1
       $$ = &TypeDecl{

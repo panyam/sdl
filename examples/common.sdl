@@ -26,7 +26,7 @@ native component HashIndex {
 
 native component BTreeIndex {
   method Find() Bool
-  method Range() Int  // Returns number of results
+  method Range() Bool
   method Insert() Bool
   method Delete () Bool
 }

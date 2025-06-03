@@ -2,6 +2,8 @@ package loader
 
 import (
 	"fmt"
+	"log"
+	"reflect"
 
 	"github.com/panyam/sdl/decl"
 	// "log" // Uncomment for debugging
@@ -11,9 +13,10 @@ import (
 // It uses an Env[Node] for storing named declarations (globals, imports, lexical vars)
 // and retains direct references for contextual lookups (self, method params, component params).
 type TypeScope struct {
-	env              *Env[Node] // Stores LetStmt vars, global decls (Enums, Components), and imported symbols.
-	currentComponent *ComponentDecl
-	currentMethod    *MethodDecl
+	env           *Env[Node] // Stores LetStmt vars, global decls (Enums, Components), and imported symbols.
+	outer         *TypeScope
+	currComponent *ComponentDecl
+	currMethod    *MethodDecl
 }
 
 // NewRootTypeScope creates a top-level scope, using the provided Env.
@@ -24,48 +27,100 @@ func NewRootTypeScope(env *Env[Node]) *TypeScope {
 		// panic("NewRootTypeScope requires a non-nil Env")
 	}
 	return &TypeScope{
-		env:              env,
-		currentComponent: nil,
-		currentMethod:    nil,
+		env:           env,
+		currComponent: nil,
+		currMethod:    nil,
 	}
 }
 
-// Push creates a new nested lexical scope (e.g., for a block or method).
-// It pushes the environment for lexical scoping of variables defined with 'let'.
-func (ts *TypeScope) Push(currentComponent *ComponentDecl, currentMethod *MethodDecl) *TypeScope {
-	effectiveCurrentComponent := ts.currentComponent
-	if currentComponent != nil {
-		effectiveCurrentComponent = currentComponent
-	}
-	effectiveCurrentMethod := ts.currentMethod
-	if currentMethod != nil {
-		effectiveCurrentMethod = currentMethod
-	}
-
+// Push creates a new nested lexical scope for a new block.
+func (ts *TypeScope) Push() *TypeScope {
 	return &TypeScope{
-		env:              ts.env.Push(), // New lexical scope for 'let' variables
-		currentComponent: effectiveCurrentComponent,
-		currentMethod:    effectiveCurrentMethod,
+		env:           ts.env.Push(),
+		outer:         ts,
+		currComponent: nil,
+		currMethod:    nil,
 	}
 }
 
-// In decl/typescope.go
+// PushComponent creates a new nested scope when entering a component
+// The component's param and method declarations are added to the env
+func (ts *TypeScope) PushComponent(comp *ComponentDecl) *TypeScope {
+	ts = ts.Push()
+	ts.currComponent = comp
+	ts.currMethod = nil
+	ts.env.Set("self", comp)
+
+	params, _ := comp.Params()
+	for _, def := range params {
+		ts.env.Set(def.Name.Value, def)
+	}
+
+	deps, _ := comp.Dependencies()
+	for _, def := range deps {
+		ts.env.Set(def.Name.Value, def)
+	}
+
+	methods, _ := comp.Methods()
+	for _, def := range methods {
+		ts.env.Set(def.Name.Value, def)
+	}
+	return ts
+}
+
+// PushComponent creates a new nested scope when entering a component's methods
+// The methods's params  are added to the env
+func (ts *TypeScope) PushMethod(currComponent *ComponentDecl, currentMethod *MethodDecl) *TypeScope {
+	ts = ts.Push()
+	ts.currComponent = currComponent
+	ts.currMethod = currentMethod
+	for _, param := range currentMethod.Parameters {
+		ts.env.Set(param.Name.Value, param)
+	}
+	return ts
+}
+
+func (ts *TypeScope) Method() *MethodDecl {
+	for ; ts != nil; ts = ts.outer {
+		if ts.currMethod != nil {
+			return ts.currMethod
+		}
+	}
+	return nil
+}
+
+func (ts *TypeScope) Component() *ComponentDecl {
+	for ; ts != nil; ts = ts.outer {
+		if ts.currComponent != nil {
+			return ts.currComponent
+		}
+	}
+	return nil
+}
 
 // Get retrieves the type of an identifier.
-// Lookup Order:
-// 1. 'self' (if in component method context).
-// 2. Method parameters (if in method context).
-// 3. Component parameters (if in component context - NEWLY ADDED/EMPHASIZED HERE).
-// 4. Lexically scoped variables (let bindings) and global/imported declarations from the Env.
 func (ts *TypeScope) Get(name string) (*Type, bool) {
 	// 1. 'self' keyword
-	if ts.currentComponent != nil && name == "self" {
-		return ComponentType(ts.currentComponent), true
+	node, _ := ts.env.Get(name)
+
+	if node != nil {
+		switch n := node.(type) {
+		case *EnumDecl:
+			return EnumType(n), true
+		case *ComponentDecl:
+			return ComponentType(n), true
+		default:
+			log.Println("node, nodetype: ", node, reflect.TypeOf(node))
+		}
 	}
+	// if node.(Param
 
 	// 2. Method parameters
-	if ts.currentMethod != nil {
-		for _, param := range ts.currentMethod.Parameters {
+	currentMethod := ts.Method()
+	currentComponent := ts.Component()
+
+	if currentMethod != nil {
+		for _, param := range currentMethod.Parameters {
 			if param.Name.Value == name {
 				if param.TypeDecl == nil {
 					return nil, false // Error: No TypeDecl
@@ -86,9 +141,9 @@ func (ts *TypeScope) Get(name string) (*Type, bool) {
 	}
 
 	// 3. Component parameters (if currentComponent is set)
-	if ts.currentComponent != nil {
+	if currentComponent != nil {
 		// Check if 'name' is a parameter of the current component.
-		if paramDecl, _ := ts.currentComponent.GetParam(name); paramDecl != nil {
+		if paramDecl, _ := currentComponent.GetParam(name); paramDecl != nil {
 			if paramDecl.TypeDecl != nil {
 				// Similar to method parameters, ensure the TypeDecl is resolved.
 				// Its resolvedType should have been set in the first pass of InferTypesForFile.
