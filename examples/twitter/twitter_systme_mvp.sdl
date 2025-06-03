@@ -1,0 +1,88 @@
+// twitter_system_mvp.sdl
+
+import UserStore, TweetStore from "./twitter_storage.sdl"
+import UserService from "./twitter_user_service.sdl"
+import TweetService from "./twitter_tweet_service.sdl"
+import TimelineService from "./twitter_timeline_service.sdl"
+import StdCache from "std_native.sdl"
+import HttpStatusCode, UserType, TweetContentType from "./twitter_common.sdl"
+
+component TestClient {
+  uses userService UserService
+  uses tweetService TweetService
+  uses timelineService TimelineService
+
+  param DefaultUserID Int = 123 // Dummy ID for actions
+  param DefaultFolloweeID Int = 456
+  param DefaultTweetContentType TweetContentType = TweetContentType.TEXT_ONLY
+
+  method RegisterAndPost(userType UserType) HttpStatusCode {
+    log "Registering user of type:", userType
+    let regStatus = self.userService.RegisterUser(userType)
+    if regStatus != HttpStatusCode.OK {
+      log "User registration failed:", regStatus
+      return regStatus
+    }
+    log "User registered. Posting tweet for user:", self.DefaultUserID
+    let postResult = self.tweetService.PostTweet(self.DefaultUserID, self.DefaultTweetContentType)
+    let postStatus = postResult[0] // Assuming tuple access HttpStatusCode, TweetID
+    let tweetID = postResult[1]
+    log "Tweet posted:", postStatus, "TweetID:", tweetID
+    return postStatus
+  }
+
+  method FollowAndGetTimeline(viewerType UserType) HttpStatusCode {
+    log "User", self.DefaultUserID, "following", self.DefaultFolloweeID
+    let followStatus = self.userService.Follow(self.DefaultUserID, self.DefaultFolloweeID)
+    if followStatus != HttpStatusCode.OK {
+      log "Follow failed:", followStatus
+      return followStatus
+    }
+    log "Follow successful. Getting timeline metrics for viewer type:", viewerType
+    let timelineMetrics_dist = self.timelineService.GetUserTimelineMetrics(viewerType)
+    
+    // For SimpleEval, we sample to get a concrete outcome for this path
+    let timeline_outcome_sample = sample timelineMetrics_dist // Tuple[Int, HttpStatusCode]
+    let numTweetsInTimeline = timeline_outcome_sample[0]
+    let timelineGenStatus = timeline_outcome_sample[1]
+
+    if timelineGenStatus == HttpStatusCode.OK {
+      log "Timeline generation successful. Num tweets:", numTweetsInTimeline
+      log "Simulating hydration of", numTweetsInTimeline, "tweets for viewer type:", viewerType
+      
+      // Simulate fetching details for each tweet in the timeline
+      // The latency of these calls will sum up.
+      for numTweetsInTimeline {
+          let fetchStatus = self.tweetService.GetTweetExistence(789) // Dummy tweet ID
+          if fetchStatus != HttpStatusCode.OK {
+              log "Warning: A tweet fetch during hydration simulation failed with status:", fetchStatus
+              // In a real model, might affect overall success or add to partial failure stats
+          }
+      }
+      log "Hydration simulation finished for viewer type:", viewerType
+    } else {
+      log "Timeline generation failed for viewer type:", viewerType, "with status:", timelineGenStatus
+    }
+    return timelineGenStatus
+  }
+}
+
+system TwitterMVP {
+  use userStore UserStore
+  use tweetStore TweetStore
+  use mainCache StdCache (MaxItems = 10000, DefaultTTL = 1min)
+
+  use userService UserService (userStore = userStore)
+  use tweetService TweetService (tweetStore = tweetStore)
+  use timelineService TimelineService (
+    userService = userService,
+    tweetService = tweetService,
+    timelineCache = mainCache
+  )
+
+  use client TestClient (
+    userService = userService,
+    tweetService = tweetService,
+    timelineService = timelineService
+  )
+}

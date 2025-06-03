@@ -177,7 +177,7 @@ func (l *Loader) LoadFile(filePath string, importerPath string, depth int) (*Fil
 		importedFS, err := l.LoadFile(importPathStr, canonicalPath, depth+1)
 		if err != nil {
 			// Wrap the error to show the import chain
-			err := fmt.Errorf("failed to load import '%s' from '%s': %w", importPathStr, canonicalPath, err)
+			err := fmt.Errorf("failed to load import '%s' from '%s': \n    %w", importPathStr, canonicalPath, err)
 			fileStatus.Errors = append(fileStatus.Errors, err)
 			return fileStatus, err
 		}

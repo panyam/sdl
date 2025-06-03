@@ -60,6 +60,12 @@ func (bt *BTreeIndex) Height() int {
 	return int(math.Ceil(h)) + 1 // Add 1 for leaf level, ceiling for integer height
 }
 
+// Range scans
+func (bt *BTreeIndex) Range() (res *Outcomes[sc.AccessResult]) {
+	// TODO
+	return
+}
+
 // --- Refined Find ---
 // Find searches for a key in the B-Tree. Traverses from root to leaf.
 func (bt *BTreeIndex) Find() *Outcomes[sc.AccessResult] {

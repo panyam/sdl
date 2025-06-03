@@ -6,7 +6,6 @@ import (
     "log"
     "fmt"
     "io"
-	  gfn "github.com/panyam/goutils/fn"
 )
 
 // Function to be called by SDLParse on error.
@@ -122,6 +121,8 @@ func yyerrok(lexer SDLLexer) {
 %type <systemDecl>         SystemDecl
 %type <compBodyItem> ComponentBodyItem 
 %type <compBodyItemList> ComponentBodyItemList ComponentBodyItemOptList
+%type <compBodyItem> NativeComponentBodyItem 
+%type <compBodyItemList> NativeComponentBodyItemList NativeComponentBodyItemOptList
 %type <sysBodyItemList>  SystemBodyItemOptList 
 %type <optionsDecl>  OptionsDecl
 %type <enumDecl>     EnumDecl
@@ -145,8 +146,7 @@ func yyerrok(lexer SDLLexer) {
 %type <typeDecl>     TypeDecl
 %type <typeDeclList>     TypeDeclList
 %type <usesDecl>     UsesDecl
-%type <methodDef>    MethodDecl
-%type <methodDef>    MethodSigDecl
+%type <methodDef>    MethodDecl MethodSigDecl
 %type <instanceDecl> InstanceDecl
 %type <forStmt>   ForStmt
 %type <assignStmt>   Assignment
@@ -155,7 +155,7 @@ func yyerrok(lexer SDLLexer) {
 // %type <expectBlock>  ExpectBlock ExpectBlockOpt
 // %type <expectStmt>   ExpectStmt
 // %type <expectStmtList> ExpectStmtList ExpectStmtOptList
-%type <methodSigItemList> MethodSigDeclList MethodSigDeclOptList
+// %type <methodSigItemList> MethodSigDeclList MethodSigDeclOptList
 %type <ifStmt>       IfStmt
 %type <exprList>     CommaSepExprListOpt, CommaSepExprList
 // %type <exprList>          OpSepExprList
@@ -245,11 +245,11 @@ OptionsDecl:
     ;
 
 ComponentDecl:
-    NATIVE COMPONENT IDENTIFIER LBRACE MethodSigDeclOptList RBRACE { // COMPONENT($1) ... RBRACE($5)
+    NATIVE COMPONENT IDENTIFIER LBRACE NativeComponentBodyItemOptList RBRACE { // COMPONENT($1) ... RBRACE($5)
         $$ = &ComponentDecl{
             NodeInfo: NewNodeInfo($1.(Node).Pos(), $6.(Node).End()),
             Name: $3,
-            Body: gfn.Map($5, func(m *MethodDecl) ComponentDeclBodyItem { return m }),
+            Body: $5,
             IsNative: true,
          }
     }
@@ -295,14 +295,17 @@ ImportItem: IDENTIFIER { $$ = &ImportDecl{ImportedItem: $1, Alias: $1 } }
           | IDENTIFIER AS IDENTIFIER { $$ = &ImportDecl{ImportedItem: $1, Alias: $3 } }
           ;
 
+/*
 MethodSigDeclOptList:
-                /* empty */ { $$ = []*MethodDecl{} }
+                // Empty
+                { $$ = []*MethodDecl{} }
               | MethodSigDeclList { $$ = $1 }
               ;
 
 MethodSigDeclList:
               MethodSigDecl { $$=[]*MethodDecl{$1} }
               | MethodSigDeclList MethodSigDecl { $$=append($1, $2) };
+*/
 
 MethodSigDecl:
     METHOD IDENTIFIER LPAREN MethodParamListOpt RPAREN { // METHOD($1) ... BlockStmt($6)
@@ -321,6 +324,22 @@ MethodSigDecl:
          }
     }
     ;
+
+NativeComponentBodyItemOptList:
+                /* empty */ { $$ = []ComponentDeclBodyItem{} }
+              | NativeComponentBodyItemList { $$ = $1 }
+              ;
+
+NativeComponentBodyItemList:
+                NativeComponentBodyItem { $$=[]ComponentDeclBodyItem{$1} }
+              | NativeComponentBodyItemList NativeComponentBodyItem { $$=append($1, $2) }
+              ;
+
+NativeComponentBodyItem:
+      ParamDecl   { $$ = $1 }
+    | MethodSigDecl   { $$ = $1 }
+    ;
+
 
 ComponentBodyItemOptList:
                 /* empty */ { $$ = []ComponentDeclBodyItem{} }
@@ -371,8 +390,8 @@ TypeDecl:
       $$ = &TypeDecl{
         NodeInfo: identNode.NodeInfo,
         Name: identNode.Value,
-        }
       }
+    }
     | IDENTIFIER LSQUARE TypeDeclList RSQUARE {
       identNode := $1
       $$ = &TypeDecl{

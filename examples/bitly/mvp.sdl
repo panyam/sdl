@@ -112,7 +112,3 @@ system BitlyWithCache {
     use db Database
     use app AppServerWithCache ( db = db, cache = cache )
 }
-
-system TestSystem {
-    use test TestNative
-}

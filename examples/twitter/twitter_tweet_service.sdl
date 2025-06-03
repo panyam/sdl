@@ -1,0 +1,45 @@
+// twitter_tweet_service.sdl
+
+import HttpStatusCode, TweetContentType, UserType from "./twitter_common.sdl"
+import TweetStore from "./twitter_storage.sdl"
+
+component TweetService {
+  uses tweetStore TweetStore
+
+  method generateTweetID() Int {
+    delay 100us
+    return sample dist { 1 => 9001, 1 => 9002 } // Placeholder unique Int ID
+  }
+
+  method PostTweet(userID Int, contentType TweetContentType) Tuple[HttpStatusCode, Int] {
+    delay 500us
+    let tweetID = self.generateTweetID()
+    let status = self.tweetStore.SaveTweet(tweetID, userID, "" + contentType)
+    return (status, tweetID)
+  }
+
+  method GetTweetExistence(tweetID Int) HttpStatusCode {
+    delay 200us
+    return self.tweetStore.GetTweetExistence(tweetID)
+  }
+
+  // Returns distribution of recent tweet counts for a user of a specific type.
+  method GetRecentTweetCountForUser(userType UserType, maxToConsider Int) Outcomes[Int] {
+    delay 200us // Service logic to determine this (e.g. looking up user's activity level)
+    // This models how many relevant tweets a user of 'userType' might have contributed
+    // that are candidates for others' timelines. Capped by maxToConsider.
+    // Example distributions:
+    if userType == UserType.LIGHT {
+      return dist { 60 => 1, 30 => 2, 10 => 0 } // Light users post few recent tweets
+    } else if userType == UserType.CASUAL {
+      return dist { 20 => 1, 50 => 3, 20 => 5, 10 => 0 }
+    } else if userType == UserType.HEAVY {
+      return dist { 10 => 3, 40 => 7, 40 => 10, 10 => 2 }
+    } else if userType == UserType.INFLUENCER {
+      return dist { 5 => 5, 25 => 10, 50 => 15, 20 => 20 } // Influencers post more
+    }
+    return dist {1 => 1} // Default fallback
+    // Note: The actual values should be less than or equal to 'maxToConsider'.
+    // The DSL would need map/filter on Outcomes to enforce this, or the native component providing this dist.
+  }
+}

@@ -1,21 +1,13 @@
 
 enum HttpStatusCode {
-  StatusOk,
-  StatusConflict,
-  StatusNotFound,
-  StatusInternalError
-}
-
-native component TestNative {
-  method ReadBool() Bool
-  method ReadString() Bool
-  method ReadInt32() Int
-  method ReadInt64() Int
-  method ReadInt() Int
-  method ReadFloat32() Float
-  method ReadFloat64() Float
-
-  method ReadOutcomes() Outcomes[Int]
+  Ok,
+  Conflict,
+  NotFound,
+  Unauthorized,
+  BadRequest,
+  InternalError,
+  InternalServerError, // Server-side error (e.g., HTTP 500)
+  ServiceUnavailable
 }
 
 native component NativeDisk {
@@ -33,18 +25,13 @@ native component HashIndex {
 }
 
 native component BTreeIndex {
-  // Exposing a dependency that can be configured
-  // It is upto the native component to manage setting/getting this
   method Find() Bool
+  method Range() Int  // Returns number of results
   method Insert() Bool
   method Delete () Bool
 }
 
 native component BitmapIndex {
-  // Exposing a dependency that can be configured
-  // It is upto the native component to manage setting/getting this
-  // uses disk Disk
-
   method Find() Bool
   method Insert() Bool
   method Delete () Bool

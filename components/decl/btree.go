@@ -18,6 +18,11 @@ func (b *BTreeIndex) Find() decl.Value {
 	return OutcomesToValue(b.Wrapped.Find())
 }
 
+// Range searches builds for BTreeIndex Insert.
+func (b *BTreeIndex) Range() decl.Value {
+	return OutcomesToValue(b.Wrapped.Range())
+}
+
 // Insert builds  for BTreeIndex Insert.
 func (b *BTreeIndex) Insert() decl.Value {
 	return OutcomesToValue(b.Wrapped.Insert())

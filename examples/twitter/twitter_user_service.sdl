@@ -1,0 +1,49 @@
+// twitter_user_service.sdl
+
+import HttpStatusCode, UserType from "./twitter_common.sdl"
+import UserStore from "./twitter_storage.sdl"
+
+component UserService {
+  uses userStore UserStore
+
+  method RegisterUser(userType UserType) HttpStatusCode {
+    delay 1ms
+
+    // In real system: generate userID
+    let dummyUserID = sample dist { 1 => 1001, 1 => 1002} // Placeholder ID
+
+    return self.userStore.CreateUserProfile(dummyUserID, "" + userType) // Pass enum as string category
+  }
+
+  method Follow(followerID Int, followeeID Int) HttpStatusCode {
+    delay 1ms
+    if followerID == followeeID {
+      return HttpStatusCode.BAD_REQUEST
+    }
+    return self.userStore.AddFollow(followerID, followeeID)
+  }
+
+  method Unfollow(followerID Int, followeeID Int) HttpStatusCode {
+    delay 1ms
+    return self.userStore.RemoveFollow(followerID, followeeID)
+  }
+
+  // Returns a distribution of following counts for a given user type.
+  // This is more for modeling than for a specific user's exact count.
+  method GetFollowingCountMetrics(userType UserType) Outcomes[Int] {
+    delay 1ms
+    // Based on UserType, return a different distribution
+    // This is a simplification; a real model might query UserStore for a sample,
+    // or this service could have pre-defined distributions per UserType.
+    if userType == UserType.LIGHT {
+      return dist { 70 => 20, 25 => 50, 5 => 100 } // Light users follow 20-100 people
+    } else if userType == UserType.CASUAL {
+      return dist { 30 => 100, 50 => 200, 15 => 500, 5 => 1000 }
+    } else if userType == UserType.HEAVY {
+      return dist { 20 => 300, 40 => 700, 30 => 1500, 10 => 3000 }
+    } else if userType == UserType.INFLUENCER { // Influencers are followed, don't follow as much
+      return dist { 60 => 50, 30 => 100, 10 => 200 }
+    }
+    return dist {1 => 50} // Default fallback
+  }
+}
