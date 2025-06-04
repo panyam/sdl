@@ -10,73 +10,77 @@ This package is responsible for the execution and evaluation of System Design La
     *   The central orchestrator for loading and preparing SDL files for execution.
     *   Holds a reference to an `loader.Loader` to parse and validate SDL source files.
     *   Manages a cache of `FileInstance` objects.
-    *   Includes a factory mechanism (`CreateNativeComponent`) to instantiate native Go components that are declared in SDL (e.g., `Disk`, `HashIndex` from the `components` package).
+    *   Includes a factory mechanism (`CreateNativeComponent`) to instantiate native Go components that are declared in SDL.
 
 *   **`FileInstance` (`file.go`):**
     *   Represents a loaded and parsed SDL file at runtime.
     *   Holds the `FileDecl` (AST) and a root runtime environment (`Env[Value]`) for the file.
-    *   Provides methods to create `SystemInstance` and `ComponentInstance` objects from declarations within the file, resolving imports if necessary.
+    *   Provides methods to create `SystemInstance` and `ComponentInstance` objects.
 
 *   **`SystemInstance` (`system.go`):**
     *   Represents a runtime instance of an SDL `system` declaration.
-    *   Contains a reference to its `SystemDecl` (AST) and its own runtime environment (`Env[Value]`) for instances and parameters defined within it.
-    *   The `Initializer()` method compiles the system body (instance declarations and their overrides) into a `BlockStmt` that can be evaluated to set up the system.
-    *   `GetUninitializedComponents()` helps identify dependencies that haven't been satisfied after initialization.
+    *   Contains its `SystemDecl` (AST) and runtime environment (`Env[Value]`).
+    *   `Initializer()` compiles the system body into a `BlockStmt` for setup.
+    *   `GetUninitializedComponents()` helps identify unsatisfied dependencies.
 
 *   **`ComponentInstance` (`component.go`) & `ObjectInstance` (`object.go`):**
-    *   `ObjectInstance`: A base for entities that can have parameters and be interacted with. It distinguishes between native Go objects and user-defined SDL objects.
-    *   `ComponentInstance`: Extends `ObjectInstance`. Represents a runtime instance of an SDL `component`.
-    *   Manages its own `ComponentDecl` (AST) and an initial environment (`InitialEnv`) which includes parameters and resolved dependencies.
-    *   Handles native component interaction through the `NativeObject` interface (which `components/decl/*` wrappers implement).
-    *   For user-defined components, its `Initializer()` method prepares a `BlockStmt` to evaluate parameter defaults and initialize `uses` dependencies that have overrides.
-    *   Provides `Get()` and `Set()` methods for accessing/modifying its parameters (delegating to `NativeInstance` for native components).
+    *   `ObjectInstance`: Base for entities with parameters (native or SDL-defined).
+    *   `ComponentInstance`: Extends `ObjectInstance` for SDL `component` instances.
+    *   Manages `ComponentDecl` (AST) and an initial environment (`InitialEnv`).
+    *   Handles native component interaction via `NativeObject` interface.
+    *   `Initializer()` prepares a `BlockStmt` for user-defined components.
+    *   `Get()` and `Set()` for parameter access.
 
 *   **`SimpleEval` (`simpleeval.go`):**
-    *   The primary interpreter/evaluator for SDL AST nodes (expressions and statements).
-    *   It traverses the AST, evaluating nodes within a given runtime environment (`Env[Value]`).
-    *   Implements evaluation logic for various SDL constructs: literals, identifiers, binary/unary operations, `let` and `set` statements, `if`, `for`, `return`, `log`, `delay`, `distribute`, `sample`, `new` (component instantiation), and method calls (`CallExpr`).
-    *   `EvalInitSystem()`: Uses `SimpleEval` to execute the initializer block of a `SystemInstance`.
-    *   Method calls on native components are delegated via `InvokeMethod` (in `native.go`) which uses reflection.
-    *   Crucially, evaluation accumulates latency through the `Value.Time` field. The `currTime *core.Duration` parameter passed during evaluation tracks the total time taken for a sequence of operations.
+    *   The primary interpreter for SDL AST nodes.
+    *   Traverses AST, evaluating nodes within an `Env[Value]`.
+    *   Handles literals, identifiers, operations, statements (`let`, `set`, `if`, `for`, `return`, `log`, `delay`), `new` (instantiation), and method calls.
+    *   Latency accumulation via `Value.Time` and `currTime *core.Duration`.
+    *   *Planned Enhancements:* Support for `gobatch`, `waitfor`, and integration with tracing mechanisms.
 
 *   **Native Component Interaction (`native.go`):**
-    *   `NativeObject` interface: (`Get`, `Set`). (Note: `InvokeMethod` is a standalone function now).
-    *   `InvokeMethod(...)`: Uses Go reflection to call methods on native component instances. It handles argument conversion (SDL `Value` to Go types) and result conversion (Go types back to SDL `Value`). The returned `Value` from a native method call is expected to have its `Time` field set to represent the latency of that native operation.
+    *   `NativeObject` interface (`Get`, `Set`).
+    *   `InvokeMethod(...)`: Uses Go reflection for native method calls, handling argument/result conversion between SDL `Value` and Go types. `Value.Time` carries latency.
+    *   *Planned Enhancements:* Support for native aggregator methods used with `waitfor`.
 
 *   **Runtime Environment (`Env[Value]` from `decl`):**
-    *   Used extensively to store and look up runtime values of variables, parameters, and component instances during evaluation.
+    *   Stores runtime values of variables, parameters, and instances.
 
-*   **`Frame` (`frame.go` - currently unused by `SimpleEval` but planned for concurrency):**
-    *   Defines a call frame structure intended for managing lexical scopes and potentially tracking asynchronous operations (`go`/`wait` - though these are not yet fully implemented in `SimpleEval`).
+*   **Concurrency Primitives (Planned):**
+    *   **`gobatch N { <block_returns_T> } => BatchFuture[T]`:** Language construct to spawn `N` parallel identical operations. `T` is the type returned by the block (e.g., `Enum`, `Outcomes[Enum]`). `BatchFuture[T]` is an opaque handle.
+    *   **`waitfor <batch_future> using MyAggregator.AggregateMethod(params...) => Outcomes[SummaryEnum]`:** SDL statement to synchronize on a `BatchFuture`. The runtime will facilitate passing necessary batch execution data (like the profile of a single operation and `N`) to the native Go `AggregateMethod`. This native method is responsible for both functional aggregation and calculating the appropriate completion time profile for its `Outcomes[SummaryEnum]` result.
+    *   **`go { <block_returns_T> } => SingleFuture[T]`:** For spawning a single asynchronous task.
+    *   **`wait <single_future> => T`:** To get the result of a single future.
+    *   **`waitgroup (f1, f2, ...) => (T1, T2, ...), makespan_time`:** For waiting on multiple, potentially heterogeneous, single futures.
+
+*   **Tracing Infrastructure (Planned):**
+    *   The runtime will be augmented to emit trace events (e.g., method entry/exit, future spawn/await) to a `Tracer` object. This will enable `sdl trace` and dynamic diagram generation.
 
 *   **Utilities (`utils.go`):**
-    *   `RunCallInBatches`: A helper function used by the `plot` command. It takes a `SystemInstance`, component/method names, and batching parameters. It repeatedly calls a target method using `SimpleEval` and collects the resulting `Value` objects (which include latency via `Value.Time`).
+    *   `RunCallInBatches`: Helper for the `plot` command.
 
 **Role in the Project:**
 
 *   Provides the execution engine for SDL.
-*   Bridges the declarative SDL models with their actual behavior and performance characteristics.
-*   Enables simulation-like execution of specific system operations (as seen in `RunCallInBatches`).
+*   Bridges declarative models with behavior and performance.
+*   Enables simulation and, with future evaluators, analytical modeling.
 
 **Current Status & Recent Work:**
 
-*   `SimpleEval` can execute a significant subset of the SDL, including component instantiation, parameter setting, method calls (both SDL-defined and native), and basic control flow.
-*   The `Value.Time` mechanism for tracking latency is integrated into `SimpleEval` and native calls.
-*   The `plot` command in `cmd/sdl` leverages this runtime to generate performance data.
-*   The structure for handling native components via reflection is in place.
-*   Concurrency features (`go`/`wait` via `Frame`) are designed but not yet fully integrated into `SimpleEval`'s core loop.
+*   `SimpleEval` executes a significant SDL subset for single-path simulation and latency tracking.
+*   Native component integration is functional.
+*   Focus is shifting towards implementing concurrency primitives (`gobatch`, `waitfor`) and tracing.
 
 **Key Dependencies:**
 
-*   `decl`: For AST node structures, `Value` type, and `Env`.
-*   `loader`: To obtain loaded and validated `FileDecl` objects.
-*   `core`: For `core.Duration` and `core.Outcomes` when dealing with probabilistic values (though `SimpleEval` itself primarily deals with single `Value` paths from sampled outcomes).
-*   `components/decl`: For the native component wrappers.
+*   `decl`: For AST, `Value` type, `Env`.
+*   `loader`: For loaded `FileDecl` objects.
+*   `core`: For `core.Duration`, `core.Outcomes`.
+*   `components/decl`: For native component wrappers.
 
 **Future Considerations (linking to `NEXTSTEPS.MD`):**
 
-*   **Full Concurrency Support:** Implement evaluation for `go` and `wait` statements, likely leveraging or enhancing the `Frame` concept.
-*   **Tracing:** Augment `SimpleEval` (or create a new evaluator) to record execution traces (Feature #1 from our discussion).
-*   **Exhaustive/Probabilistic Evaluation:** Develop new evaluators (e.g., an `OutcomesEval` or `ProbabilisticPathEval`) for analytical modeling or exhaustive path tracing (Feature #2).
-*   **Enhanced Error Handling:** More robust runtime error reporting.
-*   **Debugging Capabilities:** Potential for step-through debugging in the future.
+*   **Full Concurrency Implementation:** Realize `gobatch`, `waitfor`, `go`, `waitgroup`.
+*   **Tracing Integration:** Develop and integrate the `Tracer` mechanism.
+*   **Exhaustive/Probabilistic Evaluation:** Design and implement new evaluators beyond `SimpleEval`.
+*   **Enhanced Error Handling & Debugging.**
