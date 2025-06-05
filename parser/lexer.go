@@ -268,6 +268,12 @@ func (l *Lexer) scanIdentifierOrKeyword() (tok int, text string) {
 		return WAIT, text
 	case "go":
 		return GO, text
+	case "gobatch":
+		return GOBATCH, text
+	case "aggregator":
+		return AGGREGATOR, text
+	case "using":
+		return USING, text
 	case "log":
 		return LOG, text
 	case "switch":
@@ -555,6 +561,9 @@ var testTokenNames = map[int]string{
 	DELAY:            "DELAY",
 	WAIT:             "WAIT",
 	GO:               "GO",
+	GOBATCH:          "GOBATCH",
+	AGGREGATOR:       "AGGREGATOR",
+	USING:            "USING",
 	LOG:              "LOG",
 	SWITCH:           "SWITCH",
 	CASE:             "CASE",

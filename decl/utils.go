@@ -149,16 +149,16 @@ func NewDistributeExpr(total Expr, defaultCase Expr, cases ...*CaseExpr) *Distri
 	return &DistributeExpr{TotalProb: total, Cases: cases, Default: defaultCase}
 }
 
-func NewGoStmt(varName *IdentifierExpr, stmt Stmt, expr Expr) *GoStmt {
-	return &GoStmt{VarName: varName, Stmt: stmt, Expr: expr}
+func NewGoExpr(stmt Stmt, expr Expr) *GoExpr {
+	return &GoExpr{Stmt: stmt, Expr: expr}
 }
 
 func NewDelayStmt(duration Expr) *DelayStmt {
 	return &DelayStmt{Duration: duration}
 }
 
-func NewWaitStmt(idents ...*IdentifierExpr) *WaitStmt {
-	return &WaitStmt{Idents: idents}
+func NewWaitExpr(idents ...*IdentifierExpr) *WaitExpr {
+	return &WaitExpr{Idents: idents}
 }
 
 // Helper assertion for BinaryOpNode structure

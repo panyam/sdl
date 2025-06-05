@@ -166,20 +166,6 @@ func (d *DelayStmt) PrettyPrint(cp CodePrinter) {
 	cp.Print("")
 }
 
-// WaitStmt represents `delay durationExpr;`
-type WaitStmt struct {
-	NodeInfo
-	Idents []*IdentifierExpr // Must evaluate to Duration outcome
-}
-
-func (d *WaitStmt) String() string {
-	return fmt.Sprintf("wait %s;", strings.Join(gfn.Map(d.Idents, func(i *IdentifierExpr) string { return i.Value }), ", "))
-}
-
-func (w *WaitStmt) PrettyPrint(cp CodePrinter) {
-	cp.Print(w.String())
-}
-
 // ExecutionMode determines sequential or parallel execution.
 type ExecutionMode string // Use string for simplicity
 
@@ -187,35 +173,6 @@ const (
 	Sequential ExecutionMode = "Sequential"
 	Go         ExecutionMode = "Go"
 )
-
-// GoStmt represents `parallel { stmt* }`
-type GoStmt struct {
-	NodeInfo
-	VarName *IdentifierExpr
-	// Can call a async/parallel on a statement or an expression
-	Stmt Stmt
-	Expr Expr
-}
-
-func (p *GoStmt) String() string { return "go { ... }" }
-
-// LogStmt represents `log "message", expr1, expr2;`
-type LogStmt struct {
-	NodeInfo
-	Args []Expr // First arg often StringLiteral, others are values to log
-}
-
-func (l *LogStmt) String() string { return "log ... ;" }
-
-func (l *LogStmt) PrettyPrint(cp CodePrinter) {
-	cp.Print("log ")
-	for idx, arg := range l.Args {
-		if idx > 0 {
-			cp.Print(", ")
-		}
-		arg.PrettyPrint(cp)
-	}
-}
 
 // ExpectStmt represents `targetMetric operator threshold;` (e.g., `result.P99 < 100ms;`)
 type ExpectStmt struct {
@@ -232,12 +189,16 @@ func (e *ExpectStmt) String() string {
 // AssignmentStmt represents setting a parameter value in an InstanceDecl.
 type AssignmentStmt struct {
 	NodeInfo
-	Var      *IdentifierExpr
-	Value    Expr   // The value assigned to the parameter
-	IsLet    string // whether this is a let statement
-	IsFuture string // whether this is a future
+	Var   *IdentifierExpr
+	Value Expr // The value assigned to the parameter
 }
 
+func (p *AssignmentStmt) Equals(another *AssignmentStmt) bool {
+	if !p.Var.Equals(another.Var) {
+		return false
+	}
+	return true
+}
 func (p *AssignmentStmt) String() string { return fmt.Sprintf("%s = %s", p.Var.Value, p.Value) }
 func (p *AssignmentStmt) PrettyPrint(cp CodePrinter) {
 	cp.Print(p.String())

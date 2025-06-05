@@ -1,5 +1,5 @@
 
-import TestNative, Cache, NativeDisk, HttpStatusCode, HashIndex from "../common.sdl" ;
+import Cache, NativeDisk, HttpStatusCode, HashIndex from "../common.sdl" ;
 import Disk from "../disk.sdl"
 import Database from "./db.sdl"
 
@@ -21,7 +21,7 @@ component AppServer {
 
   method SimpleHttp() HttpStatusCode {
     delay 20ms
-    return HttpStatusCode.StatusOk
+    return HttpStatusCode.Ok
   }
 
   method Shorten() HttpStatusCode {
@@ -32,24 +32,24 @@ component AppServer {
         // log "hello world", foundDuplicate, self.db.PutShortUrl()
         // Success so try saving a new short ID
         if self.db.PutShortUrl() {
-          return HttpStatusCode.StatusOk
+          return HttpStatusCode.Ok
         } else {
-          return HttpStatusCode.StatusInternalError
+          return HttpStatusCode.InternalError
         }
       }
     }
 
     // All retries elapsed - too many conflicts
-    return HttpStatusCode.StatusConflict
+    return HttpStatusCode.Conflict
   }
 
   method Redirect() HttpStatusCode {
     if self.db.GetByShortId() {
-      return HttpStatusCode.StatusOk // or may be 302
+      return HttpStatusCode.Ok // or may be 302
     }
 
     // Simplified - can model more errors
-    return HttpStatusCode.StatusInternalError
+    return HttpStatusCode.InternalError
   }
 }
 
@@ -73,29 +73,29 @@ component AppServerWithCache {
         // Success so try saving a new short ID
         if self.db.PutShortUrl() {
           // .... Write to cache as well
-          return HttpStatusCode.StatusOk
+          return HttpStatusCode.Ok
         } else {
-          return HttpStatusCode.StatusInternalError
+          return HttpStatusCode.InternalError
         }
       }
     }
 
     // All retries elapsed - too many conflicts
-    return HttpStatusCode.StatusConflict
+    return HttpStatusCode.Conflict
   }
 
   method Redirect() HttpStatusCode {
     // See if there is a cache hit
     if cache.Read() {
-      return HttpStatusCode.StatusOk // or may be 302
+      return HttpStatusCode.Ok // or may be 302
     }
 
     if self.db.GetByShortId() {
-      return HttpStatusCode.StatusOk // or may be 302
+      return HttpStatusCode.Ok // or may be 302
     }
 
     // Simplified - can model more errors
-    return HttpStatusCode.StatusInternalError
+    return HttpStatusCode.InternalError
   }
 
   method CheckDuplicateShortId() Bool {

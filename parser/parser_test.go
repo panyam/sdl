@@ -454,33 +454,18 @@ func TestParseStatements(t *testing.T) {
 		assert.True(t, ok)
 	})
 
-	t.Run("WaitStmt", func(t *testing.T) {
-		input := wrap("wait f1, f2;")
+	t.Run("WaitExpr", func(t *testing.T) {
+		input := wrap("wait f1, f2")
 		// Indices: component(0)...{(24) wait(26) f1(31), f2(36) ;(38)...
 		ast := parseString(t, input)
-		stmt := getStmt(t, ast).(*WaitStmt)
+		estmt := getStmt(t, ast).(*ExprStmt)
+		stmt := estmt.Expression.(*WaitExpr)
 		assertPosition(t, stmt, 26, 38)
 		require.Len(t, stmt.Idents, 2)
 		assertIdentifier(t, stmt.Idents[0], "f1")
 		assertIdentifier(t, stmt.Idents[1], "f2")
 		assertPosition(t, stmt.Idents[0], 31, 33)
 		assertPosition(t, stmt.Idents[1], 36, 38)
-	})
-
-	t.Run("LogStmt", func(t *testing.T) {
-		input := wrap(`log "Processing:", id, item.Value`)
-		// Indices: component(0)...{(24) log(26) "Processing:"(30), id(45), item.Value(49) ;(60) }...
-		ast := parseString(t, input)
-		stmt := getStmt(t, ast).(*LogStmt)
-		assertPosition(t, stmt, 26, 60)
-		require.Len(t, stmt.Args, 3)
-		assertLiteralWithValue(t, stmt.Args[0], StrType, "Processing:")
-		assertIdentifier(t, stmt.Args[1], "id")
-		_, okMA := stmt.Args[2].(*MemberAccessExpr)
-		assert.True(t, okMA)
-		assertPosition(t, stmt.Args[0].(Node), 30, 44)
-		assertPosition(t, stmt.Args[1].(Node), 45, 47)
-		assertPosition(t, stmt.Args[2].(Node), 49, 59)
 	})
 
 	t.Run("IfStmt", func(t *testing.T) {

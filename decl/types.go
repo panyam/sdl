@@ -10,7 +10,7 @@ import (
 type TypeTag int
 
 const (
-	TypeTagUnknown TypeTag = iota
+	TypeTagVoid TypeTag = iota
 	TypeTagNil
 	TypeTagSimple
 	TypeTagTuple
@@ -21,6 +21,9 @@ const (
 	TypeTagRef
 	TypeTagOutcomes
 	TypeTagExpr
+	TypeTagFuture
+	TypeTagResolvedFuture
+	TypeTagUnion
 )
 
 type Type struct {
@@ -32,6 +35,7 @@ type Type struct {
 
 var (
 	// Use singletons for basic types for efficiency
+	VoidType  = &Type{Tag: TypeTagVoid}
 	NilType   = SimpleType("Nil")
 	BoolType  = SimpleType("Bool")
 	IntType   = SimpleType("Int")
@@ -43,34 +47,13 @@ func SimpleType(name string) *Type {
 	return &Type{Tag: TypeTagSimple, Info: name} // Changed from {} to have a name for clarity
 }
 
-type MethodTypeInfo struct {
-	Component *ComponentDecl
-	Method    *MethodDecl
-}
-
-func MethodType(componentDecl *ComponentDecl, methodDecl *MethodDecl) *Type {
-	if componentDecl == nil || methodDecl == nil {
-		panic("Component and Method Decls cannot be nil")
+func UnionType(elementTypes ...*Type) *Type {
+	if len(elementTypes) == 0 {
+		panic("Union element type cannot be nil or 0 length")
 	}
 	return &Type{
-		Tag: TypeTagMethod,
-		// Name: "Method",
-		Info: &MethodTypeInfo{componentDecl, methodDecl},
-	}
-}
-
-type RefTypeInfo struct {
-	Component *ComponentDecl
-	ParamType *Type
-}
-
-func RefType(componentDecl *ComponentDecl, paramType *Type) *Type {
-	if componentDecl == nil || paramType == nil {
-		panic("Component and Param Type cannot be nil")
-	}
-	return &Type{
-		Tag:  TypeTagRef,
-		Info: &RefTypeInfo{componentDecl, paramType},
+		Tag:  TypeTagUnion,
+		Info: elementTypes,
 	}
 }
 
@@ -94,7 +77,7 @@ func ExprType(elementType *Type) *Type {
 
 func ListType(elementType *Type) *Type {
 	if elementType == nil {
-		panic("Outcomes element type cannot be nil")
+		panic("ListType element type cannot be nil")
 	}
 	return &Type{
 		Tag: TypeTagList,
@@ -132,6 +115,40 @@ func ComponentType(decl *ComponentDecl) *Type {
 }
 
 // String representation of the type
+func (t *Type) Union(another *Type) *Type {
+	if t == nil {
+		return another
+	}
+	if another == nil {
+		return t
+	}
+	if t.Tag != TypeTagUnion {
+		t = UnionType(t)
+	}
+
+	variantTypes := t.Info.([]*Type)
+	otherTypes := []*Type{another}
+	if another.Tag == TypeTagUnion {
+		otherTypes = another.Info.([]*Type)
+	}
+
+	typesToAdd := []*Type{}
+	for _, otherType := range otherTypes {
+		found := false
+		for _, variantType := range variantTypes {
+			if variantType.Equals(another) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			typesToAdd = append(typesToAdd, otherType)
+		}
+	}
+
+	return UnionType(append(variantTypes, typesToAdd...)...)
+}
+
 func (t *Type) String() string {
 	if t == nil {
 		return "<nil_type>"
@@ -176,6 +193,25 @@ func (v *Type) Equals(other *Type) bool {
 
 	if v.Tag == TypeTagSimple {
 		return v.Info.(string) == other.Info.(string)
+	} else if v.Tag == TypeTagUnion {
+		t1 := v.Info.([]*Type)
+		t2 := other.Info.([]*Type)
+		if len(t1) != len(t2) {
+			return false
+		}
+		for _, a := range t1 {
+			found := false
+			for _, b := range t2 {
+				if a.Equals(b) {
+					found = true
+				}
+				break
+			}
+			if !found {
+				return false
+			}
+		}
+		return true
 	} else if v.Tag == TypeTagTuple {
 		c1 := v.Info.([]*Type)
 		c2 := other.Info.([]*Type)
@@ -193,13 +229,23 @@ func (v *Type) Equals(other *Type) bool {
 		e1 := v.Info.(*EnumDecl)
 		e2 := other.Info.(*EnumDecl)
 		return e1.Name.Value == e2.Name.Value
+	} else if v.Tag == TypeTagRef {
+		return v.Info.(*RefTypeInfo).Equals(other.Info.(*RefTypeInfo))
+	} else if v.Tag == TypeTagFuture {
+		return v.Info.(*FutureTypeInfo).Equals(other.Info.(*FutureTypeInfo))
+	} else if v.Tag == TypeTagResolvedFuture {
+		return v.Info.(*ResolvedFutureTypeInfo).Equals(other.Info.(*ResolvedFutureTypeInfo))
 	} else if v.Tag == TypeTagList || v.Tag == TypeTagOutcomes {
 		return v.Info.(*Type).Equals(other.Info.(*Type))
 	} else if v.Tag == TypeTagComponent {
 		c1 := v.Info.(*ComponentDecl)
 		c2 := other.Info.(*ComponentDecl)
 		// TODO - a more deeper check
-		return c1.Name.Value == c2.Name.Value
+		return c1.Equals(c2)
+	} else if v.Tag == TypeTagMethod {
+		m1 := v.Info.(*MethodTypeInfo)
+		m2 := other.Info.(*MethodTypeInfo)
+		return m1.Equals(m2)
 	}
 	panic(fmt.Sprintf("Invalid types... %d, %v, %d, %v", v.Tag, v.Info, other.Tag, other.Info))
 }
@@ -212,6 +258,106 @@ func (t *Type) IsComponentType() bool {
 	return t.Tag == TypeTagComponent
 }
 
+type ResolvedFutureTypeInfo struct {
+	// The future type that has been resolved
+	FutureType    *Type
+	ResolvedValue Value
+	LoopExprValue Value
+}
+
+// Creates a new future type (either for a single value or batch of values)
+// resultType is the Type of the future's result (when started with the go expression)
+// If a go expression contains a loop expression (eg gobatch <loop_expr> { .... }) then this
+// denotes a batch future over multiple items and the loopType denotes the type of the loop expr.
+// For now only integers (or outcomes[int]) are supported for the loop expression
+func ResolvedFutureType(futureType *Type) *Type {
+	if futureType == nil {
+		panic("Future type element type cannot be nil")
+	}
+	return &Type{
+		Tag: TypeTagResolvedFuture,
+		Info: &ResolvedFutureTypeInfo{
+			FutureType: futureType,
+		},
+	}
+}
+
+func (r *ResolvedFutureTypeInfo) Equals(another *ResolvedFutureTypeInfo) bool {
+	return r.FutureType.Equals(another.FutureType) &&
+		r.LoopExprValue.Equals(&another.LoopExprValue) &&
+		r.ResolvedValue.Equals(&another.ResolvedValue)
+}
+
+type FutureTypeInfo struct {
+	ResultType *Type
+	LoopType   *Type
+	IsBatch    bool
+}
+
+// Creates a new future type (either for a single value or batch of values)
+// resultType is the Type of the future's result (when started with the go expression)
+// If a go expression contains a loop expression (eg gobatch <loop_expr> { .... }) then this
+// denotes a batch future over multiple items and the loopType denotes the type of the loop expr.
+// For now only integers (or outcomes[int]) are supported for the loop expression
+func FutureType(resultType *Type, loopType *Type) *Type {
+	if resultType == nil {
+		panic("Future type element type cannot be nil")
+	}
+	return &Type{
+		Tag: TypeTagFuture,
+		Info: &FutureTypeInfo{
+			ResultType: resultType,
+			LoopType:   loopType,
+			IsBatch:    loopType != nil,
+		},
+	}
+}
+
+func (r *FutureTypeInfo) Equals(another *FutureTypeInfo) bool {
+	return r.IsBatch == another.IsBatch &&
+		r.ResultType.Equals(another.ResultType) &&
+		r.LoopType.Equals(another.LoopType)
+}
+
+type MethodTypeInfo struct {
+	Component *ComponentDecl
+	Method    *MethodDecl
+}
+
+func (r *MethodTypeInfo) Equals(another *MethodTypeInfo) bool {
+	return r.Component.Equals(another.Component) && r.Method.Equals(another.Method)
+}
+
+func MethodType(componentDecl *ComponentDecl, methodDecl *MethodDecl) *Type {
+	if componentDecl == nil || methodDecl == nil {
+		panic("Component and Method Decls cannot be nil")
+	}
+	return &Type{
+		Tag: TypeTagMethod,
+		// Name: "Method",
+		Info: &MethodTypeInfo{componentDecl, methodDecl},
+	}
+}
+
+type RefTypeInfo struct {
+	Component *ComponentDecl
+	ParamType *Type
+}
+
+func (r *RefTypeInfo) Equals(another *RefTypeInfo) bool {
+	return r.Component.Equals(another.Component) && r.ParamType.Equals(another.ParamType)
+}
+
+func RefType(componentDecl *ComponentDecl, paramType *Type) *Type {
+	if componentDecl == nil || paramType == nil {
+		panic("Component and Param Type cannot be nil")
+	}
+	return &Type{
+		Tag:  TypeTagRef,
+		Info: &RefTypeInfo{componentDecl, paramType},
+	}
+}
+
 // TypeDecl represents primitive types or registered enum identifiers.
 
 type TypeDecl struct {
@@ -221,6 +367,17 @@ type TypeDecl struct {
 	resolvedType *Type       // Cache the resolved *Type
 }
 
+func (t *TypeDecl) Equals(another *TypeDecl) bool {
+	if t.Name != another.Name || len(t.Args) != len(another.Args) || !t.resolvedType.Equals(another.resolvedType) {
+		return false
+	}
+	for i, a := range t.Args {
+		if !a.Equals(another.Args[i]) {
+			return false
+		}
+	}
+	return true
+}
 func (t *TypeDecl) String() string {
 	if len(t.Args) == 0 {
 		return fmt.Sprintf("Type { %s ", t.Name)

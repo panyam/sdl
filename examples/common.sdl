@@ -10,6 +10,9 @@ enum HttpStatusCode {
   ServiceUnavailable
 }
 
+// An aggregator method used for selecting from futures
+native aggregator AllHttpStatusesLessThan(maxDuration Duration) Outcomes[HttpStautsCode]
+
 native component NativeDisk {
   method Read()
 }

@@ -122,6 +122,10 @@ type LiteralExpr struct {
 	// NumericValue float64
 }
 
+func (l *LiteralExpr) Equals(another *LiteralExpr) bool {
+	return l.Value.Equals(&another.Value)
+}
+
 func (l *LiteralExpr) String() string {
 	return l.Value.String()
 }
@@ -133,6 +137,10 @@ func (l *LiteralExpr) PrettyPrint(cp CodePrinter) {
 type IdentifierExpr struct {
 	ExprBase
 	Value string
+}
+
+func (i *IdentifierExpr) Equals(another *IdentifierExpr) bool {
+	return i.Value == another.Value
 }
 
 func (i *IdentifierExpr) systemBodyItemNode() {} // Allow bare identifier? Maybe not needed.
@@ -228,4 +236,34 @@ type CaseExpr struct {
 func (c *CaseExpr) String() string { return fmt.Sprintf("case %s => %s", c.Condition, c.Body) }
 func (e *CaseExpr) PrettyPrint(cp CodePrinter) {
 	cp.Print(e.String())
+}
+
+// GoExpr represents `go { stmt }`
+type GoExpr struct {
+	ExprBase
+	// Can call a async/parallel on a statement or an expression
+	LoopExpr Expr // if a loop is proivded then it is a batch async call
+	Stmt     Stmt
+	Expr     Expr
+}
+
+func (p *GoExpr) String() string { return "go { ... }" }
+func (e *GoExpr) PrettyPrint(cp CodePrinter) {
+	cp.Print(e.String())
+}
+
+// WaitExpr represents `delay durationExpr;`
+type WaitExpr struct {
+	ExprBase
+	Idents           []*IdentifierExpr // Must evaluate to Duration outcome
+	Aggregator       *IdentifierExpr
+	AggregatorParams []Expr
+}
+
+func (d *WaitExpr) String() string {
+	return fmt.Sprintf("wait %s;", strings.Join(gfn.Map(d.Idents, func(i *IdentifierExpr) string { return i.Value }), ", "))
+}
+
+func (w *WaitExpr) PrettyPrint(cp CodePrinter) {
+	cp.Print(w.String())
 }

@@ -203,6 +203,55 @@ func (i *Inference) EvalForMethodSignature(method *MethodDecl, compDecl *Compone
 	return
 }
 
+func (i *Inference) EvalForStmt(stmt Stmt, scope *TypeScope) (returnType *Type, ok bool) {
+	ok = true
+	switch s := stmt.(type) {
+	case *LetStmt:
+		return i.EvalForLetStmt(s, scope)
+	case *SetStmt:
+		return i.EvalForSetStmt(s, scope)
+	case *ExprStmt:
+		return i.EvalForExprType(s.Expression, scope)
+	case *ReturnStmt:
+		var actualReturnType *Type = NilType
+		if s.ReturnValue != nil {
+			return i.EvalForExprType(s.ReturnValue, scope)
+		}
+		return actualReturnType, ok
+	case *IfStmt:
+		return i.EvalForIfStmt(s, scope)
+	case *ForStmt:
+		return i.EvalForForStmt(s, scope)
+	case *DelayStmt:
+		return i.EvalForDelayStmt(s, scope)
+	case *BlockStmt:
+		return i.EvalForBlockStmt(s, scope)
+		/*
+			case *AssignmentStmt: // General assignment, var must exist.
+				existingVarType, varFound := scope.Get(s.Var.Value)
+				if !varFound {
+					i.Errorf(s.Var.Pos(), "assignment to undeclared variable '%s'", s.Var.Value)
+					break
+				}
+				s.Var.SetInferredType(existingVarType)
+				valType, ok := i.EvalForExprType(s.Value, scope)
+				if ok && valType != nil && !valType.Equals(existingVarType) {
+					isIntToFloat := valType.Equals(IntType) && existingVarType.Equals(FloatType)
+					if !isIntToFloat {
+						i.Errorf(s.Pos(), "type mismatch in assignment to '%s': variable is %s, value is %s", s.Var.Value, existingVarType.String(), valType.String())
+					}
+				}
+		*/
+		/*
+			case *ExpectStmt:
+				i.Errorf(pos, "ExpectStmt found outside of an analyze block's expectations; type checking skipped here", s.Pos().LineColStr())
+		*/
+	default:
+		i.Errorf(stmt.Pos(), "type inference for statement type %T not implemented yet: %v", stmt, stmt)
+	}
+	return
+}
+
 // i.EvalForExprType recursively infers the type of an expression and sets its InferredType field.
 func (i *Inference) EvalForExprType(expr Expr, scope *TypeScope) (inferred *Type, success bool) {
 	if expr == nil {
@@ -235,12 +284,18 @@ func (i *Inference) EvalForExprType(expr Expr, scope *TypeScope) (inferred *Type
 		inferred, success = i.EvalForSampleExpr(e, scope)
 	case *IndexExpr:
 		inferred, success = i.EvalForIndexExpr(e, scope)
-	case *CaseExpr:
-		if e.Body == nil {
-			i.Errorf(e.Pos(), "CaseExpr at has no body")
-			return nil, false
-		}
-		inferred, success = i.EvalForExprType(e.Body, scope)
+	case *GoExpr:
+		inferred, success = i.EvalForGoExpr(e, scope)
+	case *WaitExpr:
+		inferred, success = i.EvalForWaitExpr(e, scope)
+		/*
+			case *CaseExpr:
+				if e.Body == nil {
+					i.Errorf(e.Pos(), "CaseExpr at has no body")
+					return nil, false
+				}
+				inferred, success = i.EvalForExprType(e.Body, scope)
+		*/
 	default:
 		panic(fmt.Errorf("type inference not implemented for expression type %T at pos %s", expr, expr.Pos().LineColStr()))
 	}
@@ -593,6 +648,135 @@ func (i *Inference) EvalForSampleExpr(expr *SampleExpr, scope *TypeScope) (*Type
 	return fromType.Info.(*Type), true
 }
 
+// EvalForGoExpr infers the type of an GoExpr (e.g., list[0], string[1]).
+// For Go expressions the block statement MUST contain a return statement which indicates the value of the future
+// If there are multiple return statements (due to multiple paths) they all should be the same
+// Return type is the Future[ReturnType]
+func (i *Inference) EvalForGoExpr(expr *GoExpr, scope *TypeScope) (returnType *Type, ok bool) {
+	var loopType *Type
+	if expr.LoopExpr != nil {
+		loopType, ok = i.EvalForExprType(expr.LoopExpr, scope)
+	}
+
+	var bodyType *Type
+	var ok2 bool
+	if expr.Stmt != nil {
+		bodyType, ok2 = i.EvalForStmt(expr.Stmt, scope)
+	} else {
+		bodyType, ok2 = i.EvalForExprType(expr.Expr, scope)
+	}
+	ok = ok && ok2
+	if bodyType == nil {
+		return nil, i.Errorf(expr.Pos(), "Go body must be a call expression or a block statment that returns a value")
+	}
+	return FutureType(bodyType, loopType), ok
+}
+
+// EvalForWaitExpr ensures that the Aggregator input types matches the future types.
+func (i *Inference) EvalForWaitExpr(expr *WaitExpr, scope *TypeScope) (returnedType *Type, ok bool) {
+	var futureTypes []*Type
+	for _, ftIdent := range expr.Idents {
+		ftType, ok2 := i.EvalForExprType(ftIdent, scope)
+		ok = ok && ok2
+		if ftType.Tag != decl.TypeTagFuture {
+			i.Errorf(ftIdent.Pos(), "Expected Future type, found: %T", ftType)
+		} else {
+			resFutureType := decl.ResolvedFutureType(ftType)
+			futureTypes = append(futureTypes, resFutureType)
+		}
+	}
+
+	if expr.Aggregator == nil {
+		if len(futureTypes) == 1 {
+			return futureTypes[0], ok
+		} else {
+			return TupleType(futureTypes...), ok
+		}
+	}
+
+	aggType, ok2 := i.EvalForExprType(expr.Aggregator, scope)
+	ok = ok && ok2
+
+	// TODO - ensure aggType's inputs are same as the tuple's
+	if aggType.Tag != decl.TypeTagMethod {
+		i.Errorf(expr.Aggregator.Pos(), "Aggregator must be a method, Found: %T", aggType)
+		return nil, false
+	}
+
+	panic("TBD")
+	return
+	/*
+		receiverType, ok := i.EvalForExprType(expr.Receiver, scope)
+		if !ok || receiverType == nil {
+			return nil, i.Errorf(expr.Receiver.Pos(), "could not determine type of receiver for index expression")
+		}
+
+		keyType, ok := i.EvalForExprType(expr.Key, scope)
+		if !ok || keyType == nil {
+			return nil, i.Errorf(expr.Key.Pos(), "could not determine type of key for index expression")
+		}
+
+		switch receiverType.Tag {
+		case decl.TypeTagList:
+			if !keyType.Equals(IntType) {
+				return nil, i.Errorf(expr.Key.Pos(), "list index must be an integer, got %s", keyType.String())
+			}
+			// The element type is stored in receiverType.Info for ListType
+			elementType, isType := receiverType.Info.(*Type)
+			if !isType || elementType == nil {
+				return nil, i.Errorf(expr.Receiver.Pos(), "internal error: ListType has invalid element type information")
+			}
+			return elementType, true
+
+		case decl.TypeTagSimple:
+			if !receiverType.Equals(decl.StrType) {
+				return nil, i.Errorf(expr.Key.Pos(), "receiver for Simple types must be a string, got %s", receiverType.String())
+			}
+
+			if !keyType.Equals(IntType) {
+				return nil, i.Errorf(expr.Key.Pos(), "string index must be an integer, got %s", keyType.String())
+			}
+			// Indexing a string results in a string (character)
+			return StrType, true
+
+		case decl.TypeTagTuple:
+			if !keyType.Equals(IntType) {
+				return nil, i.Errorf(expr.Key.Pos(), "tuple index must be an integer, got %s", keyType.String())
+			}
+			// For tuples, we can only determine the specific element type if the key is a compile-time integer literal.
+			if keyLiteral, isLiteral := expr.Key.(*LiteralExpr); isLiteral && keyLiteral.Value.Type.Equals(IntType) {
+				indexVal, err := keyLiteral.Value.GetInt()
+				if err != nil {
+					// Should not happen if type is IntType, but defensive
+					return nil, i.Errorf(expr.Key.Pos(), "internal error: could not get int value from int literal for tuple index")
+				}
+
+				tupleElementTypes, isTypeList := receiverType.Info.([]*Type)
+				if !isTypeList {
+					return nil, i.Errorf(expr.Receiver.Pos(), "internal error: TupleType has invalid element type information")
+				}
+
+				if indexVal < 0 || int(indexVal) >= len(tupleElementTypes) {
+					return nil, i.Errorf(expr.Key.Pos(), "tuple index %d out of bounds (len %d)", indexVal, len(tupleElementTypes))
+				}
+				return tupleElementTypes[indexVal], true
+			}
+			// If the key is not an integer literal, we cannot statically determine which tuple element is accessed.
+			// For now, we'll disallow non-literal integer indexing for tuples in type inference.
+			// A more advanced system might return a union type or a generic "any_tuple_element" type.
+			return nil, i.Errorf(expr.Key.Pos(), "tuple index must be an integer literal for precise type inference")
+
+		case decl.TypeTagOutcomes:
+			// It's generally an error to directly index an Outcomes[T] type.
+			// The user should use 'sample' first to get a concrete value.
+			return nil, i.Errorf(expr.Receiver.Pos(), "cannot directly index an Outcomes type; use 'sample' first to get a concrete value (e.g., 'let concrete_list = sample my_outcomes_list; concrete_list[0]')")
+
+		default:
+			return nil, i.Errorf(expr.Receiver.Pos(), "type %s is not indexable", receiverType.String())
+		}
+	*/
+}
+
 // EvalForIndexExpr infers the type of an IndexExpr (e.g., list[0], string[1]).
 func (i *Inference) EvalForIndexExpr(expr *IndexExpr, scope *TypeScope) (*Type, bool) {
 	receiverType, ok := i.EvalForExprType(expr.Receiver, scope)
@@ -667,65 +851,45 @@ func (i *Inference) EvalForIndexExpr(expr *IndexExpr, scope *TypeScope) (*Type, 
 
 // --- Statement Type Inference ---
 
-func (i *Inference) EvalForDelayStmt(d *DelayStmt, scope *TypeScope) (ok bool) {
+func (i *Inference) EvalForDelayStmt(d *DelayStmt, scope *TypeScope) (returnType *Type, ok bool) {
 	// Evaluate the type for the duration expr - it should resolve to int or float
 	childType, ok := i.EvalForExprType(d.Duration, scope)
 	if ok {
 		if !childType.Equals(IntType) && !childType.Equals(FloatType) {
-			return i.Errorf(d.Pos(), "Delay expression should be int or float, found: %s", childType.String())
+			return nil, i.Errorf(d.Pos(), "Delay expression should be int or float, found: %s", childType.String())
 		}
 	}
-	return
+	return childType, ok
 }
 
-func (i *Inference) EvalForSetStmt(s *SetStmt, scope *TypeScope) (ok bool) {
+func (i *Inference) EvalForSetStmt(s *SetStmt, scope *TypeScope) (returnType *Type, ok bool) {
 	valType, ok := i.EvalForExprType(s.Value, scope)
-	if !ok {
-		return ok
-	}
-
-	if valType == nil {
-		return false
+	if !ok || valType == nil {
+		return
 	}
 
 	// Evaluate the lhs type
 	lhsType, ok := i.EvalForExprType(s.TargetExpr, scope)
-	if !ok {
-		return ok
-	}
-	if lhsType == nil {
-		return false
+	if !ok || lhsType == nil {
+		return
 	}
 
 	// LHS MUST be a RefType
 	if lhsType.Tag != decl.TypeTagRef {
-		return i.Errorf(s.Pos(), "Cannot assign to a non ref type lhs.  Found: %s", lhsType.String())
+		return nil, i.Errorf(s.Pos(), "Cannot assign to a non ref type lhs.  Found: %s", lhsType.String())
 	}
 
 	// Make sure lhs ref type's param type and valtype match
 	if !lhsType.Info.(*decl.RefTypeInfo).ParamType.Equals(valType) {
-		return i.Errorf(s.Pos(), "LHS Type (%s) != RHS Type (%s)", lhsType.String(), valType.String())
+		return nil, i.Errorf(s.Pos(), "LHS Type (%s) != RHS Type (%s)", lhsType.String(), valType.String())
 	}
 	return
 }
 
-func (i *Inference) EvalForLogStmt(l *LogStmt, scope *TypeScope) (ok bool) {
-	ok = true
-	for _, expr := range l.Args {
-		_, ok2 := i.EvalForExprType(expr, scope)
-		ok = ok && ok2
-	}
-	return
-}
-
-func (i *Inference) EvalForLetStmt(l *LetStmt, scope *TypeScope) (ok bool) {
+func (i *Inference) EvalForLetStmt(l *LetStmt, scope *TypeScope) (returnType *Type, ok bool) {
 	valType, ok := i.EvalForExprType(l.Value, scope)
-	if !ok {
-		return ok
-	}
-
-	if valType == nil {
-		return false
+	if !ok || valType == nil {
+		return nil, false
 	}
 	if len(l.Variables) == 1 {
 		varIdent := l.Variables[0]
@@ -748,11 +912,31 @@ func (i *Inference) EvalForLetStmt(l *LetStmt, scope *TypeScope) (ok bool) {
 	return
 }
 
-func (i *Inference) EvalForForStmt(f *ForStmt, scope *TypeScope) (ok bool) {
+func (i *Inference) EvalForIfStmt(s *IfStmt, scope *TypeScope) (returnType *Type, ok bool) {
+	condType, ok2 := i.EvalForExprType(s.Condition, scope)
+	ok = ok && ok2
+	if ok2 && condType != nil && !condType.Equals(BoolType) {
+		i.Errorf(s.Condition.Pos(), "if condition must be boolean, got %s", condType.String())
+	}
+
+	var thenType, elseType *Type
+	if s.Then != nil {
+		thenType, ok2 = i.EvalForStmt(s.Then, scope)
+		ok = ok && ok2
+	}
+	if s.Else != nil {
+		elseType, ok = i.EvalForStmt(s.Else, scope)
+		ok = ok && ok2
+	}
+
+	return thenType.Union(elseType), ok
+}
+
+func (i *Inference) EvalForForStmt(f *ForStmt, scope *TypeScope) (returnType *Type, ok bool) {
 	ok = true
 	condType, condOk := i.EvalForExprType(f.Condition, scope)
 	if !condOk {
-		return false
+		return nil, false
 	}
 	if !condType.Equals(BoolType) && !condType.Equals(IntType) {
 		ok = i.Errorf(f.Pos(), "For loop condition can be bool or int, found: %s", condType.String())
@@ -760,103 +944,51 @@ func (i *Inference) EvalForForStmt(f *ForStmt, scope *TypeScope) (ok bool) {
 
 	// Evaluate block
 	bodyScope := scope.Push()
-	ok = ok && i.EvalForStmt(f.Body, bodyScope)
+	bodyType, ok2 := i.EvalForStmt(f.Body, bodyScope)
+	ok = ok && ok2
+	returnType = ListType(bodyType)
 	return
 }
 
-func (i *Inference) EvalForBlockStmt(block *BlockStmt, parentScope *TypeScope) (ok bool) {
+/*
+	if currentMethod := scope.Method(); currentMethod != nil {
+		var expectedReturnType *Type = NilType
+		if currentMethod.ReturnType != nil {
+			// Ensure the method's ReturnType (a TypeDecl) is resolved to a *Type
+			resolvedExpectedType := currentMethod.ReturnType.ResolvedType() // Or .ResolveType(scope)
+			if resolvedExpectedType == nil {
+				i.Errorf(currentMethod.ReturnType.Pos(), "method '%s' has an unresolvable return TypeDecl", currentMethod.Name.Value)
+				return false
+			}
+			expectedReturnType = resolvedExpectedType
+		}
+		if !actualReturnType.Equals(expectedReturnType) {
+			isPromotion := actualReturnType.Equals(IntType) && expectedReturnType.Equals(FloatType)
+			if !isPromotion {
+				i.Errorf(s.Pos(), "return type mismatch for method '%s': expected %s, got %s", currentMethod.Name.Value, expectedReturnType.String(), actualReturnType.String())
+			}
+		}
+	} else {
+		i.Errorf(s.Pos(), "return statement found outside of a method definition")
+	}
+*/
+
+func (i *Inference) EvalForBlockStmt(block *BlockStmt, parentScope *TypeScope) (returnType *Type, ok bool) {
 	ok = true
+	returnType = decl.VoidType
 	blockScope := parentScope.Push()
 	for _, stmt := range block.Statements {
-		ok = ok && i.EvalForStmt(stmt, blockScope)
+		r1, ok2 := i.EvalForStmt(stmt, blockScope)
+		ok = ok && ok2
+		if _, ok3 := stmt.(*ReturnStmt); ok3 {
+			returnType = r1
+			break
+		}
 	}
 	return
 }
 
-func (i *Inference) EvalForStmt(stmt Stmt, scope *TypeScope) (ok bool) {
-	ok = true
-	switch s := stmt.(type) {
-	case *LetStmt:
-		ok = ok && i.EvalForLetStmt(s, scope)
-	case *LogStmt:
-		ok = ok && i.EvalForLogStmt(s, scope)
-	case *SetStmt:
-		ok = ok && i.EvalForSetStmt(s, scope)
-	case *ExprStmt:
-		_, ok2 := i.EvalForExprType(s.Expression, scope)
-		ok = ok && ok2
-	case *ReturnStmt:
-		var actualReturnType *Type = NilType
-		if s.ReturnValue != nil {
-			infRetType, ok2 := i.EvalForExprType(s.ReturnValue, scope)
-			ok = ok && ok2
-			if ok2 && infRetType != nil {
-				actualReturnType = infRetType
-			}
-		}
-		if currentMethod := scope.Method(); currentMethod != nil {
-			var expectedReturnType *Type = NilType
-			if currentMethod.ReturnType != nil {
-				// Ensure the method's ReturnType (a TypeDecl) is resolved to a *Type
-				resolvedExpectedType := currentMethod.ReturnType.ResolvedType() // Or .ResolveType(scope)
-				if resolvedExpectedType == nil {
-					i.Errorf(currentMethod.ReturnType.Pos(), "method '%s' has an unresolvable return TypeDecl", currentMethod.Name.Value)
-					return false
-				}
-				expectedReturnType = resolvedExpectedType
-			}
-			if !actualReturnType.Equals(expectedReturnType) {
-				isPromotion := actualReturnType.Equals(IntType) && expectedReturnType.Equals(FloatType)
-				if !isPromotion {
-					i.Errorf(s.Pos(), "return type mismatch for method '%s': expected %s, got %s", currentMethod.Name.Value, expectedReturnType.String(), actualReturnType.String())
-				}
-			}
-		} else {
-			i.Errorf(s.Pos(), "return statement found outside of a method definition")
-		}
-	case *IfStmt:
-		condType, ok2 := i.EvalForExprType(s.Condition, scope)
-		ok = ok && ok2
-		if ok2 && condType != nil && !condType.Equals(BoolType) {
-			i.Errorf(s.Condition.Pos(), "if condition must be boolean, got %s", condType.String())
-		}
-		if s.Then != nil {
-			ok = ok && i.EvalForBlockStmt(s.Then, scope)
-		}
-		if s.Else != nil {
-			ok = ok && i.EvalForStmt(s.Else, scope)
-		}
-	case *ForStmt:
-		ok = ok && i.EvalForForStmt(s, scope)
-	case *DelayStmt:
-		ok = ok && i.EvalForDelayStmt(s, scope)
-	case *BlockStmt:
-		ok = ok && i.EvalForBlockStmt(s, scope)
-	case *AssignmentStmt: // General assignment, var must exist.
-		existingVarType, varFound := scope.Get(s.Var.Value)
-		if !varFound {
-			i.Errorf(s.Var.Pos(), "assignment to undeclared variable '%s'", s.Var.Value)
-			break
-		}
-		s.Var.SetInferredType(existingVarType)
-		valType, ok := i.EvalForExprType(s.Value, scope)
-		if ok && valType != nil && !valType.Equals(existingVarType) {
-			isIntToFloat := valType.Equals(IntType) && existingVarType.Equals(FloatType)
-			if !isIntToFloat {
-				i.Errorf(s.Pos(), "type mismatch in assignment to '%s': variable is %s, value is %s", s.Var.Value, existingVarType.String(), valType.String())
-			}
-		}
-		/*
-			case *ExpectStmt:
-				i.Errorf(pos, "ExpectStmt found outside of an analyze block's expectations; type checking skipped here", s.Pos().LineColStr())
-		*/
-	default:
-		i.Errorf(stmt.Pos(), "type inference for statement type %T not implemented yet: %v", stmt, stmt)
-	}
-	return ok
-}
-
-func (i *Inference) EvalForSystemDecl(systemDecl *SystemDecl, nodeScope *TypeScope) (ok bool) {
+func (i *Inference) EvalForSystemDecl(systemDecl *SystemDecl, nodeScope *TypeScope) (returnType *Type, ok bool) {
 	ok = true
 	// Pass 1 - Infer types for all components and instances in the system declaration
 	var instanceDecls []*InstanceDecl
@@ -865,26 +997,28 @@ func (i *Inference) EvalForSystemDecl(systemDecl *SystemDecl, nodeScope *TypeSco
 		case *InstanceDecl:
 			compTypeNode, foundCompType := nodeScope.env.Get(it.ComponentName.Value)
 			if !foundCompType {
-				return i.Errorf(it.ComponentName.Pos(), "component type '%s' not found for instance '%s'", it.ComponentName.Value, it.Name.Value)
+				return nil, i.Errorf(it.ComponentName.Pos(), "component type '%s' not found for instance '%s'", it.ComponentName.Value, it.Name.Value)
 			}
 			compDefinition, ok2 := compTypeNode.(*ComponentDecl)
 			ok = ok && ok2
 			if !ok2 {
-				i.Errorf(it.ComponentName.Pos(), "identifier '%s' used as component type for instance '%s' is not a component declaration (got %T)", it.ComponentName.Value, it.Name.Value, compTypeNode)
-				return false
+				return nil, i.Errorf(it.ComponentName.Pos(), "identifier '%s' used as component type for instance '%s' is not a component declaration (got %T)", it.ComponentName.Value, it.Name.Value, compTypeNode)
 			}
 			instanceType := ComponentType(compDefinition)
 			nodeScope.env.Set(it.Name.Value, it) // Store InstanceDecl node in env by its name
 			it.Name.SetInferredType(instanceType)
 			instanceDecls = append(instanceDecls, it)
 		case *LetStmt:
-			ok = ok && i.EvalForStmt(it, nodeScope)
+			_, ok2 := i.EvalForLetStmt(it, nodeScope)
+			ok = ok && ok2
 		case *SetStmt:
-			ok = ok && i.EvalForSetStmt(it, nodeScope)
+			_, ok2 := i.EvalForSetStmt(it, nodeScope)
+			ok = ok && ok2
 		case *OptionsDecl:
 			if it.Body != nil {
 				optionsScope := nodeScope.Push()
-				ok = ok && i.EvalForBlockStmt(it.Body, optionsScope)
+				_, ok2 := i.EvalForBlockStmt(it.Body, optionsScope)
+				ok = ok && ok2
 			}
 		default:
 			// i.Errorf(item.Pos(), "type inference for system body item type %T not implemented yet", item)

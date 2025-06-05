@@ -78,8 +78,8 @@ component FollowsService {
 
 // The main timeline service
 component TimelineService {
-  uses TweetsDB Database
-  uses Follows FollowsService
+  uses TweetsSvc TweetService
+  uses FollowsSvc FollowsService
 
   /**
    * Gets the timeline for a user by merging tweets from users they are following:
@@ -92,6 +92,24 @@ component TimelineService {
    * ```
    */
   method GetTimeline() HttpStatusCode {
-    let _, followCount = Follows.GetFollowerCount()
+    // Get followee counts - we dont need actual users this user is following
+    // using the count we can kick of batch calls and that distribution is 
+    // what this is all about
+    let _, followerCount = FollowsSvc.GetFollowerCount()
+
+    // Get tweets from the followees
+    let future = gobatch followerCount {
+      return TweetsSvc.ListTweets()
+    }
+
+    // Wait for batch to complete.
+    let result = wait future using AllHttpStatusesLessThan(200ms)
+
+    // Here AllHttpStatusLessThan is a native method that takes the gobatch futures value
+    // and returns a new outcomes result matching our own return type.
+    return result
   }
 }
+
+// Our native function could look like
+// func AllHttpStatusesLessThan(batchreceipt BatchReceipt, parameters ...Value) Outcomes[Value] { }

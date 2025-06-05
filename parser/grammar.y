@@ -35,6 +35,7 @@ func yyerrok(lexer SDLLexer) {
     file        *FileDecl
     componentDecl *ComponentDecl
     systemDecl *SystemDecl
+    aggregatorDecl *AggregatorDecl
     node        Node // Generic interface for lists and for accessing NodeInfo
     // tokenNode   TokenNode // Generic interface for lists and for accessing NodeInfo
     expr        Expr
@@ -58,13 +59,13 @@ func yyerrok(lexer SDLLexer) {
     caseStmt *CaseStmt
 
     tupleExpr *TupleExpr
-    goStmt         *GoStmt
+    goExpr         *GoExpr
     forStmt         *ForStmt
     assignStmt     *AssignmentStmt
     optionsDecl    *OptionsDecl
     enumDecl       *EnumDecl
     importDecl     *ImportDecl
-    waitStmt *WaitStmt
+    waitExpr *WaitExpr
     delayStmt *DelayStmt
     sampleExpr *SampleExpr
 
@@ -93,7 +94,7 @@ func yyerrok(lexer SDLLexer) {
 
 // --- Tokens ---
 // Keywords (assume lexer returns token type, parser might need pos for some)
-%token<node> SYSTEM USES METHOD ANALYZE EXPECT LET IF ELSE SAMPLE DISTRIBUTE DEFAULT RETURN DELAY WAIT GO LOG SWITCH CASE FOR 
+%token<node> SYSTEM USES AGGREGATOR METHOD ANALYZE EXPECT LET IF ELSE SAMPLE DISTRIBUTE DEFAULT RETURN DELAY WAIT GO GOBATCH USING LOG SWITCH CASE FOR 
 
 // Marking these as nodes so can be returned as Node for their locations
 %token<node> USE NATIVE LSQUARE RSQUARE LBRACE RBRACE OPTIONS ENUM COMPONENT PARAM IMPORT FROM AS
@@ -119,6 +120,7 @@ func yyerrok(lexer SDLLexer) {
 %type <node>         SystemBodyItem  TopLevelDeclaration
 %type <componentDecl>         ComponentDecl
 %type <systemDecl>         SystemDecl
+%type <aggregatorDecl>         AggregatorDecl
 %type <compBodyItem> ComponentBodyItem 
 %type <compBodyItemList> ComponentBodyItemList ComponentBodyItemOptList
 %type <compBodyItem> NativeComponentBodyItem 
@@ -129,15 +131,14 @@ func yyerrok(lexer SDLLexer) {
 %type <identList>    CommaIdentifierList 
 %type <importDecl>   ImportItem
 %type <importDeclList>   ImportDecl ImportList
-%type <stmt>         Stmt IfStmtElseOpt LetStmt ExprStmt ReturnStmt LogStmt
-%type <waitStmt>     WaitStmt
+%type <stmt>         Stmt IfStmtElseOpt LetStmt ExprStmt ReturnStmt 
 %type <delayStmt>    DelayStmt 
 %type <sampleExpr>    SampleExpr 
 // %type <assignStmt>   AssignStmt
 %type <blockStmt>    BlockStmt
 %type <stmtList>     StmtList 
 %type <tupleExpr>         TupleExpr
-%type <expr>         Expression UnaryExpr PrimaryExpr LiteralExpr CallExpr MemberAccessExpr IndexExpr LeafExpr ParenExpr
+%type <expr>         Expression UnaryExpr PrimaryExpr LiteralExpr CallExpr MemberAccessExpr IndexExpr LeafExpr ParenExpr  WaitExpr
 // %type <expr>         BinaryExpr NonAssocBinExpr 
 %type <chainedExpr>         ChainedExpr
 // %type <expr> OrExpr AndBoolExpr CmpExpr AddExpr MulExpr UnaryExpr 
@@ -170,7 +171,7 @@ func yyerrok(lexer SDLLexer) {
 %type <caseStmtList> CaseStmtList CaseStmtListOpt
 %type <stmt>           DefaultCaseStmt DefaultCaseStmtOpt // Expr for cases
 
-%type <goStmt>         GoStmt
+%type <expr>         GoExpr
 
 // --- Operator Precedence and Associativity (Lowest to Highest) ---
 %left BINARY_OP MINUS
@@ -218,6 +219,7 @@ DeclarationList:
 TopLevelDeclaration:
       ComponentDecl { $$ = $1 }
     | SystemDecl    { $$ = $1 }
+    | AggregatorDecl { $$ = $1 }
     | OptionsDecl   { $$ = $1 }
     | EnumDecl      { $$ = $1 }
     ;
@@ -295,32 +297,20 @@ ImportItem: IDENTIFIER { $$ = &ImportDecl{ImportedItem: $1, Alias: $1 } }
           | IDENTIFIER AS IDENTIFIER { $$ = &ImportDecl{ImportedItem: $1, Alias: $3 } }
           ;
 
-/*
-MethodSigDeclOptList:
-                // Empty
-                { $$ = []*MethodDecl{} }
-              | MethodSigDeclList { $$ = $1 }
-              ;
-
-MethodSigDeclList:
-              MethodSigDecl { $$=[]*MethodDecl{$1} }
-              | MethodSigDeclList MethodSigDecl { $$=append($1, $2) };
-*/
-
 MethodSigDecl:
-    METHOD IDENTIFIER LPAREN MethodParamListOpt RPAREN { // METHOD($1) ... BlockStmt($6)
+    IDENTIFIER LPAREN MethodParamListOpt RPAREN { // METHOD($1) ... BlockStmt($6)
         $$ = &MethodDecl{
-            NodeInfo: NewNodeInfo($1.(Node).Pos(), $5.End()),
-            Name: $2,
-            Parameters: $4,
+            NodeInfo: NewNodeInfo($1.Pos(), $4.End()),
+            Name: $1,
+            Parameters: $3,
         }
     }
-    | METHOD IDENTIFIER LPAREN MethodParamListOpt RPAREN TypeDecl { // METHOD($1) ... BlockStmt($8)
+    | IDENTIFIER LPAREN MethodParamListOpt RPAREN TypeDecl { // METHOD($1) ... BlockStmt($8)
         $$ = &MethodDecl{
-            NodeInfo: NewNodeInfo($1.(Node).Pos(), $6.End()),
-            Name: $2,
-            Parameters: $4,
-            ReturnType: $6,
+            NodeInfo: NewNodeInfo($1.Pos(), $5.End()),
+            Name: $1,
+            Parameters: $3,
+            ReturnType: $5,
          }
     }
     ;
@@ -337,7 +327,7 @@ NativeComponentBodyItemList:
 
 NativeComponentBodyItem:
       ParamDecl   { $$ = $1 }
-    | MethodSigDecl   { $$ = $1 }
+    | METHOD MethodSigDecl   { $$ = $2 }
     ;
 
 
@@ -443,10 +433,10 @@ UsesDecl:
     ;
 
 MethodDecl:
-    MethodSigDecl BlockStmt { // METHOD($1) ... BlockStmt($6)
-        $1.Body = $2
-        $1.NodeInfo.StopPos = $2.End()
-        $$ = $1
+    METHOD MethodSigDecl BlockStmt { // METHOD($1) ... BlockStmt($6)
+        $2.Body = $3
+        $2.NodeInfo.StopPos = $3.End()
+        $$ = $2
     }
     ;
 
@@ -485,6 +475,16 @@ SystemDecl:
              NodeInfo: NewNodeInfo($1.(Node).Pos(), $5.(Node).End()),
              Name: $2,
              Body: $4,
+        }
+    }
+    ;
+
+AggregatorDecl:
+    NATIVE AGGREGATOR MethodSigDecl { // SYSTEM($1) ... RBRACE($5)
+        $$ = &AggregatorDecl{
+             NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.End()),
+             Parameters: $3.Parameters,
+             ReturnType: $3.ReturnType,
         }
     }
     ;
@@ -620,11 +620,8 @@ Stmt:
     | ForStmt       { $$ = $1 }
     | ReturnStmt     { $$ = $1 }
     | IfStmt         { $$ = $1 }
-    | WaitStmt       { $$ = $1 }
     | DelayStmt      { $$ = $1 }
     | SwitchStmt      { $$ = $1 }
-    // | GoStmt         { $$ = $1 }
-    | LogStmt        { $$ = $1 }
     | BlockStmt      { $$ = $1 }
     | SEMICOLON     { $$ = nil }
     // | AssignStmt     { $$ = $1 } // Disallow assignments as statements? Let's require `let` for now.
@@ -668,6 +665,7 @@ AssignStmt: // Rule for simple assignment `a = b;` if needed as statement
 
 ExprStmt:
     CallExpr { $$ = &ExprStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $1.(Node).End()), Expression: $1 } }
+    | WaitExpr { $$ = &ExprStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $1.(Node).End()), Expression: $1 } }
     ;
 
 ReturnStmt:
@@ -679,23 +677,24 @@ DelayStmt:
     DELAY Expression { $$ = &DelayStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $2.End()), Duration: $2 } }
     ;
 
-WaitStmt:
+WaitExpr:
     WAIT CommaIdentifierList { // WAIT($1) IDENTIFIER($2) ... 
          idents := $2
          endNode := idents[len(idents)-1] // End at the last identifier in the list
-         $$ = &WaitStmt{ NodeInfo: NewNodeInfo($1.Pos(), endNode.End()), Idents: idents }
+         $$ = &WaitExpr{  Idents: idents }
+         $$.(*WaitExpr).NodeInfo = NewNodeInfo($1.Pos(), endNode.End())
+    }
+    | WAIT CommaIdentifierList USING CallExpr { // WAIT($1) IDENTIFIER($2) ... 
+         idents := $2
+         endNode := idents[len(idents)-1] // End at the last identifier in the list
+         $$ = &WaitExpr{  Idents: idents }
+         $$.(*WaitExpr).NodeInfo = NewNodeInfo($1.Pos(), endNode.End())
     }
     ;
-
-LogStmt:
-    LOG CommaSepExprList { // LOG($1) Expression($2) ... 
-         $$ = &LogStmt{Args: $2}
-    }
-    ;
-
 
 CommaSepExprListOpt:
-      /* empty */  { $$ = []Expr{} }
+      //
+      { $$ = []Expr{} }
     | CommaSepExprList { $$ = $1 }
     ;
 
@@ -737,16 +736,22 @@ TupleExpr: LPAREN CommaSepExprList COMMA Expression RPAREN {
           $$ = &TupleExpr{Children: append($2, $4)}
 } ;
 
-GoStmt:
-    GO IDENTIFIER ASSIGN Stmt { // GO($1) ... BlockStmt($4)
-        $$ = &GoStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $4.End()), VarName: $2, Stmt: $4 }
+GoExpr:
+    GO BlockStmt { // GO($1) ... BlockStmt($4)
+        $$ = &GoExpr{  Stmt: $2 }
+        $$.(*GoExpr).NodeInfo = NewNodeInfo($1.(Node).Pos(), $2.End())
     }
-    | GO BlockStmt { // GO($1) BlockStmt($2)
-        $$ = &GoStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $2.End()), VarName: nil, Stmt: $2 }
+    | GO Expression {
+        $$ = &GoExpr{  Expr: $2 }
+        $$.(*GoExpr).NodeInfo = NewNodeInfo($1.(Node).Pos(), $2.End())
     }
-    | GO IDENTIFIER ASSIGN Expression {
-         yyerror(SDLlex, fmt.Sprintf("`go` currently only supports assigning blocks, not expressions, at pos %d", $1.(Node).Pos()))
-         $$ = &GoStmt{}
+    | GOBATCH Expression BlockStmt { // GO($1) ... BlockStmt($4)
+        $$ = &GoExpr{  LoopExpr: $2, Stmt: $3 }
+        $$.(*GoExpr).NodeInfo = NewNodeInfo($1.(Node).Pos(), $3.End())
+    }
+    | GOBATCH Expression Expression {
+        $$ = &GoExpr{  LoopExpr: $2, Expr: $3 }
+        $$.(*GoExpr).NodeInfo = NewNodeInfo($1.(Node).Pos(), $3.End())
     }
     ;
 
@@ -754,9 +759,12 @@ GoStmt:
 // Expression: OpSepExprList        { $$ = $1 } ;
 
 Expression: ChainedExpr {
-    $1.Unchain(nil)
-    $$ = $1.UnchainedExpr
-};
+        $1.Unchain(nil)
+        $$ = $1.UnchainedExpr
+    }
+    | GoExpr          { $$ = $1 }
+    | WaitExpr          { $$ = $1 }
+    ;
 // Expression: NonAssocBinExpr ;
 
 /*
@@ -810,41 +818,6 @@ UnaryExpr: PrimaryExpr { $$=$1 }
     }
     // For each OPERATOR  that can be binary or unary add a rule like the above MINUS and add a U<OPERATOR> as well
     ;
-
-
-
-/*
-Expression: OrExpr { $$ = $1 } ;
-OrExpr: AndBoolExpr { $$=$1 }
-      | OrExpr OR AndBoolExpr { $$ = &BinaryExpr{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
-      ;
-
-AndBoolExpr:
-       CmpExpr { $$=$1 }
-      | AndBoolExpr AND CmpExpr { $$ = &BinaryExpr{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.(Node).String(), Right: $3} }
-      ;
-
-CmpExpr: AddExpr { $$=$1 }
-    | AddExpr EQ AddExpr  { $$ = &BinaryExpr{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
-    | AddExpr NEQ AddExpr { $$ = &BinaryExpr{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
-    | AddExpr LT AddExpr  { $$ = &BinaryExpr{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
-    | AddExpr LTE AddExpr { $$ = &BinaryExpr{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
-    | AddExpr GT AddExpr  { $$ = &BinaryExpr{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
-    | AddExpr GTE AddExpr { $$ = &BinaryExpr{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
-    ;
-
-AddExpr:
-      MulExpr { $$=$1 }
-    | AddExpr PLUS MulExpr { $$ = &BinaryExpr{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
-    | AddExpr MINUS MulExpr { $$ = &BinaryExpr{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
-    ;
-
-MulExpr: UnaryExpr { $$=$1 }
-    | MulExpr MUL UnaryExpr { $$ = &BinaryExpr{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
-    | MulExpr DIV UnaryExpr { $$ = &BinaryExpr{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
-    | MulExpr MOD UnaryExpr { $$ = &BinaryExpr{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.(Node).End()), Left: $1, Operator: $2.String(), Right: $3} }
-    ;
-*/
 
 PrimaryExpr:
        LeafExpr { $$ = $1 }

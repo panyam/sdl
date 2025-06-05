@@ -13,12 +13,6 @@ type Value struct {
 	Time  core.Duration // The time duration incurred for this value
 }
 
-// Value specific to references of members inside components
-type RefValue struct {
-	Receiver Value
-	Attrib   string
-}
-
 // NewValue creates a new boxed value, optionally initializing and type-checking.
 // If initialValue is provided, Set() is called. Only the first initialValue is used.
 func NewValue(t *Type, initialValue ...any) (Value, error) {
@@ -53,6 +47,14 @@ func (r *Value) IsFalse() bool {
 
 func (r *Value) IsNil() bool {
 	return r.Value == nil
+}
+
+func (v *Value) Equals(another *Value) bool {
+	if !v.Type.Equals(another.Type) {
+		return false
+	}
+	// TODO - Full comparison
+	return true
 }
 
 // Tries to set the value by enforcing and checking types.
@@ -172,6 +174,15 @@ func (r *Value) Set(v any) error {
 		outval, ok := v.(*core.Outcomes[Value])
 		if !ok {
 			return fmt.Errorf("expected Outcomes[value], got %T", v)
+		}
+		r.Value = outval
+		return nil
+	}
+
+	if r.Type.Tag == TypeTagFuture {
+		outval, ok := v.(*FutureValue)
+		if !ok {
+			return fmt.Errorf("expected Future, got %T", v)
 		}
 		r.Value = outval
 		return nil
@@ -397,4 +408,18 @@ func FloatValue(val float64) (out Value) {
 func BoolValue(val bool) (out Value) {
 	out, _ = NewValue(BoolType, val)
 	return
+}
+
+// Value specific to references of members inside components
+type RefValue struct {
+	Receiver Value
+	Attrib   string
+}
+
+type FutureValue struct {
+	// Posible outcomes distribution of *when* the future was kicked off
+	StartedAt *core.Outcomes[core.Duration]
+
+	// Value of the loop expr if it is a batch future
+	LoopValue Value
 }

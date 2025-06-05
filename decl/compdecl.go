@@ -37,6 +37,39 @@ type ComponentDecl struct {
 	ParentFileDecl *FileDecl
 }
 
+func (d *ComponentDecl) Equals(another *ComponentDecl) bool {
+	if d.IsNative != another.IsNative ||
+		!d.Name.Equals(another.Name) ||
+		d.ParentFileDecl != another.ParentFileDecl ||
+		len(d.uses) != len(another.uses) ||
+		len(d.methods) != len(another.methods) ||
+		len(d.params) != len(another.params) {
+		return false
+	}
+	if d.uses != nil {
+		for k, v := range d.uses {
+			if !v.Equals(another.uses[k]) {
+				return false
+			}
+		}
+	}
+	if d.params != nil {
+		for k, v := range d.params {
+			if !v.Equals(another.params[k]) {
+				return false
+			}
+		}
+	}
+	if d.methods != nil {
+		for k, v := range d.methods {
+			if !v.Equals(another.methods[k]) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
 func (d *ComponentDecl) Params() (out []*ParamDecl, err error) {
 	err = d.Resolve()
 	out = d.paramList
@@ -163,6 +196,9 @@ type ParamDecl struct {
 	DefaultValue Expr // Optional
 }
 
+func (p *ParamDecl) Equals(another *ParamDecl) bool {
+	return p.Name.Equals(another.Name) && p.TypeDecl.Equals(another.TypeDecl)
+}
 func (p *ParamDecl) componentBodyItemNode() {}
 func (p *ParamDecl) String() string {
 	s := fmt.Sprintf("param %s: %s", p.Name, p.TypeDecl)
@@ -194,6 +230,17 @@ type UsesDecl struct {
 	ResolvedComponent *ComponentDecl
 }
 
+func (d *UsesDecl) Equals(another *UsesDecl) bool {
+	if !d.Name.Equals(another.Name) ||
+		!d.ComponentName.Equals(another.ComponentName) ||
+		// len(d.Overrides) != len(another.Overrides) ||
+		d.ResolvedComponent != another.ResolvedComponent {
+		return false
+	}
+	// Do not validate overrides?
+	return true
+}
+
 func (u *UsesDecl) componentBodyItemNode() {}
 func (u *UsesDecl) String() string         { return fmt.Sprintf("uses %s: %s;", u.Name, u.ComponentName) }
 
@@ -213,6 +260,17 @@ type MethodDecl struct {
 	Parent *ComponentDecl
 }
 
+func (d *MethodDecl) Equals(another *MethodDecl) bool {
+	if !d.Name.Equals(another.Name) || len(d.Parameters) != len(another.Parameters) || !d.ReturnType.Equals(another.ReturnType) {
+		return false
+	}
+	for i, p1 := range d.Parameters {
+		if !p1.Equals(another.Parameters[i]) {
+			return false
+		}
+	}
+	return true
+}
 func (o *MethodDecl) componentBodyItemNode() {}
 func (o *MethodDecl) String() string {
 	retType := ""

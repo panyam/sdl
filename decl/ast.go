@@ -204,3 +204,23 @@ type ExpectationsDecl struct {
 }
 
 func (e *ExpectationsDecl) String() string { return "expect { ... }" }
+
+// Aggregator declarations - For now they can only be native
+// Aggregators are used to select from a set of futures being waited on
+type AggregatorDecl struct {
+	NodeInfo
+	Name       *IdentifierExpr
+	Parameters []*ParamDecl // Signature parameters (can be empty)
+	ReturnType *TypeDecl    // Optional return type (primitive or enum)
+
+	// Once resolved
+	ParentFileDecl *FileDecl
+}
+
+func (a *AggregatorDecl) String() string {
+	s := fmt.Sprintf("aggregator %s (%s) %s", a.Name, "ParamTypesTbd", a.ReturnType)
+	return s + ";"
+}
+func (a *AggregatorDecl) PrettyPrint(cp CodePrinter) {
+	cp.Print(a.String())
+}
