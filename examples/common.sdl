@@ -11,7 +11,7 @@ enum HttpStatusCode {
 }
 
 // An aggregator method used for selecting from futures
-native aggregator AllHttpStatusesLessThan(maxDuration Duration) Outcomes[HttpStautsCode]
+native aggregator AllHttpStatusesLessThan(maxDuration Float) HttpStatusCode
 
 native component NativeDisk {
   method Read()

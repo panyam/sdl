@@ -80,8 +80,7 @@ func ListType(elementType *Type) *Type {
 		panic("ListType element type cannot be nil")
 	}
 	return &Type{
-		Tag: TypeTagList,
-		// Name: "Outcomes",
+		Tag:  TypeTagList,
 		Info: elementType,
 	}
 }
@@ -320,12 +319,23 @@ func (r *FutureTypeInfo) Equals(another *FutureTypeInfo) bool {
 }
 
 type MethodTypeInfo struct {
-	Component *ComponentDecl
-	Method    *MethodDecl
+	Component  *ComponentDecl
+	Method     *MethodDecl
+	Aggregator *AggregatorDecl
 }
 
 func (r *MethodTypeInfo) Equals(another *MethodTypeInfo) bool {
 	return r.Component.Equals(another.Component) && r.Method.Equals(another.Method)
+}
+
+func AggregatorType(aggregatorDecl *AggregatorDecl) *Type {
+	if aggregatorDecl == nil {
+		panic("Aggregator decl cannot be nil")
+	}
+	return &Type{
+		Tag:  TypeTagMethod,
+		Info: &MethodTypeInfo{Aggregator: aggregatorDecl},
+	}
 }
 
 func MethodType(componentDecl *ComponentDecl, methodDecl *MethodDecl) *Type {
@@ -333,9 +343,8 @@ func MethodType(componentDecl *ComponentDecl, methodDecl *MethodDecl) *Type {
 		panic("Component and Method Decls cannot be nil")
 	}
 	return &Type{
-		Tag: TypeTagMethod,
-		// Name: "Method",
-		Info: &MethodTypeInfo{componentDecl, methodDecl},
+		Tag:  TypeTagMethod,
+		Info: &MethodTypeInfo{Component: componentDecl, Method: methodDecl},
 	}
 }
 

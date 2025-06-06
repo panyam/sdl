@@ -109,8 +109,10 @@ func (ts *TypeScope) Get(name string) (*Type, bool) {
 			return EnumType(n), true
 		case *ComponentDecl:
 			return ComponentType(n), true
+		case *AggregatorDecl:
+			return AggregatorType(n), true
 		default:
-			log.Println("node, nodetype: ", node, reflect.TypeOf(node))
+			log.Println("not found: node, nodetype: ", node, reflect.TypeOf(node))
 		}
 	}
 	// if node.(Param

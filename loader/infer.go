@@ -3,7 +3,9 @@ package loader
 import (
 	"fmt"
 	"log"
+	"strings"
 
+	"github.com/panyam/goutils/fn"
 	"github.com/panyam/sdl/decl"
 	// "log" // Uncomment for debugging
 )
@@ -59,6 +61,12 @@ func (i *Inference) Eval(rootEnv *Env[Node]) bool {
 
 	components, _ := file.GetComponents()
 	systems, _ := file.GetSystems()
+	aggregators, _ := file.Aggregators()
+
+	// Handle Aggregators: Infer types for system declarations
+	for _, agg := range aggregators {
+		i.EvalForAggregator(agg, rootScope.Push()) // System scope can see globals/imports from rootEnv
+	}
 
 	// First pass: Resolve TypeDecls in component parameter defaults, method parameters, and method return types.
 	for _, compDecl := range components {
@@ -73,6 +81,31 @@ func (i *Inference) Eval(rootEnv *Env[Node]) bool {
 		i.EvalForSystemDecl(sysDecl, rootScope.Push()) // System scope can see globals/imports from rootEnv
 	}
 	return false
+}
+
+func (i *Inference) EvalForAggregator(agg *AggregatorDecl, rootScope *TypeScope) (success bool) {
+	// TODO _ duplicate of EvalForMethodSignature (without compDecl) - may be dedup or compress
+	for _, param := range agg.Parameters {
+		if param.TypeDecl != nil {
+			resolvedParamType := rootScope.ResolveType(param.TypeDecl)
+			if resolvedParamType == nil {
+				i.Errorf(param.TypeDecl.Pos(), "unresolved type '%s' for parameter '%s' in aggregator '%s'", param.TypeDecl.Name, param.Name.Value, agg.Name.Value)
+			} else {
+				param.TypeDecl.SetResolvedType(resolvedParamType)
+			}
+		} else {
+			i.Errorf(param.Pos(), "parameter '%s' of aggregator '%s' has no type declaration", param.Name.Value, agg.Name.Value)
+		}
+	}
+	if agg.ReturnType != nil {
+		resolvedReturnType := rootScope.ResolveType(agg.ReturnType)
+		if resolvedReturnType == nil {
+			i.Errorf(agg.ReturnType.Pos(), "unresolved return type '%s' for aggregator '%s'", agg.ReturnType.Name, agg.Name.Value)
+		} else {
+			agg.ReturnType.SetResolvedType(resolvedReturnType)
+		}
+	}
+	return
 }
 
 func (i *Inference) EvalForComponent(compDecl *ComponentDecl, rootScope *TypeScope) (success bool) {
@@ -674,6 +707,7 @@ func (i *Inference) EvalForGoExpr(expr *GoExpr, scope *TypeScope) (returnType *T
 
 // EvalForWaitExpr ensures that the Aggregator input types matches the future types.
 func (i *Inference) EvalForWaitExpr(expr *WaitExpr, scope *TypeScope) (returnedType *Type, ok bool) {
+	ok = true
 	var futureTypes []*Type
 	for _, ftIdent := range expr.Idents {
 		ftType, ok2 := i.EvalForExprType(ftIdent, scope)
@@ -703,7 +737,9 @@ func (i *Inference) EvalForWaitExpr(expr *WaitExpr, scope *TypeScope) (returnedT
 		return nil, false
 	}
 
-	panic("TBD")
+	// Return the method's return type for now
+
+	returnedType = aggType.Info.(*decl.MethodTypeInfo).Aggregator.ReturnType.ResolvedType()
 	return
 	/*
 		receiverType, ok := i.EvalForExprType(expr.Receiver, scope)
@@ -889,6 +925,7 @@ func (i *Inference) EvalForSetStmt(s *SetStmt, scope *TypeScope) (returnType *Ty
 func (i *Inference) EvalForLetStmt(l *LetStmt, scope *TypeScope) (returnType *Type, ok bool) {
 	valType, ok := i.EvalForExprType(l.Value, scope)
 	if !ok || valType == nil {
+		i.Errorf(l.Pos(), "cannot infer types for (%s) in Let stmt", strings.Join(fn.Map(l.Variables, func(v *IdentifierExpr) string { return v.Value }), ", "))
 		return nil, false
 	}
 	if len(l.Variables) == 1 {

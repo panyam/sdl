@@ -351,6 +351,20 @@ func (l *Loader) AddImportedAliasesToScope(fs *FileStatus, currentScope *decl.En
 					fs.FullPath, importedItemOriginalName, importedFS.FullPath, err_e))
 			}
 
+			// Check Aggregators (we have to move just "methods" or "functions")
+			if aggDecl, err_e := importedFileDecl.GetAggregator(importedItemOriginalName); err_e == nil && aggDecl != nil {
+				if existingRef := currentScope.GetRef(aliasName); existingRef != nil {
+					fs.AddErrors(fmt.Errorf("in file %s: import alias '%s' for aggregator '%s' from %s conflicts with an existing symbol",
+						fs.FullPath, aliasName, importedItemOriginalName, importPathStr))
+				} else {
+					currentScope.Set(aliasName, aggDecl)
+				}
+				foundSymbol = true
+			} else if err_e != nil {
+				fs.AddErrors(fmt.Errorf("in file %s: error getting aggregator '%s' from imported file %s: %w",
+					fs.FullPath, importedItemOriginalName, importedFS.FullPath, err_e))
+			}
+
 			// Check Components - only if not already found as an enum
 			if !foundSymbol {
 				if compDecl, err_c := importedFileDecl.GetComponent(importedItemOriginalName); err_c == nil && compDecl != nil {

@@ -19,6 +19,7 @@ type FileDecl struct {
 	components     map[string]*ComponentDecl
 	enums          map[string]*EnumDecl
 	imports        map[string]*ImportDecl
+	aggregators    map[string]*AggregatorDecl
 	importList     []*ImportDecl // Keep original list for iteration order if needed
 	systems        map[string]*SystemDecl
 }
@@ -86,6 +87,22 @@ func (f *FileDecl) Imports() (map[string]*ImportDecl, error) {
 	return f.imports, nil
 }
 
+func (f *FileDecl) GetAggregator(name string) (out *AggregatorDecl, err error) {
+	aggs, err := f.Aggregators()
+	if err == nil {
+		out = aggs[name]
+	}
+	return
+}
+
+// Get a map of the all the aggregators encountered in this FileDecl
+func (f *FileDecl) Aggregators() (map[string]*AggregatorDecl, error) {
+	if err := f.Resolve(); err != nil {
+		return nil, err
+	}
+	return f.aggregators, nil
+}
+
 // Called to resolve specific AST aspects out of the parse tree
 func (f *FileDecl) Resolve() error {
 	if f == nil {
@@ -139,9 +156,17 @@ func (f *FileDecl) Resolve() error {
 				return fmt.Errorf("error registering definition '%s': %w", node.Alias.Value, err)
 			}
 
+		case *AggregatorDecl:
+			if err := f.RegisterAggregator(node); err != nil {
+				return err
+			}
+			if err := f.RegisterDefinition(node.Name.Value, node); err != nil {
+				return fmt.Errorf("error registering definition '%s': %w", node.Name.Value, err)
+			}
+
 		default:
 			// Ignore other node types at the top level? Or error?
-			// log.Printf("Ignoring unsupported top-level declaration type %T at pos %d", node, node.Pos())
+			log.Printf("Ignoring unsupported top-level declaration type %T at pos %d", node, node.Pos())
 		}
 	}
 	// log.Printf("Finished loading definitions.")
@@ -212,6 +237,18 @@ func (f *FileDecl) RegisterEnum(c *EnumDecl) error {
 	return nil
 }
 
+func (f *FileDecl) RegisterAggregator(c *AggregatorDecl) error {
+	if f.aggregators == nil {
+		f.aggregators = map[string]*AggregatorDecl{}
+	}
+	if _, exists := f.aggregators[c.Name.Value]; exists {
+		err := fmt.Errorf("aggregator definition '%s' already registered", c.Name.Value)
+		panic(err)
+	}
+	f.aggregators[c.Name.Value] = c
+	return nil
+}
+
 func (f *FileDecl) RegisterImport(c *ImportDecl) error {
 	if f.imports == nil {
 		f.imports = map[string]*ImportDecl{}
@@ -260,6 +297,20 @@ func (f *FileDecl) AddToScope(currentScope *Env[Node]) (errors []error) {
 				errors = append(errors, fmt.Errorf("duplicate definition for local component '%s'", name))
 			} else {
 				currentScope.Set(name, compDecl)
+			}
+		}
+	}
+
+	// Add aggregators and methods
+	aggs, err := f.Aggregators()
+	if err != nil {
+		errors = append(errors, fmt.Errorf("error getting local components for scope: %w", err))
+	} else {
+		for name, aggDecl := range aggs {
+			if existingRef := currentScope.GetRef(name); existingRef != nil {
+				errors = append(errors, fmt.Errorf("duplicate definition for local component '%s'", name))
+			} else {
+				currentScope.Set(name, aggDecl)
 			}
 		}
 	}

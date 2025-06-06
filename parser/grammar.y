@@ -483,6 +483,7 @@ AggregatorDecl:
     NATIVE AGGREGATOR MethodSigDecl { // SYSTEM($1) ... RBRACE($5)
         $$ = &AggregatorDecl{
              NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.End()),
+             Name: $3.Name,
              Parameters: $3.Parameters,
              ReturnType: $3.ReturnType,
         }
@@ -687,7 +688,7 @@ WaitExpr:
     | WAIT CommaIdentifierList USING CallExpr { // WAIT($1) IDENTIFIER($2) ... 
          idents := $2
          endNode := idents[len(idents)-1] // End at the last identifier in the list
-         $$ = &WaitExpr{  Idents: idents }
+         $$ = &WaitExpr{  Idents: idents, Aggregator: $4.(*CallExpr).Function.(*IdentifierExpr), AggregatorParams: $4.(*CallExpr).Args }
          $$.(*WaitExpr).NodeInfo = NewNodeInfo($1.Pos(), endNode.End())
     }
     ;
