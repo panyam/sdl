@@ -133,8 +133,8 @@ func (r *Value) Set(v any) error {
 	}
 
 	if r.Type.Tag == TypeTagExpr {
-		if le, ok := v.(Expr); !ok {
-			return fmt.Errorf("TypeTagExpr needs an Expr value")
+		if le, ok := v.(ThunkValue); !ok {
+			return fmt.Errorf("TypeTagExpr needs a ThunkValue")
 		} else {
 			r.Value = le
 		}
@@ -161,10 +161,19 @@ func (r *Value) Set(v any) error {
 		return nil
 	}
 
-	if r.Type.Tag == TypeTagRef || r.Type.Tag == TypeTagMethod {
+	if r.Type.Tag == TypeTagRef {
 		refval, ok := v.(*RefValue)
 		if !ok {
 			return fmt.Errorf("expected RefVal, got %T", v)
+		}
+		r.Value = refval
+		return nil
+	}
+
+	if r.Type.Tag == TypeTagMethod {
+		refval, ok := v.(*MethodValue)
+		if !ok {
+			return fmt.Errorf("expected MethodVal, got %T", v)
 		}
 		r.Value = refval
 		return nil
@@ -414,6 +423,16 @@ func BoolValue(val bool) (out Value) {
 type RefValue struct {
 	Receiver Value
 	Attrib   string
+}
+
+type MethodValue struct {
+	Method   *MethodDecl
+	SavedEnv *Env[Value]
+}
+
+type ThunkValue struct {
+	Expr     Expr
+	SavedEnv *Env[Value]
 }
 
 type FutureValue struct {

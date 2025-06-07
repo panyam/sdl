@@ -259,26 +259,6 @@ func (i *Inference) EvalForStmt(stmt Stmt, scope *TypeScope) (returnType *Type, 
 		return i.EvalForDelayStmt(s, scope)
 	case *BlockStmt:
 		return i.EvalForBlockStmt(s, scope)
-		/*
-			case *AssignmentStmt: // General assignment, var must exist.
-				existingVarType, varFound := scope.Get(s.Var.Value)
-				if !varFound {
-					i.Errorf(s.Var.Pos(), "assignment to undeclared variable '%s'", s.Var.Value)
-					break
-				}
-				s.Var.SetInferredType(existingVarType)
-				valType, ok := i.EvalForExprType(s.Value, scope)
-				if ok && valType != nil && !valType.Equals(existingVarType) {
-					isIntToFloat := valType.Equals(IntType) && existingVarType.Equals(FloatType)
-					if !isIntToFloat {
-						i.Errorf(s.Pos(), "type mismatch in assignment to '%s': variable is %s, value is %s", s.Var.Value, existingVarType.String(), valType.String())
-					}
-				}
-		*/
-		/*
-			case *ExpectStmt:
-				i.Errorf(pos, "ExpectStmt found outside of an analyze block's expectations; type checking skipped here", s.Pos().LineColStr())
-		*/
 	default:
 		i.Errorf(stmt.Pos(), "type inference for statement type %T not implemented yet: %v", stmt, stmt)
 	}

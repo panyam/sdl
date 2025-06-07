@@ -111,88 +111,15 @@ func (ts *TypeScope) Get(name string) (*Type, bool) {
 			return ComponentType(n), true
 		case *AggregatorDecl:
 			return AggregatorType(n), true
-		default:
-			log.Println("not found: node, nodetype: ", node, reflect.TypeOf(node))
-		}
-	}
-	// if node.(Param
-
-	// 2. Method parameters
-	currentMethod := ts.Method()
-	currentComponent := ts.Component()
-
-	if currentMethod != nil {
-		for _, param := range currentMethod.Parameters {
-			if param.Name.Value == name {
-				if param.TypeDecl == nil {
-					return nil, false // Error: No TypeDecl
-				}
-				// Use ResolveType to ensure the TypeDecl is resolved.
-				// The TypeDecl's resolvedType should have been set in the first pass of InferTypesForFile.
-				resolvedType := param.TypeDecl.ResolvedType()
-				if resolvedType == nil { // Fallback if not pre-resolved for some reason
-					resolvedType = ts.ResolveType(param.TypeDecl) // Pass current TypeScope
-				}
-				if resolvedType == nil {
-					// log.Printf("Warning: Parameter '%s' in method '%s' has an unresolved TypeDecl '%s'.", name, // ts.currentMethod.NameNode.Name, param.TypeDecl.Name)
-					return nil, false
-				}
-				return resolvedType, true
-			}
-		}
-	}
-
-	// 3. Component parameters (if currentComponent is set)
-	if currentComponent != nil {
-		// Check if 'name' is a parameter of the current component.
-		if paramDecl, _ := currentComponent.GetParam(name); paramDecl != nil {
-			if paramDecl.TypeDecl != nil {
-				// Similar to method parameters, ensure the TypeDecl is resolved.
-				// Its resolvedType should have been set in the first pass of InferTypesForFile.
-				resolvedType := paramDecl.TypeDecl.ResolvedType()
-				if resolvedType == nil { // Fallback
-					resolvedType = ts.ResolveType(paramDecl.TypeDecl)
-				}
-				if resolvedType == nil {
-					// log.Printf("Warning: Component parameter '%s' in component '%s' has an unresolved TypeDecl '%s'.", name, // ts.currentComponent.NameNode.Name, paramDecl.TypeDecl.Name)
-					return nil, false
-				}
-				return resolvedType, true
-			} else if paramDecl.DefaultValue != nil { // Type inferred from default value
-				// The type of the param (IdentifierExpr for paramDecl.Name) should have been set
-				// during InferTypesForParamDecl. We retrieve that here.
-				// This path assumes paramDecl.Name.InferredType() was reliably set.
-				if paramDecl.Name != nil && paramDecl.Name.InferredType() != nil {
-					return paramDecl.Name.InferredType(), true
-				}
-				// log.Printf("Warning: Component parameter '%s' (with default value) in component '%s' does not have its type inferred on its Name node.", name, ts.currentComponent.NameNode.Name)
-				return nil, false
-			}
-			// log.Printf("Warning: Component parameter '%s' in component '%s' has no explicit type and no default value to infer from (or type inference failed).", name, ts.currentComponent.NameNode.Name)
-			return nil, false // No type and no default from which type could be inferred.
-		}
-		// Note: 'uses' dependencies are typically accessed via 'self.dependency_name',
-		// which is handled by InferMemberAccessExprType. Direct lookup of a 'uses' name
-		// is not standard unless it's treated like a local variable holding the component instance.
-	}
-
-	// 4. Lexically scoped variables ('let' bindings) and global/imported declarations from Env.
-	declNode, foundNode := ts.env.Get(name)
-	if foundNode {
-		switch node := declNode.(type) {
-		case *EnumDecl:
-			return EnumType(node), true
-		case *ComponentDecl:
-			return ComponentType(node), true
 		case *IdentifierExpr: // This is how 'let' bound variables are stored
-			if node.InferredType() == nil {
+			if n.InferredType() == nil {
 				// log.Printf("Warning: Identifier '%s' (let variable) found in env but its type is not yet inferred.", name)
 				return nil, false
 			}
-			return node.InferredType(), true
+			return n.InferredType(), true
 		case *InstanceDecl:
 			if ts.env != nil {
-				compDeclNode, compFound := ts.env.Get(node.ComponentName.Value)
+				compDeclNode, compFound := ts.env.Get(n.ComponentName.Value)
 				if compFound {
 					if compDecl, ok := compDeclNode.(*ComponentDecl); ok {
 						return ComponentType(compDecl), true
@@ -201,8 +128,9 @@ func (ts *TypeScope) Get(name string) (*Type, bool) {
 			}
 			return nil, false
 		default:
-			// log.Printf("Warning: Found node of unexpected type %T for name '%s' in env.", node, name)
-			return nil, false
+			log.Println("not found: node, nodetype: ", node, reflect.TypeOf(node))
+			panic("TBD - we have to see if there is a failure else where or just a standard undefined error")
+			// return nil, false
 		}
 	}
 

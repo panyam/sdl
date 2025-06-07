@@ -12,7 +12,7 @@ import (
 func TestNativeAndBitly(t *testing.T) {
 	l := loader.NewLoader(nil, nil, 10) // Max depth 10
 	rt := NewRuntime(l)
-	fi := rt.LoadFile("../examples/bitly.sdl")
+	fi := rt.LoadFile("../examples/bitly/mvp.sdl")
 
 	systest := fi.NewSystem("TestSystem")
 	var currTime core.Duration
