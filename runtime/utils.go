@@ -74,3 +74,15 @@ func RunTestCall(system *SystemInstance, env *Env[Value], obj, method string, nc
 		}
 	}
 }
+
+func ensureNoErr(err error, args ...any) error {
+	if err != nil {
+		if len(args) > 0 {
+			msg := args[0].(string)
+			args = args[1:]
+			log.Printf(msg, args...)
+		}
+		panic(err)
+	}
+	return err
+}

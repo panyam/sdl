@@ -142,12 +142,6 @@ func (r *Value) Set(v any) error {
 
 	// Take care of the complex types now
 	if r.Type.Tag == TypeTagComponent {
-		/*
-			val, ok := v.(*ComponentInstance)
-			if !ok {
-				return fmt.Errorf("type mismatch: expected ComponentInstance, got %T", v)
-			}
-		*/
 		r.Value = v
 		return nil
 	}
@@ -426,8 +420,11 @@ type RefValue struct {
 }
 
 type MethodValue struct {
-	Method   *MethodDecl
-	SavedEnv *Env[Value]
+	// tells what this method is bound to (eg ComponentInstance if a comp method else nil)
+	BoundInstance any
+	Method        *MethodDecl
+	SavedEnv      *Env[Value]
+	IsNative      bool
 }
 
 type ThunkValue struct {

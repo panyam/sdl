@@ -191,6 +191,9 @@ func InvokeMethod(nativeValue any, methodName string, args []Value, env *Env[Val
 	// 1. Find the method on the GoInstance using reflection.
 	instanceVal := reflect.ValueOf(nativeValue)
 	methodVal := instanceVal.MethodByName(methodName)
+	// log.Println("MV: ", methodVal)
+	// compInstance := nativeValue.(*ComponentInstance)
+	// log.Println("CompInst: ", compInstance, compInstance.ComponentDecl)
 	if !methodVal.IsValid() {
 		err = fmt.Errorf("method '%s' not found on native component '%s' (type %T)", methodName, "NoName", nativeValue)
 		return
@@ -267,15 +270,5 @@ func InvokeMethod(nativeValue any, methodName string, args []Value, env *Env[Val
 		}
 	}
 	*currTime += val.Time
-	// Convert the return value (expected *core.Outcomes[V]) to a VarState -> LeafNode
-	/*
-		resultVarState, err := outcomeToVarState(returnVal)
-		if err != nil {
-			err = fmt.Errorf("failed to convert result of native method '%s' (type %T) to VarState: %w", methodName, returnVal, err)
-			return
-		}
-		val.Type = OpNodeType
-		val.Value = &LeafNode{State: resultVarState}
-	*/
 	return
 }

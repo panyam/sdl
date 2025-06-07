@@ -36,9 +36,7 @@ func NewSimpleEval(fi *FileInstance) *SimpleEval {
 
 func (s *SimpleEval) EvalInitSystem(sys *SystemInstance, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
 	stmts, err := sys.Initializer()
-	if err != nil {
-		panic(err)
-	}
+	ensureNoErr(err)
 	_, returned, timeTaken := s.EvalStatements(stmts.Statements, env)
 	*currTime += timeTaken
 	result.Time = timeTaken
@@ -206,9 +204,7 @@ func (s *SimpleEval) evalForStmt(f *ForStmt, env *Env[Value], currTime *core.Dur
 		} else {
 			condBoolVal, err = condVal.GetBool()
 		}
-		if err != nil {
-			panic(err)
-		}
+		ensureNoErr(err)
 		if isCondInt {
 			if condIntVal > 0 && counter >= condIntVal {
 				return
@@ -236,9 +232,7 @@ func (s *SimpleEval) evalLetStmt(l *LetStmt, env *Env[Value], currTime *core.Dur
 	} else {
 		// If there are multiple variables, we expect the result to be a tuple
 		tupleValues, err := result.GetTuple()
-		if err != nil {
-			panic(err)
-		}
+		ensureNoErr(err)
 		for i, val := range tupleValues {
 			letvar := l.Variables[i].Value
 			env.Set(letvar, val)
@@ -302,10 +296,7 @@ func (s *SimpleEval) evalDistributeExpr(dist *decl.DistributeExpr, env *Env[Valu
 		}
 	}
 	outVal, err := NewValue(decl.OutcomesType(outcomeType), outcomes)
-	if err != nil {
-		log.Println("unexpected error.  should have been caught by validator?")
-		panic(err)
-	}
+	ensureNoErr(err, "unexpected error.  should have been caught by validator?")
 	return outVal, false
 }
 
@@ -324,13 +315,11 @@ func (s *SimpleEval) evalSampleExpr(samp *decl.SampleExpr, env *Env[Value], curr
 }
 
 // Evaluate a component construction expression
-func (s *SimpleEval) evalNewExpr(n *decl.NewExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
+func (s *SimpleEval) evalNewExpr(n *decl.NewExpr, _ *Env[Value], currTime *core.Duration) (result Value, returned bool) {
 	// New contains the name of the component to instantiate
 	// Since exection begins from a single File the File's env should contain the identifer
 	compInst, result, err := s.RootFile.NewComponent(n.ComponentExpr.Value)
-	if err != nil {
-		panic(err)
-	}
+	ensureNoErr(err)
 
 	// Also set the initial env for the component
 	// copy all params with default values first followed by overrides (UDParams)
@@ -349,9 +338,7 @@ func (s *SimpleEval) evalNewExpr(n *decl.NewExpr, env *Env[Value], currTime *cor
 	// Later on we can also have native components expose their dependencies so we can take care of it but out of scope for now
 	if !compInst.IsNative {
 		stmts, err := compInst.Initializer()
-		if err != nil {
-			panic(err)
-		}
+		ensureNoErr(err)
 		_, _, timeTaken := s.EvalStatements(stmts.Statements, compInst.InitialEnv)
 		*currTime += timeTaken
 		result.Time += timeTaken
@@ -434,21 +421,18 @@ func (s *SimpleEval) evalMemberAccessExpr(m *MemberAccessExpr, env *Env[Value], 
 		if idexprType.Tag == decl.TypeTagEnum {
 			// This is an enum - so we can return the value directly
 			enumDecl := idexprType.Info.(*EnumDecl)
-			if err != nil {
-				panic(fmt.Sprintf("Enum value %s not found in enum %s", m.Member.Value, idexpr.Value))
-			}
+			ensureNoErr(err, "Enum value %s not found in enum %s", m.Member.Value, idexpr.Value)
 			// log.Println("Enum Value: ", enumDecl)
 			idx := enumDecl.IndexOfVariant(m.Member.Value)
 			result, err = NewValue(idexprType, idx)
-			if err != nil {
-				panic(fmt.Sprintf("Error creating enum value: %v", err))
-			}
+			ensureNoErr(err, "Error creating enum value: %v", err)
 			return
 		}
 	}
 
 	maeTarget, _ := s.Eval(m.Receiver, env, currTime)
 	finalReceiver := maeTarget
+
 	var compInst *ComponentInstance
 	if maeTarget.Type.Tag == decl.TypeTagRef {
 		refVal := maeTarget.Value.(*decl.RefValue)
@@ -476,38 +460,45 @@ func (s *SimpleEval) evalMemberAccessExpr(m *MemberAccessExpr, env *Env[Value], 
 	compDecl := compInst.ComponentDecl
 	compType := decl.ComponentType(compDecl)
 	finalReceiver, err = NewValue(compType, compInst)
-	if err != nil {
-		panic(err)
-	}
+	ensureNoErr(err)
 	paramDecl, _ := compDecl.GetParam(m.Member.Value)
+
+	// See if we are just dealing with a param - in which case we return a value
 	if paramDecl != nil {
 		paramType := paramDecl.Name.InferredType()
 		refType := decl.RefType(compDecl, paramType)
 		result, err = NewValue(refType, &decl.RefValue{Receiver: finalReceiver, Attrib: m.Member.Value})
-		if err != nil {
-			panic(err)
-		}
+		ensureNoErr(err)
 		return
 	}
 
+	// "uses" declarations are same as params
 	usesDecl, _ := compDecl.GetDependency(m.Member.Value)
 	if usesDecl != nil {
 		depType := decl.ComponentType(usesDecl.ResolvedComponent)
 		refType := decl.RefType(compDecl, depType)
 		result, err = NewValue(refType, &decl.RefValue{Receiver: finalReceiver, Attrib: m.Member.Value})
-		if err != nil {
-			panic(err)
-		}
+		ensureNoErr(err)
 		return
 	}
 
+	// Methods are different - instead of returning a reference, return a bound method
+	// so it can be evaluated correctly
 	methodDecl, _ := compDecl.GetMethod(m.Member.Value)
 	if methodDecl != nil {
 		methodType := decl.MethodType(compDecl, methodDecl)
-		result, err = NewValue(methodType, &decl.RefValue{Receiver: finalReceiver, Attrib: m.Member.Value})
-		if err != nil {
-			panic(err)
+		methodVal := &decl.MethodValue{
+			Method:   methodDecl,
+			SavedEnv: compInst.InitialEnv.Push(),
+			IsNative: compDecl.IsNative,
 		}
+		if compInst.IsNative {
+			methodVal.BoundInstance = compInst.NativeInstance
+		} else {
+			// log.Println("what do we do here?")
+		}
+		result, err = NewValue(methodType, methodVal)
+		ensureNoErr(err)
 		return result, false
 	}
 
@@ -517,7 +508,7 @@ func (s *SimpleEval) evalMemberAccessExpr(m *MemberAccessExpr, env *Env[Value], 
 		if usesDecl != nil {
 			refType := decl.RefType(compDecl, usesDecl.Type.ResolvedType())
 			result, err = NewValue(refType, &decl.RefValue{Receiver: maeTarget, Attrib: m.Member.Value})
-			if err != nil {
+			ensureNoErr(err) {
 				panic(err)
 			}
 			return
@@ -532,120 +523,39 @@ func (s *SimpleEval) evalMemberAccessExpr(m *MemberAccessExpr, env *Env[Value], 
 // Call expression are of the form a.b.c.d(params)
 // The a.b.c.d must resolve to a callable (either a component method or a native function)
 func (s *SimpleEval) evalCallExpr(expr *CallExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
-	// Now find *where* it needs to be set, it can be:
-	// 1. A var in the local env
-	// 2. A member access expression - of the form a.b.c.d.e where a, b, c, d are components and e is a field/param name
-	// or a component instance - either way it should have the same type as the RHS
+	// Simplified version - evaluate the Function -
+	// it MUST evaluate to a MethodValue with a saved env
+	receiver, _ := s.Eval(expr.Function, env, currTime)
+	methodValue := receiver.Value.(*decl.MethodValue)
+	methodDecl := methodValue.Method // compInstance.ComponentDecl.GetMethod(fexpr.Member.Value)
 
-	switch fexpr := expr.Function.(type) {
-	case *IdentifierExpr:
-		// Try to resolve the expression based on
-		receiver, _ := s.Eval(fexpr, env, currTime)
-		// receiver is a single identifier - this is probably a native method?
-		// or "self".
-		log.Println("Not sure how to handle Identifier receiver in call expr: ", receiver)
-		panic("Native func call TBD")
-	case *MemberAccessExpr:
-		maeResult, _ := s.evalMemberAccessExpr(fexpr, env, currTime)
-		maeType := maeResult.Type
-		if maeType.Tag != decl.TypeTagMethod {
-			panic(fmt.Sprintf("Expected MemberAccessExpr to resolve to a method, found: %s -> %s", maeResult.String(), maeType))
-		}
-
-		refValue := maeResult.Value.(*decl.RefValue)
-		compInstance := refValue.Receiver.Value.(*ComponentInstance)
-		methodDecl, err := compInstance.ComponentDecl.GetMethod(fexpr.Member.Value)
-		if err != nil {
-			panic(fmt.Sprintf("Method %s not found in component %s: %v", fexpr.Member.Value, compInstance.ComponentDecl.Name.Value, err))
-		}
-
-		// Now we have the target component instance, we can invoke the method
-		// Evaluate the arguments
-		argValues := make([]Value, len(expr.Args))
-		for i, argExpr := range expr.Args {
-			argValue, _ := s.Eval(argExpr, env, currTime)
-			argValues[i] = argValue
-		}
-
-		newEnv := compInstance.InitialEnv.Push()
-
-		if compInstance.IsNative {
-			// Native method invocation to be handled differently
-			result, err := InvokeMethod(compInstance.NativeInstance, fexpr.Member.Value, argValues, env, currTime, s.Rand)
-			if err != nil {
-				log.Println("Error calling method: ", err)
-			}
-			return result, false
-		} else {
-			result, _ = s.Eval(methodDecl.Body, newEnv, currTime)
-			// We can assume method exists on the component instance as it would have been validated durint inference phase
-		}
-	default:
-		panic(fmt.Sprintf("Expected Identifier or MAE, Expected: %v", fexpr))
+	// Now we have the target component instance, we can invoke the method
+	// Evaluate the arguments
+	argValues := make([]Value, len(expr.Args))
+	for i, argExpr := range expr.Args {
+		argValue, _ := s.Eval(argExpr, env, currTime)
+		argValues[i] = argValue
 	}
-	// only duration increases - no change in result or returned status
+	// No currying for now
+	newenv := methodValue.SavedEnv.Push()
+	for idx, param := range methodDecl.Parameters {
+		newenv.Set(param.Name.Value, argValues[idx])
+	}
+
+	// Now evaluate the body using the new env
+	if methodValue.IsNative {
+		// Native method invocation to be handled differently
+		result, err := InvokeMethod(methodValue.BoundInstance, methodValue.Method.Name.Value,
+			argValues, env, currTime, s.Rand)
+		ensureNoErr(err, "Error calling method: ", err)
+		return result, false
+	} else {
+		result, _ = s.Eval(methodDecl.Body, newenv, currTime)
+	}
 	return
 
 	/*
-		var runtimeInstance ComponentRuntime
-		var methodName string
-
-		// 1. Evaluate the Function part to determine what is being called.
-		//    Most common case: MemberAccessExpr (instance.method)
-		if memberAccess, ok := expr.Function.(*MemberAccessExpr); ok {
-			// Let's re-evaluate the receiver identifier directly to get the runtime instance
-			receiverIdent, okIdent := memberAccess.Receiver.(*IdentifierExpr)
-			if !okIdent {
-				// If the receiver isn't a simple identifier (e.g., nested call result),
-				// this scenario is more complex and might require the Tree Evaluator.
-				// For Stage 1, let's assume simple instance.method calls.
-				return val, fmt.Errorf("method call receiver must be a simple identifier, found %T", memberAccess.Receiver)
-			}
-
-			instanceAny, found := frame.Get(receiverIdent.Name)
-			if !found {
-				return val, fmt.Errorf("instance '%s' not found for method call '%s'", receiverIdent.Name, memberAccess.Member.Value)
-			}
-
-			runtimeInstance, ok = instanceAny.Value.(ComponentRuntime)
-			if !ok {
-				// This indicates an error - something other than a ComponentRuntime was stored for this identifier.
-				return val, fmt.Errorf("identifier '%s' does not represent a component instance (found type %T)", receiverIdent.Name, instanceAny)
-			}
-
-			methodName = memberAccess.Member.Value // Get method name from the AST
-
-		} else if identFunc, ok := expr.Function.(*IdentifierExpr); ok {
-			// Case: Calling a potential global/builtin function (less common for components)
-			// Look up in VM's internal funcs? Defer implementation for now.
-			return val, fmt.Errorf("calling standalone functions ('%s') not implemented yet", identFunc.Name)
-		} else {
-			// The function part is some other expression - likely invalid DSL structure
-			// or requires evaluation first (Stage 2 Tree Evaluator needed).
-			return val, fmt.Errorf("invalid function/method expression type %T in call", expr.Function)
-		}
-
-		// 2. Evaluate Arguments -> []OpNode
-		argOpNodes := make([]Value, len(expr.Args))
-		for i, argExpr := range expr.Args {
-			argOpNodes[i], err = Eval(argExpr, env)
-			if err != nil {
-				// TODO: Improve error reporting (arg index, method name)
-				return val, fmt.Errorf("evaluating argument %d for method '%s': %w", i, methodName, err)
-			}
-		}
-
-		// 3. Invoke the method on the ComponentRuntime instance
-		//    Pass the current frame (callFrame) for context.
-		resultOpNode, err := runtimeInstance.InvokeMethod(methodName, argOpNodes, v, frame)
-		if err != nil {
-			// Error could be method not found, arg mismatch (checked inside InvokeMethod),
-			// or error during execution (native reflection call fail, DSL body eval fail).
-			return val, fmt.Errorf("error calling method '%s' on instance '%s': %w", methodName, runtimeInstance.GetInstanceName(), err)
-		}
-
-		// 4. Return the resulting OpNode
-		return resultOpNode, nil
+		newEnv := compInstance.InitialEnv.Push()
 	*/
 }
 

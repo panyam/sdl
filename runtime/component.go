@@ -31,9 +31,7 @@ func NewComponentInstance(file *FileInstance, compDecl *ComponentDecl) (*Compone
 	}
 	compType := decl.ComponentType(compDecl)
 	compValue, err := NewValue(compType, compInst)
-	if err != nil {
-		panic(err)
-	}
+	ensureNoErr(err)
 	compInst.InitialEnv.Set("self", compValue)
 
 	// Initialize the runtime based on whether it is native or user-defined
@@ -103,7 +101,7 @@ func (ci *ComponentInstance) Initializer() (blockStmt *BlockStmt, err error) {
 func (ci *ComponentInstance) InvokeMethod(methodName string, args []Value, vm *VM, callFrame *Frame) (val Value, err error) {
 	// 1. Find the Method Definition in the ComponentDefinition
 	methodDef, err := ci.ComponentDecl.GetMethod(methodName)
-	if err != nil {
+	ensureNoErr(err) {
 		return
 	}
 	if methodDef == nil {
@@ -129,7 +127,7 @@ func (ci *ComponentInstance) InvokeMethod(methodName string, args []Value, vm *V
 
 	// 4. Bind 'self'/'this' maybe? Store ci (*ComponentInstance) itself?
 	val, err = NewValue(ComponentType, ci)
-	if err != nil {
+	ensureNoErr(err) {
 		return
 	}
 	methodFrame.Set("self", val) // Allow methods to access instance params/deps via self.
@@ -137,7 +135,7 @@ func (ci *ComponentInstance) InvokeMethod(methodName string, args []Value, vm *V
 	// 5. Bind dependencies ('uses') to local variables in methodFrame.
 	for depName, depInstance := range ci.Dependencies {
 		depVal, err := NewValue(ComponentType, depInstance)
-		if err != nil {
+		ensureNoErr(err) {
 			return nil, err
 		}
 		methodFrame.Set(depName, depVal) // Store the ComponentRuntime dependency
@@ -146,7 +144,7 @@ func (ci *ComponentInstance) InvokeMethod(methodName string, args []Value, vm *V
 	// 6. Evaluate the method body (BlockStmt) using the methodFrame.
 	//    The result of the block is the result of the method.
 	resultValue, err := Eval(methodDef.Body, methodFrame, vm)
-	if err != nil {
+	ensureNoErr(err) {
 		err = fmt.Errorf("error executing method '%s' body for instance '%s': %w", methodName, ci.InstanceName, err)
 		return
 	}

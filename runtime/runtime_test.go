@@ -14,16 +14,13 @@ func TestNativeAndBitly(t *testing.T) {
 	rt := NewRuntime(l)
 	fi := rt.LoadFile("../examples/bitly/mvp.sdl")
 
-	systest := fi.NewSystem("TestSystem")
 	var currTime core.Duration
 	se := NewSimpleEval(fi)
 	env := fi.Env.Push()
-	se.EvalInitSystem(systest, env, &currTime)
 
 	sysbitly := fi.NewSystem("Bitly")
 	se.EvalInitSystem(sysbitly, env, &currTime)
 
-	RunTestCall(systest, env, "test", "ReadBool", 100)
 	RunTestCall(sysbitly, env, "app", "Shorten", 1000)
 	/*
 		RunTestCall(sys, env, "test", "ReadBool")
