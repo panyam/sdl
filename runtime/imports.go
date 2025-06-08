@@ -25,6 +25,10 @@ type ComponentDecl = decl.ComponentDecl
 type SystemDecl = decl.SystemDecl
 type EnumDecl = decl.EnumDecl
 type Value = decl.Value
+type FutureValue = decl.FutureValue
+type ThunkValue = decl.ThunkValue
+type MethodValue = decl.MethodValue
+type RefValue = decl.RefValue
 
 type Node = decl.Node
 type FileDecl = decl.FileDecl

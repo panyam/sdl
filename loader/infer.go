@@ -690,6 +690,7 @@ func (i *Inference) EvalForGoExpr(expr *GoExpr, scope *TypeScope) (returnType *T
 	if bodyType == nil {
 		return nil, i.Errorf(expr.Pos(), "Go body must be a call expression or a block statment that returns a value")
 	}
+	expr.SetInferredType(bodyType)
 	return FutureType(bodyType, loopType), ok
 }
 

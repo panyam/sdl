@@ -437,16 +437,20 @@ type MethodValue struct {
 }
 
 type ThunkValue struct {
-	Expr     Expr
+	Stmt     Stmt
 	SavedEnv *Env[Value]
 }
 
 type FutureValue struct {
 	// Posible outcomes distribution of *when* the future was kicked off
-	StartedAt *core.Outcomes[core.Duration]
+	StartedAt core.Duration
 
 	// Value of the loop expr if it is a batch future
 	LoopValue Value
+
+	// We track the body of the future as a thunk with a captured environment
+	// so we can run it later (at Wait time)
+	Body ThunkValue
 }
 
 func TupleValue(values ...Value) (out Value) {

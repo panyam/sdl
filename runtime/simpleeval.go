@@ -122,11 +122,10 @@ func (s *SimpleEval) Eval(node Node, env *Env[Value], currTime *core.Duration) (
 		return s.evalMemberAccessExpr(n, env, currTime)
 	case *TupleExpr:
 		return s.evalTupleExpr(n, env, currTime)
-	/* - TODO
-	case *SwitchStmt: // <-- Will be implemented now
-		return s.evalSwitchStmt(n, env)
-	*/
-
+	case *GoExpr:
+		return s.evalGoExpr(n, env, currTime)
+	case *WaitExpr:
+		return s.evalWaitExpr(n, env, currTime)
 	default:
 		panic(fmt.Errorf("Eval not implemented for node type %T", node))
 	}
@@ -406,6 +405,30 @@ func (s *SimpleEval) evalTupleExpr(m *TupleExpr, env *Env[Value], currTime *core
 		vals = append(vals, argres)
 	}
 	result = TupleValue(vals...)
+	return
+}
+
+func (s *SimpleEval) evalGoExpr(m *GoExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
+	loopValue, _ := s.Eval(m.LoopExpr, env, currTime)
+	target := m.Stmt
+	if m.Expr != nil {
+		target = m.Expr
+	}
+	futureType := m.InferredType()
+	result, err := NewValue(futureType, &FutureValue{
+		LoopValue: loopValue,
+		StartedAt: *currTime,
+		Body: ThunkValue{
+			Stmt: target,
+		},
+	})
+	ensureNoErr(err)
+
+	return
+}
+
+func (s *SimpleEval) evalWaitExpr(m *WaitExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
+	panic("WaitExpr TBD")
 	return
 }
 

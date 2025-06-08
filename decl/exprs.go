@@ -9,7 +9,7 @@ import (
 
 // Expr represents an expression node (evaluates to a value/state).
 type Expr interface {
-	Node
+	Stmt
 	exprNode() // Marker method for expressions
 	PrettyPrint(cp CodePrinter)
 	InferredType() *Type
@@ -40,6 +40,7 @@ func (e *ExprBase) DeclaredType() *Type {
 	return e.declaredType
 }
 
+func (me *ExprBase) stmtNode() {}
 func (me *ExprBase) exprNode() {}
 
 // LazyExpr is a thunk/holder of another expression that is evaluated when needed.
