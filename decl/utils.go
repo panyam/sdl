@@ -46,6 +46,10 @@ func NewLetStmt(varName string, value Expr) *LetStmt {
 	return &LetStmt{Variables: []*IdentifierExpr{NewIdent(varName)}, Value: value}
 }
 
+func NewNewExpr(compDecl *ComponentDecl) *NewExpr {
+	return &NewExpr{ComponentDecl: compDecl}
+}
+
 func NewBinExpr(left Expr, op string, right Expr) *BinaryExpr {
 	return &BinaryExpr{Left: left, Operator: op, Right: right}
 }

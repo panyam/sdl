@@ -43,10 +43,12 @@ func (s *SystemInstance) Initializer() (blockStmt *BlockStmt, err error) {
 			// if it is an instance declaration, find the component type from the environment
 			// and create a new instance of the component type
 			instanceDecls = append(instanceDecls, it)
-			// stmts = append(stmts, &ExprStmt{ Expression: })
+			// Resolve the compdecl first
+			compDecl, err := s.File.GetComponentDecl(it.ComponentName.Value)
+			ensureNoErr(err)
 			stmts = append(stmts, &decl.SetStmt{
 				TargetExpr: it.Name,
-				Value:      &decl.NewExpr{ComponentExpr: &IdentifierExpr{Value: it.ComponentName.Value}},
+				Value:      NewNewExpr(compDecl),
 			})
 		case *LetStmt:
 			// Add this as is

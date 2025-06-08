@@ -69,6 +69,9 @@ var BoolValue = decl.BoolValue
 var StringValue = decl.StringValue
 var IntValue = decl.IntValue
 var FloatValue = decl.FloatValue
+var TupleValue = decl.TupleValue
 var Nil = decl.Nil
 
 type ErrorCollector = loader.ErrorCollector
+
+var NewNewExpr = decl.NewNewExpr

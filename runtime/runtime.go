@@ -19,20 +19,6 @@ func NewRuntime(loader *loader.Loader) (r *Runtime) {
 	return
 }
 
-func (r *Runtime) CreateNativeComponent(compDecl *ComponentDecl) NativeObject {
-	name := compDecl.Name.Value
-	if name == "Disk" {
-		return cd.NewDisk(name)
-	}
-	if name == "HashIndex" {
-		return cd.NewHashIndex(name)
-	}
-	if name == "TestNative" {
-		return NewTestNative(name)
-	}
-	panic(fmt.Sprintf("Native component not registered: %s", name))
-}
-
 // Gets the initial run time environment for a File which would include its parameters and component creators
 func (r *Runtime) LoadFile(filePath string) *FileInstance {
 	if env, ok := r.fileInstances[filePath]; ok && env != nil {
@@ -55,4 +41,21 @@ func (r *Runtime) LoadFile(filePath string) *FileInstance {
 	out := NewFileInstance(r, file)
 	r.fileInstances[fs.FullPath] = out
 	return out
+}
+
+func (r *Runtime) CreateNativeComponent(compDecl *ComponentDecl) NativeObject {
+	name := compDecl.Name.Value
+	if name == "Disk" {
+		return cd.NewDisk(name)
+	}
+	if name == "HashIndex" {
+		return cd.NewHashIndex(name)
+	}
+	if name == "BTreeIndex" {
+		return cd.NewBTreeIndex(name)
+	}
+	if name == "TestNative" {
+		return NewTestNative(name)
+	}
+	panic(fmt.Sprintf("Native component not registered: %s", name))
 }

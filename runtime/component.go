@@ -1,6 +1,8 @@
 package runtime
 
 import (
+	"log"
+
 	"github.com/panyam/sdl/decl"
 )
 
@@ -19,10 +21,13 @@ func NewComponentInstance(file *FileInstance, compDecl *ComponentDecl) (*Compone
 	if compDecl.IsNative {
 		nativeValue = file.Runtime.CreateNativeComponent(compDecl)
 	}
+
+	originFile := file.Runtime.LoadFile(compDecl.ParentFileDecl.FullPath)
+	log.Println("Originfile: ", originFile)
 	compInst := &ComponentInstance{
 		//ObjectInstance: NewObjectInstance(file, nativeValue),
 		ObjectInstance: ObjectInstance{
-			File:           file,
+			File:           originFile,
 			IsNative:       compDecl.IsNative,
 			InitialEnv:     decl.NewEnv[Value](nil), // should parent be File.Env?
 			NativeInstance: nativeValue,
@@ -78,8 +83,8 @@ func (ci *ComponentInstance) Initializer() (blockStmt *BlockStmt, err error) {
 				Receiver: decl.NewIdent("self"),
 				Member:   usesdecl.Name,
 			},
-			Value: &decl.NewExpr{ComponentExpr: usesdecl.ResolvedComponent.Name}},
-		)
+			Value: NewNewExpr(usesdecl.ResolvedComponent),
+		})
 	}
 
 	// Phase 2 - For each dependency that was created (it had overrides), set parameters too

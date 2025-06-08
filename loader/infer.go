@@ -133,6 +133,7 @@ func (i *Inference) EvalForComponent(compDecl *ComponentDecl, rootScope *TypeSco
 		instanceType := ComponentType(compDefinition)
 		rootScope.env.Set(usesDecl.Name.Value, compDefinition) // Store InstanceDecl node in env by its name
 		usesDecl.Name.SetInferredType(instanceType)
+		usesDecl.ResolvedComponent = compDefinition
 	}
 
 	// Method signatures
@@ -396,23 +397,30 @@ func (i *Inference) EvalForMemberAccessExpr(expr *MemberAccessExpr, scope *TypeS
 			panic("internal error: parameter type for '" + memberName + "' in component '" + decl.Name.Value + "' is nil")
 		}
 		return RefType(decl, paramType), true
-	} else if usesDecl, _ := decl.GetDependency(memberName); usesDecl != nil {
+	}
+
+	if usesDecl, _ := decl.GetDependency(memberName); usesDecl != nil {
 		if scope.env == nil {
 			return nil, i.Errorf(usesDecl.Pos(), "internal error: TypeScope.env is nil when resolving 'uses' dependency '%s' in component '%s'", memberName, decl.Name.Value)
 		}
+
 		depCompName := usesDecl.ComponentName.Value
 		depCompDeclNode, found := scope.env.Get(depCompName)
 		if !found {
 			return nil, i.Errorf(usesDecl.Pos(), "'uses' dependency '%s' in component '%s' refers to unknown component type '%s'", memberName, decl.Name.Value, depCompName)
 		}
+
 		if depCompDecl, ok := depCompDeclNode.(*ComponentDecl); ok {
 			usesDecl.ResolvedComponent = depCompDecl
 			return RefType(decl, ComponentType(depCompDecl)), true
 		}
 		return nil, i.Errorf(usesDecl.Pos(), "'uses' dependency '%s' in component '%s' resolved to a non-component type %T for '%s'", memberName, decl.Name.Value, depCompDeclNode, depCompName)
-	} else if methodDecl, _ := decl.GetMethod(memberName); methodDecl != nil {
+	}
+
+	if methodDecl, _ := decl.GetMethod(memberName); methodDecl != nil {
 		return MethodType(decl, methodDecl), ok
 	}
+
 	return nil, i.Errorf(expr.Pos(), "member '%s' not found in component '%s' (type %s)", memberName, decl.Name.Value, receiverType)
 }
 

@@ -93,10 +93,10 @@ func (e *BinaryExpr) PrettyPrint(cp CodePrinter) {
 // InstanceDecls are compiled down to a combination of NewExpr and SetExpr expression types
 type NewExpr struct {
 	ExprBase
-	ComponentExpr *IdentifierExpr
+	ComponentDecl *ComponentDecl
 }
 
-func (n *NewExpr) String() string { return fmt.Sprintf("(new %s)", n.ComponentExpr.Value) }
+func (n *NewExpr) String() string { return fmt.Sprintf("(new %s)", n.ComponentDecl.Name.Value) }
 func (n *NewExpr) PrettyPrint(cp CodePrinter) {
 	cp.Print(n.String())
 }

@@ -1,6 +1,9 @@
 package runtime
 
-import "errors"
+import (
+	"errors"
+	"log"
+)
 
 var (
 	ErrNotImplemented       = errors.New("evaluation for this node type not implemented")
@@ -9,3 +12,15 @@ var (
 	ErrUnsupportedType      = errors.New("unsupported type for operation")
 	ErrInvalidType          = errors.New("invalid type")
 )
+
+func ensureNoErr(err error, args ...any) error {
+	if err != nil {
+		if len(args) > 0 {
+			msg := args[0].(string)
+			args = args[1:]
+			log.Printf(msg, args...)
+		}
+		panic(err)
+	}
+	return err
+}

@@ -120,6 +120,8 @@ func (s *SimpleEval) Eval(node Node, env *Env[Value], currTime *core.Duration) (
 		return s.evalCallExpr(n, env, currTime)
 	case *MemberAccessExpr:
 		return s.evalMemberAccessExpr(n, env, currTime)
+	case *TupleExpr:
+		return s.evalTupleExpr(n, env, currTime)
 	/* - TODO
 	case *SwitchStmt: // <-- Will be implemented now
 		return s.evalSwitchStmt(n, env)
@@ -318,24 +320,14 @@ func (s *SimpleEval) evalSampleExpr(samp *decl.SampleExpr, env *Env[Value], curr
 func (s *SimpleEval) evalNewExpr(n *decl.NewExpr, _ *Env[Value], currTime *core.Duration) (result Value, returned bool) {
 	// New contains the name of the component to instantiate
 	// Since exection begins from a single File the File's env should contain the identifer
-	compInst, result, err := s.RootFile.NewComponent(n.ComponentExpr.Value)
+	compInst, result, err := NewComponentInstance(s.RootFile, n.ComponentDecl)
 	ensureNoErr(err)
 
-	// Also set the initial env for the component
-	// copy all params with default values first followed by overrides (UDParams)
-	/* No longer needed as the Initializer will take care of this
-	params, _ := compInst.ComponentDecl.Params()
-	for _, param := range params {
-		if param.DefaultValue != nil {
-			pval, _ := s.Eval(param.DefaultValue, env, currTime)
-			compInst.InitialEnv.Set(param.Name.Value, pval)
-		}
-	}
-	*/
-
 	// Now for any "instantiated" components set it here
-	// For native components we dont need this as they will take care of it themselves - ie initialization is "entire"
-	// Later on we can also have native components expose their dependencies so we can take care of it but out of scope for now
+	// For native components we dont need this as they will take care of it themselves -
+	// ie initialization is "entire"
+	// Later on we can also have native components expose their dependencies so we can take
+	// care of it but out of scope for now
 	if !compInst.IsNative {
 		stmts, err := compInst.Initializer()
 		ensureNoErr(err)
@@ -404,6 +396,16 @@ func (s *SimpleEval) evalDelayStmt(d *DelayStmt, env *Env[Value], currTime *core
 	} else {
 		panic("delay value should have been int or float.  type checking failed")
 	}
+	return
+}
+
+func (s *SimpleEval) evalTupleExpr(m *TupleExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
+	var vals []Value
+	for _, argExpr := range m.Children {
+		argres, _ := s.Eval(argExpr, env, currTime)
+		vals = append(vals, argres)
+	}
+	result = TupleValue(vals...)
 	return
 }
 

@@ -191,6 +191,15 @@ func (r *Value) Set(v any) error {
 		return nil
 	}
 
+	if r.Type.Tag == TypeTagTuple {
+		listVal, ok := v.([]Value)
+		if !ok {
+			return fmt.Errorf("type mismatch: expected Tuple ([]Value), got %T", v)
+		}
+		r.Value = listVal
+		return nil
+	}
+
 	if r.Type.Tag == TypeTagList {
 		// Expecting a slice of Value for containers
 		listVal, ok := v.([]Value)
@@ -438,4 +447,10 @@ type FutureValue struct {
 
 	// Value of the loop expr if it is a batch future
 	LoopValue Value
+}
+
+func TupleValue(values ...Value) (out Value) {
+	tt := &Type{Tag: TypeTagTuple} // Changed from {} to have a name for clarity
+	out, _ = NewValue(tt, values)
+	return
 }
