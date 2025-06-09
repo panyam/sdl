@@ -558,19 +558,36 @@ func (i *Inference) EvalForCallExpr(expr *CallExpr, scope *TypeScope) (*Type, bo
 		expectedParamTypes = append(expectedParamTypes, paramSDLType)
 	}
 
-	if len(expr.Args) != len(expectedParamTypes) {
-		return nil, i.Errorf(expr.Pos(), "argument count mismatch for call to '%s': expected %d, got %d", funcNameForError, len(expectedParamTypes), len(expr.Args))
+	if expr.NumArgs() != len(expectedParamTypes) {
+		return nil, i.Errorf(expr.Pos(), "argument count mismatch for call to '%s': expected %d, got %d", funcNameForError, len(expectedParamTypes), expr.NumArgs())
 	}
 
-	for idx, argExpr := range expr.Args {
-		argType, ok := i.EvalForExprType(argExpr, scope)
-		if !ok || argType == nil {
-			return nil, i.Errorf(argExpr.Pos(), "could not determine type for argument %d of call to '%s'", idx+1, funcNameForError)
+	if expr.IsNamed {
+		for argname, argExpr := range expr.ArgMap {
+			argType, ok := i.EvalForExprType(argExpr, scope)
+			if !ok || argType == nil {
+				return nil, i.Errorf(argExpr.Pos(), "could not determine type for argument '%s' of call to '%s'", argname, funcNameForError)
+			}
+			/*TODO - match with method param names and types
+			if !argType.Equals(expectedParamTypes[idx]) {
+				isIntToFloat := argType.Equals(IntType) && expectedParamTypes[idx].Equals(FloatType)
+				if !isIntToFloat {
+					return nil, i.Errorf(argExpr.Pos(), "type mismatch for argument %d of call to '%s': expected %s, got %s", idx, funcNameForError, expectedParamTypes[idx].String(), argType.String())
+				}
+			}
+			*/
 		}
-		if !argType.Equals(expectedParamTypes[idx]) {
-			isIntToFloat := argType.Equals(IntType) && expectedParamTypes[idx].Equals(FloatType)
-			if !isIntToFloat {
-				return nil, i.Errorf(argExpr.Pos(), "type mismatch for argument %d of call to '%s': expected %s, got %s", idx, funcNameForError, expectedParamTypes[idx].String(), argType.String())
+	} else {
+		for idx, argExpr := range expr.ArgList {
+			argType, ok := i.EvalForExprType(argExpr, scope)
+			if !ok || argType == nil {
+				return nil, i.Errorf(argExpr.Pos(), "could not determine type for argument %d of call to '%s'", idx+1, funcNameForError)
+			}
+			if !argType.Equals(expectedParamTypes[idx]) {
+				isIntToFloat := argType.Equals(IntType) && expectedParamTypes[idx].Equals(FloatType)
+				if !isIntToFloat {
+					return nil, i.Errorf(argExpr.Pos(), "type mismatch for argument %d of call to '%s': expected %s, got %s", idx, funcNameForError, expectedParamTypes[idx].String(), argType.String())
+				}
 			}
 		}
 	}

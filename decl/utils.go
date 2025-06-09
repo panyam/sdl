@@ -133,20 +133,14 @@ func NewMemberAccessExpr(receiver Expr, memberName string) *MemberAccessExpr {
 	}
 }
 
-// Helper to create a CallExpr AST node for testing
-func NewCallExpr2(receiver Expr, methodName string, args ...Expr) *CallExpr {
-	return &CallExpr{
-		Function: &MemberAccessExpr{
-			Receiver: receiver,
-			Member:   NewIdent(methodName),
-		},
-		Args: args,
-	}
-}
-
 func NewCallExpr(fn Expr, args ...Expr) *CallExpr {
 	// NodeInfo is cleaned by cleanNodeInfo
-	return &CallExpr{Function: fn, Args: args}
+	return &CallExpr{Function: fn, ArgList: args}
+}
+
+func NewNamedCallExpr(fn Expr, args map[string]Expr) *CallExpr {
+	// NodeInfo is cleaned by cleanNodeInfo
+	return &CallExpr{Function: fn, IsNamed: true, ArgMap: args}
 }
 
 func NewDistributeExpr(total Expr, defaultCase Expr, cases ...*CaseExpr) *DistributeExpr {

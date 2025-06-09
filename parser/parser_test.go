@@ -461,11 +461,11 @@ func TestParseStatements(t *testing.T) {
 		estmt := getStmt(t, ast).(*ExprStmt)
 		stmt := estmt.Expression.(*WaitExpr)
 		assertPosition(t, stmt, 26, 38)
-		require.Len(t, stmt.Idents, 2)
-		assertIdentifier(t, stmt.Idents[0], "f1")
-		assertIdentifier(t, stmt.Idents[1], "f2")
-		assertPosition(t, stmt.Idents[0], 31, 33)
-		assertPosition(t, stmt.Idents[1], 36, 38)
+		require.Len(t, stmt.FutureNames, 2)
+		assertIdentifier(t, stmt.FutureNames[0], "f1")
+		assertIdentifier(t, stmt.FutureNames[1], "f2")
+		assertPosition(t, stmt.FutureNames[0], 31, 33)
+		assertPosition(t, stmt.FutureNames[1], 36, 38)
 	})
 
 	t.Run("IfStmt", func(t *testing.T) {
@@ -547,11 +547,11 @@ func TestParseExpressions(t *testing.T) {
 		require.True(t, okMA)
 		assertIdentifier(t, memAccess.Receiver, "obj")
 		assertIdentifier(t, memAccess.Member, "Method")
-		require.Len(t, expr.Args, 2)
-		assertLiteralWithValue(t, expr.Args[0], IntType, int64(1))
-		assertLiteralWithValue(t, expr.Args[1], StrType, "two")
-		assertPosition(t, expr.Args[0].(Node), 39, 40) // "1"
-		assertPosition(t, expr.Args[1].(Node), 42, 47) // `"two"`
+		require.Len(t, expr.ArgList, 2)
+		assertLiteralWithValue(t, expr.ArgList[0], IntType, int64(1))
+		assertLiteralWithValue(t, expr.ArgList[1], StrType, "two")
+		assertPosition(t, expr.ArgList[0].(Node), 39, 40) // "1"
+		assertPosition(t, expr.ArgList[1].(Node), 42, 47) // `"two"`
 	})
 
 }

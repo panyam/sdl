@@ -177,14 +177,30 @@ func (e *MemberAccessExpr) PrettyPrint(cp CodePrinter) {
 // CallExpr represents `function(arg1, arg2, ...)` (user funcs, component methods, built-ins)
 type CallExpr struct {
 	ExprBase
-	Function Expr   // Typically IdentifierExpr or MemberAccessExpr
-	Args     []Expr // Argument expressions
+	Function Expr            // Typically IdentifierExpr or MemberAccessExpr
+	IsNamed  bool            // whehter it is a named or unnamed call expression
+	ArgList  []Expr          // Argument expressions
+	ArgMap   map[string]Expr // Argument expressions
+}
+
+func (c *CallExpr) NumArgs() int {
+	if c.IsNamed {
+		return len(c.ArgMap)
+	} else {
+		return len(c.ArgList)
+	}
 }
 
 func (c *CallExpr) String() string {
 	argsStr := []string{}
-	for _, arg := range c.Args {
-		argsStr = append(argsStr, arg.String())
+	if c.IsNamed {
+		for argname, arg := range c.ArgMap {
+			argsStr = append(argsStr, fmt.Sprintf("%s=%s", argname, arg))
+		}
+	} else {
+		for _, arg := range c.ArgList {
+			argsStr = append(argsStr, arg.String())
+		}
 	}
 	return fmt.Sprintf("%s(%s)", c.Function, strings.Join(argsStr, ", "))
 }
@@ -258,7 +274,7 @@ type WaitExpr struct {
 	ExprBase
 	FutureNames      []*IdentifierExpr // Must evaluate to Duration outcome
 	AggregatorName   *IdentifierExpr
-	AggregatorParams []Expr
+	AggregatorParams map[string]Expr
 }
 
 func (d *WaitExpr) String() string {

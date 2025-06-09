@@ -442,7 +442,7 @@ func (s *SimpleEval) evalWaitExpr(expr *WaitExpr, env *Env[Value], currTime *cor
 	}
 
 	aggregator := s.RootFile.Runtime.CreateAggregator(expr.AggregatorName.Value, aggParams)
-	result, _ = aggregator(s, env, currTime, futureValues)
+	result, _ = aggregator.Eval(s, env, currTime, futureValues)
 	return
 }
 

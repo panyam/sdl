@@ -81,6 +81,7 @@ func yyerrok(lexer SDLLexer) {
     paramList         []*ParamDecl
     assignList        []*AssignmentStmt
     exprList          []Expr
+    exprMap           map[string]Expr
     stmtList          []Stmt
     ident             *IdentifierExpr
     identList         []*IdentifierExpr
@@ -138,7 +139,7 @@ func yyerrok(lexer SDLLexer) {
 %type <blockStmt>    BlockStmt
 %type <stmtList>     StmtList 
 %type <tupleExpr>         TupleExpr
-%type <expr>         Expression UnaryExpr PrimaryExpr LiteralExpr CallExpr MemberAccessExpr IndexExpr LeafExpr ParenExpr  WaitExpr
+%type <expr>         Expression UnaryExpr PrimaryExpr LiteralExpr EmptyCallExpr NamedCallExpr CallExpr MemberAccessExpr IndexExpr LeafExpr ParenExpr  WaitExpr
 // %type <expr>         BinaryExpr NonAssocBinExpr 
 %type <chainedExpr>         ChainedExpr
 // %type <expr> OrExpr AndBoolExpr CmpExpr AddExpr MulExpr UnaryExpr 
@@ -159,6 +160,7 @@ func yyerrok(lexer SDLLexer) {
 // %type <methodSigItemList> MethodSigDeclList MethodSigDeclOptList
 %type <ifStmt>       IfStmt
 %type <exprList>     CommaSepExprListOpt, CommaSepExprList
+%type <exprMap>     KWArgListOpt, KWArgList
 // %type <exprList>          OpSepExprList
 %type <expr>          TotalClauseOpt 
 %type <caseExpr> CaseExpr
@@ -664,11 +666,6 @@ AssignStmt: // Rule for simple assignment `a = b;` if needed as statement
     ;
 */
 
-ExprStmt:
-    CallExpr { $$ = &ExprStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $1.(Node).End()), Expression: $1 } }
-    | WaitExpr { $$ = &ExprStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $1.(Node).End()), Expression: $1 } }
-    ;
-
 ReturnStmt:
     RETURN Expression { $$ = &ReturnStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $2.(Node).End()), ReturnValue: $2 } }
     | RETURN SEMICOLON          { $$ = &ReturnStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $2.(Node).End()), ReturnValue: nil } }
@@ -685,11 +682,39 @@ WaitExpr:
          $$ = &WaitExpr{  FutureNames: idents }
          $$.(*WaitExpr).NodeInfo = NewNodeInfo($1.Pos(), endNode.End())
     }
-    | WAIT CommaIdentifierList USING CallExpr { // WAIT($1) IDENTIFIER($2) ... 
-         idents := $2
-         endNode := idents[len(idents)-1] // End at the last identifier in the list
-         $$ = &WaitExpr{  FutureNames: idents, AggregatorName: $4.(*CallExpr).Function.(*IdentifierExpr), AggregatorParams: $4.(*CallExpr).Args }
-         $$.(*WaitExpr).NodeInfo = NewNodeInfo($1.Pos(), endNode.End())
+    | WAIT CommaIdentifierList USING EmptyCallExpr { // WAIT($1) IDENTIFIER($2) ... 
+        idents := $2
+        endNode := idents[len(idents)-1] // End at the last identifier in the list
+        $$ = &WaitExpr{ 
+          FutureNames: idents,
+          AggregatorName: $4.(*CallExpr).Function.(*IdentifierExpr),
+        }
+        $$.(*WaitExpr).NodeInfo = NewNodeInfo($1.Pos(), endNode.End())
+    }
+    | WAIT CommaIdentifierList USING NamedCallExpr { // WAIT($1) IDENTIFIER($2) ... 
+        idents := $2
+        endNode := idents[len(idents)-1] // End at the last identifier in the list
+        $$ = &WaitExpr{ 
+          FutureNames: idents,
+          AggregatorName: $4.(*CallExpr).Function.(*IdentifierExpr),
+          AggregatorParams: $4.(*CallExpr).ArgMap,
+        }
+        $$.(*WaitExpr).NodeInfo = NewNodeInfo($1.Pos(), endNode.End())
+    }
+    ;
+
+KWArgListOpt:
+      //
+      { $$ = map[string]Expr{} }
+    | KWArgList { $$ = $1 }
+    ;
+
+KWArgList:
+    IDENTIFIER ASSIGN Expression { $$ = map[string]Expr{$1.Value: $3} }
+    | KWArgList COMMA IDENTIFIER ASSIGN Expression {
+        name := $3.Value
+        $1[name] = $5 
+        $$ = $1
     }
     ;
 
@@ -823,6 +848,8 @@ UnaryExpr: PrimaryExpr { $$=$1 }
 PrimaryExpr:
        LeafExpr { $$ = $1 }
     | CallExpr                { $$ = $1 }
+    | NamedCallExpr                { $$ = $1 }
+    | EmptyCallExpr                { $$ = $1 }
     ;
 
 LeafExpr:
@@ -876,8 +903,27 @@ MemberAccessExpr:
     }
     ;
 
+EmptyCallExpr:
+    PrimaryExpr LPAREN RPAREN { // PrimaryExpr($1) LPAREN($2) ArgList($3) RPAREN($4)
+        $$ = &CallExpr{ Function: $1, }
+        $$.(*CallExpr).NodeInfo = NewNodeInfo($1.Pos(), $3.End())
+    }
+    ;
+
+NamedCallExpr:
+    PrimaryExpr LPAREN KWArgList RPAREN { // PrimaryExpr($1) LPAREN($2) ArgList($3) RPAREN($4)
+        endNode := $4.(Node) // End at RPAREN
+        $$ = &CallExpr{
+             Function: $1,
+             IsNamed: true,
+             ArgMap: $3,
+        }
+        $$.(*CallExpr).NodeInfo = NewNodeInfo($1.Pos(), endNode.End())
+    }
+    ;
+
 CallExpr:
-    IDENTIFIER LPAREN CommaSepExprListOpt RPAREN { // PrimaryExpr($1) LPAREN($2) ArgList($3) RPAREN($4)
+    PrimaryExpr LPAREN CommaSepExprList RPAREN { // PrimaryExpr($1) LPAREN($2) ArgList($3) RPAREN($4)
         endNode := $4.(Node) // End at RPAREN
         if len($3) > 0 {
              exprList := $3
@@ -885,10 +931,11 @@ CallExpr:
         }
         $$ = &CallExpr{
              Function: $1,
-             Args: $3,
+             ArgList: $3,
         }
         $$.(*CallExpr).NodeInfo = NewNodeInfo($1.Pos(), endNode.End())
     }
+/*
     | MemberAccessExpr LPAREN CommaSepExprListOpt RPAREN { // PrimaryExpr($1) LPAREN($2) ArgList($3) RPAREN($4)
          endNode := $4.(Node) // End at RPAREN
          if len($3) > 0 {
@@ -901,6 +948,7 @@ CallExpr:
          }
         $$.(*CallExpr).NodeInfo = NewNodeInfo($1.Pos(), endNode.End())
     }
+*/
     ;
 
 DistributeExpr:
@@ -965,6 +1013,12 @@ DefaultCaseStmtOpt:
 
 DefaultCaseStmt:
     DEFAULT ARROW Stmt { $$ = $3 }
+    ;
+
+ExprStmt:
+    CallExpr { $$ = &ExprStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $1.(Node).End()), Expression: $1 } }
+    | EmptyCallExpr { $$ = &ExprStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $1.(Node).End()), Expression: $1 } }
+    | WaitExpr { $$ = &ExprStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $1.(Node).End()), Expression: $1 } }
     ;
 
 %% // --- Go Code Section ---
