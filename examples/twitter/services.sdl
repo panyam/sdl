@@ -1,5 +1,5 @@
 
-import AllHttpStatusesLessThan, HttpStatusCode from "../common.sdl"
+import WaitAll, WaitAny, HttpStatusCode from "../common.sdl"
 import Database from "./dbs.sdl"
 
 system Twitter {
@@ -113,7 +113,7 @@ component TimelineService {
     }
 
     // Wait for batch to complete.
-    let result = wait future using AllHttpStatusesLessThan(minDelay = 200ms)
+    let result = wait future using WaitAll(HttpStatusCode.Ok)
 
     // Here AllHttpStatusLessThan is a native method that takes the gobatch futures value
     // and returns a new outcomes result matching our own return type.

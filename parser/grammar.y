@@ -139,10 +139,8 @@ func yyerrok(lexer SDLLexer) {
 %type <blockStmt>    BlockStmt
 %type <stmtList>     StmtList 
 %type <tupleExpr>         TupleExpr
-%type <expr>         Expression UnaryExpr PrimaryExpr LiteralExpr EmptyCallExpr NamedCallExpr CallExpr MemberAccessExpr IndexExpr LeafExpr ParenExpr  WaitExpr
-// %type <expr>         BinaryExpr NonAssocBinExpr 
+%type <expr>         Expression UnaryExpr PrimaryExpr LiteralExpr CallExpr MemberAccessExpr IndexExpr LeafExpr ParenExpr  WaitExpr
 %type <chainedExpr>         ChainedExpr
-// %type <expr> OrExpr AndBoolExpr CmpExpr AddExpr MulExpr UnaryExpr 
 %type <paramDecl>    ParamDecl MethodParamDecl
 %type <paramList>    MethodParamList MethodParamListOpt
 %type <typeDecl>     TypeDecl
@@ -153,15 +151,11 @@ func yyerrok(lexer SDLLexer) {
 %type <forStmt>   ForStmt
 %type <assignStmt>   Assignment
 %type <assignList>   AssignList  AssignListOpt
-// %type <analyzeDecl>  AnalyzeDecl
-// %type <expectBlock>  ExpectBlock ExpectBlockOpt
-// %type <expectStmt>   ExpectStmt
-// %type <expectStmtList> ExpectStmtList ExpectStmtOptList
-// %type <methodSigItemList> MethodSigDeclList MethodSigDeclOptList
 %type <ifStmt>       IfStmt
-%type <exprList>     CommaSepExprListOpt, CommaSepExprList
-%type <exprMap>     KWArgListOpt, KWArgList
-// %type <exprList>          OpSepExprList
+// %type <exprList>     CommaSepExprListOpt
+// %type <exprMap>     KWArgListOpt
+%type <exprList>     CommaSepExprList
+%type <exprMap>     KWArgList
 %type <expr>          TotalClauseOpt 
 %type <caseExpr> CaseExpr
 %type <caseExprList> CaseExprList CaseExprListOpt
@@ -179,13 +173,6 @@ func yyerrok(lexer SDLLexer) {
 %left BINARY_OP MINUS
 %nonassoc BINARY_NC_OP 
 %left LSQUARE
-/*
-%left OR
-%left AND
-%nonassoc EQ NEQ LT LTE GT GTE // Comparisons don't chain
-%left PLUS MINUS
-%left MUL DIV MOD
-*/
 %right UNARY_OP UMINUS // Unary operators (UMINUS for precedence)
 %right SAMPLE
 
@@ -543,70 +530,6 @@ Assignment:
     }
     ;
 
-/*
-AnalyzeDecl:
-    ANALYZE IDENTIFIER ASSIGN Expression ExpectBlockOpt { // ANALYZE($1) ... 
-        callExpr, ok := $4.(*CallExpr)
-        if !ok {
-            yyerror(SDLlex, fmt.Sprintf("analyze target must be a method call, found %T at pos %d", $4, $4.(Node).Pos()))
-        }
-        endPos := 0
-        if $5 != nil {
-          endPos = $5.End()
-        } else {
-          endPos = $4.End()
-        }
-        $$ = &AnalyzeDecl{
-             NodeInfo: NewNodeInfo($1.(Node).Pos(), endPos),
-             Name: $2,
-             Target: callExpr,
-             Expectations: $5,
-         }
-    }
-    ;
-
-ExpectBlockOpt:
-              { $$ = nil }    // empty
-            | ExpectBlock { $$ = $1 };
-
-ExpectBlock:
-    EXPECT LBRACE ExpectStmtOptList RBRACE { // EXPECT($1) ... RBRACE($4)
-        log.Println("Did Expect Block Hit?")
-        $$ = &ExpectationsDecl{
-            NodeInfo: NewNodeInfo($1.(Node).Pos(), $4.(Node).End()),
-            Expects: $3,
-        }
-    }
-    ;
-
-ExpectStmtOptList:
-    { $$ = []*ExpectStmt{} } // empty
-    | ExpectStmtList { $$ = $1 }
-    ;
-
-ExpectStmtList:
-    Expression {
-      log.Println("Did we come here????")
-      $$ = []*ExpectStmt{$1}
-    }
-    | ExpectStmtList SEMICOLON Expression {
-      log.Println("Why not here Did we come here????")
-        cmpExp := $3.(*BinaryExpr);
-        expct := &ExpectStmt{ NodeInfo: NewNodeInfo($1[0].Pos(), $3.End()), Target: cmpExp.Left.(*MemberAccessExpr), Operator: cmpExp.Operator, Threshold: cmpExp.Right}
-        $$ = append($1, expct)
-    }
-    ;
-
-ExpectStmt:
-    Expression EQ Expression { $$ = &ExpectStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.End()), Target: $1.(*MemberAccessExpr), Operator: "==", Threshold: $3} }
-    | Expression NEQ Expression { $$ = &ExpectStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.End()), Target: $1.(*MemberAccessExpr), Operator: "!=", Threshold: $3} }
-    | Expression LT Expression { $$ = &ExpectStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.End()), Target: $1.(*MemberAccessExpr), Operator: "<", Threshold: $3} }
-    | Expression LTE Expression { $$ = &ExpectStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.End()), Target: $1.(*MemberAccessExpr), Operator: "<=", Threshold: $3} }
-    | Expression GT Expression { $$ = &ExpectStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.End()), Target: $1.(*MemberAccessExpr), Operator: ">", Threshold: $3} }
-    | Expression GTE Expression { $$ = &ExpectStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.End()), Target: $1.(*MemberAccessExpr), Operator: ">=", Threshold: $3} }
-    ;
-*/
-
 // --- Statements ---
 StmtList: 
             /* empty */       { $$ = []Stmt{} }
@@ -682,16 +605,7 @@ WaitExpr:
          $$ = &WaitExpr{  FutureNames: idents }
          $$.(*WaitExpr).NodeInfo = NewNodeInfo($1.Pos(), endNode.End())
     }
-    | WAIT CommaIdentifierList USING EmptyCallExpr { // WAIT($1) IDENTIFIER($2) ... 
-        idents := $2
-        endNode := idents[len(idents)-1] // End at the last identifier in the list
-        $$ = &WaitExpr{ 
-          FutureNames: idents,
-          AggregatorName: $4.(*CallExpr).Function.(*IdentifierExpr),
-        }
-        $$.(*WaitExpr).NodeInfo = NewNodeInfo($1.Pos(), endNode.End())
-    }
-    | WAIT CommaIdentifierList USING NamedCallExpr { // WAIT($1) IDENTIFIER($2) ... 
+    | WAIT CommaIdentifierList USING CallExpr { // WAIT($1) IDENTIFIER($2) ... 
         idents := $2
         endNode := idents[len(idents)-1] // End at the last identifier in the list
         $$ = &WaitExpr{ 
@@ -703,11 +617,19 @@ WaitExpr:
     }
     ;
 
+/*
 KWArgListOpt:
       //
       { $$ = map[string]Expr{} }
     | KWArgList { $$ = $1 }
     ;
+
+CommaSepExprListOpt:
+      //
+      { $$ = []Expr{} }
+    | CommaSepExprList { $$ = $1 }
+    ;
+*/
 
 KWArgList:
     IDENTIFIER ASSIGN Expression { $$ = map[string]Expr{$1.Value: $3} }
@@ -716,12 +638,6 @@ KWArgList:
         $1[name] = $5 
         $$ = $1
     }
-    ;
-
-CommaSepExprListOpt:
-      //
-      { $$ = []Expr{} }
-    | CommaSepExprList { $$ = $1 }
     ;
 
 CommaSepExprList:
@@ -848,8 +764,6 @@ UnaryExpr: PrimaryExpr { $$=$1 }
 PrimaryExpr:
        LeafExpr { $$ = $1 }
     | CallExpr                { $$ = $1 }
-    | NamedCallExpr                { $$ = $1 }
-    | EmptyCallExpr                { $$ = $1 }
     ;
 
 LeafExpr:
@@ -903,27 +817,12 @@ MemberAccessExpr:
     }
     ;
 
-EmptyCallExpr:
+CallExpr:
     PrimaryExpr LPAREN RPAREN { // PrimaryExpr($1) LPAREN($2) ArgList($3) RPAREN($4)
         $$ = &CallExpr{ Function: $1, }
         $$.(*CallExpr).NodeInfo = NewNodeInfo($1.Pos(), $3.End())
     }
-    ;
-
-NamedCallExpr:
-    PrimaryExpr LPAREN KWArgList RPAREN { // PrimaryExpr($1) LPAREN($2) ArgList($3) RPAREN($4)
-        endNode := $4.(Node) // End at RPAREN
-        $$ = &CallExpr{
-             Function: $1,
-             IsNamed: true,
-             ArgMap: $3,
-        }
-        $$.(*CallExpr).NodeInfo = NewNodeInfo($1.Pos(), endNode.End())
-    }
-    ;
-
-CallExpr:
-    PrimaryExpr LPAREN CommaSepExprList RPAREN { // PrimaryExpr($1) LPAREN($2) ArgList($3) RPAREN($4)
+    | PrimaryExpr LPAREN CommaSepExprList RPAREN { // PrimaryExpr($1) LPAREN($2) ArgList($3) RPAREN($4)
         endNode := $4.(Node) // End at RPAREN
         if len($3) > 0 {
              exprList := $3
@@ -935,20 +834,15 @@ CallExpr:
         }
         $$.(*CallExpr).NodeInfo = NewNodeInfo($1.Pos(), endNode.End())
     }
-/*
-    | MemberAccessExpr LPAREN CommaSepExprListOpt RPAREN { // PrimaryExpr($1) LPAREN($2) ArgList($3) RPAREN($4)
-         endNode := $4.(Node) // End at RPAREN
-         if len($3) > 0 {
-             exprList := $3
-             endNode = exprList[len(exprList)-1].(Node) // End at last arg
-         }
-         $$ = &CallExpr{
+    | PrimaryExpr LPAREN KWArgList RPAREN { // PrimaryExpr($1) LPAREN($2) ArgList($3) RPAREN($4)
+        endNode := $4.(Node) // End at RPAREN
+        $$ = &CallExpr{
              Function: $1,
-             Args: $3,
-         }
+             IsNamed: true,
+             ArgMap: $3,
+        }
         $$.(*CallExpr).NodeInfo = NewNodeInfo($1.Pos(), endNode.End())
     }
-*/
     ;
 
 DistributeExpr:
@@ -1017,7 +911,6 @@ DefaultCaseStmt:
 
 ExprStmt:
     CallExpr { $$ = &ExprStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $1.(Node).End()), Expression: $1 } }
-    | EmptyCallExpr { $$ = &ExprStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $1.(Node).End()), Expression: $1 } }
     | WaitExpr { $$ = &ExprStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $1.(Node).End()), Expression: $1 } }
     ;
 

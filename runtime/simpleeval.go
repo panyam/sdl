@@ -570,11 +570,12 @@ func (s *SimpleEval) evalCallExpr(expr *CallExpr, env *Env[Value], currTime *cor
 
 	// Now we have the target component instance, we can invoke the method
 	// Evaluate the arguments
-	argValues := make([]Value, len(expr.Args))
-	for i, argExpr := range expr.Args {
+	argValues := make([]Value, expr.NumArgs())
+	for i, argExpr := range expr.ArgList {
 		argValue, _ := s.Eval(argExpr, env, currTime)
 		argValues[i] = argValue
 	}
+
 	// No currying for now
 	newenv := methodValue.SavedEnv.Push()
 	for idx, param := range methodDecl.Parameters {
@@ -592,10 +593,6 @@ func (s *SimpleEval) evalCallExpr(expr *CallExpr, env *Env[Value], currTime *cor
 		result, _ = s.Eval(methodDecl.Body, newenv, currTime)
 	}
 	return
-
-	/*
-		newEnv := compInstance.InitialEnv.Push()
-	*/
 }
 
 /** Evaluate a Assignment as a statement and return its value */
