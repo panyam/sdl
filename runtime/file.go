@@ -32,20 +32,6 @@ func (f *FileInstance) NewSystem(systemName string) *SystemInstance {
 	return NewSystemInstance(f, system)
 }
 
-// Creates a new instance of a component
-// Note that a component can be native or user defined.
-// We want the same semantics regardless
-/*
-func (f *FileInstance) NewComponent(name string) (*ComponentInstance, Value, error) {
-	compDecl, err := f.GetComponentDecl(name)
-	if compDecl == nil || err != nil {
-		ensureNoErr(err)
-		return nil, Nil, err
-	}
-	return NewComponentInstance(f, compDecl)
-}
-*/
-
 // GetComponentDecl returns the ComponentDecl for the given name even if it is an import by resolving to the original source
 func (f *FileInstance) GetComponentDecl(name string) (*ComponentDecl, error) {
 	def, err := f.Decl.GetDefinition(name)

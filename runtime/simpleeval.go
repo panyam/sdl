@@ -427,8 +427,21 @@ func (s *SimpleEval) evalGoExpr(m *GoExpr, env *Env[Value], currTime *core.Durat
 	return
 }
 
-func (s *SimpleEval) evalWaitExpr(m *WaitExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
-	panic("WaitExpr TBD")
+func (s *SimpleEval) evalWaitExpr(expr *WaitExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
+	var futureValues []Value
+	for _, fname := range expr.FutureNames {
+		futureVal, _ := s.Eval(fname, env, currTime)
+		futureValues = append(futureValues, futureVal)
+	}
+
+	var aggParams []Value
+	for _, aggParam := range expr.AggregatorParams {
+		aggVal, _ := s.Eval(aggParam, env, currTime)
+		aggParams = append(aggParams, aggVal)
+	}
+
+	aggregator := s.RootFile.Runtime.CreateAggregator(expr.AggregatorName.Value, aggParams)
+	result, _ = aggregator(s, env, currTime, futureValues)
 	return
 }
 

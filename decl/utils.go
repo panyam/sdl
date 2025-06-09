@@ -162,7 +162,7 @@ func NewDelayStmt(duration Expr) *DelayStmt {
 }
 
 func NewWaitExpr(idents ...*IdentifierExpr) *WaitExpr {
-	return &WaitExpr{Idents: idents}
+	return &WaitExpr{FutureNames: idents}
 }
 
 // Helper assertion for BinaryOpNode structure

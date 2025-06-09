@@ -256,13 +256,13 @@ func (e *GoExpr) PrettyPrint(cp CodePrinter) {
 // WaitExpr represents `delay durationExpr;`
 type WaitExpr struct {
 	ExprBase
-	Idents           []*IdentifierExpr // Must evaluate to Duration outcome
-	Aggregator       *IdentifierExpr
+	FutureNames      []*IdentifierExpr // Must evaluate to Duration outcome
+	AggregatorName   *IdentifierExpr
 	AggregatorParams []Expr
 }
 
 func (d *WaitExpr) String() string {
-	return fmt.Sprintf("wait %s;", strings.Join(gfn.Map(d.Idents, func(i *IdentifierExpr) string { return i.Value }), ", "))
+	return fmt.Sprintf("wait %s;", strings.Join(gfn.Map(d.FutureNames, func(i *IdentifierExpr) string { return i.Value }), ", "))
 }
 
 func (w *WaitExpr) PrettyPrint(cp CodePrinter) {

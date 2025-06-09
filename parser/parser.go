@@ -1530,7 +1530,7 @@ SDLdefault:
 		{ // WAIT($1) IDENTIFIER($2) ...
 			idents := SDLDollar[2].identList
 			endNode := idents[len(idents)-1] // End at the last identifier in the list
-			SDLVAL.expr = &WaitExpr{Idents: idents}
+			SDLVAL.expr = &WaitExpr{FutureNames: idents}
 			SDLVAL.expr.(*WaitExpr).NodeInfo = NewNodeInfo(SDLDollar[1].node.Pos(), endNode.End())
 		}
 	case 89:
@@ -1539,7 +1539,7 @@ SDLdefault:
 		{ // WAIT($1) IDENTIFIER($2) ...
 			idents := SDLDollar[2].identList
 			endNode := idents[len(idents)-1] // End at the last identifier in the list
-			SDLVAL.expr = &WaitExpr{Idents: idents, Aggregator: SDLDollar[4].expr.(*CallExpr).Function.(*IdentifierExpr), AggregatorParams: SDLDollar[4].expr.(*CallExpr).Args}
+			SDLVAL.expr = &WaitExpr{FutureNames: idents, AggregatorName: SDLDollar[4].expr.(*CallExpr).Function.(*IdentifierExpr), AggregatorParams: SDLDollar[4].expr.(*CallExpr).Args}
 			SDLVAL.expr.(*WaitExpr).NodeInfo = NewNodeInfo(SDLDollar[1].node.Pos(), endNode.End())
 		}
 	case 90:

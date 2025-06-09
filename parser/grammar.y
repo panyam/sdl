@@ -682,13 +682,13 @@ WaitExpr:
     WAIT CommaIdentifierList { // WAIT($1) IDENTIFIER($2) ... 
          idents := $2
          endNode := idents[len(idents)-1] // End at the last identifier in the list
-         $$ = &WaitExpr{  Idents: idents }
+         $$ = &WaitExpr{  FutureNames: idents }
          $$.(*WaitExpr).NodeInfo = NewNodeInfo($1.Pos(), endNode.End())
     }
     | WAIT CommaIdentifierList USING CallExpr { // WAIT($1) IDENTIFIER($2) ... 
          idents := $2
          endNode := idents[len(idents)-1] // End at the last identifier in the list
-         $$ = &WaitExpr{  Idents: idents, Aggregator: $4.(*CallExpr).Function.(*IdentifierExpr), AggregatorParams: $4.(*CallExpr).Args }
+         $$ = &WaitExpr{  FutureNames: idents, AggregatorName: $4.(*CallExpr).Function.(*IdentifierExpr), AggregatorParams: $4.(*CallExpr).Args }
          $$.(*WaitExpr).NodeInfo = NewNodeInfo($1.Pos(), endNode.End())
     }
     ;
