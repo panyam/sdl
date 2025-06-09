@@ -419,7 +419,8 @@ func (s *SimpleEval) evalGoExpr(m *GoExpr, env *Env[Value], currTime *core.Durat
 		LoopValue: loopValue,
 		StartedAt: *currTime,
 		Body: ThunkValue{
-			Stmt: target,
+			Stmt:     target,
+			SavedEnv: env.Push(),
 		},
 	})
 	ensureNoErr(err)
