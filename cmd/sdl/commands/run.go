@@ -3,142 +3,141 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
+	"sync"
+	"time"
 
-	"github.com/panyam/sdl/core" // Will be needed for VM and AST
-	"github.com/panyam/sdl/decl" // Will be needed for VM and AST
+	"github.com/panyam/sdl/loader"
+	"github.com/panyam/sdl/runtime"
 	"github.com/spf13/cobra"
 )
 
 var runCmd = &cobra.Command{
-	Use:   "run <system_name> [<analysis_name>]",
-	Short: "Executes analyses defined in a system",
-	Long: `Runs one or all 'analyze' blocks within a specified system configuration.
-Calculates performance metrics and checks expectations.`,
-	Args: cobra.RangeArgs(1, 2), // system_name is required, analysis_name is optional
+	Use:   "run <system_name> <instance_name> <method_name>",
+	Short: "Runs a simulation for a specific system method",
+	Long: `Executes a method on a component instance within a system a specified number of times 
+to gather performance and result data. This command is designed for statistical 
+analysis of a system's behavior under simulated load.
+
+The results, including latency, return values, and errors for each run, are
+saved to a JSON file for further analysis by commands like 'sdl plot'.`,
+	Args: cobra.ExactArgs(3), // Now requires system, instance, and method
 	Run: func(cmd *cobra.Command, args []string) {
 		systemName := args[0]
-		analysisNameFilter := ""
-		if len(args) > 1 {
-			analysisNameFilter = args[1]
-		}
+		instanceName := args[1]
+		methodName := args[2]
 
-		outputJSONFile, _ := cmd.Flags().GetString("json-results")
-		// rawOutcomes, _ := cmd.Flags().GetBool("raw-outcomes") // For later
+		totalRuns, _ := cmd.Flags().GetInt("runs")
+		numWorkers, _ := cmd.Flags().GetInt("workers")
+		outputFile, _ := cmd.Flags().GetString("out")
 
 		if dslFilePath == "" {
 			fmt.Fprintln(os.Stderr, "Error: DSL file path must be specified with -f or --file.")
 			os.Exit(1)
 		}
-
-		fmt.Printf("Running analyses for system '%s' in file '%s'\n", systemName, dslFilePath)
-		if analysisNameFilter != "" {
-			fmt.Printf("Filtering for analysis: '%s'\n", analysisNameFilter)
-		}
-
-		// --- Placeholder for actual execution ---
-		// 1. Parse dslFilePath -> astRoot
-		//    file, err := os.Open(dslFilePath) ...
-		//    astRoot, err := decl.Parse(file) ...
-		//    astRoot.Resolve() ...
-
-		// 2. Initialize VM
-		//    vm := decl.NewVM()
-		//    vm.Init() // or some LoadAST(astRoot) method
-
-		// 3. Find the SystemDecl in astRoot
-		//    sysDecl, err := astRoot.GetSystem(systemName) ...
-
-		// 4. Execute the system to get analysis results
-		//    results, err := vm.ExecuteSystem(sysDecl, analysisNameFilter /*, paramOverrides */)
-		//    if err != nil {
-		//        fmt.Fprintf(os.Stderr, "Error running system '%s': %v\n", systemName, err)
-		//        os.Exit(1)
-		//    }
-		//    `results` would be map[string]*decl.AnalysisResultWrapper
-
-		// --- Mocked Results for Placeholder ---
-		mockResults := make(map[string]*decl.AnalysisResultWrapper)
-		analysesToRun := []string{"Analysis1_Placeholder", "Analysis2_Placeholder"}
-		if analysisNameFilter != "" {
-			analysesToRun = []string{analysisNameFilter}
-		}
-
-		for _, anName := range analysesToRun {
-			// metrics := make(map[core.MetricType]float64)
-			// metrics[core.AvailabilityMetric] = 0.995
-			// metrics[core.P99LatencyMetric] = 0.120
-			mockResults[anName] = &decl.AnalysisResultWrapper{
-				Name:    anName,
-				Metrics: make(map[core.MetricType]float64), // Placeholder
-				// ExpectationChecks: ...
-				AnalysisPerformed: true,
-				Messages:          []string{fmt.Sprintf("Mocked result for %s", anName)},
-			}
-		}
-		// --- End Mocked Results ---
-
-		allPassed := true
-		for name, result := range mockResults {
-			fmt.Printf("\nAnalysis: %s\n", name)
-			for _, msg := range result.Messages {
-				fmt.Printf("  Log: %s\n", msg)
-			}
-			if result.Error != nil {
-				fmt.Printf("  Error: %v\n", result.Error)
-				allPassed = false
-				continue
-			}
-			if !result.AnalysisPerformed {
-				fmt.Println("  Analysis skipped or metrics not calculable.")
-				// allPassed = false; // Or handle based on expectations
-				continue
-			}
-			fmt.Println("  Metrics:")
-			// for metricType, value := range result.Metrics {
-			// 	fmt.Printf("    - %s: %.6f\n", decl.MetricTypeToString(metricType), value)
-			// }
-			fmt.Println("    (Metrics display placeholder)")
-			fmt.Println("  Expectations:")
-			// for _, ec := range result.ExpectationChecks {
-			// 	status := "PASS"
-			// 	if !ec.Passed { status = "FAIL"; allPassed = false }
-			// 	fmt.Printf("    - %s %s %.3f (Actual: %.3f) -> %s\n",
-			// 		decl.MetricTypeToString(ec.Expectation.Metric),
-			// 		decl.OperatorTypeToString(ec.Expectation.Operator),
-			// 		ec.Expectation.Threshold,
-			// 		ec.ActualValue,
-			// 		status)
-			// }
-			fmt.Println("    (Expectations display placeholder)")
-		}
-
-		if outputJSONFile != "" {
-			jsonData, err := json.MarshalIndent(mockResults, "", "  ")
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error marshalling results to JSON: %v\n", err)
-			} else {
-				err = os.WriteFile(outputJSONFile, jsonData, 0644)
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "Error writing JSON results to %s: %v\n", outputJSONFile, err)
-				} else {
-					fmt.Printf("\nJSON results written to %s\n", outputJSONFile)
-				}
-			}
-		}
-
-		if !allPassed {
-			fmt.Println("\nOne or more analyses FAILED expectations.")
+		if outputFile == "" {
+			fmt.Fprintln(os.Stderr, "Error: Output file must be specified with --out or -o.")
 			os.Exit(1)
 		}
-		fmt.Println("\nAll specified analyses completed.")
 
+		fmt.Printf("Starting simulation for %s.%s.%s...\n", systemName, instanceName, methodName)
+		fmt.Printf("Total Runs: %d, Concurrent Workers: %d\n", totalRuns, numWorkers)
+
+		// 1. Load and initialize the system
+		sdlLoader := loader.NewLoader(nil, nil, 10)
+		fileStatus, err := sdlLoader.LoadFile(dslFilePath, "", 0)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error loading SDL file '%s': %v\n", dslFilePath, err)
+			os.Exit(1)
+		}
+
+		if !sdlLoader.Validate(fileStatus) {
+			fmt.Fprintf(os.Stderr, "Validation failed for file '%s':\n", dslFilePath)
+			fileStatus.PrintErrors()
+			os.Exit(1)
+		}
+
+		rt := runtime.NewRuntime(sdlLoader)
+		fileInstance := rt.LoadFile(dslFilePath) // This will be fast as it's cached
+		system := fileInstance.NewSystem(systemName)
+		if system == nil {
+			fmt.Fprintf(os.Stderr, "System '%s' not found in file '%s'.\n", systemName, dslFilePath)
+			os.Exit(1)
+		}
+
+		// 2. Setup for concurrent execution
+		batchSize := totalRuns / 100
+		if batchSize == 0 {
+			batchSize = 1
+		}
+		if batchSize > 1000 {
+			batchSize = 1000
+		}
+		numBatches := (totalRuns + batchSize - 1) / batchSize
+
+		allResults := make([]RunResult, 0, totalRuns)
+		resultsChan := make(chan []RunResult, numWorkers)
+		var wg sync.WaitGroup
+		var resultMutex sync.Mutex
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for batchResults := range resultsChan {
+				resultMutex.Lock()
+				allResults = append(allResults, batchResults...)
+				resultMutex.Unlock()
+			}
+		}()
+
+		fmt.Println("Simulation in progress...")
+		startTime := time.Now()
+
+		onBatch := func(batch int, batchVals []runtime.Value) {
+			batchResults := make([]RunResult, len(batchVals))
+			now := time.Now().UnixMilli()
+			for i, val := range batchVals {
+				batchResults[i] = RunResult{
+					Timestamp:   now,
+					Latency:     val.Time * 1000,
+					ResultValue: val.String(),
+					IsError:     false, // Placeholder
+				}
+			}
+			resultsChan <- batchResults
+			if (batch+1)%10 == 0 || batch == numBatches-1 {
+				log.Printf("  ... completed %d / %d batches\n", batch+1, numBatches)
+			}
+		}
+
+		// The obj argument is the *instance* name.
+		runtime.RunCallInBatches(system, instanceName, methodName, numBatches, batchSize, numWorkers, onBatch)
+
+		close(resultsChan)
+		wg.Wait()
+
+		duration := time.Since(startTime)
+		fmt.Printf("Simulation finished in %v.\n", duration)
+		fmt.Printf("Collected %d results.\n", len(allResults))
+
+		jsonData, err := json.MarshalIndent(allResults, "", "  ")
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error marshalling results to JSON: %v\n", err)
+			os.Exit(1)
+		}
+		err = os.WriteFile(outputFile, jsonData, 0644)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error writing JSON results to %s: %v\n", outputFile, err)
+			os.Exit(1)
+		}
+		fmt.Printf("Results successfully written to %s\n", outputFile)
 	},
 }
 
 func init() {
 	AddCommand(runCmd)
-	runCmd.Flags().String("json-results", "", "Output detailed results (including raw outcomes) to a JSON file")
-	// runCmd.Flags().Bool("raw-outcomes", false, "Include full raw Outcomes buckets in JSON output (can be large)")
-	// runCmd.Flags().StringArrayP("param", "p", []string{}, "Override a parameter for this run (e.g., 'instance.param=value')")
+	runCmd.Flags().Int("runs", 1000, "Total number of simulation runs to execute.")
+	runCmd.Flags().Int("workers", 50, "Number of concurrent workers to run the simulation.")
+	runCmd.Flags().StringP("out", "o", "", "Output file path for the detailed JSON results (required).")
 }
