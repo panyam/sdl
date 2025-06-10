@@ -60,10 +60,20 @@ func (bt *BTreeIndex) Height() int {
 	return int(math.Ceil(h)) + 1 // Add 1 for leaf level, ceiling for integer height
 }
 
-// Range scans
-func (bt *BTreeIndex) Range() (res *Outcomes[sc.AccessResult]) {
-	// TODO
-	return
+// Range scans. This is a placeholder implementation.
+// A real implementation would model scanning a certain number of leaf pages.
+func (bt *BTreeIndex) Range() *Outcomes[sc.AccessResult] {
+	// For now, return a simple outcome representing the cost of reading a few pages.
+	// This prevents nil panics and allows simulations to proceed.
+	// Let's model it as reading 5 pages.
+	numPagesToRead := 5
+	currentCost := &Outcomes[sc.AccessResult]{And: sc.AndAccessResults}
+	currentCost.Add(1.0, sc.AccessResult{true, 0})
+
+	for i := 0; i < numPagesToRead; i++ {
+		currentCost = sc.And(currentCost, bt.Disk.Read(), sc.AndAccessResults)
+	}
+	return currentCost
 }
 
 // --- Refined Find ---
