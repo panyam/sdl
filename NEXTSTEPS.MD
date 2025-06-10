@@ -7,14 +7,13 @@ This document outlines the key areas for future development and refinement in th
 *   **Concurrency Model Implementation:**
     *   **`go { <block_returns_T> } => SingleFuture[T]`:** Implement spawning of single asynchronous tasks.
     *   **`gobatch N { <block_returns_T> } => BatchFuture[T]`:** Implement spawning of N parallel identical operations. `T` (type returned by block) can be `Bool`, `Enum`, `Outcomes[Bool]`, or `Outcomes[Enum]`.
-    *   **`waitfor <batch_future> using MyAggregator.AggregateMethod(params...)`:** Implement the synchronization primitive. The runtime will pass necessary batch execution data (internally, a structure like `NativeBatchInfo` containing `OriginalCountN` and `SingleOpOutcomeProfile` for `T`) to the specified native Go `AggregateMethod`. The native aggregator is responsible for both functional aggregation and calculating the appropriate completion time profile for its `Outcomes[SummaryEnum]` result.
+    *   **`wait <future1> <future2> ... <futureN> using AggregatorMethod(Params) => AggregatorReturnType`:** SDL statement to synchronize on a `BatchFuture` or N normal futures. The runtime will facilitate passing necessary futures (like the profile of a single operation and `N`) to the native Go `AggregateMethod`. This native method is responsible for both functional aggregation and calculating the appropriate completion time profile for its `AggregatorReturnType` result as a Value object.  For a simulation based eval (like simpleeval) this returns a single value.  For an analysis based eval (like OutcomesEval) it could return a Value that is `Outcomes[AggregatorMethod]`.
     *   **`wait <single_future> => T`:** Implement waiting for and retrieving the result of a single future.
-    *   **`waitgroup (f1, f2, ...) => (T1, T2, ...), makespan_time`:** Implement waiting for multiple, potentially heterogeneous, single futures, returning their individual results and the overall makespan.
     *   **Core Library Support:** Enhance `sdl/core` with functions to calculate distributions of order statistics (e.g., time to Cth completion from N, makespan of N) needed by native aggregators.
 
 *   **Single Call Tracing (Feature #1):**
     *   Augment `SimpleEval` (or create a `TracingEval`) to record execution paths.
-    *   Implement a `Tracer` object callable by the evaluator on method entry/exit, future spawn (`go`, `gobatch`), and synchronization (`waitfor`, `waitgroup`).
+    *   Implement a `Tracer` object callable by the evaluator on method entry/exit, future spawn (`go`, `gobatch`), and synchronization (`wait`).
     *   Define a structured trace output (e.g., JSON) capable of representing sequential and concurrent operations.
     *   Integrate this into `cmd/sdl trace`.
 
@@ -32,8 +31,8 @@ This document outlines the key areas for future development and refinement in th
 
 ## 2. Language Features & Semantics (DSL & `decl`, `parser`)
 
-*   **Introduce Concurrency Keywords:** Add `go`, `gobatch`, `waitfor`, `using`, `waitgroup` to the grammar (`parser/grammar.y`).
-*   **Introduce Future Types:** Define `SingleFuture[T]` and `BatchFuture[T]` as opaque types in the SDL type system (`decl` package). These are primarily handles passed to `waitfor` or `waitgroup` and native aggregators.
+*   **Introduce Concurrency Keywords:** Add `go`, `gobatch`, `wait`, `wait using`, to the grammar (`parser/grammar.y`).
+*   **Introduce Future Types:** Define `Future[T]` as opaque type in the SDL type system (`decl` package). (Future.IsBatch defines whether the Future is for a batch of N homogenous futures). These are primarily handles passed to `wait` and native aggregators.
 *   **`switch` as an Expression:** Allow `switch` statements to be used as expressions, returning a value. Ensure all branches of a switch expression yield type-compatible results. Update grammar and type inference.
 *   **Built-in Functions:** Define and implement a standard library of built-in functions.
 *   **Global `options` Blocks:** Fully implement parsing and application of global and component-level `options`.
@@ -54,11 +53,11 @@ This document outlines the key areas for future development and refinement in th
 
 ## 4. Native Component Development (`components`)
 
-*   **Native Aggregators:** Develop a set of standard native aggregator components/methods for common summarization patterns used with `waitfor ... using ...` (e.g., AllSucceeded, AnySucceeded, QuorumReached, based on boolean or simple enum results).
+*   **Native Aggregators:** Develop a set of standard native aggregator components/methods for common summarization patterns used with `wait ... using ...` (e.g., AllSucceeded, AnySucceeded, QuorumReached, based on boolean or simple enum results).
 
 ## 5. Testing & CI
 
-*   **Concurrency Runtime Tests:** Extensive tests for `go`, `gobatch`, `waitfor`, `waitgroup`, and native aggregators.
+*   **Concurrency Runtime Tests:** Extensive tests for `go`, `gobatch`, `wait` and native aggregators.
 *   **Tracing Tests:** Validate the accuracy and completeness of trace generation.
 *   **End-to-End CLI Tests:** Expand for all commands, especially new/updated ones.
 
@@ -70,7 +69,7 @@ This document outlines the key areas for future development and refinement in th
 
 ## Priority Focus (Immediate to Medium Term):
 
-1.  **Core Concurrency Primitives in `runtime` and DSL (`go`, `gobatch`, `waitfor using`, `SingleFuture`, `BatchFuture`).** This includes the necessary `core` library support for latency distribution calculations (e.g., makespan).
+1.  **Core Concurrency Primitives in `runtime` and DSL (`go`, `gobatch`, `wait using`, `Future`, `BatchFuture`).** This includes the necessary `core` library support for latency distribution calculations (e.g., makespan).
 2.  **Basic Native Aggregators** for common boolean summarization (all/any/some succeeded).
 3.  **Single Call Tracing (`runtime` & `cmd/sdl trace`).**
 4.  **Dynamic Diagram Generation (`cmd/sdl diagram dynamic`) based on traces.**
