@@ -5,6 +5,7 @@ import (
 	"math"
 
 	"github.com/panyam/sdl/core"
+	"github.com/panyam/sdl/decl"
 )
 
 type Aggregator interface {
@@ -20,7 +21,7 @@ func (t *WaitAll) Eval(eval *SimpleEval, env *Env[Value], currTime *core.Duratio
 	// Placeholder implementation for simulation:
 	// 1. Evaluate all the future thunks.
 	// 2. Find the maximum latency among them (makespan).
-	// 3. Assume success if all futures succeed (or simply return the desired success code for now).
+	// 3. Compare the result of each future with the desired success codes.
 	// 4. Update total time and return.
 
 	maxLatency := 0.0
@@ -28,29 +29,56 @@ func (t *WaitAll) Eval(eval *SimpleEval, env *Env[Value], currTime *core.Duratio
 
 	for _, futureVal := range futures {
 		if futureVal.Type.Tag != TypeTagFuture {
-			// This should be caught by type checker, but good to have a runtime check
 			panic(fmt.Sprintf("wait expected a future, but got %s", futureVal.Type.String()))
 		}
 		fval := futureVal.Value.(*FutureValue)
 
 		// A very simplified evaluation of the "gobatch" block.
 		// It just evaluates the body once to get a representative latency and result.
-		// A full implementation would need to handle the "N" runs and their distribution.
 		var futureLatency core.Duration
 		res, ret := eval.Eval(fval.Body.Stmt, fval.Body.SavedEnv, &futureLatency)
-		if ret && res.IsNil() { // If it's a return from a block without a value
-			allFuturesSucceeded = false // Or handle based on some logic
+
+		if !ret {
+			allFuturesSucceeded = false
+		} else {
+			// Check if the result is in the list of success codes
+			isSuccess := false
+			for _, successCode := range t.SuccessResultCodes {
+				if res.Equals(&successCode) {
+					isSuccess = true
+					break
+				}
+			}
+			if !isSuccess {
+				allFuturesSucceeded = false
+			}
 		}
 
 		maxLatency = math.Max(maxLatency, futureLatency)
 	}
 
 	// For now, let's just assume the aggregation returns the first success code provided.
-	if len(t.SuccessResultCodes) > 0 {
+	if allFuturesSucceeded && len(t.SuccessResultCodes) > 0 {
+		// If all futures returned a success code, then the aggregator returns that code.
+		// This is a simplification; a real aggregator might return a summary.
 		result = t.SuccessResultCodes[0]
 	} else {
-		// Fallback if no success code was provided
-		result = BoolValue(allFuturesSucceeded)
+		// Fallback if any future failed or no success code was provided.
+		// Here, we should return a sensible failure value. Let's find "InternalError" in the enum.
+		// This is still a placeholder for proper error handling.
+		if len(t.SuccessResultCodes) > 0 {
+			enumType := t.SuccessResultCodes[0].Type
+			if enumType.Tag == decl.TypeTagEnum {
+				enumDecl := enumType.Info.(*decl.EnumDecl)
+				errIndex := enumDecl.IndexOfVariant("InternalError")
+				if errIndex >= 0 {
+					result, _ = NewValue(enumType, errIndex)
+				}
+			}
+		}
+		if result.IsNil() {
+			result = BoolValue(false)
+		}
 	}
 
 	// The latency of the wait is the makespan of the parallel operations.

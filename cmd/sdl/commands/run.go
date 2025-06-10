@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 	"sync"
 	"time"
 
@@ -22,7 +23,7 @@ analysis of a system's behavior under simulated load.
 
 The results, including latency, return values, and errors for each run, are
 saved to a JSON file for further analysis by commands like 'sdl plot'.`,
-	Args: cobra.ExactArgs(3), // Now requires system, instance, and method
+	Args: cobra.ExactArgs(3),
 	Run: func(cmd *cobra.Command, args []string) {
 		systemName := args[0]
 		instanceName := args[1]
@@ -44,7 +45,6 @@ saved to a JSON file for further analysis by commands like 'sdl plot'.`,
 		fmt.Printf("Starting simulation for %s.%s.%s...\n", systemName, instanceName, methodName)
 		fmt.Printf("Total Runs: %d, Concurrent Workers: %d\n", totalRuns, numWorkers)
 
-		// 1. Load and initialize the system
 		sdlLoader := loader.NewLoader(nil, nil, 10)
 		fileStatus, err := sdlLoader.LoadFile(dslFilePath, "", 0)
 		if err != nil {
@@ -59,14 +59,13 @@ saved to a JSON file for further analysis by commands like 'sdl plot'.`,
 		}
 
 		rt := runtime.NewRuntime(sdlLoader)
-		fileInstance := rt.LoadFile(dslFilePath) // This will be fast as it's cached
+		fileInstance := rt.LoadFile(dslFilePath)
 		system := fileInstance.NewSystem(systemName)
 		if system == nil {
 			fmt.Fprintf(os.Stderr, "System '%s' not found in file '%s'.\n", systemName, dslFilePath)
 			os.Exit(1)
 		}
 
-		// 2. Setup for concurrent execution
 		batchSize := totalRuns / 100
 		if batchSize == 0 {
 			batchSize = 1
@@ -94,13 +93,21 @@ saved to a JSON file for further analysis by commands like 'sdl plot'.`,
 		fmt.Println("Simulation in progress...")
 		startTime := time.Now()
 
+		var simTimeCounter float64
+		var simTimeMutex sync.Mutex
+
 		onBatch := func(batch int, batchVals []runtime.Value) {
 			batchResults := make([]RunResult, len(batchVals))
-			now := time.Now().UnixMilli()
 			for i, val := range batchVals {
+				simTimeMutex.Lock()
+				// Advance the simulated time by the latency of this run
+				simTimeCounter += val.Time
+				currentSimTimeMillis := int64(simTimeCounter * 1000)
+				simTimeMutex.Unlock()
+
 				batchResults[i] = RunResult{
-					Timestamp:   now,
-					Latency:     val.Time * 1000,
+					Timestamp:   currentSimTimeMillis, // Use synthetic sim time
+					Latency:     val.Time * 1000,      // Latency is the duration of the run itself
 					ResultValue: val.String(),
 					IsError:     false, // Placeholder
 				}
@@ -111,7 +118,6 @@ saved to a JSON file for further analysis by commands like 'sdl plot'.`,
 			}
 		}
 
-		// The obj argument is the *instance* name.
 		runtime.RunCallInBatches(system, instanceName, methodName, numBatches, batchSize, numWorkers, onBatch)
 
 		close(resultsChan)
@@ -120,6 +126,11 @@ saved to a JSON file for further analysis by commands like 'sdl plot'.`,
 		duration := time.Since(startTime)
 		fmt.Printf("Simulation finished in %v.\n", duration)
 		fmt.Printf("Collected %d results.\n", len(allResults))
+
+		// Sort final results by timestamp before writing
+		sort.Slice(allResults, func(i, j int) bool {
+			return allResults[i].Timestamp < allResults[j].Timestamp
+		})
 
 		jsonData, err := json.MarshalIndent(allResults, "", "  ")
 		if err != nil {

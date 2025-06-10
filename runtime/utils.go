@@ -11,37 +11,47 @@ import (
 func RunCallInBatches(system *SystemInstance, obj, method string, nbatches, batchsize int, numworkers int, onBatch func(batch int, batchVals []Value)) (results [][]Value) {
 	fi := system.File
 	se := NewSimpleEval(fi)
-	var currTime core.Duration
+	var totalSimTime core.Duration
 	env := fi.Env.Push()
-	se.EvalInitSystem(system, env, &currTime)
+	se.EvalInitSystem(system, env, &totalSimTime)
 
 	startTime := time.Now()
 	ncalls := nbatches * batchsize
 	defer func() {
-		log.Printf("Time taken for %d calls: %v", ncalls, time.Now().Sub(startTime))
+		log.Printf("Total Simulation Time: %v", totalSimTime)
+		log.Printf("Wall Clock Time for %d calls: %v", ncalls, time.Now().Sub(startTime))
 	}()
+
 	if nbatches < numworkers {
 		numworkers = nbatches
 	}
 
 	var wg sync.WaitGroup
-	batchesPerWorker := int(nbatches / numworkers)
-	if nbatches%numworkers != 0 {
-		batchesPerWorker += 1
-	}
-	for i := range numworkers {
+	batchesPerWorker := (nbatches + numworkers - 1) / numworkers
+
+	for i := 0; i < numworkers; i++ {
 		wg.Add(1)
 		go func(workerIndex int) {
+			defer wg.Done()
+			workerEnv := env.Push() // Each worker gets its own environment to avoid data races
+			workerSE := NewSimpleEval(fi)
+
 			startBatch := workerIndex * batchesPerWorker
-			endBatch := min((workerIndex+1)*batchesPerWorker, nbatches)
-			log.Printf("Starting worker %d, Batch Range: %d -> %d", workerIndex, startBatch, endBatch)
-			for batch := startBatch; batch < endBatch; batch += 1 {
+			endBatch := (workerIndex + 1) * batchesPerWorker
+			if endBatch > nbatches {
+				endBatch = nbatches
+			}
+			// log.Printf("Starting worker %d, Batch Range: %d -> %d", workerIndex, startBatch, endBatch)
+
+			for batch := startBatch; batch < endBatch; batch++ {
 				var batchVals []Value
-				for range batchsize {
-					var currTime core.Duration
+				// For simulations, we don't advance a single shared clock.
+				// Each run is independent. We capture the latency of each run.
+				for k := 0; k < batchsize; k++ {
+					var runLatency core.Duration
 					ce := &CallExpr{Function: &MemberAccessExpr{Receiver: &IdentifierExpr{Value: obj}, Member: &IdentifierExpr{Value: method}}}
-					res, _ := se.Eval(ce, env, &currTime) // reuse env to continue
-					res.Time = currTime
+					res, _ := workerSE.Eval(ce, workerEnv, &runLatency) // a fresh runLatency for each call
+					res.Time = runLatency                               // The latency is the duration of this single run
 					batchVals = append(batchVals, res)
 				}
 				results = append(results, batchVals)
@@ -49,11 +59,9 @@ func RunCallInBatches(system *SystemInstance, obj, method string, nbatches, batc
 					onBatch(batch, batchVals)
 				}
 			}
-			wg.Done()
 		}(i)
 	}
 
-	// Wait for all workers to finish
 	wg.Wait()
 	return
 }
