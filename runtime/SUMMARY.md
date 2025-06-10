@@ -36,22 +36,23 @@ This package is responsible for the execution and evaluation of System Design La
     *   Traverses AST, evaluating nodes within an `Env[Value]`.
     *   Handles literals, identifiers, operations, statements (`let`, `set`, `if`, `for`, `return`, `log`, `delay`), `new` (instantiation), and method calls.
     *   Latency accumulation via `Value.Time` and `currTime *core.Duration`.
-    *   *Planned Enhancements:* Support for `gobatch`, `waitfor`, and integration with tracing mechanisms.
+    *   Async Enhancements: `go`, `gobtach` and `wait using`
+    *   *Planned Enhancements:* Integration with tracing mechanisms.
 
 *   **Native Component Interaction (`native.go`):**
     *   `NativeObject` interface (`Get`, `Set`).
     *   `InvokeMethod(...)`: Uses Go reflection for native method calls, handling argument/result conversion between SDL `Value` and Go types. `Value.Time` carries latency.
-    *   *Planned Enhancements:* Support for native aggregator methods used with `waitfor`.
 
 *   **Runtime Environment (`Env[Value]` from `decl`):**
     *   Stores runtime values of variables, parameters, and instances.
 
-*   **Concurrency Primitives (Planned):**
+*   **Concurrency Primitives:**
     *   **`gobatch N { <block_returns_T> } => BatchFuture[T]`:** Language construct to spawn `N` parallel identical operations. `T` is the type returned by the block (e.g., `Enum`, `Outcomes[Enum]`). `BatchFuture[T]` is an opaque handle.
-    *   **`waitfor <batch_future> using MyAggregator.AggregateMethod(params...) => Outcomes[SummaryEnum]`:** SDL statement to synchronize on a `BatchFuture`. The runtime will facilitate passing necessary batch execution data (like the profile of a single operation and `N`) to the native Go `AggregateMethod`. This native method is responsible for both functional aggregation and calculating the appropriate completion time profile for its `Outcomes[SummaryEnum]` result.
+    *   **`wait <future1> <future2> ... <futureN> using AggregatorMethod(Params) => AggregatorReturnType`:** SDL statement to synchronize on a `BatchFuture` or N normal futures. The runtime will facilitate passing necessary futures (like the profile of a single operation and `N`) to the native Go `AggregateMethod`. This native method is responsible for both functional aggregation and calculating the appropriate completion time profile for its `AggregatorReturnType` result as a Value object.  For a simulation based eval (like simpleeval) this returns a single value.  For an analysis based eval (like OutcomesEval) it could return a Value that is `Outcomes[AggregatorMethod]`.
     *   **`go { <block_returns_T> } => SingleFuture[T]`:** For spawning a single asynchronous task.
-    *   **`wait <single_future> => T`:** To get the result of a single future.
-    *   **`waitgroup (f1, f2, ...) => (T1, T2, ...), makespan_time`:** For waiting on multiple, potentially heterogeneous, single futures.
+    *   Single Wait - **`wait <single_future> => T`:** To get the result of a single future.
+    *   Multi Wait - **`wait (f1, f2, ...) => (T1, T2, ...)`:** For waiting on multiple, potentially heterogeneous, single futures.
+    *   Multi Wait With Aggregator - **`wait (f1, f2, ...) using Aggregator(Params) => (AggResult1)`:** For waiting on multiple, potentially heterogeneous, single futures but aggregating them into a single result.
 
 *   **Tracing Infrastructure (Planned):**
     *   The runtime will be augmented to emit trace events (e.g., method entry/exit, future spawn/await) to a `Tracer` object. This will enable `sdl trace` and dynamic diagram generation.
@@ -80,7 +81,6 @@ This package is responsible for the execution and evaluation of System Design La
 
 **Future Considerations (linking to `NEXTSTEPS.MD`):**
 
-*   **Full Concurrency Implementation:** Realize `gobatch`, `waitfor`, `go`, `waitgroup`.
 *   **Tracing Integration:** Develop and integrate the `Tracer` mechanism.
 *   **Exhaustive/Probabilistic Evaluation:** Design and implement new evaluators beyond `SimpleEval`.
 *   **Enhanced Error Handling & Debugging.**
