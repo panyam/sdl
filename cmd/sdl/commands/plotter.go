@@ -125,7 +125,7 @@ const svgTemplate = `<svg width="{{.Config.Width}}" height="{{.Config.Height}}" 
   </g>
 
   <!-- Legend -->
-  <g class="legend" transform="translate({{add .Config.MarginLeft .InnerWidth -100}}, {{.Config.MarginTop}})">
+  <g class="legend" transform="translate({{add (add .Config.MarginLeft .InnerWidth) -100}}, {{.Config.MarginTop}})">
     {{range .LegendItems}}
     <rect x="0" y="{{.Y}}" width="12" height="12" fill="{{.Color}}"></rect>
     <text x="20" y="{{add .Y 10}}">{{.Name}}</text>
