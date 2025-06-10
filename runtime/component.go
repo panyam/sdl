@@ -1,8 +1,6 @@
 package runtime
 
 import (
-	"log"
-
 	"github.com/panyam/sdl/decl"
 )
 
@@ -23,9 +21,7 @@ func NewComponentInstance(file *FileInstance, compDecl *ComponentDecl) (*Compone
 	}
 
 	originFile := file.Runtime.LoadFile(compDecl.ParentFileDecl.FullPath)
-	log.Println("Originfile: ", originFile)
 	compInst := &ComponentInstance{
-		//ObjectInstance: NewObjectInstance(file, nativeValue),
 		ObjectInstance: ObjectInstance{
 			File:           originFile,
 			IsNative:       compDecl.IsNative,

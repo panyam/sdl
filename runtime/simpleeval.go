@@ -2,7 +2,6 @@ package runtime
 
 import (
 	"fmt"
-	"log"
 	"math/rand"
 	"slices"
 	"time"
@@ -41,21 +40,16 @@ func (s *SimpleEval) EvalInitSystem(sys *SystemInstance, env *Env[Value], currTi
 	*currTime += timeTaken
 	result.Time = timeTaken
 
-	log.Println("Compiled statements:")
-	decl.PPrint(stmts)
-
 	// Now check if all things are initialized
 	uninited := sys.GetUninitializedComponents(env)
 	for _, unin := range uninited {
-		log.Println("Uninitialized Dependency: ", unin.Attrib)
-		curr := unin.From
 		out := unin.Attrib
 		errorFile := sys.System.ParentFileDecl.FullPath
 		errorLoc := unin.Pos
+		curr := unin.From
 		for curr != nil {
 			errorLoc = curr.Pos
 			out = curr.CompInst.ComponentDecl.Name.Value + "." + out
-			log.Printf("    From %s, Line: %d, Column %d", curr.CompInst.ComponentDecl.ParentFileDecl.FullPath, curr.Pos.Line, curr.Pos.Col)
 			curr = curr.From
 		}
 		s.AddErrors(fmt.Errorf("%s, Line: %d, Col: %d - Uninitialized Dependency: %s", errorFile, errorLoc.Line, errorLoc.Col, out))
@@ -186,7 +180,9 @@ func (s *SimpleEval) evalSetStmt(set *SetStmt, env *Env[Value], currTime *core.D
 }
 
 func (s *SimpleEval) evalReturnStmt(r *ReturnStmt, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
-	result, _ = s.Eval(r.ReturnValue, env, currTime)
+	if r.ReturnValue != nil {
+		result, _ = s.Eval(r.ReturnValue, env, currTime)
+	}
 	return result, true
 }
 
@@ -354,12 +350,12 @@ func (s *SimpleEval) evalUnaryExpr(u *UnaryExpr, env *Env[Value], currTime *core
 }
 
 func (s *SimpleEval) evalBinaryExpr(b *BinaryExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
-	lr, _ := s.Eval(b.Left, env, currTime)
-	rr, _ := s.Eval(b.Right, env, currTime)
+	_, _ = s.Eval(b.Left, env, currTime)
+	_, _ = s.Eval(b.Right, env, currTime)
 
 	// TODO - Evaluate based on the operator
-	log.Println("Left Result: ", lr)
-	log.Println("Right Result: ", rr)
+	// log.Println("Left Result: ", lr)
+	// log.Println("Right Result: ", rr)
 	return
 }
 
@@ -374,12 +370,11 @@ func (s *SimpleEval) evalIfStmt(stmt *IfStmt, env *Env[Value], currTime *core.Du
 	condResult, _ := s.Eval(stmt.Condition, env, currTime)
 
 	if condResult.IsTrue() {
-		thenResult, returned := s.Eval(stmt.Then, env, currTime)
-		return thenResult, returned
-	} else {
-		elseResult, returned := s.Eval(stmt.Then, env, currTime)
-		return elseResult, returned
+		return s.Eval(stmt.Then, env, currTime)
+	} else if stmt.Else != nil {
+		return s.Eval(stmt.Else, env, currTime)
 	}
+	return // No else, return default nil value
 }
 
 // Delay expressions
@@ -541,21 +536,16 @@ func (s *SimpleEval) evalMemberAccessExpr(m *MemberAccessExpr, env *Env[Value], 
 		return result, false
 	}
 
-	// Otherwise see if it is a uses field
-	/*
-		usesDecl, _ := compDecl.GetDependency(m.Member.Value)
-		if usesDecl != nil {
-			refType := decl.RefType(compDecl, usesDecl.Type.ResolvedType())
-			result, err = NewValue(refType, &decl.RefValue{Receiver: maeTarget, Attrib: m.Member.Value})
-			ensureNoErr(err) {
-				panic(err)
-			}
-			return
-		}
-	*/
-
-	// Return the reference value here
-	panic("Invalid member type")
+	err = fmt.Errorf("in file %s at line %d, col %d: member '%s' not found on component of type '%s'",
+		s.RootFile.Decl.FullPath,
+		m.Member.Pos().Line,
+		m.Member.Pos().Col,
+		m.Member.Value,
+		compDecl.Name.Value,
+	)
+	s.AddErrors(err)
+	result = decl.Nil
+	return result, false
 }
 
 // Evaluate a Call and return its value
