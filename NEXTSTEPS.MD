@@ -1,78 +1,55 @@
 # SDL Project: Next Steps & Outstanding Work
 
-This document outlines the key areas for future development and refinement in the SDL project, reflecting the current state after static diagramming enhancements and recent discussions on concurrency and tracing.
+This document outlines the key areas for future development and refinement in the SDL project.
+
+**`[COMPLETED]`** The `sdl run` and `sdl plot` commands have been implemented to provide a powerful simulation-based analysis workflow.
+
+---
 
 ## 1. Runtime and Evaluation Enhancements (`runtime` package)
 
-*   **Concurrency Model Implementation:**
-    *   **`go { <block_returns_T> } => SingleFuture[T]`:** Implement spawning of single asynchronous tasks.
-    *   **`gobatch N { <block_returns_T> } => BatchFuture[T]`:** Implement spawning of N parallel identical operations. `T` (type returned by block) can be `Bool`, `Enum`, `Outcomes[Bool]`, or `Outcomes[Enum]`.
-    *   **`wait <future1> <future2> ... <futureN> using AggregatorMethod(Params) => AggregatorReturnType`:** SDL statement to synchronize on a `BatchFuture` or N normal futures. The runtime will facilitate passing necessary futures (like the profile of a single operation and `N`) to the native Go `AggregateMethod`. This native method is responsible for both functional aggregation and calculating the appropriate completion time profile for its `AggregatorReturnType` result as a Value object.  For a simulation based eval (like simpleeval) this returns a single value.  For an analysis based eval (like OutcomesEval) it could return a Value that is `Outcomes[AggregatorMethod]`.
-    *   **`wait <single_future> => T`:** Implement waiting for and retrieving the result of a single future.
-    *   **Core Library Support:** Enhance `sdl/core` with functions to calculate distributions of order statistics (e.g., time to Cth completion from N, makespan of N) needed by native aggregators.
+*   **Full Concurrency Model Implementation:**
+    *   The `gobatch` and `wait using` constructs have placeholder implementations that are sufficient for basic simulation but need to be fully realized.
+    *   **`gobatch N { ... }`**: The runtime should properly model the execution of N parallel operations, not just a single representative one.
+    *   **Native Aggregators**: Develop a set of standard native aggregator methods (`WaitAll`, `WaitAny`, `Quorum`) that can properly calculate the resulting latency distribution and success probability from a batch of futures.
+    *   **`go { ... }`**: Implement the spawning and execution of single asynchronous tasks.
+    *   **`wait <future>`**: Implement waiting for single and multiple heterogeneous futures.
+    *   **Core Library Support:** Enhance `sdl/core` with functions to calculate distributions of order statistics (e.g., time to C-th completion from N, makespan of N) needed by the native aggregators.
 
-*   **Single Call Tracing (Feature #1):**
-    *   Augment `SimpleEval` (or create a `TracingEval`) to record execution paths.
-    *   Implement a `Tracer` object callable by the evaluator on method entry/exit, future spawn (`go`, `gobatch`), and synchronization (`wait`).
+*   **Single Call Tracing (The "How" and "Why"):**
+    *   This is the next major feature. Augment `SimpleEval` (or create a new `TracingEval`) to record the execution path of a *single* method call.
+    *   Implement a `Tracer` object that the evaluator can call on method entry/exit, future spawn (`go`, `gobatch`), and synchronization (`wait`).
     *   Define a structured trace output (e.g., JSON) capable of representing sequential and concurrent operations.
-    *   Integrate this into `cmd/sdl trace`.
+    *   This will be the backend for the `sdl trace` and `sdl diagram dynamic` commands.
 
-*   **Exhaustive Tracing / "Travel Maps" (Feature #2):**
-    *   Develop a new `ExhaustiveEval` or `ProbabilisticPathEval`.
-    *   This evaluator should systematically explore branches from `distribute`, `sample`, `if`, and `switch` statements (when used as expressions with multiple outcomes).
-    *   Implement configurable loop unrolling.
-    *   The evaluator should build a collapsed path graph (DAG) directly, showing divergences, convergences, and associated probabilities/frequencies.
-    *   Define an output format for this graph suitable for visualization.
-
-*   **DSL `analyze` Block Execution:**
-    *   Implement runtime support for executing `analyze` blocks defined in SDL systems.
-    *   This will involve evaluating the target expression, calculating metrics using `sdl/core`, and comparing against `expect` statements.
-    *   This is the backend for the `sdl run` command.
+*   **Exhaustive Tracing / Analytical Evaluation:**
+    *   This is a longer-term goal to move beyond single-path simulation.
+    *   Develop a new `ExhaustiveEval` that systematically explores all probabilistic branches (`distribute`, `sample`) to build a complete outcome graph, enabling true analytical results directly from the DSL.
 
 ## 2. Language Features & Semantics (DSL & `decl`, `parser`)
 
-*   **Introduce Concurrency Keywords:** Add `go`, `gobatch`, `wait`, `wait using`, to the grammar (`parser/grammar.y`).
-*   **Introduce Future Types:** Define `Future[T]` as opaque type in the SDL type system (`decl` package). (Future.IsBatch defines whether the Future is for a batch of N homogenous futures). These are primarily handles passed to `wait` and native aggregators.
-*   **`switch` as an Expression:** Allow `switch` statements to be used as expressions, returning a value. Ensure all branches of a switch expression yield type-compatible results. Update grammar and type inference.
-*   **Built-in Functions:** Define and implement a standard library of built-in functions.
-*   **Global `options` Blocks:** Fully implement parsing and application of global and component-level `options`.
+*   **`switch` as an Expression:** Allow `switch` statements to be used as expressions, returning a value. Ensure all branches of a switch expression yield type-compatible results. Update the grammar and type inference logic.
+*   **Built-in Functions:** Define and implement a standard library of built-in functions (e.g., math functions, string manipulation).
+*   **Global `options` Blocks:** Fully implement parsing and application of global and component-level `options` to configure the runtime or components.
 
 ## 3. CLI Command Implementation & Enhancements (`cmd/sdl`)
 
-*   **`sdl run`:**
-    *   Integrate with the runtime to execute specified `analyze` blocks.
 *   **`sdl trace`:**
-    *   Implement fully using the single-call tracing capabilities.
-*   **`sdl diagram dynamic` (Feature #4):**
-    *   Consume trace output from the `sdl trace` feature.
-    *   Generate sequence diagrams or call graphs.
-*   **`sdl plot` Enhancements:**
-    *   Consider more plot types (e.g., histograms).
+    *   Implement this command fully using the single-call tracing infrastructure described above. It should produce a detailed JSON trace file.
+*   **`sdl diagram dynamic`:**
+    *   Implement this command to consume the trace output from `sdl trace` and generate a sequence diagram or call graph (e.g., in Mermaid format).
 *   **Refine Static Diagramming (`sdl diagram static`):**
     *   Improve layout algorithms and styling options.
 
-## 4. Native Component Development (`components`)
+## 4. Testing & Documentation
 
-*   **Native Aggregators:** Develop a set of standard native aggregator components/methods for common summarization patterns used with `wait ... using ...` (e.g., AllSucceeded, AnySucceeded, QuorumReached, based on boolean or simple enum results).
-
-## 5. Testing & CI
-
-*   **Concurrency Runtime Tests:** Extensive tests for `go`, `gobatch`, `wait` and native aggregators.
+*   **Concurrency Runtime Tests:** Add extensive tests for the full concurrency model once implemented.
 *   **Tracing Tests:** Validate the accuracy and completeness of trace generation.
-*   **End-to-End CLI Tests:** Expand for all commands, especially new/updated ones.
-
-## 6. Documentation & Examples
-
-*   **Comprehensive DSL Manual:** Update with concurrency features, `switch` expressions, tracing, etc.
-*   **More `.sdl` Examples:** Demonstrate new concurrency features, aggregators, and tracing for realistic scenarios.
-*   **Tutorials:** On using the CLI for tracing and analyzing concurrent models.
+*   **Documentation:** Update the project's documentation and examples to cover the new `run`/`plot` workflow and the upcoming `trace` command.
 
 ## Priority Focus (Immediate to Medium Term):
 
-1.  **Core Concurrency Primitives in `runtime` and DSL (`go`, `gobatch`, `wait using`, `Future`, `BatchFuture`).** This includes the necessary `core` library support for latency distribution calculations (e.g., makespan).
-2.  **Basic Native Aggregators** for common boolean summarization (all/any/some succeeded).
-3.  **Single Call Tracing (`runtime` & `cmd/sdl trace`).**
-4.  **Dynamic Diagram Generation (`cmd/sdl diagram dynamic`) based on traces.**
-5.  **Implementation of `sdl run` based on DSL `analyze` blocks.**
-6.  **`switch` as an Expression.**
-7.  **Exhaustive Tracing / "Travel Maps".**
+1.  **Single Call Tracing (`runtime` & `cmd/sdl trace`).** This is the highest priority as it unlocks debugging and dynamic diagrams.
+2.  **Dynamic Diagram Generation (`cmd/sdl diagram dynamic`).** This provides a powerful visualization for the new trace data.
+3.  **Full Concurrency Model.** This involves fleshing out the `gobatch`/`wait` logic and creating robust native aggregators.
+4.  **`switch` as an Expression.** This is a valuable language enhancement for more concise models.
