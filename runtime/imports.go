@@ -79,3 +79,5 @@ var Nil = decl.Nil
 type ErrorCollector = loader.ErrorCollector
 
 var NewNewExpr = decl.NewNewExpr
+
+var TypeTagFuture = decl.TypeTagFuture
