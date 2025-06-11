@@ -2,7 +2,7 @@
 
 **Purpose:**
 
-This package implements the main command-line interface (CLI) tool for the System Design Language (SDL) project, named `sdl`. It allows users to interact with the SDL toolchain to parse, validate, inspect, generate diagrams, and run powerful performance simulations.
+This package implements the main command-line interface (CLI) tool for the System Design Language (SDL) project, named `sdl`. It allows users to interact with the SDL toolchain to parse, validate, inspect, generate diagrams, and run simulations.
 
 **Core Structure & Files:**
 
@@ -12,34 +12,34 @@ This package implements the main command-line interface (CLI) tool for the Syste
     *   **`validate.go`**: Implements `sdl validate <dsl_file_path...>` for parsing and semantic checks using `loader.Loader`.
     *   **`list.go`**: Implements `sdl list <entity_type>` to list defined entities from a DSL file.
     *   **`describe.go`**: Implements `sdl describe <entity_type> <entity_name>` to show detailed information about a specific entity.
-    *   **`run.go`**: Implements `sdl run <system> <instance> <method>` to perform large-scale simulations. It executes the specified method thousands of times and captures detailed results (latency, return value, errors) for each run into a JSON file.
-    *   **`plot.go`**: A versatile plotting command. It can either run a live simulation (similar to its original function) or, more powerfully, read the JSON output from `sdl run` to generate sophisticated plots. It can create latency percentile charts or multi-series count charts (e.g., showing the rate of different `HttpStatusCode` results per second).
-    *   **`plotter.go`**: A flexible SVG plotting library that now supports rendering both single-series and multi-series line charts with legends, used by the `plot` command.
-    *   **`diagram.go`**: Implements `sdl diagram static ...` to generate static architecture diagrams in various formats (DOT, Mermaid, Excalidraw, SVG). Dynamic diagram generation is a placeholder.
-    *   **`trace.go`**: (Placeholder) Implements `sdl trace ...` for detailed single-run execution tracing.
-    *   **`shared_types.go`**: Defines shared data structures, like `RunResult`, used for serialization between commands (e.g., between `run` and `plot`).
+    *   **`run.go`**: Implements `sdl run ...` to perform large-scale simulations. It produces a detailed JSON file containing the results (latency, return value, etc.) for each run.
+    *   **`trace.go`**: Implements `sdl trace ...` to perform a single-run execution of a method and save the detailed event trace to a JSON file.
+    *   **`plot.go`**: A versatile plotting command that consumes the JSON output from `sdl run`. It acts as a client to the `viz` package to generate SVG plots for latency or result counts.
+    *   **`diagram.go`**: A command that generates diagrams by calling generators in the `viz` package. It can create `static` diagrams from SDL source or `dynamic` sequence diagrams from the JSON output of `sdl trace`.
+    *   **`shared_types.go`**: Defines shared data structures, like `RunResult`, used for serialization between commands.
 
 **Key Functionality & Features:**
 
 *   **Modular Commands:** Uses Cobra for a structured command system.
-*   **Separation of Concerns:** A powerful `run` command for expensive simulations and a flexible `plot` command for post-facto analysis and visualization.
-*   **Performance Simulation:** `sdl run` allows for large-scale Monte Carlo style simulations to gather statistical data on performance and behavior.
-*   **Rich Plotting:** `sdl plot` can visualize not just latency percentiles but also the distribution of outcomes (like return codes) over time from simulation data.
-*   **Static Diagram Generation:** `sdl diagram static` can generate diagrams in DOT, Mermaid, Excalidraw (JSON), and SVG formats.
-*   **Placeholders for Advanced Features:** Dynamic `diagram` and `trace` commands indicate future capabilities.
+*   **Separation of Concerns:** The CLI commands are thin wrappers that orchestrate the `loader`, `runtime`, and `viz` packages. Heavy lifting (simulation, tracing, diagram generation) is delegated to the libraries.
+*   **Decoupled Workflows:** The CLI promotes a two-step process for analysis:
+    1.  **Data Generation:** `sdl run` or `sdl trace` produce JSON data files.
+    2.  **Visualization:** `sdl plot` or `sdl diagram dynamic` consume these files to generate visuals.
+*   **Rich Analysis:** The commands support statistical performance simulation (`run`/`plot`) and detailed single-run debugging (`trace`/`diagram dynamic`).
 
-**Workflow for Simulation and Plotting:**
+**Workflows:**
 
-1.  **Run Simulation:** A user runs a large-scale simulation and saves the results.
-    *   `sdl run Twitter tls GetTimeline --runs=50000 --out=timeline_results.json -f examples/twitter/services.sdl`
-2.  **Generate Plots:** The user then uses the `plot` command to analyze the results from different angles without re-running the simulation.
-    *   **Plot Latency:** `sdl plot --from=timeline_results.json --y-axis=latency -o latency.svg`
-    *   **Plot Result Counts:** `sdl plot --from=timeline_results.json --y-axis=count --group-by=result -o counts.svg`
+1.  **Simulation and Plotting:**
+    *   `sdl run Twitter tls.GetTimeline --runs=50000 --out=timeline_results.json -f ...`
+    *   `sdl plot --from=timeline_results.json --y-axis=latency -o latency.svg`
+
+2.  **Tracing and Dynamic Diagrams:**
+    *   `sdl trace Twitter tls.GetTimeline --out=timeline_trace.json -f ...`
+    *   `sdl diagram dynamic --from=timeline_trace.json --format=mermaid -o sequence.md`
 
 **Current Status:**
 
-*   The CLI framework is well-established.
-*   `validate`, `list`, `describe`, and static `diagram` commands are functional.
-*   The `run` and `plot` commands provide a powerful, two-step workflow for performance analysis through simulation.
-*   The `plotter` is now capable of multi-series rendering.
-*   Dynamic diagrams and full execution tracing via `sdl trace` are the next major features to be implemented.
+*   The CLI framework is well-established and has been refactored for clarity.
+*   The `run`/`plot` and `trace`/`diagram` workflows are fully implemented.
+*   The visualization logic has been successfully moved to the new top-level `viz` package.
+*   The next major step is to enhance the `runtime` to fully support concurrent execution beyond the current simulation placeholders.

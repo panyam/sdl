@@ -1,16 +1,14 @@
 package commands
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
-	"sort"
-	"strings"
 
 	"github.com/panyam/sdl/decl"
 	"github.com/panyam/sdl/loader"
 	"github.com/panyam/sdl/runtime"
+	"github.com/panyam/sdl/viz"
 	"github.com/spf13/cobra"
 )
 
@@ -68,154 +66,55 @@ func generateDynamicDiagram(fromFile, outputFile, format string) {
 		os.Exit(1)
 	}
 
-	var diagramOutput string
+	var generator viz.SequenceDiagramGenerator
 	switch format {
 	case "mermaid":
-		diagramOutput = generateMermaidSequenceDiagram(&traceData)
+		generator = &viz.MermaidSequenceGenerator{}
 	default:
 		fmt.Fprintf(os.Stderr, "Dynamic diagram for format '%s' not supported. Choose 'mermaid'.\n", format)
+		os.Exit(1)
+	}
+
+	diagramOutput, err := generator.Generate(&traceData)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error generating dynamic diagram: %v\n", err)
 		os.Exit(1)
 	}
 
 	writeOutput(outputFile, diagramOutput)
 }
 
-// getParticipantAndMethod extracts the participant and method from a target string like "instance.method".
-func getParticipantAndMethod(target string) (participant, method string) {
-	parts := strings.SplitN(target, ".", 2)
-	if len(parts) == 2 {
-		return parts[0], parts[1]
-	}
-	return target, ""
-}
-
-func generateMermaidSequenceDiagram(trace *runtime.TraceData) string {
-	var b bytes.Buffer
-	b.WriteString("sequenceDiagram\n")
-
-	// 1. Discover all participants and order them correctly
-	participantSet := make(map[string]bool)
-	participantSet["User"] = true // The initiator is always present
-
-	eventMap := make(map[int]*runtime.TraceEvent)
-	for _, event := range trace.Events {
-		eventMap[event.ID] = event
-		if event.Kind == runtime.EventEnter {
-			participant, _ := getParticipantAndMethod(event.Target)
-			if participant != "" {
-				participantSet[participant] = true
-			}
-		}
-	}
-
-	// Create a sorted list of participants with "User" first
-	participantList := make([]string, 0, len(participantSet))
-	for p := range participantSet {
-		if p != "User" {
-			participantList = append(participantList, p)
-		}
-	}
-	sort.Strings(participantList)
-	participantList = append([]string{"User"}, participantList...)
-
-	// 2. Declare all participants in the correct order
-	for _, p := range participantList {
-		b.WriteString(fmt.Sprintf("  participant %s\n", p))
-	}
-	b.WriteString("\n")
-
-	// 3. Process events to generate the sequence
-	// Map of active event IDs to their "from" participant
-	activeEvents := make(map[int]string)
-	activeEvents[0] = "User" // Root event's parent is the User
-
-	for _, event := range trace.Events {
-		from, parentFound := activeEvents[event.ParentID]
-		if !parentFound {
-			from = "User" // Default to User if parent not found (should not happen for non-root)
-		}
-
-		if event.Kind == runtime.EventEnter {
-			to, method := getParticipantAndMethod(event.Target)
-			if to == "self" {
-				to = from // A call to "self" is a call to the current participant
-			}
-
-			b.WriteString(fmt.Sprintf("  %s->>%s: %s(%s)\n", from, to, method, strings.Join(event.Arguments, ", ")))
-			b.WriteString(fmt.Sprintf("  activate %s\n", to))
-			activeEvents[event.ID] = to // The callee is now the "from" for its children
-		} else if event.Kind == runtime.EventExit {
-			// Find the corresponding Enter event to know who to deactivate
-			// This linear scan is inefficient but simple for now.
-			var enterTarget string
-			for _, e := range trace.Events {
-				if e.Kind == runtime.EventEnter && e.ParentID == event.ParentID && e.Timestamp < event.Timestamp {
-					// This is a heuristic match, a real solution needs to link exit to enter
-					enterTarget = e.Target
-					break
-				}
-			}
-			if enterTarget != "" {
-				to, _ := getParticipantAndMethod(enterTarget)
-				if to == "self" {
-					to = from
-				}
-				b.WriteString(fmt.Sprintf("  deactivate %s\n", to))
-			}
-		}
-	}
-
-	return b.String()
-}
-
 func generateStaticDiagram(systemName, outputFile, format string) {
-	var diagramOutput string
-	var errGen error
-
-	// ... (rest of the static diagram logic remains the same)
 	// 1. Load the SDL file
 	sdlLoader := loader.NewLoader(nil, nil, 10)
 	fileStatus, err := sdlLoader.LoadFile(dslFilePath, "", 0)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error loading SDL file '%s': %v\n", dslFilePath, err)
+	if err != nil || fileStatus.HasErrors() {
+		fmt.Fprintf(os.Stderr, "Error loading or parsing SDL file '%s':\n", dslFilePath)
 		if fileStatus != nil {
-			for _, e := range fileStatus.Errors {
-				fmt.Fprintln(os.Stderr, "  ", e)
-			}
-		}
-		os.Exit(1)
-	}
-	if fileStatus.HasErrors() {
-		fmt.Fprintf(os.Stderr, "Errors found while loading SDL file '%s':\n", dslFilePath)
-		for _, e := range fileStatus.Errors {
-			fmt.Fprintln(os.Stderr, "  ", e)
+			fileStatus.PrintErrors()
+		} else {
+			fmt.Println(err)
 		}
 		os.Exit(1)
 	}
 
 	astRoot := fileStatus.FileDecl
-	if astRoot == nil {
-		fmt.Fprintf(os.Stderr, "Error: Parsed AST is nil for '%s'.\n", dslFilePath)
-		os.Exit(1)
-	}
-
-	// 2. Find SystemDecl
 	sysDecl, err := astRoot.GetSystem(systemName)
 	if err != nil || sysDecl == nil {
 		fmt.Fprintf(os.Stderr, "Error finding system '%s' in '%s': %v\n", systemName, dslFilePath, err)
 		os.Exit(1)
 	}
 
-	// 3. Populate DiagramNode and DiagramEdge slices
-	var diagramNodes []DiagramNode
-	var diagramEdges []DiagramEdge
+	// 2. Populate viz.Node and viz.Edge slices
+	var nodes []viz.Node
+	var edges []viz.Edge
 	instanceNameToID := make(map[string]string)
 
 	for _, item := range sysDecl.Body {
 		if instDecl, ok := item.(*decl.InstanceDecl); ok {
 			nodeID := instDecl.Name.Value
-			instanceNameToID[instDecl.Name.Value] = nodeID
-			diagramNodes = append(diagramNodes, DiagramNode{
+			instanceNameToID[nodeID] = nodeID
+			nodes = append(nodes, viz.Node{
 				ID:   nodeID,
 				Name: instDecl.Name.Value,
 				Type: instDecl.ComponentName.Value,
@@ -229,7 +128,7 @@ func generateStaticDiagram(systemName, outputFile, format string) {
 			for _, assignment := range instDecl.Overrides {
 				if targetIdent, okIdent := assignment.Value.(*decl.IdentifierExpr); okIdent {
 					if toNodeID, isInstance := instanceNameToID[targetIdent.Value]; isInstance {
-						diagramEdges = append(diagramEdges, DiagramEdge{
+						edges = append(edges, viz.Edge{
 							FromID: fromNodeID,
 							ToID:   toNodeID,
 							Label:  assignment.Var.Value,
@@ -240,22 +139,26 @@ func generateStaticDiagram(systemName, outputFile, format string) {
 		}
 	}
 
-	// 4. Generate output based on format
+	// 3. Get the correct generator based on format
+	var generator viz.StaticDiagramGenerator
 	switch format {
 	case "dot":
-		diagramOutput = generateDotOutput(sysDecl.Name.Value, diagramNodes, diagramEdges)
+		generator = &viz.DotGenerator{}
 	case "mermaid":
-		diagramOutput = generateMermaidOutput(sysDecl.Name.Value, diagramNodes, diagramEdges)
+		generator = &viz.MermaidStaticGenerator{}
 	case "excalidraw":
-		diagramOutput, errGen = generateExcalidrawOutput(sysDecl.Name.Value, diagramNodes, diagramEdges)
+		generator = &viz.ExcalidrawGenerator{}
 	case "svg":
-		diagramOutput, errGen = generateSvgOutput(sysDecl.Name.Value, diagramNodes, diagramEdges)
+		generator = &viz.SvgGenerator{}
 	default:
-		fmt.Fprintf(os.Stderr, "Static diagram for format '%s' not supported or placeholder.\n", format)
+		fmt.Fprintf(os.Stderr, "Static diagram for format '%s' is not supported.\n", format)
 		os.Exit(1)
 	}
-	if errGen != nil {
-		fmt.Fprintf(os.Stderr, "Error generating %s diagram: %v\n", format, errGen)
+
+	// 4. Generate and write output
+	diagramOutput, err := generator.Generate(systemName, nodes, edges)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error generating %s diagram: %v\n", format, err)
 		os.Exit(1)
 	}
 
@@ -264,7 +167,7 @@ func generateStaticDiagram(systemName, outputFile, format string) {
 
 func writeOutput(outputFile, content string) {
 	if content == "" {
-		return // Nothing to write
+		return
 	}
 	if outputFile != "" {
 		err := os.WriteFile(outputFile, []byte(content), 0644)
@@ -283,6 +186,5 @@ func init() {
 	AddCommand(diagramCmd)
 	diagramCmd.Flags().StringP("output", "o", "", "Output file path for the diagram")
 	diagramCmd.Flags().String("from", "", "Path to a JSON trace file (for dynamic diagrams)")
-	// Updated to include excalidraw and svg
 	diagramCmd.Flags().String("format", "dot", "Output format (dot, mermaid, excalidraw, svg)")
 }

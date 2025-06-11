@@ -12,6 +12,7 @@ import (
 	"github.com/panyam/sdl/decl"
 	"github.com/panyam/sdl/loader"
 	"github.com/panyam/sdl/runtime"
+	"github.com/panyam/sdl/viz"
 	"github.com/spf13/cobra"
 )
 
@@ -52,16 +53,11 @@ This command can operate in two modes:
 		},
 	}
 
-	// General flags
-	plotCmd.Flags().StringP("output", "o", "output.svg", "Output file path for the plot(s) (e.g., plot.svg)")
+	plotCmd.Flags().StringP("output", "o", "output.svg", "Output file path for the plot (e.g., plot.svg)")
 	plotCmd.Flags().String("title", "", "Title for the plot. If empty, a default is generated.")
-
-	// File mode flags
 	plotCmd.Flags().String("from", "", "Path to a JSON results file (from 'sdl run --out'). If provided, live simulation is skipped.")
 	plotCmd.Flags().String("y-axis", "latency", "Metric for the Y-axis ('latency' or 'count'). Only used with --from.")
 	plotCmd.Flags().String("group-by", "result", "How to group data for 'count' plots ('result' or 'error'). Only used with --from.")
-
-	// Live run mode flags
 	plotCmd.Flags().Int("numbatches", 100, "Number of batches to run (live mode only).")
 	plotCmd.Flags().Int("numworkers", 50, "Number of parallel workers (live mode only).")
 	plotCmd.Flags().Int("batchsize", 100, "Number of runs per batch (live mode only).")
@@ -70,7 +66,6 @@ This command can operate in two modes:
 }
 
 func plotFromFile(fromFile, outputFile, title, yAxis, groupBy string) {
-	fmt.Printf("Reading results from %s...\n", fromFile)
 	data, err := os.ReadFile(fromFile)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error reading file %s: %v\n", fromFile, err)
@@ -82,7 +77,7 @@ func plotFromFile(fromFile, outputFile, title, yAxis, groupBy string) {
 		fmt.Fprintf(os.Stderr, "Error parsing JSON from %s: %v\n", fromFile, err)
 		os.Exit(1)
 	}
-	fmt.Printf("Successfully parsed %d results.\n", len(results))
+	fmt.Printf("Successfully parsed %d results from %s.\n", len(results), fromFile)
 
 	switch yAxis {
 	case "latency":
@@ -101,8 +96,6 @@ func plotCountsFromFile(results []RunResult, outputFile, title, groupBy string) 
 		return
 	}
 
-	// 1. Aggregate counts per category per time bucket
-	// map[category][timestamp] -> count
 	buckets := make(map[string]map[int64]int)
 	for _, r := range results {
 		var category string
@@ -127,32 +120,29 @@ func plotCountsFromFile(results []RunResult, outputFile, title, groupBy string) 
 		buckets[category][bucketTime]++
 	}
 
-	// 2. Convert aggregated data to DataSeries
-	var plotData MultiSeriesPlotData
-	plotData.Series = make([]DataSeries, 0, len(buckets))
-
+	series := make([]viz.DataSeries, 0, len(buckets))
 	for category, timeCounts := range buckets {
-		series := DataSeries{Name: category, Points: make([]DataPoint, 0, len(timeCounts))}
+		points := make([]viz.DataPoint, 0, len(timeCounts))
 		for ts, count := range timeCounts {
-			series.Points = append(series.Points, DataPoint{X: ts, Y: float64(count)})
+			points = append(points, viz.DataPoint{X: ts, Y: float64(count)})
 		}
-		sort.Slice(series.Points, func(i, j int) bool { return series.Points[i].X < series.Points[j].X })
-		plotData.Series = append(plotData.Series, series)
+		sort.Slice(points, func(i, j int) bool { return points[i].X < points[j].X })
+		series = append(series, viz.DataSeries{Name: category, Points: points})
 	}
-	sort.Slice(plotData.Series, func(i, j int) bool { return plotData.Series[i].Name < plotData.Series[j].Name })
+	sort.Slice(series, func(i, j int) bool { return series[i].Name < series[j].Name })
 
-	// 3. Generate the plot
 	if title == "" {
 		title = fmt.Sprintf("Count of %s per Second", strings.Title(groupBy))
 	}
-	plotData.Metadata = PlotMetadata{
-		Title:  title,
-		XLabel: "Time",
-		YLabel: "Count per Second",
-	}
 
 	fmt.Println("Generating count plot...")
-	plotMulti(outputFile, plotData)
+	plotter := viz.NewSVGPlotter(viz.DefaultPlotConfig())
+	svg, err := plotter.Generate(series, title, "Time", "Count per Second")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error generating plot: %v\n", err)
+		os.Exit(1)
+	}
+	writeOutput(outputFile, svg)
 }
 
 func plotLatencyFromFile(results []RunResult, outputFile, title string) {
@@ -169,7 +159,7 @@ func plotLatencyFromFile(results []RunResult, outputFile, title string) {
 		}
 	}
 
-	avgVals, p50Vals, p90Vals, p99Vals := make([]DataPoint, 0, len(buckets)), make([]DataPoint, 0, len(buckets)), make([]DataPoint, 0, len(buckets)), make([]DataPoint, 0, len(buckets))
+	avgVals, p50Vals, p90Vals, p99Vals := make([]viz.DataPoint, 0, len(buckets)), make([]viz.DataPoint, 0, len(buckets)), make([]viz.DataPoint, 0, len(buckets)), make([]viz.DataPoint, 0, len(buckets))
 	sortedTimestamps := make([]int64, 0, len(buckets))
 	for ts := range buckets {
 		sortedTimestamps = append(sortedTimestamps, ts)
@@ -184,15 +174,15 @@ func plotLatencyFromFile(results []RunResult, outputFile, title string) {
 			for _, lat := range latencies {
 				total += lat
 			}
-			avgVals = append(avgVals, DataPoint{X: ts, Y: total / float64(len(latencies))})
-			p50Vals = append(p50Vals, DataPoint{X: ts, Y: latencies[int(float64(len(latencies))*0.5)]})
-			p90Vals = append(p90Vals, DataPoint{X: ts, Y: latencies[int(float64(len(latencies))*0.9)]})
-			p99Vals = append(p99Vals, DataPoint{X: ts, Y: latencies[int(float64(len(latencies))*0.99)]})
+			avgVals = append(avgVals, viz.DataPoint{X: ts, Y: total / float64(len(latencies))})
+			p50Vals = append(p50Vals, viz.DataPoint{X: ts, Y: latencies[int(float64(len(latencies))*0.5)]})
+			p90Vals = append(p90Vals, viz.DataPoint{X: ts, Y: latencies[int(float64(len(latencies))*0.9)]})
+			p99Vals = append(p99Vals, viz.DataPoint{X: ts, Y: latencies[int(float64(len(latencies))*0.99)]})
 		}
 	}
 
-	fmt.Println("Generating latency plots...")
-	generateLatencyPlots(outputFile, title, avgVals, p50Vals, p90Vals, p99Vals)
+	fmt.Println("Generating latency plot...")
+	generateLatencyPlot(outputFile, title, avgVals, p50Vals, p90Vals, p99Vals)
 }
 
 func plotFromLiveRun(systemName, instanceName, methodName, outputFile, title string, cmd *cobra.Command) {
@@ -210,10 +200,10 @@ func plotFromLiveRun(systemName, instanceName, methodName, outputFile, title str
 	fi := rt.LoadFile(dslFilePath)
 	system := fi.NewSystem(systemName)
 
-	avgVals := make([]DataPoint, numBatches)
-	p50Vals := make([]DataPoint, numBatches)
-	p90Vals := make([]DataPoint, numBatches)
-	p99Vals := make([]DataPoint, numBatches)
+	avgVals := make([]viz.DataPoint, numBatches)
+	p50Vals := make([]viz.DataPoint, numBatches)
+	p90Vals := make([]viz.DataPoint, numBatches)
+	p99Vals := make([]viz.DataPoint, numBatches)
 	now := time.Now()
 	timeDelta := time.Second * 1
 
@@ -225,35 +215,48 @@ func plotFromLiveRun(systemName, instanceName, methodName, outputFile, title str
 		}
 		sort.Slice(batchVals, func(i, j int) bool { return batchVals[i].Time < batchVals[j].Time })
 		t := now.Add(time.Duration(batch) * timeDelta)
+		timestamp := t.UnixMilli()
 
 		if len(batchVals) > 0 {
-			p50Vals[batch].Y = batchVals[int(float64(len(batchVals))*0.5)].Time * 1000
-			p90Vals[batch].Y = batchVals[int(float64(len(batchVals))*0.9)].Time * 1000
-			p99Vals[batch].Y = batchVals[int(float64(len(batchVals))*0.99)].Time * 1000
+			p50Vals[batch] = viz.DataPoint{X: timestamp, Y: batchVals[int(float64(len(batchVals))*0.5)].Time * 1000}
+			p90Vals[batch] = viz.DataPoint{X: timestamp, Y: batchVals[int(float64(len(batchVals))*0.9)].Time * 1000}
+			p99Vals[batch] = viz.DataPoint{X: timestamp, Y: batchVals[int(float64(len(batchVals))*0.99)].Time * 1000}
 			var totalLatency float64
 			for _, bv := range batchVals {
 				totalLatency += bv.Time
 			}
-			avgVals[batch].Y = (totalLatency / float64(len(batchVals))) * 1000
+			avgVals[batch] = viz.DataPoint{X: timestamp, Y: (totalLatency / float64(len(batchVals))) * 1000}
+		} else {
+			// Ensure empty points are still created to keep arrays aligned
+			p50Vals[batch] = viz.DataPoint{X: timestamp, Y: 0}
+			p90Vals[batch] = viz.DataPoint{X: timestamp, Y: 0}
+			p99Vals[batch] = viz.DataPoint{X: timestamp, Y: 0}
+			avgVals[batch] = viz.DataPoint{X: timestamp, Y: 0}
 		}
-		avgVals[batch].X, p50Vals[batch].X, p90Vals[batch].X, p99Vals[batch].X = t.UnixMilli(), t.UnixMilli(), t.UnixMilli(), t.UnixMilli()
 	})
 
-	fmt.Println("Simulation finished. Generating plots...")
-	generateLatencyPlots(outputFile, title, avgVals, p50Vals, p90Vals, p99Vals)
+	fmt.Println("Simulation finished. Generating latency plot...")
+	generateLatencyPlot(outputFile, title, avgVals, p50Vals, p90Vals, p99Vals)
 }
 
-func generateLatencyPlots(outputFile, title string, avg, p50, p90, p99 []DataPoint) {
-	pctFileName := func(prefix string) string {
-		if strings.HasSuffix(outputFile, ".svg") {
-			return strings.Replace(outputFile, ".svg", fmt.Sprintf("_%s.svg", prefix), 1)
-		}
-		return fmt.Sprintf("%s_%s.svg", outputFile, prefix)
+func generateLatencyPlot(outputFile, title string, avg, p50, p90, p99 []viz.DataPoint) {
+	if title == "" {
+		title = "API Latency"
 	}
-	plot(pctFileName("avg"), avg, "Time", "Latency Avg (ms)", title+" - Avg API Latency")
-	plot(pctFileName("p50"), p50, "Time", "Latency p50 (ms)", title+" - p50 API Latency")
-	plot(pctFileName("p90"), p90, "Time", "Latency p90 (ms)", title+" - p90 API Latency")
-	plot(pctFileName("p99"), p99, "Time", "Latency p99 (ms)", title+" - p99 API Latency")
+	series := []viz.DataSeries{
+		{Name: "p50", Points: p50},
+		{Name: "p90", Points: p90},
+		{Name: "p99", Points: p99},
+		{Name: "avg", Points: avg},
+	}
+
+	plotter := viz.NewSVGPlotter(viz.DefaultPlotConfig())
+	svg, err := plotter.Generate(series, title, "Time", "Latency (ms)")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error generating plot: %v\n", err)
+		os.Exit(1)
+	}
+	writeOutput(outputFile, svg)
 }
 
 func init() {

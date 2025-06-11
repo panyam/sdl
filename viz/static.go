@@ -59,6 +59,7 @@ type SvgGenerator struct{}
 
 func (g *SvgGenerator) Generate(systemName string, nodes []Node, edges []Edge) (string, error) {
 	var svg bytes.Buffer
+	// ... (SVG generation code remains the same as before)
 	canvasWidth := 1024
 	canvasHeight := 768
 	padding := 20.0
@@ -147,6 +148,7 @@ func (g *SvgGenerator) Generate(systemName string, nodes []Node, edges []Edge) (
 		}
 	}
 	svg.WriteString("</svg>")
+
 	return svg.String(), nil
 }
 
@@ -199,38 +201,65 @@ func (g *ExcalidrawGenerator) Generate(systemName string, nodes []Node, edges []
 	return scene.toJSON()
 }
 
-// ... (Excalidraw helper structs and methods) ...
-type excalidrawElement struct {
-	ID, Type, StrokeColor, BackgroundColor, FillStyle, StrokeStyle, StrokeSharpness string
-	X, Y, Width, Height, Angle, FontSize, Baseline                                float64
-	StrokeWidth, Roughness, Opacity, FontFamily                                   int
-	Seed, VersionNonce                                                            int64
-	Version                                                                       int
-	IsDeleted                                                                     bool
-	BoundElements                                                                 []*boundElement
-	StartBinding, EndBinding                                                      *binding
-	Points                                                                        [][]float64
-	Text, OriginalText, ContainerId                                               *string
-	VerticalAlign, TextAlign                                                      string
-	StartArrowhead, EndArrowhead                                                  *string
+// --- Excalidraw Helper Structs and Methods ---
+
+type ExcalidrawElement struct {
+	ID              string          `json:"id"`
+	Type            string          `json:"type"`
+	X               float64         `json:"x"`
+	Y               float64         `json:"y"`
+	Width           float64         `json:"width"`
+	Height          float64         `json:"height"`
+	Angle           float64         `json:"angle,omitempty"`
+	StrokeColor     string          `json:"strokeColor"`
+	BackgroundColor string          `json:"backgroundColor"`
+	FillStyle       string          `json:"fillStyle"`
+	StrokeWidth     int             `json:"strokeWidth"`
+	StrokeStyle     string          `json:"strokeStyle"`
+	Roughness       int             `json:"roughness"`
+	Opacity         int             `json:"opacity"`
+	Seed            int64           `json:"seed"`
+	Version         int             `json:"version"`
+	VersionNonce    int64           `json:"versionNonce"`
+	IsDeleted       bool            `json:"isDeleted,omitempty"`
+	BoundElements   []*BoundElement `json:"boundElements,omitempty"`
+	StartBinding    *Binding        `json:"startBinding,omitempty"`
+	EndBinding      *Binding        `json:"endBinding,omitempty"`
+	Points          [][]float64     `json:"points,omitempty"`
+	Text            string          `json:"text,omitempty"`
+	FontSize        float64         `json:"fontSize,omitempty"`
+	FontFamily      int             `json:"fontFamily,omitempty"`
+	TextAlign       string          `json:"textAlign,omitempty"`
+	VerticalAlign   string          `json:"verticalAlign,omitempty"`
+	Baseline        int             `json:"baseline,omitempty"`
+	ContainerId     *string         `json:"containerId,omitempty"`
+	OriginalText    string          `json:"originalText,omitempty"`
+	StrokeSharpness string          `json:"strokeSharpness,omitempty"`
+	StartArrowhead  *string         `json:"startArrowhead,omitempty"`
+	EndArrowhead    *string         `json:"endArrowhead,omitempty"`
 }
-type binding struct{ ElementID string; Focus, Gap float64 }
-type boundElement struct{ Type, ID string }
-type excalidrawFile struct {
+type Binding struct {
+	ElementID string  `json:"elementId"`
+	Focus     float64 `json:"focus,omitempty"`
+	Gap       float64 `json:"gap,omitempty"`
+}
+type BoundElement struct{ Type, ID string }
+type ExcalidrawFile struct {
 	Type, Version, Source string
-	Elements              []*excalidrawElement
+	Elements              []*ExcalidrawElement
 	AppState              map[string]interface{}
 	Files                 map[string]interface{}
 }
 type excalidrawScene struct {
-	elements     []*excalidrawElement
-	elementIDMap map[string]*excalidrawElement
+	elements     []*ExcalidrawElement
+	elementIDMap map[string]*ExcalidrawElement
 	randSource   *rand.Rand
 }
+
 func newExcalidrawScene() *excalidrawScene {
 	return &excalidrawScene{
-		elements:     make([]*excalidrawElement, 0),
-		elementIDMap: make(map[string]*excalidrawElement),
+		elements:     make([]*ExcalidrawElement, 0),
+		elementIDMap: make(map[string]*ExcalidrawElement),
 		randSource:   rand.New(rand.NewSource(time.Now().UnixNano())),
 	}
 }
@@ -238,7 +267,7 @@ func (s *excalidrawScene) newSeed() int64 { return s.randSource.Int63n(214748364
 func (s *excalidrawScene) newElementID(prefix string) string {
 	return prefix + "_" + strconv.FormatInt(s.newSeed(), 36)
 }
-func (s *excalidrawScene) addElement(element *excalidrawElement) error {
+func (s *excalidrawScene) addElement(element *ExcalidrawElement) error {
 	if element.ID == "" {
 		element.ID = s.newElementID(element.Type)
 	}
@@ -246,9 +275,9 @@ func (s *excalidrawScene) addElement(element *excalidrawElement) error {
 	s.elementIDMap[element.ID] = element
 	return nil
 }
-func (s *excalidrawScene) getElement(id string) *excalidrawElement { return s.elementIDMap[id] }
-func (s *excalidrawScene) addRectangle(x, y, w, h float64, label string, props, labelProps *excalidrawElement) (*excalidrawElement, *excalidrawElement, error) {
-	rect := &excalidrawElement{
+func (s *excalidrawScene) getElement(id string) *ExcalidrawElement { return s.elementIDMap[id] }
+func (s *excalidrawScene) addRectangle(x, y, w, h float64, label string, props, labelProps *ExcalidrawElement) (*ExcalidrawElement, *ExcalidrawElement, error) {
+	rect := &ExcalidrawElement{
 		Type: "rectangle", X: x, Y: y, Width: w, Height: h, StrokeColor: "#1e1e1e", BackgroundColor: "#f8f9fa",
 		FillStyle: "solid", StrokeWidth: 1, StrokeStyle: "solid", Roughness: 1, StrokeSharpness: "round",
 		Seed: s.newSeed(), Version: 2, VersionNonce: s.newSeed(), Opacity: 100,
@@ -256,42 +285,42 @@ func (s *excalidrawScene) addRectangle(x, y, w, h float64, label string, props, 
 	s.addElement(rect)
 	if label != "" {
 		text, _, _ := s.addText(x+10, y+(h-24)/2, w-20, 24, label, &rect.ID, nil)
-		rect.BoundElements = append(rect.BoundElements, &boundElement{Type: "text", ID: text.ID})
+		rect.BoundElements = append(rect.BoundElements, &BoundElement{Type: "text", ID: text.ID})
 	}
 	return rect, nil, nil
 }
-func (s *excalidrawScene) addText(x, y, w, h float64, text string, containerID *string, props *excalidrawElement) (*excalidrawElement, *excalidrawElement, error) {
+func (s *excalidrawScene) addText(x, y, w, h float64, text string, containerID *string, props *ExcalidrawElement) (*ExcalidrawElement, *ExcalidrawElement, error) {
 	fs := 16.0
-	bl := fs * 0.8
-	textEl := &excalidrawElement{
-		Type: "text", X: x, Y: y, Width: w, Height: h, Text: &text, OriginalText: &text, ContainerId: containerID,
+	bl := int(fs * 0.8)
+	textEl := &ExcalidrawElement{
+		Type: "text", X: x, Y: y, Width: w, Height: h, Text: text, OriginalText: text, ContainerId: containerID,
 		StrokeColor: "#1e1e1e", BackgroundColor: "transparent", FontSize: fs, FontFamily: 1, TextAlign: "center", VerticalAlign: "middle",
 		Baseline: bl, Seed: s.newSeed(), Version: 2, VersionNonce: s.newSeed(), Opacity: 100,
 	}
 	s.addElement(textEl)
 	return textEl, nil, nil
 }
-func (s *excalidrawScene) addArrow(from, to, label string, props, labelProps *excalidrawElement) (*excalidrawElement, *excalidrawElement, error) {
+func (s *excalidrawScene) addArrow(from, to, label string, props, labelProps *ExcalidrawElement) (*ExcalidrawElement, *ExcalidrawElement, error) {
 	source := s.getElement(from)
 	target := s.getElement(to)
 	ah := "arrow"
-	arrow := &excalidrawElement{
-		Type: "arrow", X: 0, Y: 0, Width: 0, Height: 0, EndArrowhead: &ah,
-		StartBinding: &binding{ElementID: source.ID, Focus: 0.5, Gap: 1},
-		EndBinding:   &binding{ElementID: target.ID, Focus: 0.5, Gap: 1},
-		StrokeColor: "#1e1e1e", StrokeWidth: 1, StrokeStyle: "solid", Roughness: 0, StrokeSharpness: "round",
+	arrow := &ExcalidrawElement{
+		Type: "arrow", StartArrowhead: nil, EndArrowhead: &ah,
+		StartBinding: &Binding{ElementID: source.ID, Focus: 0.5, Gap: 1},
+		EndBinding:   &Binding{ElementID: target.ID, Focus: 0.5, Gap: 1},
+		StrokeColor:  "#1e1e1e", StrokeWidth: 1, StrokeStyle: "solid", Roughness: 0, StrokeSharpness: "round",
 		Seed: s.newSeed(), Version: 2, VersionNonce: s.newSeed(), Opacity: 100,
 	}
 	s.addElement(arrow)
 	if label != "" {
 		text, _, _ := s.addText(0, 0, 0, 0, label, &arrow.ID, nil)
-		arrow.BoundElements = append(arrow.BoundElements, &boundElement{Type: "text", ID: text.ID})
+		arrow.BoundElements = append(arrow.BoundElements, &BoundElement{Type: "text", ID: text.ID})
 	}
 	return arrow, nil, nil
 }
 func (s *excalidrawScene) toJSON() (string, error) {
-	file := excalidrawFile{
-		Type: "excalidraw", Version: 2, Source: "https://github.com/panyam/sdl",
+	file := ExcalidrawFile{
+		Type: "excalidraw", Version: "2", Source: "https://github.com/panyam/sdl",
 		Elements: s.elements, AppState: map[string]interface{}{"viewBackgroundColor": "#FFFFFF"},
 	}
 	data, err := json.MarshalIndent(file, "", "  ")
