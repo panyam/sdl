@@ -21,13 +21,15 @@ type SimpleEval struct {
 	ErrorCollector
 	RootFile *FileInstance
 	Rand     *rand.Rand
+	Tracer   *ExecutionTracer
 	Errors   []error
 }
 
-func NewSimpleEval(fi *FileInstance) *SimpleEval {
+func NewSimpleEval(fi *FileInstance, tracer *ExecutionTracer) *SimpleEval {
 	out := &SimpleEval{
 		RootFile: fi,
 		Rand:     rand.New(rand.NewSource(time.Now().UnixMicro())),
+		Tracer:   tracer,
 	}
 	out.MaxErrors = 1
 	return out
@@ -404,6 +406,12 @@ func (s *SimpleEval) evalTupleExpr(m *TupleExpr, env *Env[Value], currTime *core
 }
 
 func (s *SimpleEval) evalGoExpr(m *GoExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
+	if s.Tracer != nil {
+		// Simplified target for now. A real implementation would be more detailed.
+		target := fmt.Sprintf("goroutine_for_%s", m.InferredType().String())
+		s.Tracer.Enter(*currTime, EventGo, target)
+	}
+
 	loopValue, _ := s.Eval(m.LoopExpr, env, currTime)
 	target := m.Stmt
 	if m.Expr != nil {
@@ -424,6 +432,11 @@ func (s *SimpleEval) evalGoExpr(m *GoExpr, env *Env[Value], currTime *core.Durat
 }
 
 func (s *SimpleEval) evalWaitExpr(expr *WaitExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
+	if s.Tracer != nil {
+		s.Tracer.Enter(*currTime, EventWait, "wait")
+		defer s.Tracer.Exit(0, *currTime, 0, Nil, nil) // Simplified exit
+	}
+
 	var futureValues []Value
 	for _, fname := range expr.FutureNames {
 		futureVal, _ := s.Eval(fname, env, currTime)
@@ -552,29 +565,37 @@ func (s *SimpleEval) evalMemberAccessExpr(m *MemberAccessExpr, env *Env[Value], 
 // Call expression are of the form a.b.c.d(params)
 // The a.b.c.d must resolve to a callable (either a component method or a native function)
 func (s *SimpleEval) evalCallExpr(expr *CallExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
-	// Simplified version - evaluate the Function -
-	// it MUST evaluate to a MethodValue with a saved env
 	receiver, _ := s.Eval(expr.Function, env, currTime)
 	methodValue := receiver.Value.(*decl.MethodValue)
-	methodDecl := methodValue.Method // compInstance.ComponentDecl.GetMethod(fexpr.Member.Value)
+	methodDecl := methodValue.Method
 
-	// Now we have the target component instance, we can invoke the method
-	// Evaluate the arguments
 	argValues := make([]Value, expr.NumArgs())
 	for i, argExpr := range expr.ArgList {
 		argValue, _ := s.Eval(argExpr, env, currTime)
 		argValues[i] = argValue
 	}
 
-	// No currying for now
+	if s.Tracer != nil {
+		argStrings := make([]string, expr.NumArgs())
+		for i := range len(expr.ArgList) {
+			argStrings[i] = argValues[i].String()
+		}
+		target := expr.Function.String() // Simplified target name
+		eventID := s.Tracer.Enter(*currTime, EventEnter, target, argStrings...)
+		startTime := *currTime
+		defer func() {
+			duration := *currTime - startTime
+			// TODO: get error if any
+			s.Tracer.Exit(eventID, *currTime, duration, result, nil)
+		}()
+	}
+
 	newenv := methodValue.SavedEnv.Push()
 	for idx, param := range methodDecl.Parameters {
 		newenv.Set(param.Name.Value, argValues[idx])
 	}
 
-	// Now evaluate the body using the new env
 	if methodValue.IsNative {
-		// Native method invocation to be handled differently
 		result, err := InvokeMethod(methodValue.BoundInstance, methodValue.Method.Name.Value,
 			argValues, env, currTime, s.Rand)
 		ensureNoErr(err, "Error calling method: ", err)

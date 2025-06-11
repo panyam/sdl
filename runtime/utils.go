@@ -10,7 +10,7 @@ import (
 
 func RunCallInBatches(system *SystemInstance, obj, method string, nbatches, batchsize int, numworkers int, onBatch func(batch int, batchVals []Value)) (results [][]Value) {
 	fi := system.File
-	se := NewSimpleEval(fi)
+	se := NewSimpleEval(fi, nil)
 	var totalSimTime core.Duration
 	env := fi.Env.Push()
 	se.EvalInitSystem(system, env, &totalSimTime)
@@ -34,7 +34,7 @@ func RunCallInBatches(system *SystemInstance, obj, method string, nbatches, batc
 		go func(workerIndex int) {
 			defer wg.Done()
 			workerEnv := env.Push() // Each worker gets its own environment to avoid data races
-			workerSE := NewSimpleEval(fi)
+			workerSE := NewSimpleEval(fi, nil)
 
 			startBatch := workerIndex * batchesPerWorker
 			endBatch := (workerIndex + 1) * batchesPerWorker
@@ -71,7 +71,7 @@ func RunTestCall(system *SystemInstance, env *Env[Value], obj, method string, nc
 	defer func() {
 		log.Printf("Time taken for %d calls: %v", ncalls, time.Now().Sub(startTime))
 	}()
-	se := NewSimpleEval(system.File)
+	se := NewSimpleEval(system.File, nil)
 	log.Printf("Now Running %s.%s.%s:", system.System.Name.Value, obj, method)
 	for i := range ncalls {
 		var currTime core.Duration

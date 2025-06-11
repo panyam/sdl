@@ -454,7 +454,11 @@ type FutureValue struct {
 }
 
 func TupleValue(values ...Value) (out Value) {
-	tt := &Type{Tag: TypeTagTuple} // Changed from {} to have a name for clarity
+	valtypes := make([]*Type, len(values))
+	for i, v := range values {
+		valtypes[i] = v.Type
+	}
+	tt := TupleType(valtypes...)
 	out, _ = NewValue(tt, values)
 	return
 }

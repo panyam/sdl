@@ -62,8 +62,7 @@ func TupleType(elementTypes ...*Type) *Type {
 		panic("Tuple element type cannot be nil or 0 length")
 	}
 	return &Type{
-		Tag: TypeTagTuple,
-		// Name: "Tuple",
+		Tag:  TypeTagTuple,
 		Info: elementTypes,
 	}
 }
