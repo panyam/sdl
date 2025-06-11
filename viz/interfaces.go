@@ -1,0 +1,49 @@
+// package viz defines common interfaces and data structures for generating visualizations.
+package viz
+
+import "github.com/panyam/sdl/runtime"
+
+// --- Common Data Structures ---
+
+// Node represents a component or instance in a static diagram.
+type Node struct {
+	ID   string // Unique identifier for the node
+	Name string // Display name
+	Type string // Component type for display
+}
+
+// Edge represents a connection between nodes in a static diagram.
+type Edge struct {
+	FromID string
+	ToID   string
+	Label  string
+}
+
+// DataPoint represents a single plot point for time-series charts.
+type DataPoint struct {
+	X int64   // Typically Unix timestamp in milliseconds
+	Y float64 // The value (e.g., latency, count)
+}
+
+// DataSeries represents a single named series of data points.
+type DataSeries struct {
+	Name   string
+	Points []DataPoint
+}
+
+// --- Interfaces for Generators ---
+
+// StaticDiagramGenerator defines the interface for creating static architecture diagrams.
+type StaticDiagramGenerator interface {
+	Generate(systemName string, nodes []Node, edges []Edge) (string, error)
+}
+
+// SequenceDiagramGenerator defines the interface for creating dynamic sequence diagrams from a trace.
+type SequenceDiagramGenerator interface {
+	Generate(trace *runtime.TraceData) (string, error)
+}
+
+// Plotter defines the interface for creating plots and charts.
+type Plotter interface {
+	Generate(series []DataSeries, title, xLabel, yLabel string) (string, error)
+}
