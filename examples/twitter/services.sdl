@@ -102,8 +102,8 @@ component TimelineService {
    * ```
    */
   method GetTimeline() HttpStatusCode {
-    // Get followee counts - we dont need actual users this user is following
-    // using the count we can kick of batch calls and that distribution is 
+    // Get followee counts - we dont need actual users being followed (by this user)
+    // using the count we can kick of batch calls and that *distribution* is 
     // what this is all about
     let _, followerCount = FollowsSvc.GetFollowerCount()
 
@@ -112,11 +112,9 @@ component TimelineService {
       return TweetsSvc.ListTweets()
     }
 
-    // Wait for batch to complete.
+    // Wait for entire batch to complete
     let result = wait future using WaitAll(HttpStatusCode.Ok)
 
-    // Here AllHttpStatusLessThan is a native method that takes the gobatch futures value
-    // and returns a new outcomes result matching our own return type.
     return result
   }
 }

@@ -21,50 +21,44 @@ func (g *MermaidSequenceGenerator) Generate(trace *runtime.TraceData) (string, e
 		return trace.Events[i].Timestamp < trace.Events[j].Timestamp
 	})
 
-	// 1. Discover all participants in topological order
-	participants := g.discoverParticipants(trace)
+	eventMap := make(map[int]*runtime.TraceEvent)
+	childrenMap := make(map[int][]*runtime.TraceEvent)
+	for _, event := range trace.Events {
+		eventMap[event.ID] = event
+		childrenMap[event.ParentID] = append(childrenMap[event.ParentID], event)
+	}
+
+	scopeOwner := g.calculateScopeOwners(trace, eventMap)
+	participants := g.discoverParticipants(trace, scopeOwner)
+
 	for _, p := range participants {
 		b.WriteString(fmt.Sprintf("  participant %s\n", p))
 	}
 	b.WriteString("\n")
 
-	// 2. Process events using a proper stack to manage activation state
-	activeStack := []string{"User"}
-	inParallelBlock := false
-	goEventParent := ""
+	processedEvents := make(map[int]bool)
+	var renderBranch func(event *runtime.TraceEvent)
 
-	for _, event := range trace.Events {
-		if len(activeStack) == 0 {
-			// This is a failsafe, should not happen in a valid trace starting from User
-			activeStack = append(activeStack, "User")
+	renderBranch = func(event *runtime.TraceEvent) {
+		if processedEvents[event.ID] {
+			return
 		}
-		caller := activeStack[len(activeStack)-1]
+		processedEvents[event.ID] = true
+
+		caller := scopeOwner[event.ParentID]
+		callee := scopeOwner[event.ID]
 
 		switch event.Kind {
 		case runtime.EventEnter:
-			callee, method := getParticipantAndMethod(event.Target)
-			if callee == "self" {
-				callee = caller
-			}
-			
-			// If we are in a parallel block, the caller is the entity that started the gobatch
-			if inParallelBlock {
-				caller = goEventParent
-			}
-
+			_, method := getParticipantAndMethod(event.Target)
 			b.WriteString(fmt.Sprintf("  %s->>%s: %s(%s)\n", caller, callee, method, strings.Join(event.Arguments, ", ")))
-			
-			if !inParallelBlock {
-				b.WriteString(fmt.Sprintf("  activate %s\n", callee))
-				activeStack = append(activeStack, callee)
+			b.WriteString(fmt.Sprintf("  activate %s\n", callee))
+
+			for _, child := range childrenMap[event.ID] {
+				renderBranch(child)
 			}
 
-		case runtime.EventExit:
-			if !inParallelBlock && len(activeStack) > 1 {
-				participantToDeactivate := activeStack[len(activeStack)-1]
-				activeStack = activeStack[:len(activeStack)-1]
-				b.WriteString(fmt.Sprintf("  deactivate %s\n", participantToDeactivate))
-			}
+			b.WriteString(fmt.Sprintf("  deactivate %s\n", callee))
 
 		case runtime.EventGo:
 			loopCount := "N"
@@ -72,15 +66,13 @@ func (g *MermaidSequenceGenerator) Generate(trace *runtime.TraceData) (string, e
 				loopCount = event.Arguments[0]
 			}
 			b.WriteString(fmt.Sprintf("  loop %s times\n", loopCount))
-			inParallelBlock = true
-			goEventParent = caller // Remember who started the parallel block
+			for _, child := range childrenMap[event.ID] {
+				// The child's caller is the owner of the 'go' event's scope
+				renderBranch(child)
+			}
+			b.WriteString("  end\n")
 
 		case runtime.EventWait:
-			if inParallelBlock {
-				b.WriteString("  end\n")
-				inParallelBlock = false
-				goEventParent = ""
-			}
 			aggregator := "wait"
 			if len(event.Arguments) > 0 && event.Arguments[0] != "" {
 				aggregator = fmt.Sprintf("wait using %s", event.Arguments[0])
@@ -89,31 +81,25 @@ func (g *MermaidSequenceGenerator) Generate(trace *runtime.TraceData) (string, e
 		}
 	}
 
-	return b.String(), nil
-}
-
-// discoverParticipants finds all unique participants in topological order from the trace.
-func (g *MermaidSequenceGenerator) discoverParticipants(trace *runtime.TraceData) []string {
-	participantList := []string{"User"}
-	participantSet := map[string]bool{"User": true}
-
-	addParticipant := func(name string) {
-		if name != "self" && !participantSet[name] {
-			participantList = append(participantList, name)
-			participantSet[name] = true
+	for _, event := range trace.Events {
+		if !processedEvents[event.ID] {
+			renderBranch(event)
 		}
 	}
 
-	// This map tracks the "owner" of a scope, which is needed to resolve 'self' calls
+	return b.String(), nil
+}
+
+func (g *MermaidSequenceGenerator) calculateScopeOwners(trace *runtime.TraceData, eventMap map[int]*runtime.TraceEvent) map[int]string {
 	scopeOwner := make(map[int]string)
-	scopeOwner[0] = "User" 
+	scopeOwner[0] = "User"
 
 	for _, event := range trace.Events {
 		owner := scopeOwner[event.ParentID]
 		if owner == "" {
-			owner = "User" // Default for safety
+			owner = "User"
 		}
-		
+
 		currentOwner := owner
 		if event.Kind == runtime.EventEnter {
 			callee, _ := getParticipantAndMethod(event.Target)
@@ -122,14 +108,24 @@ func (g *MermaidSequenceGenerator) discoverParticipants(trace *runtime.TraceData
 			}
 		}
 		scopeOwner[event.ID] = currentOwner
-		addParticipant(currentOwner)
 	}
+	return scopeOwner
+}
 
+func (g *MermaidSequenceGenerator) discoverParticipants(trace *runtime.TraceData, scopeOwner map[int]string) []string {
+	participantList := []string{"User"}
+	participantSet := map[string]bool{"User": true}
+
+	for _, event := range trace.Events {
+		owner := scopeOwner[event.ID]
+		if owner != "" && !participantSet[owner] {
+			participantList = append(participantList, owner)
+			participantSet[owner] = true
+		}
+	}
 	return participantList
 }
 
-
-// getParticipantAndMethod extracts the participant and method from a target string like "instance.method".
 func getParticipantAndMethod(target string) (participant, method string) {
 	parts := strings.SplitN(target, ".", 2)
 	if len(parts) == 2 {
