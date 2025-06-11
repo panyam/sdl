@@ -94,11 +94,13 @@ type ExcalidrawElement struct {
 	StartArrowhead  *string         `json:"startArrowhead,omitempty"`
 	EndArrowhead    *string         `json:"endArrowhead,omitempty"`
 }
+
 type Binding struct {
 	ElementID string  `json:"elementId"`
 	Focus     float64 `json:"focus,omitempty"`
 	Gap       float64 `json:"gap,omitempty"`
 }
+
 type BoundElement struct{ Type, ID string }
 type ExcalidrawFile struct {
 	Type, Version, Source string
