@@ -15,13 +15,12 @@ import (
 )
 
 var diagramCmd = &cobra.Command{
-	Use:   "diagram <diagram_type> [system_name] [method_call]",
+	Use:   "diagram <diagram_type> [system_name]",
 	Short: "Generates diagrams of system structure or behavior",
 	Long: `Generates visual representations of system components and their interactions.
 Diagram types:
-  static: Shows component instances and their declared dependencies.
-  dynamic: Shows component interactions for a specific operation.
-           Must be generated from a trace file using the --from flag.`,
+  static: Shows component instances and their declared dependencies. Requires a <system_name>.
+  dynamic: Shows component interactions from a trace file. Requires the --from flag.`,
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		diagramType := args[0]
@@ -73,9 +72,6 @@ func generateDynamicDiagram(fromFile, outputFile, format string) {
 	switch format {
 	case "mermaid":
 		diagramOutput = generateMermaidSequenceDiagram(&traceData)
-	case "dot":
-		fmt.Fprintf(os.Stderr, "Dynamic diagram for format 'dot' is not yet supported.\n")
-		os.Exit(1)
 	default:
 		fmt.Fprintf(os.Stderr, "Dynamic diagram for format '%s' not supported. Choose 'mermaid'.\n", format)
 		os.Exit(1)
@@ -84,70 +80,89 @@ func generateDynamicDiagram(fromFile, outputFile, format string) {
 	writeOutput(outputFile, diagramOutput)
 }
 
+// getParticipantAndMethod extracts the participant and method from a target string like "instance.method".
+func getParticipantAndMethod(target string) (participant, method string) {
+	parts := strings.SplitN(target, ".", 2)
+	if len(parts) == 2 {
+		return parts[0], parts[1]
+	}
+	return target, ""
+}
+
 func generateMermaidSequenceDiagram(trace *runtime.TraceData) string {
 	var b bytes.Buffer
 	b.WriteString("sequenceDiagram\n")
 
-	participants := make(map[string]bool)
-	participants["User"] = true
+	// 1. Discover all participants and order them correctly
+	participantSet := make(map[string]bool)
+	participantSet["User"] = true // The initiator is always present
 
-	// Find all participants
-	for _, event := range trace.Events {
-		if event.Kind == runtime.EventEnter {
-			parts := strings.Split(event.Target, ".")
-			if len(parts) > 0 && !participants[parts[0]] {
-				participants[parts[0]] = true
-				b.WriteString(fmt.Sprintf("  participant %s\n", parts[0]))
-			}
-		}
-	}
-
-	// Build the sequence
 	eventMap := make(map[int]*runtime.TraceEvent)
 	for _, event := range trace.Events {
 		eventMap[event.ID] = event
-	}
-
-	// Sort events by timestamp to process them in order
-	sort.SliceStable(trace.Events, func(i, j int) bool {
-		return trace.Events[i].Timestamp < trace.Events[j].Timestamp
-	})
-
-	for _, event := range trace.Events {
-		if event.Kind != runtime.EventEnter {
-			continue
-		}
-
-		parentEvent, hasParent := eventMap[event.ParentID]
-		from := "User"
-		if hasParent {
-			fromParts := strings.Split(parentEvent.Target, ".")
-			if len(fromParts) > 0 {
-				from = fromParts[0]
+		if event.Kind == runtime.EventEnter {
+			participant, _ := getParticipantAndMethod(event.Target)
+			if participant != "" {
+				participantSet[participant] = true
 			}
 		}
+	}
 
-		toParts := strings.Split(event.Target, ".")
-		to := "Unknown"
-		if len(toParts) > 0 {
-			to = toParts[0]
+	// Create a sorted list of participants with "User" first
+	participantList := make([]string, 0, len(participantSet))
+	for p := range participantSet {
+		if p != "User" {
+			participantList = append(participantList, p)
 		}
-		methodName := ""
-		if len(toParts) > 1 {
-			methodName = toParts[1]
+	}
+	sort.Strings(participantList)
+	participantList = append([]string{"User"}, participantList...)
+
+	// 2. Declare all participants in the correct order
+	for _, p := range participantList {
+		b.WriteString(fmt.Sprintf("  participant %s\n", p))
+	}
+	b.WriteString("\n")
+
+	// 3. Process events to generate the sequence
+	// Map of active event IDs to their "from" participant
+	activeEvents := make(map[int]string)
+	activeEvents[0] = "User" // Root event's parent is the User
+
+	for _, event := range trace.Events {
+		from, parentFound := activeEvents[event.ParentID]
+		if !parentFound {
+			from = "User" // Default to User if parent not found (should not happen for non-root)
 		}
 
-		// Activate the receiver of the call
-		b.WriteString(fmt.Sprintf("  activate %s\n", to))
-		b.WriteString(fmt.Sprintf("  %s->>%s: %s(%s)\n", from, to, methodName, strings.Join(event.Arguments, ", ")))
+		if event.Kind == runtime.EventEnter {
+			to, method := getParticipantAndMethod(event.Target)
+			if to == "self" {
+				to = from // A call to "self" is a call to the current participant
+			}
 
-		// Corresponding exit event? For now, we just show calls.
-		// A full implementation would find the matching exit event to add return arrows
-		// and deactivate participants. For simplicity, we can just deactivate immediately
-		// if we don't handle nested calls perfectly yet.
-		// For this simple version, let's assume calls return immediately for diagramming.
-		b.WriteString(fmt.Sprintf("  deactivate %s\n", to))
-
+			b.WriteString(fmt.Sprintf("  %s->>%s: %s(%s)\n", from, to, method, strings.Join(event.Arguments, ", ")))
+			b.WriteString(fmt.Sprintf("  activate %s\n", to))
+			activeEvents[event.ID] = to // The callee is now the "from" for its children
+		} else if event.Kind == runtime.EventExit {
+			// Find the corresponding Enter event to know who to deactivate
+			// This linear scan is inefficient but simple for now.
+			var enterTarget string
+			for _, e := range trace.Events {
+				if e.Kind == runtime.EventEnter && e.ParentID == event.ParentID && e.Timestamp < event.Timestamp {
+					// This is a heuristic match, a real solution needs to link exit to enter
+					enterTarget = e.Target
+					break
+				}
+			}
+			if enterTarget != "" {
+				to, _ := getParticipantAndMethod(enterTarget)
+				if to == "self" {
+					to = from
+				}
+				b.WriteString(fmt.Sprintf("  deactivate %s\n", to))
+			}
+		}
 	}
 
 	return b.String()
@@ -157,6 +172,7 @@ func generateStaticDiagram(systemName, outputFile, format string) {
 	var diagramOutput string
 	var errGen error
 
+	// ... (rest of the static diagram logic remains the same)
 	// 1. Load the SDL file
 	sdlLoader := loader.NewLoader(nil, nil, 10)
 	fileStatus, err := sdlLoader.LoadFile(dslFilePath, "", 0)
