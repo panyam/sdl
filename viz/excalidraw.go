@@ -105,27 +105,27 @@ type BoundElement struct{ Type, ID string }
 type ExcalidrawFile struct {
 	Type, Version, Source string
 	Elements              []*ExcalidrawElement
-	AppState              map[string]interface{}
-	Files                 map[string]interface{}
+	AppState              map[string]any
+	Files                 map[string]any
 }
-type excalidrawScene struct {
+type ExcalidrawScene struct {
 	elements     []*ExcalidrawElement
 	elementIDMap map[string]*ExcalidrawElement
 	randSource   *rand.Rand
 }
 
-func newExcalidrawScene() *excalidrawScene {
-	return &excalidrawScene{
+func newExcalidrawScene() *ExcalidrawScene {
+	return &ExcalidrawScene{
 		elements:     make([]*ExcalidrawElement, 0),
 		elementIDMap: make(map[string]*ExcalidrawElement),
 		randSource:   rand.New(rand.NewSource(time.Now().UnixNano())),
 	}
 }
-func (s *excalidrawScene) newSeed() int64 { return s.randSource.Int63n(2147483646) + 1 }
-func (s *excalidrawScene) newElementID(prefix string) string {
+func (s *ExcalidrawScene) newSeed() int64 { return s.randSource.Int63n(2147483646) + 1 }
+func (s *ExcalidrawScene) newElementID(prefix string) string {
 	return prefix + "_" + strconv.FormatInt(s.newSeed(), 36)
 }
-func (s *excalidrawScene) addElement(element *ExcalidrawElement) error {
+func (s *ExcalidrawScene) addElement(element *ExcalidrawElement) error {
 	if element.ID == "" {
 		element.ID = s.newElementID(element.Type)
 	}
@@ -133,8 +133,8 @@ func (s *excalidrawScene) addElement(element *ExcalidrawElement) error {
 	s.elementIDMap[element.ID] = element
 	return nil
 }
-func (s *excalidrawScene) getElement(id string) *ExcalidrawElement { return s.elementIDMap[id] }
-func (s *excalidrawScene) addRectangle(x, y, w, h float64, label string, props, labelProps *ExcalidrawElement) (*ExcalidrawElement, *ExcalidrawElement, error) {
+func (s *ExcalidrawScene) getElement(id string) *ExcalidrawElement { return s.elementIDMap[id] }
+func (s *ExcalidrawScene) addRectangle(x, y, w, h float64, label string, props, labelProps *ExcalidrawElement) (*ExcalidrawElement, *ExcalidrawElement, error) {
 	rect := &ExcalidrawElement{
 		Type: "rectangle", X: x, Y: y, Width: w, Height: h, StrokeColor: "#1e1e1e", BackgroundColor: "#f8f9fa",
 		FillStyle: "solid", StrokeWidth: 1, StrokeStyle: "solid", Roughness: 1, StrokeSharpness: "round",
@@ -147,7 +147,7 @@ func (s *excalidrawScene) addRectangle(x, y, w, h float64, label string, props, 
 	}
 	return rect, nil, nil
 }
-func (s *excalidrawScene) addText(x, y, w, h float64, text string, containerID *string, props *ExcalidrawElement) (*ExcalidrawElement, *ExcalidrawElement, error) {
+func (s *ExcalidrawScene) addText(x, y, w, h float64, text string, containerID *string, props *ExcalidrawElement) (*ExcalidrawElement, *ExcalidrawElement, error) {
 	fs := 16.0
 	bl := int(fs * 0.8)
 	textEl := &ExcalidrawElement{
@@ -158,7 +158,7 @@ func (s *excalidrawScene) addText(x, y, w, h float64, text string, containerID *
 	s.addElement(textEl)
 	return textEl, nil, nil
 }
-func (s *excalidrawScene) addArrow(from, to, label string, props, labelProps *ExcalidrawElement) (*ExcalidrawElement, *ExcalidrawElement, error) {
+func (s *ExcalidrawScene) addArrow(from, to, label string, props, labelProps *ExcalidrawElement) (*ExcalidrawElement, *ExcalidrawElement, error) {
 	source := s.getElement(from)
 	target := s.getElement(to)
 	ah := "arrow"
@@ -176,10 +176,10 @@ func (s *excalidrawScene) addArrow(from, to, label string, props, labelProps *Ex
 	}
 	return arrow, nil, nil
 }
-func (s *excalidrawScene) toJSON() (string, error) {
+func (s *ExcalidrawScene) toJSON() (string, error) {
 	file := ExcalidrawFile{
 		Type: "excalidraw", Version: "2", Source: "https://github.com/panyam/sdl",
-		Elements: s.elements, AppState: map[string]interface{}{"viewBackgroundColor": "#FFFFFF"},
+		Elements: s.elements, AppState: map[string]any{"viewBackgroundColor": "#FFFFFF"},
 	}
 	data, err := json.MarshalIndent(file, "", "  ")
 	return string(data), err
