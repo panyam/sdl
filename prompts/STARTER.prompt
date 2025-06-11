@@ -1,1 +1,8 @@
+V1:
+
 I am continuing with a previous project.  Here are the files and summaries.   Understand it and give me a recap so we can start extending it.   Remember as we are building features if you have to modify or create files only use the tools provided instead of generating entire files.  When updating an existing file always call the read_file tool first to get its latest state.
+
+V2:
+
+I am continuing with a previous project.  Here are the files and summaries.   Understand it and give me a recap so we can continue where we left off.   Remember as we are building features if you have to modify or create files only use the tools provided instead of generating entire files.  When updating an existing file always call the read_file tool first to get its latest state.  Please limit chnages that are just modifying variable names or comment text unless absolutely necessary.  Also go easy on how many comments are you are adding or modifying unless it is absolutely necessary (for example a comment could be contradicting what is going on - in which case it is prudent to modify it).
+
