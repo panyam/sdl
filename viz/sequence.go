@@ -21,42 +21,49 @@ func (g *MermaidSequenceGenerator) Generate(trace *runtime.TraceData) (string, e
 		return trace.Events[i].Timestamp < trace.Events[j].Timestamp
 	})
 
+	// 1. First pass: Determine owner of each scope and discover all participants
+	scopeOwner := make(map[int]string)
+	scopeOwner[0] = "User"
 	participantList := []string{"User"}
 	participantSet := map[string]bool{"User": true}
-	scopeParticipant := map[int]string{0: "User"}
 
 	addParticipant := func(name string) {
-		if name != "self" && !participantSet[name] {
+		if !participantSet[name] {
 			participantList = append(participantList, name)
 			participantSet[name] = true
 		}
 	}
 
 	for _, event := range trace.Events {
+		owner := scopeOwner[event.ParentID]
+		if owner == "" {
+			owner = "User" // Default for safety
+		}
+
 		if event.Kind == runtime.EventEnter {
-			caller := scopeParticipant[event.ParentID]
 			callee, _ := getParticipantAndMethod(event.Target)
 			if callee == "self" {
-				callee = caller
+				scopeOwner[event.ID] = owner
+				addParticipant(owner)
+			} else {
+				scopeOwner[event.ID] = callee
+				addParticipant(callee)
 			}
-			addParticipant(callee)
-			scopeParticipant[event.ID] = callee
+		} else {
+			scopeOwner[event.ID] = owner
 		}
 	}
 
+	// 2. Declare all participants in the discovered order
 	for _, p := range participantList {
 		b.WriteString(fmt.Sprintf("  participant %s\n", p))
 	}
 	b.WriteString("\n")
 
-	activeParticipantStack := []string{"User"}
+	// 3. Process events using the scope map to generate the sequence
 	inParallelBlock := false
-
 	for _, event := range trace.Events {
-		if len(activeParticipantStack) == 0 {
-			activeParticipantStack = append(activeParticipantStack, "User")
-		}
-		caller := activeParticipantStack[len(activeParticipantStack)-1]
+		caller := scopeOwner[event.ParentID]
 
 		switch event.Kind {
 		case runtime.EventEnter:
@@ -65,21 +72,16 @@ func (g *MermaidSequenceGenerator) Generate(trace *runtime.TraceData) (string, e
 				callee = caller
 			}
 
-			if inParallelBlock {
-				b.WriteString(fmt.Sprintf("  %s->>%s: %s(%s)\n", caller, callee, method, strings.Join(event.Arguments, ", ")))
-			} else {
-				b.WriteString(fmt.Sprintf("  %s->>%s: %s(%s)\n", caller, callee, method, strings.Join(event.Arguments, ", ")))
+			b.WriteString(fmt.Sprintf("  %s->>%s: %s(%s)\n", caller, callee, method, strings.Join(event.Arguments, ", ")))
+			if !inParallelBlock {
 				b.WriteString(fmt.Sprintf("  activate %s\n", callee))
-				activeParticipantStack = append(activeParticipantStack, callee)
 			}
 
 		case runtime.EventExit:
+			// The owner of the exit event is the participant that needs to be deactivated.
+			participantToDeactivate := scopeOwner[event.ID]
 			if !inParallelBlock {
-				if len(activeParticipantStack) > 1 {
-					participantToDeactivate := activeParticipantStack[len(activeParticipantStack)-1]
-					activeParticipantStack = activeParticipantStack[:len(activeParticipantStack)-1]
-					b.WriteString(fmt.Sprintf("  deactivate %s\n", participantToDeactivate))
-				}
+				b.WriteString(fmt.Sprintf("  deactivate %s\n", participantToDeactivate))
 			}
 
 		case runtime.EventGo:
@@ -92,14 +94,14 @@ func (g *MermaidSequenceGenerator) Generate(trace *runtime.TraceData) (string, e
 
 		case runtime.EventWait:
 			if inParallelBlock {
-				b.WriteString("  end\n")
+				b.WriteString("  end\n") // End the 'loop' block
 				inParallelBlock = false
 			}
-			aggregator := ""
-			if len(event.Arguments) > 0 {
-				aggregator = event.Arguments[0]
+			aggregator := "wait"
+			if len(event.Arguments) > 0 && event.Arguments[0] != "" {
+				aggregator = fmt.Sprintf("wait using %s", event.Arguments[0])
 			}
-			b.WriteString(fmt.Sprintf("  Note over %s: wait using %s\n", caller, aggregator))
+			b.WriteString(fmt.Sprintf("  Note over %s: %s\n", caller, aggregator))
 		}
 	}
 
