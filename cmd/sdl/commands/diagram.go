@@ -70,8 +70,10 @@ func generateDynamicDiagram(fromFile, outputFile, format string) {
 	switch format {
 	case "mermaid":
 		generator = &viz.MermaidSequenceGenerator{}
+	case "dot":
+		generator = &viz.DotTraceGenerator{}
 	default:
-		fmt.Fprintf(os.Stderr, "Dynamic diagram for format '%s' not supported. Choose 'mermaid'.\n", format)
+		fmt.Fprintf(os.Stderr, "Dynamic diagram for format '%s' not supported. Choose 'mermaid' or 'dot'.\n", format)
 		os.Exit(1)
 	}
 
