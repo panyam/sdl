@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"slices"
+	"strconv"
 	"time"
 
 	"github.com/panyam/sdl/core"
@@ -184,8 +185,6 @@ func (s *SimpleEval) evalReturnStmt(r *ReturnStmt, env *Env[Value], currTime *co
 func (s *SimpleEval) evalForStmt(f *ForStmt, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
 	var err error
 	counter := int64(0)
-
-	// now evaluate the body
 	for {
 		condVal, _ := s.Eval(f.Condition, env, currTime)
 		isCondInt := condVal.Type.Equals(IntType)
@@ -204,8 +203,6 @@ func (s *SimpleEval) evalForStmt(f *ForStmt, env *Env[Value], currTime *core.Dur
 		} else if !condBoolVal {
 			return
 		}
-
-		// Evaluate body and see if it returned
 		bodyRes, bodyReturned := s.Eval(f.Body, env, currTime)
 		if bodyReturned {
 			return bodyRes, bodyReturned
@@ -222,7 +219,6 @@ func (s *SimpleEval) evalLetStmt(l *LetStmt, env *Env[Value], currTime *core.Dur
 		letvar := l.Variables[0].Value
 		env.Set(letvar, result)
 	} else {
-		// If there are multiple variables, we expect the result to be a tuple
 		tupleValues, err := result.GetTuple()
 		ensureNoErr(err)
 		for i, val := range tupleValues {
@@ -376,7 +372,9 @@ func (s *SimpleEval) evalGoExpr(m *GoExpr, env *Env[Value], currTime *core.Durat
 	if s.Tracer != nil {
 		loopCount := "1"
 		if !loopValue.IsNil() {
-			loopCount = loopValue.String()
+			if intVal, err := loopValue.GetInt(); err == nil {
+				loopCount = strconv.FormatInt(intVal, 10)
+			}
 		}
 		target := fmt.Sprintf("goroutine_for_%s", m.InferredType().String())
 		traceID = s.Tracer.Enter(*currTime, EventGo, target, loopCount)
@@ -483,21 +481,14 @@ func (s *SimpleEval) evalMemberAccessExpr(m *MemberAccessExpr, env *Env[Value], 
 		ensureNoErr(err)
 		return
 	}
-
-	// Methods are different - instead of returning a reference, return a bound method
-	// so it can be evaluated correctly
 	methodDecl, _ := compDecl.GetMethod(m.Member.Value)
 	if methodDecl != nil {
 		methodType := decl.MethodType(compDecl, methodDecl)
 		methodVal := &decl.MethodValue{
-			Method:   methodDecl,
-			SavedEnv: compInst.InitialEnv.Push(),
-			IsNative: compDecl.IsNative,
+			Method: methodDecl, SavedEnv: compInst.InitialEnv.Push(), IsNative: compDecl.IsNative,
 		}
 		if compInst.IsNative {
 			methodVal.BoundInstance = compInst.NativeInstance
-		} else {
-			// log.Println("what do we do here?")
 		}
 		result, err = NewValue(methodType, methodVal)
 		ensureNoErr(err)
