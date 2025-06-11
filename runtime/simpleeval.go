@@ -73,13 +73,13 @@ func (s *SimpleEval) EvalStatements(stmts []Stmt, env *Env[Value]) (result []Val
 
 // The main Eval loop of an expression/statement
 func (s *SimpleEval) Eval(node Node, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
-	// fmt.Printf("Eval entry: %T - %s\n", node, node) // Debug entry
+	// ... (rest of the Eval method remains the same)
 	switch n := node.(type) {
 	// --- Statement Nodes ---
 	case *BlockStmt:
 		// With a block statement we usually push an extra context so it can be removed
 		// at the end of the block
-		return s.evalBlockStmt(n, env.Push(), currTime) // Pass nil context
+		return s.evalBlockStmt(n, env.Push(), currTime)
 	case *LetStmt:
 		return s.evalLetStmt(n, env, currTime)
 	case *SetStmt:
@@ -143,14 +143,13 @@ func (s *SimpleEval) evalIdentifierExpr(i *IdentifierExpr, env *Env[Value], _ *c
 	value, ok := env.Get(name)
 	if !ok {
 		err := fmt.Errorf("identifier not found '%s'", name)
-		panic(err) // or register and continue?
+		panic(err)
 	} else {
 		result = value
 	}
 	return
 }
 
-// Evaluates the value of a Literal Expression
 func (s *SimpleEval) evalLiteralExpr(e *LiteralExpr, _ *Env[Value], _ *core.Duration) (result Value, returned bool) {
 	result = e.Value
 	return
@@ -159,12 +158,6 @@ func (s *SimpleEval) evalLiteralExpr(e *LiteralExpr, _ *Env[Value], _ *core.Dura
 func (s *SimpleEval) evalSetStmt(set *SetStmt, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
 	// evaluate the Expression and unzip and assign to variables in the same environment
 	result, _ = s.Eval(set.Value, env, currTime)
-
-	// Now find *where* it needs to be set, it can be:
-	// 1. A var in the local env
-	// 2. A member access expression - of the form a.b.c.d.e where a, b, c, d are components and e is a field/param name
-	// or a component instance - either way it should have the same type as the RHS
-
 	switch lhs := set.TargetExpr.(type) {
 	case *IdentifierExpr:
 		env.Set(lhs.Value, result)
@@ -240,7 +233,6 @@ func (s *SimpleEval) evalLetStmt(l *LetStmt, env *Env[Value], currTime *core.Dur
 	return
 }
 
-// Evaluates a distrbute expression that returns an Outcomes value type.
 func (s *SimpleEval) evalDistributeExpr(dist *decl.DistributeExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
 	var totalValue Value
 	totalProb := 0.0
@@ -269,7 +261,6 @@ func (s *SimpleEval) evalDistributeExpr(dist *decl.DistributeExpr, env *Env[Valu
 			condProb = condVal.FloatVal()
 		}
 		totalCasesProb += condProb
-
 		bodyVal, _ := s.Eval(caseExp.Body, env, currTime)
 		if idx == 0 {
 			outcomeType = bodyVal.Type
@@ -279,8 +270,6 @@ func (s *SimpleEval) evalDistributeExpr(dist *decl.DistributeExpr, env *Env[Valu
 		caseBodies = append(caseBodies, bodyVal)
 		outcomes.Add(condProb, bodyVal)
 	}
-
-	// check default
 	if dist.Default != nil {
 		if dist.TotalProb == nil {
 			panic("Default cannot exist when total prob exists - type checker cannot check this??")
@@ -299,32 +288,16 @@ func (s *SimpleEval) evalDistributeExpr(dist *decl.DistributeExpr, env *Env[Valu
 	return outVal, false
 }
 
-// Evaluate a sample expression that evaluates a random value based on the child
-// distribution
 func (s *SimpleEval) evalSampleExpr(samp *decl.SampleExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
 	res, _ := s.Eval(samp.FromExpr, env, currTime)
-
 	outcomes := res.OutcomesVal()
 	result, _ = outcomes.Sample(s.Rand)
-	// log.Println("Sampled from: ", outcomes, result, ok)
 	return
-	// TODO - Need a "Samplable or Distribution type"
-	// Outcomes are essentially weight => Value.  When Values are discrete its not an issue.
-	// But when you have Values that could be continuous (eg latencies) we need these to be sampled
 }
 
-// Evaluate a component construction expression
 func (s *SimpleEval) evalNewExpr(n *decl.NewExpr, _ *Env[Value], currTime *core.Duration) (result Value, returned bool) {
-	// New contains the name of the component to instantiate
-	// Since exection begins from a single File the File's env should contain the identifer
 	compInst, result, err := NewComponentInstance(s.RootFile, n.ComponentDecl)
 	ensureNoErr(err)
-
-	// Now for any "instantiated" components set it here
-	// For native components we dont need this as they will take care of it themselves -
-	// ie initialization is "entire"
-	// Later on we can also have native components expose their dependencies so we can take
-	// care of it but out of scope for now
 	if !compInst.IsNative {
 		stmts, err := compInst.Initializer()
 		ensureNoErr(err)
@@ -337,8 +310,6 @@ func (s *SimpleEval) evalNewExpr(n *decl.NewExpr, _ *Env[Value], currTime *core.
 
 func (s *SimpleEval) evalUnaryExpr(u *UnaryExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
 	lr, _ := s.Eval(u.Right, env, currTime)
-
-	// TODO - Evaluate based on the operator
 	if u.Operator == "not" {
 		if lr.Type.Equals(BoolType) {
 			lr.Value = !lr.Value.(bool)
@@ -361,27 +332,21 @@ func (s *SimpleEval) evalBinaryExpr(b *BinaryExpr, env *Env[Value], currTime *co
 	return
 }
 
-/** Evaluate a Expr as a statement and return its value */
 func (s *SimpleEval) evalExprStmt(stmt *ExprStmt, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
 	return s.Eval(stmt.Expression, env, currTime)
 }
 
-/** Evaluate a If and return its value */
 func (s *SimpleEval) evalIfStmt(stmt *IfStmt, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
-	// Evaluate the condition expression to get its OpNode representation
 	condResult, _ := s.Eval(stmt.Condition, env, currTime)
-
 	if condResult.IsTrue() {
 		return s.Eval(stmt.Then, env, currTime)
 	} else if stmt.Else != nil {
 		return s.Eval(stmt.Else, env, currTime)
 	}
-	return // No else, return default nil value
+	return
 }
 
-// Delay expressions
 func (s *SimpleEval) evalDelayStmt(d *DelayStmt, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
-	// Evaluate the condition expression to get its OpNode representation
 	result, _ = s.Eval(d.Duration, env, currTime)
 	if i, err := result.GetInt(); err == nil {
 		*currTime += core.Duration(i)
@@ -390,7 +355,7 @@ func (s *SimpleEval) evalDelayStmt(d *DelayStmt, env *Env[Value], currTime *core
 		*currTime += f
 		result.Time += f
 	} else {
-		panic("delay value should have been int or float.  type checking failed")
+		panic("delay value should have been int or float. type checking failed")
 	}
 	return
 }
@@ -406,13 +371,17 @@ func (s *SimpleEval) evalTupleExpr(m *TupleExpr, env *Env[Value], currTime *core
 }
 
 func (s *SimpleEval) evalGoExpr(m *GoExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
+	var traceID int
+	loopValue, _ := s.Eval(m.LoopExpr, env, currTime)
 	if s.Tracer != nil {
-		// Simplified target for now. A real implementation would be more detailed.
+		loopCount := "1"
+		if !loopValue.IsNil() {
+			loopCount = loopValue.String()
+		}
 		target := fmt.Sprintf("goroutine_for_%s", m.InferredType().String())
-		s.Tracer.Enter(*currTime, EventGo, target)
+		traceID = s.Tracer.Enter(*currTime, EventGo, target, loopCount)
 	}
 
-	loopValue, _ := s.Eval(m.LoopExpr, env, currTime)
 	target := m.Stmt
 	if m.Expr != nil {
 		target = m.Expr
@@ -425,16 +394,20 @@ func (s *SimpleEval) evalGoExpr(m *GoExpr, env *Env[Value], currTime *core.Durat
 			Stmt:     target,
 			SavedEnv: env.Push(),
 		},
+		TraceID: traceID,
 	})
 	ensureNoErr(err)
-
 	return
 }
 
 func (s *SimpleEval) evalWaitExpr(expr *WaitExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
+	var aggName string
+	if expr.AggregatorName != nil {
+		aggName = expr.AggregatorName.Value
+	}
 	if s.Tracer != nil {
-		s.Tracer.Enter(*currTime, EventWait, "wait")
-		defer s.Tracer.Exit(0, *currTime, 0, Nil, nil) // Simplified exit
+		s.Tracer.Enter(*currTime, EventWait, "wait", aggName)
+		defer s.Tracer.Exit(*currTime, 0, Nil, nil)
 	}
 
 	var futureValues []Value
@@ -449,37 +422,25 @@ func (s *SimpleEval) evalWaitExpr(expr *WaitExpr, env *Env[Value], currTime *cor
 		aggParams = append(aggParams, aggVal)
 	}
 
-	aggregator := s.RootFile.Runtime.CreateAggregator(expr.AggregatorName.Value, aggParams)
+	aggregator := s.RootFile.Runtime.CreateAggregator(aggName, aggParams)
 	result, _ = aggregator.Eval(s, env, currTime, futureValues)
 	return
 }
 
-///////////////////////////////////////////////////////
-
-// MemberAccessExprs are used to access fields/params of a component instance
-// In most cases they are straightforward - however when used as a set target
-// we somehow need to capture a reference to it so the value can be set later.
-// Right now it is being solved by special casing SetStmt and CallExpr
 func (s *SimpleEval) evalMemberAccessExpr(m *MemberAccessExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
 	var err error
-	// check if receive is an enum
 	if idexpr, ok := m.Receiver.(*IdentifierExpr); ok && idexpr.InferredType() != nil {
 		idexprType := idexpr.InferredType()
 		if idexprType.Tag == decl.TypeTagEnum {
-			// This is an enum - so we can return the value directly
 			enumDecl := idexprType.Info.(*EnumDecl)
 			ensureNoErr(err, "Enum value %s not found in enum %s", m.Member.Value, idexpr.Value)
-			// log.Println("Enum Value: ", enumDecl)
 			idx := enumDecl.IndexOfVariant(m.Member.Value)
 			result, err = NewValue(idexprType, idx)
 			ensureNoErr(err, "Error creating enum value: %v", err)
 			return
 		}
 	}
-
 	maeTarget, _ := s.Eval(m.Receiver, env, currTime)
-	finalReceiver := maeTarget
-
 	var compInst *ComponentInstance
 	if maeTarget.Type.Tag == decl.TypeTagRef {
 		refVal := maeTarget.Value.(*decl.RefValue)
@@ -489,7 +450,7 @@ func (s *SimpleEval) evalMemberAccessExpr(m *MemberAccessExpr, env *Env[Value], 
 			// TODO - This is a runtime error - but a user one so we should flag instead of panicking
 			// This means a "set" needs to be called - for example in DB, the ByShortCode dependency is not
 			// set - should we require that these are set manually each time or allow default values somehow for components too?
-			err := fmt.Errorf("Depenendency %s not set.  Either override it or set it", refVal.Attrib)
+			err := fmt.Errorf("Dependency %s not set. Either override it or set it", refVal.Attrib)
 			s.AddErrors(err)
 			panic(err)
 		}
@@ -499,18 +460,14 @@ func (s *SimpleEval) evalMemberAccessExpr(m *MemberAccessExpr, env *Env[Value], 
 	} else {
 		compInst = maeTarget.Value.(*ComponentInstance)
 	}
-
 	if compInst == nil {
 		panic(fmt.Sprintf("Expected mae to be a component, found: %s -> %s", maeTarget.String(), maeTarget.Type))
 	}
-
 	compDecl := compInst.ComponentDecl
 	compType := decl.ComponentType(compDecl)
-	finalReceiver, err = NewValue(compType, compInst)
+	finalReceiver, err := NewValue(compType, compInst)
 	ensureNoErr(err)
 	paramDecl, _ := compDecl.GetParam(m.Member.Value)
-
-	// See if we are just dealing with a param - in which case we return a value
 	if paramDecl != nil {
 		paramType := paramDecl.Name.InferredType()
 		refType := decl.RefType(compDecl, paramType)
@@ -518,8 +475,6 @@ func (s *SimpleEval) evalMemberAccessExpr(m *MemberAccessExpr, env *Env[Value], 
 		ensureNoErr(err)
 		return
 	}
-
-	// "uses" declarations are same as params
 	usesDecl, _ := compDecl.GetDependency(m.Member.Value)
 	if usesDecl != nil {
 		depType := decl.ComponentType(usesDecl.ResolvedComponent)
@@ -548,22 +503,13 @@ func (s *SimpleEval) evalMemberAccessExpr(m *MemberAccessExpr, env *Env[Value], 
 		ensureNoErr(err)
 		return result, false
 	}
-
 	err = fmt.Errorf("in file %s at line %d, col %d: member '%s' not found on component of type '%s'",
-		s.RootFile.Decl.FullPath,
-		m.Member.Pos().Line,
-		m.Member.Pos().Col,
-		m.Member.Value,
-		compDecl.Name.Value,
-	)
+		s.RootFile.Decl.FullPath, m.Member.Pos().Line, m.Member.Pos().Col, m.Member.Value, compDecl.Name.Value)
 	s.AddErrors(err)
 	result = decl.Nil
 	return result, false
 }
 
-// Evaluate a Call and return its value
-// Call expression are of the form a.b.c.d(params)
-// The a.b.c.d must resolve to a callable (either a component method or a native function)
 func (s *SimpleEval) evalCallExpr(expr *CallExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
 	receiver, _ := s.Eval(expr.Function, env, currTime)
 	methodValue := receiver.Value.(*decl.MethodValue)
@@ -576,17 +522,17 @@ func (s *SimpleEval) evalCallExpr(expr *CallExpr, env *Env[Value], currTime *cor
 	}
 
 	if s.Tracer != nil {
-		argStrings := make([]string, expr.NumArgs())
-		for i := range len(expr.ArgList) {
-			argStrings[i] = argValues[i].String()
+		argStrings := make([]string, len(argValues))
+		for i, v := range argValues {
+			argStrings[i] = v.String()
 		}
-		target := expr.Function.String() // Simplified target name
+		target := expr.Function.String()
 		eventID := s.Tracer.Enter(*currTime, EventEnter, target, argStrings...)
 		startTime := *currTime
 		defer func() {
 			duration := *currTime - startTime
-			// TODO: get error if any
-			s.Tracer.Exit(eventID, *currTime, duration, result, nil)
+			s.Tracer.Exit(*currTime, duration, result, nil)
+			_ = eventID // To silence unused error, though it's conceptually used by Exit
 		}()
 	}
 
@@ -596,8 +542,7 @@ func (s *SimpleEval) evalCallExpr(expr *CallExpr, env *Env[Value], currTime *cor
 	}
 
 	if methodValue.IsNative {
-		result, err := InvokeMethod(methodValue.BoundInstance, methodValue.Method.Name.Value,
-			argValues, env, currTime, s.Rand)
+		result, err := InvokeMethod(methodValue.BoundInstance, methodValue.Method.Name.Value, argValues, env, currTime, s.Rand)
 		ensureNoErr(err, "Error calling method: ", err)
 		return result, false
 	} else {
@@ -606,7 +551,6 @@ func (s *SimpleEval) evalCallExpr(expr *CallExpr, env *Env[Value], currTime *cor
 	return
 }
 
-/** Evaluate a Assignment as a statement and return its value */
 func (s *SimpleEval) evalAssignmentStmt(stmt *AssignmentStmt, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
 	panic("to be implemented")
 }

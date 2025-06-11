@@ -23,9 +23,6 @@ func NewValue(t *Type, initialValue ...any) (Value, error) {
 		Type:  t,
 		Value: nil, // Default to nil Go value
 	}
-	// Set Type-specific zero value for Go Value? Or leave as Go nil? Let's leave as Go nil initially.
-	// rv.Value = zeroValueForType(t)
-
 	if len(initialValue) > 0 {
 		err := rv.Set(initialValue[0])
 		if err != nil {
@@ -62,11 +59,8 @@ func (v *Value) Equals(another *Value) bool {
 // For List/Outcomes, 'v' is expected to be '[]Value'.
 func (r *Value) Set(v any) error {
 	if r.Type == nil {
-		// Should not happen if constructed properly
 		return fmt.Errorf("internal error: Value has nil type")
 	}
-
-	// Handle general nil case first
 	if v == nil {
 		if r.Type.Tag == TypeTagNil {
 			r.Value = nil
@@ -77,12 +71,9 @@ func (r *Value) Set(v any) error {
 		}
 	}
 
-	// Check type based on expected tag
 	switch r.Type {
 	case NilType:
-		// v is not nil here (handled above)
 		return fmt.Errorf("type mismatch: expected nil, got %T", v)
-
 	case BoolType:
 		val, ok := v.(bool)
 		if !ok {
@@ -242,7 +233,7 @@ func (r *Value) Set(v any) error {
 // String representation of the runtime value
 func (r *Value) String() string {
 	if r.IsNil() {
-		return "<nil Value>"
+		return "<nil>"
 	}
 	valStr := fmt.Sprintf("%v", r.Value)
 	typeName := "<nil type>"
@@ -451,6 +442,8 @@ type FutureValue struct {
 	// We track the body of the future as a thunk with a captured environment
 	// so we can run it later (at Wait time)
 	Body ThunkValue
+
+	TraceID int // ID of the 'go' event in the trace
 }
 
 func TupleValue(values ...Value) (out Value) {

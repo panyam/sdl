@@ -18,12 +18,6 @@ type WaitAll struct {
 }
 
 func (t *WaitAll) Eval(eval *SimpleEval, env *Env[Value], currTime *core.Duration, futures []Value) (result Value, returned bool) {
-	// Placeholder implementation for simulation:
-	// 1. Evaluate all the future thunks.
-	// 2. Find the maximum latency among them (makespan).
-	// 3. Compare the result of each future with the desired success codes.
-	// 4. Update total time and return.
-
 	maxLatency := 0.0
 	allFuturesSucceeded := true
 
@@ -33,15 +27,24 @@ func (t *WaitAll) Eval(eval *SimpleEval, env *Env[Value], currTime *core.Duratio
 		}
 		fval := futureVal.Value.(*FutureValue)
 
+		// Set the tracer's parent context before evaluating the deferred code
+		if eval.Tracer != nil && fval.TraceID > 0 {
+			eval.Tracer.PushParentID(fval.TraceID)
+		}
+
 		// A very simplified evaluation of the "gobatch" block.
 		// It just evaluates the body once to get a representative latency and result.
 		var futureLatency core.Duration
 		res, ret := eval.Eval(fval.Body.Stmt, fval.Body.SavedEnv, &futureLatency)
 
+		// Restore the tracer's parent context
+		if eval.Tracer != nil && fval.TraceID > 0 {
+			eval.Tracer.PopParent()
+		}
+
 		if !ret {
 			allFuturesSucceeded = false
 		} else {
-			// Check if the result is in the list of success codes
 			isSuccess := false
 			for _, successCode := range t.SuccessResultCodes {
 				if res.Equals(&successCode) {

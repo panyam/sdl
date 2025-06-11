@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"sync"
+
 	"github.com/panyam/sdl/core"
 )
 
@@ -18,14 +19,14 @@ const (
 // TraceEvent represents a single event in an execution trace.
 type TraceEvent struct {
 	Kind         TraceEventKind `json:"kind"`
-	ParentID     int            `json:"parent_id,omitempty"` // ID of the parent event
-	ID           int            `json:"id"`                  // Unique ID for this event
-	Timestamp    float64        `json:"ts"`                  // Simulation time at which event occurred
-	Duration     float64        `json:"dur,omitempty"`       // Duration of the event (especially for exits)
-	Target       string         `json:"target"`              // e.g., "MyService.doWork" or "future1"
-	Arguments    []string       `json:"args,omitempty"`      // String representation of arguments
-	ReturnValue  string         `json:"ret,omitempty"`       // String representation of return value
-	ErrorMessage string         `json:"err,omitempty"`       // Error message if any
+	ParentID     int            `json:"parent_id,omitempty"`
+	ID           int            `json:"id"`
+	Timestamp    float64        `json:"ts"`
+	Duration     float64        `json:"dur,omitempty"`
+	Target       string         `json:"target"`
+	Arguments    []string       `json:"args,omitempty"`
+	ReturnValue  string         `json:"ret,omitempty"`
+	ErrorMessage string         `json:"err,omitempty"`
 }
 
 // TraceData is the top-level structure for a trace file.
@@ -35,13 +36,12 @@ type TraceData struct {
 	Events     []*TraceEvent `json:"events"`
 }
 
-
 // ExecutionTracer records the execution flow of a single simulation run.
 type ExecutionTracer struct {
-	mu         sync.Mutex
-	Events     []*TraceEvent
-	nextID     int
-	stack      []int // Stores the ID of the current parent event
+	mu     sync.Mutex
+	Events []*TraceEvent
+	nextID int
+	stack  []int
 }
 
 // NewExecutionTracer creates a new tracer.
@@ -49,33 +49,36 @@ func NewExecutionTracer() *ExecutionTracer {
 	return &ExecutionTracer{
 		Events: make([]*TraceEvent, 0),
 		nextID: 1,
-		stack:  []int{0}, // Start with a root event "parent" of 0
+		stack:  []int{0},
 	}
 }
 
-// currentParentID returns the ID of the event at the top of the stack.
-func (t *ExecutionTracer) currentParentID() int {
-	if len(t.stack) == 0 {
-		return 0 // Root
-	}
-	return t.stack[len(t.stack)-1]
-}
-
-// pushParent puts a new event ID onto the stack.
-func (t *ExecutionTracer) pushParent(id int) {
+// PushParentID manually pushes a parent ID onto the stack.
+// Used by the aggregator to set the context for evaluating futures.
+func (t *ExecutionTracer) PushParentID(id int) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	t.stack = append(t.stack, id)
 }
 
-// popParent removes the most recent event ID from the stack.
-func (t *ExecutionTracer) popParent() {
-	if len(t.stack) > 1 { // Don't pop the root
+// PopParent removes the most recent event ID from the stack.
+func (t *ExecutionTracer) PopParent() {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if len(t.stack) > 1 {
 		t.stack = t.stack[:len(t.stack)-1]
 	}
 }
 
+func (t *ExecutionTracer) currentParentID() int {
+	if len(t.stack) == 0 {
+		return 0
+	}
+	return t.stack[len(t.stack)-1]
+}
+
 // Enter logs the entry into a function or block.
-// It returns the ID of the newly created "enter" event, which should be used
-// for the corresponding Exit call.
+// It returns the ID of the newly created event.
 func (t *ExecutionTracer) Enter(ts float64, kind TraceEventKind, target string, args ...string) int {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -93,29 +96,31 @@ func (t *ExecutionTracer) Enter(ts float64, kind TraceEventKind, target string, 
 	}
 	t.Events = append(t.Events, event)
 
-	// The new event becomes the parent for subsequent events.
-	t.pushParent(eventID)
+	// If it's a standard call, it becomes the new parent for subsequent nested calls.
+	// For 'go' and 'wait', they are instantaneous events, not parent scopes.
+	if kind == EventEnter {
+		t.stack = append(t.stack, eventID)
+	}
 
 	return eventID
 }
 
 // Exit logs the exit from a function or block.
-func (t *ExecutionTracer) Exit(eventID int, ts float64, duration core.Duration, retVal Value, err error) {
+func (t *ExecutionTracer) Exit(ts float64, duration core.Duration, retVal Value, err error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	
-	// Pop this event from the parent stack first.
-	t.popParent()
 
-	// Find the corresponding "enter" event to update its duration,
-	// or create a new "exit" event. Let's create a new event for simplicity.
+	// Pop the corresponding "enter" event from the parent stack.
+	if len(t.stack) > 1 {
+		t.stack = t.stack[:len(t.stack)-1]
+	}
+
 	event := &TraceEvent{
 		Kind:      EventExit,
 		ID:        t.nextID,
-		ParentID:  t.currentParentID(), 
+		ParentID:  t.currentParentID(),
 		Timestamp: ts,
 		Duration:  duration,
-		Target:    "", // Target is known from the enter event
 	}
 	t.nextID++
 
