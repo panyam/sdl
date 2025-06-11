@@ -2,25 +2,24 @@
 
 This document outlines the key areas for future development and refinement in the SDL project.
 
-**`[COMPLETED]`** The `sdl run` and `sdl plot` commands have been implemented to provide a powerful simulation-based analysis workflow.
+---
+## Completed
+
+*   **`[COMPLETED]` Simulation & Plotting Workflow:** The `sdl run` and `sdl plot` commands are fully implemented, providing a powerful workflow for statistical performance analysis.
+*   **`[COMPLETED]` Visualization Package Refactoring:** All diagramming and plotting logic has been successfully refactored into a new top-level `viz` package, decoupling it from the command-line interface.
+*   **`[COMPLETED]` Tracing & Dynamic Diagram Workflow:**
+    *   The `runtime` is now instrumented with a tracer to capture detailed execution events.
+    *   The `sdl trace` command successfully generates a JSON trace file from a single method execution.
+    *   The `sdl diagram dynamic` command consumes this trace file to generate a Mermaid sequence diagram, correctly visualizing concurrency and call flows.
 
 ---
-
 ## 1. Runtime and Evaluation Enhancements (`runtime` package)
 
-*   **Full Concurrency Model Implementation:**
-    *   The `gobatch` and `wait using` constructs have placeholder implementations that are sufficient for basic simulation but need to be fully realized.
-    *   **`gobatch N { ... }`**: The runtime should properly model the execution of N parallel operations, not just a single representative one.
+*   **Full Concurrency Model Implementation:** This is the next major priority.
+    *   The `gobatch` and `wait using` constructs are visualized correctly but the runtime model is a placeholder.
+    *   **`gobatch N { ... }`**: The runtime should properly model the execution of N parallel operations, not just a single representative one. This is crucial for accurate simulation of fan-out scenarios.
     *   **Native Aggregators**: Develop a set of standard native aggregator methods (`WaitAll`, `WaitAny`, `Quorum`) that can properly calculate the resulting latency distribution and success probability from a batch of futures.
-    *   **`go { ... }`**: Implement the spawning and execution of single asynchronous tasks.
-    *   **`wait <future>`**: Implement waiting for single and multiple heterogeneous futures.
     *   **Core Library Support:** Enhance `sdl/core` with functions to calculate distributions of order statistics (e.g., time to C-th completion from N, makespan of N) needed by the native aggregators.
-
-*   **Single Call Tracing (The "How" and "Why"):**
-    *   This is the next major feature. Augment `SimpleEval` (or create a new `TracingEval`) to record the execution path of a *single* method call.
-    *   Implement a `Tracer` object that the evaluator can call on method entry/exit, future spawn (`go`, `gobatch`), and synchronization (`wait`).
-    *   Define a structured trace output (e.g., JSON) capable of representing sequential and concurrent operations.
-    *   This will be the backend for the `sdl trace` and `sdl diagram dynamic` commands.
 
 *   **Exhaustive Tracing / Analytical Evaluation:**
     *   This is a longer-term goal to move beyond single-path simulation.
@@ -32,24 +31,21 @@ This document outlines the key areas for future development and refinement in th
 *   **Built-in Functions:** Define and implement a standard library of built-in functions (e.g., math functions, string manipulation).
 *   **Global `options` Blocks:** Fully implement parsing and application of global and component-level `options` to configure the runtime or components.
 
-## 3. CLI Command Implementation & Enhancements (`cmd/sdl`)
+## 3. Visualization Enhancements (`viz` package)
 
-*   **`sdl trace`:**
-    *   Implement this command fully using the single-call tracing infrastructure described above. It should produce a detailed JSON trace file.
-*   **`sdl diagram dynamic`:**
-    *   Implement this command to consume the trace output from `sdl trace` and generate a sequence diagram or call graph (e.g., in Mermaid format).
-*   **Refine Static Diagramming (`sdl diagram static`):**
+*   **Improve Dynamic Diagrams:**
+    *   Add support for more output formats beyond Mermaid (e.g., SVG, Excalidraw).
+    *   Show return values and latencies on the sequence diagram arrows.
+*   **Refine Static Diagramming:**
     *   Improve layout algorithms and styling options.
 
 ## 4. Testing & Documentation
 
-*   **Concurrency Runtime Tests:** Add extensive tests for the full concurrency model once implemented.
-*   **Tracing Tests:** Validate the accuracy and completeness of trace generation.
-*   **Documentation:** Update the project's documentation and examples to cover the new `run`/`plot` workflow and the upcoming `trace` command.
+*   **Concurrency Runtime Tests:** Add extensive tests for the full concurrency model once it is implemented.
+*   **Documentation:** Update the project's main documentation and examples to cover the new `trace` and `diagram dynamic` workflow in detail.
 
 ## Priority Focus (Immediate to Medium Term):
 
-1.  **Single Call Tracing (`runtime` & `cmd/sdl trace`).** This is the highest priority as it unlocks debugging and dynamic diagrams.
-2.  **Dynamic Diagram Generation (`cmd/sdl diagram dynamic`).** This provides a powerful visualization for the new trace data.
-3.  **Full Concurrency Model.** This involves fleshing out the `gobatch`/`wait` logic and creating robust native aggregators.
-4.  **`switch` as an Expression.** This is a valuable language enhancement for more concise models.
+1.  **Full Concurrency Model (`runtime` & `core`).** This is the highest priority as it's the largest remaining gap in the simulation engine's capabilities.
+2.  **Language Enhancements.** Implementing `switch` as an expression and adding built-in functions will significantly improve the expressiveness of the DSL.
+3.  **Visualization Polish.** Adding more output formats and details to the dynamic diagrams.
