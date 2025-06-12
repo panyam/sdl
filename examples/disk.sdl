@@ -1,4 +1,5 @@
 
+import delay from "./common.sdl"
 
 // We could use a custom disk or a NativeDisk
 component Disk {

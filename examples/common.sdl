@@ -16,6 +16,7 @@ native aggregator WaitAll(statusCodes List[HttpStatusCode]) HttpStatusCode
 native aggregator WaitAny(statusCodes List[HttpStatusCode]) HttpStatusCode
 
 native method log(msg String)
+
 native method delay(duration Float)
 
 native component NativeDisk {

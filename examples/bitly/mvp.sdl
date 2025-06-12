@@ -1,6 +1,6 @@
 
 
-import Cache, NativeDisk, HttpStatusCode, HashIndex from "../common.sdl" ;
+import Cache, NativeDisk, HttpStatusCode, HashIndex, delay, log from "../common.sdl" ;
 import Disk from "../disk.sdl"
 import Database from "./db.sdl"
 
