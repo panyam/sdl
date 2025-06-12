@@ -5,53 +5,45 @@ This document outlines the key areas for future development and refinement in th
 ---
 ## Completed
 
+*   **`[COMPLETED]` Interactive Session Proof-of-Concept:**
+    *   Created the `console` package and the `Canvas` API, which provides a stateful engine for interactive analysis.
+    *   Successfully implemented and tested the core workflow (`Load`, `Set`, `Run`, `Plot`) in a unit test (`TestExecutionRecipe`), proving the feasibility of the recipe runner concept.
 *   **`[COMPLETED]` Native Methods & Grammar Simplification:**
     *   Added support for top-level `native method` declarations.
     *   Refactored the `delay` statement into a standard native method call, simplifying the grammar.
-    *   Implemented a native method registry in the runtime for functions like `delay` and `log`.
-*   **`[COMPLETED]` Histogram Plotting:** The `sdl plot` command now supports a `--y-axis=histogram` option to generate bar chart visualizations of metric distributions (e.g., latency). The `viz` package was enhanced to generate bar charts.
-*   **`[COMPLETED]` Simulation & Plotting Workflow:** The `sdl run` and `sdl plot` commands are fully implemented, providing a powerful workflow for statistical performance analysis.
-*   **`[COMPLETED]` Visualization Package Refactoring:** All diagramming and plotting logic has been successfully refactored into a new top-level `viz` package, decoupling it from the command-line interface.
-*   **`[COMPLETED]` Tracing & Dynamic Diagram Workflow:**
-    *   The `runtime` is now instrumented with a tracer to capture detailed execution events.
-    *   The `sdl trace` command successfully generates a JSON trace file from a single method execution.
-    *   The `sdl diagram dynamic` command consumes this trace file to generate a Mermaid sequence diagram, correctly visualizing concurrency and call flows.
+*   **`[COMPLETED]` Histogram Plotting:** The `sdl plot` command now supports a `--y-axis=histogram` option to generate bar chart visualizations of metric distributions.
+*   **`[COMPLETED]` Simulation & Plotting Workflow:** The `sdl run` and `sdl plot` commands are fully implemented.
+*   **`[COMPLETED]` Tracing & Dynamic Diagram Workflow:** The `sdl trace` and `sdl diagram dynamic` commands are fully implemented.
 
 ---
-## 1. Interactive Recipe Runner
+## 1. Implement the Interactive Recipe Runner
 
-To provide a more fluid, notebook-like experience for iterative analysis and storytelling (e.g., for conference demos), we will build an interactive "recipe runner."
+With the `Canvas` API proven, the next step is to build the user-facing frontend for it.
 
-*   **Phase 1: Proof of Concept (Unit Test):** Before building the full `execute` command, create a unit test (`TestExecutionRecipe`) that validates the core primitives:
-    1.  Load an SDL model via the Go API.
-    2.  Instantiate a system and get a handle to a native component instance (e.g., a `components.Cache`).
-    3.  **Run Scenario A:** Modify a parameter on the component struct (e.g., `cache.HitRate = 0.95`), run a simulation, and store the results in memory.
-    4.  **Run Scenario B:** Modify the *same* component instance again (`cache.HitRate = 0.60`), run a new simulation, and store its results.
-    5.  **Generate Comparison:** Combine the results from both scenarios into a single multi-series plot and save it to a file. This proves the end-to-end concept works.
+*   **Create the `sdl execute` command:**
+    *   Create the file `cmd/sdl/commands/execute.go`.
+    *   The command will take one argument: the path to a `.recipe` file.
+*   **Build the Recipe Parser:**
+    *   The `Run` function for the command will read the recipe file line by line.
+    *   It will parse each line into a command and its arguments (e.g., using `strings.Fields`).
+*   **Integrate the `Canvas` Engine:**
+    *   The command will instantiate a `console.Canvas` object.
+    *   Based on the parsed command from the recipe file, it will call the corresponding `Canvas` method (e.g., `canvas.Load(...)`, `canvas.Set(...)`, `canvas.Run(...)`).
 
-*   **Phase 2: `sdl execute` Command:**
-    *   Create the `cmd/sdl/commands/execute.go` file.
-    *   Implement a simple parser for the `.recipe` file format.
-    *   Build a `Session` object to manage the loaded state (loader, variables).
-    *   Implement the recipe commands (`load`, `use`, `set`, `run`, `plot`, `diagram`, `echo`).
+## 2. Model System Capacity
 
-## 2. Runtime and Evaluation Enhancements (`runtime` package)
+*   **Enhance Queuing Primitives:** Refactor `ResourcePool.Acquire` and `Queue.Dequeue` to return an `Outcomes[Duration]` representing the distribution of time spent waiting in the queue.
+*   **Create Capacity-Aware Models:** Update the `.sdl` examples (like `Disk`) to embed `ResourcePool` components to model contention and queuing delays under load.
+*   **Validate with a Test:** Create a new test to verify that increasing the `ArrivalRate` parameter on a component's internal `ResourcePool` correctly increases its end-to-end latency.
 
-*   **Full Concurrency Model Implementation:** This is the next major priority after the recipe runner PoC.
-    *   **`gobatch N { ... }`**: The runtime should properly model the execution of N parallel operations, not just a single representative one.
-    *   **Native Aggregators**: Develop standard aggregator methods (`WaitAll`, `WaitAny`, `Quorum`) to calculate latency and success from futures.
-    *   **Core Library Support:** Enhance `sdl/core` with functions for order statistics (e.g., makespan of N).
+## 3. Runtime and Evaluation Enhancements (`runtime` package)
 
-*   **Exhaustive Tracing / Analytical Evaluation:**
-    *   A longer-term goal to move beyond single-path simulation by exploring all probabilistic branches (`distribute`, `sample`) to build a complete outcome graph.
-
-## 3. Language Features & Semantics (DSL & `decl`, `parser`)
-
-*   **`switch` as an Expression:** Allow `switch` to be used as an expression that returns a value.
-*   **More Built-in Functions:** Define and implement a broader standard library.
+*   **Full Concurrency Model Implementation:**
+    *   **`gobatch N { ... }`**: Implement the runtime logic to properly model the execution of N parallel operations.
+    *   **Native Aggregators**: Develop standard aggregator methods (`WaitAll`, `WaitAny`, `Quorum`).
 
 ## Priority Focus (Immediate to Medium Term):
 
-1.  **Interactive Recipe Runner (Phase 1).** The PoC test is the highest priority as it directly enables the creation of compelling, story-driven demos for the upcoming conference.
-2.  **Full Concurrency Model (`runtime` & `core`).** This remains the most significant feature gap in the simulation engine.
-3.  **Language Enhancements.** Implementing `switch` as an expression and adding more built-in functions.
+1.  **`sdl execute` Command.** This is the highest priority as it delivers the interactive analysis workflow planned for the conference.
+2.  **Model System Capacity.** This is a critical modeling feature that builds directly on the interactive capabilities of the recipe runner.
+3.  **Full Concurrency Model.** This remains the most significant feature gap in the simulation engine.
