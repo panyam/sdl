@@ -20,6 +20,7 @@ type FileDecl struct {
 	enums          map[string]*EnumDecl
 	imports        map[string]*ImportDecl
 	aggregators    map[string]*AggregatorDecl
+	nativeMethods  map[string]*MethodDecl
 	importList     []*ImportDecl // Keep original list for iteration order if needed
 	systems        map[string]*SystemDecl
 }
@@ -103,6 +104,22 @@ func (f *FileDecl) Aggregators() (map[string]*AggregatorDecl, error) {
 	return f.aggregators, nil
 }
 
+// Get a map of all the native methods encountered in this FileDecl
+func (f *FileDecl) GetNativeMethods() (out map[string]*MethodDecl, err error) {
+	err = f.Resolve()
+	out = f.nativeMethods
+	return
+}
+
+// Get a particular native method by name in this FileDecl
+func (f *FileDecl) GetNativeMethod(name string) (out *MethodDecl, err error) {
+	methods, err := f.GetNativeMethods()
+	if err == nil {
+		out = methods[name]
+	}
+	return
+}
+
 // Called to resolve specific AST aspects out of the parse tree
 func (f *FileDecl) Resolve() error {
 	if f == nil {
@@ -128,7 +145,13 @@ func (f *FileDecl) Resolve() error {
 			if err := f.RegisterDefinition(node.Name.Value, node); err != nil {
 				return fmt.Errorf("error registering definition '%s': %w", node.Name.Value, err)
 			}
-
+		case *MethodDecl:
+			if err := f.RegisterNativeMethod(node); err != nil {
+				return err
+			}
+			if err := f.RegisterDefinition(node.Name.Value, node); err != nil {
+				return fmt.Errorf("error registering definition '%s': %w", node.Name.Value, err)
+			}
 		case *SystemDecl:
 			// Store the SystemDecl AST by name for later execution
 			if err := f.RegisterSystem(node); err != nil {
@@ -249,6 +272,18 @@ func (f *FileDecl) RegisterAggregator(c *AggregatorDecl) error {
 	return nil
 }
 
+func (f *FileDecl) RegisterNativeMethod(c *MethodDecl) error {
+	if f.nativeMethods == nil {
+		f.nativeMethods = map[string]*MethodDecl{}
+	}
+	if _, exists := f.nativeMethods[c.Name.Value]; exists {
+		err := fmt.Errorf("native method definition '%s' already registered", c.Name.Value)
+		panic(err)
+	}
+	f.nativeMethods[c.Name.Value] = c
+	return nil
+}
+
 func (f *FileDecl) RegisterImport(c *ImportDecl) error {
 	if f.imports == nil {
 		f.imports = map[string]*ImportDecl{}
@@ -304,13 +339,26 @@ func (f *FileDecl) AddToScope(currentScope *Env[Node]) (errors []error) {
 	// Add aggregators and methods
 	aggs, err := f.Aggregators()
 	if err != nil {
-		errors = append(errors, fmt.Errorf("error getting local components for scope: %w", err))
+		errors = append(errors, fmt.Errorf("error getting local aggregators for scope: %w", err))
 	} else {
 		for name, aggDecl := range aggs {
 			if existingRef := currentScope.GetRef(name); existingRef != nil {
-				errors = append(errors, fmt.Errorf("duplicate definition for local component '%s'", name))
+				errors = append(errors, fmt.Errorf("duplicate definition for local aggregator '%s'", name))
 			} else {
 				currentScope.Set(name, aggDecl)
+			}
+		}
+	}
+
+	nativeMethods, err := f.GetNativeMethods()
+	if err != nil {
+		errors = append(errors, fmt.Errorf("error getting local native methods for scope: %w", err))
+	} else {
+		for name, methodDecl := range nativeMethods {
+			if existingRef := currentScope.GetRef(name); existingRef != nil {
+				errors = append(errors, fmt.Errorf("duplicate definition for local native method '%s'", name))
+			} else {
+				currentScope.Set(name, methodDecl)
 			}
 		}
 	}
