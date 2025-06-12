@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/panyam/sdl/cmd/sdl/commands"
+	"github.com/panyam/sdl/decl"
 	"github.com/panyam/sdl/loader"
 	"github.com/panyam/sdl/runtime"
 	"github.com/panyam/sdl/viz"
@@ -107,14 +108,44 @@ func (c *Canvas) Set(path string, value any) error {
 		return fmt.Errorf("instance '%s' not found in active system", instanceName)
 	}
 
-	// The instance from the env is a runtime.Value wrapping a *ComponentInstance
 	compInstance, ok := instance.Value.(*runtime.ComponentInstance)
 	if !ok {
 		return fmt.Errorf("'%s' is not a component instance", instanceName)
 	}
 
-	// Recursively find and set the field
-	return c.setField(compInstance.NativeInstance, parts[1:], value)
+	if compInstance.IsNative {
+		// For native components, use reflection to set the field on the underlying Go struct.
+		return c.setField(compInstance.NativeInstance, parts[1:], value)
+	} else {
+		// For user-defined components, set the parameter in their runtime environment.
+		paramName := parts[1] // Assuming simple, non-nested params for now
+		if len(parts) > 2 {
+			return fmt.Errorf("setting nested parameters on user-defined components is not yet supported: %s", path)
+		}
+
+		// Convert the Go value to a runtime.Value
+		var newValue decl.Value
+		var err error
+		switch v := value.(type) {
+		case int:
+			newValue, err = decl.NewValue(decl.IntType, int64(v))
+		case int64:
+			newValue, err = decl.NewValue(decl.IntType, v)
+		case float64:
+			newValue, err = decl.NewValue(decl.FloatType, v)
+		case bool:
+			newValue, err = decl.NewValue(decl.BoolType, v)
+		case string:
+			newValue, err = decl.NewValue(decl.StrType, v)
+		default:
+			err = fmt.Errorf("unsupported value type for Set on user-defined component: %T", value)
+		}
+
+		if err != nil {
+			return err
+		}
+		return compInstance.Set(paramName, newValue)
+	}
 }
 
 func (c *Canvas) setField(obj any, path []string, value any) error {
@@ -122,6 +153,9 @@ func (c *Canvas) setField(obj any, path []string, value any) error {
 
 	// Dereference pointers until we get to a struct or the end of the chain
 	for objVal.Kind() == reflect.Ptr {
+		if objVal.IsNil() {
+			return fmt.Errorf("cannot set field on nil pointer in path %v", path)
+		}
 		objVal = objVal.Elem()
 	}
 
