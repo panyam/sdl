@@ -62,16 +62,32 @@ func (r *Runtime) LoadFile(filePath string) *FileInstance {
 
 func (r *Runtime) CreateNativeComponent(compDecl *ComponentDecl) NativeObject {
 	name := compDecl.Name.Value
-	if name == "Disk" {
+	switch name {
+	case "Disk", "NativeDisk":
 		return cd.NewDisk(name)
-	}
-	if name == "HashIndex" {
+	case "HashIndex":
 		return cd.NewHashIndex(name)
-	}
-	if name == "BTreeIndex" {
+	case "BTreeIndex":
 		return cd.NewBTreeIndex(name)
-	}
-	if name == "TestNative" {
+	case "BitmapIndex":
+		return cd.NewBitmapIndex(name)
+	case "Cache":
+		return cd.NewCache(name)
+	case "LSMTree":
+		return cd.NewLSMTree(name)
+	case "MM1Queue":
+		return cd.NewMM1Queue(name)
+	case "MMCKQueue":
+		return cd.NewQueue(name)
+	case "ResourcePool":
+		return cd.NewResourcePool(name)
+	case "Link":
+		return cd.NewNetworkLink(name)
+	case "SortedFile":
+		return cd.NewSortedFile(name)
+	case "HeapFile":
+		return cd.NewHeapFile(name)
+	case "TestNative":
 		return NewTestNative(name)
 	}
 	panic(fmt.Sprintf("Native component not registered: %s", name))

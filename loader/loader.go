@@ -310,88 +310,58 @@ func (l *Loader) validateFileDecl(fs *FileStatus, fileDecl *decl.FileDecl, visit
 func (l *Loader) AddImportedAliasesToScope(fs *FileStatus, currentScope *decl.Env[decl.Node]) {
 	fileDecl := fs.FileDecl
 	// 2. Add imported symbols to the scope, respecting aliases
-	// Re-fetch resolvedImports in case of prior errors that might have prevented its population.
 	resolvedImportsAfterLocal, err := fileDecl.Imports()
 	if err != nil {
 		fs.AddErrors(fmt.Errorf("in file %s: error re-getting resolved imports for scope population: %w", fs.FullPath, err))
-	} else {
-		for aliasName, importDeclNode := range resolvedImportsAfterLocal {
-			importedItemOriginalName := importDeclNode.ImportedItem.Value
+		return
+	}
 
-			importPathValue := importDeclNode.Path.Value
-			importPathStr, _ := importPathValue.Value.(string) // Already checked validity
+	for aliasName, importDeclNode := range resolvedImportsAfterLocal {
+		importedItemOriginalName := importDeclNode.ImportedItem.Value
+		importPathValue := importDeclNode.Path.Value
+		importPathStr, _ := importPathValue.Value.(string) // Already checked validity
 
-			importedFS := l.GetFileStatus(importPathStr, fs.FullPath)
-			if importedFS == nil || importedFS.FileDecl == nil {
-				fs.AddErrors(fmt.Errorf("in file %s: internal error during scope population - imported file %s (for alias '%s') not found or parsed",
-					fs.FullPath, importPathStr, aliasName))
-				continue
+		importedFS := l.GetFileStatus(importPathStr, fs.FullPath)
+		if importedFS == nil || importedFS.FileDecl == nil {
+			fs.AddErrors(fmt.Errorf("in file %s: internal error - imported file %s not found or parsed", fs.FullPath, importPathStr))
+			continue
+		}
+
+		if importedFS.HasErrors() {
+			fs.AddErrors(fmt.Errorf("in file %s: cannot import from '%s' (alias '%s') because it has validation errors", fs.FullPath, importPathStr, aliasName))
+			continue
+		}
+
+		// Use GetDefinition to find the imported symbol
+		def, err := importedFS.FileDecl.GetDefinition(importedItemOriginalName)
+		if err != nil {
+			fs.AddErrors(fmt.Errorf("in file %s: error getting definition for '%s' from '%s': %w", fs.FullPath, importedItemOriginalName, importPathStr, err))
+			continue
+		}
+
+		foundSymbol := false
+		if def != nil {
+			// Check for alias collision in the current scope
+			if existingRef := currentScope.GetRef(aliasName); existingRef != nil {
+				fs.AddErrors(fmt.Errorf("in file %s: import alias '%s' for '%s' from '%s' conflicts with an existing symbol",
+					fs.FullPath, aliasName, importedItemOriginalName, importPathStr))
+				continue // Skip this import due to conflict
 			}
-			importedFileDecl := importedFS.FileDecl
 
-			// Ensure the imported file itself is valid before trying to pull symbols from it
-			if importedFS.HasErrors() {
-				log.Printf("Skipping import from %s (alias %s) into %s because it has errors.", importedFS.FullPath, aliasName, fs.FullPath)
-				fs.AddErrors(fmt.Errorf("in file %s: cannot import from %s (alias '%s') because it has errors", fs.FullPath, importedFS.FullPath, aliasName))
-				continue
-			}
-
-			foundSymbol := false
-			// Check Enums
-			if enumDecl, err_e := importedFileDecl.GetEnum(importedItemOriginalName); err_e == nil && enumDecl != nil {
-				if existingRef := currentScope.GetRef(aliasName); existingRef != nil {
-					fs.AddErrors(fmt.Errorf("in file %s: import alias '%s' for enum '%s' from %s conflicts with an existing symbol",
-						fs.FullPath, aliasName, importedItemOriginalName, importPathStr))
-				} else {
-					currentScope.Set(aliasName, enumDecl)
-				}
+			// Check if the definition type is importable and add to scope
+			switch d := def.(type) {
+			case *decl.EnumDecl, *decl.ComponentDecl, *decl.AggregatorDecl, *decl.MethodDecl:
+				currentScope.Set(aliasName, d)
 				foundSymbol = true
-			} else if err_e != nil {
-				fs.AddErrors(fmt.Errorf("in file %s: error getting enum '%s' from imported file %s: %w",
-					fs.FullPath, importedItemOriginalName, importedFS.FullPath, err_e))
+			default:
+				// The type is not importable, error will be reported below
 			}
+		}
 
-			// Check Aggregators (we have to move just "methods" or "functions")
-			if aggDecl, err_e := importedFileDecl.GetAggregator(importedItemOriginalName); err_e == nil && aggDecl != nil {
-				if existingRef := currentScope.GetRef(aliasName); existingRef != nil {
-					fs.AddErrors(fmt.Errorf("in file %s: import alias '%s' for aggregator '%s' from %s conflicts with an existing symbol",
-						fs.FullPath, aliasName, importedItemOriginalName, importPathStr))
-				} else {
-					currentScope.Set(aliasName, aggDecl)
-				}
-				foundSymbol = true
-			} else if err_e != nil {
-				fs.AddErrors(fmt.Errorf("in file %s: error getting aggregator '%s' from imported file %s: %w",
-					fs.FullPath, importedItemOriginalName, importedFS.FullPath, err_e))
-			}
-
-			// Check Components - only if not already found as an enum
-			if !foundSymbol {
-				if compDecl, err_c := importedFileDecl.GetComponent(importedItemOriginalName); err_c == nil && compDecl != nil {
-					if existingRef := currentScope.GetRef(aliasName); existingRef != nil {
-						fs.AddErrors(fmt.Errorf("in file %s: import alias '%s' for component '%s' from %s conflicts with an existing symbol",
-							fs.FullPath, aliasName, importedItemOriginalName, importPathStr))
-					} else {
-						currentScope.Set(aliasName, compDecl)
-					}
-					foundSymbol = true
-				} else if err_c != nil {
-					fs.AddErrors(fmt.Errorf("in file %s: error getting component '%s' from imported file %s: %w",
-						fs.FullPath, importedItemOriginalName, importedFS.FullPath, err_c))
-				}
-			}
-
-			// ... similar for other importable types ...
-
-			if !foundSymbol && !fs.HasErrors() { // Only add "not found" if no other error occurred for this import
-				// Check if the symbol has already been added to the scope to prevent duplicate error messages.
-				// This might be tricky if AddError above was conditional.
-				// A simple check: if after trying all types, currentScope.GetRef(aliasName) is still nil.
-				if currentScope.GetRef(aliasName) == nil {
-					fs.AddErrors(fmt.Errorf("in file %s: imported symbol '%s' (aliased as '%s') not found in %s or not an importable type",
-						fs.FullPath, importedItemOriginalName, aliasName, importedFS.FullPath))
-				}
-			}
+		// Report error if symbol was not found or not an importable type
+		if !foundSymbol {
+			fs.AddErrors(fmt.Errorf("in file %s: imported symbol '%s' (aliased as '%s') not found in '%s' or is not an importable type",
+				fs.FullPath, importedItemOriginalName, aliasName, importPathStr))
 		}
 	}
 }

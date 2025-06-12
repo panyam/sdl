@@ -51,7 +51,7 @@ func (c *Canvas) Load(filePath string) error {
 	if !c.loader.Validate(fileStatus) {
 		// Collect errors into a single error object
 		// For now, just return a generic error.
-		// fileStatus.PrintErrors()
+		fileStatus.PrintErrors()
 		return fmt.Errorf("validation failed for file '%s'", filePath)
 	}
 
@@ -86,6 +86,9 @@ func (c *Canvas) Use(systemName string) error {
 		// eval.PrintErrors()
 		return fmt.Errorf("errors found while initializing system '%s'", systemName)
 	}
+
+	// Crucially, assign the populated environment back to the active system
+	c.activeSystem.Env = env
 
 	return nil
 }
