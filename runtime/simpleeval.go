@@ -467,7 +467,7 @@ func (s *SimpleEval) evalMemberAccessExpr(m *MemberAccessExpr, env *Env[Value], 
 	}
 	methodDecl, _ := compDecl.GetMethod(m.Member.Value)
 	if methodDecl != nil {
-		methodType := decl.MethodType(compDecl, methodDecl)
+		methodType := decl.MethodType(methodDecl)
 		methodVal := &decl.MethodValue{
 			Method: methodDecl, SavedEnv: compInst.InitialEnv.Push(), IsNative: compDecl.IsNative,
 		}

@@ -12,7 +12,7 @@ func RunCallInBatches(system *SystemInstance, obj, method string, nbatches, batc
 	fi := system.File
 	se := NewSimpleEval(fi, nil)
 	var totalSimTime core.Duration
-	env := fi.Env.Push()
+	env := fi.Env()
 	se.EvalInitSystem(system, env, &totalSimTime)
 
 	startTime := time.Now()

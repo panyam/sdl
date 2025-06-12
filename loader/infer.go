@@ -426,7 +426,7 @@ func (i *Inference) EvalForMemberAccessExpr(expr *MemberAccessExpr, scope *TypeS
 	}
 
 	if methodDecl, _ := decl.GetMethod(memberName); methodDecl != nil {
-		return MethodType(decl, methodDecl), ok
+		return MethodType(methodDecl), ok
 	}
 
 	return nil, i.Errorf(expr.Pos(), "member '%s' not found in component '%s' (type %s)", memberName, decl.Name.Value, receiverType)

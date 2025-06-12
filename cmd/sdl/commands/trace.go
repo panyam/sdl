@@ -64,7 +64,7 @@ used by other commands like 'diagram dynamic' to generate visualizations.`,
 
 		// 4. Prepare the system environment
 		var totalSimTime core.Duration
-		env := fileInstance.Env.Push()
+		env := fileInstance.Env()
 		eval.EvalInitSystem(system, env, &totalSimTime)
 
 		// 5. Parse the method call string (simplified)

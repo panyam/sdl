@@ -198,6 +198,15 @@ func (f *FileDecl) Resolve() error {
 }
 
 // GetDefinition retrieves a definition by name from the FileDecl.
+func (f *FileDecl) AllDefinitions() (map[string]Node, error) {
+	if f.allDefinitions == nil {
+		if err := f.Resolve(); err != nil {
+			return nil, fmt.Errorf("error resolving file definitions: %w", err)
+		}
+	}
+	return f.allDefinitions, nil
+}
+
 func (f *FileDecl) GetDefinition(name string) (Node, error) {
 	if f.allDefinitions == nil {
 		if err := f.Resolve(); err != nil {

@@ -318,13 +318,12 @@ func (r *FutureTypeInfo) Equals(another *FutureTypeInfo) bool {
 }
 
 type MethodTypeInfo struct {
-	Component  *ComponentDecl
 	Method     *MethodDecl
 	Aggregator *AggregatorDecl
 }
 
 func (r *MethodTypeInfo) Equals(another *MethodTypeInfo) bool {
-	return r.Component.Equals(another.Component) && r.Method.Equals(another.Method)
+	return r.Method.Equals(another.Method)
 }
 
 func AggregatorType(aggregatorDecl *AggregatorDecl) *Type {
@@ -337,13 +336,13 @@ func AggregatorType(aggregatorDecl *AggregatorDecl) *Type {
 	}
 }
 
-func MethodType(componentDecl *ComponentDecl, methodDecl *MethodDecl) *Type {
-	if componentDecl == nil || methodDecl == nil {
-		panic("Component and Method Decls cannot be nil")
+func MethodType(methodDecl *MethodDecl) *Type {
+	if methodDecl == nil {
+		panic("Method Decls cannot be nil")
 	}
 	return &Type{
 		Tag:  TypeTagMethod,
-		Info: &MethodTypeInfo{Component: componentDecl, Method: methodDecl},
+		Info: &MethodTypeInfo{Method: methodDecl},
 	}
 }
 

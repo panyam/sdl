@@ -11,13 +11,36 @@ import (
 type FileInstance struct {
 	Runtime *Runtime
 	Decl    *FileDecl
-	Env     *Env[Value]
+	env     *Env[Value]
 }
 
 func NewFileInstance(r *Runtime, file *FileDecl) *FileInstance {
 	inst := &FileInstance{Runtime: r, Decl: file}
-	inst.Env = decl.NewEnv[Value](nil)
 	return inst
+}
+
+func (f *FileInstance) Env() *Env[Value] {
+	if f.env == nil {
+		f.env = decl.NewEnv[Value](nil)
+		// Now push all the methods etc here
+		defns, err := f.Decl.AllDefinitions()
+		ensureNoErr(err)
+		for defname, defn := range defns {
+			switch n := defn.(type) {
+			case *MethodDecl:
+				methodType := decl.MethodType(n)
+				methodVal := &decl.MethodValue{
+					Method: n, SavedEnv: f.env.Push(), IsNative: n.IsNative,
+				}
+				val, err := NewValue(methodType, methodVal)
+				ensureNoErr(err)
+				f.env.Set(defname, val)
+			default:
+				break
+			}
+		}
+	}
+	return f.env.Push()
 }
 
 // Initialize a new system with the given name.

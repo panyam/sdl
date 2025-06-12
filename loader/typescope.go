@@ -127,6 +127,16 @@ func (ts *TypeScope) Get(name string) (*Type, bool) {
 				}
 			}
 			return nil, false
+		case *MethodDecl:
+			if ts.env != nil {
+				methodDeclNode, methodFound := ts.env.Get(n.Name.Value)
+				if methodFound {
+					if methodDecl, ok := methodDeclNode.(*MethodDecl); ok {
+						return MethodType(methodDecl), true
+					}
+				}
+			}
+			return nil, false
 		default:
 			log.Println("not found: node, nodetype: ", node, reflect.TypeOf(node))
 			panic("TBD - we have to see if there is a failure else where or just a standard undefined error")

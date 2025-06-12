@@ -25,7 +25,7 @@ func NewComponentInstance(file *FileInstance, compDecl *ComponentDecl) (*Compone
 		ObjectInstance: ObjectInstance{
 			File:           originFile,
 			IsNative:       compDecl.IsNative,
-			InitialEnv:     decl.NewEnv[Value](nil), // should parent be File.Env?
+			InitialEnv:     originFile.Env(), // should parent be File.Env?
 			NativeInstance: nativeValue,
 		},
 		ComponentDecl: compDecl,
