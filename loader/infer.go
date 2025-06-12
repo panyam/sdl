@@ -688,6 +688,16 @@ func (i *Inference) EvalForSampleExpr(expr *SampleExpr, scope *TypeScope) (*Type
 	if !ok || fromType == nil {
 		return nil, i.Errorf(expr.Pos(), "could not determine type for 'from' expression of sample expr")
 	}
+
+	// If the 'from' expression is a reference, we need to look at the type it refers to.
+	if fromType.Tag == decl.TypeTagRef {
+		refInfo, ok := fromType.Info.(*decl.RefTypeInfo)
+		if !ok || refInfo == nil || refInfo.ParamType == nil {
+			return nil, i.Errorf(expr.Pos(), "internal error: invalid RefType information for sample expression")
+		}
+		fromType = refInfo.ParamType // Dereference to the actual type of the parameter/dependency
+	}
+
 	if fromType.Tag != decl.TypeTagOutcomes || fromType.Info == nil {
 		return nil, i.Errorf(expr.Pos(), "type mismatch for sample expression: 'from' expression must be Outcomes[T], got %s", fromType.String())
 	}

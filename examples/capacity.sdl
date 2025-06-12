@@ -1,0 +1,54 @@
+// examples/capacity.sdl
+
+import ResourcePool, delay, log from "./common.sdl"
+
+// A Disk component with a built-in ResourcePool to model
+// contention and queuing under load.
+component DiskWithCapacity {
+    // Internal pool to model the disk's IOPS capacity.
+    // Size = 1 simulates a simple disk that handles one I/O at a time.
+    uses _pool ResourcePool(Size = 1)
+
+    // The raw, no-contention latency of the physical I/O operation.
+    param _rawReadLatency = dist {
+        90 => 10ms,
+         9 => 50ms,
+         1 => 500ms
+    }
+
+    // _init is a convention for a method to be called to set up
+    // the component's internal state after it's created.
+    method _init() {
+        // The service time (AvgHoldTime) of the pool is the average
+        // time it takes to complete one raw I/O operation.
+        // We will set this from our test case.
+        // A future version of SDL might support a mean() function, e.g.:
+        // self._pool.AvgHoldTime = mean(self._rawReadLatency)
+    }
+
+    // Read performs a read operation, subject to queuing delays.
+    method Read() Bool {
+        // Step 1: Acquire a slot from the pool.
+        // This call will add queuing delay if the disk is busy.
+        // If the pool is saturated (utilization >= 1), this will fail.
+        let success = self._pool.Acquire()
+        if not success {
+            return false // Request failed/dropped due to overload.
+        }
+
+        // Step 2: Perform the actual disk operation.
+        // The latency for this part is the raw, no-contention latency.
+        delay(sample self._rawReadLatency)
+
+        // Step 3: Return the success/failure of the physical operation itself.
+        return sample dist {
+            999 => true,
+              1 => false
+        }
+    }
+}
+
+// A simple system that uses our capacity-aware disk.
+system TestCapacitySystem {
+    use MyDisk DiskWithCapacity
+}

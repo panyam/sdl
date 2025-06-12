@@ -26,17 +26,26 @@ func (f *FileInstance) Env() *Env[Value] {
 		defns, err := f.Decl.AllDefinitions()
 		ensureNoErr(err)
 		for defname, defn := range defns {
-			switch n := defn.(type) {
-			case *MethodDecl:
-				methodType := decl.MethodType(n)
+			var methodDecl *MethodDecl
+			if n, ok := defn.(*MethodDecl); ok {
+				methodDecl = n
+			} else if n, ok := defn.(*ImportDecl); ok {
+				log.Println("Ok how to handle imports of methods here??: ", n.ResolvedItem)
+				if _, ok := n.ResolvedItem.(*ImportDecl); ok {
+					panic("where should we handle recursive imports - in the loader?")
+				}
+				if n2, ok := n.ResolvedItem.(*MethodDecl); ok {
+					methodDecl = n2
+				}
+			}
+			if methodDecl != nil {
+				methodType := decl.MethodType(methodDecl)
 				methodVal := &decl.MethodValue{
-					Method: n, SavedEnv: f.env.Push(), IsNative: n.IsNative,
+					Method: methodDecl, SavedEnv: f.env.Push(), IsNative: methodDecl.IsNative,
 				}
 				val, err := NewValue(methodType, methodVal)
 				ensureNoErr(err)
 				f.env.Set(defname, val)
-			default:
-				break
 			}
 		}
 	}

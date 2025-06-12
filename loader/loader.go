@@ -181,7 +181,9 @@ func (l *Loader) LoadFile(filePath string, importerPath string, depth int) (*Fil
 			fileStatus.Errors = append(fileStatus.Errors, err)
 			return fileStatus, err
 		}
+		def, _ := importedFS.FileDecl.GetDefinition(importDecl.ImportedItem.Value)
 		importDecl.ResolvedFullPath = importedFS.FullPath // Store the resolved path in the import declaration
+		importDecl.ResolvedItem = def
 		fileStatus.AddImports(importedFS.FullPath)
 	}
 

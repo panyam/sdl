@@ -99,7 +99,8 @@ type ImportDecl struct {
 	Alias        *IdentifierExpr
 	ImportedItem *IdentifierExpr
 
-	ResolvedFullPath string // Full path to the imported item, resolved after loading
+	ResolvedFullPath string // Full path to the imported item, resolved after loading (recursively if needed)
+	ResolvedItem     Node   // Resolves to a ComponentDecl or Method or Param in the ResolvedFullPath module
 }
 
 func (i *ImportDecl) String() string {
