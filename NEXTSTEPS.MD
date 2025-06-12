@@ -5,6 +5,11 @@ This document outlines the key areas for future development and refinement in th
 ---
 ## Completed
 
+*   **`[COMPLETED]` Native Methods & Grammar Simplification:**
+    *   Added support for top-level `native method` declarations.
+    *   Refactored the `delay` statement into a standard native method call, simplifying the grammar.
+    *   Implemented a native method registry in the runtime for functions like `delay` and `log`.
+*   **`[COMPLETED]` Histogram Plotting:** The `sdl plot` command now supports a `--y-axis=histogram` option to generate bar chart visualizations of metric distributions (e.g., latency). The `viz` package was enhanced to generate bar charts.
 *   **`[COMPLETED]` Simulation & Plotting Workflow:** The `sdl run` and `sdl plot` commands are fully implemented, providing a powerful workflow for statistical performance analysis.
 *   **`[COMPLETED]` Visualization Package Refactoring:** All diagramming and plotting logic has been successfully refactored into a new top-level `viz` package, decoupling it from the command-line interface.
 *   **`[COMPLETED]` Tracing & Dynamic Diagram Workflow:**
@@ -28,7 +33,7 @@ This document outlines the key areas for future development and refinement in th
 ## 2. Language Features & Semantics (DSL & `decl`, `parser`)
 
 *   **`switch` as an Expression:** Allow `switch` statements to be used as expressions, returning a value. Ensure all branches of a switch expression yield type-compatible results. Update the grammar and type inference logic.
-*   **Built-in Functions:** Define and implement a standard library of built-in functions (e.g., math functions, string manipulation).
+*   **More Built-in Functions:** Define and implement a broader standard library of built-in functions (e.g., math functions, string manipulation).
 *   **Global `options` Blocks:** Fully implement parsing and application of global and component-level `options` to configure the runtime or components.
 
 ## 3. Visualization Enhancements (`viz` package)
@@ -47,5 +52,5 @@ This document outlines the key areas for future development and refinement in th
 ## Priority Focus (Immediate to Medium Term):
 
 1.  **Full Concurrency Model (`runtime` & `core`).** This is the highest priority as it's the largest remaining gap in the simulation engine's capabilities.
-2.  **Language Enhancements.** Implementing `switch` as an expression and adding built-in functions will significantly improve the expressiveness of the DSL.
+2.  **Language Enhancements.** Implementing `switch` as an expression and adding more built-in functions will significantly improve the expressiveness of the DSL.
 3.  **Visualization Polish.** Adding more output formats and details to the dynamic diagrams.
