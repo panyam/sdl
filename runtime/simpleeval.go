@@ -522,7 +522,7 @@ func (s *SimpleEval) evalCallExpr(expr *CallExpr, env *Env[Value], currTime *cor
 
 	if methodValue.IsNative {
 		if methodValue.BoundInstance != nil {
-			result, err := InvokeMethod(methodValue.BoundInstance, methodValue.Method.Name.Value, argValues, env, currTime, s.Rand)
+			result, err := InvokeMethod(methodValue.BoundInstance, methodValue.Method.Name.Value, argValues, env, currTime, s.Rand, true)
 			ensureNoErr(err, "Error calling method: ", err)
 			return result, false
 		} else {
