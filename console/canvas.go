@@ -103,27 +103,42 @@ func (c *Canvas) Set(path string, value any) error {
 	}
 
 	instanceName := parts[0]
-	instance, ok := c.activeSystem.Env.Get(instanceName)
+	instanceVal, ok := c.activeSystem.Env.Get(instanceName)
 	if !ok {
 		return fmt.Errorf("instance '%s' not found in active system", instanceName)
 	}
 
-	compInstance, ok := instance.Value.(*runtime.ComponentInstance)
-	if !ok {
+	// Start with the top-level component instance
+	var currentComp *runtime.ComponentInstance
+	if comp, ok := instanceVal.Value.(*runtime.ComponentInstance); ok {
+		currentComp = comp
+	} else {
 		return fmt.Errorf("'%s' is not a component instance", instanceName)
 	}
 
-	if compInstance.IsNative {
-		// For native components, use reflection to set the field on the underlying Go struct.
-		return c.setField(compInstance.NativeInstance, parts[1:], value)
-	} else {
-		// For user-defined components, set the parameter in their runtime environment.
-		paramName := parts[1] // Assuming simple, non-nested params for now
-		if len(parts) > 2 {
-			return fmt.Errorf("setting nested parameters on user-defined components is not yet supported: %s", path)
+	// Traverse the path parts[1:len(parts)-1] to find the target component
+	for i := 1; i < len(parts)-1; i++ {
+		depName := parts[i]
+		depVal, ok := currentComp.Get(depName) // Get the dependency by name
+		if !ok || depVal.IsNil() {
+			return fmt.Errorf("dependency '%s' not found in component '%s'", depName, currentComp.ComponentDecl.Name.Value)
 		}
 
-		// Convert the Go value to a runtime.Value
+		if nextComp, ok := depVal.Value.(*runtime.ComponentInstance); ok {
+			currentComp = nextComp
+		} else {
+			return fmt.Errorf("dependency '%s' in '%s' is not a component instance", depName, currentComp.ComponentDecl.Name.Value)
+		}
+	}
+
+	// Now currentComp is the component on which we need to set the final parameter
+	finalParamName := parts[len(parts)-1]
+
+	if currentComp.IsNative {
+		// For native components, use reflection to set the field on the underlying Go struct.
+		return c.setField(currentComp.NativeInstance, []string{finalParamName}, value)
+	} else {
+		// For user-defined components, set the parameter in their runtime environment.
 		var newValue decl.Value
 		var err error
 		switch v := value.(type) {
@@ -144,7 +159,7 @@ func (c *Canvas) Set(path string, value any) error {
 		if err != nil {
 			return err
 		}
-		return compInstance.Set(paramName, newValue)
+		return currentComp.Set(finalParamName, newValue)
 	}
 }
 
