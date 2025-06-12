@@ -340,22 +340,6 @@ func (s *SimpleEval) evalIfStmt(stmt *IfStmt, env *Env[Value], currTime *core.Du
 	return
 }
 
-/* Temporarily disabling this - will remove once we clear the native helper for this
-func (s *SimpleEval) evalDelayStmt(d *DelayStmt, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
-	result, _ = s.Eval(d.Duration, env, currTime)
-	if i, err := result.GetInt(); err == nil {
-		*currTime += core.Duration(i)
-		result.Time += core.Duration(i)
-	} else if f, err := result.GetFloat(); err == nil {
-		*currTime += f
-		result.Time += f
-	} else {
-		panic("delay value should have been int or float. type checking failed")
-	}
-	return
-}
-*/
-
 func (s *SimpleEval) evalTupleExpr(m *TupleExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
 	var vals []Value
 	for _, argExpr := range m.Children {
@@ -533,9 +517,18 @@ func (s *SimpleEval) evalCallExpr(expr *CallExpr, env *Env[Value], currTime *cor
 	}
 
 	if methodValue.IsNative {
-		result, err := InvokeMethod(methodValue.BoundInstance, methodValue.Method.Name.Value, argValues, env, currTime, s.Rand)
-		ensureNoErr(err, "Error calling method: ", err)
-		return result, false
+		if methodValue.BoundInstance != nil {
+			result, err := InvokeMethod(methodValue.BoundInstance, methodValue.Method.Name.Value, argValues, env, currTime, s.Rand)
+			ensureNoErr(err, "Error calling method: ", err)
+			return result, false
+		} else {
+			// It's a global native method
+			nativeFunc, found := s.RootFile.Runtime.nativeMethods[methodDecl.Name.Value]
+			if !found {
+				panic(fmt.Sprintf("Global native method '%s' not found in runtime registry", methodDecl.Name.Value))
+			}
+			return nativeFunc(s, newenv, currTime, argValues...)
+		}
 	} else {
 		result, _ = s.Eval(methodDecl.Body, newenv, currTime)
 	}

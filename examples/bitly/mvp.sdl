@@ -1,4 +1,5 @@
 
+
 import Cache, NativeDisk, HttpStatusCode, HashIndex from "../common.sdl" ;
 import Disk from "../disk.sdl"
 import Database from "./db.sdl"
@@ -20,7 +21,7 @@ component AppServer {
   }
 
   method SimpleHttp() HttpStatusCode {
-    delay 20ms
+    delay(20ms)
     return HttpStatusCode.Ok
   }
 

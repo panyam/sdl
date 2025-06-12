@@ -5,18 +5,35 @@ import (
 	"log"
 
 	cd "github.com/panyam/sdl/components/decl"
+	"github.com/panyam/sdl/core"
 	"github.com/panyam/sdl/loader"
 )
 
+type NativeMethod func(eval *SimpleEval, env *Env[Value], currTime *core.Duration, args ...Value) (result Value, returned bool)
+
 type Runtime struct {
-	Loader        *loader.Loader
-	NativeObjects []any
-	fileInstances map[string]*FileInstance
+	Loader         *loader.Loader
+	NativeObjects  []any
+	fileInstances  map[string]*FileInstance
+	nativeMethods  map[string]NativeMethod
+	nativeAggrs    map[string]Aggregator
+	nativeComps    map[string]any
+	nativeCompCons map[string]func(name string) any
 }
 
 func NewRuntime(loader *loader.Loader) (r *Runtime) {
-	r = &Runtime{Loader: loader, fileInstances: make(map[string]*FileInstance)}
+	r = &Runtime{
+		Loader:        loader,
+		fileInstances: make(map[string]*FileInstance),
+		nativeMethods: make(map[string]NativeMethod),
+	}
+	r.RegisterNativeMethod("log", Native_log)
+	r.RegisterNativeMethod("delay", Native_delay)
 	return
+}
+
+func (r *Runtime) RegisterNativeMethod(name string, f NativeMethod) {
+	r.nativeMethods[name] = f
 }
 
 // Gets the initial run time environment for a File which would include its parameters and component creators
@@ -58,4 +75,28 @@ func (r *Runtime) CreateNativeComponent(compDecl *ComponentDecl) NativeObject {
 		return NewTestNative(name)
 	}
 	panic(fmt.Sprintf("Native component not registered: %s", name))
+}
+
+func Native_log(eval *SimpleEval, env *Env[Value], currTime *core.Duration, args ...Value) (result Value, returned bool) {
+	for _, arg := range args {
+		fmt.Printf("LOG: %s\n", arg.String())
+	}
+	return Nil, false
+}
+
+func Native_delay(eval *SimpleEval, env *Env[Value], currTime *core.Duration, args ...Value) (result Value, returned bool) {
+	if len(args) != 1 {
+		panic("delay expects exactly one argument")
+	}
+	result = args[0]
+	if i, err := result.GetInt(); err == nil {
+		*currTime += core.Duration(i)
+		result.Time += core.Duration(i)
+	} else if f, err := result.GetFloat(); err == nil {
+		*currTime += f
+		result.Time += f
+	} else {
+		panic("delay value should have been int or float. type checking failed")
+	}
+	return
 }

@@ -1,4 +1,5 @@
 
+
 enum HttpStatusCode {
   Ok,
   Conflict,
@@ -13,6 +14,9 @@ enum HttpStatusCode {
 // An aggregator method used for selecting from futures
 native aggregator WaitAll(statusCodes List[HttpStatusCode]) HttpStatusCode
 native aggregator WaitAny(statusCodes List[HttpStatusCode]) HttpStatusCode
+
+native method log(msg String)
+native method delay(duration Float)
 
 native component NativeDisk {
   method Read()
@@ -69,4 +73,3 @@ native component ResourcePool {
 native component Link {
   method Transfer() Bool
 }
-

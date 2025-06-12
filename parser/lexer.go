@@ -262,8 +262,6 @@ func (l *Lexer) scanIdentifierOrKeyword() (tok int, text string) {
 		return DEFAULT, text
 	case "return":
 		return RETURN, text
-	case "delay":
-		return DELAY, text
 	case "wait":
 		return WAIT, text
 	case "go":
@@ -274,6 +272,7 @@ func (l *Lexer) scanIdentifierOrKeyword() (tok int, text string) {
 		return AGGREGATOR, text
 	case "using":
 		return USING, text
+	// case "log": return LOG, text
 	case "switch":
 		return SWITCH, text
 	case "case":
@@ -556,40 +555,40 @@ var testTokenNames = map[int]string{
 	DISTRIBUTE:       "DISTRIBUTE",
 	DEFAULT:          "DEFAULT",
 	RETURN:           "RETURN",
-	DELAY:            "DELAY",
 	WAIT:             "WAIT",
 	GO:               "GO",
 	GOBATCH:          "GOBATCH",
 	AGGREGATOR:       "AGGREGATOR",
 	USING:            "USING",
-	SWITCH:           "SWITCH",
-	CASE:             "CASE",
-	ENUM:             "ENUM",
-	IMPORT:           "IMPORT",
-	FROM:             "FROM",
-	AS:               "AS",
-	OPTIONS:          "OPTIONS",
-	FOR:              "FOR",
-	INT:              "int", // Keyword for type
-	FLOAT:            "float",
-	BOOL:             "bool",
-	STRING:           "string",
-	DURATION:         "Duration",
-	ASSIGN:           "ASSIGN",
-	COLON:            "COLON",
-	SEMICOLON:        "SEMICOLON",
-	LBRACE:           "LBRACE",
-	RBRACE:           "RBRACE",
-	LSQUARE:          "LSQUARE",
-	RSQUARE:          "RSQUARE",
-	LPAREN:           "LPAREN",
-	RPAREN:           "RPAREN",
-	COMMA:            "COMMA",
-	DOT:              "DOT",
-	ARROW:            "ARROW",
-	LET_ASSIGN:       "LET_ASSIGN",
-	BINARY_OP:        "BINARY_OP",
-	MINUS:            "MINUS",
+	// LOG:              "LOG",
+	SWITCH:     "SWITCH",
+	CASE:       "CASE",
+	ENUM:       "ENUM",
+	IMPORT:     "IMPORT",
+	FROM:       "FROM",
+	AS:         "AS",
+	OPTIONS:    "OPTIONS",
+	FOR:        "FOR",
+	INT:        "int", // Keyword for type
+	FLOAT:      "float",
+	BOOL:       "bool",
+	STRING:     "string",
+	DURATION:   "Duration",
+	ASSIGN:     "ASSIGN",
+	COLON:      "COLON",
+	SEMICOLON:  "SEMICOLON",
+	LBRACE:     "LBRACE",
+	RBRACE:     "RBRACE",
+	LSQUARE:    "LSQUARE",
+	RSQUARE:    "RSQUARE",
+	LPAREN:     "LPAREN",
+	RPAREN:     "RPAREN",
+	COMMA:      "COMMA",
+	DOT:        "DOT",
+	ARROW:      "ARROW",
+	LET_ASSIGN: "LET_ASSIGN",
+	BINARY_OP:  "BINARY_OP",
+	MINUS:      "MINUS",
 }
 
 func TokenString(tok int) string {

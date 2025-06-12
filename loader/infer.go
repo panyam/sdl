@@ -62,10 +62,16 @@ func (i *Inference) Eval(rootEnv *Env[Node]) bool {
 	components, _ := file.GetComponents()
 	systems, _ := file.GetSystems()
 	aggregators, _ := file.Aggregators()
+	nativeMethods, _ := file.GetNativeMethods()
 
 	// Handle Aggregators: Infer types for system declarations
 	for _, agg := range aggregators {
 		i.EvalForAggregator(agg, rootScope.Push()) // System scope can see globals/imports from rootEnv
+	}
+
+	// Handle native methods
+	for _, method := range nativeMethods {
+		i.EvalForMethodSignature(method, nil, rootScope) // No component context
 	}
 
 	// First pass: Resolve TypeDecls in component parameter defaults, method parameters, and method return types.
@@ -214,22 +220,26 @@ func (i *Inference) EvalForParamDecl(paramDecl *ParamDecl, compDecl *ComponentDe
 
 // Infer/Check types for a method signature.  The body is not evaluated here
 func (i *Inference) EvalForMethodSignature(method *MethodDecl, compDecl *ComponentDecl, rootScope *TypeScope) (errors []error) {
+	compName := "global"
+	if compDecl != nil {
+		compName = compDecl.Name.Value
+	}
 	for _, param := range method.Parameters {
 		if param.TypeDecl != nil {
 			resolvedParamType := rootScope.ResolveType(param.TypeDecl)
 			if resolvedParamType == nil {
-				i.Errorf(param.TypeDecl.Pos(), "unresolved type '%s' for parameter '%s' in method '%s.%s'", param.TypeDecl.Name, param.Name.Value, compDecl.Name.Value, method.Name.Value)
+				i.Errorf(param.TypeDecl.Pos(), "unresolved type '%s' for parameter '%s' in method '%s.%s'", param.TypeDecl.Name, param.Name.Value, compName, method.Name.Value)
 			} else {
 				param.TypeDecl.SetResolvedType(resolvedParamType)
 			}
 		} else {
-			i.Errorf(param.Pos(), "parameter '%s' of method '%s.%s' has no type declaration", param.Name.Value, compDecl.Name.Value, method.Name.Value)
+			i.Errorf(param.Pos(), "parameter '%s' of method '%s.%s' has no type declaration", param.Name.Value, compName, method.Name.Value)
 		}
 	}
 	if method.ReturnType != nil {
 		resolvedReturnType := rootScope.ResolveType(method.ReturnType)
 		if resolvedReturnType == nil {
-			i.Errorf(method.ReturnType.Pos(), "unresolved return type '%s' for method '%s.%s'", method.ReturnType.Name, compDecl.Name.Value, method.Name.Value)
+			i.Errorf(method.ReturnType.Pos(), "unresolved return type '%s' for method '%s.%s'", method.ReturnType.Name, compName, method.Name.Value)
 		} else {
 			method.ReturnType.SetResolvedType(resolvedReturnType)
 		}
@@ -256,8 +266,6 @@ func (i *Inference) EvalForStmt(stmt Stmt, scope *TypeScope) (returnType *Type, 
 		return i.EvalForIfStmt(s, scope)
 	case *ForStmt:
 		return i.EvalForForStmt(s, scope)
-	case *DelayStmt:
-		return i.EvalForDelayStmt(s, scope)
 	case *BlockStmt:
 		return i.EvalForBlockStmt(s, scope)
 	default:
@@ -822,17 +830,6 @@ func (i *Inference) EvalForIndexExpr(expr *IndexExpr, scope *TypeScope) (*Type, 
 }
 
 // --- Statement Type Inference ---
-
-func (i *Inference) EvalForDelayStmt(d *DelayStmt, scope *TypeScope) (returnType *Type, ok bool) {
-	// Evaluate the type for the duration expr - it should resolve to int or float
-	childType, ok := i.EvalForExprType(d.Duration, scope)
-	if ok {
-		if !childType.Equals(IntType) && !childType.Equals(FloatType) {
-			return nil, i.Errorf(d.Pos(), "Delay expression should be int or float, found: %s", childType.String())
-		}
-	}
-	return childType, ok
-}
 
 func (i *Inference) EvalForSetStmt(s *SetStmt, scope *TypeScope) (returnType *Type, ok bool) {
 	valType, ok := i.EvalForExprType(s.Value, scope)

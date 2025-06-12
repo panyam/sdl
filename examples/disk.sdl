@@ -1,4 +1,5 @@
 
+
 // We could use a custom disk or a NativeDisk
 component Disk {
   // How about *just* latencies
@@ -34,13 +35,13 @@ component Disk {
 
   method Read() Bool {
     let outcome, latency = sample ReadOutcomes
-    delay sample latency
+    delay(sample latency)
     return outcome
   }
 
   method Write() Bool {
     let outcome, latency = sample WriteOutcomes
-    delay sample latency
+    delay(sample latency)
     return outcome
   }
 }

@@ -1,4 +1,5 @@
 
+
 import WaitAll, WaitAny, HttpStatusCode from "../common.sdl"
 import Database from "./dbs.sdl"
 
@@ -72,11 +73,11 @@ component FollowsService {
   //
   // This could also be a parameter 
   method GetFollowerCount() (HttpStatusCode, Int) {
-    delay sample dist {
+    delay(sample dist {
       89 => 10ms
       5 => 100ms
       1 => 1s
-    }
+    })
     return (HttpStatusCode.Ok, sample dist {
       900 => 1000,      // 90% of users have < 1k followers
       40  => 10000,     // 4% of users have < 10k followers
