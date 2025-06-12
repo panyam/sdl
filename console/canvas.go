@@ -174,6 +174,21 @@ func (c *Canvas) setField(obj any, path []string, value any) error {
 		objVal = objVal.Elem()
 	}
 
+	// If the current object is a native component wrapper, get the actual wrapped component.
+	if objVal.Kind() == reflect.Struct {
+		wrappedField := objVal.FieldByName("Wrapped")
+		if wrappedField.IsValid() {
+			objVal = wrappedField
+			// Again, dereference pointers of the wrapped value
+			for objVal.Kind() == reflect.Ptr {
+				if objVal.IsNil() {
+					return fmt.Errorf("the 'Wrapped' field is a nil pointer")
+				}
+				objVal = objVal.Elem()
+			}
+		}
+	}
+
 	if len(path) == 0 {
 		return fmt.Errorf("path cannot be empty when setting field")
 	}
