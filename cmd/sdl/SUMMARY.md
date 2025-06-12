@@ -2,7 +2,7 @@
 
 **Purpose:**
 
-This package implements the main command-line interface (CLI) tool for the System Design Language (SDL) project, named `sdl`. It allows users to interact with the SDL toolchain to parse, validate, inspect, generate diagrams, and run simulations.
+This package implements the main command-line interface (CLI) tool for the System Design Language (SDL) project, with a primary focus on **workshop demonstrations and system design interview coaching**. The CLI enables seamless conference presentations through interactive simulations, real-time parameter modification, and immediate visualization updates that make distributed systems concepts tangible for audiences.
 
 **Core Structure & Files:**
 
@@ -14,32 +14,47 @@ This package implements the main command-line interface (CLI) tool for the Syste
     *   **`describe.go`**: Implements `sdl describe <entity_type> <entity_name>` to show detailed information about a specific entity.
     *   **`run.go`**: Implements `sdl run ...` to perform large-scale simulations. It produces a detailed JSON file containing the results (latency, return value, etc.) for each run.
     *   **`trace.go`**: Implements `sdl trace ...` to perform a single-run execution of a method and save the detailed event trace to a JSON file.
-    *   **`plot.go`**: A versatile plotting command that consumes the JSON output from `sdl run`. It acts as a client to the `viz` package to generate SVG plots for latency or result counts.
-    *   **`diagram.go`**: A command that generates diagrams by calling generators in the `viz` package. It can create `static` diagrams from SDL source or `dynamic` sequence diagrams from the JSON output of `sdl trace`.
+    *   **`plot.go`**: A versatile plotting command that generates immediate visualizations for workshop demonstrations. Creates comparison plots showing before/after performance that generate "aha moments" for audiences.
+    *   **`diagram.go`**: A command that generates system architecture diagrams essential for workshop presentations. Creates static diagrams from SDL source and dynamic sequence diagrams from execution traces.
     *   **`shared_types.go`**: Defines shared data structures, like `RunResult`, used for serialization between commands.
+
+**🎪 Upcoming Workshop Commands:**
+    *   **`execute.go`** (Planned): Recipe runner for scripted workshop demonstrations, enabling smooth progression through demo scenarios with automatic parameter changes and visualization updates.
+    *   **`dashboard.go`** (Planned): Multi-panel real-time visualization interface showing latency plots, architecture diagrams, and system metrics simultaneously during live demos.
+    *   **`workshop.go`** (Planned): Specialized workshop management commands for scenario loading, guided progression, and audience interaction features.
 
 **Key Functionality & Features:**
 
-*   **Modular Commands:** Uses Cobra for a structured command system.
-*   **Separation of Concerns:** The CLI commands are thin wrappers that orchestrate the `loader`, `runtime`, and `viz` packages. Heavy lifting (simulation, tracing, diagram generation) is delegated to the libraries.
-*   **Decoupled Workflows:** The CLI promotes a two-step process for analysis:
-    1.  **Data Generation:** `sdl run` or `sdl trace` produce JSON data files.
-    2.  **Visualization:** `sdl plot` or `sdl diagram dynamic` consume these files to generate visuals.
-*   **Rich Analysis:** The commands support statistical performance simulation (`run`/`plot`) and detailed single-run debugging (`trace`/`diagram dynamic`).
+*   **Workshop-Optimized Commands:** Cobra-based command system designed for smooth conference presentations and live demonstrations.
+*   **Canvas Integration:** CLI commands orchestrate the `console.Canvas` API for real-time parameter modification and immediate simulation execution.
+*   **Live Visualization Pipeline:** Seamless integration between simulation execution and visualization generation, enabling instant before/after comparisons that create educational moments.
+*   **Educational Workflows:** Commands designed specifically for system design interview coaching:
+    1.  **Interactive Analysis:** Real-time parameter changes with immediate performance impact visualization.
+    2.  **Scenario Progression:** Scripted workshop flows from baseline → traffic spike → optimization → scaling.
+    3.  **Visual Storytelling:** Architecture diagrams, latency plots, and comparison charts that make abstract concepts concrete.
 
-**Workflows:**
+**Workshop Workflows:**
 
-1.  **Simulation and Plotting:**
-    *   `sdl run Twitter tls.GetTimeline --runs=50000 --out=timeline_results.json -f ...`
-    *   `sdl plot --from=timeline_results.json --y-axis=latency -o latency.svg`
+1.  **Netflix Traffic Spike Demo (Current):**
+    *   `sdl run examples/netflix/netflix.sdl NetflixSystem videoService.StreamVideo --count=1000`
+    *   `sdl plot baseline,traffic_spike --type=comparison --title="Before vs After Traffic Spike"`
+    *   `sdl diagram examples/netflix/netflix.sdl NetflixSystem --type=static`
 
-2.  **Tracing and Dynamic Diagrams:**
-    *   `sdl trace Twitter tls.GetTimeline --out=timeline_trace.json -f ...`
-    *   `sdl diagram dynamic --from=timeline_trace.json --format=mermaid -o sequence.md`
+2.  **Interactive Recipe Execution (Planned):**
+    *   `sdl execute examples/netflix/traffic_spike_demo.recipe`
+    *   `sdl dashboard examples/netflix/netflix.sdl NetflixSystem --live`
+
+3.  **Legacy Analysis Workflows:**
+    *   `sdl run Twitter tls.GetTimeline --runs=50000 --out=timeline_results.json`
+    *   `sdl trace Twitter tls.GetTimeline --out=timeline_trace.json`
 
 **Current Status:**
 
-*   The CLI framework is well-established and has been refactored for clarity.
-*   The `run`/`plot` and `trace`/`diagram` workflows are fully implemented.
-*   The visualization logic has been successfully moved to the new top-level `viz` package.
-*   The next major step is to enhance the `runtime` to fully support concurrent execution beyond the current simulation placeholders.
+*   **Workshop Foundation Ready:** Core CLI framework supports all essential workshop operations with existing `run`, `plot`, and `diagram` commands fully functional.
+*   **Netflix Demo Validated:** Complete command workflows tested with Netflix streaming service demo, ready for conference presentation.
+*   **Canvas Integration Complete:** CLI commands successfully orchestrate the `console.Canvas` API for interactive demonstrations.
+*   **Visualization Pipeline Mature:** The `viz` package integration provides immediate, high-quality plots and diagrams essential for workshop impact.
+
+**Conference Preparation Priority:**
+*   **Critical Path:** Implement `sdl execute` and `sdl dashboard` commands to enable scripted demos and multi-panel live visualization.
+*   **Success Criteria:** Seamless workshop presentation with real-time parameter modification, immediate visual feedback, and compelling audience "aha moments" about distributed systems performance and capacity modeling.

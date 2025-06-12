@@ -1,6 +1,8 @@
-# SDL Project: Next Steps & Outstanding Work
+# SDL Project: Conference Workshop Roadmap
 
-This document outlines the key areas for future development and refinement in the SDL project.
+**Primary Focus:** "Building an Open Source System Design Interview Coach With Interactive Simulations"
+
+This document outlines the workshop-focused development roadmap for delivering a compelling conference presentation that demonstrates SDL as the ultimate system design interview preparation platform.
 
 ---
 ## Completed
@@ -24,36 +26,89 @@ This document outlines the key areas for future development and refinement in th
     *   Boolean evaluation enhanced to handle `Outcomes[Bool]` types with embedded latency.
     *   Duration parsing fixed to use correct unit conversion (seconds as base unit).
     *   All Canvas tests pass, demonstrating realistic queuing delays under different loads.
+*   **`[COMPLETED]` Netflix Workshop Demo:**
+    *   Comprehensive Netflix streaming service model with CDN, database, encoding, and load balancing components.
+    *   Complete traffic spike scenario demonstrating 4x load increase and performance impact.
+    *   Canvas-based test suite validating all workshop demonstration flows.
+    *   Edge case testing for live Q&A scenarios and rapid parameter modification.
+    *   Ready-to-demo example showcasing system design interview coaching concepts.
 
 ---
-## 1. Implement the Interactive Recipe Runner
+## 🎯 CONFERENCE WORKSHOP PRIORITIES
 
-With the `Canvas` API complete and stable, the next step is to build the user-facing frontend for it.
+### 🔥 CRITICAL PATH (Essential for Conference Success)
+
+## 1. Validate Netflix Demo Foundation
+
+*   **Test Current Capabilities:**
+    *   Run `examples/netflix/traffic_spike_demo_test.go` to validate existing Canvas API
+    *   Identify and fix any gaps in parameter modification or simulation execution
+    *   Ensure reliable performance for live demonstration scenarios
+
+## 2. Implement Workshop Presentation Tools
 
 *   **Create the `sdl execute` command:**
-    *   Create the file `cmd/sdl/commands/execute.go`.
-    *   The command will take one argument: the path to a `.recipe` file.
-*   **Build the Recipe Parser:**
-    *   The `Run` function for the command will read the recipe file line by line.
-    *   It will parse each line into a command and its arguments (e.g., using `strings.Fields`).
-*   **Integrate the `Canvas` Engine:**
-    *   The command will instantiate a `console.Canvas` object.
-    *   Based on the parsed command from the recipe file, it will call the corresponding `Canvas` method (e.g., `canvas.Load(...)`, `canvas.Set(...)`, `canvas.Run(...)`).
+    *   Build `cmd/sdl/commands/execute.go` for recipe-based demos
+    *   Enable scripted scenario progression during presentations
+    *   Support live parameter modification with immediate visual feedback
+*   **Build the `sdl dashboard` command:**
+    *   Multi-panel real-time visualization interface
+    *   Show latency plots, architecture diagrams, and system metrics simultaneously
+    *   Update visualizations as parameters change during live demos
 
-## 2. ~~Model System Capacity~~ `[COMPLETED]`
+## 3. Polish Workshop Experience
 
-*   ~~**Enhance Queuing Primitives:** Refactor `ResourcePool.Acquire` and `Queue.Dequeue` to return an `Outcomes[Duration]` representing the distribution of time spent waiting in the queue.~~
-*   ~~**Create Capacity-Aware Models:** Update the `.sdl` examples (like `Disk`) to embed `ResourcePool` components to model contention and queuing delays under load.~~
-*   ~~**Validate with a Test:** Create a new test to verify that increasing the `ArrivalRate` parameter on a component's internal `ResourcePool` correctly increases its end-to-end latency.~~
+*   **Create workshop-specific scenarios:**
+    *   Additional FAANG interview examples (Uber dispatch, Instagram feed, WhatsApp messaging)
+    *   Edge case demonstrations for audience Q&A
+    *   Rapid iteration examples showing parameter sensitivity
 
-## 3. Runtime and Evaluation Enhancements (`runtime` package)
+### 🔧 ENHANCEMENT OPPORTUNITIES (Post-Conference)
 
+## 4. Enhanced Component Library
+
+*   **Add More Realistic Components:**
+    *   CDN with geographic distribution modeling
+    *   Message queues with different consistency models
+    *   Microservice communication patterns
+    *   Auto-scaling and load balancing primitives
+
+## 5. Advanced Workshop Features
+
+*   **Automated Scenario Progression:**
+    *   Guided workshop steps with hints and explanations
+    *   Interactive tutorials for common system design patterns
+    *   Integration with presentation tools for seamless demos
+
+## 6. Future Platform Development
+
+*   **Web-Based "Incredible Machine" Interface:**
+    *   Drag-and-drop system component composition
+    *   Real-time parameter sliders and live visualization updates
+    *   Collaborative system design sessions
 *   **Full Concurrency Model Implementation:**
-    *   **`gobatch N { ... }`**: Implement the runtime logic to properly model the execution of N parallel operations.
-    *   **Native Aggregators**: Develop standard aggregator methods (`WaitAll`, `WaitAny`, `Quorum`).
+    *   Complete `gobatch N { ... }` parallel execution modeling
+    *   Advanced aggregator methods (`WaitAll`, `WaitAny`, `Quorum`)
 
-## Priority Focus (Immediate to Medium Term):
+---
+## 🎪 CONFERENCE SUCCESS METRICS
 
-1.  **`sdl execute` Command.** This is the highest priority as it delivers the interactive analysis workflow planned for the conference.
-2.  ~~**Model System Capacity.**~~ `[COMPLETED]` ~~This is a critical modeling feature that builds directly on the interactive capabilities of the recipe runner.~~
-3.  **Full Concurrency Model.** This remains the most significant feature gap in the simulation engine.
+**Essential Outcomes:**
+- Netflix demo runs flawlessly with live parameter modification
+- Audience experiences "aha moments" about queuing theory and capacity limits
+- SDL positioned as the go-to system design interview preparation platform
+- Clear roadmap for open source community engagement
+
+**Impact Goals:**
+- Transform how engineers prepare for system design interviews
+- Demonstrate the power of interactive simulation for education
+- Establish SDL as a serious tool for distributed systems modeling
+- Generate community interest and contributor engagement
+
+---
+## 📅 DEVELOPMENT TIMELINE
+
+**Week 1-2:** Validate Netflix demo, implement `sdl execute` and `sdl dashboard`
+**Week 3-4:** Polish presentation flow, add additional scenarios, practice demos
+**Conference Day:** Deliver compelling workshop demonstrating SDL's interview coaching capabilities
+**Post-Conference:** Community building, enhanced features, web interface development

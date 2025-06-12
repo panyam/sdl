@@ -2,46 +2,46 @@
 
 **Purpose:**
 
-This package contains example system models built using the SDL library. These examples primarily demonstrate how to use the **Go API** of the `core` and `components` packages to model real-world scenarios and analyze their performance. They serve as integration tests and usage guides for the library's Go interface. The package also includes some sample `.sdl` files that can be used for testing the parser and loader.
+This package contains example system models with a primary focus on **workshop demonstrations and system design interview coaching**. The flagship Netflix streaming service demo (`netflix/`) provides a comprehensive scenario for teaching capacity modeling, queuing theory, and performance optimization. Legacy examples demonstrate the Go API usage, while new examples focus on creating compelling educational experiences for conference presentations and interview preparation.
 
-**Key Examples (Go API):**
+**🎪 Workshop Demonstration Examples:**
 
-1.  **`bitly/` (in `examples/native/bitly`):
-    *   Models a simplified URL shortening service like Bitly.
-    *   Components: `IDGenerator`, `Cache` (`components.Cache`), `DatabaseComponent` (wraps `components.HashIndex`), `BitlyService` (orchestrator).
-    *   Demonstrates composing cache reads/misses with database operations (`Redirect` operation).
-    *   Demonstrates simple sequential operations (`ShortenURL` operation).
-    *   Uses `core.Analyze` for testing performance against expectations.
+1.  **`netflix/` - Netflix Streaming Service Demo (FLAGSHIP):**
+    *   **Purpose:** Conference workshop demonstration of system design interview coaching with interactive simulations.
+    *   **Components:** CDN with ResourcePool capacity modeling, VideoEncoder with queuing delays, VideoDatabase with connection pooling, LoadBalancer for traffic distribution.
+    *   **Scenarios:** Complete traffic spike narrative from baseline performance → 4x load increase → cache optimization → capacity scaling → database bottlenecks → failure conditions.
+    *   **Workshop Value:** Demonstrates M/M/c queuing theory, cache hit rate impact, capacity planning, and performance trade-offs through real-time parameter modification.
+    *   **Files:** `netflix.sdl` (system model), `traffic_spike_demo_test.go` (Canvas-based test suite for validation).
 
-2.  **`gpucaller/` (in `examples/native/gpucaller`):
-    *   Models an application server making inference requests to a pool of GPUs, including batching.
-    *   Components: `AppServer`, `Batcher` (`components.Batcher`), `GpuBatchProcessor` (implements `BatchProcessor` interface), stateless `ResourcePool` (`components.ResourcePool`).
-    *   Defines a custom `gpuwork.go` profile for the batch processing time.
-    *   Demonstrates using the stateless `ResourcePool` based on configured rates (`lambda`, `Ts`).
-    *   Demonstrates using the `Batcher` component.
-    *   Includes tests (`gpucaller_test.go`) that perform parameter sweeping (varying GPU pool size and QPS) using `core.Analyze` to evaluate SLOs under different loads.
+**Additional Workshop Examples:**
 
-3.  **`notifier/` (in `examples/native/notifier`):
-    *   Models a notification system with asynchronous fan-out.
-    *   Components: `NotifierService`, `MessageStore` (using `components.HashIndex`), `InboxStore` (using `components.LSMTree`), `AsyncProcessor`, CDC delay simulation.
-    *   Highlights the challenge of modeling variable fan-out (message delivery to N recipients). The `AsyncProcessor` currently uses a manual expansion/approximation.
-    *   Demonstrates combining synchronous (`SendMessage`) and asynchronous (CDC delay + `ProcessMessage`) paths for end-to-end analysis.
+2.  **`bitly/` - URL Shortening Service:**
+    *   SDL model files for a Bitly-style URL shortening service.
+    *   **Files:** `db.sdl`, `mvp.sdl` - Component and system definitions.
+    *   **Workshop Potential:** Could be expanded for system design interview scenarios demonstrating database sharding, caching strategies, and global distribution.
 
-**Sample SDL Files:**
+3.  **`twitter/` - Social Media Platform:**
+    *   SDL models for Twitter-style social media components.
+    *   **Files:** `dbs.sdl`, `services.sdl` - Database and service architectures.
+    *   **Workshop Potential:** Excellent for demonstrating timeline generation, fan-out patterns, and social graph challenges.
 
-*   **`common.sdl`**: Defines a set of "native" component signatures (e.g., `NativeDisk`, `HashIndex`, `Cache`, `MM1Queue`) and a global enum `HttpStatusCode`. These native components are intended to be backed by Go implementations (like those in the `components` package).
-*   **`bitly.sdl`**: An example SDL file that imports `common.sdl` and defines a `Disk` component (overriding/detailing a native one), a `Database` component, an `AppServer` component, and a `Bitly` system. It also shows an `AppServerWithCache` and `BitlyWithCache` system using an imported `Cache`.
-    *   This file is used in `loader/loader_test.go` (`TestBitly`) to test parsing, loading, import resolution, and type inference.
+**Foundation SDL Files:**
+
+*   **`common.sdl`**: Core native component signatures and types used across workshop examples. Defines components like `ResourcePool`, `Cache`, `HashIndex`, and enums like `HttpStatusCode`. Essential foundation for all workshop scenarios.
+*   **`capacity.sdl`**: Demonstrates capacity modeling with ResourcePool components. Shows queuing delays and performance degradation patterns.
+*   **`disk.sdl`**: Basic disk component model with latency distributions.
+*   **`workshop.todo`**: Comprehensive development status and todo tracking for workshop preparation.
 
 **Current Status:**
 
-*   Provides concrete usage examples for the **Go API** of the SDL library.
-*   Demonstrates modeling different system patterns (caching, database interaction, resource pooling, batching, basic async flows) using the Go primitives.
-*   Go API tests consistently use `core.Analyze` for verification against performance expectations.
-*   The `.sdl` files serve as initial test cases for the DSL parser, loader, and the developing type inference system.
+*   **Workshop-Ready:** Netflix demo provides complete conference presentation scenario with comprehensive test coverage.
+*   **Educational Focus:** Examples designed specifically for system design interview coaching and interactive capacity modeling demonstrations.
+*   **Foundation Complete:** Core SDL files (`common.sdl`, `capacity.sdl`) provide essential building blocks for workshop scenarios.
+*   **Canvas Integration:** Netflix example fully integrated with Canvas API for real-time parameter modification and live demonstrations.
+*   **Conference Preparation:** All examples validated for workshop use with edge case testing and rapid iteration support.
 
-**Next Steps (for this package):**
+**Workshop Development Priorities:**
 
-*   Expand the Go API examples as new `core` or `components` features are added.
-*   Develop more complex `.sdl` files to further test the DSL parser, loader, type inference, and eventually the DSL VM.
-*   Potentially refactor the Go API examples into DSL equivalents once the DSL and VM are mature, to serve as benchmarks and demonstrate DSL capabilities.
+*   **Immediate:** Validate Netflix demo end-to-end, implement `sdl execute` and `sdl dashboard` commands for conference presentation.
+*   **Next:** Expand Bitly and Twitter examples into full workshop scenarios with guided progression and interactive elements.
+*   **Future:** Develop additional FAANG interview scenarios (Uber dispatch, Instagram feed, WhatsApp messaging) and automated workshop progression tools.
