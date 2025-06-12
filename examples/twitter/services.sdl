@@ -1,6 +1,6 @@
 
 
-import WaitAll, WaitAny, HttpStatusCode from "../common.sdl"
+import WaitAll, WaitAny, HttpStatusCode, delay, log from "../common.sdl"
 import Database from "./dbs.sdl"
 
 system Twitter {
@@ -115,8 +115,6 @@ component TimelineService {
 
     // Wait for entire batch to complete
     let result = wait future using WaitAll(HttpStatusCode.Ok)
-
-    log("Ok here we are")
 
     return result
   }

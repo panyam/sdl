@@ -269,6 +269,7 @@ func (r *Value) OutcomesVal() *core.Outcomes[Value] {
 }
 
 func (r *Value) GetInt() (int64, error) {
+	r, err := r.Deref()
 	if r.IsNil() || r.Type == nil {
 		return 0, fmt.Errorf("cannot get Int from nil Value")
 	}
@@ -282,10 +283,11 @@ func (r *Value) GetInt() (int64, error) {
 	if !ok {
 		return 0, fmt.Errorf("internal error: Int value is not Go int (%T)", r.Value)
 	}
-	return val, nil
+	return val, err
 }
 
 func (r *Value) GetBool() (bool, error) {
+	r, err := r.Deref()
 	if r.IsNil() || r.Type == nil {
 		return false, fmt.Errorf("cannot get Bool from nil Value")
 	}
@@ -299,10 +301,11 @@ func (r *Value) GetBool() (bool, error) {
 	if !ok {
 		return false, fmt.Errorf("internal error: Bool value is not Go bool (%T)", r.Value)
 	}
-	return val, nil
+	return val, err
 }
 
 func (r *Value) GetFloat() (float64, error) {
+	r, err := r.Deref()
 	if r.IsNil() || r.Type == nil {
 		return 0.0, fmt.Errorf("cannot get Float from nil Value")
 	}
@@ -316,10 +319,11 @@ func (r *Value) GetFloat() (float64, error) {
 	if !ok {
 		return 0.0, fmt.Errorf("internal error: Float value is not Go float64 (%T)", r.Value)
 	}
-	return val, nil
+	return val, err
 }
 
 func (r *Value) GetString() (string, error) {
+	r, err := r.Deref()
 	if r.IsNil() || r.Type == nil {
 		return "", fmt.Errorf("cannot get String from nil Value")
 	}
@@ -335,10 +339,11 @@ func (r *Value) GetString() (string, error) {
 	if !ok {
 		return "", fmt.Errorf("internal error: String value is not Go string (%T)", r.Value)
 	}
-	return val, nil
+	return val, err
 }
 
 func (r *Value) GetList() ([]Value, error) {
+	r, err := r.Deref()
 	if r.IsNil() || r.Type == nil {
 		return nil, fmt.Errorf("cannot get List from nil Value")
 	}
@@ -353,10 +358,11 @@ func (r *Value) GetList() ([]Value, error) {
 	if !ok {
 		return nil, fmt.Errorf("internal error: List value is not Go []Value (%T)", r.Value)
 	}
-	return val, nil
+	return val, err
 }
 
 func (r *Value) GetTuple() ([]Value, error) {
+	r, err := r.Deref()
 	if r.IsNil() || r.Type == nil {
 		return nil, fmt.Errorf("cannot get Tuple from nil Value")
 	}
@@ -371,10 +377,11 @@ func (r *Value) GetTuple() ([]Value, error) {
 	if !ok {
 		return nil, fmt.Errorf("internal error: Tuple value is not Go []Value (%T)", r.Value)
 	}
-	return val, nil
+	return val, err
 }
 
 func (r *Value) GetOutcomes() (*core.Outcomes[Value], error) {
+	r, err := r.Deref()
 	if r.IsNil() || r.Type == nil {
 		return nil, fmt.Errorf("cannot get Outcomes from nil Value")
 	}
@@ -389,7 +396,17 @@ func (r *Value) GetOutcomes() (*core.Outcomes[Value], error) {
 	if !ok {
 		return nil, fmt.Errorf("internal error: Outcomes value is not Go []Value (%T)", r.Value)
 	}
-	return val, nil
+	return val, err
+}
+
+func (r *Value) Deref() (*Value, error) {
+	if r.IsNil() || r.Type == nil {
+		return nil, fmt.Errorf("cannot Deref from nil Value")
+	}
+	if r.Type.Tag != TypeTagRef {
+		return r, nil
+	}
+	return r.Value.(*RefValue).Deref(), nil
 }
 
 // Helpers to create specific simple values
@@ -417,6 +434,7 @@ func BoolValue(val bool) (out Value) {
 type RefValue struct {
 	Receiver Value
 	Attrib   string
+	Deref    func() *Value
 }
 
 type MethodValue struct {

@@ -451,11 +451,15 @@ func (s *SimpleEval) evalMemberAccessExpr(m *MemberAccessExpr, env *Env[Value], 
 	ensureNoErr(err)
 	paramDecl, _ := compDecl.GetParam(m.Member.Value)
 	if paramDecl != nil {
-		paramType := paramDecl.Name.InferredType()
-		refType := decl.RefType(compDecl, paramType)
-		result, err = NewValue(refType, &decl.RefValue{Receiver: finalReceiver, Attrib: m.Member.Value})
-		ensureNoErr(err)
-		return
+		// paramType := paramDecl.Name.InferredType()
+		// refType := decl.RefType(compDecl, paramType)
+		// result, err = NewValue(refType, &decl.RefValue{Receiver: finalReceiver, Attrib: m.Member.Value})
+		// ensureNoErr(err)
+		result, ok := compInst.Get(m.Member.Value) // NewValue(refType, &decl.RefValue{Receiver: finalReceiver, Attrib: m.Member.Value})
+		if !ok {
+			panic("Invalid...")
+		}
+		return result, false
 	}
 	usesDecl, _ := compDecl.GetDependency(m.Member.Value)
 	if usesDecl != nil {
