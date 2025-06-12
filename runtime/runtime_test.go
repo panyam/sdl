@@ -15,8 +15,8 @@ func RunLoadTest(sdlfile, systemName, componentName, methodName string) {
 	fi := rt.LoadFile(sdlfile)
 
 	var currTime core.Duration
-	se := NewSimpleEval(fi)
-	env := fi.Env.Push()
+	se := NewSimpleEval(fi, nil)
+	env := fi.Env()
 
 	sys := fi.NewSystem(systemName)
 	se.EvalInitSystem(sys, env, &currTime)
