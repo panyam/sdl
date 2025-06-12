@@ -1,0 +1,187 @@
+# SDL Conference Workshop Development Status
+# "Building an Open Source System Design Interview Coach With Interactive Simulations"
+
+## 🎯 CONFERENCE VISION
+
+As a former FAANG engineering leader who's interviewed 100s of candidates, building tools for system design interview preparation featuring:
+
+* Interactive simulators showing how architectures perform under load
+* Visual tools demonstrating distributed systems concepts (CAP theorem, consistency models)  
+* Performance comparison tools for evaluating architectural trade-offs
+* Failure scenario simulators revealing resilience thinking
+
+**Core Concept**: "Incredible Machine" style creation and testing of systems with live metrics like latencies, capacities, call counts, errors, etc.
+
+## 📁 CURRENT STATE - WHAT WE HAVE
+
+### ✅ READY FOR DEMO:
+- [x] Core SDL language and runtime
+- [x] Canvas API with parameter modification (Set, Run, Plot)
+- [x] Capacity modeling with ResourcePool (M/M/c queuing)
+- [x] Multiple visualization formats (latency plots, diagrams, histograms)
+- [x] CLI commands (run, plot, diagram, validate)
+- [x] Netflix streaming service demo scenario (examples/netflix/)
+- [x] Comprehensive test suite validating workshop scenarios
+
+### 🚧 PARTIALLY READY:
+- [ ] Recipe-based workflows (engine exists, need `sdl execute` command)
+- [ ] Component library (good foundation, needs more realistic components)
+- [ ] Documentation (comprehensive but needs workshop-specific content)
+
+### ❌ MISSING FOR CONFERENCE:
+- [ ] Real-time dashboard interface
+- [ ] FAANG-style interview scenario library
+- [ ] Workshop-specific CLI commands
+- [ ] Live multi-panel visualization
+- [ ] Automated scenario progression
+
+## 📋 TODO LIST
+
+### 🔥 HIGH PRIORITY (Essential for Conference)
+
+1. **[PENDING]** Test current Netflix scenario with existing Canvas API
+   - Run comprehensive test suite to validate current capabilities
+   - Identify any gaps or issues in the Canvas API
+   - Ensure all parameter modifications work correctly
+   - Status: Ready to test examples/netflix/traffic_spike_demo_test.go
+
+2. **[PENDING]** Implement 'sdl execute' command for recipe runner
+   - Build command parser for recipe files
+   - Enable scripted demo workflows
+   - Critical for smooth conference presentation
+   - Location: cmd/sdl/commands/execute.go
+
+3. **[PENDING]** Create 'sdl dashboard' command for live multi-panel view
+   - Multi-panel terminal interface showing real-time updates
+   - Display latency plots, system diagrams, utilization metrics
+   - The "Incredible Machine" style visualization
+   - Location: cmd/sdl/commands/dashboard.go
+
+4. **[PENDING]** Fix any Canvas API gaps discovered by Netflix test
+   - Address issues found during testing
+   - Ensure robust parameter modification
+   - Handle edge cases gracefully
+
+### 🔧 MEDIUM PRIORITY (Nice to Have for Conference)
+
+5. **[PENDING]** Add realistic components (CDN, LoadBalancer, MessageQueue, etc.)
+   - Expand component library beyond current set
+   - More authentic distributed system modeling
+   - Location: components/ and components/decl/
+
+6. **[PENDING]** Build additional FAANG interview scenarios (Uber, Instagram, WhatsApp)
+   - Create more diverse workshop content
+   - Cover different architectural patterns
+   - Location: examples/uber/, examples/instagram/, examples/whatsapp/
+
+7. **[PENDING]** Create workshop-specific commands (sdl workshop, scenario management)
+   - Specialized CLI for workshop flow
+   - Scenario loading and management
+   - Location: cmd/sdl/commands/workshop.go
+
+8. **[PENDING]** Add system utilization plots, throughput charts, failure rate graphs
+   - Enhanced visualization beyond latency plots
+   - More comprehensive performance analysis
+   - Location: viz/ package enhancements
+
+### 📅 LOW PRIORITY (Post-Conference)
+
+9. **[PENDING]** Build automated scenario progression with guided steps
+   - Automated workshop guidance
+   - Step-by-step progression
+
+10. **[PENDING]** Implement live parameter sliders/modification interface
+    - Interactive parameter controls
+    - Real-time manipulation during demos
+
+11. **[PENDING]** Create browser-based prototype for post-conference development
+    - Full "Incredible Machine" style web UI
+    - Drag-and-drop system building
+
+## 🎪 DEMO SCENARIO - NETFLIX TRAFFIC SPIKE
+
+**Files Created:**
+- `examples/netflix/netflix.sdl` - Complete streaming service model
+- `examples/netflix/traffic_spike_demo_test.go` - Canvas-based test suite
+
+**Demo Flow Validated:**
+1. **Baseline Performance** → Normal traffic conditions
+2. **Traffic Spike** → 4x load increase (Stranger Things premiere)
+3. **Cache Optimization** → Improve hit rate from 85% to 95%
+4. **Capacity Scaling** → Double CDN capacity
+5. **Database Bottleneck** → Identify database as constraint
+6. **Encoding Workload** → Video upload pipeline testing
+7. **Failure Scenarios** → CDN capacity limits
+8. **Edge Cases** → Zero capacity, infinite load, perfect system
+
+**Workshop Narrative:**
+- Candidate: "We'll just add more servers"
+- Demo: Show how database becomes bottleneck
+- SDL shows: 95th percentile latency explodes even with infinite app servers
+
+## 🏗️ TECHNICAL ARCHITECTURE
+
+**Current SDL Components:**
+- `parser/` - SDL text to AST conversion
+- `loader/` - Import resolution and type checking  
+- `runtime/` - Simulation execution engine
+- `components/` - System component library (disk, cache, etc.)
+- `console/` - Interactive analysis engine (Canvas API)
+- `viz/` - Plotting and diagram generation
+- `cmd/sdl/` - Command-line interface
+
+**Canvas API (Ready):**
+```go
+canvas.Load("scenarios/netflix.sdl")
+canvas.Use("NetflixSystem") 
+canvas.Set("videoService.cdn.pool.ArrivalRate", 200.0)  // Traffic spike
+canvas.Run("spike", "videoService.StreamVideo", 1000)
+canvas.Plot([]string{"baseline", "spike"}, "comparison")
+```
+
+## 🎯 CONFERENCE SUCCESS CRITERIA
+
+**Essential (Must Have):**
+- [ ] Netflix demo working end-to-end
+- [ ] Real-time parameter modification during presentation
+- [ ] Live visualization updates
+- [ ] Smooth demo flow without technical glitches
+
+**Nice to Have:**
+- [ ] Multiple FAANG scenarios
+- [ ] Dashboard with multiple panels
+- [ ] Automated progression through demo steps
+
+**Demo Impact Goals:**
+- Show capacity modeling revealing system limits
+- Demonstrate "aha moments" about cache hit rates, queuing theory
+- Visualize trade-offs between architectural alternatives
+- Prove SDL as system design interview preparation platform
+
+## 📝 NEXT SESSION PRIORITIES
+
+1. **Test Netflix scenario** - Run traffic_spike_demo_test.go
+2. **Fix any Canvas API issues** - Address gaps discovered
+3. **Implement sdl execute** - Recipe runner for demos
+4. **Create dashboard prototype** - Multi-panel visualization
+
+## 🔄 SESSION HANDOFF NOTES
+
+**Last Completed:**
+- Netflix streaming service model created
+- Comprehensive test suite implemented  
+- Canvas-based demo flow validated
+- All files committed to git
+
+**Current Focus:**
+- Conference workshop preparation
+- Interactive simulation demonstrations
+- "Incredible Machine" style system design coaching
+
+**Key Files to Remember:**
+- `examples/netflix/` - Main demo scenario
+- `console/canvas.go` - Interactive API
+- `NEXTSTEPS.md` - Overall project roadmap
+- `examples/workshop.todo` - This file!
+
+**Ready to start testing and building missing pieces for conference success! 🚀**
