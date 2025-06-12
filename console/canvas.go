@@ -2,25 +2,28 @@ package console
 
 import (
 	"fmt"
+	"os"
 	"reflect"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/panyam/sdl/cmd/sdl/commands"
 	"github.com/panyam/sdl/loader"
 	"github.com/panyam/sdl/runtime"
+	"github.com/panyam/sdl/viz"
 )
 
 // Canvas provides a stateful, interactive environment for loading,
 // modifying, and analyzing SDL models. It acts as the core engine
 // for both scripted tests and future interactive tools like a REPL.
 type Canvas struct {
-	loader         *loader.Loader
-	runtime        *runtime.Runtime
-	activeFile     *loader.FileStatus
-	activeSystem   *runtime.SystemInstance
-	sessionVars    map[string]interface{}
-	loadedFiles    map[string]*loader.FileStatus
+	loader       *loader.Loader
+	runtime      *runtime.Runtime
+	activeFile   *loader.FileStatus
+	activeSystem *runtime.SystemInstance
+	sessionVars  map[string]interface{}
+	loadedFiles  map[string]*loader.FileStatus
 }
 
 // NewCanvas creates a new interactive canvas session.
@@ -28,9 +31,9 @@ func NewCanvas() *Canvas {
 	l := loader.NewLoader(nil, nil, 10)
 	r := runtime.NewRuntime(l)
 	return &Canvas{
-		loader:       l,
-		runtime:      r,
-		sessionVars:  make(map[string]interface{}),
+		loader:      l,
+		runtime:     r,
+		sessionVars: make(map[string]interface{}),
 		loadedFiles: make(map[string]*loader.FileStatus),
 	}
 }
@@ -76,7 +79,7 @@ func (c *Canvas) Use(systemName string) error {
 
 	// Initialize the system
 	var totalSimTime runtime.Duration
-	env := fileInstance.Env.Push()
+	env := fileInstance.Env()
 	eval := runtime.NewSimpleEval(fileInstance, nil)
 	eval.EvalInitSystem(system, env, &totalSimTime)
 	if eval.HasErrors() {
@@ -191,8 +194,57 @@ func (c *Canvas) Run(varName string, target string, opts ...RunOption) error {
 
 // Plot generates a visualization from data stored in session variables.
 func (c *Canvas) Plot(opts ...PlotOption) error {
-	// Implementation will generate SVG plots
-	return nil
+	cfg := &PlotConfig{
+		YAxis: "latency",
+	}
+	for _, opt := range opts {
+		opt(cfg)
+	}
+
+	if cfg.OutputFile == "" {
+		return fmt.Errorf("output file must be specified for plot")
+	}
+
+	var vizSeries []viz.DataSeries
+	for _, seriesInfo := range cfg.Series {
+		data, ok := c.sessionVars[seriesInfo.From]
+		if !ok {
+			return fmt.Errorf("session variable '%s' not found for plotting", seriesInfo.From)
+		}
+
+		results, ok := data.([]commands.RunResult)
+		if !ok {
+			return fmt.Errorf("session variable '%s' is not of type []RunResult", seriesInfo.From)
+		}
+		// TODO: This logic is duplicated from plot.go, can be refactored
+		buckets := make(map[int64][]float64)
+		for _, r := range results {
+			if !r.IsError {
+				bucketTime := (r.Timestamp / 1000) * 1000
+				buckets[bucketTime] = append(buckets[bucketTime], r.Latency)
+			}
+		}
+
+		var points []viz.DataPoint
+		for ts, latencies := range buckets {
+			sort.Float64s(latencies)
+			if len(latencies) > 0 {
+				points = append(points, viz.DataPoint{
+					X: ts,
+					Y: latencies[int(float64(len(latencies))*0.9)], // P90
+				})
+			}
+		}
+		sort.Slice(points, func(i, j int) bool { return points[i].X < points[j].X })
+		vizSeries = append(vizSeries, viz.DataSeries{Name: seriesInfo.Name, Points: points})
+	}
+
+	plotter := viz.NewSVGPlotter(viz.DefaultPlotConfig())
+	svg, err := plotter.Generate(vizSeries, cfg.Title, "Time", "P90 Latency (ms)")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(cfg.OutputFile, []byte(svg), 0644)
 }
 
 // --- Option types for Run/Plot ---
@@ -209,4 +261,28 @@ func WithRuns(n int) RunOption {
 	}
 }
 
-type PlotOption func()
+type SeriesInfo struct {
+	Name string
+	From string // Variable name from sessionVars
+}
+
+type PlotConfig struct {
+	Title      string
+	YAxis      string
+	OutputFile string
+	Series     []SeriesInfo
+}
+
+type PlotOption func(*PlotConfig)
+
+func WithSeries(name, fromVar string) PlotOption {
+	return func(cfg *PlotConfig) {
+		cfg.Series = append(cfg.Series, SeriesInfo{Name: name, From: fromVar})
+	}
+}
+
+func WithOutput(path string) PlotOption {
+	return func(cfg *PlotConfig) {
+		cfg.OutputFile = path
+	}
+}

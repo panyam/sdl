@@ -5,6 +5,7 @@ import (
 	"github.com/panyam/sdl/loader"
 )
 
+type Duration = float64
 type NodeInfo = decl.NodeInfo
 type LiteralExpr = decl.LiteralExpr
 type IdentifierExpr = decl.IdentifierExpr

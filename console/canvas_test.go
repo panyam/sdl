@@ -22,15 +22,14 @@ func TestExecutionRecipe(t *testing.T) {
 	t.Log("--- Running Baseline Scenario (95% Cache Hit Rate) ---")
 	err = canvas.Set("app.cache.HitRate", 0.95)
 	assert.NoError(t, err, "Setting cache hit rate should not fail")
-	// TODO: Add RunOptions for things like --runs=N
-	err = canvas.Run("run_baseline", "app.Redirect")
+	err = canvas.Run("run_baseline", "app.Redirect", WithRuns(20000))
 	assert.NoError(t, err, "Running baseline simulation should not fail")
 
 	// --- Contended Scenario ---
 	t.Log("--- Running Contended Scenario (60% Cache Hit Rate) ---")
 	err = canvas.Set("app.cache.HitRate", 0.60)
 	assert.NoError(t, err, "Setting cache hit rate should not fail")
-	err = canvas.Run("run_contended", "app.Redirect")
+	err = canvas.Run("run_contended", "app.Redirect", WithRuns(20000))
 	assert.NoError(t, err, "Running contended simulation should not fail")
 
 	// --- Flaky Cache Scenario ---
@@ -39,12 +38,16 @@ func TestExecutionRecipe(t *testing.T) {
 	assert.NoError(t, err)
 	err = canvas.Set("app.cache.FailureProb", 0.05)
 	assert.NoError(t, err, "Setting cache failure probability should not fail")
-	err = canvas.Run("run_flaky", "app.Redirect")
+	err = canvas.Run("run_flaky", "app.Redirect", WithRuns(20000))
 	assert.NoError(t, err, "Running flaky cache simulation should not fail")
 
 	// --- Plotting ---
 	t.Log("--- Generating Latency Comparison Plot ---")
-	// TODO: Define PlotOptions for specifying series, from, output etc.
-	err = canvas.Plot() // This will need to be fleshed out with options
+	err = canvas.Plot(
+		WithSeries("Baseline", "run_baseline"),
+		WithSeries("Contended (60% Hit)", "run_contended"),
+		WithSeries("Flaky Cache (5% Fail)", "run_flaky"),
+		WithOutput("bitly_latency_comparison.svg"),
+	)
 	assert.NoError(t, err, "Generating the plot should not fail")
 }
