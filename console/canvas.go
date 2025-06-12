@@ -22,7 +22,7 @@ type Canvas struct {
 	runtime      *runtime.Runtime
 	activeFile   *loader.FileStatus
 	activeSystem *runtime.SystemInstance
-	sessionVars  map[string]interface{}
+	sessionVars  map[string]any
 	loadedFiles  map[string]*loader.FileStatus
 }
 
@@ -33,7 +33,7 @@ func NewCanvas() *Canvas {
 	return &Canvas{
 		loader:      l,
 		runtime:     r,
-		sessionVars: make(map[string]interface{}),
+		sessionVars: make(map[string]any),
 		loadedFiles: make(map[string]*loader.FileStatus),
 	}
 }
@@ -92,7 +92,7 @@ func (c *Canvas) Use(systemName string) error {
 
 // Set modifies a component parameter at runtime.
 // The path is a dot-separated string, e.g., "app.cache.HitRate".
-func (c *Canvas) Set(path string, value interface{}) error {
+func (c *Canvas) Set(path string, value any) error {
 	parts := strings.Split(path, ".")
 	if len(parts) < 2 {
 		return fmt.Errorf("invalid path for Set: '%s'. Must be at least <instance>.<field>", path)
@@ -114,7 +114,7 @@ func (c *Canvas) Set(path string, value interface{}) error {
 	return c.setField(compInstance.NativeInstance, parts[1:], value)
 }
 
-func (c *Canvas) setField(obj interface{}, path []string, value interface{}) error {
+func (c *Canvas) setField(obj any, path []string, value any) error {
 	objVal := reflect.ValueOf(obj)
 
 	// Dereference pointers until we get to a struct or the end of the chain
