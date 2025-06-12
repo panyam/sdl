@@ -25,13 +25,10 @@ The project is a Go-based system composed of several key packages:
     *   **`diagram`**: A powerful diagramming tool that consumes data from `sdl trace` (for dynamic diagrams) or directly from `.sdl` files (for static diagrams).
 *   **`./examples`:** Contains sample `.sdl` files and Go API usage examples.
 
-**3. Current Status & Key Features:**
+**3. Current Status & Future Direction:**
 
-*   **Simplified Grammar:** The language has been simplified by introducing `native method`s, allowing constructs like `delay` to be implemented as a standard function call rather than a special-cased statement.
-*   **Complete Analysis Workflows:** Two complete, decoupled workflows are now implemented:
-    1.  **Performance Simulation:** `sdl run` -> `sdl plot` for statistical analysis.
-    2.  **Execution Tracing:** `sdl trace` -> `sdl diagram dynamic` for visualizing single-run behavior as a sequence diagram.
-*   **Advanced Visualization:** The `viz` package can generate multi-series SVG line charts, SVG bar charts (histograms), multiple static diagram formats (DOT, Mermaid, SVG, Excalidraw), and Mermaid sequence diagrams that correctly represent concurrency.
+*   **Mature Core & Workflows:** The project has robust libraries for performance modeling and two complete, decoupled workflows: statistical simulation (`run` -> `plot`) and single-run tracing (`trace` -> `diagram`).
+*   **Expressive Language:** The grammar has been simplified with the introduction of `native method`s, allowing common operations like `delay` to be standard function calls.
+*   **Advanced Visualization:** The `viz` package can generate multi-series SVG line charts, SVG bar charts (for histograms), and multiple static/dynamic diagram formats.
+*   **Next Evolution: Interactive Analysis:** To enhance developer experience and enable rapid, iterative analysis, the next major feature will be an **interactive recipe runner**. This will allow users to script a series of actions—loading models, modifying parameters in-memory, running simulations, and generating comparison plots—from a single command, providing a notebook-like experience.
 *   **Known Limitations:** The runtime correctly visualizes concurrency (`gobatch`/`wait`), but the underlying execution model for `gobatch` still simulates a single representative path. Fully modeling N parallel executions in the runtime is the next major step.
-
-This summary provides a high-level overview of the SDL project, its architecture, and its powerful simulation and analysis capabilities.

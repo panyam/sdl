@@ -18,39 +18,40 @@ This document outlines the key areas for future development and refinement in th
     *   The `sdl diagram dynamic` command consumes this trace file to generate a Mermaid sequence diagram, correctly visualizing concurrency and call flows.
 
 ---
-## 1. Runtime and Evaluation Enhancements (`runtime` package)
+## 1. Interactive Recipe Runner
 
-*   **Full Concurrency Model Implementation:** This is the next major priority.
-    *   The `gobatch` and `wait using` constructs are visualized correctly but the runtime model is a placeholder.
-    *   **`gobatch N { ... }`**: The runtime should properly model the execution of N parallel operations, not just a single representative one. This is crucial for accurate simulation of fan-out scenarios.
-    *   **Native Aggregators**: Develop a set of standard native aggregator methods (`WaitAll`, `WaitAny`, `Quorum`) that can properly calculate the resulting latency distribution and success probability from a batch of futures.
-    *   **Core Library Support:** Enhance `sdl/core` with functions to calculate distributions of order statistics (e.g., time to C-th completion from N, makespan of N) needed by the native aggregators.
+To provide a more fluid, notebook-like experience for iterative analysis and storytelling (e.g., for conference demos), we will build an interactive "recipe runner."
+
+*   **Phase 1: Proof of Concept (Unit Test):** Before building the full `execute` command, create a unit test (`TestExecutionRecipe`) that validates the core primitives:
+    1.  Load an SDL model via the Go API.
+    2.  Instantiate a system and get a handle to a native component instance (e.g., a `components.Cache`).
+    3.  **Run Scenario A:** Modify a parameter on the component struct (e.g., `cache.HitRate = 0.95`), run a simulation, and store the results in memory.
+    4.  **Run Scenario B:** Modify the *same* component instance again (`cache.HitRate = 0.60`), run a new simulation, and store its results.
+    5.  **Generate Comparison:** Combine the results from both scenarios into a single multi-series plot and save it to a file. This proves the end-to-end concept works.
+
+*   **Phase 2: `sdl execute` Command:**
+    *   Create the `cmd/sdl/commands/execute.go` file.
+    *   Implement a simple parser for the `.recipe` file format.
+    *   Build a `Session` object to manage the loaded state (loader, variables).
+    *   Implement the recipe commands (`load`, `use`, `set`, `run`, `plot`, `diagram`, `echo`).
+
+## 2. Runtime and Evaluation Enhancements (`runtime` package)
+
+*   **Full Concurrency Model Implementation:** This is the next major priority after the recipe runner PoC.
+    *   **`gobatch N { ... }`**: The runtime should properly model the execution of N parallel operations, not just a single representative one.
+    *   **Native Aggregators**: Develop standard aggregator methods (`WaitAll`, `WaitAny`, `Quorum`) to calculate latency and success from futures.
+    *   **Core Library Support:** Enhance `sdl/core` with functions for order statistics (e.g., makespan of N).
 
 *   **Exhaustive Tracing / Analytical Evaluation:**
-    *   This is a longer-term goal to move beyond single-path simulation.
-    *   Develop a new `ExhaustiveEval` that systematically explores all probabilistic branches (`distribute`, `sample`) to build a complete outcome graph, enabling true analytical results directly from the DSL.
+    *   A longer-term goal to move beyond single-path simulation by exploring all probabilistic branches (`distribute`, `sample`) to build a complete outcome graph.
 
-## 2. Language Features & Semantics (DSL & `decl`, `parser`)
+## 3. Language Features & Semantics (DSL & `decl`, `parser`)
 
-*   **`switch` as an Expression:** Allow `switch` statements to be used as expressions, returning a value. Ensure all branches of a switch expression yield type-compatible results. Update the grammar and type inference logic.
-*   **More Built-in Functions:** Define and implement a broader standard library of built-in functions (e.g., math functions, string manipulation).
-*   **Global `options` Blocks:** Fully implement parsing and application of global and component-level `options` to configure the runtime or components.
-
-## 3. Visualization Enhancements (`viz` package)
-
-*   **Improve Dynamic Diagrams:**
-    *   Add support for more output formats beyond Mermaid (e.g., SVG, Excalidraw).
-    *   Show return values and latencies on the sequence diagram arrows.
-*   **Refine Static Diagramming:**
-    *   Improve layout algorithms and styling options.
-
-## 4. Testing & Documentation
-
-*   **Concurrency Runtime Tests:** Add extensive tests for the full concurrency model once it is implemented.
-*   **Documentation:** Update the project's main documentation and examples to cover the new `trace` and `diagram dynamic` workflow in detail.
+*   **`switch` as an Expression:** Allow `switch` to be used as an expression that returns a value.
+*   **More Built-in Functions:** Define and implement a broader standard library.
 
 ## Priority Focus (Immediate to Medium Term):
 
-1.  **Full Concurrency Model (`runtime` & `core`).** This is the highest priority as it's the largest remaining gap in the simulation engine's capabilities.
-2.  **Language Enhancements.** Implementing `switch` as an expression and adding more built-in functions will significantly improve the expressiveness of the DSL.
-3.  **Visualization Polish.** Adding more output formats and details to the dynamic diagrams.
+1.  **Interactive Recipe Runner (Phase 1).** The PoC test is the highest priority as it directly enables the creation of compelling, story-driven demos for the upcoming conference.
+2.  **Full Concurrency Model (`runtime` & `core`).** This remains the most significant feature gap in the simulation engine.
+3.  **Language Enhancements.** Implementing `switch` as an expression and adding more built-in functions.
