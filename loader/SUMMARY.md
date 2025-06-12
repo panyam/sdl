@@ -22,7 +22,7 @@ This package is responsible for managing the loading of SDL source files. Its ke
         1.  Symbols from imported files, added under their specified aliases (handled by `AddImportedAliasesToScope`). Collision detection for aliases is performed.
         2.  Local symbols defined within the current file (handled by `fileDecl.AddToScope`). Collision detection with imported aliases or other local symbols is performed.
         It then calls `InferTypesForFile` (from `infer.go` within this package).
-    *   `AddImportedAliasesToScope(...)`: Helper method that populates the `currentScope` with explicitly imported symbols from other files, respecting their aliases and checking for collisions.
+    *   `AddImportedAliasesToScope(...)`: Helper method that populates the `currentScope` with explicitly imported symbols from other files, respecting their aliases and checking for collisions. It can handle all importable definition types (`Component`, `Enum`, `Aggregator`, `Method`).
 
 2.  **`interfaces.go`**:
     *   `Parser` interface: Defines the contract for parsing SDL content.
@@ -32,7 +32,7 @@ This package is responsible for managing the loading of SDL source files. Its ke
     *   `DefaultFileResolver`: An implementation of `FileResolver` for the local filesystem.
 
 4.  **`infer.go` (Type Inference Logic):**
-    *   Contains the `Inference` struct and its methods, including the main entry point `Eval(rootEnv *Env[Node])` (which used to be more like a static `InferTypesForFile`).
+    *   Contains the `Inference` struct and its methods, including the main entry point `Eval(rootEnv *Env[Node])`.
     *   It performs multiple passes, first resolving types in signatures and parameter defaults, then inferring types for method bodies and system definitions.
     *   Relies on `TypeScope` to manage contextual symbol lookups.
     *   Recursive helper functions (`EvalForExprType`, `EvalForStmt`, etc.) traverse the AST, infer types for expressions, and check type compatibility.
@@ -69,6 +69,7 @@ This package is responsible for managing the loading of SDL source files. Its ke
 
 *   The loader can successfully parse files and their imports, resolve basic definitions, and detect cycles.
 *   The type inference scoping mechanism (`validateFileDecl`, `AddImportedAliasesToScope`, `TypeScope`) is well-established to correctly construct and populate the environment for `infer.go`.
+*   The import mechanism has been made more robust and can now correctly handle importing all definition types, including `native method` declarations.
 
 **Next Steps (for this package):**
 

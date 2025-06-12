@@ -5,20 +5,24 @@ This document outlines the key areas for future development and refinement in th
 ---
 ## Completed
 
-*   **`[COMPLETED]` Interactive Session Proof-of-Concept:**
-    *   Created the `console` package and the `Canvas` API, which provides a stateful engine for interactive analysis.
-    *   Successfully implemented and tested the core workflow (`Load`, `Set`, `Run`, `Plot`) in a unit test (`TestExecutionRecipe`), proving the feasibility of the recipe runner concept.
+*   **`[COMPLETED]` Interactive Session Engine (`console.Canvas`):**
+    *   The `console.Canvas` API is now a stable and robust engine for interactive analysis.
+    *   Core workflow (`Load`, `Use`, `Set`, `Run`, `Plot`) is fully functional and tested.
+    *   The `Set` command is particularly powerful, supporting runtime modification of parameters on both top-level instances and their nested dependencies (e.g., `app.cache.HitRate`).
+*   **`[COMPLETED]` Loader & Runtime Enhancements:**
+    *   The `loader` now correctly handles imports of all declaration types, including `native method`.
+    *   The `runtime` can now instantiate all available native components from the `components` library.
 *   **`[COMPLETED]` Native Methods & Grammar Simplification:**
     *   Added support for top-level `native method` declarations.
     *   Refactored the `delay` statement into a standard native method call, simplifying the grammar.
-*   **`[COMPLETED]` Histogram Plotting:** The `sdl plot` command now supports a `--y-axis=histogram` option to generate bar chart visualizations of metric distributions.
-*   **`[COMPLETED]` Simulation & Plotting Workflow:** The `sdl run` and `sdl plot` commands are fully implemented.
-*   **`[COMPLETED]` Tracing & Dynamic Diagram Workflow:** The `sdl trace` and `sdl diagram dynamic` commands are fully implemented.
+*   **`[COMPLETED]` Plotting & Visualization:**
+    *   The `sdl plot` command supports latency, count, and histogram plots.
+    *   The `sdl diagram` command supports static (architecture) and dynamic (sequence) diagrams.
 
 ---
 ## 1. Implement the Interactive Recipe Runner
 
-With the `Canvas` API proven, the next step is to build the user-facing frontend for it.
+With the `Canvas` API complete and stable, the next step is to build the user-facing frontend for it.
 
 *   **Create the `sdl execute` command:**
     *   Create the file `cmd/sdl/commands/execute.go`.

@@ -8,6 +8,7 @@ This package is responsible for the execution and evaluation of System Design La
 
 *   **`Runtime` (`runtime.go`):**
     *   The central orchestrator for loading and preparing SDL files for execution. It holds a reference to a `loader.Loader` and manages a cache of loaded `FileInstance` objects.
+    *   It contains the `CreateNativeComponent` factory method, which can instantiate any of the registered native Go components (e.g., `Cache`, `Disk`, `LSMTree`) by name.
 
 *   **`FileInstance` (`file.go`):**
     *   Represents a loaded and parsed SDL file at runtime, holding the AST (`FileDecl`) and a root environment. It provides methods to create runtime instances of systems and components.
@@ -18,9 +19,8 @@ This package is responsible for the execution and evaluation of System Design La
 *   **`SimpleEval` (`simpleeval.go`):**
     *   The primary interpreter (evaluator) for SDL AST nodes. It walks the AST to evaluate expressions and statements.
     *   It manages runtime state, including variables and component instances, within an `Env[Value]`.
-    *   It handles all language constructs: literals, operations, statements (`let`, `if`, `for`, `return`, `delay`), `new` (instantiation), and method calls.
+    *   It handles all language constructs: literals, operations, statements (`let`, `if`, `for`, `return`), `new` (instantiation), and method calls.
     *   **Latency Accumulation**: A key feature is its tracking of simulated time. The `Time` field on the `decl.Value` struct is used to accumulate the latency of operations within a single simulation run.
-    *   **Error Handling**: The evaluator has been improved to provide clear, user-friendly error messages for common runtime issues, such as calling a non-existent method.
 
 *   **Concurrency Primitives (`aggregator.go`, `simpleeval.go`):**
     *   The runtime now has placeholder implementations for concurrency constructs like `gobatch` and `wait using <Aggregator>`.
@@ -41,7 +41,7 @@ The runtime package is the engine that brings SDL models to life. It enables the
 *   `SimpleEval` can execute a significant SDL subset, making it suitable for single-path, simulation-based analysis.
 *   The `RunCallInBatches` utility is robust and supports the CLI's simulation features.
 *   The placeholder implementation of the `WaitAll` aggregator has been fixed to unblock the simulation of simple concurrent patterns.
-*   Error reporting within the evaluator has been improved.
+*   The native component factory `CreateNativeComponent` has been updated to support all available native components.
 
 **Key Dependencies:**
 
