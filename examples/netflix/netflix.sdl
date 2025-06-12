@@ -1,0 +1,140 @@
+// Netflix-style video streaming service
+// This scenario demonstrates capacity modeling, caching, and load balancing
+
+import ResourcePool, delay from "../common.sdl"
+
+// Content Delivery Network with geographic distribution
+component CDN {
+    uses pool ResourcePool(Size = 100)  // 100 concurrent connections per edge
+    param AvgHoldTime = 50ms           // Time to serve cached content
+    param CacheHitRate = 0.85          // 85% cache hit rate
+    
+    method ServeVideo() Bool {
+        // Try to acquire CDN capacity
+        let acquired = self.pool.Acquire()
+        if not acquired {
+            return false  // CDN overloaded
+        }
+        
+        // Check cache hit
+        let cacheHit = sample dist {
+            85 => true,   // Cache hit
+            15 => false   // Cache miss - need origin
+        }
+        
+        if cacheHit {
+            delay(self.AvgHoldTime)
+            return true
+        } else {
+            // Cache miss - much slower
+            delay(self.AvgHoldTime * 5)  // Origin server is slower
+            return sample dist {
+                95 => true,   // Origin usually works
+                 5 => false   // But sometimes fails
+            }
+        }
+    }
+}
+
+// Video encoding service for new content
+component VideoEncoder {
+    uses pool ResourcePool(Size = 10)   // Limited encoding capacity
+    param EncodingTime = 30000ms        // 30 seconds to encode
+    
+    method EncodeVideo() Bool {
+        let acquired = self.pool.Acquire()
+        if not acquired {
+            return false  // Encoding queue full
+        }
+        
+        delay(self.EncodingTime)
+        return sample dist {
+            98 => true,   // Encoding usually succeeds
+             2 => false   // Sometimes fails (corrupted input, etc.)
+        }
+    }
+}
+
+// Database for metadata (user preferences, video catalog)
+component VideoDatabase {
+    uses pool ResourcePool(Size = 50)   // Connection pool
+    param QueryTime = 5ms               // Fast metadata queries
+    
+    method GetVideoMetadata() Bool {
+        let acquired = self.pool.Acquire()
+        if not acquired {
+            return false  // Connection pool exhausted
+        }
+        
+        delay(self.QueryTime)
+        return sample dist {
+            999 => true,  // Database is very reliable
+              1 => false  // Rare failures
+        }
+    }
+}
+
+// Load balancer distributing traffic
+component LoadBalancer {
+    uses pool ResourcePool(Size = 1000) // High capacity
+    param RoutingTime = 1ms             // Fast routing decisions
+    
+    method RouteRequest() Bool {
+        let acquired = self.pool.Acquire()
+        if not acquired {
+            return false  // Even load balancer can be overwhelmed
+        }
+        
+        delay(self.RoutingTime)
+        return true  // Load balancer rarely fails
+    }
+}
+
+// Main video streaming service
+component VideoService {
+    uses loadBalancer LoadBalancer
+    uses cdn CDN
+    uses database VideoDatabase
+    uses encoder VideoEncoder
+    
+    // Main method: serve a video request
+    method StreamVideo() Bool {
+        // Step 1: Load balancer routes the request
+        let routed = self.loadBalancer.RouteRequest()
+        if not routed {
+            return false
+        }
+        
+        // Step 2: Get video metadata from database
+        let metadata = self.database.GetVideoMetadata()
+        if not metadata {
+            return false
+        }
+        
+        // Step 3: Serve video from CDN
+        return self.cdn.ServeVideo()
+    }
+    
+    // Upload and encode new content
+    method UploadVideo() Bool {
+        // Route upload request
+        let routed = self.loadBalancer.RouteRequest()
+        if not routed {
+            return false
+        }
+        
+        // Store metadata
+        let stored = self.database.GetVideoMetadata()  // Reusing for simplicity
+        if not stored {
+            return false
+        }
+        
+        // Encode the video
+        return self.encoder.EncodeVideo()
+    }
+}
+
+// Complete Netflix-style system
+system NetflixSystem {
+    use videoService VideoService
+}
