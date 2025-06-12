@@ -16,7 +16,6 @@ type ReturnStmt = decl.ReturnStmt
 type ExprStmt = decl.ExprStmt
 type WaitStmt = decl.WaitStmt
 type LogStmt = decl.LogStmt
-type DelayStmt = decl.DelayStmt
 type TypeDecl = decl.TypeDecl
 type ParamDecl = decl.ParamDecl
 type ComponentDecl = decl.ComponentDecl
