@@ -93,8 +93,6 @@ func (s *SimpleEval) Eval(node Node, env *Env[Value], currTime *core.Duration) (
 		return s.evalExprStmt(n, env, currTime)
 	case *IfStmt:
 		return s.evalIfStmt(n, env, currTime)
-	case *DelayStmt:
-		return s.evalDelayStmt(n, env, currTime)
 	case *AssignmentStmt:
 		return s.evalAssignmentStmt(n, env, currTime)
 
@@ -342,6 +340,7 @@ func (s *SimpleEval) evalIfStmt(stmt *IfStmt, env *Env[Value], currTime *core.Du
 	return
 }
 
+/* Temporarily disabling this - will remove once we clear the native helper for this
 func (s *SimpleEval) evalDelayStmt(d *DelayStmt, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
 	result, _ = s.Eval(d.Duration, env, currTime)
 	if i, err := result.GetInt(); err == nil {
@@ -355,6 +354,7 @@ func (s *SimpleEval) evalDelayStmt(d *DelayStmt, env *Env[Value], currTime *core
 	}
 	return
 }
+*/
 
 func (s *SimpleEval) evalTupleExpr(m *TupleExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
 	var vals []Value

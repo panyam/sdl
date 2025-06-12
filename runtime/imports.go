@@ -18,7 +18,6 @@ type SetStmt = decl.SetStmt
 type ForStmt = decl.ForStmt
 type ReturnStmt = decl.ReturnStmt
 type ExprStmt = decl.ExprStmt
-type DelayStmt = decl.DelayStmt
 type TypeDecl = decl.TypeDecl
 type ParamDecl = decl.ParamDecl
 type ComponentDecl = decl.ComponentDecl
