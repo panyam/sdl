@@ -4,6 +4,8 @@ package components
 import (
 	"fmt"
 	"math"
+
+	"github.com/panyam/sdl/core"
 )
 
 // factorial calculates n!
@@ -61,11 +63,10 @@ func NewResourcePool(name string) *ResourcePool {
 // It dynamically calculates the steady-state M/M/c queuing delay (Wq) based on
 // the component's current ArrivalRate and AvgHoldTime parameters.
 //
-// Returns Outcomes[Duration]:
-//   - A distribution of wait times if the pool is stable (utilization < 1).
-//   - A single outcome of a very large duration if the pool is unstable (utilization >= 1),
-//     which can be interpreted by the caller as a timeout or failure.
-func (rp *ResourcePool) Acquire() *Outcomes[Duration] {
+// Returns Outcomes[AccessResult]:
+//   - Success=true with queuing delay if the pool is stable (utilization < 1).
+//   - Success=false with high latency if the pool is unstable (utilization >= 1).
+func (rp *ResourcePool) Acquire() *core.Outcomes[core.AccessResult] {
 	// --- Dynamic M/M/c Calculation ---
 	if rp.AvgHoldTime < 1e-12 {
 		rp.AvgHoldTime = 1e-12 // Avoid division by zero
@@ -104,16 +105,16 @@ func (rp *ResourcePool) Acquire() *Outcomes[Duration] {
 	}
 	// --- End Dynamic M/M/c Calculation ---
 
-	outcomes := &Outcomes[Duration]{And: func(a, b Duration) Duration { return a + b }}
+	outcomes := &core.Outcomes[core.AccessResult]{}
 
-	// If unstable (rho >= 1), return a very large wait time to signal failure/timeout.
+	// If unstable (rho >= 1), return failure with high latency
 	if math.IsInf(avgWaitTimeQ, 1) || avgWaitTimeQ > 3600.0*24 {
-		outcomes.Add(1.0, 3600.0*24) // 1 day in seconds
+		outcomes.Add(1.0, core.AccessResult{Success: false, Latency: 3600.0*24}) // 1 day timeout
 		return outcomes
 	}
 
 	if avgWaitTimeQ < 1e-9 {
-		outcomes.Add(1.0, 0.0) // No waiting if utilization is negligible
+		outcomes.Add(1.0, core.AccessResult{Success: true, Latency: 0.0}) // No waiting if utilization is negligible
 	} else {
 		// Stable (rho < 1), Positive Wait -> Generate Wait Distribution
 		// Approximate distribution using exponential percentiles scaled by calculated Wq
@@ -139,7 +140,7 @@ func (rp *ResourcePool) Acquire() *Outcomes[Duration] {
 			if waitTime < 0 {
 				waitTime = 0
 			}
-			outcomes.Add(bucketWeights[i]*totalProb, waitTime)
+			outcomes.Add(bucketWeights[i]*totalProb, core.AccessResult{Success: true, Latency: waitTime})
 		}
 	}
 	return outcomes

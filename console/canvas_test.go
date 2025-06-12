@@ -88,7 +88,7 @@ func calculateAverageLatency(results []commands.RunResult) float64 {
 	count := 0
 	for _, r := range results {
 		// Only consider successful runs for latency calculation
-		if r.ResultValue == "true" {
+		if r.ResultValue == "Val(Bool: true)" {
 			totalLatency += r.Latency
 			count++
 		}
@@ -104,7 +104,7 @@ func calculateFailureRate(results []commands.RunResult) float64 {
 	failures := 0
 	for _, r := range results {
 		// A failure is when the component returns 'false'.
-		if r.ResultValue == "false" {
+		if r.ResultValue == "Val(Bool: false)" {
 			failures++
 		}
 	}

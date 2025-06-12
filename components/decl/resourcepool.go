@@ -16,5 +16,5 @@ func NewResourcePool(name string) *ResourcePool {
 
 // Acquire predicts queueing delay based on MMc model.
 func (b *ResourcePool) Acquire() decl.Value {
-	return OutcomesOfDurationsToValue(b.Wrapped.Acquire())
+	return OutcomesToValue(b.Wrapped.Acquire())
 }

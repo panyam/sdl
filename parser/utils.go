@@ -18,14 +18,14 @@ func parseDuration(numText, unit string) (out float64) {
 		log.Println("Invalid duration: ", numText, unit)
 	}
 
-	if unit == "ms" {
-		// base unit is ms
-	} else if unit == "s" {
-		out *= 1000.0
+	if unit == "s" {
+		// base unit is seconds - no conversion needed
+	} else if unit == "ms" {
+		out /= 1000.0  // Convert milliseconds to seconds
 	} else if unit == "us" {
-		out /= 1000
+		out /= 1000000.0  // Convert microseconds to seconds
 	} else if unit == "ns" {
-		out /= 1000000
+		out /= 1000000000.0  // Convert nanoseconds to seconds
 	}
 	return
 }
