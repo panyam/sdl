@@ -255,6 +255,7 @@ type MethodDecl struct {
 	Parameters []*ParamDecl // Signature parameters (can be empty)
 	ReturnType *TypeDecl    // Optional return type (primitive or enum)
 	Body       *BlockStmt
+	IsNative   bool
 
 	// Resolved/Checked items
 	Parent *ComponentDecl

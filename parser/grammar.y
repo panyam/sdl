@@ -66,7 +66,7 @@ func yyerrok(lexer SDLLexer) {
     enumDecl       *EnumDecl
     importDecl     *ImportDecl
     waitExpr *WaitExpr
-    delayStmt *DelayStmt
+    // delayStmt *DelayStmt
     sampleExpr *SampleExpr
 
     // Slices for lists
@@ -133,7 +133,7 @@ func yyerrok(lexer SDLLexer) {
 %type <importDecl>   ImportItem
 %type <importDeclList>   ImportDecl ImportList
 %type <stmt>         Stmt IfStmtElseOpt LetStmt ExprStmt ReturnStmt 
-%type <delayStmt>    DelayStmt 
+// %type <delayStmt>    DelayStmt 
 %type <sampleExpr>    SampleExpr 
 // %type <assignStmt>   AssignStmt
 %type <blockStmt>    BlockStmt
@@ -209,6 +209,10 @@ TopLevelDeclaration:
       ComponentDecl { $$ = $1 }
     | SystemDecl    { $$ = $1 }
     | AggregatorDecl { $$ = $1 }
+    | NATIVE METHOD MethodSigDecl   { 
+        $3.IsNative = true
+        $$ = $3
+    }
     | OptionsDecl   { $$ = $1 }
     | EnumDecl      { $$ = $1 }
     ;
@@ -546,7 +550,6 @@ Stmt:
     | ForStmt       { $$ = $1 }
     | ReturnStmt     { $$ = $1 }
     | IfStmt         { $$ = $1 }
-    | DelayStmt      { $$ = $1 }
     | SwitchStmt      { $$ = $1 }
     | BlockStmt      { $$ = $1 }
     | SEMICOLON     { $$ = nil }
@@ -594,9 +597,7 @@ ReturnStmt:
     | RETURN SEMICOLON          { $$ = &ReturnStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $2.(Node).End()), ReturnValue: nil } }
     ;
 
-DelayStmt:
-    DELAY Expression { $$ = &DelayStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $2.End()), Duration: $2 } }
-    ;
+// DelayStmt: DELAY Expression { $$ = &DelayStmt{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $2.End()), Duration: $2 } } ;
 
 WaitExpr:
     WAIT CommaIdentifierList { // WAIT($1) IDENTIFIER($2) ... 

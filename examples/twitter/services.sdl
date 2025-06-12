@@ -115,6 +115,8 @@ component TimelineService {
     // Wait for entire batch to complete
     let result = wait future using WaitAll(HttpStatusCode.Ok)
 
+    log("Ok here we are")
+
     return result
   }
 }
