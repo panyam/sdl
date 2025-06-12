@@ -75,6 +75,8 @@ func (rp *ResourcePool) Acquire() *core.Outcomes[core.AccessResult] {
 	offeredLoad := rp.ArrivalRate / serviceRate
 	utilization := offeredLoad / float64(rp.Size)
 	isStable := utilization < 1.0
+	
+	// Debug removed for cleaner output
 
 	var avgWaitTimeQ float64 = 0 // Wq
 	if !isStable {

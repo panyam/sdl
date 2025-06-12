@@ -305,14 +305,30 @@ func (s *SimpleEval) evalNewExpr(n *decl.NewExpr, _ *Env[Value], currTime *core.
 func (s *SimpleEval) evalUnaryExpr(u *UnaryExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
 	lr, _ := s.Eval(u.Right, env, currTime)
 	if u.Operator == "not" {
+		// Handle both direct bool and Outcomes[Bool] types
 		if lr.Type.Equals(BoolType) {
 			lr.Value = !lr.Value.(bool)
+		} else if lr.Type.Tag == decl.TypeTagOutcomes {
+			// Sample from outcomes and apply 'not' to the result
+			outcomesVal := lr.OutcomesVal()
+			sampledVal, ok := outcomesVal.Sample(s.Rand)
+			if !ok {
+				panic("failed to sample from outcomes in unary not expression")
+			}
+			*currTime += sampledVal.Time // Add the sampled time
+			if sampledVal.Type.Equals(BoolType) {
+				sampledVal.Value = !sampledVal.Value.(bool)
+				lr = sampledVal
+			} else {
+				panic(fmt.Sprintf("Unary operator 'not' expected bool in outcomes, got: %s", sampledVal.Type))
+			}
 		} else {
 			panic(fmt.Sprintf("Unary operator not supported for type: %s", lr.Type))
 		}
 	} else {
 		panic(fmt.Sprintf("Unary operator not supported: %s", u.Operator))
 	}
+	result = lr
 	return
 }
 

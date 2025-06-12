@@ -64,6 +64,8 @@ func TestCapacityModeling(t *testing.T) {
 	avgLatencyLow := calculateAverageLatency(lowLoadResults)
 	avgLatencyHigh := calculateAverageLatency(highLoadResults)
 	failureRateOverload := calculateFailureRate(overloadResults)
+	
+	// Debug removed for cleaner output
 
 	fmt.Println("--- Capacity Modeling Test Results ---")
 	fmt.Printf("Raw Operation Latency (Avg): %.2f ms\n", avgHoldTimeSeconds*1000)

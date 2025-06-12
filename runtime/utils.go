@@ -12,8 +12,15 @@ func RunCallInBatches(system *SystemInstance, obj, method string, nbatches, batc
 	fi := system.File
 	se := NewSimpleEval(fi, nil)
 	var totalSimTime core.Duration
-	env := fi.Env()
-	se.EvalInitSystem(system, env, &totalSimTime)
+	
+	// Use the existing system environment if available, otherwise create new one
+	var env *Env[Value]
+	if system.Env != nil {
+		env = system.Env
+	} else {
+		env = fi.Env()
+		se.EvalInitSystem(system, env, &totalSimTime)
+	}
 
 	startTime := time.Now()
 	ncalls := nbatches * batchsize

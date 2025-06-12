@@ -102,6 +102,10 @@ func (c *Canvas) Set(path string, value any) error {
 		return fmt.Errorf("invalid path for Set: '%s'. Must be at least <instance>.<field>", path)
 	}
 
+	if c.activeSystem == nil || c.activeSystem.Env == nil {
+		return fmt.Errorf("no active system. Call Use() before Set()")
+	}
+
 	instanceName := parts[0]
 	instanceVal, ok := c.activeSystem.Env.Get(instanceName)
 	if !ok {
@@ -119,10 +123,13 @@ func (c *Canvas) Set(path string, value any) error {
 	// Traverse the path parts[1:len(parts)-1] to find the target component
 	for i := 1; i < len(parts)-1; i++ {
 		depName := parts[i]
+		// Debug removed for cleaner output
 		depVal, ok := currentComp.Get(depName) // Get the dependency by name
 		if !ok || depVal.IsNil() {
+			// Debug removed
 			return fmt.Errorf("dependency '%s' not found in component '%s'", depName, currentComp.ComponentDecl.Name.Value)
 		}
+		// Debug removed
 
 		if nextComp, ok := depVal.Value.(*runtime.ComponentInstance); ok {
 			currentComp = nextComp
@@ -133,9 +140,12 @@ func (c *Canvas) Set(path string, value any) error {
 
 	// Now currentComp is the component on which we need to set the final parameter
 	finalParamName := parts[len(parts)-1]
+	
+	// Debug removed
 
 	if currentComp.IsNative {
 		// For native components, use reflection to set the field on the underlying Go struct.
+		// Debug removed
 		return c.setField(currentComp.NativeInstance, []string{finalParamName}, value)
 	} else {
 		// For user-defined components, set the parameter in their runtime environment.

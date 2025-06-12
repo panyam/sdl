@@ -23,6 +23,15 @@ func Dur2Value(ar core.Duration) Value {
 	return out
 }
 
+func Bool2Value(success bool, latency core.Duration) Value {
+	out, err := decl.NewValue(decl.BoolType, success)
+	if err != nil {
+		panic(err)
+	}
+	out.Time = latency
+	return out
+}
+
 func OutcomesToValue(outcomes *core.Outcomes[core.AccessResult]) (v decl.Value) {
 	out := core.Map(outcomes, Ar2Value)
 	outType := decl.OutcomesType(decl.BoolType)
