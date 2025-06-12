@@ -1,0 +1,7 @@
+Read and learn all about this project by looking at all the SUMMARY.md and NEXTSTEPS.md.  
+
+I am continuing with a previous project.  You will find the summaries in SUMMARY.md files located in the top level as various sub folders.  NEXTSTEPS.md is used to note what has been completed and what are next steps in our roadmap.
+Thorougly understand it and give me a recap so we can continue where we left off.   
+Also be conservative on how many comments are you are adding or modifying unless it is absolutely necessary (for example a comment could be contradicting what is going on - in which case it is prudent to modify it).  
+When modifying files just focus on areas where the change is required instead of diving into a full fledged refactor.
+

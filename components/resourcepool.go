@@ -4,8 +4,6 @@ package components
 import (
 	"fmt"
 	"math"
-
-	sc "github.com/panyam/sdl/core"
 )
 
 // factorial calculates n!
@@ -59,14 +57,15 @@ func NewResourcePool(name string) *ResourcePool {
 	return rp
 }
 
-// Acquire predicts the outcome of attempting to acquire one resource from the pool.
-// It dynamically calculates the steady-state M/M/c queuing delay based on the
-// component's current ArrivalRate and AvgHoldTime parameters.
-// Returns Outcomes[sc.AccessResult]:
-// - Success=true, Latency=0: Acquired immediately (pool underutilized on average, Wq ~ 0).
-// - Success=true, Latency=WaitTimeDist: Acquired after average queuing delay Wq (pool utilized on average).
-// - Success=false, Latency=0: Rejected (pool unstable, Wq is infinite).
-func (rp *ResourcePool) Acquire() *Outcomes[sc.AccessResult] {
+// Acquire predicts the queuing delay for acquiring one resource from the pool.
+// It dynamically calculates the steady-state M/M/c queuing delay (Wq) based on
+// the component's current ArrivalRate and AvgHoldTime parameters.
+//
+// Returns Outcomes[Duration]:
+//   - A distribution of wait times if the pool is stable (utilization < 1).
+//   - A single outcome of a very large duration if the pool is unstable (utilization >= 1),
+//     which can be interpreted by the caller as a timeout or failure.
+func (rp *ResourcePool) Acquire() *Outcomes[Duration] {
 	// --- Dynamic M/M/c Calculation ---
 	if rp.AvgHoldTime < 1e-12 {
 		rp.AvgHoldTime = 1e-12 // Avoid division by zero
@@ -105,14 +104,16 @@ func (rp *ResourcePool) Acquire() *Outcomes[sc.AccessResult] {
 	}
 	// --- End Dynamic M/M/c Calculation ---
 
-	outcomes := &Outcomes[sc.AccessResult]{And: sc.AndAccessResults}
+	outcomes := &Outcomes[Duration]{And: func(a, b Duration) Duration { return a + b }}
 
-	if math.IsInf(avgWaitTimeQ, 1) || avgWaitTimeQ > 3600.0*24 { // Treat effectively infinite waits as rejection
-		// Unstable (rho >= 1) -> Reject
-		outcomes.Add(1.0, sc.AccessResult{Success: false, Latency: 0})
-	} else if avgWaitTimeQ < 1e-9 {
-		// Stable (rho < 1) and Negligible Wait -> Immediate Success
-		outcomes.Add(1.0, sc.AccessResult{Success: true, Latency: 0})
+	// If unstable (rho >= 1), return a very large wait time to signal failure/timeout.
+	if math.IsInf(avgWaitTimeQ, 1) || avgWaitTimeQ > 3600.0*24 {
+		outcomes.Add(1.0, 3600.0*24) // 1 day in seconds
+		return outcomes
+	}
+
+	if avgWaitTimeQ < 1e-9 {
+		outcomes.Add(1.0, 0.0) // No waiting if utilization is negligible
 	} else {
 		// Stable (rho < 1), Positive Wait -> Generate Wait Distribution
 		// Approximate distribution using exponential percentiles scaled by calculated Wq
@@ -138,10 +139,7 @@ func (rp *ResourcePool) Acquire() *Outcomes[sc.AccessResult] {
 			if waitTime < 0 {
 				waitTime = 0
 			}
-			outcomes.Add(bucketWeights[i]*totalProb, sc.AccessResult{
-				Success: true, // Acquired *after* waiting
-				Latency: waitTime,
-			})
+			outcomes.Add(bucketWeights[i]*totalProb, waitTime)
 		}
 	}
 	return outcomes
