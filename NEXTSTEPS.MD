@@ -18,6 +18,12 @@ This document outlines the key areas for future development and refinement in th
 *   **`[COMPLETED]` Plotting & Visualization:**
     *   The `sdl plot` command supports latency, count, and histogram plots.
     *   The `sdl diagram` command supports static (architecture) and dynamic (sequence) diagrams.
+*   **`[COMPLETED]` Capacity Modeling:**
+    *   The `ResourcePool` component now supports full M/M/c queuing calculations.
+    *   Canvas API correctly handles capacity modeling workflows with proper instance management.
+    *   Boolean evaluation enhanced to handle `Outcomes[Bool]` types with embedded latency.
+    *   Duration parsing fixed to use correct unit conversion (seconds as base unit).
+    *   All Canvas tests pass, demonstrating realistic queuing delays under different loads.
 
 ---
 ## 1. Implement the Interactive Recipe Runner
@@ -34,11 +40,11 @@ With the `Canvas` API complete and stable, the next step is to build the user-fa
     *   The command will instantiate a `console.Canvas` object.
     *   Based on the parsed command from the recipe file, it will call the corresponding `Canvas` method (e.g., `canvas.Load(...)`, `canvas.Set(...)`, `canvas.Run(...)`).
 
-## 2. Model System Capacity
+## 2. ~~Model System Capacity~~ `[COMPLETED]`
 
-*   **Enhance Queuing Primitives:** Refactor `ResourcePool.Acquire` and `Queue.Dequeue` to return an `Outcomes[Duration]` representing the distribution of time spent waiting in the queue.
-*   **Create Capacity-Aware Models:** Update the `.sdl` examples (like `Disk`) to embed `ResourcePool` components to model contention and queuing delays under load.
-*   **Validate with a Test:** Create a new test to verify that increasing the `ArrivalRate` parameter on a component's internal `ResourcePool` correctly increases its end-to-end latency.
+*   ~~**Enhance Queuing Primitives:** Refactor `ResourcePool.Acquire` and `Queue.Dequeue` to return an `Outcomes[Duration]` representing the distribution of time spent waiting in the queue.~~
+*   ~~**Create Capacity-Aware Models:** Update the `.sdl` examples (like `Disk`) to embed `ResourcePool` components to model contention and queuing delays under load.~~
+*   ~~**Validate with a Test:** Create a new test to verify that increasing the `ArrivalRate` parameter on a component's internal `ResourcePool` correctly increases its end-to-end latency.~~
 
 ## 3. Runtime and Evaluation Enhancements (`runtime` package)
 
@@ -49,5 +55,5 @@ With the `Canvas` API complete and stable, the next step is to build the user-fa
 ## Priority Focus (Immediate to Medium Term):
 
 1.  **`sdl execute` Command.** This is the highest priority as it delivers the interactive analysis workflow planned for the conference.
-2.  **Model System Capacity.** This is a critical modeling feature that builds directly on the interactive capabilities of the recipe runner.
+2.  ~~**Model System Capacity.**~~ `[COMPLETED]` ~~This is a critical modeling feature that builds directly on the interactive capabilities of the recipe runner.~~
 3.  **Full Concurrency Model.** This remains the most significant feature gap in the simulation engine.

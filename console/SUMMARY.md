@@ -26,7 +26,8 @@ This package provides the core engine for interactive analysis of SDL models. It
 
 **Current Status:**
 
-*   The `Canvas` API has been defined and is fully functional, as validated and debugged through the `TestExecutionRecipe` unit test.
-*   The `Set` method has been made robust, correctly handling nested parameter modification for both native and user-defined components.
-*   The core primitives—loading, in-memory modification of parameters, running simulations, and plotting from session variables—are all working correctly.
-*   The package is now ready to be integrated into the user-facing `sdl execute` command.
+*   The `Canvas` API is fully functional and production-ready, validated through comprehensive tests including capacity modeling scenarios.
+*   The `Set` method correctly handles nested parameter modification for both native and user-defined components, with proper instance management to ensure parameters reach the correct simulation instances.
+*   **Capacity Modeling Integration:** The Canvas now supports full capacity modeling workflows, allowing dynamic modification of ResourcePool parameters and execution of realistic load testing scenarios.
+*   All core primitives—loading, in-memory modification of parameters, running simulations, and plotting from session variables—are working correctly.
+*   The package is ready to be integrated into the user-facing `sdl execute` command and supports sophisticated system analysis workflows.

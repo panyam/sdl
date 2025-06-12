@@ -24,7 +24,8 @@ This package provides concrete Go implementations of common distributed system c
     *   This sub-package contains Go structs that act as **wrappers** around the actual component implementations (e.g., `components.Disk` is wrapped by `components/decl.Disk`).
     *   These wrappers conform to the `runtime.NativeObject` interface (implicitly or explicitly through embedding `NWBase`).
     *   Their methods (e.g., `decl.Disk.Read()`) call the corresponding method on the wrapped component (e.g., `components.Disk.Read()`).
-    *   Crucially, they **convert the `*core.Outcomes` returned by the core components into `decl.Value` objects** suitable for the SDL runtime. This involves mapping `core.AccessResult` or `core.Duration` to `decl.Value`, ensuring that latency is transferred to `decl.Value.Time` (often by sampling if the outcome is probabilistic, or by representing the entire distribution as a `Value` of type `Outcomes[T]`).
+    *   Crucially, they **convert the `*core.Outcomes` returned by the core components into `decl.Value` objects** suitable for the SDL runtime. This involves mapping `core.AccessResult` or `core.Duration` to `decl.Value`, ensuring that latency is transferred to `decl.Value.Time`.
+    *   **Enhanced for Capacity Modeling:** The `ResourcePool` wrapper now converts `Outcomes[AccessResult]` to `Outcomes[Bool]` with embedded latency, enabling SDL boolean operations while preserving queuing delay information.
     *   These wrappers are what the SDL `runtime` instantiates and interacts with when a `native component` is declared in an SDL file.
 
 5.  **Testing:**
@@ -32,8 +33,9 @@ This package provides concrete Go implementations of common distributed system c
 
 **Current Status:**
 
-*   Provides a reasonably comprehensive suite of standard system components with defined performance models based on `sdl/core`.
+*   Provides a comprehensive suite of standard system components with defined performance models based on `sdl/core`.
 *   The `decl/` sub-package provides the necessary wrappers to make these Go components callable from the SDL runtime as native components.
+*   **Capacity Modeling Ready:** The `ResourcePool` component now supports full capacity modeling with M/M/c queuing calculations, enabling realistic analysis of system performance under different loads and identification of capacity bottlenecks.
 
 **Relationship with other packages:**
 

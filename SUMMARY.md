@@ -1,6 +1,6 @@
 # SDL (System Design Language) Project Summary
 
-**Version:** As of the completion and stabilization of the `console.Canvas` API.
+**Version:** As of the completion of capacity modeling implementation and Canvas API stabilization.
 
 **1. Vision & Goal:**
 
@@ -23,6 +23,7 @@ The project is a Go-based system composed of several key packages:
 **3. Current Status & Future Direction:**
 
 *   **Mature Core & Workflows:** The project has robust libraries for performance modeling and two complete, decoupled workflows: statistical simulation (`run` -> `plot`) and single-run tracing (`trace` -> `diagram`).
-*   **Interactive Analysis Engine (Canvas API):** The `console.Canvas` API is now stable and fully functional. It supports loading models, programmatically modifying nested component parameters (e.g., `app.cache.HitRate`), running simulations, and plotting results from a stateful session.
+*   **Interactive Analysis Engine (Canvas API):** The `console.Canvas` API is stable and fully functional. It supports loading models, programmatically modifying nested component parameters (e.g., `app.cache.HitRate`), running simulations, and plotting results from a stateful session.
+*   **Capacity Modeling (NEW):** The system now supports full capacity modeling with M/M/c queuing theory. The `ResourcePool` component can model queuing delays under different loads, demonstrate performance degradation, and correctly identify overload conditions with failures. This enables realistic analysis of system capacity limits and bottlenecks.
 *   **Next Evolution: Recipe Runner:** The next major feature will be the `sdl execute` command, a user-facing tool that runs "recipe" files. This will provide a powerful, scriptable, and notebook-like experience for system analysis, built directly on top of the now-robust `Canvas` API.
 *   **Known Limitations:** The runtime correctly visualizes concurrency (`gobatch`/`wait`), but the underlying execution model for `gobatch` still simulates a single representative path. Fully modeling N parallel executions in the runtime is the next major step.

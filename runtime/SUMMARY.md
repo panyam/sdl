@@ -21,6 +21,7 @@ This package is responsible for the execution and evaluation of System Design La
     *   It manages runtime state, including variables and component instances, within an `Env[Value]`.
     *   It handles all language constructs: literals, operations, statements (`let`, `if`, `for`, `return`), `new` (instantiation), and method calls.
     *   **Latency Accumulation**: A key feature is its tracking of simulated time. The `Time` field on the `decl.Value` struct is used to accumulate the latency of operations within a single simulation run.
+    *   **Enhanced Boolean Evaluation**: Now correctly handles `Outcomes[Bool]` types in unary operations (like `not`), sampling from probabilistic outcomes and applying boolean operations while preserving latency information.
 
 *   **Concurrency Primitives (`aggregator.go`, `simpleeval.go`):**
     *   The runtime now has placeholder implementations for concurrency constructs like `gobatch` and `wait using <Aggregator>`.
@@ -28,9 +29,11 @@ This package is responsible for the execution and evaluation of System Design La
 
 *   **Utilities (`utils.go`):**
     *   **`RunCallInBatches`**: A powerful helper function that drives the `sdl run` and `sdl plot` commands. It efficiently executes a method thousands of times across multiple concurrent workers. It has been updated to correctly track and provide the per-run latency for creating accurate time-series data.
+    *   **Instance Management**: Now ensures proper instance isolation by reusing existing system environments rather than creating new ones for each batch, ensuring Canvas.Set() parameter modifications reach the correct simulation instances.
 
 *   **Native Component Interaction (`native.go`):**
     *   Defines the bridge to native Go components (from the `components` package). It uses reflection to invoke methods on Go objects, transparently converting between the runtime's `decl.Value` and standard Go types.
+    *   **Enhanced InvokeMethod**: The `InvokeMethod` function now includes a `shouldSample` parameter to support future extensibility for `OutcomesEval`, preparing for more sophisticated probabilistic evaluation strategies.
 
 **Role in the Project:**
 
@@ -42,6 +45,7 @@ The runtime package is the engine that brings SDL models to life. It enables the
 *   The `RunCallInBatches` utility is robust and supports the CLI's simulation features.
 *   The placeholder implementation of the `WaitAll` aggregator has been fixed to unblock the simulation of simple concurrent patterns.
 *   The native component factory `CreateNativeComponent` has been updated to support all available native components.
+*   **Capacity Modeling Support**: The runtime now fully supports capacity modeling workflows with proper boolean evaluation for `Outcomes[Bool]` types, correct instance management for parameter modification, and enhanced native method invocation for probabilistic components.
 
 **Key Dependencies:**
 

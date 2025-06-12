@@ -1,0 +1,361 @@
+# SDL (System Design Language)
+
+A specialized language and toolchain for modeling, simulating, and analyzing the performance characteristics of distributed systems.
+
+## 🎯 What is SDL?
+
+SDL enables rapid analysis of system designs through:
+- **Performance modeling** with latency and availability distributions
+- **Capacity analysis** using queuing theory (M/M/c models)
+- **Bottleneck identification** under different loads
+- **SLO evaluation** and performance exploration
+- **Interactive analysis** with parameter modification
+- **Diagram generation** from system definitions
+
+## 🚀 Quick Start
+
+### Installation
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd sdl
+
+# Build the CLI tool
+make build
+
+# Or install directly
+go install ./cmd/sdl
+```
+
+### Your First SDL Model
+
+Create a simple disk model (`mydisk.sdl`):
+
+```sdl
+// Define a disk component with realistic performance characteristics
+component SimpleDisk {
+    param ReadLatency = dist {
+        90 => 5ms,    // 90% of reads: 5ms
+         9 => 20ms,   // 9% of reads: 20ms  
+         1 => 100ms   // 1% of reads: 100ms (outliers)
+    }
+    
+    method Read() Bool {
+        delay(sample self.ReadLatency)
+        return sample dist {
+            999 => true,   // 99.9% success rate
+              1 => false   // 0.1% failure rate
+        }
+    }
+}
+
+system MySystem {
+    use disk SimpleDisk
+}
+```
+
+### Run Performance Analysis
+
+```bash
+# Validate your model
+sdl validate mydisk.sdl
+
+# Run 1000 simulations and analyze latency
+sdl run mydisk.sdl MySystem disk.Read --count 1000 --output results.json
+
+# Generate latency distribution plot
+sdl plot results.json --type latency --output latency.png
+
+# Create system architecture diagram
+sdl diagram mydisk.sdl MySystem --type static --output architecture.svg
+```
+
+## 🏗️ Core Concepts
+
+### Components and Systems
+
+```sdl
+// Define reusable components
+component Database {
+    param ConnectionPoolSize = 10
+    param QueryLatency = 15ms
+    
+    uses cache Cache
+    uses disk SimpleDisk
+    
+    method Query() Bool {
+        // Try cache first
+        let hit = self.cache.Read()
+        if hit {
+            return true
+        }
+        
+        // Fall back to disk
+        return self.disk.Read()
+    }
+}
+
+// Compose into systems
+system WebService {
+    use db Database
+    use loadBalancer LoadBalancer
+}
+```
+
+### Probabilistic Modeling
+
+```sdl
+// Use distributions to model real-world variability
+param ResponseTime = dist {
+    50 => 10ms,     // Median case
+    30 => 25ms,     // Slower responses
+    15 => 50ms,     // Even slower
+     4 => 200ms,    // Outliers
+     1 => 1000ms    // Rare tail latencies
+}
+
+// Sample from distributions in your logic
+method ProcessRequest() Bool {
+    delay(sample self.ResponseTime)
+    return true
+}
+```
+
+### Capacity Modeling with ResourcePool
+
+```sdl
+import ResourcePool from "./common.sdl"
+
+component DiskWithCapacity {
+    // Model disk IOPS capacity
+    uses pool ResourcePool(Size = 100)  // 100 IOPS capacity
+    
+    param ServiceTime = 10ms  // Time per I/O operation
+    
+    method Read() Bool {
+        // Acquire capacity (may queue if busy)
+        let acquired = self.pool.Acquire()
+        if not acquired {
+            return false  // Overloaded - request dropped
+        }
+        
+        // Perform the actual I/O
+        delay(self.ServiceTime)
+        return true
+    }
+}
+```
+
+## 📊 Interactive Analysis
+
+SDL provides a powerful Canvas API for interactive system analysis:
+
+```bash
+# Load and modify systems interactively
+sdl execute analysis.recipe
+```
+
+Example recipe file (`analysis.recipe`):
+```
+load mydisk.sdl
+use MySystem
+
+# Test normal load
+set disk.ReadLatency dist { 90 => 5ms, 10 => 20ms }
+run normal_load disk.Read --count 1000
+plot normal_load --type latency
+
+# Test under high contention  
+set disk.pool.ArrivalRate 50  # requests/second
+set disk.pool.AvgHoldTime 20ms
+run high_load disk.Read --count 1000
+plot high_load --type latency
+
+# Compare results
+plot normal_load,high_load --type comparison
+```
+
+## 🔧 CLI Commands
+
+### Core Workflow Commands
+
+```bash
+# Validate SDL syntax and semantics
+sdl validate <file.sdl>
+
+# Run simulations
+sdl run <file.sdl> <SystemName> <method> [options]
+  --count <n>        # Number of simulation runs
+  --output <file>    # Save results to file
+  --format json|csv  # Output format
+
+# Generate plots from simulation results  
+sdl plot <results.json> [options]
+  --type latency|histogram|timeseries
+  --output <file.png>
+  --title "Custom Title"
+
+# Create system diagrams
+sdl diagram <file.sdl> <SystemName> [options]
+  --type static|dynamic
+  --format svg|png|excalidraw
+  --output <file>
+
+# Interactive analysis
+sdl execute <recipe.file>
+
+# Single execution trace (for debugging)
+sdl trace <file.sdl> <SystemName> <method>
+```
+
+### Analysis and Inspection
+
+```bash
+# List components and systems
+sdl list <file.sdl>
+
+# Describe component details
+sdl describe <file.sdl> <ComponentName>
+```
+
+## 📈 Capacity Analysis Example
+
+Analyze how system performance degrades under increasing load:
+
+```sdl
+// High-capacity web server
+component WebServer {
+    uses pool ResourcePool(Size = 50)  // 50 concurrent requests
+    param ProcessingTime = 100ms
+    
+    method HandleRequest() Bool {
+        let acquired = self.pool.Acquire()
+        if not acquired {
+            return false  // Server overloaded
+        }
+        
+        delay(self.ProcessingTime)
+        return true
+    }
+}
+```
+
+Load testing recipe:
+```
+load webserver.sdl
+use WebSystem
+
+# Test increasing arrival rates
+set server.pool.ArrivalRate 10
+run load_10rps server.HandleRequest --count 1000
+
+set server.pool.ArrivalRate 30  
+run load_30rps server.HandleRequest --count 1000
+
+set server.pool.ArrivalRate 60  # Above capacity!
+run load_60rps server.HandleRequest --count 1000
+
+# Compare latency distributions
+plot load_10rps,load_30rps,load_60rps --type comparison
+```
+
+Expected results:
+- **10 RPS**: ~100ms latency, 100% success
+- **30 RPS**: ~120ms latency, 100% success  
+- **60 RPS**: ~300ms+ latency, failures occur
+
+## 🏗️ Architecture
+
+SDL is built as a modular Go system:
+
+- **`parser`**: Converts SDL text to Abstract Syntax Tree
+- **`loader`**: Resolves imports and performs type checking
+- **`runtime`**: Executes simulations and manages component instances
+- **`components`**: Library of pre-built system components (disk, cache, etc.)
+- **`console`**: Interactive analysis engine (Canvas API)
+- **`viz`**: Plotting and diagram generation
+- **`cmd/sdl`**: Command-line interface
+
+## 📚 Examples
+
+Explore the `examples/` directory for complete system models:
+
+- **`examples/capacity.sdl`**: Capacity modeling with ResourcePool
+- **`examples/bitly/`**: URL shortener service architecture
+- **`examples/twitter/`**: Social media platform components
+- **`examples/leetcode/`**: Algorithm and data structure performance
+
+## 🛠️ Development
+
+### Building from Source
+
+```bash
+# Install dependencies
+go mod download
+
+# Generate parser (requires goyacc)
+make parser
+
+# Build CLI
+make build
+
+# Run tests
+go test ./...
+
+# Run specific component tests
+go test ./components -v
+go test ./console -v
+```
+
+### Project Structure
+
+See `SUMMARY.md` files in each package for detailed technical documentation:
+
+- **[Project Overview](SUMMARY.md)** - High-level architecture and status
+- **[Core Package](core/SUMMARY.md)** - Probabilistic modeling primitives
+- **[Components](components/SUMMARY.md)** - System component library
+- **[Runtime](runtime/SUMMARY.md)** - Simulation execution engine
+- **[Console](console/SUMMARY.md)** - Interactive analysis framework
+
+## 🎯 Use Cases
+
+### Performance Engineering
+- Model latency distributions under different loads
+- Identify bottlenecks before they hit production
+- Compare architectural alternatives quantitatively
+
+### Capacity Planning  
+- Determine system limits using queuing theory
+- Plan for traffic growth and resource scaling
+- Optimize resource allocation across components
+
+### SLO Validation
+- Verify that designs meet latency and availability targets
+- Test resilience under failure scenarios
+- Generate evidence for capacity and performance claims
+
+### Architecture Documentation
+- Create executable specifications of system behavior
+- Generate diagrams that stay synchronized with models
+- Share performance assumptions across teams
+
+## 🔮 Roadmap
+
+See [NEXTSTEPS.md](NEXTSTEPS.md) for detailed development plans:
+
+- **✅ Capacity Modeling**: M/M/c queuing theory implementation (completed)
+- **🚧 Recipe Runner**: `sdl execute` command for interactive workflows  
+- **📋 Planned**: Full concurrency modeling with `gobatch` parallelism
+
+## 📄 License
+
+[License information to be added]
+
+## 🤝 Contributing
+
+[Contributing guidelines to be added]
+
+---
+
+**SDL**: Making system performance modeling accessible, interactive, and actionable.
