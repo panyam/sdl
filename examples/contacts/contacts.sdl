@@ -1,0 +1,63 @@
+// Simple contacts lookup service for Canvas API validation
+// Demonstrates: AppServer → Database → HashIndex with capacity modeling
+
+import ResourcePool, HashIndex, delay from "../common.sdl"
+
+// Database component with connection pooling and cache
+component ContactDatabase {
+    uses pool ResourcePool(Size = 5)          // 5 concurrent connections
+    uses index HashIndex                      // Phone number → Contact lookup
+    
+    param CacheHitRate = 0.4                  // 40% cache hit rate initially
+    param QueryTime = 10ms                    // Base query time
+    
+    method LookupByPhone(phoneNumber String) Bool {
+        // Try to acquire database connection
+        let acquired = self.pool.Acquire()
+        if not acquired {
+            return false  // Connection pool exhausted
+        }
+        
+        // Check cache first
+        let cached = sample dist {
+            40 => true,   // Cache hit
+            60 => false   // Cache miss - need index lookup
+        }
+        
+        if cached {
+            delay(2ms)    // Fast cache lookup
+            return true
+        } else {
+            // Cache miss - query the hash index
+            delay(self.QueryTime)
+            return self.index.Find()
+        }
+    }
+}
+
+// Application server with request handling capacity
+component ContactAppServer {
+    uses db ContactDatabase
+    uses pool ResourcePool(Size = 10)        // 10 concurrent request handlers
+    
+    param ProcessingTime = 5ms               // Request processing overhead
+    
+    method HandleLookup(phoneNumber String) Bool {
+        // Acquire request handler
+        let acquired = self.pool.Acquire()
+        if not acquired {
+            return false  // Server overloaded
+        }
+        
+        // Process request overhead
+        delay(self.ProcessingTime)
+        
+        // Delegate to database
+        return self.db.LookupByPhone(phoneNumber)
+    }
+}
+
+// Complete contacts lookup system
+system ContactsSystem {
+    use server ContactAppServer
+}
