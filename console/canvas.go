@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/panyam/sdl/cmd/sdl/commands"
 	"github.com/panyam/sdl/decl"
 	"github.com/panyam/sdl/loader"
 	"github.com/panyam/sdl/runtime"
+	"github.com/panyam/sdl/types"
 	"github.com/panyam/sdl/viz"
 )
 
@@ -250,12 +250,12 @@ func (c *Canvas) Run(varName string, target string, opts ...RunOption) error {
 	}
 	numBatches := (cfg.Runs + batchSize - 1) / batchSize
 
-	allResults := make([]commands.RunResult, 0, cfg.Runs)
+	allResults := make([]types.RunResult, 0, cfg.Runs)
 
 	onBatch := func(batch int, batchVals []runtime.Value) {
 		ts := time.Now().UnixMilli() // Use wall time for timestamp for now
 		for _, val := range batchVals {
-			allResults = append(allResults, commands.RunResult{
+			allResults = append(allResults, types.RunResult{
 				Timestamp:   ts,
 				Latency:     val.Time * 1000, // to ms
 				ResultValue: val.String(),
@@ -289,7 +289,7 @@ func (c *Canvas) Plot(opts ...PlotOption) error {
 			return fmt.Errorf("session variable '%s' not found for plotting", seriesInfo.From)
 		}
 
-		results, ok := data.([]commands.RunResult)
+		results, ok := data.([]types.RunResult)
 		if !ok {
 			return fmt.Errorf("session variable '%s' is not of type []RunResult", seriesInfo.From)
 		}

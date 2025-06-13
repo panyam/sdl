@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/panyam/sdl/cmd/sdl/commands"
+	"github.com/panyam/sdl/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -12,7 +12,7 @@ func TestCapacityModeling(t *testing.T) {
 	canvas := NewCanvas()
 
 	// 1. Load the SDL file with the capacity-aware component
-	err := canvas.Load("../examples/capacity.sdl")
+	err := canvas.Load("../examples/disk.sdl")
 	assert.NoError(t, err, "Loading capacity.sdl should succeed")
 
 	// 2. Activate the system
@@ -57,9 +57,9 @@ func TestCapacityModeling(t *testing.T) {
 	assert.NoError(t, err)
 
 	// 4. Analyze and Assert Results
-	lowLoadResults := canvas.sessionVars["low_load_results"].([]commands.RunResult)
-	highLoadResults := canvas.sessionVars["high_load_results"].([]commands.RunResult)
-	overloadResults := canvas.sessionVars["overload_results"].([]commands.RunResult)
+	lowLoadResults := canvas.sessionVars["low_load_results"].([]types.RunResult)
+	highLoadResults := canvas.sessionVars["high_load_results"].([]types.RunResult)
+	overloadResults := canvas.sessionVars["overload_results"].([]types.RunResult)
 
 	avgLatencyLow := calculateAverageLatency(lowLoadResults)
 	avgLatencyHigh := calculateAverageLatency(highLoadResults)
@@ -85,7 +85,7 @@ func TestCapacityModeling(t *testing.T) {
 }
 
 // Helper function to calculate average latency from run results.
-func calculateAverageLatency(results []commands.RunResult) float64 {
+func calculateAverageLatency(results []types.RunResult) float64 {
 	var totalLatency float64
 	count := 0
 	for _, r := range results {
@@ -102,7 +102,7 @@ func calculateAverageLatency(results []commands.RunResult) float64 {
 }
 
 // Helper function to calculate the failure rate.
-func calculateFailureRate(results []commands.RunResult) float64 {
+func calculateFailureRate(results []types.RunResult) float64 {
 	failures := 0
 	for _, r := range results {
 		// A failure is when the component returns 'false'.
