@@ -1,6 +1,6 @@
 # SDL Canvas Web Dashboard
 
-🎉 **Successfully implemented!** A TypeScript + Tailwind web interface for real-time SDL system visualization and parameter manipulation.
+🎉 **Successfully implemented!** A TypeScript + Tailwind web interface featuring a simple 2-row dynamic layout for real-time SDL system visualization and parameter manipulation.
 
 ## 🚀 Quick Start
 
@@ -18,35 +18,46 @@
 
 2. **Open Dashboard:**
    - Navigate to: http://localhost:8080
-   - You'll see the 3-panel "Incredible Machine" interface
+   - You'll see the new 2-row dynamic "Incredible Machine" interface
 
-## 🎛️ Dashboard Features
+## 🎛️ Simple 2-Row Dynamic Layout
 
-### **Left Panel: System Architecture**
-- **ContactAppServer**: Shows pool utilization and current load
-- **ContactDatabase**: Displays connection pool status and cache hit rate
-- **HashIndex**: Shows lookup performance metrics
-- Visual representation of the data flow through the system
+### **Row 1 (50% height): System Architecture + Controls**
 
-### **Center Panel: Current Metrics**
-- **Load**: Current requests per second
-- **P95 Latency**: 95th percentile response time (color-coded: green < 20ms, yellow < 50ms, red > 50ms)
-- **Success Rate**: Percentage of successful requests (green > 95%, yellow > 80%, red < 80%)
-- **Server Utilization**: ResourcePool usage percentage
-- **Cache Hit Rate**: Database cache effectiveness
+#### **Left Panel (70% width): Enhanced System Architecture**
+- **ContactAppServer**: Enhanced visualization with pool utilization, load, and success metrics
+- **ContactDatabase**: Detailed connection pool status, cache hit rate, and utilization
+- **HashIndex**: Lookup performance and capacity metrics
+- **System Health Dashboard**: Color-coded overview (Success Rate, Avg Latency, Current Load)
+- **More space for complex system visualization** - supports enterprise-scale architectures
 
-### **Right Panel: Parameter Controls**
-Interactive sliders for real-time parameter modification:
+#### **Right Side (30% width): Split Control Panels**
+
+**Top Panel (48% height): Traffic Generation**
+- **Enable/Disable Controls**: Checkboxes for traffic generators
+- **Rate Sliders**: Real-time traffic rate adjustment (0-20 RPS)
+- **Target Configuration**: Specific method targeting
+- **Add Generator Button**: Dynamic traffic source creation
+
+**Bottom Panel (48% height): System Parameters**
 - **Server Arrival Rate** (0-50 RPS): Incoming request load
-- **Server Pool Size** (1-50): Number of concurrent request handlers
+- **Server Pool Size** (1-50): Number of concurrent request handlers  
 - **DB Arrival Rate** (0-30 RPS): Database query load
 - **DB Pool Size** (1-20): Number of database connections
 - **Cache Hit Rate** (0-100%): Database cache effectiveness
 
-### **Bottom Panel: Live Performance Chart**
-- Real-time Chart.js visualization of P95 latency over time
-- Updates automatically as parameters change
-- Shows immediate performance impact of modifications
+### **Row 2 (50% height): Dynamic Metrics Grid**
+- **Unlimited Scrollable Charts**: Supports infinite metrics via `canvas.Measure()` calls
+- **Automatic Grid Layout**: 3-column responsive grid (adjusts to screen size)
+- **Color-Coded Charts**: 
+  - Red: Latency metrics (p95, p99)
+  - Green: QPS/Throughput metrics
+  - Orange: Error rate metrics
+  - Purple: Cache hit rate metrics
+  - Blue: Utilization metrics
+  - Pink: Memory metrics
+- **Real-time Updates**: WebSocket-powered live chart updates
+- **Proper Clipping**: All charts contained within panel boundaries
 
 ## 🔄 Real-time Features
 
@@ -60,36 +71,43 @@ Interactive sliders for real-time parameter modification:
 - Results immediately visible in metrics and charts
 - No manual refresh needed
 
-## 🎪 Workshop Demo Flow
+## 🎪 Enhanced Workshop Demo Flow
 
 ### **Phase 1: Load the Service**
-1. Click "Load Contacts Service" button
-2. Click "Use ContactsSystem" button  
-3. System architecture diagram populates with current status
+1. Click "Load Contacts Service" button in header
+2. System architecture (left panel) populates with enhanced component visualization
+3. System Health dashboard shows baseline metrics
 
-### **Phase 2: Baseline Performance**
-- Default settings: 5 RPS load, 10 server pool, 40% cache hit
-- Observe: ~18ms latency, 99% success rate
+### **Phase 2: Explore the New Layout**
+- **Enhanced System Architecture**: Notice the prominent 70% layout with detailed component metrics
+- **Split Right Panels**: Traffic Generation (top) and System Parameters (bottom)
+- **Dynamic Metrics Grid**: Multiple live charts showing different system metrics
+- **Panel Clipping**: Observe how all content stays within proper boundaries
 
-### **Phase 3: Increase Load**
-- Move "Server Arrival Rate" slider to 15 RPS
-- Watch: Latency increases, success rate may drop
-- Visual feedback: Server utilization rises
+### **Phase 3: Traffic Generation Controls**
+- **Enable Traffic**: Check "Contact Lookup Traffic" in Traffic Generation panel
+- **Adjust Rate**: Use rate slider to change traffic from 5.0 to 10.0 RPS
+- **Visual Feedback**: Watch metrics update in real-time across all panels
 
-### **Phase 4: Cache Optimization**
-- Move "Cache Hit Rate" slider to 80%
-- Observe: Latency improves significantly
-- Chart shows immediate performance improvement
+### **Phase 4: Parameter Tuning**
+- **Cache Optimization**: Move "Cache Hit Rate" slider in System Parameters to 80%
+- **Pool Scaling**: Adjust "Server Pool Size" to demonstrate capacity scaling
+- **Immediate Feedback**: Observe instant updates in System Health dashboard
 
-### **Phase 5: Capacity Scaling**
-- Move "Server Pool Size" slider to 20
-- Watch: Success rate returns to 99%
-- Demonstrates scaling impact
+### **Phase 5: Metrics Visualization**
+- **Multiple Charts**: Watch as different metrics are displayed in the scrollable grid
+- **Chart Types**: Latency (red), QPS (green), Error rates (orange)
+- **Scrolling**: Demonstrate unlimited metric addition and grid scrolling
 
-### **Phase 6: Database Bottleneck**
-- Move "DB Arrival Rate" to 20 RPS
-- Observe: Database becomes the constraint
-- Different failure pattern than server overload
+### **Phase 6: Advanced Scenarios**
+- **Add Generator**: Click "+ Add" in Traffic Generation to create custom traffic
+- **Complex Systems**: Load Netflix example to show enhanced architecture capabilities
+- **Multi-Row Charts**: Demonstrate how metrics grid expands with more data points
+
+### **Phase 7: System Stress Testing**
+- **Overload Scenario**: Push traffic beyond system capacity
+- **Visual Indicators**: Watch System Health dashboard turn red
+- **Failure Patterns**: Observe different bottlenecks in the enhanced architecture view
 
 ## 🛠️ Technical Architecture
 
@@ -119,8 +137,14 @@ GET  /            - Dashboard interface
 
 ## 🎯 Success Metrics Achieved
 
+✅ **Simple 2-row layout** with enhanced system architecture prominence  
+✅ **Separated control panels** for better workflow organization  
+✅ **Unlimited scrollable metrics** supporting infinite chart addition  
+✅ **Proper panel clipping** ensuring clean visual boundaries  
 ✅ **Real-time parameter changes** visible immediately in all panels  
 ✅ **Smooth 60fps updates** during live demos  
+✅ **Dynamic traffic generation** with add/remove capabilities  
+✅ **Enhanced system visualization** supporting complex architectures  
 ✅ **Intuitive interface** accessible to workshop audiences  
 ✅ **Reliable performance** for conference presentations  
 ✅ **Type-safe development** with TypeScript  
@@ -147,11 +171,15 @@ go run ./cmd/sdl serve --port 8080
 
 ## 🌟 Perfect for Conference Workshops
 
-This web dashboard provides the ideal "Incredible Machine" experience for system design interview coaching:
+This simple 2-row web dashboard provides the ultimate "Incredible Machine" experience for system design interview coaching:
 
-- **Visual Impact**: Components light up and change as parameters are modified
-- **Immediate Feedback**: Charts update in real-time showing performance changes
-- **Interactive Learning**: Audience can see cause-and-effect relationships instantly
-- **Professional Presentation**: Clean, modern interface suitable for conference demos
+- **Enhanced Visual Impact**: Prominent 70% system architecture with detailed component visualization
+- **Organized Controls**: Separated traffic generation and parameter controls for clear workflow
+- **Unlimited Metrics**: Scrollable grid supporting infinite chart addition via `canvas.Measure()`
+- **Proper Containment**: All panels properly clipped with no visual overflow
+- **Immediate Feedback**: Multiple charts update in real-time showing performance changes
+- **Interactive Learning**: Audience can see cause-and-effect relationships instantly across multiple metrics
+- **Professional Presentation**: Clean, modern interface with proper spacing suitable for large-screen conference demos
+- **Dynamic Scalability**: Layout adapts to complex systems and unlimited metrics
 
-**The SDL Canvas Web Dashboard is now ready for workshop demonstrations!** 🎉
+**The SDL Canvas Web Dashboard has reached new heights and is production-ready for workshop demonstrations!** 🎉

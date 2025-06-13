@@ -149,7 +149,28 @@ component DiskWithCapacity {
 
 ## 📊 Interactive Analysis
 
-SDL provides a powerful Canvas API for interactive system analysis:
+### Web Dashboard (New!)
+
+Experience SDL through our powerful web interface with real-time visualization:
+
+```bash
+# Start the interactive web dashboard
+./sdl serve --port 8080
+```
+
+Navigate to `http://localhost:8080` for the **"Incredible Machine"** experience:
+
+- **2-Row Dynamic Layout:**
+  - **Row 1**: System Architecture (left) + Traffic Generation & System Parameters (right)
+  - **Row 2**: Live Metrics Grid with unlimited scrollable charts
+- **Real-time Parameter Controls:** Sliders for instant system modification
+- **Dynamic Metrics Visualization:** Charts auto-generated from `canvas.Measure()` calls
+- **Live Performance Feedback:** WebSocket-powered real-time updates
+- **Proper Panel Clipping:** All content contained within panel boundaries
+
+### CLI-Based Analysis
+
+SDL also provides a powerful Canvas API for command-line analysis:
 
 ```bash
 # Load and modify systems interactively
@@ -286,6 +307,38 @@ Explore the `examples/` directory for complete system models:
 - **`examples/twitter/`**: Social media platform components
 - **`examples/leetcode/`**: Algorithm and data structure performance
 
+## 🌐 Web Dashboard
+
+### Simple 2-Row Layout
+
+The SDL web dashboard features a groundbreaking 2-row dynamic layout designed for system design interview coaching:
+
+**Row 1 (50% height): System Architecture + Controls**
+- **Enhanced System Architecture (70% width)**: Prominent visualization with detailed component metrics
+- **Traffic Generation (30% × 48%)**: Dynamic traffic source management  
+- **System Parameters (30% × 48%)**: Real-time parameter controls
+
+**Row 2 (50% height): Dynamic Metrics Grid**
+- **Unlimited Scrollable Charts**: Support for infinite metrics via `canvas.Measure()` calls
+- **Color-Coded Visualization**: Red (latency), Green (QPS), Orange (errors), Purple (cache), Blue (utilization), Pink (memory)
+- **Responsive Grid Layout**: Automatically adapts to screen size and content
+
+### Key Features
+- **Proper Panel Clipping**: All content contained within panel boundaries
+- **Real-time Updates**: WebSocket-powered live chart updates
+- **Enhanced System Visualization**: Supports complex enterprise-scale architectures
+- **Professional Interface**: Clean, modern design suitable for conference presentations
+
+### Getting Started
+```bash
+# Build and start the web dashboard
+./sdl serve --port 8080
+```
+
+Visit `http://localhost:8080` to experience the interactive "Incredible Machine" interface.
+
+For detailed information, see [WEB_DASHBOARD_GUIDE.md](WEB_DASHBOARD_GUIDE.md).
+
 ## 🛠️ Development
 
 ### Building from Source
@@ -306,6 +359,9 @@ go test ./...
 # Run specific component tests
 go test ./components -v
 go test ./console -v
+
+# Build and test web dashboard
+cd web && npm install && npm run build && cd ..
 ```
 
 ### Project Structure

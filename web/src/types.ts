@@ -57,6 +57,26 @@ export interface DashboardState {
   isConnected: boolean;
   simulationResults: Record<string, RunResult[]>;
   metrics: SystemMetrics;
+  dynamicCharts: Record<string, ChartData>;
+  generateCalls: GenerateCall[];
+}
+
+// Dynamic chart support
+export interface ChartData {
+  chartName: string;
+  metricName: string;
+  data: number[];
+  labels: string[];
+  title: string;
+}
+
+// Generate call controls
+export interface GenerateCall {
+  id: string;
+  name: string;
+  target: string;
+  rate: number;
+  enabled: boolean;
 }
 
 export interface SystemMetrics {

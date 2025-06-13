@@ -1,11 +1,11 @@
 import { CanvasAPI } from './canvas-api.js';
-import { DashboardState, ParameterConfig, WebSocketMessage } from './types.js';
+import { DashboardState, ParameterConfig, WebSocketMessage, GenerateCall } from './types.js';
 import { Chart, ChartConfiguration } from 'chart.js/auto';
 
 export class Dashboard {
   private api: CanvasAPI;
   private state: DashboardState;
-  private latencyChart: Chart | null = null;
+  private charts: Record<string, Chart> = {};
 
   // Parameter configurations for the contacts service
   private parameters: ParameterConfig[] = [
@@ -29,7 +29,88 @@ export class Dashboard {
         dbUtilization: 0,
         cacheHitRate: 0.4,
         dbConnections: '0/5'
-      }
+      },
+      dynamicCharts: {
+        'server.HandleLookup.p95Latency': {
+          chartName: 'server-latency',
+          metricName: 'server.HandleLookup.p95Latency',
+          data: [],
+          labels: [],
+          title: 'Server P95 Latency'
+        },
+        'server.HandleLookup.qps': {
+          chartName: 'server-qps',
+          metricName: 'server.HandleLookup.qps',
+          data: [],
+          labels: [],
+          title: 'Server QPS'
+        },
+        'database.QueryContact.p95Latency': {
+          chartName: 'db-latency',
+          metricName: 'database.QueryContact.p95Latency',
+          data: [],
+          labels: [],
+          title: 'Database P95 Latency'
+        },
+        'server.HandleLookup.errorRate': {
+          chartName: 'server-errors',
+          metricName: 'server.HandleLookup.errorRate',
+          data: [],
+          labels: [],
+          title: 'Server Error Rate'
+        },
+        'database.QueryContact.qps': {
+          chartName: 'db-qps',
+          metricName: 'database.QueryContact.qps',
+          data: [],
+          labels: [],
+          title: 'Database QPS'
+        },
+        'cache.HitRate.percentage': {
+          chartName: 'cache-hit',
+          metricName: 'cache.HitRate.percentage',
+          data: [],
+          labels: [],
+          title: 'Cache Hit Rate %'
+        },
+        'server.HandleLookup.p99Latency': {
+          chartName: 'server-p99',
+          metricName: 'server.HandleLookup.p99Latency',
+          data: [],
+          labels: [],
+          title: 'Server P99 Latency'
+        },
+        'network.bandwidth.utilization': {
+          chartName: 'network-util',
+          metricName: 'network.bandwidth.utilization',
+          data: [],
+          labels: [],
+          title: 'Network Utilization %'
+        },
+        'memory.heap.usage': {
+          chartName: 'memory-heap',
+          metricName: 'memory.heap.usage',
+          data: [],
+          labels: [],
+          title: 'Heap Memory Usage MB'
+        }
+      },
+      generateCalls: [
+        {
+          id: 'lookup-traffic',
+          name: 'Contact Lookup Traffic',
+          target: 'server.HandleLookup',
+          rate: 5.0,
+          enabled: true
+        },
+        {
+          id: 'bulk-traffic',
+          name: 'Bulk Load Traffic',
+          target: 'server.HandleBulk',
+          rate: 1.0,
+          enabled: false
+        }
+      ]
     };
 
     this.setupEventListeners();
@@ -86,7 +167,7 @@ export class Dashboard {
       this.state.metrics.cacheHitRate = cacheParam.value as number;
     }
 
-    this.updateChart();
+    this.updateDynamicCharts();
   }
 
   private calculateEstimatedLatency(load: number): number {
@@ -150,22 +231,41 @@ export class Dashboard {
     }
   }
 
-  private updateChart() {
-    if (!this.latencyChart) return;
-
-    // Add new data point
+  private updateDynamicCharts() {
     const now = Date.now();
-    const data = this.latencyChart.data;
-    
-    if (data.datasets[0].data.length > 20) {
-      data.labels?.shift();
-      data.datasets[0].data.shift();
-    }
-    
-    data.labels?.push(new Date(now).toLocaleTimeString());
-    data.datasets[0].data.push(this.state.metrics.latency);
-    
-    this.latencyChart.update('none');
+    const timestamp = new Date(now).toLocaleTimeString();
+
+    // Update each chart with simulated data
+    Object.values(this.state.dynamicCharts).forEach(chartData => {
+      const chart = this.charts[chartData.chartName];
+      if (!chart) return;
+
+      // Simulate metric values based on chart type
+      let value = 0;
+      if (chartData.metricName.includes('p95Latency') || chartData.metricName.includes('p99Latency')) {
+        value = this.state.metrics.latency + Math.random() * 10 - 5;
+      } else if (chartData.metricName.includes('qps')) {
+        value = this.state.metrics.load + Math.random() * 2 - 1;
+      } else if (chartData.metricName.includes('errorRate')) {
+        value = Math.max(0, (100 - this.state.metrics.successRate) + Math.random() * 2 - 1);
+      } else if (chartData.metricName.includes('HitRate') || chartData.metricName.includes('utilization')) {
+        value = Math.max(0, Math.min(100, this.state.metrics.cacheHitRate * 100 + Math.random() * 20 - 10));
+      } else if (chartData.metricName.includes('memory')) {
+        value = Math.max(0, 512 + Math.random() * 200 - 100); // Simulate heap usage in MB
+      }
+
+      // Update chart data
+      const data = chart.data;
+      if (data.datasets[0].data.length > 20) {
+        data.labels?.shift();
+        data.datasets[0].data.shift();
+      }
+      
+      data.labels?.push(timestamp);
+      data.datasets[0].data.push(value);
+      
+      chart.update('none');
+    });
   }
 
   private showError(message: string) {
@@ -183,9 +283,9 @@ export class Dashboard {
     if (!app) return;
 
     app.innerHTML = `
-      <div class="min-h-screen p-4">
+      <div class="h-screen flex flex-col p-4">
         <!-- Header -->
-        <div class="mb-6">
+        <div class="mb-4 flex-shrink-0">
           <h1 class="text-2xl font-bold text-blue-300 mb-2">SDL Canvas Dashboard</h1>
           <div class="flex items-center gap-4">
             <button id="load-btn" class="btn btn-primary">Load Contacts Service</button>
@@ -198,86 +298,176 @@ export class Dashboard {
           <div id="error-display" class="hidden mt-2 p-2 bg-red-800 text-red-200 rounded text-sm"></div>
         </div>
 
-        <!-- Main Grid Layout -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          <!-- System Architecture Panel -->
-          <div class="panel">
+        <!-- Row 1: System Architecture + Right Side Panels (50% height) -->
+        <div class="flex gap-4 mb-4" style="height: 45%;">
+          <!-- System Architecture Panel (70% width) -->
+          <div class="panel overflow-hidden" style="flex: 0 0 70%;">
             <div class="panel-header">System Architecture</div>
-            <div class="space-y-3">
-              <div class="component-box">
-                <div class="component-title">ContactAppServer</div>
-                <div class="component-detail">Pool: ${this.parameters.find(p => p.path === 'server.pool.Size')?.value}/10</div>
-                <div class="component-detail">Load: ${this.state.metrics.load.toFixed(1)} RPS</div>
-              </div>
-              <div class="text-center text-gray-500">↓</div>
-              <div class="component-box">
-                <div class="component-title">ContactDatabase</div>
-                <div class="component-detail">Pool: ${this.parameters.find(p => p.path === 'server.db.pool.Size')?.value}/5</div>
-                <div class="component-detail">Cache: ${(this.state.metrics.cacheHitRate * 100).toFixed(0)}%</div>
-              </div>
-              <div class="text-center text-gray-500">↓</div>
-              <div class="component-box">
-                <div class="component-title">HashIndex</div>
-                <div class="component-detail">Lookup: ~8ms</div>
-              </div>
+            <div class="h-full overflow-y-auto p-4 space-y-4">
+              ${this.renderSystemArchitectureOnly()}
             </div>
           </div>
 
-          <!-- Current Metrics Panel -->
-          <div class="panel">
-            <div class="panel-header">Current Metrics</div>
-            <div class="space-y-2">
-              <div class="metric-item">
-                <span class="metric-label">Load</span>
-                <span class="metric-value">${this.state.metrics.load.toFixed(1)} RPS</span>
-              </div>
-              <div class="metric-item">
-                <span class="metric-label">P95 Latency</span>
-                <span class="metric-value ${this.getLatencyClass()}">${this.state.metrics.latency.toFixed(1)}ms</span>
-              </div>
-              <div class="metric-item">
-                <span class="metric-label">Success Rate</span>
-                <span class="metric-value ${this.getSuccessRateClass()}">${this.state.metrics.successRate.toFixed(1)}%</span>
-              </div>
-              <div class="metric-item">
-                <span class="metric-label">Server Util</span>
-                <span class="metric-value">${this.state.metrics.serverUtilization.toFixed(0)}%</span>
-              </div>
-              <div class="metric-item">
-                <span class="metric-label">Cache Hit</span>
-                <span class="metric-value">${(this.state.metrics.cacheHitRate * 100).toFixed(0)}%</span>
+          <!-- Right Side: Traffic Generation + System Parameters (30% width) -->
+          <div class="flex flex-col gap-4" style="flex: 0 0 28%;">
+            <!-- Traffic Generation Panel (Top 50%) -->
+            <div class="panel overflow-hidden" style="height: 48%;">
+              <div class="panel-header">Traffic Generation</div>
+              <div class="p-3 h-full overflow-y-auto">
+                ${this.renderGenerateControls()}
               </div>
             </div>
-          </div>
 
-          <!-- Parameter Controls Panel -->
-          <div class="panel">
-            <div class="panel-header">Parameter Controls</div>
-            <div class="space-y-3">
-              ${this.parameters.map(param => this.renderParameterControl(param)).join('')}
+            <!-- System Parameters Panel (Bottom 50%) -->
+            <div class="panel overflow-hidden" style="height: 48%;">
+              <div class="panel-header">System Parameters</div>
+              <div class="p-3 h-full overflow-y-auto">
+                ${this.renderSystemParameters()}
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Performance Chart Panel -->
-        <div class="panel">
-          <div class="panel-header">Live Performance Chart</div>
-          <div class="h-64">
-            <canvas id="latency-chart"></canvas>
+        <!-- Row 2: Dynamic Metrics Grid (50% height) -->
+        <div class="panel overflow-hidden" style="height: 45%;">
+          <div class="panel-header">Live Metrics</div>
+          <div class="p-4 h-full overflow-y-auto">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" style="grid-auto-rows: 200px;">
+              ${this.renderDynamicCharts()}
+            </div>
           </div>
         </div>
       </div>
     `;
 
     this.setupInteractivity();
-    this.initChart();
+    this.initDynamicCharts();
+  }
+
+  private renderSystemArchitectureOnly(): string {
+    return `
+      <div class="space-y-6">
+        <!-- Enhanced System Architecture with more space -->
+        <div class="component-box bg-blue-900/30 border-blue-600">
+          <div class="component-title text-xl font-bold">ContactAppServer</div>
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div class="component-detail">Pool: ${this.parameters.find(p => p.path === 'server.pool.Size')?.value}/10</div>
+            <div class="component-detail">Load: ${this.state.metrics.load.toFixed(1)} RPS</div>
+            <div class="component-detail">Utilization: ${this.state.metrics.serverUtilization.toFixed(0)}%</div>
+            <div class="component-detail">Success: ${this.state.metrics.successRate.toFixed(1)}%</div>
+          </div>
+        </div>
+        
+        <div class="text-center text-gray-400 text-2xl font-bold">↓</div>
+        
+        <div class="component-box bg-green-900/30 border-green-600">
+          <div class="component-title text-xl font-bold">ContactDatabase</div>
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div class="component-detail">Pool: ${this.parameters.find(p => p.path === 'server.db.pool.Size')?.value}/5</div>
+            <div class="component-detail">Cache: ${(this.state.metrics.cacheHitRate * 100).toFixed(0)}%</div>
+            <div class="component-detail">Connections: ${this.state.metrics.dbConnections}</div>
+            <div class="component-detail">DB Util: ${this.state.metrics.dbUtilization.toFixed(0)}%</div>
+          </div>
+        </div>
+        
+        <div class="text-center text-gray-400 text-2xl font-bold">↓</div>
+        
+        <div class="component-box bg-purple-900/30 border-purple-600">
+          <div class="component-title text-xl font-bold">HashIndex</div>
+          <div class="grid grid-cols-2 gap-3 mt-3">
+            <div class="component-detail">Lookup: ~8ms</div>
+            <div class="component-detail">Type: In-Memory</div>
+            <div class="component-detail">Size: 10K entries</div>
+            <div class="component-detail">Hit Rate: 98%</div>
+          </div>
+        </div>
+
+        <!-- Additional system info can go here with more space -->
+        <div class="mt-6 p-4 bg-gray-800/50 rounded border border-gray-600">
+          <h4 class="text-lg font-semibold text-gray-300 mb-2">System Health</h4>
+          <div class="grid grid-cols-3 gap-4">
+            <div class="text-center">
+              <div class="text-2xl font-bold text-green-400">${this.state.metrics.successRate.toFixed(1)}%</div>
+              <div class="text-xs text-gray-400">Success Rate</div>
+            </div>
+            <div class="text-center">
+              <div class="text-2xl font-bold text-blue-400">${this.state.metrics.latency.toFixed(0)}ms</div>
+              <div class="text-xs text-gray-400">Avg Latency</div>
+            </div>
+            <div class="text-center">
+              <div class="text-2xl font-bold text-yellow-400">${this.state.metrics.load.toFixed(1)}</div>
+              <div class="text-xs text-gray-400">Current Load</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  private renderSystemParameters(): string {
+    return `
+      <div class="space-y-3">
+        <div class="text-xs text-gray-400 mb-3">
+          Adjust system configuration parameters in real-time
+        </div>
+        ${this.parameters.map(param => this.renderParameterControl(param)).join('')}
+      </div>
+    `;
+  }
+
+  private renderGenerateControls(): string {
+    return `
+      <div class="space-y-2">
+        <div class="text-xs text-gray-400 mb-2">
+          Add/remove traffic to test system behavior
+        </div>
+        
+        ${this.state.generateCalls.map(call => `
+          <div class="bg-gray-800 border border-gray-600 rounded p-2">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs font-medium truncate">${call.name}</span>
+              <input type="checkbox" ${call.enabled ? 'checked' : ''} 
+                     data-generate-id="${call.id}"
+                     class="form-checkbox h-3 w-3 text-blue-600">
+            </div>
+            
+            <div class="text-xs text-gray-500 mb-1">${call.target}</div>
+            
+            <div class="flex items-center gap-1">
+              <input type="range" 
+                     min="0" max="20" step="0.5" 
+                     value="${call.rate}"
+                     data-rate-id="${call.id}"
+                     class="flex-1 h-1 bg-gray-600 rounded appearance-none slider">
+              <span class="text-xs text-gray-300 w-10 text-right">${call.rate}</span>
+            </div>
+          </div>
+        `).join('')}
+        
+        <button id="add-generator" class="w-full btn btn-outline text-xs py-1">
+          + Add
+        </button>
+      </div>
+    `;
+  }
+
+  private renderDynamicCharts(): string {
+    const charts = Object.values(this.state.dynamicCharts);
+    return charts.map(chart => `
+      <div class="bg-gray-800 border border-gray-600 rounded p-3 flex flex-col h-full">
+        <h4 class="text-sm font-medium text-gray-300 mb-2 text-xs">${chart.title}</h4>
+        <div class="flex-grow relative min-h-0">
+          <canvas id="chart-${chart.chartName}" class="w-full h-full"></canvas>
+        </div>
+      </div>
+    `).join('');
   }
 
   private renderParameterControl(param: ParameterConfig): string {
     if (param.type === 'number') {
       return `
         <div class="space-y-1">
-          <label class="block text-sm text-gray-300">${param.name}</label>
+          <label class="block text-xs text-gray-300">${param.name}</label>
           <div class="flex items-center gap-2">
             <input 
               type="range" 
@@ -288,7 +478,7 @@ export class Dashboard {
               value="${param.value}"
               class="flex-1 h-1 bg-gray-600 rounded appearance-none slider"
             >
-            <span class="text-sm text-gray-400 w-16">${param.value}</span>
+            <span class="text-xs text-gray-400 w-12 text-right">${param.value}</span>
           </div>
         </div>
       `;
@@ -296,17 +486,6 @@ export class Dashboard {
     return '';
   }
 
-  private getLatencyClass(): string {
-    if (this.state.metrics.latency < 20) return 'metric-good';
-    if (this.state.metrics.latency < 50) return 'metric-warning';
-    return 'metric-error';
-  }
-
-  private getSuccessRateClass(): string {
-    if (this.state.metrics.successRate > 95) return 'metric-good';
-    if (this.state.metrics.successRate > 80) return 'metric-warning';
-    return 'metric-error';
-  }
 
   private setupInteractivity() {
     // Load button
@@ -329,48 +508,160 @@ export class Dashboard {
         });
       }
     });
+
+    // Generate controls
+    this.state.generateCalls.forEach(call => {
+      // Enable/disable checkbox
+      const checkbox = document.querySelector(`[data-generate-id="${call.id}"]`) as HTMLInputElement;
+      checkbox?.addEventListener('change', (e) => {
+        call.enabled = (e.target as HTMLInputElement).checked;
+        this.handleGenerateToggle(call);
+      });
+
+      // Rate slider
+      const rateSlider = document.querySelector(`[data-rate-id="${call.id}"]`) as HTMLInputElement;
+      rateSlider?.addEventListener('input', (e) => {
+        const value = parseFloat((e.target as HTMLInputElement).value);
+        call.rate = value;
+        this.handleGenerateRateChange(call);
+        this.render(); // Re-render to update display
+      });
+    });
+
+    // Add generator button
+    const addGeneratorBtn = document.getElementById('add-generator');
+    addGeneratorBtn?.addEventListener('click', () => this.addNewGenerator());
   }
 
-  private initChart() {
-    const canvas = document.getElementById('latency-chart') as HTMLCanvasElement;
-    if (!canvas) return;
+  private handleGenerateToggle(call: GenerateCall) {
+    console.log(`${call.enabled ? 'Starting' : 'Stopping'} generator: ${call.name}`);
+    // TODO: Implement actual traffic generation start/stop
+    if (call.enabled) {
+      this.startTrafficGeneration(call);
+    } else {
+      this.stopTrafficGeneration(call);
+    }
+  }
 
-    const config: ChartConfiguration = {
-      type: 'line',
-      data: {
-        labels: [],
-        datasets: [{
-          label: 'P95 Latency (ms)',
-          data: [],
-          borderColor: 'rgb(59, 130, 246)',
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
-          borderWidth: 2,
-          fill: true,
-          tension: 0.1
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: {
-            beginAtZero: true,
-            grid: { color: 'rgba(55, 65, 81, 0.5)' },
-            ticks: { color: 'rgba(156, 163, 175, 1)' }
-          },
-          x: {
-            grid: { color: 'rgba(55, 65, 81, 0.5)' },
-            ticks: { color: 'rgba(156, 163, 175, 1)' }
-          }
+  private handleGenerateRateChange(call: GenerateCall) {
+    console.log(`Changing rate for ${call.name} to ${call.rate} RPS`);
+    // TODO: Implement actual rate change
+    if (call.enabled) {
+      this.updateTrafficRate(call);
+    }
+  }
+
+  private startTrafficGeneration(call: GenerateCall) {
+    // TODO: Call Canvas API to start traffic generation
+    console.log(`Starting traffic generation for ${call.target} at ${call.rate} RPS`);
+  }
+
+  private stopTrafficGeneration(call: GenerateCall) {
+    // TODO: Call Canvas API to stop traffic generation
+    console.log(`Stopping traffic generation for ${call.target}`);
+  }
+
+  private updateTrafficRate(call: GenerateCall) {
+    // TODO: Call Canvas API to update traffic rate
+    console.log(`Updating traffic rate for ${call.target} to ${call.rate} RPS`);
+  }
+
+  private addNewGenerator() {
+    const newId = `generator-${Date.now()}`;
+    const newGenerator: GenerateCall = {
+      id: newId,
+      name: 'Custom Traffic',
+      target: 'server.HandleCustom',
+      rate: 1.0,
+      enabled: false
+    };
+    
+    this.state.generateCalls.push(newGenerator);
+    this.render();
+  }
+
+  // Method to simulate server adding a new metric via canvas.Measure()
+  public addMetricFromServer(metricName: string, chartTitle: string) {
+    const chartName = metricName.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+    
+    this.state.dynamicCharts[metricName] = {
+      chartName,
+      metricName,
+      data: [],
+      labels: [],
+      title: chartTitle
+    };
+    
+    console.log(`📊 Server added new metric: ${metricName} -> "${chartTitle}"`);
+    this.render();
+  }
+
+  private initDynamicCharts() {
+    Object.values(this.state.dynamicCharts).forEach(chartData => {
+      const canvas = document.getElementById(`chart-${chartData.chartName}`) as HTMLCanvasElement;
+      if (!canvas) return;
+
+      // Determine chart color based on metric type
+      let borderColor = 'rgb(59, 130, 246)'; // Default blue
+      let backgroundColor = 'rgba(59, 130, 246, 0.1)';
+      
+      if (chartData.metricName.includes('p95Latency') || chartData.metricName.includes('p99Latency')) {
+        borderColor = 'rgb(239, 68, 68)'; // Red for latency
+        backgroundColor = 'rgba(239, 68, 68, 0.1)';
+      } else if (chartData.metricName.includes('qps')) {
+        borderColor = 'rgb(34, 197, 94)'; // Green for QPS
+        backgroundColor = 'rgba(34, 197, 94, 0.1)';
+      } else if (chartData.metricName.includes('errorRate')) {
+        borderColor = 'rgb(245, 158, 11)'; // Orange for error rate
+        backgroundColor = 'rgba(245, 158, 11, 0.1)';
+      } else if (chartData.metricName.includes('HitRate')) {
+        borderColor = 'rgb(168, 85, 247)'; // Purple for cache hit rate
+        backgroundColor = 'rgba(168, 85, 247, 0.1)';
+      } else if (chartData.metricName.includes('utilization')) {
+        borderColor = 'rgb(14, 165, 233)'; // Sky blue for utilization
+        backgroundColor = 'rgba(14, 165, 233, 0.1)';
+      } else if (chartData.metricName.includes('memory')) {
+        borderColor = 'rgb(236, 72, 153)'; // Pink for memory
+        backgroundColor = 'rgba(236, 72, 153, 0.1)';
+      }
+
+      const config: ChartConfiguration = {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [{
+            label: chartData.title,
+            data: [],
+            borderColor,
+            backgroundColor,
+            borderWidth: 2,
+            fill: true,
+            tension: 0.1
+          }]
         },
-        plugins: {
-          legend: {
-            labels: { color: 'rgba(156, 163, 175, 1)' }
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              grid: { color: 'rgba(55, 65, 81, 0.5)' },
+              ticks: { color: 'rgba(156, 163, 175, 1)', font: { size: 10 } }
+            },
+            x: {
+              grid: { color: 'rgba(55, 65, 81, 0.5)' },
+              ticks: { color: 'rgba(156, 163, 175, 1)', font: { size: 10 } }
+            }
+          },
+          plugins: {
+            legend: {
+              display: false // Hide legend to save space
+            }
           }
         }
-      }
-    };
+      };
 
-    this.latencyChart = new Chart(canvas, config);
+      this.charts[chartData.chartName] = new Chart(canvas, config);
+    });
   }
 }
