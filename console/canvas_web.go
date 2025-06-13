@@ -57,7 +57,12 @@ func NewWebServer() *WebServer {
 
 // WebSocket connection lifecycle methods
 func (c *CanvasWSConn) OnStart(conn *websocket.Conn) error {
-	c.id = fmt.Sprintf("conn_%d", conn.RemoteAddr().String())
+	// First, initialize the embedded JSONConn
+	if err := c.JSONConn.OnStart(conn); err != nil {
+		return err
+	}
+	
+	c.id = fmt.Sprintf("conn_%s", conn.RemoteAddr().String())
 	
 	c.handler.mu.Lock()
 	c.handler.clients[c.id] = c
@@ -75,17 +80,21 @@ func (c *CanvasWSConn) OnStart(conn *websocket.Conn) error {
 		},
 	}
 	
-	// Use the Writer to send the message
+	// Now the Writer should be properly initialized
 	c.Writer.Send(conc.Message[any]{Value: message})
 	return nil
 }
 
 func (c *CanvasWSConn) OnClose() {
+	// Clean up our client tracking
 	c.handler.mu.Lock()
 	delete(c.handler.clients, c.id)
 	c.handler.mu.Unlock()
 	
 	log.Printf("🔌 WebSocket client disconnected: %s", c.id)
+	
+	// Call the embedded JSONConn's OnClose
+	c.JSONConn.OnClose()
 }
 
 func (c *CanvasWSConn) OnTimeout() bool {

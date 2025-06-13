@@ -49,7 +49,7 @@ export interface WebSocketMessage {
   type: 'fileLoaded' | 'systemActivated' | 'parameterChanged' | 'simulationCompleted' | 'plotGenerated' |
         'generatorAdded' | 'generatorUpdated' | 'generatorRemoved' | 'generatorPaused' | 'generatorResumed' |
         'generatorsStarted' | 'generatorsStopped' | 'measurementAdded' | 'measurementUpdated' | 
-        'measurementRemoved' | 'stateRestored';
+        'measurementRemoved' | 'stateRestored' | 'ping' | 'pong' | 'connected';
   [key: string]: any;
 }
 

@@ -16,6 +16,7 @@ const API_BASE = '/api';
 export class CanvasAPI {
   private ws: WebSocket | null = null;
   private wsListeners: ((message: WebSocketMessage) => void)[] = [];
+  private pingInterval: number | null = null;
 
   constructor() {
     this.connectWebSocket();
@@ -130,11 +131,21 @@ export class CanvasAPI {
     this.ws.onopen = () => {
       console.log('🔌 WebSocket connected');
       this.notifyListeners({ type: 'systemActivated', connected: true } as WebSocketMessage);
+      
+      // Start sending pings every 25 seconds to keep connection alive
+      this.startPingInterval();
     };
     
     this.ws.onmessage = (event) => {
       try {
         const message: WebSocketMessage = JSON.parse(event.data);
+        
+        // Handle pong responses
+        if (message.type === 'pong') {
+          console.log('📡 Received pong from server');
+          return; // Don't notify listeners for pong messages
+        }
+        
         this.notifyListeners(message);
       } catch (error) {
         console.error('❌ Failed to parse WebSocket message:', error);
@@ -143,6 +154,7 @@ export class CanvasAPI {
     
     this.ws.onclose = () => {
       console.log('🔌 WebSocket disconnected');
+      this.stopPingInterval();
       // Attempt to reconnect after 3 seconds
       setTimeout(() => this.connectWebSocket(), 3000);
     };
@@ -159,6 +171,36 @@ export class CanvasAPI {
 
   private notifyListeners(message: WebSocketMessage) {
     this.wsListeners.forEach(listener => listener(message));
+  }
+
+  private startPingInterval() {
+    // Send a ping every 25 seconds (well before any typical 30s timeout)
+    this.pingInterval = window.setInterval(() => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        const pingMessage = {
+          type: 'ping',
+          timestamp: Date.now()
+        };
+        this.ws.send(JSON.stringify(pingMessage));
+        console.log('📡 Sent ping to keep WebSocket alive');
+      }
+    }, 25000);
+  }
+
+  private stopPingInterval() {
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval);
+      this.pingInterval = null;
+    }
+  }
+
+  // Cleanup method for proper resource disposal
+  public disconnect() {
+    this.stopPingInterval();
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
+    }
   }
 
   // HTTP utilities
