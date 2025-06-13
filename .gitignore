@@ -1,4 +1,7 @@
 dist
+playwright-report
+test-results
 .DS_Store
 y.output
 __debug*
+web/tests/screenshots
