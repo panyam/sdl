@@ -129,6 +129,15 @@ export interface CanvasState {
   measurements: Record<string, MeasurementConfig>;
   sessionVars: Record<string, any>;
   lastRunResult?: any;
+  systemParameters?: Record<string, any>;
+  metricsHistory?: MetricSnapshot[];
+}
+
+export interface MetricSnapshot {
+  timestamp: number;
+  metricType: string;
+  value: number;
+  source: string;
 }
 
 // System diagram types (matching viz package)

@@ -30,15 +30,25 @@ type MeasurementConfig struct {
 	Options    map[string]interface{} `json:"options,omitempty"`
 }
 
+// MetricSnapshot represents a point-in-time metric value
+type MetricSnapshot struct {
+	Timestamp   int64   `json:"timestamp"`   // Unix timestamp in milliseconds
+	MetricType  string  `json:"metricType"`  // e.g., "latency", "qps", "errorRate"
+	Value       float64 `json:"value"`       // The metric value
+	Source      string  `json:"source"`      // Source component/measurement
+}
+
 // CanvasState represents the complete state of a Canvas session
 type CanvasState struct {
-	LoadedFiles   []string                     `json:"loadedFiles"`
-	ActiveFile    string                       `json:"activeFile"`
-	ActiveSystem  string                       `json:"activeSystem"`
-	Generators    map[string]*GeneratorConfig  `json:"generators"`
-	Measurements  map[string]*MeasurementConfig `json:"measurements"`
-	SessionVars   map[string]interface{}       `json:"sessionVars"`
-	LastRunResult interface{}                  `json:"lastRunResult,omitempty"`
+	LoadedFiles       []string                     `json:"loadedFiles"`
+	ActiveFile        string                       `json:"activeFile"`
+	ActiveSystem      string                       `json:"activeSystem"`
+	Generators        map[string]*GeneratorConfig  `json:"generators"`
+	Measurements      map[string]*MeasurementConfig `json:"measurements"`
+	SessionVars       map[string]interface{}       `json:"sessionVars"`
+	LastRunResult     interface{}                  `json:"lastRunResult,omitempty"`
+	SystemParameters  map[string]interface{}       `json:"systemParameters,omitempty"`  // Current parameter values
+	MetricsHistory    []MetricSnapshot             `json:"metricsHistory,omitempty"`    // Recent metrics for charts
 }
 
 // generatorManager manages traffic generators
@@ -294,10 +304,12 @@ func (c *Canvas) Save() (*CanvasState, error) {
 	c.initManagers()
 	
 	state := &CanvasState{
-		LoadedFiles:  make([]string, 0, len(c.loadedFiles)),
-		Generators:   c.GetGenerators(),
-		Measurements: c.GetMeasurements(),
-		SessionVars:  make(map[string]interface{}),
+		LoadedFiles:      make([]string, 0, len(c.loadedFiles)),
+		Generators:       c.GetGenerators(),
+		Measurements:     c.GetMeasurements(),
+		SessionVars:      make(map[string]interface{}),
+		SystemParameters: make(map[string]interface{}),
+		MetricsHistory:   make([]MetricSnapshot, 0),
 	}
 	
 	// Copy loaded files
@@ -316,6 +328,11 @@ func (c *Canvas) Save() (*CanvasState, error) {
 	// Copy session vars (shallow copy for now)
 	for k, v := range c.sessionVars {
 		state.SessionVars[k] = v
+	}
+	
+	// Copy system parameters
+	for k, v := range c.systemParameters {
+		state.SystemParameters[k] = v
 	}
 	
 	return state, nil
@@ -366,6 +383,14 @@ func (c *Canvas) Restore(state *CanvasState) error {
 	// Restore session vars
 	for k, v := range state.SessionVars {
 		c.sessionVars[k] = v
+	}
+	
+	// Restore system parameters (reapply all parameter changes)
+	for path, value := range state.SystemParameters {
+		if err := c.Set(path, value); err != nil {
+			// Log error but continue with other parameters
+			fmt.Printf("Warning: failed to restore parameter %s: %v\n", path, err)
+		}
 	}
 	
 	return nil

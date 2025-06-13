@@ -40,6 +40,11 @@ type WebServer struct {
 	wsHandler *CanvasWSHandler
 }
 
+// GetCanvas returns the Canvas instance for REPL access
+func (ws *WebServer) GetCanvas() *Canvas {
+	return ws.canvas
+}
+
 // NewWebServer creates a new web server instance
 func NewWebServer() *WebServer {
 	ws := &WebServer{

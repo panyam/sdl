@@ -19,14 +19,15 @@ import (
 // modifying, and analyzing SDL models. It acts as the core engine
 // for both scripted tests and future interactive tools like a REPL.
 type Canvas struct {
-	loader       *loader.Loader
-	runtime      *runtime.Runtime
-	activeFile   *loader.FileStatus
-	activeSystem *runtime.SystemInstance
-	sessionVars  map[string]any
-	loadedFiles  map[string]*loader.FileStatus
-	genManager   *generatorManager
-	measManager  *measurementManager
+	loader           *loader.Loader
+	runtime          *runtime.Runtime
+	activeFile       *loader.FileStatus
+	activeSystem     *runtime.SystemInstance
+	sessionVars      map[string]any
+	loadedFiles      map[string]*loader.FileStatus
+	genManager       *generatorManager
+	measManager      *measurementManager
+	systemParameters map[string]interface{} // Track parameter changes
 }
 
 // NewCanvas creates a new interactive canvas session.
@@ -34,10 +35,11 @@ func NewCanvas() *Canvas {
 	l := loader.NewLoader(nil, nil, 10)
 	r := runtime.NewRuntime(l)
 	return &Canvas{
-		loader:      l,
-		runtime:     r,
-		sessionVars: make(map[string]any),
-		loadedFiles: make(map[string]*loader.FileStatus),
+		loader:           l,
+		runtime:          r,
+		sessionVars:      make(map[string]any),
+		loadedFiles:      make(map[string]*loader.FileStatus),
+		systemParameters: make(map[string]interface{}),
 	}
 }
 
@@ -147,8 +149,12 @@ func (c *Canvas) Set(path string, value any) error {
 
 	if currentComp.IsNative {
 		// For native components, use reflection to set the field on the underlying Go struct.
-		// Debug removed
-		return c.setField(currentComp.NativeInstance, []string{finalParamName}, value)
+		err := c.setField(currentComp.NativeInstance, []string{finalParamName}, value)
+		if err == nil {
+			// Track parameter change for state persistence
+			c.systemParameters[path] = value
+		}
+		return err
 	} else {
 		// For user-defined components, set the parameter in their runtime environment.
 		var newValue decl.Value
@@ -171,7 +177,12 @@ func (c *Canvas) Set(path string, value any) error {
 		if err != nil {
 			return err
 		}
-		return currentComp.Set(finalParamName, newValue)
+		err = currentComp.Set(finalParamName, newValue)
+		if err == nil {
+			// Track parameter change for state persistence
+			c.systemParameters[path] = value
+		}
+		return err
 	}
 }
 
