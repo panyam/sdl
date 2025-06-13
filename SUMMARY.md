@@ -22,7 +22,7 @@ The project is a Go-based system composed of several key packages:
 *   **`./web/`**: Complete TypeScript + Tailwind frontend providing the "Incredible Machine" style dashboard with 3-panel layout, real-time charts, and interactive parameter controls for workshop demonstrations.
 *   **`./types`**: Shared data structures between backend and frontend, ensuring type-safe communication across the web stack.
 *   **`./viz`:** A top-level library for generating all visualizations, including line charts, bar charts (histograms), and static/dynamic diagrams.
-*   **`./cmd/sdl` (Command Line Interface):** The main user-facing tool, built with Cobra. It provides a suite of commands for a comprehensive workflow (`validate`, `run`, `trace`, `plot`, `diagram`, `serve`) enabling both CLI-based analysis and web-based interactive dashboards.
+*   **`./cmd/sdl` (Command Line Interface):** The main user-facing tool, built with Cobra. It provides a suite of commands for a comprehensive workflow (`validate`, `run`, `trace`, `plot`, `diagram`, `serve`, `console`) enabling CLI-based analysis, interactive REPL sessions, and web-based dashboards.
 *   **`./examples`:** Contains sample `.sdl` files, Go API usage examples, and the flagship Netflix streaming service demo (`examples/netflix/`) that showcases traffic spike scenarios, capacity modeling, and performance optimization for workshop demonstrations.
 
 **3. Current Status & Architecture:**
@@ -35,5 +35,8 @@ The project is a Go-based system composed of several key packages:
 *   **Frontend Canvas Integration:** Web dashboard now fully integrated with RESTful Canvas API. Dashboard starts empty and automatically loads Canvas state. All control operations (load, use, set, run) work through REST endpoints with real-time WebSocket updates for metrics.
 *   **System Architecture Visualization:** Frontend displays full component topology matching the `sdl diagram` command output. Shows complete system structure with all components, connections, and dependencies in the prominent left panel.
 *   **2-Row Web Dashboard:** TypeScript + Tailwind frontend with clean layout - Row 1 (System Architecture + Controls), Row 2 (Dynamic Metrics Grid). Real-time updates via WebSocket, control operations via REST API. Removed all hardcoded service-specific references for true generic operation.
-*   **Production Deployment:** Single-command deployment with `./sdl serve --port 8080`. Serves both legacy API endpoints and new RESTful Canvas API with proper CORS handling.
+*   **Interactive REPL Console:** New `sdl console` command provides interactive REPL with shared Canvas state. Features command history, real-time web dashboard synchronization, and eliminates need for curl commands - perfect for side-by-side demonstrations.
+*   **Enhanced Canvas State Persistence:** Complete Canvas state management with parameter tracking. Includes loaded files, active system, generators, measurements, session variables, and system parameters. Enables perfect session recovery and browser reconnection.
+*   **Real-time Synchronization:** Console commands instantly update web dashboard via WebSocket broadcasting. Browser can reconnect mid-session and automatically sync with current REPL state.
+*   **Production Deployment:** Single-command deployment with `./sdl serve --port 8080` or interactive mode with `./sdl console --port 8080`. Serves RESTful Canvas API with proper CORS handling and real-time WebSocket updates.
 *   **Demonstration Examples:** Netflix streaming service and contacts lookup service provide comprehensive examples for system design interview scenarios with traffic generation and performance analysis.

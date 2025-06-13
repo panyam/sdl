@@ -16,6 +16,7 @@ This package implements the main command-line interface (CLI) tool for the Syste
     *   **`trace.go`**: Implements `sdl trace ...` to perform a single-run execution of a method and save the detailed event trace to a JSON file.
     *   **`plot.go`**: A versatile plotting command that generates immediate visualizations for workshop demonstrations. Creates comparison plots showing before/after performance that generate "aha moments" for audiences.
     *   **`diagram.go`**: A command that generates system architecture diagrams essential for workshop presentations. Creates static diagrams from SDL source and dynamic sequence diagrams from execution traces.
+    *   **`console.go`**: Interactive REPL console with shared Canvas state. Provides real-time web dashboard synchronization, command history, and eliminates need for curl commands during demonstrations.
     *   **`shared_types.go`**: Defines shared data structures, like `RunResult`, used for serialization between commands.
 
 **🎪 Upcoming Workshop Commands:**
@@ -25,8 +26,9 @@ This package implements the main command-line interface (CLI) tool for the Syste
 
 **Key Functionality & Features:**
 
+*   **Interactive REPL Console:** New `sdl console` command provides real-time interactive environment with shared Canvas state and automatic web dashboard synchronization.
 *   **Workshop-Optimized Commands:** Cobra-based command system designed for smooth conference presentations and live demonstrations.
-*   **Canvas Integration:** CLI commands orchestrate the `console.Canvas` API for real-time parameter modification and immediate simulation execution.
+*   **Canvas Integration:** CLI and REPL commands orchestrate the `console.Canvas` API for real-time parameter modification and immediate simulation execution.
 *   **Live Visualization Pipeline:** Seamless integration between simulation execution and visualization generation, enabling instant before/after comparisons that create educational moments.
 *   **Educational Workflows:** Commands designed specifically for system design interview coaching:
     1.  **Interactive Analysis:** Real-time parameter changes with immediate performance impact visualization.
@@ -35,12 +37,19 @@ This package implements the main command-line interface (CLI) tool for the Syste
 
 **Workshop Workflows:**
 
-1.  **Netflix Traffic Spike Demo (Current):**
+1.  **Interactive REPL Demo (Current):**
+    *   `sdl console --port 8080`
+    *   `SDL> load examples/netflix/netflix.sdl`
+    *   `SDL> use NetflixSystem`
+    *   `SDL> set videoService.pool.ArrivalRate 50`
+    *   Real-time dashboard updates at http://localhost:8080
+
+2.  **Traditional CLI Demo (Current):**
     *   `sdl run examples/netflix/netflix.sdl NetflixSystem videoService.StreamVideo --count=1000`
     *   `sdl plot baseline,traffic_spike --type=comparison --title="Before vs After Traffic Spike"`
     *   `sdl diagram examples/netflix/netflix.sdl NetflixSystem --type=static`
 
-2.  **Interactive Recipe Execution (Planned):**
+3.  **Interactive Recipe Execution (Planned):**
     *   `sdl execute examples/netflix/traffic_spike_demo.recipe`
     *   `sdl dashboard examples/netflix/netflix.sdl NetflixSystem --live`
 

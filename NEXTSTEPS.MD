@@ -42,10 +42,21 @@ This document outlines the workshop-focused development status and next steps fo
     *   HTTP API backend with Canvas operations (load, use, set, run, plot)
     *   Production-ready web stack with single-command deployment: `./sdl serve --port 8080`
     *   Comprehensive testing suite including Playwright automation for layout validation
+*   **`[COMPLETED]` Interactive REPL Console:**
+    *   New `sdl console` command provides interactive REPL with Canvas API
+    *   Shared Canvas instance between REPL and web dashboard for seamless side-by-side demonstrations
+    *   Command history, auto-completion, and real-time WebSocket synchronization
+    *   Eliminates need for curl commands - much better UX for interactive exploration
+    *   Console commands instantly update browser dashboard via WebSocket broadcasting
+*   **`[COMPLETED]` Enhanced Canvas State Persistence:**
+    *   Complete Canvas state save/restore functionality with parameter tracking
+    *   Includes loaded files, active system, generators, measurements, session variables, and system parameters
+    *   Browser can reconnect mid-session and automatically sync with current REPL state
+    *   Perfect for workshop scenarios where browser connection might drop
 *   **`[COMPLETED]` Canvas API Foundation:**
-    *   The `console.Canvas` API is now a stable and robust engine powering both CLI and web interfaces.
-    *   Core workflow (`Load`, `Use`, `Set`, `Run`, `Plot`) is fully functional and tested across multiple interfaces.
-    *   The `Set` command supports runtime modification of parameters on both top-level instances and their nested dependencies (e.g., `app.cache.HitRate`).
+    *   The `console.Canvas` API is now a stable and robust engine powering CLI, REPL, and web interfaces
+    *   Core workflow (`Load`, `Use`, `Set`, `Run`, `Plot`) is fully functional and tested across multiple interfaces
+    *   The `Set` command supports runtime modification of parameters on both top-level instances and their nested dependencies (e.g., `app.cache.HitRate`)
 *   **`[COMPLETED]` Contacts Service Validation:**
     *   Simple 2-tier phone lookup service (`examples/contacts/`) created for Canvas API validation
     *   Complete test suite covering parameter modification, visualization, and rapid iteration scenarios
@@ -224,5 +235,7 @@ This document outlines the workshop-focused development status and next steps fo
 
 **COMPLETED:** Frontend integration with new RESTful Canvas API
 **COMPLETED:** Dashboard now fully operational with real Canvas state and system visualization
-**CURRENT PHASE:** Enhanced testing and documentation for production deployment  
+**COMPLETED:** Interactive REPL console with real-time dashboard synchronization
+**COMPLETED:** Enhanced Canvas state persistence with parameter tracking and session recovery
+**CURRENT PHASE:** Documentation updates and advanced testing for production deployment  
 **NEXT PHASE:** Advanced visualization features and scenario library expansion

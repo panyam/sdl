@@ -46,10 +46,11 @@ The dashboard features a carefully designed 2-row layout that maximizes both sys
 
 #### Canvas API Client (`src/canvas-api.ts`)
 - **RESTful API Integration**: Full implementation of Canvas REST endpoints
-- **WebSocket Client**: Manages real-time bidirectional communication
-- **State Management**: Handles Canvas state save/restore operations
+- **WebSocket Client**: Manages real-time bidirectional communication with REPL console synchronization
+- **Enhanced State Management**: Handles complete Canvas state save/restore including system parameters and session recovery
 - **Traffic Generation**: Complete generator lifecycle management
 - **Measurement Control**: Dynamic chart creation from Canvas measurements
+- **REPL Synchronization**: Real-time updates from console commands via WebSocket broadcasting
 - **Error Handling**: Robust error management for all API operations
 
 #### Type System (`src/types.ts`)
@@ -81,19 +82,21 @@ The dashboard features a carefully designed 2-row layout that maximizes both sys
 
 ### Initialization Flow
 1. **Load Application**: TypeScript bundle loads in browser
-2. **Establish WebSocket**: Connect to backend for real-time updates
-3. **Load Canvas State**: Fetch current Canvas state via REST API
+2. **Establish WebSocket**: Connect to backend for real-time updates and REPL synchronization
+3. **Load Canvas State**: Fetch current Canvas state via REST API (includes REPL session state)
 4. **Initialize System**: Display system architecture if Canvas has active system
 5. **Setup Generators**: Load any existing traffic generators and measurements
-6. **Render UI**: Display 2-row layout with populated or empty panels
+6. **Sync REPL State**: Automatically sync with any active console session
+7. **Render UI**: Display 2-row layout with populated or empty panels
 
 ### Parameter Modification Flow
-1. **User Interaction**: Slider movement or checkbox toggle
-2. **State Update**: Update local dashboard state
-3. **API Call**: Send parameter change to backend via HTTP
+1. **User Interaction**: Slider movement, checkbox toggle, or REPL console command
+2. **State Update**: Update local dashboard state or receive from console
+3. **API Call**: Send parameter change to backend via HTTP (or receive from REPL)
 4. **Auto-Simulation**: Backend automatically runs new simulation
-5. **WebSocket Update**: Real-time results broadcast to all clients
+5. **WebSocket Broadcast**: Real-time results broadcast to all clients (including REPL)
 6. **UI Refresh**: Update system architecture, metrics, and charts
+7. **Cross-Session Sync**: Changes visible in both dashboard and console immediately
 
 ### Chart Management Flow
 1. **Metric Registration**: Backend calls `canvas.Measure()` with new metrics
@@ -135,9 +138,11 @@ The dashboard features a carefully designed 2-row layout that maximizes both sys
 
 ### Educational Impact
 - **Visual Learning**: Complex system concepts made immediately visible
-- **Interactive Exploration**: Audience can see cause-and-effect relationships
+- **Interactive Exploration**: Audience can see cause-and-effect relationships via both dashboard and console
+- **Side-by-Side Demonstrations**: REPL console commands instantly update dashboard - perfect for workshops
 - **Professional Presentation**: Suitable for large-screen conference demos
-- **Engagement Factor**: "Incredible Machine" experience captures attention
+- **Enhanced Engagement**: "Incredible Machine" experience with real-time console synchronization captures attention
+- **No curl Required**: Clean REPL interface eliminates clunky HTTP commands during presentations
 
 ### Technical Reliability
 - **Production Ready**: Comprehensive testing ensures demo reliability
