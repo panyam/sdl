@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SDL Canvas API Test</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #ffffff; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #333; }
+        .success { border-color: green; }
+        .error { border-color: red; }
+        button { margin: 5px; padding: 10px; }
+        pre { background: #2a2a2a; padding: 10px; overflow: auto; }
+    </style>
+</head>
+<body>
+    <h1>SDL Canvas API Test</h1>
+    
+    <div>
+        <button onclick="testLoad()">Test Load</button>
+        <button onclick="testUse()">Test Use</button>
+        <button onclick="testSet()">Test Set</button>
+        <button onclick="testRun()">Test Run</button>
+        <button onclick="connectWebSocket()">Test WebSocket</button>
+    </div>
+    
+    <div id="results"></div>
+
+    <script>
+        let ws = null;
+        
+        async function apiCall(endpoint, data) {
+            try {
+                const response = await fetch(`/api${endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                return await response.json();
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+        
+        function logResult(test, result) {
+            const div = document.createElement('div');
+            div.className = `test ${result.success ? 'success' : 'error'}`;
+            div.innerHTML = `
+                <h3>${test}</h3>
+                <pre>${JSON.stringify(result, null, 2)}</pre>
+            `;
+            document.getElementById('results').prepend(div);
+        }
+        
+        async function testLoad() {
+            const result = await apiCall('/load', { filePath: 'examples/contacts/contacts.sdl' });
+            logResult('Load API', result);
+        }
+        
+        async function testUse() {
+            const result = await apiCall('/use', { systemName: 'ContactsSystem' });
+            logResult('Use API', result);
+        }
+        
+        async function testSet() {
+            const result = await apiCall('/set', { path: 'server.pool.ArrivalRate', value: 10.0 });
+            logResult('Set API', result);
+        }
+        
+        async function testRun() {
+            const result = await apiCall('/run', { varName: 'test', target: 'server.HandleLookup', runs: 100 });
+            logResult('Run API', result);
+        }
+        
+        function connectWebSocket() {
+            if (ws) {
+                ws.close();
+            }
+            
+            ws = new WebSocket(`ws://localhost:8080/api/live`);
+            
+            ws.onopen = () => {
+                logResult('WebSocket', { success: true, message: 'Connected' });
+            };
+            
+            ws.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                logResult('WebSocket Message', message);
+            };
+            
+            ws.onerror = (error) => {
+                logResult('WebSocket', { success: false, error: 'Connection failed' });
+            };
+        }
+    </script>
+</body>
+</html>

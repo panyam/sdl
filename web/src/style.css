@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles for the dashboard */
+@layer components {
+  .panel {
+    @apply bg-gray-800 border border-gray-700 rounded-lg p-4;
+  }
+  
+  .panel-header {
+    @apply text-sm font-semibold text-gray-300 uppercase tracking-wide mb-3;
+  }
+  
+  .metric-item {
+    @apply flex justify-between items-center py-1;
+  }
+  
+  .metric-label {
+    @apply text-gray-400 text-sm;
+  }
+  
+  .metric-value {
+    @apply text-white font-medium;
+  }
+  
+  .metric-good {
+    @apply text-green-400;
+  }
+  
+  .metric-warning {
+    @apply text-yellow-400;
+  }
+  
+  .metric-error {
+    @apply text-red-400;
+  }
+  
+  .input-field {
+    @apply bg-gray-700 border border-gray-600 rounded px-3 py-1 text-white text-sm focus:outline-none focus:border-blue-500;
+  }
+  
+  .btn {
+    @apply px-3 py-1 rounded text-sm font-medium transition-colors;
+  }
+  
+  .btn-primary {
+    @apply bg-blue-600 hover:bg-blue-700 text-white;
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-600 hover:bg-gray-700 text-white;
+  }
+  
+  .component-box {
+    @apply bg-gray-700 border border-gray-600 rounded-lg p-3 mb-2;
+  }
+  
+  .component-title {
+    @apply font-semibold text-blue-300 mb-1;
+  }
+  
+  .component-detail {
+    @apply text-xs text-gray-400;
+  }
+}

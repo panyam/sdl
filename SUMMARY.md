@@ -1,6 +1,6 @@
 # SDL (System Design Language) Project Summary
 
-**Version:** As of conference workshop preparation with Netflix streaming demo and interactive capacity modeling.
+**Version:** As of conference workshop preparation with complete web Canvas visualization dashboard.
 
 **1. Vision & Goal:**
 
@@ -17,16 +17,21 @@ The project is a Go-based system composed of several key packages:
 *   **`./decl` & `./parser`:** Define the language's Abstract Syntax Tree (AST) and implement the `goyacc`-based parser to generate the AST from `.sdl` files. The language now supports top-level `native method` declarations.
 *   **`./loader`:** Manages the loading of SDL files, resolving imports from various definition types (`component`, `enum`, `method`), and orchestrating type inference and validation.
 *   **`./runtime`:** The execution engine for SDL models. It features `SimpleEval`, an interpreter that walks the AST to run simulations, and a factory for instantiating any registered native component.
-*   **`./console`**: The workshop engine providing a stateful, API-driven system (`Canvas`) for interactive analysis. This powers the conference demo's real-time parameter modification, scenario execution, and live visualization updates that make system design concepts immediately tangible.
+*   **`./console`**: The workshop engine providing a stateful, API-driven system (`Canvas`) for interactive analysis. This powers both the CLI-based analysis and the new web dashboard's real-time parameter modification, scenario execution, and live visualization updates that make system design concepts immediately tangible.
+*   **`./cmd/sdl/commands/serve.go`**: Web server providing HTTP API and WebSocket support for the interactive dashboard, enabling browser-based system visualization and real-time parameter manipulation.
+*   **`./web/`**: Complete TypeScript + Tailwind frontend providing the "Incredible Machine" style dashboard with 3-panel layout, real-time charts, and interactive parameter controls for workshop demonstrations.
+*   **`./types`**: Shared data structures between backend and frontend, ensuring type-safe communication across the web stack.
 *   **`./viz`:** A top-level library for generating all visualizations, including line charts, bar charts (histograms), and static/dynamic diagrams.
-*   **`./cmd/sdl` (Command Line Interface):** The main user-facing tool, built with Cobra. It provides a suite of commands for a comprehensive workflow (`validate`, `run`, `trace`, `plot`, `diagram`), with upcoming workshop-focused commands (`execute`, `dashboard`, `workshop`) for the conference demonstration.
+*   **`./cmd/sdl` (Command Line Interface):** The main user-facing tool, built with Cobra. It provides a suite of commands for a comprehensive workflow (`validate`, `run`, `trace`, `plot`, `diagram`, `serve`) enabling both CLI-based analysis and web-based interactive dashboards.
 *   **`./examples`:** Contains sample `.sdl` files, Go API usage examples, and the flagship Netflix streaming service demo (`examples/netflix/`) that showcases traffic spike scenarios, capacity modeling, and performance optimization for workshop demonstrations.
 
 **3. Current Status & Conference Workshop Focus:**
 
-*   **Workshop-Ready Foundation:** The project has robust libraries for performance modeling, complete visualization workflows, and interactive analysis capabilities specifically designed for live demonstrations and educational scenarios.
-*   **Netflix Demo Scenario (NEW):** A comprehensive Netflix-style streaming service model (`examples/netflix/`) with CDN capacity modeling, database bottlenecks, video encoding pipelines, and traffic spike scenarios. This serves as the flagship demonstration for showing how system design decisions impact real-world performance.
-*   **Interactive Analysis Engine (Canvas API):** The `console.Canvas` API is stable and optimized for workshop use. It supports real-time parameter modification during presentations, rapid scenario execution, and immediate visualization updates that create "aha moments" for audiences.
-*   **Capacity Modeling with Queuing Theory:** Full M/M/c queuing implementation enables realistic analysis of system capacity limits, demonstrating concepts like cache hit rate impact, database connection pooling, and CDN overload conditions that are crucial for system design interviews.
-*   **Next Evolution: Workshop Tooling:** Immediate focus on `sdl execute` (recipe runner), `sdl dashboard` (multi-panel real-time visualization), and workshop-specific commands that enable smooth, professional conference presentations.
-*   **Conference Goal:** Transform SDL into the ultimate system design interview preparation platform, providing the tools that every engineering candidate needs to visualize and communicate complex distributed systems concepts effectively.
+*   **🎉 WEB DASHBOARD COMPLETE:** Full "Incredible Machine" style web interface implemented with TypeScript + Tailwind, providing real-time parameter manipulation, live performance charts, and 3-panel dashboard layout. The web Canvas visualization is production-ready for workshop demonstrations.
+*   **Workshop-Ready Foundation:** The project has robust libraries for performance modeling, complete visualization workflows, and both CLI and web-based interactive analysis capabilities specifically designed for live demonstrations and educational scenarios.
+*   **Multi-Interface Canvas API:** The `console.Canvas` API powers both CLI commands and the new web dashboard, providing consistent real-time parameter modification, scenario execution, and visualization updates across all interfaces.
+*   **Contacts Service Validation (NEW):** Simple 2-tier phone lookup service (`examples/contacts/`) created and fully validated to test Canvas API capabilities, providing a clean foundation for web dashboard development and workshop scenarios.
+*   **Netflix Demo Scenario:** A comprehensive Netflix-style streaming service model (`examples/netflix/`) with CDN capacity modeling, database bottlenecks, video encoding pipelines, and traffic spike scenarios available for complex workshop demonstrations.
+*   **Capacity Modeling with Queuing Theory:** Full M/M/c queuing implementation enables realistic analysis of system capacity limits, demonstrating concepts like cache hit rate impact, database connection pooling, and overload conditions that are crucial for system design interviews.
+*   **Production-Ready Web Stack:** Complete TypeScript frontend with Chart.js visualization, WebSocket real-time updates, HTTP API backend, and comprehensive testing suite. Single-command deployment: `./sdl serve --port 8080`.
+*   **Conference Goal ACHIEVED:** SDL now provides the ultimate system design interview preparation platform with both powerful CLI tools and an intuitive web interface that makes complex distributed systems concepts immediately visible and interactive.

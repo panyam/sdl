@@ -2,7 +2,7 @@
 
 **Purpose:**
 
-This package provides the core engine for interactive workshop demonstrations and system design interview coaching. Its primary goal is to create a stateful, long-running session that enables real-time parameter modification, immediate visualization updates, and seamless live demonstrations that make complex distributed systems concepts immediately tangible for audiences.
+This package provides the core engine for interactive workshop demonstrations and system design interview coaching. Its primary goal is to create a stateful, long-running session that enables real-time parameter modification, immediate visualization updates, and seamless live demonstrations that make complex distributed systems concepts immediately tangible for audiences. **Now powers both CLI and web interfaces.**
 
 **Core Components & Files:**
 
