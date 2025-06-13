@@ -1,4 +1,5 @@
 dist
+./sdl
 playwright-report
 test-results
 .DS_Store
