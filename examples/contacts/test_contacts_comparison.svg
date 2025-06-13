@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?><svg width="800" height="400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .axis { font: 12px sans-serif; fill: #000000; }
+      .axis path, .axis line { fill: none; stroke: #000000; shape-rendering: crispEdges; }
+      .grid-line { stroke: #e5e7eb; stroke-width: 0.5px; }
+      .title { font: bold 16px sans-serif; text-anchor: middle; fill: #000000; }
+      .axis-label { font: 12px sans-serif; text-anchor: middle; fill: #000000; }
+      .legend { font: 12px sans-serif; fill: #000000; }
+    </style>
+  </defs>
+
+  
+
+  <g transform="translate(60,40)">
+    
+    <line class="grid-line" x1="0" x2="620" y1="268" y2="268"></line><line class="grid-line" x1="0" x2="620" y1="166" y2="166"></line><line class="grid-line" x1="0" x2="620" y1="63" y2="63"></line><line class="grid-line" x1="0" x2="620" y1="-40" y2="-40"></line>
+
+    
+    <g class="axis" transform="translate(0,310)">
+      
+      <path d="M0,0H620"></path>
+      <text class="axis-label" x="310" y="35">Time</text>
+    </g>
+
+    
+    <g class="axis">
+      <line x1="0" x2="-6" y1="268" y2="268"></line><text x="-10" y="272" text-anchor="end">14</text><line x1="0" x2="-6" y1="166" y2="166"></line><text x="-10" y="170" text-anchor="end">15</text><line x1="0" x2="-6" y1="63" y2="63"></line><text x="-10" y="67" text-anchor="end">16</text><line x1="0" x2="-6" y1="-40" y2="-40"></line><text x="-10" y="-36" text-anchor="end">17</text>
+      <path d="M0,0V310"></path>
+      <text class="axis-label" transform="rotate(-90)" x="-155" y="-50">P90 Latency (ms)</text>
+    </g>
+
+    
+    
+    <path fill="none" stroke="#3b82f6" stroke-width="2px" d=""></path>
+    
+    <path fill="none" stroke="#ef4444" stroke-width="2px" d=""></path>
+    
+
+    
+    
+  </g>
+
+  
+  <g class="legend" transform="translate(580, 40)">
+    
+    <rect x="0" y="0" width="12" height="12" fill="#3b82f6"></rect>
+    <text x="20" y="10">viz_baseline</text>
+    
+    <rect x="0" y="20" width="12" height="12" fill="#ef4444"></rect>
+    <text x="20" y="30">viz_load</text>
+    
+  </g>
+</svg>

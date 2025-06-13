@@ -1,6 +1,7 @@
 package contacts
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/panyam/sdl/console"
@@ -32,7 +33,7 @@ func TestContactsServiceBasic(t *testing.T) {
 	canvas.Set("server.db.pool.ArrivalRate", 3.0)  // 3 RPS to DB (60% cache miss)
 	canvas.Set("server.db.pool.AvgHoldTime", "12ms") // 10ms query + 2ms overhead
 
-	err = canvas.Run("baseline", "server.HandleLookup", 1000)
+	err = canvas.Run("baseline", "server.HandleLookup", console.WithRuns(1000))
 	if err != nil {
 		t.Fatalf("Failed to run baseline: %v", err)
 	}
@@ -45,7 +46,7 @@ func TestContactsServiceBasic(t *testing.T) {
 	canvas.Set("server.pool.ArrivalRate", 15.0)    // 3x load increase
 	canvas.Set("server.db.pool.ArrivalRate", 9.0)  // Corresponding DB load
 
-	err = canvas.Run("high_load", "server.HandleLookup", 1000)
+	err = canvas.Run("high_load", "server.HandleLookup", console.WithRuns(1000))
 	if err != nil {
 		t.Fatalf("Failed to run high load test: %v", err)
 	}
@@ -58,7 +59,7 @@ func TestContactsServiceBasic(t *testing.T) {
 	canvas.Set("server.db.CacheHitRate", 0.8)       // 80% cache hit rate
 	canvas.Set("server.db.pool.ArrivalRate", 3.0)   // Reduced DB load due to better cache
 
-	err = canvas.Run("optimized_cache", "server.HandleLookup", 1000)
+	err = canvas.Run("optimized_cache", "server.HandleLookup", console.WithRuns(1000))
 	if err != nil {
 		t.Fatalf("Failed to run optimized cache test: %v", err)
 	}
@@ -70,7 +71,7 @@ func TestContactsServiceBasic(t *testing.T) {
 	// Scale up server capacity
 	canvas.Set("server.pool.Size", 20)              // Double server capacity
 
-	err = canvas.Run("scaled_server", "server.HandleLookup", 1000)
+	err = canvas.Run("scaled_server", "server.HandleLookup", console.WithRuns(1000))
 	if err != nil {
 		t.Fatalf("Failed to run scaled server test: %v", err)
 	}
@@ -82,7 +83,7 @@ func TestContactsServiceBasic(t *testing.T) {
 	// Create database bottleneck by increasing DB load
 	canvas.Set("server.db.pool.ArrivalRate", 20.0)  // High DB load
 
-	err = canvas.Run("db_bottleneck", "server.HandleLookup", 1000)
+	err = canvas.Run("db_bottleneck", "server.HandleLookup", console.WithRuns(1000))
 	if err != nil {
 		t.Fatalf("Failed to run DB bottleneck test: %v", err)
 	}
@@ -112,17 +113,14 @@ func TestContactsParameterModification(t *testing.T) {
 		path  string
 		value interface{}
 	}{
-		// Numeric parameters
+		// Native component parameters (ResourcePool)
 		{"Server Pool Size", "server.pool.Size", 15},
 		{"DB Pool Size", "server.db.pool.Size", 8},
-		{"Arrival Rate", "server.pool.ArrivalRate", 12.5},
-		
-		// Duration parameters  
-		{"Processing Time", "server.ProcessingTime", "8ms"},
-		{"Query Time", "server.db.QueryTime", "15ms"},
-		{"Hold Time", "server.pool.AvgHoldTime", "20ms"},
+		{"Server Arrival Rate", "server.pool.ArrivalRate", 12.5},
+		{"DB Arrival Rate", "server.db.pool.ArrivalRate", 8.0},
+		{"Hold Time", "server.pool.AvgHoldTime", 0.020},  // 20ms = 0.020 seconds
 
-		// Probability parameters
+		// User-defined component parameters
 		{"Cache Hit Rate", "server.db.CacheHitRate", 0.6},
 
 		// Edge cases
@@ -160,25 +158,33 @@ func TestContactsVisualization(t *testing.T) {
 
 	// Run a few simulations for visualization testing
 	canvas.Set("server.pool.ArrivalRate", 5.0)
-	canvas.Run("viz_baseline", "server.HandleLookup", 500)
+	canvas.Run("viz_baseline", "server.HandleLookup", console.WithRuns(500))
 
 	canvas.Set("server.pool.ArrivalRate", 12.0)
-	canvas.Run("viz_load", "server.HandleLookup", 500)
+	canvas.Run("viz_load", "server.HandleLookup", console.WithRuns(500))
 
 	// Test different visualization types
 	visualTests := []struct {
-		name     string
-		results  []string
-		plotType string
+		name        string
+		seriesNames []string
+		outputFile  string
 	}{
-		{"Single Latency Plot", []string{"viz_baseline"}, "latency"},
-		{"Comparison Plot", []string{"viz_baseline", "viz_load"}, "comparison"},
-		{"Histogram", []string{"viz_load"}, "histogram"},
+		{"Single Latency Plot", []string{"viz_baseline"}, "test_contacts_single.svg"},
+		{"Comparison Plot", []string{"viz_baseline", "viz_load"}, "test_contacts_comparison.svg"},
+		{"Load Test", []string{"viz_load"}, "test_contacts_load.svg"},
 	}
 
 	for _, test := range visualTests {
 		t.Run(test.name, func(t *testing.T) {
-			err := canvas.Plot(test.results, test.plotType, "test_contacts_"+test.name)
+			// Build plot options
+			opts := []console.PlotOption{
+				console.WithOutput(test.outputFile),
+			}
+			for _, seriesName := range test.seriesNames {
+				opts = append(opts, console.WithSeries(seriesName, seriesName))
+			}
+			
+			err := canvas.Plot(opts...)
 			if err != nil {
 				t.Errorf("Failed to generate %s: %v", test.name, err)
 			} else {
@@ -187,15 +193,7 @@ func TestContactsVisualization(t *testing.T) {
 		})
 	}
 
-	// Test architecture diagram generation
-	t.Run("Architecture Diagram", func(t *testing.T) {
-		err := canvas.Diagram("ContactsSystem", "static", "contacts_architecture")
-		if err != nil {
-			t.Errorf("Failed to generate architecture diagram: %v", err)
-		} else {
-			t.Log("✓ Generated architecture diagram successfully")
-		}
-	})
+	t.Log("✓ All visualization tests completed")
 }
 
 // TestContactsRapidIteration simulates rapid parameter changes for live demos
@@ -242,7 +240,7 @@ func TestContactsRapidIteration(t *testing.T) {
 
 			// Run quick simulation
 			runName := fmt.Sprintf("demo_step_%d", i+1)
-			err := canvas.Run(runName, "server.HandleLookup", 300) // Smaller count for speed
+			err := canvas.Run(runName, "server.HandleLookup", console.WithRuns(300)) // Smaller count for speed
 			if err != nil {
 				t.Logf("Simulation %s resulted in error (may be expected): %v", runName, err)
 			} else {

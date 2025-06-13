@@ -9,9 +9,8 @@ component ContactDatabase {
     uses index HashIndex                      // Phone number → Contact lookup
     
     param CacheHitRate = 0.4                  // 40% cache hit rate initially
-    param QueryTime = 10ms                    // Base query time
     
-    method LookupByPhone(phoneNumber String) Bool {
+    method LookupByPhone() Bool {
         // Try to acquire database connection
         let acquired = self.pool.Acquire()
         if not acquired {
@@ -29,7 +28,7 @@ component ContactDatabase {
             return true
         } else {
             // Cache miss - query the hash index
-            delay(self.QueryTime)
+            delay(10ms)   // Database query time
             return self.index.Find()
         }
     }
@@ -40,9 +39,7 @@ component ContactAppServer {
     uses db ContactDatabase
     uses pool ResourcePool(Size = 10)        // 10 concurrent request handlers
     
-    param ProcessingTime = 5ms               // Request processing overhead
-    
-    method HandleLookup(phoneNumber String) Bool {
+    method HandleLookup() Bool {
         // Acquire request handler
         let acquired = self.pool.Acquire()
         if not acquired {
@@ -50,14 +47,16 @@ component ContactAppServer {
         }
         
         // Process request overhead
-        delay(self.ProcessingTime)
+        delay(5ms)
         
         // Delegate to database
-        return self.db.LookupByPhone(phoneNumber)
+        return self.db.LookupByPhone()
     }
 }
 
 // Complete contacts lookup system
 system ContactsSystem {
-    use server ContactAppServer
+    use server ContactAppServer(db = database)
+    use database ContactDatabase(index = idx)
+    use idx HashIndex
 }
