@@ -2,14 +2,34 @@
 
 **Primary Focus:** "Building an Open Source System Design Interview Coach With Interactive Simulations"
 
-**🎉 MAJOR MILESTONE ACHIEVED:** Complete web Canvas visualization dashboard implemented and production-ready!
+**MAJOR MILESTONE ACHIEVED:** RESTful Canvas API with production-grade WebSocket integration completed.
 
 This document outlines the workshop-focused development status and next steps for delivering a compelling conference presentation that demonstrates SDL as the ultimate system design interview preparation platform.
 
 ---
 ## Completed
 
-*   **`[COMPLETED]` 🎉 WEB CANVAS VISUALIZATION DASHBOARD - SIMPLE 2-ROW LAYOUT:**
+*   **`[COMPLETED]` RESTful Canvas API Implementation:**
+    *   Complete RESTful endpoints for traffic generation management (AddGenerator, RemoveGenerator, UpdateGenerator, PauseGenerator, ResumeGenerator, StartGenerators, StopGenerators)
+    *   Measurement management API (AddMeasurement, RemoveMeasurement, GetMeasurements) 
+    *   Canvas state management with save/restore functionality for stateless operations
+    *   Thread-safe concurrent access with proper mutex protection
+    *   Eliminated WebSocket brittleness by using HTTP for control operations
+
+*   **`[COMPLETED]` goutils WebSocket Integration:**
+    *   Production-grade WebSocket implementation using goutils library
+    *   Proper lifecycle hooks (OnStart, OnClose, OnTimeout, HandleMessage, Validate)
+    *   Automatic connection management with unique client IDs
+    *   Thread-safe broadcasting to all connected clients
+    *   Clean separation between control plane (HTTP) and data plane (WebSocket)
+
+*   **`[COMPLETED]` Consolidated Web Server Architecture:**
+    *   All HTTP/WebSocket functionality moved to `console/canvas_web.go`
+    *   Simplified serve command that delegates to Canvas web router
+    *   Eliminated code duplication between serve commands
+    *   Better maintainability with single location for web logic
+
+*   **`[COMPLETED]` WEB CANVAS VISUALIZATION DASHBOARD - SIMPLE 2-ROW LAYOUT:**
     *   Complete TypeScript + Tailwind frontend with simple 2-row dynamic "Incredible Machine" layout
     *   **Enhanced System Architecture**: 70% width prominent panel with detailed component visualization and system health dashboard
     *   **Separated Control Panels**: Traffic Generation (top-right) and System Parameters (bottom-right) for organized workflow
@@ -93,9 +113,39 @@ This document outlines the workshop-focused development status and next steps fo
 *   **Netflix Service:** Complex, realistic scenario for advanced demonstrations
 *   **Both scenarios fully tested and workshop-ready**
 
-### 🔄 NEXT LEVEL ENHANCEMENTS (Optional for Conference)
+### CURRENT PRIORITIES
 
-## 4. Enhanced Scenario Library (Nice to Have)
+## 1. Dashboard Integration with RESTful Canvas API
+
+*   **Update Frontend Canvas API Client:**
+    *   Integrate new RESTful endpoints for generator and measurement management
+    *   Replace mock data with real Canvas API calls
+    *   Implement proper error handling and loading states
+    *   Add support for Canvas state management operations
+
+*   **Real-time Dashboard Updates:**
+    *   Connect WebSocket message handling to new Canvas event types
+    *   Update dashboard state from Canvas generators and measurements
+    *   Implement dynamic chart creation based on measurement configs
+    *   Ensure proper UI updates for generator state changes
+
+## 2. Enhanced Testing and Documentation
+
+*   **API Integration Testing:**
+    *   End-to-end testing of RESTful Canvas API with frontend
+    *   WebSocket integration testing with goutils library
+    *   Cross-browser compatibility testing for WebSocket connections
+    *   Load testing for concurrent Canvas sessions
+
+*   **Documentation Updates:**
+    *   API documentation for new RESTful endpoints
+    *   WebSocket event specification and message formats
+    *   Canvas state management and save/restore workflows
+    *   Developer guide for extending Canvas API
+
+### FUTURE ENHANCEMENTS
+
+## 3. Enhanced Scenario Library (Nice to Have)
 
 *   **Additional FAANG Examples:**
     *   Uber dispatch system with geo-location and driver matching
@@ -139,37 +189,33 @@ This document outlines the workshop-focused development status and next steps fo
     *   Advanced aggregator methods (`WaitAll`, `WaitAny`, `Quorum`)
 
 ---
-## 🎪 CONFERENCE SUCCESS METRICS
+## PRODUCTION READINESS STATUS
 
-**✅ ESSENTIAL OUTCOMES ACHIEVED:**
-- ✅ Web dashboard provides flawless real-time parameter modification experience
-- ✅ Interactive visualization creates immediate "aha moments" about queuing theory and capacity limits
-- ✅ SDL positioned as the go-to system design interview preparation platform with both CLI and web interfaces
-- ✅ Production-ready platform ready for open source community engagement
+**ESSENTIAL OUTCOMES ACHIEVED:**
+- RESTful Canvas API eliminates WebSocket brittleness for control operations
+- goutils WebSocket integration provides production-grade real-time communication
+- Consolidated web server architecture improves maintainability
+- Web dashboard provides real-time parameter modification experience
+- Interactive visualization demonstrates queuing theory and capacity limits
+- Production-ready platform ready for deployment and community engagement
 
-**🎯 IMPACT GOALS STATUS:**
-- ✅ **Transform how engineers prepare for system design interviews:** Web dashboard makes complex concepts immediately visible and interactive
-- ✅ **Demonstrate the power of interactive simulation for education:** Real-time parameter changes with instant visual feedback achieved
-- ✅ **Establish SDL as a serious tool for distributed systems modeling:** Professional web interface elevates the platform's credibility
-- ✅ **Generate community interest and contributor engagement:** Polished, feature-complete platform ready for public release
-
-**🚀 CONFERENCE DEMONSTRATION READY:**
+**DEPLOYMENT STATUS:**
 - Single command deployment: `./sdl serve --port 8080`
-- Professional web interface suitable for large-screen presentations
-- Real-time audience interaction capabilities
+- Professional web interface suitable for presentations
 - Multiple demo scenarios available (contacts, Netflix)
-- Comprehensive testing suite ensures reliability
+- Build pipeline and testing suite operational
 
 ---
-## 📅 DEVELOPMENT TIMELINE
+## DEVELOPMENT TIMELINE
 
-**✅ COMPLETED:** Web Canvas visualization dashboard implementation
-**✅ COMPLETED:** Canvas API validation and comprehensive testing
-**✅ COMPLETED:** Production-ready web stack with TypeScript + Tailwind frontend
-**✅ COMPLETED:** Real-time WebSocket communication and Chart.js visualization
-**✅ COMPLETED:** Multi-scenario demonstration capabilities (contacts + Netflix)
+**COMPLETED:** RESTful Canvas API with traffic generation and measurement management
+**COMPLETED:** goutils WebSocket integration with production-grade connection handling  
+**COMPLETED:** Consolidated web server architecture in console/canvas_web.go
+**COMPLETED:** Web Canvas visualization dashboard with 2-row layout
+**COMPLETED:** Canvas API validation and comprehensive testing
+**COMPLETED:** Production-ready web stack with TypeScript + Tailwind frontend
+**COMPLETED:** Multi-scenario demonstration capabilities (contacts + Netflix)
 
-**🎯 CONFERENCE READY:** Primary workshop tooling objectives achieved ahead of schedule!
-
-**Conference Day:** Deliver compelling workshop demonstrating SDL's interview coaching capabilities using production-ready web dashboard
-**Post-Conference:** Community building, enhanced scenario library, advanced visualization features
+**CURRENT PHASE:** Frontend integration with new RESTful Canvas API
+**NEXT PHASE:** Enhanced testing and documentation for production deployment
+**FUTURE WORK:** Advanced visualization features and scenario library expansion

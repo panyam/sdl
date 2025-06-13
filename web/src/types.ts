@@ -46,7 +46,10 @@ export interface SeriesInfo {
 
 // WebSocket message types
 export interface WebSocketMessage {
-  type: 'fileLoaded' | 'systemActivated' | 'parameterChanged' | 'simulationCompleted' | 'plotGenerated';
+  type: 'fileLoaded' | 'systemActivated' | 'parameterChanged' | 'simulationCompleted' | 'plotGenerated' |
+        'generatorAdded' | 'generatorUpdated' | 'generatorRemoved' | 'generatorPaused' | 'generatorResumed' |
+        'generatorsStarted' | 'generatorsStopped' | 'measurementAdded' | 'measurementUpdated' | 
+        'measurementRemoved' | 'stateRestored';
   [key: string]: any;
 }
 
@@ -98,4 +101,35 @@ export interface ParameterConfig {
   max?: number;
   step?: number;
   value: any;
+}
+
+// Canvas API types matching Go backend
+export interface GeneratorConfig {
+  id: string;
+  name: string;
+  target: string;
+  rate: number;
+  duration?: number; // in milliseconds
+  enabled: boolean;
+  options?: Record<string, any>;
+}
+
+export interface MeasurementConfig {
+  id: string;
+  name: string;
+  metricType: string; // "latency", "throughput", "errors", etc.
+  target: string;
+  interval: number; // in milliseconds
+  enabled: boolean;
+  options?: Record<string, any>;
+}
+
+export interface CanvasState {
+  loadedFiles: string[];
+  activeFile: string;
+  activeSystem: string;
+  generators: Record<string, GeneratorConfig>;
+  measurements: Record<string, MeasurementConfig>;
+  sessionVars: Record<string, any>;
+  lastRunResult?: any;
 }

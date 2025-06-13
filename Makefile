@@ -1,5 +1,5 @@
 
-sdl:
+bin:
 	cd parser && make build
 	go build -o ${GOBIN}/sdl ./cmd/sdl/main.go
 

@@ -30,91 +30,83 @@ export class Dashboard {
         cacheHitRate: 0.4,
         dbConnections: '0/5'
       },
-      dynamicCharts: {
-        'server.HandleLookup.p95Latency': {
-          chartName: 'server-latency',
-          metricName: 'server.HandleLookup.p95Latency',
-          data: [],
-          labels: [],
-          title: 'Server P95 Latency'
-        },
-        'server.HandleLookup.qps': {
-          chartName: 'server-qps',
-          metricName: 'server.HandleLookup.qps',
-          data: [],
-          labels: [],
-          title: 'Server QPS'
-        },
-        'database.QueryContact.p95Latency': {
-          chartName: 'db-latency',
-          metricName: 'database.QueryContact.p95Latency',
-          data: [],
-          labels: [],
-          title: 'Database P95 Latency'
-        },
-        'server.HandleLookup.errorRate': {
-          chartName: 'server-errors',
-          metricName: 'server.HandleLookup.errorRate',
-          data: [],
-          labels: [],
-          title: 'Server Error Rate'
-        },
-        'database.QueryContact.qps': {
-          chartName: 'db-qps',
-          metricName: 'database.QueryContact.qps',
-          data: [],
-          labels: [],
-          title: 'Database QPS'
-        },
-        'cache.HitRate.percentage': {
-          chartName: 'cache-hit',
-          metricName: 'cache.HitRate.percentage',
-          data: [],
-          labels: [],
-          title: 'Cache Hit Rate %'
-        },
-        'server.HandleLookup.p99Latency': {
-          chartName: 'server-p99',
-          metricName: 'server.HandleLookup.p99Latency',
-          data: [],
-          labels: [],
-          title: 'Server P99 Latency'
-        },
-        'network.bandwidth.utilization': {
-          chartName: 'network-util',
-          metricName: 'network.bandwidth.utilization',
-          data: [],
-          labels: [],
-          title: 'Network Utilization %'
-        },
-        'memory.heap.usage': {
-          chartName: 'memory-heap',
-          metricName: 'memory.heap.usage',
-          data: [],
-          labels: [],
-          title: 'Heap Memory Usage MB'
-        }
-      },
-      generateCalls: [
-        {
-          id: 'lookup-traffic',
-          name: 'Contact Lookup Traffic',
-          target: 'server.HandleLookup',
-          rate: 5.0,
-          enabled: true
-        },
-        {
-          id: 'bulk-traffic',
-          name: 'Bulk Load Traffic',
-          target: 'server.HandleBulk',
-          rate: 1.0,
-          enabled: false
-        }
-      ]
+      dynamicCharts: {},
+      generateCalls: []
     };
 
     this.setupEventListeners();
-    this.render();
+    this.initialize();
+  }
+
+  private async initialize() {
+    try {
+      // Load current Canvas state
+      await this.loadCanvasState();
+      
+      // Load contacts service if no file is currently loaded
+      if (!this.state.currentFile) {
+        await this.loadContactsService();
+      }
+      
+      this.render();
+    } catch (error) {
+      console.error('❌ Failed to initialize dashboard:', error);
+      this.render(); // Render anyway with empty state
+    }
+  }
+
+  private async loadCanvasState() {
+    try {
+      const stateResponse = await this.api.getState();
+      if (stateResponse.success && stateResponse.data) {
+        const canvasState = stateResponse.data;
+        
+        // Update dashboard state from Canvas state
+        this.state.currentFile = canvasState.activeFile;
+        this.state.currentSystem = canvasState.activeSystem;
+        
+        // Convert Canvas generators to dashboard generate calls
+        this.state.generateCalls = Object.values(canvasState.generators || {}).map(gen => ({
+          id: gen.id,
+          name: gen.name,
+          target: gen.target,
+          rate: gen.rate,
+          enabled: gen.enabled
+        }));
+      }
+
+      // Load generators from API
+      const generatorsResponse = await this.api.getGenerators();
+      if (generatorsResponse.success && generatorsResponse.data) {
+        this.state.generateCalls = Object.values(generatorsResponse.data).map(gen => ({
+          id: gen.id,
+          name: gen.name,
+          target: gen.target,
+          rate: gen.rate,
+          enabled: gen.enabled
+        }));
+      }
+
+      // Load measurements and create dynamic charts
+      const measurementsResponse = await this.api.getMeasurements();
+      if (measurementsResponse.success && measurementsResponse.data) {
+        // Convert measurements to dynamic charts
+        Object.values(measurementsResponse.data).forEach(measurement => {
+          if (measurement.enabled) {
+            this.state.dynamicCharts[measurement.metricType] = {
+              chartName: measurement.id,
+              metricName: measurement.metricType,
+              data: [],
+              labels: [],
+              title: measurement.name
+            };
+          }
+        });
+      }
+
+    } catch (error) {
+      console.error('❌ Failed to load Canvas state:', error);
+    }
   }
 
   private setupEventListeners() {

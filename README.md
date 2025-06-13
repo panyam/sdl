@@ -2,7 +2,7 @@
 
 A specialized language and toolchain for modeling, simulating, and analyzing the performance characteristics of distributed systems.
 
-## 🎯 What is SDL?
+## What is SDL?
 
 SDL enables rapid analysis of system designs through:
 - **Performance modeling** with latency and availability distributions
@@ -10,6 +10,8 @@ SDL enables rapid analysis of system designs through:
 - **Bottleneck identification** under different loads
 - **SLO evaluation** and performance exploration
 - **Interactive analysis** with parameter modification
+- **Real-time visualization** with web dashboard
+- **RESTful API** for traffic generation and measurement management
 - **Diagram generation** from system definitions
 
 ## 🚀 Quick Start
@@ -168,10 +170,45 @@ Navigate to `http://localhost:8080` for the **"Incredible Machine"** experience:
 - **Live Performance Feedback:** WebSocket-powered real-time updates
 - **Proper Panel Clipping:** All content contained within panel boundaries
 
-### CLI-Based Analysis
+### Canvas API for Advanced Analysis
 
-SDL also provides a powerful Canvas API for command-line analysis:
+SDL's Canvas API provides stateful, RESTful session management for complex analysis workflows:
 
+#### RESTful Traffic Generation API
+```bash
+# Add traffic generators
+curl -X POST http://localhost:8080/api/canvas/generators \
+  -d '{"id":"load1", "name":"Peak Traffic", "target":"app.HandleRequest", "rate":100, "enabled":true}'
+
+# Control generators  
+curl -X POST http://localhost:8080/api/canvas/generators/start
+curl -X POST http://localhost:8080/api/canvas/generators/load1/pause
+
+# Get current state
+curl http://localhost:8080/api/canvas/generators
+```
+
+#### Measurement Management
+```bash
+# Add measurements
+curl -X POST http://localhost:8080/api/canvas/measurements \
+  -d '{"id":"latency1", "name":"Response Latency", "metricType":"latency", "target":"app", "interval":1000, "enabled":true}'
+
+# View measurements
+curl http://localhost:8080/api/canvas/measurements
+```
+
+#### Canvas State Management
+```bash
+# Save current Canvas state
+curl -X POST http://localhost:8080/api/canvas/state
+
+# Restore previous state  
+curl -X POST http://localhost:8080/api/canvas/state/restore \
+  -d '{"loadedFiles":["app.sdl"], "activeSystem":"WebApp", "generators":{...}}'
+```
+
+#### CLI Integration
 ```bash
 # Load and modify systems interactively
 sdl execute analysis.recipe
@@ -396,13 +433,48 @@ See `SUMMARY.md` files in each package for detailed technical documentation:
 - Generate diagrams that stay synchronized with models
 - Share performance assumptions across teams
 
-## 🔮 Roadmap
+## Technical Architecture
+
+### Canvas API Design
+
+SDL's Canvas API follows RESTful principles with WebSocket integration for optimal performance:
+
+- **Control Plane (HTTP)**: All configuration operations use RESTful endpoints
+  - Traffic generator management: `POST /api/canvas/generators`
+  - Measurement configuration: `POST /api/canvas/measurements`  
+  - Canvas state operations: `GET/POST /api/canvas/state`
+- **Data Plane (WebSocket)**: Real-time updates only
+  - Live metrics broadcasting
+  - Parameter change notifications
+  - Generator status updates
+
+### Web Server Architecture
+
+Consolidated web server implementation in `console/canvas_web.go`:
+
+- **goutils WebSocket Integration**: Production-grade WebSocket handling with lifecycle hooks
+- **Thread-safe Connection Management**: Concurrent client handling with proper synchronization
+- **RESTful API Design**: Stateless operations with full Canvas state management
+- **Single Binary Deployment**: Complete frontend bundled with Go backend
+
+### Frontend Architecture
+
+TypeScript + Tailwind frontend with professional 2-row layout:
+
+- **Row 1**: System Architecture (70% width) + Traffic/Parameter Controls (30% width)
+- **Row 2**: Dynamic metrics grid with unlimited scrollable charts
+- **Real-time Updates**: WebSocket-powered live data visualization
+- **Type-safe Communication**: Shared TypeScript interfaces with Go backend
+
+## Roadmap
 
 See [NEXTSTEPS.md](NEXTSTEPS.md) for detailed development plans:
 
-- **✅ Capacity Modeling**: M/M/c queuing theory implementation (completed)
-- **🚧 Recipe Runner**: `sdl execute` command for interactive workflows  
-- **📋 Planned**: Full concurrency modeling with `gobatch` parallelism
+- **COMPLETED**: RESTful Canvas API with traffic generation and measurement management
+- **COMPLETED**: goutils WebSocket integration with production-grade connection handling
+- **COMPLETED**: Consolidated web server architecture and 2-row dashboard layout
+- **CURRENT**: Frontend integration with new RESTful Canvas API
+- **NEXT**: Enhanced testing and documentation for production deployment
 
 ## 📄 License
 

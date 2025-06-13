@@ -25,6 +25,8 @@ type Canvas struct {
 	activeSystem *runtime.SystemInstance
 	sessionVars  map[string]any
 	loadedFiles  map[string]*loader.FileStatus
+	genManager   *generatorManager
+	measManager  *measurementManager
 }
 
 // NewCanvas creates a new interactive canvas session.
