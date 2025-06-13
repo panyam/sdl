@@ -365,3 +365,61 @@ func WithOutput(path string) PlotOption {
 		cfg.OutputFile = path
 	}
 }
+
+// SystemDiagram represents the topology of a system using viz package types
+type SystemDiagram struct {
+	SystemName string     `json:"systemName"`
+	Nodes      []viz.Node `json:"nodes"`
+	Edges      []viz.Edge `json:"edges"`
+}
+
+// GetSystemDiagram returns the topology of the currently active system
+func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
+	if c.activeSystem == nil {
+		return nil, fmt.Errorf("no active system set. Use Load() and Use() commands first")
+	}
+
+	systemName := c.activeSystem.System.Name.Value
+	
+	// Extract nodes and edges from the system declaration
+	var nodes []viz.Node
+	var edges []viz.Edge
+	instanceNameToID := make(map[string]string)
+
+	// Build nodes from instance declarations
+	for _, item := range c.activeSystem.System.Body {
+		if instDecl, ok := item.(*decl.InstanceDecl); ok {
+			nodeID := instDecl.Name.Value
+			instanceNameToID[nodeID] = nodeID
+			nodes = append(nodes, viz.Node{
+				ID:   nodeID,
+				Name: instDecl.Name.Value,
+				Type: instDecl.ComponentName.Value,
+			})
+		}
+	}
+
+	// Build edges from instance overrides/dependencies
+	for _, item := range c.activeSystem.System.Body {
+		if instDecl, ok := item.(*decl.InstanceDecl); ok {
+			fromNodeID := instanceNameToID[instDecl.Name.Value]
+			for _, assignment := range instDecl.Overrides {
+				if targetIdent, okIdent := assignment.Value.(*decl.IdentifierExpr); okIdent {
+					if toNodeID, isInstance := instanceNameToID[targetIdent.Value]; isInstance {
+						edges = append(edges, viz.Edge{
+							FromID: fromNodeID,
+							ToID:   toNodeID,
+							Label:  assignment.Var.Value,
+						})
+					}
+				}
+			}
+		}
+	}
+
+	return &SystemDiagram{
+		SystemName: systemName,
+		Nodes:      nodes,
+		Edges:      edges,
+	}, nil
+}

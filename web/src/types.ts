@@ -86,10 +86,7 @@ export interface SystemMetrics {
   load: number;
   latency: number;
   successRate: number;
-  serverUtilization: number;
-  dbUtilization: number;
-  cacheHitRate: number;
-  dbConnections: string;
+  [key: string]: any; // Allow dynamic metrics
 }
 
 // Component parameter types
@@ -132,4 +129,23 @@ export interface CanvasState {
   measurements: Record<string, MeasurementConfig>;
   sessionVars: Record<string, any>;
   lastRunResult?: any;
+}
+
+// System diagram types (matching viz package)
+export interface SystemDiagram {
+  systemName: string;
+  nodes: SystemNode[];
+  edges: SystemEdge[];
+}
+
+export interface SystemNode {
+  ID: string;
+  Name: string;
+  Type: string;
+}
+
+export interface SystemEdge {
+  FromID: string;
+  ToID: string;
+  Label: string;
 }

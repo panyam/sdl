@@ -8,7 +8,8 @@ import {
   WebSocketMessage,
   GeneratorConfig,
   MeasurementConfig,
-  CanvasState
+  CanvasState,
+  SystemDiagram
 } from './types.js';
 
 const API_BASE = '/api';
@@ -53,6 +54,10 @@ export class CanvasAPI {
   // Canvas state management
   async getState(): Promise<APIResponse<CanvasState>> {
     return this.get('/canvas/state');
+  }
+
+  async getDiagram(): Promise<APIResponse<SystemDiagram>> {
+    return this.get('/canvas/diagram');
   }
 
   async saveState(): Promise<APIResponse<CanvasState>> {

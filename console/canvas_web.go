@@ -321,6 +321,9 @@ func (ws *WebServer) setupCanvasAPIRoutes(router *mux.Router) {
 	router.HandleFunc("/api/canvas/state", ws.handleGetState).Methods("GET")
 	router.HandleFunc("/api/canvas/state", ws.handleSaveState).Methods("POST")
 	router.HandleFunc("/api/canvas/state/restore", ws.handleRestoreState).Methods("POST")
+	
+	// System diagram
+	router.HandleFunc("/api/canvas/diagram", ws.handleGetDiagram).Methods("GET")
 
 	// Generator management (RESTful)
 	router.HandleFunc("/api/canvas/generators", ws.handleGetGenerators).Methods("GET")
@@ -583,6 +586,16 @@ func (ws *WebServer) handleRestoreState(w http.ResponseWriter, r *http.Request) 
 	ws.broadcast("stateRestored", map[string]interface{}{
 		"state": state,
 	})
+}
+
+func (ws *WebServer) handleGetDiagram(w http.ResponseWriter, r *http.Request) {
+	diagram, err := ws.canvas.GetSystemDiagram()
+	if err != nil {
+		ws.sendError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	ws.sendSuccess(w, diagram)
 }
 
 // Utility methods

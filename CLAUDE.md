@@ -6,3 +6,4 @@ Also be conservative on how many comments are you are adding or modifying unless
 When modifying files just focus on areas where the change is required instead of diving into a full fledged refactor.
 Make sure you ignore node_modules as it has a lot of files you wont need for most things
 When updating .md files and in commit messages use emojis and flowerly languages sparingly.  We dont want to be too grandios or overpromising.
+Make sure the playwright tool is setup so you can inspect the browser when we are implementing and testing the Dashboard features.

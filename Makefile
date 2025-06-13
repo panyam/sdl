@@ -1,6 +1,7 @@
 
 bin:
 	cd parser && make build
+	cd web ; npm run build
 	go build -o ${GOBIN}/sdl ./cmd/sdl/main.go
 
 run:

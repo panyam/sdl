@@ -21,15 +21,20 @@ The SDL Web Dashboard provides an interactive "Incredible Machine" style interfa
 The dashboard features a carefully designed 2-row layout that maximizes both system visualization and metrics analysis:
 
 **Row 1 (45% height): System Architecture + Split Controls**
-- **Left Panel (70% width)**: Enhanced System Architecture with prominent component visualization
+- **Left Panel (70% width)**: Enhanced System Architecture with full component topology visualization
+  - Displays complete system structure from Canvas API
+  - Shows all components, connections, and dependencies
+  - Matches output of `sdl diagram` command
+  - Dynamically updates based on loaded SDL file
 - **Right Side (30% width)**: Vertically split into two panels:
-  - **Top Panel (48% height)**: Traffic Generation controls
-  - **Bottom Panel (48% height)**: System Parameters controls
+  - **Top Panel (48% height)**: Traffic Generation controls with Start/Stop functionality
+  - **Bottom Panel (48% height)**: System Parameters controls for real-time modification
 
 **Row 2 (45% height): Dynamic Metrics Grid**
 - **Unlimited Scrollable Charts**: Supports infinite metrics via `canvas.Measure()` calls
 - **3-Column Responsive Grid**: Automatically adapts to screen size
 - **Proper Clipping**: All content contained within panel boundaries
+- **Empty State**: Dashboard starts empty until Canvas state is loaded
 
 ### Key Components
 
@@ -40,9 +45,12 @@ The dashboard features a carefully designed 2-row layout that maximizes both sys
 - **Parameter Control**: Manages real-time system parameter modification
 
 #### Canvas API Client (`src/canvas-api.ts`)
-- **HTTP API Wrapper**: Type-safe interface to backend Canvas operations
+- **RESTful API Integration**: Full implementation of Canvas REST endpoints
 - **WebSocket Client**: Manages real-time bidirectional communication
-- **Error Handling**: Robust error management for API calls
+- **State Management**: Handles Canvas state save/restore operations
+- **Traffic Generation**: Complete generator lifecycle management
+- **Measurement Control**: Dynamic chart creation from Canvas measurements
+- **Error Handling**: Robust error management for all API operations
 
 #### Type System (`src/types.ts`)
 - **Shared Data Structures**: Type-safe communication with Go backend
@@ -74,8 +82,10 @@ The dashboard features a carefully designed 2-row layout that maximizes both sys
 ### Initialization Flow
 1. **Load Application**: TypeScript bundle loads in browser
 2. **Establish WebSocket**: Connect to backend for real-time updates
-3. **Initialize Canvas**: Set up Chart.js instances for metrics visualization
-4. **Render UI**: Display 2-row layout with all panels
+3. **Load Canvas State**: Fetch current Canvas state via REST API
+4. **Initialize System**: Display system architecture if Canvas has active system
+5. **Setup Generators**: Load any existing traffic generators and measurements
+6. **Render UI**: Display 2-row layout with populated or empty panels
 
 ### Parameter Modification Flow
 1. **User Interaction**: Slider movement or checkbox toggle
