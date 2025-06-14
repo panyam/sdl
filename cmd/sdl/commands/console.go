@@ -10,7 +10,6 @@ import (
 	"os/signal"
 	"os/user"
 	"path/filepath"
-	"reflect"
 	"strconv"
 	"strings"
 	"syscall"
@@ -18,7 +17,6 @@ import (
 
 	"github.com/c-bata/go-prompt"
 	"github.com/panyam/sdl/console"
-	"github.com/panyam/sdl/loader"
 	"github.com/spf13/cobra"
 )
 
@@ -453,13 +451,8 @@ func getSystemSuggestions(prefix string) []prompt.Suggest {
 		return suggestions
 	}
 	
-	state, err := currentCanvas.Save()
-	if err != nil || len(state.LoadedFiles) == 0 {
-		return suggestions
-	}
-	
-	// Get systems from loaded files by accessing the Canvas's loadedFiles
-	systemNames := getSystemNamesFromCanvas(currentCanvas)
+	// Get system names directly from Canvas using the new public method
+	systemNames := currentCanvas.GetAvailableSystemNames()
 	
 	for _, systemName := range systemNames {
 		suggestions = append(suggestions, prompt.Suggest{
@@ -471,41 +464,6 @@ func getSystemSuggestions(prefix string) []prompt.Suggest {
 	return prompt.FilterHasPrefix(suggestions, prefix, true)
 }
 
-// getSystemNamesFromCanvas extracts all system names from loaded files
-func getSystemNamesFromCanvas(canvas *console.Canvas) []string {
-	var systemNames []string
-	
-	// We need to access the Canvas's private loadedFiles field using reflection
-	// since it's not exposed via public methods
-	canvasValue := reflect.ValueOf(canvas).Elem()
-	loadedFilesField := canvasValue.FieldByName("loadedFiles")
-	
-	if !loadedFilesField.IsValid() || loadedFilesField.IsNil() {
-		return systemNames
-	}
-	
-	// loadedFiles is map[string]*loader.FileStatus
-	loadedFilesMap := loadedFilesField.Interface().(map[string]*loader.FileStatus)
-	
-	for _, fileStatus := range loadedFilesMap {
-		if fileStatus == nil || fileStatus.FileDecl == nil {
-			continue
-		}
-		
-		// Get systems from this file
-		systems, err := fileStatus.FileDecl.GetSystems()
-		if err != nil {
-			continue // Skip files with errors
-		}
-		
-		// Add system names to our list
-		for _, system := range systems {
-			systemNames = append(systemNames, system.Name.Value)
-		}
-	}
-	
-	return systemNames
-}
 
 func getParameterPathSuggestions(prefix string) []prompt.Suggest {
 	suggestions := []prompt.Suggest{}

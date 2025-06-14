@@ -384,6 +384,31 @@ type SystemDiagram struct {
 	Edges      []viz.Edge `json:"edges"`
 }
 
+// GetAvailableSystemNames returns all system names from loaded SDL files
+func (c *Canvas) GetAvailableSystemNames() []string {
+	var systemNames []string
+	
+	// Iterate through all loaded files
+	for _, fileStatus := range c.loadedFiles {
+		if fileStatus == nil || fileStatus.FileDecl == nil {
+			continue
+		}
+		
+		// Get systems from this file
+		systems, err := fileStatus.FileDecl.GetSystems()
+		if err != nil {
+			continue // Skip files with errors
+		}
+		
+		// Add system names to our list
+		for _, system := range systems {
+			systemNames = append(systemNames, system.Name.Value)
+		}
+	}
+	
+	return systemNames
+}
+
 // GetSystemDiagram returns the topology of the currently active system
 func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
 	if c.activeSystem == nil {
