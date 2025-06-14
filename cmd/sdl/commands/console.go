@@ -95,6 +95,14 @@ var commands = []commandInfo{
 	{Name: "run", Description: "Run simulation", Usage: "run <var> <target> [runs]", MinArgs: 2},
 	{Name: "execute", Description: "Execute commands from a recipe file", Usage: "execute <recipe_file>", MinArgs: 1},
 	{Name: "state", Description: "Show current Canvas state", Usage: "state", MinArgs: 0},
+	{Name: "gen-add", Description: "Add traffic generator", Usage: "gen-add <id> <target> <rate>", MinArgs: 3},
+	{Name: "gen-list", Description: "List all traffic generators", Usage: "gen-list", MinArgs: 0},
+	{Name: "gen-remove", Description: "Remove traffic generator", Usage: "gen-remove <id>", MinArgs: 1},
+	{Name: "gen-start", Description: "Start all traffic generators", Usage: "gen-start", MinArgs: 0},
+	{Name: "gen-stop", Description: "Stop all traffic generators", Usage: "gen-stop", MinArgs: 0},
+	{Name: "gen-pause", Description: "Pause traffic generator", Usage: "gen-pause <id>", MinArgs: 1},
+	{Name: "gen-resume", Description: "Resume traffic generator", Usage: "gen-resume <id>", MinArgs: 1},
+	{Name: "gen-modify", Description: "Modify traffic generator", Usage: "gen-modify <id> <field> <value>", MinArgs: 3},
 	{Name: "exit", Description: "Exit the console", Usage: "exit", MinArgs: 0},
 	{Name: "quit", Description: "Exit the console", Usage: "quit", MinArgs: 0},
 }
@@ -289,6 +297,27 @@ func completer(d prompt.Document) []prompt.Suggest {
 	case "execute":
 		if argIndex == 1 {
 			return getFileSuggestions(word, ".txt")
+		}
+	case "gen-remove", "gen-pause", "gen-resume":
+		if argIndex == 1 {
+			return getGeneratorIDSuggestions(word)
+		}
+	case "gen-modify":
+		if argIndex == 1 {
+			return getGeneratorIDSuggestions(word)
+		} else if argIndex == 2 {
+			return getGeneratorFieldSuggestions(word)
+		}
+	case "gen-add":
+		if argIndex == 2 {
+			return getTargetSuggestions(word)
+		} else if argIndex == 3 {
+			return []prompt.Suggest{
+				{Text: "10", Description: "10 requests per second"},
+				{Text: "25", Description: "25 requests per second"},
+				{Text: "50", Description: "50 requests per second"},
+				{Text: "100", Description: "100 requests per second"},
+			}
 		}
 	}
 	
@@ -536,6 +565,39 @@ func getTargetSuggestions(prefix string) []prompt.Suggest {
 	return prompt.FilterHasPrefix(targets, prefix, true)
 }
 
+func getGeneratorIDSuggestions(prefix string) []prompt.Suggest {
+	suggestions := []prompt.Suggest{}
+	
+	if currentCanvas == nil {
+		return suggestions
+	}
+	
+	generators := currentCanvas.GetGenerators()
+	for id, gen := range generators {
+		status := "paused"
+		if gen.Enabled {
+			status = "running"
+		}
+		suggestions = append(suggestions, prompt.Suggest{
+			Text:        id,
+			Description: fmt.Sprintf("%s -> %s (%s)", gen.Name, gen.Target, status),
+		})
+	}
+	
+	return prompt.FilterHasPrefix(suggestions, prefix, true)
+}
+
+func getGeneratorFieldSuggestions(prefix string) []prompt.Suggest {
+	suggestions := []prompt.Suggest{
+		{Text: "rate", Description: "Requests per second"},
+		{Text: "target", Description: "Target component method"},
+		{Text: "name", Description: "Generator display name"},
+		{Text: "enabled", Description: "Enable/disable generator (true/false)"},
+	}
+	
+	return prompt.FilterHasPrefix(suggestions, prefix, true)
+}
+
 func executor(line string) {
 	line = strings.TrimSpace(line)
 	if line == "" {
@@ -704,6 +766,46 @@ func executeCommand(canvas *console.Canvas, line string) error {
 		}
 		return executeRecipe(canvas, args[0])
 		
+	// Generator management commands
+	case "gen-add":
+		if len(args) < 3 {
+			return fmt.Errorf("usage: gen-add <id> <target> <rate>")
+		}
+		return handleGenAdd(canvas, args)
+		
+	case "gen-list":
+		return handleGenList(canvas)
+		
+	case "gen-remove":
+		if len(args) < 1 {
+			return fmt.Errorf("usage: gen-remove <id>")
+		}
+		return handleGenRemove(canvas, args[0])
+		
+	case "gen-start":
+		return handleGenStart(canvas)
+		
+	case "gen-stop":
+		return handleGenStop(canvas)
+		
+	case "gen-pause":
+		if len(args) < 1 {
+			return fmt.Errorf("usage: gen-pause <id>")
+		}
+		return handleGenPause(canvas, args[0])
+		
+	case "gen-resume":
+		if len(args) < 1 {
+			return fmt.Errorf("usage: gen-resume <id>")
+		}
+		return handleGenResume(canvas, args[0])
+		
+	case "gen-modify":
+		if len(args) < 3 {
+			return fmt.Errorf("usage: gen-modify <id> <field> <value>")
+		}
+		return handleGenModify(canvas, args)
+		
 	default:
 		return fmt.Errorf("unknown command: %s (type 'help' for available commands)", command)
 	}
@@ -712,6 +814,7 @@ func executeCommand(canvas *console.Canvas, line string) error {
 func showHelp() {
 	fmt.Printf(`Available commands:
 
+Core Commands:
   help                        Show this help message
   load <file_path>           Load an SDL file
   use <system_name>          Activate a system from loaded file
@@ -721,6 +824,16 @@ func showHelp() {
   state                      Show current Canvas state
   !<shell_command>           Execute shell command (e.g., !ls, !git status)
   exit, quit                 Exit the console (or press Ctrl+D)
+
+Traffic Generator Commands:
+  gen-add <id> <target> <rate>     Add traffic generator
+  gen-list                         List all traffic generators
+  gen-remove <id>                  Remove traffic generator
+  gen-start                        Start all traffic generators
+  gen-stop                         Stop all traffic generators
+  gen-pause <id>                   Pause specific traffic generator
+  gen-resume <id>                  Resume specific traffic generator
+  gen-modify <id> <field> <value>  Modify generator (fields: rate, target, name, enabled)
 
 Navigation:
   ↑↓                         Navigate through command history (persistent across sessions)
@@ -740,11 +853,14 @@ Examples:
   SDL> load examples/contacts/contacts.sdl
   SDL> use ContactsSystem
   SDL> set server.pool.ArrivalRate 15
+  SDL> gen-add load1 server.HandleLookup 10
+  SDL> gen-list
+  SDL> gen-start
   SDL> run latest server.HandleLookup 2000
+  SDL> gen-modify load1 rate 25
+  SDL> gen-stop
   SDL> execute examples/demo_recipe.txt
   SDL> !ls -la
-  SDL> !git status
-  SDL> !ps aux | grep sdl
 
 `)
 }
@@ -797,6 +913,145 @@ func executeRecipe(canvas *console.Canvas, filePath string) error {
 	}
 	
 	fmt.Printf("✅ Recipe completed successfully\n")
+	return nil
+}
+
+// Generator management functions
+func handleGenAdd(canvas *console.Canvas, args []string) error {
+	id := args[0]
+	target := args[1]
+	rateStr := args[2]
+	
+	rate, err := strconv.Atoi(rateStr)
+	if err != nil {
+		return fmt.Errorf("invalid rate '%s': must be a number", rateStr)
+	}
+	
+	config := &console.GeneratorConfig{
+		ID:      id,
+		Name:    fmt.Sprintf("Generator-%s", id),
+		Target:  target,
+		Rate:    rate,
+		Enabled: true,
+	}
+	
+	if err := canvas.AddGenerator(config); err != nil {
+		return err
+	}
+	
+	fmt.Printf("✅ Added generator: %s -> %s at %d rps\n", id, target, rate)
+	return nil
+}
+
+func handleGenList(canvas *console.Canvas) error {
+	generators := canvas.GetGenerators()
+	
+	if len(generators) == 0 {
+		fmt.Println("📋 No traffic generators configured")
+		return nil
+	}
+	
+	fmt.Printf("📋 Traffic Generators (%d):\n", len(generators))
+	for id, gen := range generators {
+		status := "⏸️ paused"
+		if gen.Enabled {
+			status = "▶️ running"
+		}
+		fmt.Printf("  %s: %s -> %s (%d rps) [%s]\n", id, gen.Name, gen.Target, gen.Rate, status)
+	}
+	return nil
+}
+
+func handleGenRemove(canvas *console.Canvas, id string) error {
+	if err := canvas.RemoveGenerator(id); err != nil {
+		return err
+	}
+	
+	fmt.Printf("✅ Removed generator: %s\n", id)
+	return nil
+}
+
+func handleGenStart(canvas *console.Canvas) error {
+	if err := canvas.StartGenerators(); err != nil {
+		return err
+	}
+	
+	fmt.Println("✅ Started all traffic generators")
+	return nil
+}
+
+func handleGenStop(canvas *console.Canvas) error {
+	if err := canvas.StopGenerators(); err != nil {
+		return err
+	}
+	
+	fmt.Println("✅ Stopped all traffic generators")
+	return nil
+}
+
+func handleGenPause(canvas *console.Canvas, id string) error {
+	if err := canvas.PauseGenerator(id); err != nil {
+		return err
+	}
+	
+	fmt.Printf("✅ Paused generator: %s\n", id)
+	return nil
+}
+
+func handleGenResume(canvas *console.Canvas, id string) error {
+	if err := canvas.ResumeGenerator(id); err != nil {
+		return err
+	}
+	
+	fmt.Printf("✅ Resumed generator: %s\n", id)
+	return nil
+}
+
+func handleGenModify(canvas *console.Canvas, args []string) error {
+	id := args[0]
+	field := args[1] 
+	valueStr := args[2]
+	
+	// Get current generator
+	generators := canvas.GetGenerators()
+	gen, exists := generators[id]
+	if !exists {
+		return fmt.Errorf("generator '%s' not found", id)
+	}
+	
+	// Create a copy to modify
+	newGen := *gen
+	
+	switch field {
+	case "rate":
+		rate, err := strconv.Atoi(valueStr)
+		if err != nil {
+			return fmt.Errorf("invalid rate '%s': must be a number", valueStr)
+		}
+		newGen.Rate = rate
+		
+	case "target":
+		newGen.Target = valueStr
+		
+	case "name":
+		newGen.Name = valueStr
+		
+	case "enabled":
+		enabled, err := strconv.ParseBool(valueStr)
+		if err != nil {
+			return fmt.Errorf("invalid enabled value '%s': must be true or false", valueStr)
+		}
+		newGen.Enabled = enabled
+		
+	default:
+		return fmt.Errorf("unknown field '%s'. Available fields: rate, target, name, enabled", field)
+	}
+	
+	if err := canvas.UpdateGenerator(&newGen); err != nil {
+		return err
+	}
+	
+	fmt.Printf("✅ Modified generator %s: %s = %s\n", id, field, valueStr)
 	return nil
 }
 
