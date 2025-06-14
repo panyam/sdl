@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/panyam/sdl/console"
 	"github.com/spf13/cobra"
@@ -176,6 +177,12 @@ func executeCommand(canvas *console.Canvas, line string) error {
 		fmt.Printf("  Measurements: %d\n", len(state.Measurements))
 		return nil
 		
+	case "execute":
+		if len(args) < 1 {
+			return fmt.Errorf("usage: execute <recipe_file>")
+		}
+		return executeRecipe(canvas, args[0])
+		
 	default:
 		return fmt.Errorf("unknown command: %s (type 'help' for available commands)", command)
 	}
@@ -189,6 +196,7 @@ func showHelp() {
   use <system_name>          Activate a system from loaded file
   set <path> <value>         Set parameter (e.g., server.pool.ArrivalRate 10)
   run <var> <target> [runs]  Run simulation (default 1000 runs)
+  execute <recipe_file>      Execute commands from a recipe file
   state                      Show current Canvas state
   exit, quit                 Exit the console
 
@@ -197,8 +205,60 @@ Examples:
   SDL> use ContactsSystem
   SDL> set server.pool.ArrivalRate 15
   SDL> run latest server.HandleLookup 2000
+  SDL> execute examples/demo_recipe.txt
 
 `)
+}
+
+func executeRecipe(canvas *console.Canvas, filePath string) error {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to open recipe file '%s': %w", filePath, err)
+	}
+	defer file.Close()
+	
+	fmt.Printf("🍳 Executing recipe: %s\n", filePath)
+	
+	scanner := bufio.NewScanner(file)
+	lineNum := 0
+	
+	for scanner.Scan() {
+		lineNum++
+		line := strings.TrimSpace(scanner.Text())
+		
+		// Skip empty lines and comments
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		
+		// Handle special commands
+		if strings.HasPrefix(line, "sleep ") {
+			parts := strings.Fields(line)
+			if len(parts) >= 2 {
+				if duration, err := time.ParseDuration(parts[1]); err == nil {
+					fmt.Printf("⏳ Sleeping for %s...\n", duration)
+					time.Sleep(duration)
+					continue
+				}
+			}
+		}
+		
+		fmt.Printf("SDL[%d]> %s\n", lineNum, line)
+		
+		if err := executeCommand(canvas, line); err != nil {
+			return fmt.Errorf("recipe failed at line %d: %w", lineNum, err)
+		}
+		
+		// Small delay between commands for demo effect
+		time.Sleep(100 * time.Millisecond)
+	}
+	
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("error reading recipe file: %w", err)
+	}
+	
+	fmt.Printf("✅ Recipe completed successfully\n")
+	return nil
 }
 
 func init() {

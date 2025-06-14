@@ -1,0 +1,35 @@
+# SDL Demo Recipe - Contact System Traffic Spike
+# This recipe demonstrates a traffic spike scenario
+
+# Load the contacts service
+load examples/contacts/contacts.sdl
+use ContactsSystem
+
+# Show initial state
+state
+
+# Set baseline parameters
+set server.pool.ArrivalRate 5
+set server.pool.Size 10
+set server.db.pool.Size 5
+set server.db.CacheHitRate 0.4
+
+# Wait a moment for the dashboard to update
+sleep 1s
+
+# Simulate traffic spike
+set server.pool.ArrivalRate 15
+sleep 2s
+
+# Scale up to handle load
+set server.pool.Size 20
+set server.db.pool.Size 10
+
+# Wait to observe the effect
+sleep 2s
+
+# Improve cache hit rate
+set server.db.CacheHitRate 0.8
+
+# Final state
+state
