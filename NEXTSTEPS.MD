@@ -255,17 +255,17 @@ This document outlines the workshop-focused development status and next steps fo
 ### **Implementation Plan - 12 Incremental Tasks:**
 
 #### **Phase 1: Foundation (High Priority)**
-1. **`[PENDING]` Setup DuckDB Foundation** - Add dependency, create schema, basic connection test
-2. **`[PENDING]` Create TimeSeriesStore** - DuckDBTimeSeriesStore with Insert/Query operations and prepared statements
-3. **`[PENDING]` Implement DuckDBTracer** - Custom tracer extending ExecutionTracer with measurement capture logic
-4. **`[PENDING]` Canvas Integration** - CreateMeasurementTracer() method and TSDB connection management
-5. **`[PENDING]` Basic Tracing Test** - End-to-end validation with contacts.sdl and data verification
+1. **`[COMPLETED]` Setup DuckDB Foundation** - DuckDB dependency, time-series schema, connection validation ✅
+2. **`[COMPLETED]` Create TimeSeriesStore** - DuckDBTimeSeriesStore with Insert/Query, percentiles, time buckets ✅
+3. **`[COMPLETED]` Implement DuckDBTracer** - MeasurementTracer extending ExecutionTracer with call-based capture ✅
+4. **`[COMPLETED]` Canvas Integration** - Complete measurement management API with resource lifecycle ✅
+5. **`[IN PROGRESS]` Basic Tracing Test** - End-to-end validation with SDL files (deferred after console commands)
 
-#### **Phase 2: Console Interface (Medium Priority)**  
-6. **`[PENDING]` Measure Console Commands** - measure add/remove/list/clear with error handling
-7. **`[PENDING]` Measurement Registry** - Integration with Canvas.Run() and measurement lifecycle management
-8. **`[PENDING]` Tab Completion** - Smart suggestions for targets, metric types, and measurement parameters
-9. **`[PENDING]` Generator Integration Test** - Full workflow testing with traffic generation and measurement collection
+#### **Phase 2: Console Interface (Medium Priority) - ACTIVE DEVELOPMENT**  
+6. **`[NEXT]` Measure Console Commands** - measure add/remove/list/clear commands with space-delimited syntax
+7. **`[NEXT]` Canvas.Run() Integration** - Auto-inject MeasurementTracer when measurements registered  
+8. **`[NEXT]` Tab Completion** - Smart suggestions for targets, metric types, dynamic system discovery
+9. **`[NEXT]` End-to-End Workflow Test** - Complete measure → run → analyze workflow with real SDL files
 
 #### **Phase 3: Advanced Features (Low Priority)**
 10. **`[PENDING]` SQL Query Interface** - measure sql command with built-in query templates and result formatting
