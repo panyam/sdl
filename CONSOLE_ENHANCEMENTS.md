@@ -24,8 +24,8 @@ The SDL console has been enhanced with the **go-prompt** library to provide a pr
 - **System names**: After `use`, Tab shows available systems
   ```
   SDL> use <TAB>
-  ContactsSystem    System definition
-  KafkaSystem       System definition
+  ContactsSystem    System definition from loaded SDL files
+  KafkaSystem       System definition from loaded SDL files
   ```
 
 - **Parameter paths**: When using `set`, Tab shows common parameters
@@ -194,10 +194,11 @@ SDL> !top -p $(pgrep sdl)
 The implementation includes several custom completion functions:
 - `getCommandSuggestions()`: Main command completions
 - `getFileSuggestions()`: File system navigation
-- `getSystemSuggestions()`: System name completions
+- `getSystemSuggestions()`: Dynamic system name completions from loaded SDL files
 - `getParameterPathSuggestions()`: Common parameter paths
 - `getValueSuggestions()`: Context-aware value suggestions
 - `getTargetSuggestions()`: Simulation target completions
+- `getSystemNamesFromCanvas()`: Extracts real system names using reflection
 
 ## Benefits
 
