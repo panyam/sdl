@@ -95,14 +95,7 @@ var commands = []commandInfo{
 	{Name: "run", Description: "Run simulation", Usage: "run <var> <target> [runs]", MinArgs: 2},
 	{Name: "execute", Description: "Execute commands from a recipe file", Usage: "execute <recipe_file>", MinArgs: 1},
 	{Name: "state", Description: "Show current Canvas state", Usage: "state", MinArgs: 0},
-	{Name: "gen-add", Description: "Add traffic generator", Usage: "gen-add <id> <target> <rate>", MinArgs: 3},
-	{Name: "gen-list", Description: "List all traffic generators", Usage: "gen-list", MinArgs: 0},
-	{Name: "gen-remove", Description: "Remove traffic generator", Usage: "gen-remove <id>", MinArgs: 1},
-	{Name: "gen-start", Description: "Start all traffic generators", Usage: "gen-start", MinArgs: 0},
-	{Name: "gen-stop", Description: "Stop all traffic generators", Usage: "gen-stop", MinArgs: 0},
-	{Name: "gen-pause", Description: "Pause traffic generator", Usage: "gen-pause <id>", MinArgs: 1},
-	{Name: "gen-resume", Description: "Resume traffic generator", Usage: "gen-resume <id>", MinArgs: 1},
-	{Name: "gen-modify", Description: "Modify traffic generator", Usage: "gen-modify <id> <field> <value>", MinArgs: 3},
+	{Name: "gen", Description: "Traffic generator commands", Usage: "gen <subcommand> [args...]", MinArgs: 1},
 	{Name: "exit", Description: "Exit the console", Usage: "exit", MinArgs: 0},
 	{Name: "quit", Description: "Exit the console", Usage: "quit", MinArgs: 0},
 }
@@ -298,27 +291,8 @@ func completer(d prompt.Document) []prompt.Suggest {
 		if argIndex == 1 {
 			return getFileSuggestions(word, ".txt")
 		}
-	case "gen-remove", "gen-pause", "gen-resume":
-		if argIndex == 1 {
-			return getGeneratorIDSuggestions(word)
-		}
-	case "gen-modify":
-		if argIndex == 1 {
-			return getGeneratorIDSuggestions(word)
-		} else if argIndex == 2 {
-			return getGeneratorFieldSuggestions(word)
-		}
-	case "gen-add":
-		if argIndex == 2 {
-			return getTargetSuggestions(word)
-		} else if argIndex == 3 {
-			return []prompt.Suggest{
-				{Text: "10", Description: "10 requests per second"},
-				{Text: "25", Description: "25 requests per second"},
-				{Text: "50", Description: "50 requests per second"},
-				{Text: "100", Description: "100 requests per second"},
-			}
-		}
+	case "gen":
+		return getGenCommandSuggestions(args, argIndex, word)
 	}
 	
 	return []prompt.Suggest{}
@@ -587,6 +561,57 @@ func getGeneratorIDSuggestions(prefix string) []prompt.Suggest {
 	return prompt.FilterHasPrefix(suggestions, prefix, true)
 }
 
+func getGenCommandSuggestions(args []string, argIndex int, word string) []prompt.Suggest {
+	// args[0] is "gen", check if we have a subcommand
+	if argIndex == 1 {
+		// Suggest gen subcommands
+		suggestions := []prompt.Suggest{
+			{Text: "add", Description: "Add traffic generator"},
+			{Text: "list", Description: "List all traffic generators"},
+			{Text: "remove", Description: "Remove traffic generator"},
+			{Text: "start", Description: "Start all traffic generators"},
+			{Text: "stop", Description: "Stop all traffic generators"},
+			{Text: "pause", Description: "Pause traffic generator"},
+			{Text: "resume", Description: "Resume traffic generator"},
+			{Text: "modify", Description: "Modify traffic generator"},
+		}
+		return prompt.FilterHasPrefix(suggestions, word, true)
+	}
+	
+	if len(args) < 2 {
+		return []prompt.Suggest{}
+	}
+	
+	subcommand := args[1]
+	subArgIndex := argIndex - 2 // Adjust for "gen <subcommand>"
+	
+	switch subcommand {
+	case "add":
+		if subArgIndex == 1 { // target argument
+			return getTargetSuggestions(word)
+		} else if subArgIndex == 2 { // rate argument
+			return []prompt.Suggest{
+				{Text: "10", Description: "10 requests per second"},
+				{Text: "25", Description: "25 requests per second"},
+				{Text: "50", Description: "50 requests per second"},
+				{Text: "100", Description: "100 requests per second"},
+			}
+		}
+	case "remove", "pause", "resume":
+		if subArgIndex == 0 { // generator id
+			return getGeneratorIDSuggestions(word)
+		}
+	case "modify":
+		if subArgIndex == 0 { // generator id
+			return getGeneratorIDSuggestions(word)
+		} else if subArgIndex == 1 { // field
+			return getGeneratorFieldSuggestions(word)
+		}
+	}
+	
+	return []prompt.Suggest{}
+}
+
 func getGeneratorFieldSuggestions(prefix string) []prompt.Suggest {
 	suggestions := []prompt.Suggest{
 		{Text: "rate", Description: "Requests per second"},
@@ -766,45 +791,11 @@ func executeCommand(canvas *console.Canvas, line string) error {
 		}
 		return executeRecipe(canvas, args[0])
 		
-	// Generator management commands
-	case "gen-add":
-		if len(args) < 3 {
-			return fmt.Errorf("usage: gen-add <id> <target> <rate>")
-		}
-		return handleGenAdd(canvas, args)
-		
-	case "gen-list":
-		return handleGenList(canvas)
-		
-	case "gen-remove":
+	case "gen":
 		if len(args) < 1 {
-			return fmt.Errorf("usage: gen-remove <id>")
+			return fmt.Errorf("usage: gen <subcommand> [args...]\nAvailable subcommands: add, list, remove, start, stop, pause, resume, modify")
 		}
-		return handleGenRemove(canvas, args[0])
-		
-	case "gen-start":
-		return handleGenStart(canvas)
-		
-	case "gen-stop":
-		return handleGenStop(canvas)
-		
-	case "gen-pause":
-		if len(args) < 1 {
-			return fmt.Errorf("usage: gen-pause <id>")
-		}
-		return handleGenPause(canvas, args[0])
-		
-	case "gen-resume":
-		if len(args) < 1 {
-			return fmt.Errorf("usage: gen-resume <id>")
-		}
-		return handleGenResume(canvas, args[0])
-		
-	case "gen-modify":
-		if len(args) < 3 {
-			return fmt.Errorf("usage: gen-modify <id> <field> <value>")
-		}
-		return handleGenModify(canvas, args)
+		return handleGenCommand(canvas, args)
 		
 	default:
 		return fmt.Errorf("unknown command: %s (type 'help' for available commands)", command)
@@ -826,14 +817,14 @@ Core Commands:
   exit, quit                 Exit the console (or press Ctrl+D)
 
 Traffic Generator Commands:
-  gen-add <id> <target> <rate>     Add traffic generator
-  gen-list                         List all traffic generators
-  gen-remove <id>                  Remove traffic generator
-  gen-start                        Start all traffic generators
-  gen-stop                         Stop all traffic generators
-  gen-pause <id>                   Pause specific traffic generator
-  gen-resume <id>                  Resume specific traffic generator
-  gen-modify <id> <field> <value>  Modify generator (fields: rate, target, name, enabled)
+  gen add <id> <target> <rate>     Add traffic generator
+  gen list                         List all traffic generators
+  gen remove <id>                  Remove traffic generator
+  gen start                        Start all traffic generators
+  gen stop                         Stop all traffic generators
+  gen pause <id>                   Pause specific traffic generator
+  gen resume <id>                  Resume specific traffic generator
+  gen modify <id> <field> <value>  Modify generator (fields: rate, target, name, enabled)
 
 Navigation:
   ↑↓                         Navigate through command history (persistent across sessions)
@@ -853,12 +844,12 @@ Examples:
   SDL> load examples/contacts/contacts.sdl
   SDL> use ContactsSystem
   SDL> set server.pool.ArrivalRate 15
-  SDL> gen-add load1 server.HandleLookup 10
-  SDL> gen-list
-  SDL> gen-start
+  SDL> gen add load1 server.HandleLookup 10
+  SDL> gen list
+  SDL> gen start
   SDL> run latest server.HandleLookup 2000
-  SDL> gen-modify load1 rate 25
-  SDL> gen-stop
+  SDL> gen modify load1 rate 25
+  SDL> gen stop
   SDL> execute examples/demo_recipe.txt
   SDL> !ls -la
 
@@ -917,6 +908,55 @@ func executeRecipe(canvas *console.Canvas, filePath string) error {
 }
 
 // Generator management functions
+func handleGenCommand(canvas *console.Canvas, args []string) error {
+	subcommand := args[0]
+	subArgs := args[1:]
+	
+	switch subcommand {
+	case "add":
+		if len(subArgs) < 3 {
+			return fmt.Errorf("usage: gen add <id> <target> <rate>")
+		}
+		return handleGenAdd(canvas, subArgs)
+		
+	case "list":
+		return handleGenList(canvas)
+		
+	case "remove":
+		if len(subArgs) < 1 {
+			return fmt.Errorf("usage: gen remove <id>")
+		}
+		return handleGenRemove(canvas, subArgs[0])
+		
+	case "start":
+		return handleGenStart(canvas)
+		
+	case "stop":
+		return handleGenStop(canvas)
+		
+	case "pause":
+		if len(subArgs) < 1 {
+			return fmt.Errorf("usage: gen pause <id>")
+		}
+		return handleGenPause(canvas, subArgs[0])
+		
+	case "resume":
+		if len(subArgs) < 1 {
+			return fmt.Errorf("usage: gen resume <id>")
+		}
+		return handleGenResume(canvas, subArgs[0])
+		
+	case "modify":
+		if len(subArgs) < 3 {
+			return fmt.Errorf("usage: gen modify <id> <field> <value>")
+		}
+		return handleGenModify(canvas, subArgs)
+		
+	default:
+		return fmt.Errorf("unknown gen subcommand: %s\nAvailable subcommands: add, list, remove, start, stop, pause, resume, modify", subcommand)
+	}
+}
+
 func handleGenAdd(canvas *console.Canvas, args []string) error {
 	id := args[0]
 	target := args[1]

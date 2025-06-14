@@ -7,14 +7,14 @@ The SDL console now includes comprehensive traffic generator management commands
 ## Generator Commands
 
 ### Core Generator Commands
-- `gen-add <id> <target> <rate>` - Add a new traffic generator
-- `gen-list` - List all configured traffic generators  
-- `gen-remove <id>` - Remove a traffic generator
-- `gen-start` - Start all traffic generators
-- `gen-stop` - Stop all traffic generators
-- `gen-pause <id>` - Pause a specific generator
-- `gen-resume <id>` - Resume a specific generator
-- `gen-modify <id> <field> <value>` - Modify generator properties
+- `gen add <id> <target> <rate>` - Add a new traffic generator
+- `gen list` - List all configured traffic generators  
+- `gen remove <id>` - Remove a traffic generator
+- `gen start` - Start all traffic generators
+- `gen stop` - Stop all traffic generators
+- `gen pause <id>` - Pause a specific generator
+- `gen resume <id>` - Resume a specific generator
+- `gen modify <id> <field> <value>` - Modify generator properties
 
 ## Test Scenarios
 
@@ -25,48 +25,48 @@ SDL> load examples/contacts/contacts.sdl
 SDL> use ContactsSystem
 
 # Check initial state (should be empty)
-SDL> gen-list
+SDL> gen list
 📋 No traffic generators configured
 
 # Add generators
-SDL> gen-add load1 server.HandleLookup 10
+SDL> gen add load1 server.HandleLookup 10
 ✅ Added generator: load1 -> server.HandleLookup at 10 rps
 
-SDL> gen-add load2 server.HandleCreate 5
+SDL> gen add load2 server.HandleCreate 5
 ✅ Added generator: load2 -> server.HandleCreate at 5 rps
 
 # List generators
-SDL> gen-list
+SDL> gen list
 📋 Traffic Generators (2):
   load1: Generator-load1 -> server.HandleLookup (10 rps) [▶️ running]
   load2: Generator-load2 -> server.HandleCreate (5 rps) [▶️ running]
 
 # Start traffic generation
-SDL> gen-start
+SDL> gen start
 ✅ Started all traffic generators
 
 # Stop traffic generation
-SDL> gen-stop
+SDL> gen stop
 ✅ Stopped all traffic generators
 ```
 
 ### Scenario 2: Generator Modification
 ```bash
 # Modify generator properties
-SDL> gen-modify load1 rate 25
+SDL> gen modify load1 rate 25
 ✅ Modified generator load1: rate = 25
 
-SDL> gen-modify load1 target server.HandleUpdate
+SDL> gen modify load1 target server.HandleUpdate
 ✅ Modified generator load1: target = server.HandleUpdate
 
-SDL> gen-modify load1 name "High Load Test"
+SDL> gen modify load1 name "High Load Test"
 ✅ Modified generator load1: name = High Load Test
 
-SDL> gen-modify load1 enabled false
+SDL> gen modify load1 enabled false
 ✅ Modified generator load1: enabled = false
 
 # Verify changes
-SDL> gen-list
+SDL> gen list
 📋 Traffic Generators (2):
   load1: High Load Test -> server.HandleUpdate (25 rps) [⏸️ paused]
   load2: Generator-load2 -> server.HandleCreate (5 rps) [▶️ running]
@@ -75,19 +75,19 @@ SDL> gen-list
 ### Scenario 3: Individual Generator Control
 ```bash
 # Pause specific generator
-SDL> gen-pause load2
+SDL> gen pause load2
 ✅ Paused generator: load2
 
 # Resume specific generator
-SDL> gen-resume load2
+SDL> gen resume load2
 ✅ Resumed generator: load2
 
 # Remove generator
-SDL> gen-remove load1
+SDL> gen remove load1
 ✅ Removed generator: load1
 
 # Verify removal
-SDL> gen-list
+SDL> gen list
 📋 Traffic Generators (1):
   load2: Generator-load2 -> server.HandleCreate (5 rps) [▶️ running]
 ```
@@ -95,30 +95,30 @@ SDL> gen-list
 ### Scenario 4: Tab Completion Testing
 ```bash
 # Test command completion
-SDL> gen-<TAB>
-gen-add       Add traffic generator
-gen-list      List all traffic generators
-gen-modify    Modify traffic generator
-gen-pause     Pause traffic generator
-gen-remove    Remove traffic generator
-gen-resume    Resume traffic generator
-gen-start     Start all traffic generators
-gen-stop      Stop all traffic generators
+SDL> gen <TAB>
+add       Add traffic generator
+list      List all traffic generators
+modify    Modify traffic generator
+pause     Pause traffic generator
+remove    Remove traffic generator
+resume    Resume traffic generator
+start     Start all traffic generators
+stop      Stop all traffic generators
 
 # Test generator ID completion
-SDL> gen-remove <TAB>
+SDL> gen remove <TAB>
 load1    High Load Test -> server.HandleUpdate (paused)
 load2    Generator-load2 -> server.HandleCreate (running)
 
 # Test field completion
-SDL> gen-modify load1 <TAB>
+SDL> gen modify load1 <TAB>
 rate      Requests per second
 target    Target component method
 name      Generator display name
 enabled   Enable/disable generator (true/false)
 
 # Test target completion
-SDL> gen-add newgen <TAB>
+SDL> gen add newgen <TAB>
 server.HandleLookup    Lookup handler latency
 server.HandleCreate    Create handler latency
 server.HandleUpdate    Update handler latency
@@ -128,16 +128,16 @@ db.Query              Database query latency
 ### Scenario 5: Error Handling
 ```bash
 # Test invalid arguments
-SDL> gen-add
-❌ Error: usage: gen-add <id> <target> <rate>
+SDL> gen add
+❌ Error: usage: gen add <id> <target> <rate>
 
-SDL> gen-modify load1 rate invalid
+SDL> gen modify load1 rate invalid
 ❌ Error: invalid rate 'invalid': must be a number
 
-SDL> gen-remove nonexistent
+SDL> gen remove nonexistent
 ❌ Error: generator 'nonexistent' not found
 
-SDL> gen-modify load1 invalid-field value
+SDL> gen modify load1 invalid-field value
 ❌ Error: unknown field 'invalid-field'. Available fields: rate, target, name, enabled
 ```
 
@@ -188,20 +188,20 @@ load examples/contacts/contacts.sdl
 use ContactsSystem
 
 # Configure traffic generators
-gen-add baseline server.HandleLookup 10
-gen-add spike server.HandleCreate 50
+gen add baseline server.HandleLookup 10
+gen add spike server.HandleCreate 50
 
 # Start load testing
-gen-start
+gen start
 sleep 5s
 
 # Increase load
-gen-modify baseline rate 25
-gen-modify spike rate 100
+gen modify baseline rate 25
+gen modify spike rate 100
 sleep 10s
 
 # Stop testing
-gen-stop
+gen stop
 ```
 
 This comprehensive generator management system provides full control over traffic generation for performance testing and system analysis.
