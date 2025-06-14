@@ -83,7 +83,24 @@ SDL> !ps aux | grep sdl
 user  12345   0.1  0.2  12345   6789   ??  S    12:00PM   0:00.15 ./sdl console
 ```
 
-### 6. **Enhanced Help**
+### 6. **Persistent Command History**
+Commands are automatically saved and restored across console sessions:
+```
+📚 Command history loaded from: ~/.sdl_history (15 commands)
+
+SDL> ↑  # Navigate through previous commands
+SDL> ↑  # Works across restart sessions
+SDL> ↑  # Up to 1000 commands preserved
+```
+
+### 7. **Improved Auto-suggest Behavior**
+Fixed the intrusive auto-suggest dropdown:
+- No suggestions shown on empty prompt
+- Suggestions only appear when typing
+- Press Tab for explicit completions
+- Less cluttered interface
+
+### 8. **Enhanced Help**
 The help command now includes navigation instructions and shell commands:
 ```
 SDL> help

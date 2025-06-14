@@ -7,9 +7,12 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
+	"os/user"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/c-bata/go-prompt"
@@ -22,6 +25,7 @@ var (
 	currentCanvas  *console.Canvas
 	commandHistory []string
 	consolePort    = 8080
+	historyFile    string
 )
 
 // Console command with go-prompt
@@ -64,6 +68,12 @@ Then in the REPL:
 		// Store canvas for global access
 		currentCanvas = webServer.GetCanvas()
 
+		// Initialize command history
+		initializeHistory()
+
+		// Setup signal handling to save history on exit
+		setupSignalHandling()
+
 		// Start enhanced REPL with go-prompt
 		startEnhancedREPL()
 	},
@@ -104,8 +114,13 @@ func startEnhancedREPL() {
 		prompt.OptionDescriptionBGColor(prompt.DarkGray),
 		prompt.OptionDescriptionTextColor(prompt.White),
 		prompt.OptionCompletionWordSeparator(" "),
+		// Control auto-suggest behavior
+		prompt.OptionMaxSuggestion(10),
 	)
 	p.Run()
+	
+	// Save history on exit
+	saveHistory()
 }
 
 func getPromptPrefix() string {
@@ -126,19 +141,109 @@ func getLivePrefix() (string, bool) {
 	return getPromptPrefix(), true
 }
 
+// History management functions
+func setupSignalHandling() {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	
+	go func() {
+		<-c
+		fmt.Println("\n\n👋 Saving history and exiting...")
+		saveHistory()
+		os.Exit(0)
+	}()
+}
+
+func initializeHistory() {
+	// Get history file path
+	historyFile = getHistoryFilePath()
+	
+	// Load existing history
+	loadHistory()
+	
+	fmt.Printf("📚 Command history loaded from: %s (%d commands)\n", historyFile, len(commandHistory))
+}
+
+func getHistoryFilePath() string {
+	// Try to get user's home directory
+	usr, err := user.Current()
+	if err != nil {
+		// Fallback to current directory
+		return ".sdl_history"
+	}
+	
+	// Use ~/.sdl_history
+	return filepath.Join(usr.HomeDir, ".sdl_history")
+}
+
+func loadHistory() {
+	file, err := os.Open(historyFile)
+	if err != nil {
+		// File doesn't exist yet, start with empty history
+		commandHistory = []string{}
+		return
+	}
+	defer file.Close()
+	
+	scanner := bufio.NewScanner(file)
+	history := []string{}
+	
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line != "" {
+			history = append(history, line)
+		}
+	}
+	
+	commandHistory = history
+}
+
+func saveHistory() {
+	if historyFile == "" {
+		return
+	}
+	
+	// Limit history size to last 1000 commands
+	maxHistory := 1000
+	startIdx := 0
+	if len(commandHistory) > maxHistory {
+		startIdx = len(commandHistory) - maxHistory
+	}
+	
+	file, err := os.Create(historyFile)
+	if err != nil {
+		fmt.Printf("⚠️  Warning: Could not save command history: %v\n", err)
+		return
+	}
+	defer file.Close()
+	
+	writer := bufio.NewWriter(file)
+	for i := startIdx; i < len(commandHistory); i++ {
+		writer.WriteString(commandHistory[i] + "\n")
+	}
+	writer.Flush()
+	
+	fmt.Printf("📚 Command history saved to: %s (%d commands)\n", historyFile, len(commandHistory)-startIdx)
+}
+
 func completer(d prompt.Document) []prompt.Suggest {
 	// Get the current line and word
 	line := d.CurrentLine()
 	word := d.GetWordBeforeCursor()
 	args := strings.Fields(line)
 	
+	// Don't show suggestions for empty input unless user explicitly pressed Tab
+	if line == "" {
+		return []prompt.Suggest{}
+	}
+	
 	// Handle shell commands (prefixed with !)
 	if strings.HasPrefix(line, "!") {
 		return getShellCommandSuggestions(word, line)
 	}
 	
-	// If we're at the beginning, suggest commands
-	if len(args) <= 1 {
+	// If we're at the beginning, suggest commands (only if there's some input)
+	if len(args) <= 1 && word != "" {
 		return getCommandSuggestions(word)
 	}
 	
@@ -449,8 +554,10 @@ func executor(line string) {
 		return
 	}
 	
-	// Add to history
-	commandHistory = append(commandHistory, line)
+	// Add to history (avoid duplicates of the last command)
+	if len(commandHistory) == 0 || commandHistory[len(commandHistory)-1] != line {
+		commandHistory = append(commandHistory, line)
+	}
 	
 	// Handle exit commands
 	if line == "exit" || line == "quit" {
@@ -628,13 +735,18 @@ func showHelp() {
   exit, quit                 Exit the console (or press Ctrl+D)
 
 Navigation:
-  ↑↓                         Navigate through command history
+  ↑↓                         Navigate through command history (persistent across sessions)
   ←→                         Move cursor within line
   Tab                        Auto-complete commands, paths, and parameters
   Ctrl+A/E                   Jump to beginning/end of line
   Ctrl+K/U                   Delete to end/beginning of line
   Ctrl+W                     Delete word before cursor
+  Ctrl+C                     Exit console (saves history)
   Ctrl+D                     Exit console
+
+History:
+  Commands are automatically saved to ~/.sdl_history
+  Up to 1000 commands are preserved across console restarts
 
 Examples:
   SDL> load examples/contacts/contacts.sdl
