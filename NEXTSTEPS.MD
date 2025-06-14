@@ -42,12 +42,14 @@ This document outlines the workshop-focused development status and next steps fo
     *   HTTP API backend with Canvas operations (load, use, set, run, plot)
     *   Production-ready web stack with single-command deployment: `./sdl serve --port 8080`
     *   Comprehensive testing suite including Playwright automation for layout validation
-*   **`[COMPLETED]` Interactive REPL Console:**
-    *   New `sdl console` command provides interactive REPL with Canvas API
+*   **`[COMPLETED]` Enhanced Interactive REPL Console:**
+    *   Professional go-prompt powered REPL with persistent command history (~/.sdl_history)
+    *   Shell command execution with ! prefix (e.g., !git status, !ls)
+    *   Arrow key navigation, tab completion, and multi-line support
+    *   Dynamic system discovery from loaded SDL files (no hardcoded suggestions)
+    *   Space-delimited generator commands (gen add, gen list, etc.) with intelligent auto-completion
     *   Shared Canvas instance between REPL and web dashboard for seamless side-by-side demonstrations
-    *   Command history, auto-completion, and real-time WebSocket synchronization
-    *   Eliminates need for curl commands - much better UX for interactive exploration
-    *   Console commands instantly update browser dashboard via WebSocket broadcasting
+    *   Real-time WebSocket synchronization eliminates need for curl commands
 *   **`[COMPLETED]` Enhanced Canvas State Persistence:**
     *   Complete Canvas state save/restore functionality with parameter tracking
     *   Includes loaded files, active system, generators, measurements, session variables, and system parameters
@@ -237,5 +239,41 @@ This document outlines the workshop-focused development status and next steps fo
 **COMPLETED:** Dashboard now fully operational with real Canvas state and system visualization
 **COMPLETED:** Interactive REPL console with real-time dashboard synchronization
 **COMPLETED:** Enhanced Canvas state persistence with parameter tracking and session recovery
-**CURRENT PHASE:** Documentation updates and advanced testing for production deployment  
+**CURRENT PHASE:** DuckDB-based measurement system for call-based metrics collection
+**ACTIVE DEVELOPMENT:** Implementing time-series measurement infrastructure with custom tracer architecture
 **NEXT PHASE:** Advanced visualization features and scenario library expansion
+
+---
+## 🚧 ACTIVE DEVELOPMENT: DuckDB Measurement System
+
+### **`[IN PROGRESS]` Call-Based Measurement Architecture:**
+*   **Custom Tracer Design:** Pluggable tracer architecture where DuckDBTracer extends ExecutionTracer to capture simulation metrics at call evaluation points in SimpleEval
+*   **Time-Series Database:** DuckDB embedded database for storing trace data with optimized time-series schema and analytical query capabilities
+*   **Console Integration:** Space-delimited measure commands (measure add, measure list, etc.) with intelligent tab completion for targets and metric types
+*   **Simulation-Native Metrics:** Measurements triggered by SDL call evaluation rather than artificial time intervals, providing true simulation-based analytics
+
+### **Implementation Plan - 12 Incremental Tasks:**
+
+#### **Phase 1: Foundation (High Priority)**
+1. **`[PENDING]` Setup DuckDB Foundation** - Add dependency, create schema, basic connection test
+2. **`[PENDING]` Create TimeSeriesStore** - DuckDBTimeSeriesStore with Insert/Query operations and prepared statements
+3. **`[PENDING]` Implement DuckDBTracer** - Custom tracer extending ExecutionTracer with measurement capture logic
+4. **`[PENDING]` Canvas Integration** - CreateMeasurementTracer() method and TSDB connection management
+5. **`[PENDING]` Basic Tracing Test** - End-to-end validation with contacts.sdl and data verification
+
+#### **Phase 2: Console Interface (Medium Priority)**  
+6. **`[PENDING]` Measure Console Commands** - measure add/remove/list/clear with error handling
+7. **`[PENDING]` Measurement Registry** - Integration with Canvas.Run() and measurement lifecycle management
+8. **`[PENDING]` Tab Completion** - Smart suggestions for targets, metric types, and measurement parameters
+9. **`[PENDING]` Generator Integration Test** - Full workflow testing with traffic generation and measurement collection
+
+#### **Phase 3: Advanced Features (Low Priority)**
+10. **`[PENDING]` SQL Query Interface** - measure sql command with built-in query templates and result formatting
+11. **`[PENDING]` Dashboard Integration** - Real-time measurement charts and WebSocket updates for live metrics
+12. **`[PENDING]` Measurement Documentation** - Comprehensive guide with testing scenarios and SQL query examples
+
+### **Technical Architecture:**
+*   **Separation of Concerns:** Runtime stays measurement-agnostic, console provides custom tracer implementations
+*   **Modular Design:** Multiple tracer types possible (measurement, debug, time-series DB, etc.)
+*   **Query Capabilities:** Full SQL analytics with DuckDB's time-series optimized functions and aggregations
+*   **Integration Benefits:** Real-time dashboard feeds, plotting system enablement, recipe automation support

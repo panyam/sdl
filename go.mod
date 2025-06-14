@@ -4,6 +4,7 @@ go 1.24.0
 
 require (
 	github.com/gorilla/mux v1.8.1
+	github.com/marcboeker/go-duckdb v1.8.3
 	github.com/panyam/goutils v0.1.3
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
