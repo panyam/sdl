@@ -28,6 +28,8 @@ type Canvas struct {
 	genManager       *generatorManager
 	measManager      *measurementManager
 	systemParameters map[string]interface{} // Track parameter changes
+	tsdb             *DuckDBTimeSeriesStore  // Time-series database for measurements
+	measurementTracer *MeasurementTracer     // Current measurement tracer
 }
 
 // NewCanvas creates a new interactive canvas session.
@@ -458,4 +460,144 @@ func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
 		Nodes:      nodes,
 		Edges:      edges,
 	}, nil
+}
+
+// initMeasurementTracing initializes the time-series database and measurement tracer
+func (c *Canvas) initMeasurementTracing(dataDir string) error {
+	if c.tsdb != nil {
+		return nil // Already initialized
+	}
+
+	// Create time-series database
+	tsdb, err := NewDuckDBTimeSeriesStore(dataDir)
+	if err != nil {
+		return fmt.Errorf("failed to initialize time-series database: %w", err)
+	}
+	c.tsdb = tsdb
+
+	// Create measurement tracer
+	c.measurementTracer = NewMeasurementTracer(tsdb, "default_run")
+
+	return nil
+}
+
+// CreateMeasurementTracer creates a new measurement tracer for the Canvas
+func (c *Canvas) CreateMeasurementTracer(dataDir string) (*MeasurementTracer, error) {
+	err := c.initMeasurementTracing(dataDir)
+	if err != nil {
+		return nil, err
+	}
+	return c.measurementTracer, nil
+}
+
+// GetMeasurementTracer returns the current measurement tracer, initializing if needed
+func (c *Canvas) GetMeasurementTracer(dataDir string) (*MeasurementTracer, error) {
+	if c.measurementTracer == nil {
+		_, err := c.CreateMeasurementTracer(dataDir)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return c.measurementTracer, nil
+}
+
+// AddMeasurement adds a new measurement target to the tracer
+func (c *Canvas) AddCanvasMeasurement(id, name, target, metricType string, enabled bool) error {
+	tracer, err := c.GetMeasurementTracer("") // Use default location
+	if err != nil {
+		return err
+	}
+
+	measurement := &MeasurementConfig{
+		ID:         id,
+		Name:       name,
+		Target:     target,
+		MetricType: metricType,
+		Enabled:    enabled,
+	}
+
+	tracer.AddMeasurement(measurement)
+	return nil
+}
+
+// RemoveMeasurement removes a measurement target from the tracer
+func (c *Canvas) RemoveCanvasMeasurement(target string) error {
+	if c.measurementTracer == nil {
+		return nil // No tracer, nothing to remove
+	}
+	c.measurementTracer.RemoveMeasurement(target)
+	return nil
+}
+
+// GetCanvasMeasurements returns all registered measurements
+func (c *Canvas) GetCanvasMeasurements() map[string]*MeasurementConfig {
+	if c.measurementTracer == nil {
+		return make(map[string]*MeasurementConfig)
+	}
+	return c.measurementTracer.GetMeasurements()
+}
+
+// ClearMeasurements removes all measurement targets
+func (c *Canvas) ClearMeasurements() {
+	if c.measurementTracer != nil {
+		c.measurementTracer.ClearMeasurements()
+	}
+}
+
+// HasMeasurements returns true if any measurements are registered
+func (c *Canvas) HasMeasurements() bool {
+	if c.measurementTracer == nil {
+		return false
+	}
+	return c.measurementTracer.HasMeasurements()
+}
+
+// SetMeasurementRunID updates the run ID for the current measurement session
+func (c *Canvas) SetMeasurementRunID(runID string) {
+	if c.measurementTracer != nil {
+		c.measurementTracer.SetRunID(runID)
+	}
+}
+
+// GetMeasurementMetrics retrieves recent metrics for a target
+func (c *Canvas) GetMeasurementMetrics(target string, since time.Time) ([]TracePoint, error) {
+	if c.measurementTracer == nil {
+		return nil, fmt.Errorf("measurement tracer not initialized")
+	}
+	return c.measurementTracer.GetMetrics(target, since)
+}
+
+// GetMeasurementPercentiles calculates percentiles for a target
+func (c *Canvas) GetMeasurementPercentiles(target string, since time.Time) (p50, p90, p95, p99 float64, err error) {
+	if c.measurementTracer == nil {
+		return 0, 0, 0, 0, fmt.Errorf("measurement tracer not initialized")
+	}
+	return c.measurementTracer.GetPercentiles(target, since)
+}
+
+// ExecuteMeasurementSQL runs a custom SQL query on measurement data
+func (c *Canvas) ExecuteMeasurementSQL(query string, args ...interface{}) ([]map[string]interface{}, error) {
+	if c.measurementTracer == nil {
+		return nil, fmt.Errorf("measurement tracer not initialized")
+	}
+	return c.measurementTracer.ExecuteSQL(query, args...)
+}
+
+// GetMeasurementStats returns statistics about stored measurements
+func (c *Canvas) GetMeasurementStats() (map[string]interface{}, error) {
+	if c.measurementTracer == nil {
+		return nil, fmt.Errorf("measurement tracer not initialized")
+	}
+	return c.measurementTracer.GetStats()
+}
+
+// Close closes the Canvas and cleans up resources
+func (c *Canvas) Close() error {
+	if c.measurementTracer != nil {
+		err := c.measurementTracer.Close()
+		c.measurementTracer = nil
+		c.tsdb = nil
+		return err
+	}
+	return nil
 }

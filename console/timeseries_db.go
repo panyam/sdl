@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"os"
 	"path/filepath"
 	"sync"
 	"time"
@@ -35,6 +36,11 @@ func NewDuckDBTimeSeriesStore(dataDir string) (*DuckDBTimeSeriesStore, error) {
 	// Create data directory if it doesn't exist
 	if dataDir == "" {
 		dataDir = "/tmp/sdl_metrics"
+	}
+
+	// Ensure data directory exists
+	if err := os.MkdirAll(dataDir, 0755); err != nil {
+		return nil, fmt.Errorf("failed to create data directory %s: %w", dataDir, err)
 	}
 
 	dbPath := filepath.Join(dataDir, "traces.duckdb")
