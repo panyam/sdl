@@ -6,25 +6,33 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/c-bata/go-prompt"
 	"github.com/panyam/sdl/console"
 	"github.com/spf13/cobra"
 )
 
-var consolePort = 8080
+// Global variables for the prompt context
+var (
+	currentCanvas  *console.Canvas
+	commandHistory []string
+	consolePort    = 8080
+)
 
-// Console command
+// Console command with go-prompt
 var consoleCmd = &cobra.Command{
 	Use:   "console",
 	Short: "Start interactive SDL console with web dashboard",
 	Long: `Start an interactive REPL console that shares state with a web dashboard.
 	
 The console provides:
-- Interactive REPL for Canvas operations (load, use, set, run, plot)
-- Command history with arrow key navigation
+- Interactive REPL with tab completion and command history
+- Rich auto-completion with descriptions
+- Arrow key navigation and multi-line support
 - Recipe file execution support
 - Real-time web dashboard at http://localhost:PORT
 - WebSocket broadcasting of all operations
@@ -45,45 +53,333 @@ Then in the REPL:
 		fmt.Printf("🚀 SDL Console starting...\n")
 		fmt.Printf("📊 Dashboard: http://localhost%s\n", addr)
 		fmt.Printf("📡 WebSocket: ws://localhost%s/api/live\n", addr)
-		fmt.Printf("💬 Type 'help' for available commands, 'exit' to quit\n\n")
+		fmt.Printf("💬 Type 'help' for available commands, Ctrl+D to quit\n\n")
 
 		// Start HTTP server in background
 		go func() {
 			log.Fatal(http.ListenAndServe(addr, router))
 		}()
 
-		// Start REPL in foreground
-		startREPL(webServer.GetCanvas())
+		// Store canvas for global access
+		currentCanvas = webServer.GetCanvas()
+
+		// Start enhanced REPL with go-prompt
+		startEnhancedREPL()
 	},
 }
 
-func startREPL(canvas *console.Canvas) {
-	scanner := bufio.NewScanner(os.Stdin)
+// Command structure for better organization
+type commandInfo struct {
+	Name        string
+	Description string
+	Usage       string
+	MinArgs     int
+}
+
+var commands = []commandInfo{
+	{Name: "help", Description: "Show help message", Usage: "help", MinArgs: 0},
+	{Name: "load", Description: "Load an SDL file", Usage: "load <file_path>", MinArgs: 1},
+	{Name: "use", Description: "Activate a system from loaded file", Usage: "use <system_name>", MinArgs: 1},
+	{Name: "set", Description: "Set parameter value", Usage: "set <path> <value>", MinArgs: 2},
+	{Name: "run", Description: "Run simulation", Usage: "run <var> <target> [runs]", MinArgs: 2},
+	{Name: "execute", Description: "Execute commands from a recipe file", Usage: "execute <recipe_file>", MinArgs: 1},
+	{Name: "state", Description: "Show current Canvas state", Usage: "state", MinArgs: 0},
+	{Name: "exit", Description: "Exit the console", Usage: "exit", MinArgs: 0},
+	{Name: "quit", Description: "Exit the console", Usage: "quit", MinArgs: 0},
+}
+
+func startEnhancedREPL() {
+	p := prompt.New(
+		executor,
+		completer,
+		prompt.OptionTitle("SDL Console"),
+		prompt.OptionPrefix(getPromptPrefix()),
+		prompt.OptionLivePrefix(getLivePrefix),
+		prompt.OptionHistory(commandHistory),
+		prompt.OptionPrefixTextColor(prompt.Yellow),
+		prompt.OptionSuggestionBGColor(prompt.DarkGray),
+		prompt.OptionSelectedSuggestionBGColor(prompt.LightGray),
+		prompt.OptionSelectedSuggestionTextColor(prompt.Black),
+		prompt.OptionDescriptionBGColor(prompt.DarkGray),
+		prompt.OptionDescriptionTextColor(prompt.White),
+		prompt.OptionCompletionWordSeparator(" "),
+	)
+	p.Run()
+}
+
+func getPromptPrefix() string {
+	if currentCanvas == nil {
+		return "SDL> "
+	}
 	
-	for {
-		fmt.Print("SDL> ")
-		
-		if !scanner.Scan() {
-			break
+	state, err := currentCanvas.Save()
+	if err != nil || state.ActiveSystem == "" {
+		return "SDL> "
+	}
+	
+	// Show active system in prompt
+	return fmt.Sprintf("SDL[%s]> ", state.ActiveSystem)
+}
+
+func getLivePrefix() (string, bool) {
+	return getPromptPrefix(), true
+}
+
+func completer(d prompt.Document) []prompt.Suggest {
+	// Get the current line and word
+	line := d.CurrentLine()
+	word := d.GetWordBeforeCursor()
+	args := strings.Fields(line)
+	
+	// If we're at the beginning, suggest commands
+	if len(args) <= 1 {
+		return getCommandSuggestions(word)
+	}
+	
+	// Context-aware completions based on the command
+	command := args[0]
+	argIndex := len(args) - 1
+	if strings.HasSuffix(line, " ") {
+		argIndex++
+	}
+	
+	switch command {
+	case "load":
+		if argIndex == 1 {
+			return getFileSuggestions(word, ".sdl")
 		}
-		
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" {
-			continue
+	case "use":
+		if argIndex == 1 {
+			return getSystemSuggestions(word)
 		}
-		
-		if line == "exit" || line == "quit" {
-			fmt.Println("👋 Goodbye!")
-			break
+	case "set":
+		if argIndex == 1 {
+			return getParameterPathSuggestions(word)
+		} else if argIndex == 2 {
+			// Could suggest common values based on parameter type
+			return getValueSuggestions(args[1])
 		}
-		
-		if err := executeCommand(canvas, line); err != nil {
-			fmt.Printf("❌ Error: %v\n", err)
+	case "run":
+		if argIndex == 1 {
+			return []prompt.Suggest{
+				{Text: "latest", Description: "Use latest measurements"},
+				{Text: "baseline", Description: "Use baseline measurements"},
+			}
+		} else if argIndex == 2 {
+			return getTargetSuggestions(word)
+		} else if argIndex == 3 {
+			return []prompt.Suggest{
+				{Text: "100", Description: "Quick test"},
+				{Text: "1000", Description: "Default runs"},
+				{Text: "5000", Description: "Extended test"},
+				{Text: "10000", Description: "Comprehensive test"},
+			}
+		}
+	case "execute":
+		if argIndex == 1 {
+			return getFileSuggestions(word, ".txt")
 		}
 	}
 	
-	if err := scanner.Err(); err != nil {
-		fmt.Printf("❌ Scanner error: %v\n", err)
+	return []prompt.Suggest{}
+}
+
+func getCommandSuggestions(prefix string) []prompt.Suggest {
+	suggestions := []prompt.Suggest{}
+	for _, cmd := range commands {
+		suggestions = append(suggestions, prompt.Suggest{
+			Text:        cmd.Name,
+			Description: cmd.Description,
+		})
+	}
+	return prompt.FilterHasPrefix(suggestions, prefix, true)
+}
+
+func getFileSuggestions(prefix string, extension string) []prompt.Suggest {
+	suggestions := []prompt.Suggest{}
+	
+	// Start from current directory or the directory in prefix
+	searchDir := "."
+	
+	if strings.Contains(prefix, "/") {
+		dir := filepath.Dir(prefix)
+		searchDir = dir
+	}
+	
+	// Read directory
+	files, err := os.ReadDir(searchDir)
+	if err != nil {
+		return suggestions
+	}
+	
+	for _, file := range files {
+		name := file.Name()
+		fullPath := filepath.Join(searchDir, name)
+		if searchDir == "." {
+			fullPath = name
+		}
+		
+		// Include directories and files with the right extension
+		if file.IsDir() {
+			suggestions = append(suggestions, prompt.Suggest{
+				Text:        fullPath + "/",
+				Description: "Directory",
+			})
+		} else if extension == "" || strings.HasSuffix(name, extension) {
+			info, _ := file.Info()
+			size := float64(0)
+			if info != nil {
+				size = float64(info.Size()) / 1024
+			}
+			suggestions = append(suggestions, prompt.Suggest{
+				Text:        fullPath,
+				Description: fmt.Sprintf("File (%.1fKB)", size),
+			})
+		}
+	}
+	
+	// Also suggest common SDL example paths
+	if extension == ".sdl" && strings.HasPrefix("examples/", prefix) {
+		exampleDirs := []string{
+			"examples/contacts/contacts.sdl",
+			"examples/kafka/kafka.sdl",
+			"examples/hotel/hotel.sdl",
+		}
+		for _, path := range exampleDirs {
+			if strings.HasPrefix(path, prefix) {
+				suggestions = append(suggestions, prompt.Suggest{
+					Text:        path,
+					Description: "Example SDL file",
+				})
+			}
+		}
+	}
+	
+	return prompt.FilterHasPrefix(suggestions, prefix, true)
+}
+
+func getSystemSuggestions(prefix string) []prompt.Suggest {
+	suggestions := []prompt.Suggest{}
+	
+	if currentCanvas == nil {
+		return suggestions
+	}
+	
+	state, err := currentCanvas.Save()
+	if err != nil || len(state.LoadedFiles) == 0 {
+		return suggestions
+	}
+	
+	// Get systems from loaded files
+	// This is a simplified version - in real implementation, 
+	// we'd parse the SDL files to get system names
+	commonSystems := []string{
+		"ContactsSystem",
+		"KafkaSystem", 
+		"HotelSystem",
+		"PaymentSystem",
+		"OrderSystem",
+	}
+	
+	for _, system := range commonSystems {
+		suggestions = append(suggestions, prompt.Suggest{
+			Text:        system,
+			Description: "System definition",
+		})
+	}
+	
+	return prompt.FilterHasPrefix(suggestions, prefix, true)
+}
+
+func getParameterPathSuggestions(prefix string) []prompt.Suggest {
+	suggestions := []prompt.Suggest{}
+	
+	// Common parameter paths
+	paths := []struct {
+		path string
+		desc string
+	}{
+		{"server.pool.ArrivalRate", "Request arrival rate"},
+		{"server.pool.Size", "Connection pool size"},
+		{"server.db.pool.Size", "Database pool size"},
+		{"server.db.CacheHitRate", "Cache hit ratio (0-1)"},
+		{"server.db.QueryTimeout", "Query timeout in ms"},
+		{"client.RequestTimeout", "Client request timeout"},
+		{"client.RetryCount", "Number of retries"},
+		{"cache.Size", "Cache size in entries"},
+		{"cache.TTL", "Cache TTL in seconds"},
+	}
+	
+	for _, p := range paths {
+		suggestions = append(suggestions, prompt.Suggest{
+			Text:        p.path,
+			Description: p.desc,
+		})
+	}
+	
+	return prompt.FilterHasPrefix(suggestions, prefix, true)
+}
+
+func getValueSuggestions(paramPath string) []prompt.Suggest {
+	// Suggest common values based on parameter type
+	if strings.Contains(paramPath, "Rate") {
+		return []prompt.Suggest{
+			{Text: "5", Description: "Low rate"},
+			{Text: "10", Description: "Medium rate"},
+			{Text: "25", Description: "High rate"},
+			{Text: "50", Description: "Very high rate"},
+		}
+	} else if strings.Contains(paramPath, "Size") {
+		return []prompt.Suggest{
+			{Text: "5", Description: "Small"},
+			{Text: "10", Description: "Medium"},
+			{Text: "20", Description: "Large"},
+			{Text: "50", Description: "Very large"},
+		}
+	} else if strings.Contains(paramPath, "CacheHitRate") {
+		return []prompt.Suggest{
+			{Text: "0.4", Description: "40% hit rate"},
+			{Text: "0.6", Description: "60% hit rate"},
+			{Text: "0.8", Description: "80% hit rate"},
+			{Text: "0.95", Description: "95% hit rate"},
+		}
+	}
+	return []prompt.Suggest{}
+}
+
+func getTargetSuggestions(prefix string) []prompt.Suggest {
+	// Common targets in SDL systems
+	targets := []prompt.Suggest{
+		{Text: "server.HandleLookup", Description: "Lookup handler latency"},
+		{Text: "server.HandleCreate", Description: "Create handler latency"},
+		{Text: "server.HandleUpdate", Description: "Update handler latency"},
+		{Text: "server.HandleDelete", Description: "Delete handler latency"},
+		{Text: "db.Query", Description: "Database query latency"},
+		{Text: "cache.Get", Description: "Cache get latency"},
+		{Text: "cache.Set", Description: "Cache set latency"},
+	}
+	
+	return prompt.FilterHasPrefix(targets, prefix, true)
+}
+
+func executor(line string) {
+	line = strings.TrimSpace(line)
+	if line == "" {
+		return
+	}
+	
+	// Add to history
+	commandHistory = append(commandHistory, line)
+	
+	// Handle exit commands
+	if line == "exit" || line == "quit" {
+		fmt.Println("👋 Goodbye!")
+		os.Exit(0)
+	}
+	
+	// Execute the command
+	if err := executeCommand(currentCanvas, line); err != nil {
+		fmt.Printf("❌ Error: %v\n", err)
 	}
 }
 
@@ -126,7 +422,7 @@ func executeCommand(canvas *console.Canvas, line string) error {
 			return fmt.Errorf("usage: set <path> <value>")
 		}
 		path := args[0]
-		valueStr := args[1]
+		valueStr := strings.Join(args[1:], " ") // Allow spaces in values
 		
 		// Try to parse as number first, then string
 		var value interface{}
@@ -161,7 +457,7 @@ func executeCommand(canvas *console.Canvas, line string) error {
 		if err := canvas.Run(varName, target, console.WithRuns(runs)); err != nil {
 			return err
 		}
-		fmt.Printf("✅ Simulation completed: %s runs of %s\n", strconv.Itoa(runs), target)
+		fmt.Printf("✅ Simulation completed: %d runs of %s\n", runs, target)
 		return nil
 		
 	case "state":
@@ -175,6 +471,12 @@ func executeCommand(canvas *console.Canvas, line string) error {
 		fmt.Printf("  Loaded Files: %d\n", len(state.LoadedFiles))
 		fmt.Printf("  Generators: %d\n", len(state.Generators))
 		fmt.Printf("  Measurements: %d\n", len(state.Measurements))
+		if len(state.SystemParameters) > 0 {
+			fmt.Printf("  Modified Parameters:\n")
+			for path, value := range state.SystemParameters {
+				fmt.Printf("    %s = %v\n", path, value)
+			}
+		}
 		return nil
 		
 	case "execute":
@@ -198,7 +500,16 @@ func showHelp() {
   run <var> <target> [runs]  Run simulation (default 1000 runs)
   execute <recipe_file>      Execute commands from a recipe file
   state                      Show current Canvas state
-  exit, quit                 Exit the console
+  exit, quit                 Exit the console (or press Ctrl+D)
+
+Navigation:
+  ↑↓                         Navigate through command history
+  ←→                         Move cursor within line
+  Tab                        Auto-complete commands, paths, and parameters
+  Ctrl+A/E                   Jump to beginning/end of line
+  Ctrl+K/U                   Delete to end/beginning of line
+  Ctrl+W                     Delete word before cursor
+  Ctrl+D                     Exit console
 
 Examples:
   SDL> load examples/contacts/contacts.sdl
