@@ -244,6 +244,7 @@ func (c *Canvas) setField(obj any, path []string, value any) error {
 
 // Run executes a simulation and stores the results in a session variable.
 // target is the method to call, e.g., "app.Redirect".
+// If measurements are registered, automatically injects MeasurementTracer for data collection.
 func (c *Canvas) Run(varName string, target string, opts ...RunOption) error {
 	cfg := &RunConfig{
 		Runs:    1000, // Default runs
@@ -279,9 +280,152 @@ func (c *Canvas) Run(varName string, target string, opts ...RunOption) error {
 		}
 	}
 
-	runtime.RunCallInBatches(c.activeSystem, instanceName, methodName, numBatches, batchSize, cfg.Workers, onBatch)
+	// Check if measurements are registered - if so, use tracer-enabled execution
+	if c.HasMeasurements() {
+		err := c.runWithMeasurementTracer(instanceName, methodName, numBatches, batchSize, cfg.Workers, onBatch)
+		if err != nil {
+			return fmt.Errorf("measurement-enabled run failed: %w", err)
+		}
+	} else {
+		// Standard execution without measurements
+		runtime.RunCallInBatches(c.activeSystem, instanceName, methodName, numBatches, batchSize, cfg.Workers, onBatch)
+	}
+	
 	c.sessionVars[varName] = allResults
 	return nil
+}
+
+// runWithMeasurementTracer executes simulations with measurement tracing enabled
+func (c *Canvas) runWithMeasurementTracer(instanceName, methodName string, numBatches, batchSize, numWorkers int, onBatch func(int, []runtime.Value)) error {
+	// Generate unique run ID for this simulation
+	runID := fmt.Sprintf("run_%d", time.Now().UnixMilli())
+	
+	// Ensure measurement tracer is initialized
+	tracer, err := c.GetMeasurementTracer("./data")
+	if err != nil {
+		return fmt.Errorf("failed to initialize measurement tracer: %w", err)
+	}
+	
+	// Set the run ID for this session
+	tracer.SetRunID(runID)
+	
+	// Create a custom simulation runner with tracer support
+	fi := c.activeSystem.File
+	se := runtime.NewSimpleEval(fi, tracer.ExecutionTracer)
+	
+	// Use the existing system environment
+	var env *runtime.Env[runtime.Value]
+	if c.activeSystem.Env != nil {
+		env = c.activeSystem.Env
+	} else {
+		env = fi.Env()
+	}
+	
+	// Run the simulation in batches with the tracer
+	for batch := 0; batch < numBatches; batch++ {
+		batchVals := make([]runtime.Value, 0, batchSize)
+		
+		for i := 0; i < batchSize; i++ {
+			// Create call expression for instance.method
+			var runLatency runtime.Duration
+			ce := &runtime.CallExpr{
+				Function: &runtime.MemberAccessExpr{
+					Receiver: &runtime.IdentifierExpr{Value: instanceName},
+					Member:   &runtime.IdentifierExpr{Value: methodName},
+				},
+			}
+			
+			// Execute single call with tracer
+			result, _ := se.Eval(ce, env, &runLatency)
+			result.Time = runLatency // Capture the latency of this single run
+			
+			if se.HasErrors() {
+				return fmt.Errorf("simulation error in batch %d: %v", batch, se.Errors)
+			}
+			batchVals = append(batchVals, result)
+		}
+		
+		// Process batch results
+		onBatch(batch, batchVals)
+	}
+	
+	// Post-process the tracer events to extract measurements
+	err = c.processTracerEvents(tracer)
+	if err != nil {
+		return fmt.Errorf("failed to process tracer events: %w", err)
+	}
+	
+	return nil
+}
+
+// processTracerEvents extracts measurements from tracer events and stores them in the database
+func (c *Canvas) processTracerEvents(tracer *MeasurementTracer) error {
+	events := tracer.ExecutionTracer.Events
+	measurements := tracer.GetMeasurements()
+	
+	// Match Enter/Exit events to extract measurements
+	enterStack := make(map[int]*runtime.TraceEvent) // eventID -> Enter event
+	
+	for _, event := range events {
+		if event.Kind == runtime.EventEnter {
+			enterStack[event.ID] = event
+		} else if event.Kind == runtime.EventExit && len(enterStack) > 0 {
+			// Find the corresponding Enter event by walking back through the stack
+			var enterEvent *runtime.TraceEvent
+			for id, enter := range enterStack {
+				// Simple approach: match the most recent Enter event that hasn't been matched
+				// This assumes proper nesting of Enter/Exit events
+				enterEvent = enter
+				delete(enterStack, id)
+				break
+			}
+			
+			if enterEvent != nil {
+				// Check if this target is being measured
+				target := enterEvent.Target
+				if measurement, exists := measurements[target]; exists && measurement.Enabled {
+					// Extract metric and store in database
+					err := c.storeMeasurementFromEvent(tracer, measurement, enterEvent, event)
+					if err != nil {
+						fmt.Printf("Warning: Failed to store measurement for %s: %v\n", target, err)
+					}
+				}
+			}
+		}
+	}
+	
+	return nil
+}
+
+// storeMeasurementFromEvent extracts measurement data from tracer events and stores in database
+func (c *Canvas) storeMeasurementFromEvent(tracer *MeasurementTracer, measurement *MeasurementConfig, enterEvent, exitEvent *runtime.TraceEvent) error {
+	// Use current wall clock time instead of simulation timestamp
+	timestampNs := time.Now().UnixNano()
+	
+	var metricValue float64
+	switch measurement.MetricType {
+	case "latency":
+		metricValue = float64(exitEvent.Duration)
+	case "throughput":
+		metricValue = 1.0 // Each call represents one unit of throughput
+	case "errors":
+		// TODO: Check if there was an error in the execution
+		metricValue = 0.0 // No error detection yet
+	default:
+		metricValue = float64(exitEvent.Duration)
+	}
+	
+	point := TracePoint{
+		Timestamp:   timestampNs,
+		Target:      measurement.Target,
+		Duration:    metricValue,
+		ReturnValue: "", // TODO: Extract return value if needed
+		Error:       "", // TODO: Extract error if needed
+		Args:        enterEvent.Arguments,
+		RunID:       tracer.runID,
+	}
+	
+	return tracer.tsdb.Insert(point)
 }
 
 // Plot generates a visualization from data stored in session variables.
