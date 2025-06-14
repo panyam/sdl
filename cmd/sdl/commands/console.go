@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -131,6 +132,11 @@ func completer(d prompt.Document) []prompt.Suggest {
 	word := d.GetWordBeforeCursor()
 	args := strings.Fields(line)
 	
+	// Handle shell commands (prefixed with !)
+	if strings.HasPrefix(line, "!") {
+		return getShellCommandSuggestions(word, line)
+	}
+	
 	// If we're at the beginning, suggest commands
 	if len(args) <= 1 {
 		return getCommandSuggestions(word)
@@ -192,7 +198,82 @@ func getCommandSuggestions(prefix string) []prompt.Suggest {
 			Description: cmd.Description,
 		})
 	}
+	
+	// Add shell command suggestion
+	suggestions = append(suggestions, prompt.Suggest{
+		Text:        "!",
+		Description: "Execute shell command (e.g., !ls, !git status)",
+	})
+	
 	return prompt.FilterHasPrefix(suggestions, prefix, true)
+}
+
+func getShellCommandSuggestions(word string, line string) []prompt.Suggest {
+	suggestions := []prompt.Suggest{}
+	
+	// Common shell commands with descriptions
+	commonCommands := []struct {
+		cmd  string
+		desc string
+	}{
+		{"ls", "List directory contents"},
+		{"pwd", "Print working directory"},
+		{"cd", "Change directory"},
+		{"cat", "Display file contents"},
+		{"grep", "Search text patterns"},
+		{"find", "Find files and directories"},
+		{"git", "Git version control"},
+		{"make", "Build using Makefile"},
+		{"go", "Go programming language tools"},
+		{"ps", "List running processes"},
+		{"top", "Display running processes"},
+		{"curl", "Transfer data from servers"},
+		{"wget", "Download files"},
+		{"docker", "Container management"},
+		{"kubectl", "Kubernetes control"},
+	}
+	
+	// If line is just "!", suggest common commands
+	if strings.TrimSpace(line) == "!" {
+		for _, cmd := range commonCommands {
+			suggestions = append(suggestions, prompt.Suggest{
+				Text:        "!" + cmd.cmd,
+				Description: cmd.desc,
+			})
+		}
+		return suggestions
+	}
+	
+	// For more complex shell commands, suggest file completion after the command
+	// Extract the shell command part (after !)
+	shellPart := strings.TrimSpace(line[1:])
+	parts := strings.Fields(shellPart)
+	
+	if len(parts) >= 1 {
+		// For commands that typically work with files, suggest file completion
+		cmd := parts[0]
+		if cmd == "cat" || cmd == "less" || cmd == "more" || cmd == "head" || cmd == "tail" || 
+		   cmd == "cp" || cmd == "mv" || cmd == "rm" || cmd == "chmod" || cmd == "ls" {
+			// Get current word for file completion
+			currentWord := ""
+			if strings.HasSuffix(line, " ") {
+				currentWord = ""
+			} else if len(parts) > 1 {
+				currentWord = parts[len(parts)-1]
+			}
+			
+			// Use file suggestions without extension filter
+			fileSuggestions := getFileSuggestions(currentWord, "")
+			for _, fs := range fileSuggestions {
+				suggestions = append(suggestions, prompt.Suggest{
+					Text:        "!" + shellPart[:len(shellPart)-len(currentWord)] + fs.Text,
+					Description: fs.Description,
+				})
+			}
+		}
+	}
+	
+	return suggestions
 }
 
 func getFileSuggestions(prefix string, extension string) []prompt.Suggest {
@@ -377,10 +458,53 @@ func executor(line string) {
 		os.Exit(0)
 	}
 	
-	// Execute the command
+	// Handle shell commands (prefixed with !)
+	if strings.HasPrefix(line, "!") {
+		shellCmd := strings.TrimSpace(line[1:])
+		if shellCmd == "" {
+			fmt.Println("❌ Error: empty shell command")
+			return
+		}
+		if err := executeShellCommand(shellCmd); err != nil {
+			fmt.Printf("❌ Shell error: %v\n", err)
+		}
+		return
+	}
+	
+	// Execute SDL command
 	if err := executeCommand(currentCanvas, line); err != nil {
 		fmt.Printf("❌ Error: %v\n", err)
 	}
+}
+
+func executeShellCommand(cmd string) error {
+	// Parse the command and arguments
+	parts := strings.Fields(cmd)
+	if len(parts) == 0 {
+		return fmt.Errorf("empty command")
+	}
+	
+	// Create the command
+	var shellCmd *exec.Cmd
+	if len(parts) == 1 {
+		shellCmd = exec.Command(parts[0])
+	} else {
+		shellCmd = exec.Command(parts[0], parts[1:]...)
+	}
+	
+	// Set up command to use current stdio
+	shellCmd.Stdout = os.Stdout
+	shellCmd.Stderr = os.Stderr
+	shellCmd.Stdin = os.Stdin
+	
+	// Run the command
+	fmt.Printf("🐚 Running: %s\n", cmd)
+	err := shellCmd.Run()
+	if err != nil {
+		return fmt.Errorf("command failed: %w", err)
+	}
+	
+	return nil
 }
 
 func executeCommand(canvas *console.Canvas, line string) error {
@@ -500,6 +624,7 @@ func showHelp() {
   run <var> <target> [runs]  Run simulation (default 1000 runs)
   execute <recipe_file>      Execute commands from a recipe file
   state                      Show current Canvas state
+  !<shell_command>           Execute shell command (e.g., !ls, !git status)
   exit, quit                 Exit the console (or press Ctrl+D)
 
 Navigation:
@@ -517,6 +642,9 @@ Examples:
   SDL> set server.pool.ArrivalRate 15
   SDL> run latest server.HandleLookup 2000
   SDL> execute examples/demo_recipe.txt
+  SDL> !ls -la
+  SDL> !git status
+  SDL> !ps aux | grep sdl
 
 `)
 }

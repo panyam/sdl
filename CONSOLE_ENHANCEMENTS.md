@@ -62,8 +62,29 @@ SDL[ContactsSystem]>
 - **Ctrl+W**: Delete word before cursor
 - **Ctrl+D**: Exit console
 
-### 5. **Enhanced Help**
-The help command now includes navigation instructions:
+### 5. **Shell Command Execution**
+Execute any shell command by prefixing it with `!`:
+```
+SDL> !ls -la
+🐚 Running: ls -la
+total 64
+drwxr-xr-x 15 user staff  480 Jun 14 12:00 .
+drwxr-xr-x  8 user staff  256 Jun 14 11:30 ..
+...
+
+SDL> !git status
+🐚 Running: git status
+On branch main
+Your branch is up to date with 'origin/main'.
+...
+
+SDL> !ps aux | grep sdl
+🐚 Running: ps aux | grep sdl
+user  12345   0.1  0.2  12345   6789   ??  S    12:00PM   0:00.15 ./sdl console
+```
+
+### 6. **Enhanced Help**
+The help command now includes navigation instructions and shell commands:
 ```
 SDL> help
 Available commands:
@@ -75,6 +96,7 @@ Available commands:
   run <var> <target> [runs]  Run simulation (default 1000 runs)
   execute <recipe_file>      Execute commands from a recipe file
   state                      Show current Canvas state
+  !<shell_command>           Execute shell command (e.g., !ls, !git status)
   exit, quit                 Exit the console (or press Ctrl+D)
 
 Navigation:
@@ -119,6 +141,28 @@ SDL[ContactsSystem]> run latest server.HandleLookup 5000
 SDL> execute <TAB>
 SDL> execute examples/<TAB>
 SDL> execute examples/demo_recipe.txt
+```
+
+### Shell Command Integration
+```bash
+# Quick directory operations
+SDL> !<TAB>
+SDL> !ls    # List files
+SDL> !pwd   # Current directory
+SDL> !git status  # Check git status
+
+# File operations with completion
+SDL> !cat <TAB>
+SDL> !cat examples/contacts/contacts.sdl
+
+# Development workflow
+SDL> !make build
+SDL> !go test ./...
+SDL> !docker ps
+
+# System monitoring
+SDL> !ps aux | grep sdl
+SDL> !top -p $(pgrep sdl)
 ```
 
 ## Technical Details
