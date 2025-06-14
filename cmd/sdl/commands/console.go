@@ -96,6 +96,7 @@ var commands = []commandInfo{
 	{Name: "execute", Description: "Execute commands from a recipe file", Usage: "execute <recipe_file>", MinArgs: 1},
 	{Name: "state", Description: "Show current Canvas state", Usage: "state", MinArgs: 0},
 	{Name: "gen", Description: "Traffic generator commands", Usage: "gen <subcommand> [args...]", MinArgs: 1},
+	{Name: "measure", Description: "Measurement commands", Usage: "measure <subcommand> [args...]", MinArgs: 1},
 	{Name: "exit", Description: "Exit the console", Usage: "exit", MinArgs: 0},
 	{Name: "quit", Description: "Exit the console", Usage: "quit", MinArgs: 0},
 }
@@ -293,6 +294,8 @@ func completer(d prompt.Document) []prompt.Suggest {
 		}
 	case "gen":
 		return getGenCommandSuggestions(args, argIndex, word)
+	case "measure":
+		return getMeasureCommandSuggestions(args, argIndex, word)
 	}
 	
 	return []prompt.Suggest{}
@@ -623,6 +626,78 @@ func getGeneratorFieldSuggestions(prefix string) []prompt.Suggest {
 	return prompt.FilterHasPrefix(suggestions, prefix, true)
 }
 
+func getMeasureCommandSuggestions(args []string, argIndex int, word string) []prompt.Suggest {
+	// args[0] is "measure", check if we have a subcommand
+	if argIndex == 1 {
+		// Suggest measure subcommands
+		suggestions := []prompt.Suggest{
+			{Text: "add", Description: "Add measurement target"},
+			{Text: "list", Description: "List all measurements"},
+			{Text: "remove", Description: "Remove measurement target"},
+			{Text: "clear", Description: "Clear all measurements"},
+			{Text: "stats", Description: "Show measurement database statistics"},
+		}
+		return prompt.FilterHasPrefix(suggestions, word, true)
+	}
+	
+	if len(args) < 2 {
+		return []prompt.Suggest{}
+	}
+	
+	subcommand := args[1]
+	subArgIndex := argIndex - 2 // Adjust for "measure <subcommand>"
+	
+	switch subcommand {
+	case "add":
+		if subArgIndex == 0 { // id argument
+			return []prompt.Suggest{
+				{Text: "lat1", Description: "Latency measurement"},
+				{Text: "tput1", Description: "Throughput measurement"},
+				{Text: "err1", Description: "Error rate measurement"},
+			}
+		} else if subArgIndex == 1 { // target argument
+			return getTargetSuggestions(word)
+		} else if subArgIndex == 2 { // metric type argument
+			return getMeasureMetricTypeSuggestions(word)
+		}
+	case "remove":
+		if subArgIndex == 0 { // target to remove
+			return getMeasurementTargetSuggestions(word)
+		}
+	}
+	
+	return []prompt.Suggest{}
+}
+
+func getMeasureMetricTypeSuggestions(prefix string) []prompt.Suggest {
+	suggestions := []prompt.Suggest{
+		{Text: "latency", Description: "Measure response time/duration"},
+		{Text: "throughput", Description: "Measure requests per second"},
+		{Text: "errors", Description: "Measure error rate"},
+	}
+	
+	return prompt.FilterHasPrefix(suggestions, prefix, true)
+}
+
+func getMeasurementTargetSuggestions(prefix string) []prompt.Suggest {
+	suggestions := []prompt.Suggest{}
+	
+	if currentCanvas == nil {
+		return suggestions
+	}
+	
+	// Get measurement targets from Canvas
+	measurements := currentCanvas.GetCanvasMeasurements()
+	for target, measurement := range measurements {
+		suggestions = append(suggestions, prompt.Suggest{
+			Text:        target,
+			Description: fmt.Sprintf("%s (%s)", measurement.Name, measurement.MetricType),
+		})
+	}
+	
+	return prompt.FilterHasPrefix(suggestions, prefix, true)
+}
+
 func executor(line string) {
 	line = strings.TrimSpace(line)
 	if line == "" {
@@ -797,6 +872,12 @@ func executeCommand(canvas *console.Canvas, line string) error {
 		}
 		return handleGenCommand(canvas, args)
 		
+	case "measure":
+		if len(args) < 1 {
+			return fmt.Errorf("usage: measure <subcommand> [args...]\nAvailable subcommands: add, list, remove, clear, stats")
+		}
+		return handleMeasureCommand(canvas, args)
+		
 	default:
 		return fmt.Errorf("unknown command: %s (type 'help' for available commands)", command)
 	}
@@ -825,6 +906,13 @@ Traffic Generator Commands:
   gen pause <id>                   Pause specific traffic generator
   gen resume <id>                  Resume specific traffic generator
   gen modify <id> <field> <value>  Modify generator (fields: rate, target, name, enabled)
+
+Measurement Commands:
+  measure add <id> <target> <type> Add measurement target (types: latency, throughput, errors)
+  measure list                     List all measurement targets
+  measure remove <target>          Remove measurement target
+  measure clear                    Clear all measurement targets
+  measure stats                    Show measurement database statistics
 
 Navigation:
   ↑↓                         Navigate through command history (persistent across sessions)
@@ -1092,6 +1180,124 @@ func handleGenModify(canvas *console.Canvas, args []string) error {
 	}
 	
 	fmt.Printf("✅ Modified generator %s: %s = %s\n", id, field, valueStr)
+	return nil
+}
+
+// Measurement command handlers
+func handleMeasureCommand(canvas *console.Canvas, args []string) error {
+	subcommand := args[0]
+	subArgs := args[1:]
+	
+	switch subcommand {
+	case "add":
+		if len(subArgs) < 3 {
+			return fmt.Errorf("usage: measure add <id> <target> <metric_type>")
+		}
+		return handleMeasureAdd(canvas, subArgs)
+		
+	case "list":
+		return handleMeasureList(canvas)
+		
+	case "remove":
+		if len(subArgs) < 1 {
+			return fmt.Errorf("usage: measure remove <target>")
+		}
+		return handleMeasureRemove(canvas, subArgs[0])
+		
+	case "clear":
+		return handleMeasureClear(canvas)
+		
+	case "stats":
+		return handleMeasureStats(canvas)
+		
+	default:
+		return fmt.Errorf("unknown measure subcommand: %s\nAvailable subcommands: add, list, remove, clear, stats", subcommand)
+	}
+}
+
+func handleMeasureAdd(canvas *console.Canvas, args []string) error {
+	id := args[0]
+	target := args[1]
+	metricType := args[2]
+	
+	// Validate metric type
+	validMetrics := map[string]bool{
+		"latency":    true,
+		"throughput": true,
+		"errors":     true,
+	}
+	
+	if !validMetrics[metricType] {
+		return fmt.Errorf("invalid metric type '%s'. Valid types: latency, throughput, errors", metricType)
+	}
+	
+	// Generate name from ID
+	name := fmt.Sprintf("Measurement-%s", id)
+	
+	err := canvas.AddCanvasMeasurement(id, name, target, metricType, true)
+	if err != nil {
+		return err
+	}
+	
+	fmt.Printf("✅ Added measurement: %s -> %s (%s)\n", id, target, metricType)
+	return nil
+}
+
+func handleMeasureList(canvas *console.Canvas) error {
+	measurements := canvas.GetCanvasMeasurements()
+	
+	if len(measurements) == 0 {
+		fmt.Println("📊 No measurements configured")
+		return nil
+	}
+	
+	fmt.Printf("📊 Measurements (%d):\n", len(measurements))
+	for target, measurement := range measurements {
+		status := "⏸️ paused"
+		if measurement.Enabled {
+			status = "📋 registered"
+		}
+		fmt.Printf("  %s: %s -> %s (%s) [%s]\n", 
+			measurement.ID, measurement.Name, target, measurement.MetricType, status)
+	}
+	return nil
+}
+
+func handleMeasureRemove(canvas *console.Canvas, target string) error {
+	err := canvas.RemoveCanvasMeasurement(target)
+	if err != nil {
+		return err
+	}
+	
+	fmt.Printf("✅ Removed measurement: %s\n", target)
+	return nil
+}
+
+func handleMeasureClear(canvas *console.Canvas) error {
+	canvas.ClearMeasurements()
+	fmt.Println("✅ Cleared all measurements")
+	return nil
+}
+
+func handleMeasureStats(canvas *console.Canvas) error {
+	stats, err := canvas.GetMeasurementStats()
+	if err != nil {
+		return err
+	}
+	
+	fmt.Printf("📊 Measurement Database Statistics:\n")
+	fmt.Printf("  Total traces: %v\n", stats["total_traces"])
+	fmt.Printf("  Unique targets: %v\n", stats["unique_targets"])
+	fmt.Printf("  Unique runs: %v\n", stats["unique_runs"])
+	fmt.Printf("  Database path: %v\n", stats["database_path"])
+	
+	if earliest, ok := stats["earliest_trace"]; ok {
+		fmt.Printf("  Earliest trace: %v\n", earliest)
+	}
+	if latest, ok := stats["latest_trace"]; ok {
+		fmt.Printf("  Latest trace: %v\n", latest)
+	}
+	
 	return nil
 }
 

@@ -173,3 +173,51 @@ func TestCanvas_MeasurementWithoutInit(t *testing.T) {
 
 	canvas.SetMeasurementRunID("test") // Should not panic
 }
+
+func TestCanvas_MeasureCommandWorkflow(t *testing.T) {
+	canvas := NewCanvas()
+	defer canvas.Close()
+
+	// Test measure add command workflow
+	err := canvas.AddCanvasMeasurement("lat1", "Latency Monitor", "server.HandleLookup", "latency", true)
+	require.NoError(t, err)
+
+	err = canvas.AddCanvasMeasurement("tput1", "Throughput Monitor", "server.HandleCreate", "throughput", true)
+	require.NoError(t, err)
+
+	err = canvas.AddCanvasMeasurement("err1", "Error Monitor", "server.HandleUpdate", "errors", true)
+	require.NoError(t, err)
+
+	// Test measure list functionality
+	measurements := canvas.GetCanvasMeasurements()
+	assert.Len(t, measurements, 3)
+	assert.Contains(t, measurements, "server.HandleLookup")
+	assert.Contains(t, measurements, "server.HandleCreate")
+	assert.Contains(t, measurements, "server.HandleUpdate")
+
+	// Verify measurement details
+	latencyMeasurement := measurements["server.HandleLookup"]
+	assert.Equal(t, "lat1", latencyMeasurement.ID)
+	assert.Equal(t, "Latency Monitor", latencyMeasurement.Name)
+	assert.Equal(t, "latency", latencyMeasurement.MetricType)
+	assert.True(t, latencyMeasurement.Enabled)
+
+	// Test measure remove command
+	err = canvas.RemoveCanvasMeasurement("server.HandleCreate")
+	require.NoError(t, err)
+	measurements = canvas.GetCanvasMeasurements()
+	assert.Len(t, measurements, 2)
+	assert.NotContains(t, measurements, "server.HandleCreate")
+
+	// Test measure stats command
+	stats, err := canvas.GetMeasurementStats()
+	require.NoError(t, err)
+	assert.Contains(t, stats, "total_traces")
+	assert.Contains(t, stats, "database_path")
+	assert.Equal(t, int64(0), stats["total_traces"]) // No data inserted yet
+
+	// Test measure clear command
+	canvas.ClearMeasurements()
+	assert.False(t, canvas.HasMeasurements())
+	assert.Len(t, canvas.GetCanvasMeasurements(), 0)
+}
