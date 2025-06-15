@@ -8,3 +8,4 @@ Make sure you ignore node_modules as it has a lot of files you wont need for mos
 When updating .md files and in commit messages use emojis and flowerly languages sparingly.  We dont want to be too grandios or overpromising.
 Make sure the playwright tool is setup so you can inspect the browser when we are implementing and testing the Dashboard features.
 Do not refer to claude or anthropic in your commit messages
+When building do not directly build the cli.  Use the "make" command.  The generated sdl binary will be in "$GOBIN" folder
