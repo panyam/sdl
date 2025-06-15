@@ -1,61 +1,93 @@
 # SDL Console Documentation
 
-This directory contains documentation and testing guides for the SDL interactive console.
+This directory contains comprehensive documentation for SDL's client-server console architecture.
 
 ## Overview
 
-The SDL console provides a professional REPL (Read-Eval-Print Loop) environment for interactive SDL system modeling, with features like command history, tab completion, shell integration, and real-time web dashboard synchronization.
+SDL provides a professional client-server architecture that separates the interactive console from the simulation engine. This creates a clean, scalable, and powerful environment for system modeling and performance testing.
 
-## Documentation Files
+## Sequential Tutorial (Start Here!)
 
-### Core Documentation
-- **[CONSOLE_ENHANCEMENTS.md](CONSOLE_ENHANCEMENTS.md)** - Comprehensive overview of all console features
-- **[READLINE_COMPARISON.md](READLINE_COMPARISON.md)** - Analysis of Go readline libraries and selection rationale
+**New users should follow the sequential tutorial:**
 
-### Feature Testing Guides
-- **[test_shell_commands.md](test_shell_commands.md)** - Shell command execution with `!` prefix
-- **[test_history_features.md](test_history_features.md)** - Persistent command history and auto-suggest improvements  
-- **[test_dynamic_system_suggestions.md](test_dynamic_system_suggestions.md)** - Dynamic system name extraction from SDL files
+1. **[Overview](01-OVERVIEW.md)** - Architecture and concepts
+2. **[Getting Started](02-GETTING-STARTED.md)** - Your first server and console session  
+3. **[Basic Commands](03-BASIC-COMMANDS.md)** - Core SDL operations
+4. **[Traffic Generation](04-TRAFFIC-GENERATION.md)** - Simulating load with generators
+5. **[Measurements](05-MEASUREMENTS.md)** - Collecting and analyzing metrics
+6. **[Web Dashboard](06-WEB-DASHBOARD.md)** - Real-time visualization and control
+7. **[Advanced Features](07-ADVANCED-FEATURES.md)** - History, tab completion, automation
+8. **[Remote Access](08-REMOTE-ACCESS.md)** - Connecting to remote servers
+9. **[Troubleshooting](09-TROUBLESHOOTING.md)** - Common issues and solutions
 
-### Testing Scripts
-- **[test_console_features.sh](test_console_features.sh)** - Automated testing script for console features
+## Architecture
+
+SDL uses a clean client-server split:
+
+```
+┌─────────────────┐    HTTP API    ┌─────────────────┐
+│  sdl console    │ ◄─────────────► │   sdl serve     │
+│  (Client)       │                │   (Server)      │
+│                 │                │                 │
+│ • Clean REPL    │                │ • Canvas Engine │
+│ • Tab Complete  │                │ • Web Dashboard │
+│ • History       │                │ • Logs & Stats  │
+│ • No Logs       │                │ • REST API      │
+└─────────────────┘                └─────────────────┘
+```
 
 ## Quick Start
 
 ```bash
-# Start the SDL console
-./sdl console --port 8080
+# Terminal 1: Start SDL server
+./bin/sdl serve
 
-# Load an SDL file and explore with tab completion
+# Terminal 2: Connect console client
+./bin/sdl console
+
+# Load and explore with tab completion
 SDL> load examples/contacts/contacts.sdl
 SDL> use <TAB>
 SDL> use ContactsSystem
-SDL[ContactsSystem]> set server.pool.<TAB>
-SDL[ContactsSystem]> !git status
+SDL[ContactsSystem]> gen add load1 server.HandleLookup 10
+SDL[ContactsSystem]> gen start load1
 ```
 
 ## Key Features
 
-1. **Rich Tab Completion** - Context-aware completions for commands, files, systems, and parameters
-2. **Persistent History** - Commands saved to `~/.sdl_history` across sessions
-3. **Shell Integration** - Execute shell commands with `!` prefix
-4. **Dynamic System Discovery** - Auto-completion extracts real system names from loaded SDL files
-5. **Web Dashboard** - Real-time visualization at http://localhost:8080
-6. **Recipe Execution** - Automated command sequences for demonstrations
+1. **Client-Server Architecture** - Clean separation of concerns
+2. **Real-time Web Dashboard** - Live visualization at http://localhost:8080
+3. **Traffic Generation** - Sustained load simulation with generators
+4. **Measurement System** - DuckDB-based metrics collection and analysis
+5. **Remote Access** - Connect to servers on other machines
+6. **Rich Tab Completion** - Context-aware command suggestions
+7. **Persistent History** - Commands saved across sessions
+8. **Shell Integration** - Execute shell commands with `!` prefix
+9. **Recipe Automation** - Scripted command sequences
 
-## Architecture
+## Additional Documentation
 
-The console is built using:
-- **go-prompt** library for rich REPL experience
-- **Canvas API** for SDL file loading and system management
-- **WebSocket broadcasting** for real-time dashboard updates
-- **Reflection-based** dynamic system discovery
+### Legacy Feature Documentation
+- **[CONSOLE_ENHANCEMENTS.md](CONSOLE_ENHANCEMENTS.md)** - Historical feature overview
+- **[READLINE_COMPARISON.md](READLINE_COMPARISON.md)** - Go readline library analysis
+
+### Testing and Development Guides  
+- **[test_shell_commands.md](test_shell_commands.md)** - Shell integration testing
+- **[test_history_features.md](test_history_features.md)** - History system testing
+- **[test_dynamic_system_suggestions.md](test_dynamic_system_suggestions.md)** - Tab completion testing
+- **[test_console_features.sh](test_console_features.sh)** - Automated test script
 
 ## Development
 
-For console development, see the source files:
-- `cmd/sdl/commands/console.go` - Main console implementation
+Core implementation files:
+- `cmd/sdl/commands/console.go` - Console client implementation
+- `cmd/sdl/commands/serve.go` - Server command implementation  
 - `console/canvas_web.go` - Web API and WebSocket handling
-- `console/canvas.go` - Core Canvas functionality
+- `console/canvas.go` - Core Canvas simulation engine
 
-The testing guides in this directory provide step-by-step instructions for verifying each feature works correctly.
+## Support
+
+For issues or questions:
+- Follow the **[Troubleshooting](09-TROUBLESHOOTING.md)** guide
+- Check existing documentation in this directory
+- Review server and console logs for error details
