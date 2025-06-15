@@ -15,9 +15,9 @@ import (
 )
 
 var (
-	showLogs     = true
-	showStats    = true
-	statsInterval = 5 * time.Second
+	showLogs      = true
+	showStats     = true
+	statsInterval = 10 * time.Second
 )
 
 // Serve command
@@ -78,7 +78,7 @@ Example:
 		fmt.Printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
 		fmt.Printf("📊 Dashboard:    %s\n", baseURL)
 		fmt.Printf("🛠️  REST API:     %s/api/canvas\n", baseURL)
-		fmt.Printf("📡 WebSocket:    ws://%s/api/live\n", addr) 
+		fmt.Printf("📡 WebSocket:    ws://%s/api/live\n", addr)
 		fmt.Printf("💻 CLI Commands: sdl load/use/gen/measure --server %s\n", baseURL)
 		fmt.Printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n")
 
@@ -105,13 +105,13 @@ Example:
 
 		// Wait for shutdown signal
 		<-sigChan
-		
+
 		fmt.Println("\n🛑 Shutting down server...")
-		
+
 		// Graceful shutdown with timeout
 		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer shutdownCancel()
-		
+
 		if err := server.Shutdown(shutdownCtx); err != nil {
 			log.Printf("⚠️  Server shutdown error: %v", err)
 		} else {
