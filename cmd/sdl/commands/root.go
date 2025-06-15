@@ -11,6 +11,13 @@ import (
 // var cfgFile string
 var dslFilePath string
 
+// Imported from api.go - these need to be accessible for flag binding
+var (
+	serverURL string
+	serveHost string
+	servePort int
+)
+
 var rootCmd = &cobra.Command{
 	Use:   "sdl",
 	Short: "SDL is a System Design Language processor and analyzer",
@@ -28,16 +35,13 @@ func Execute() {
 }
 
 func init() {
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-	// Example:
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.sdl.yaml)")
-
-	// A common flag for specifying the DSL file, can be made persistent if most commands need it.
-	// Alternatively, each command can define its own file flag if preferred.
-	// Let's make it persistent for now.
+	// Global persistent flags
 	rootCmd.PersistentFlags().StringVarP(&dslFilePath, "file", "f", "", "Path to the DSL file (required by many commands)")
+	rootCmd.PersistentFlags().StringVar(&serverURL, "server", "", "SDL server URL (default: CANVAS_SERVER_URL env var or http://localhost:8080)")
+	
+	// Serve command flags
+	rootCmd.PersistentFlags().StringVar(&serveHost, "host", "", "Server host (default: CANVAS_SERVE_HOST env var or localhost)")
+	rootCmd.PersistentFlags().IntVar(&servePort, "port", 0, "Server port (default: CANVAS_SERVE_PORT env var or 8080)")
 }
 
 // AddCommand allows adding subcommands from other files.

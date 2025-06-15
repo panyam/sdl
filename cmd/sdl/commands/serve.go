@@ -15,7 +15,6 @@ import (
 )
 
 var (
-	servePort    = 8080
 	showLogs     = true
 	showStats    = true
 	statsInterval = 5 * time.Second
@@ -29,24 +28,28 @@ var serveCmd = &cobra.Command{
 	
 The server provides:
 - Canvas simulation engine for SDL system execution
-- REST API for all Canvas operations (load, use, set, run, plot, etc.)
+- REST API for all Canvas operations 
 - RESTful API for traffic generation and measurement management  
 - WebSocket connection for real-time updates
 - Web dashboard for visualization and control
 - Traffic generator and measurement logging
 - Server statistics and health monitoring
 
-This server can be used standalone or with the SDL console client for a clean REPL experience.
+Use the server with direct CLI commands for a clean shell experience.
 
 Example:
-  # Start server with default settings
+  # Terminal 1: Start server
   sdl serve
   
-  # Start server on custom port without logs
-  sdl serve --port 9090 --no-logs
+  # Terminal 2: Use CLI commands  
+  sdl load examples/contacts/contacts.sdl
+  sdl use ContactsSystem
+  sdl gen add load1 server.HandleLookup 10
+  sdl gen start load1
   
-  # Then connect with console client
-  sdl console --server http://localhost:9090`,
+  # Or start server on custom port
+  sdl serve --port 9090 --no-logs
+  sdl load --server http://localhost:9090 examples/contacts/contacts.sdl`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Create web server with Canvas
 		webServer := console.NewWebServer()
@@ -61,20 +64,22 @@ Example:
 		sigChan := make(chan os.Signal, 1)
 		signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
-		// Start server
-		addr := fmt.Sprintf(":%d", servePort)
+		// Get server configuration
+		host, port := getServeConfig()
+		addr := fmt.Sprintf("%s:%d", host, port)
 		server := &http.Server{
 			Addr:    addr,
 			Handler: router,
 		}
 
 		// Server startup message
+		baseURL := fmt.Sprintf("http://%s", addr)
 		fmt.Printf("🚀 SDL Canvas Server v1.0\n")
 		fmt.Printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
-		fmt.Printf("📊 Dashboard:    http://localhost%s\n", addr)
-		fmt.Printf("🛠️  REST API:     http://localhost%s/api/canvas\n", addr)
-		fmt.Printf("📡 WebSocket:    ws://localhost%s/api/live\n", addr) 
-		fmt.Printf("💻 Console:      sdl console --server http://localhost%s\n", addr)
+		fmt.Printf("📊 Dashboard:    %s\n", baseURL)
+		fmt.Printf("🛠️  REST API:     %s/api/canvas\n", baseURL)
+		fmt.Printf("📡 WebSocket:    ws://%s/api/live\n", addr) 
+		fmt.Printf("💻 CLI Commands: sdl load/use/gen/measure --server %s\n", baseURL)
 		fmt.Printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n")
 
 		// Start server in goroutine
@@ -139,7 +144,7 @@ func displayServerStats(ctx context.Context, canvas *console.Canvas) {
 }
 
 func init() {
-	serveCmd.Flags().IntVar(&servePort, "port", 8080, "Port to serve on")
+	// Port and host are now handled by persistent flags in root.go
 	serveCmd.Flags().BoolVar(&showLogs, "logs", true, "Show server logs")
 	serveCmd.Flags().BoolVar(&showStats, "stats", true, "Show periodic statistics")
 	serveCmd.Flags().DurationVar(&statsInterval, "stats-interval", 5*time.Second, "Statistics display interval")

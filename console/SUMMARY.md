@@ -2,7 +2,7 @@
 
 **Purpose:**
 
-This package provides the core engine for interactive workshop demonstrations and system design interview coaching. Its primary goal is to create a stateful, long-running session that enables real-time parameter modification, immediate visualization updates, and seamless live demonstrations that make complex distributed systems concepts immediately tangible for audiences. **Now powers CLI, interactive REPL console, and web interfaces with shared state synchronization.**
+This package provides the core engine for interactive workshop demonstrations and system design interview coaching. Its primary goal is to create a stateful, long-running session that enables real-time parameter modification, immediate visualization updates, and seamless live demonstrations that make complex distributed systems concepts immediately tangible for audiences. **Now powers CLI commands, web server, and dashboard interfaces with RESTful API architecture.**
 
 **Core Components & Files:**
 
@@ -26,7 +26,7 @@ This package provides the core engine for interactive workshop demonstrations an
 
 **Relationship with Other Packages:**
 
-*   **`cmd/sdl`**: Powers both the serve command and new console command. The console command provides interactive REPL with shared Canvas state that synchronizes with web dashboard in real-time. The consolidated web server architecture delegates all HTTP/WebSocket handling to Canvas.
+*   **`cmd/sdl`**: Powers the serve command hosting Canvas web server and all client CLI commands. Direct commands (`sdl load`, `sdl gen add`, `sdl measure start`) use RESTful Canvas API for clean server/client separation. The consolidated web server architecture delegates all HTTP/WebSocket handling to Canvas.
 *   **`loader` & `runtime`**: The `Canvas` orchestrates these packages to seamlessly load workshop scenarios and execute rapid parameter modifications during live demos.
 *   **`viz`**: The `Canvas.Plot` method generates immediate visualizations that demonstrate system behavior changes, creating compelling visual storytelling for workshop audiences.
 
@@ -36,7 +36,7 @@ This package provides the core engine for interactive workshop demonstrations an
 *   **RESTful Canvas API:** Complete implementation of stateless REST endpoints for all Canvas operations. Frontend can control entire Canvas lifecycle through HTTP while receiving real-time updates via WebSocket.
 *   **Web Dashboard Integration:** Canvas now fully integrated with TypeScript frontend. Dashboard automatically loads Canvas state on startup, displays system architecture dynamically, and provides real-time traffic generation controls.
 *   **System Visualization:** Canvas provides complete component topology data that frontend renders to match `sdl diagram` output. All components, connections, and dependencies are visualized in the dashboard.
-*   **Interactive REPL Console:** New `sdl console` command provides seamless interactive experience with command history, real-time WebSocket synchronization, and shared Canvas state with web dashboard.
+*   **Direct CLI Commands:** Shell-native commands (`sdl load`, `sdl gen add`, `sdl measure start`) provide clean, scriptable interface using RESTful Canvas API with environment variable configuration support.
 *   **Enhanced State Persistence:** Complete Canvas state tracking including system parameters, enabling perfect session recovery when browser reconnects mid-session.
 *   **Real-Time Parameter Modification:** The `Set` method delivers flawless live demo performance, enabling instant parameter changes with immediate simulation impact that creates compelling workshop moments.
 *   **Traffic Generation:** Complete generator lifecycle management with start/stop/pause controls. Multiple generators can run simultaneously with different configurations.
@@ -46,7 +46,7 @@ This package provides the core engine for interactive workshop demonstrations an
 *   **End-to-End Analytics Workflow:** Complete `measure → run → analyze` pipeline with DuckDB storage, percentile calculations (P50/P90/P95/P99), custom SQL queries, and time-series data retrieval. Validated with comprehensive test suite covering multiple simulation runs and data accumulation.
 *   **Traffic Generation:** Fully functional generators that execute Canvas.Run() at configured rates, creating actual simulation load with measurement tracing. Supports real-time rate adjustments and pause/resume operations.
 *   **Live Measurement Dashboard:** Web dashboard fetches real measurement data from DuckDB via REST API endpoint `/api/measurements/{target}/data`. Charts update every 2 seconds showing actual latency distributions from simulations.
-*   **Shared State Synchronization:** Console commands instantly broadcast to web dashboard via WebSocket, enabling perfect side-by-side demonstrations without curl commands.
+*   **Shared State Synchronization:** CLI commands instantly broadcast to web dashboard via WebSocket, enabling perfect side-by-side demonstrations with clean shell integration.
 *   **Capacity Modeling Integration:** Full support for M/M/c queuing demonstrations, allowing audiences to see how traffic spikes overwhelm systems and how capacity scaling and caching optimizations restore performance.
 *   **Demo Scenario Validation:** Netflix streaming service model provides complete workshop narrative from baseline performance through traffic spikes, optimization strategies, and failure scenarios.
 *   **Ready for Conference:** All primitives tested for rapid iteration, edge case handling, and audience Q&A scenarios. The foundation for "Building an Open Source System Design Interview Coach With Interactive Simulations" is solid and reliable.

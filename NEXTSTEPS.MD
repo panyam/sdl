@@ -88,6 +88,13 @@ This document outlines the workshop-focused development status and next steps fo
     *   Canvas-based test suite validating all workshop demonstration flows.
     *   Edge case testing for live Q&A scenarios and rapid parameter modification.
     *   Ready-to-demo example showcasing system design interview coaching concepts.
+*   **`[COMPLETED]` CLI Architecture Transformation:**
+    *   Replaced complex REPL console with direct CLI commands leveraging native shell features
+    *   Clean server/client separation: `sdl serve` hosts Canvas engine, client commands use REST API
+    *   Scriptable commands enabling shell automation: `sdl load`, `sdl gen add`, `sdl measure start`
+    *   Persistent flags with environment variable support (CANVAS_SERVER_URL, CANVAS_SERVE_HOST, CANVAS_SERVE_PORT)
+    *   Unified API client configuration eliminating code duplication across commands
+    *   Enhanced shell integration with history, completion, and piping capabilities
 
 ---
 ## 🎯 CONFERENCE WORKSHOP PRIORITIES
@@ -240,7 +247,8 @@ This document outlines the workshop-focused development status and next steps fo
 **COMPLETED:** Interactive REPL console with real-time dashboard synchronization
 **COMPLETED:** Enhanced Canvas state persistence with parameter tracking and session recovery
 **COMPLETED:** DuckDB-based measurement system for call-based metrics collection
-**CURRENT PHASE:** Advanced visualization features and dashboard integration
+**COMPLETED:** CLI Architecture Transformation from REPL to Direct Commands
+**CURRENT PHASE:** Documentation updates and architectural optimization
 **NEXT PHASE:** Enhanced scenario library and workshop optimization
 
 ---
@@ -297,28 +305,28 @@ SDL> measure stats
 ---
 ## 🚀 NEXT PHASE: Architecture Improvements
 
-### **Client-Server Architecture Split (Planned)**
-The current `sdl console` command runs both REPL and web server in the same process, leading to log noise in the terminal. Next phase will split these concerns:
+### **✅ Client-Server Architecture Split (COMPLETED)**
+Successfully transformed from complex REPL to clean server/client separation:
 
-1. **`[NEXT]` SDL Server Command** - Dedicated server process hosting Canvas, web dashboard, and showing logs
+1. **`[COMPLETED]` SDL Server Command** - Dedicated server process hosting Canvas, web dashboard, and showing logs
    - Host Canvas instance and manage state
    - Run web dashboard on configured port
    - Display traffic generator and measurement logs
    - Show server statistics and health metrics
    - Provide REST API for all Canvas operations
 
-2. **`[NEXT]` SDL Console as Client** - Pure REPL client connecting to server
+2. **`[COMPLETED]` SDL CLI Commands as Client** - Direct shell commands connecting to server
    - Clean terminal interface without server logs
-   - Connect to local or remote Canvas server
-   - Execute commands via REST API
-   - Maintain command history and tab completion
+   - Connect to local or remote Canvas server via `--server` flag
+   - Execute all operations via REST API
+   - Native shell features (history, completion, piping)
    - Support multiple client connections to same server
 
-3. **`[NEXT]` Enhanced API Coverage** - Complete REST API for all console commands
-   - Execute recipe files remotely
-   - Stream command outputs
-   - Session management for multiple clients
-   - Authentication and authorization (future)
+3. **`[COMPLETED]` Enhanced API Coverage** - Complete REST API for all Canvas operations
+   - All Canvas commands accessible via REST (load, use, set, get, run, info, execute)
+   - Traffic generation management (gen add/start/stop/pause/resume)
+   - Measurement system commands (measure add/start/stop/data/stats)
+   - Environment variable configuration support
 
 ### **Technical Foundation Established:**
 *   **✅ Separation of Concerns:** Runtime measurement-agnostic, console provides tracer implementations
