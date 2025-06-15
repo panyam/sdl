@@ -9,7 +9,10 @@
     "preview": "vite preview",
     "test": "playwright test",
     "test:headed": "playwright test --headed",
-    "test:ui": "playwright test --ui"
+    "test:ui": "playwright test --ui",
+    "dev-test": "playwright test development-loop.spec.ts --reporter=line",
+    "dev-quick": "playwright test development-loop.spec.ts --grep='quick dashboard validation' --reporter=line",
+    "dev-screenshot": "playwright test development-loop.spec.ts --grep='quick dashboard validation' --reporter=line"
   },
   "devDependencies": {
     "@playwright/test": "^1.53.0",

@@ -388,6 +388,14 @@ func (ws *WebServer) handleGetMeasurementData(w http.ResponseWriter, r *http.Req
 		}
 	}
 	
+	// Ensure time-series database is initialized
+	if ws.canvas.tsdb == nil {
+		if err := ws.canvas.initMeasurementTracing(""); err != nil {
+			ws.sendError(w, fmt.Sprintf("Failed to initialize measurement database: %v", err), http.StatusInternalServerError)
+			return
+		}
+	}
+	
 	// Get measurement data from DuckDB
 	points, err := ws.canvas.tsdb.QueryLatency(target, startTime)
 	if err != nil {
@@ -551,25 +559,34 @@ func (ws *WebServer) handleStopGenerators(w http.ResponseWriter, r *http.Request
 
 // Measurement handlers
 func (ws *WebServer) handleGetMeasurements(w http.ResponseWriter, r *http.Request) {
-	measurements := ws.canvas.GetMeasurements()
+	// Use the DuckDB-based measurement system instead of the old one
+	measurements := ws.canvas.GetCanvasMeasurements()
 	ws.sendSuccess(w, measurements)
 }
 
 func (ws *WebServer) handleAddMeasurement(w http.ResponseWriter, r *http.Request) {
-	var config MeasurementConfig
-	if err := json.NewDecoder(r.Body).Decode(&config); err != nil {
+	var req struct {
+		ID         string `json:"id"`
+		Name       string `json:"name"`
+		Target     string `json:"target"`
+		MetricType string `json:"metricType"`
+		Enabled    bool   `json:"enabled"`
+	}
+	
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		ws.sendError(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	if err := ws.canvas.AddMeasurement(&config); err != nil {
+	// Use the DuckDB-based measurement system instead of the old one
+	if err := ws.canvas.AddCanvasMeasurement(req.ID, req.Name, req.Target, req.MetricType, req.Enabled); err != nil {
 		ws.sendError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	ws.sendSuccess(w, map[string]string{"status": "success", "id": config.ID})
+	ws.sendSuccess(w, map[string]string{"status": "success", "id": req.ID})
 	ws.broadcast("measurementAdded", map[string]interface{}{
-		"measurement": config,
+		"measurement": req,
 	})
 }
 

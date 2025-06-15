@@ -46,3 +46,5 @@ The project is a Go-based system composed of several key packages:
 *   **Real-time Synchronization:** CLI commands instantly update web dashboard via WebSocket broadcasting. Browser can reconnect mid-session and automatically sync with current Canvas state.
 *   **Production Deployment:** Single-command deployment with `./sdl serve --port 8080` provides RESTful Canvas API with proper CORS handling and real-time WebSocket updates. All operations accessible via direct CLI commands with `--server` flag.
 *   **Demonstration Examples:** Netflix streaming service and contacts lookup service provide comprehensive examples for system design interview scenarios with traffic generation and performance analysis.
+*   **Server Stability:** Fixed critical nil pointer dereference in measurement data endpoints by implementing lazy initialization of DuckDB time-series database when first accessed.
+*   **Development Infrastructure:** Complete Playwright-based test suite for dashboard validation with automated system loading, API testing, and visual regression capabilities via screenshot comparison.

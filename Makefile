@@ -4,6 +4,17 @@ binary:
 	cd web ; npm run build
 	go build -o ${GOBIN}/sdl ./cmd/sdl/main.go
 
+# Development workflow: build and test dashboard
+dev-test: binary
+	cd web && ./dev-test.sh
+
+# Quick development validation
+dev-quick: binary
+	cd web && npm run dev-quick
+
+dev-screenshot: binary
+	cd web && npm run dev-screenshot
+
 run:
 	go test
 
