@@ -1,7 +1,6 @@
 
 binary:
-	cd parser && make build
-	cd web ; npm run build
+	cd parser && make
 	go build -o ${GOBIN}/sdl ./cmd/sdl/main.go
 
 # Development workflow: build and test dashboard
