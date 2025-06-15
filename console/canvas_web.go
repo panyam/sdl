@@ -351,6 +351,15 @@ func (ws *WebServer) setupCanvasAPIRoutes(router *mux.Router) {
 	
 	// Measurement data endpoints
 	router.HandleFunc("/api/measurements/{target}/data", ws.handleGetMeasurementData).Methods("GET")
+	
+	// Console command endpoints
+	router.HandleFunc("/api/console/load", ws.handleConsoleLoad).Methods("POST")
+	router.HandleFunc("/api/console/use", ws.handleConsoleUse).Methods("POST")
+	router.HandleFunc("/api/console/set", ws.handleConsoleSet).Methods("POST")
+	router.HandleFunc("/api/console/run", ws.handleConsoleRun).Methods("POST")
+	router.HandleFunc("/api/console/execute", ws.handleConsoleExecute).Methods("POST")
+	router.HandleFunc("/api/console/help", ws.handleConsoleHelp).Methods("GET")
+	router.HandleFunc("/api/console/state", ws.handleConsoleState).Methods("GET")
 }
 
 // Measurement data handler
@@ -696,6 +705,166 @@ func (ws *WebServer) broadcast(messageType string, data interface{}) {
 	for _, client := range ws.wsHandler.clients {
 		client.Writer.Send(conc.Message[any]{Value: message})
 	}
+}
+
+// Console command request types
+type ConsoleLoadRequest struct {
+	FilePath string `json:"filePath"`
+}
+
+type ConsoleUseRequest struct {
+	SystemName string `json:"systemName"`
+}
+
+type ConsoleSetRequest struct {
+	Path  string      `json:"path"`
+	Value interface{} `json:"value"`
+}
+
+type ConsoleRunRequest struct {
+	VarName string `json:"varName"`
+	Target  string `json:"target"`
+	Runs    int    `json:"runs,omitempty"`
+}
+
+type ConsoleExecuteRequest struct {
+	RecipeFile string `json:"recipeFile"`
+}
+
+// Console command handlers
+func (ws *WebServer) handleConsoleLoad(w http.ResponseWriter, r *http.Request) {
+	var req ConsoleLoadRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		ws.sendError(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	err := ws.canvas.Load(req.FilePath)
+	if err != nil {
+		ws.sendError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	ws.sendSuccess(w, map[string]string{"status": "loaded", "file": req.FilePath})
+	ws.broadcast("fileLoaded", map[string]interface{}{
+		"file": req.FilePath,
+	})
+}
+
+func (ws *WebServer) handleConsoleUse(w http.ResponseWriter, r *http.Request) {
+	var req ConsoleUseRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		ws.sendError(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	err := ws.canvas.Use(req.SystemName)
+	if err != nil {
+		ws.sendError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	ws.sendSuccess(w, map[string]string{"status": "system activated", "system": req.SystemName})
+	ws.broadcast("systemActivated", map[string]interface{}{
+		"system": req.SystemName,
+	})
+}
+
+func (ws *WebServer) handleConsoleSet(w http.ResponseWriter, r *http.Request) {
+	var req ConsoleSetRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		ws.sendError(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	err := ws.canvas.Set(req.Path, req.Value)
+	if err != nil {
+		ws.sendError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	ws.sendSuccess(w, map[string]interface{}{
+		"status": "parameter set",
+		"path":   req.Path,
+		"value":  req.Value,
+	})
+	ws.broadcast("parameterChanged", map[string]interface{}{
+		"path":  req.Path,
+		"value": req.Value,
+	})
+}
+
+func (ws *WebServer) handleConsoleRun(w http.ResponseWriter, r *http.Request) {
+	var req ConsoleRunRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		ws.sendError(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	runs := req.Runs
+	if runs <= 0 {
+		runs = 1000 // Default
+	}
+
+	err := ws.canvas.Run(req.VarName, req.Target, WithRuns(runs))
+	if err != nil {
+		ws.sendError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	ws.sendSuccess(w, map[string]interface{}{
+		"status":  "simulation completed",
+		"varName": req.VarName,
+		"target":  req.Target,
+		"runs":    runs,
+	})
+	ws.broadcast("simulationCompleted", map[string]interface{}{
+		"varName": req.VarName,
+		"target":  req.Target,
+		"runs":    runs,
+	})
+}
+
+func (ws *WebServer) handleConsoleExecute(w http.ResponseWriter, r *http.Request) {
+	var req ConsoleExecuteRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		ws.sendError(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// TODO: Implement recipe execution
+	// This would need to parse the recipe file and execute commands sequentially
+	ws.sendError(w, "Recipe execution not yet implemented in API", http.StatusNotImplemented)
+}
+
+func (ws *WebServer) handleConsoleHelp(w http.ResponseWriter, r *http.Request) {
+	helpText := `SDL Console API Commands:
+
+Available endpoints:
+- POST /api/console/load      - Load an SDL file
+- POST /api/console/use       - Activate a system
+- POST /api/console/set       - Set parameter value  
+- POST /api/console/run       - Run simulation
+- POST /api/console/execute   - Execute recipe file
+- GET  /api/console/help      - Show this help
+- GET  /api/console/state     - Get current Canvas state
+
+For full Canvas API see:
+- GET  /api/canvas/state      - Canvas state management
+- POST /api/canvas/generators - Traffic generation
+- POST /api/canvas/measurements - Measurement management`
+
+	ws.sendSuccess(w, map[string]string{"help": helpText})
+}
+
+func (ws *WebServer) handleConsoleState(w http.ResponseWriter, r *http.Request) {
+	state, err := ws.canvas.Save()
+	if err != nil {
+		ws.sendError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	ws.sendSuccess(w, state)
 }
 
 // CORS middleware

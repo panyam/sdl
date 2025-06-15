@@ -2,15 +2,14 @@ package commands
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/exec"
 	"os/signal"
 	"os/user"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 	"syscall"
@@ -25,49 +24,63 @@ import (
 var (
 	currentCanvas  *console.Canvas
 	commandHistory []string
-	consolePort    = 8080
 	historyFile    string
+	serverURL      = "http://localhost:8080"
 )
 
 // Console command with go-prompt
 var consoleCmd = &cobra.Command{
 	Use:   "console",
-	Short: "Start interactive SDL console with web dashboard",
-	Long: `Start an interactive REPL console that shares state with a web dashboard.
-	
-The console provides:
-- Interactive REPL with tab completion and command history
-- Rich auto-completion with descriptions
-- Arrow key navigation and multi-line support
-- Recipe file execution support
-- Real-time web dashboard at http://localhost:PORT
-- WebSocket broadcasting of all operations
+	Short: "Start interactive SDL console client",
+	Long: `Start an interactive REPL console that connects to an SDL server.
 
-Example:
-  sdl console --port 8080
+The console provides a clean terminal experience by connecting to a running
+SDL server. The server hosts the Canvas simulation engine, web dashboard,
+and displays logs separately from the REPL interface.
+
+Example workflow:
+  # Terminal 1: Start server
+  sdl serve
   
-Then in the REPL:
+  # Terminal 2: Connect console client
+  sdl console
+
+Features:
+- Clean REPL interface without server logs
+- Tab completion and command history  
+- All Canvas operations via REST API
+- Can connect to local or remote servers
+
+Commands in the REPL:
   SDL> load examples/contacts/contacts.sdl
   SDL> use ContactsSystem
-  SDL> set server.pool.ArrivalRate 10`,
+  SDL> set server.pool.ArrivalRate 10
+  SDL> run test1 server.HandleLookup 1000`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// Start web server in background
-		webServer := console.NewWebServer()
-		router := webServer.GetRouter()
-
-		addr := fmt.Sprintf(":%d", consolePort)
-		fmt.Printf("🚀 SDL Console starting...\n")
-		fmt.Printf("📊 Dashboard: http://localhost%s\n", addr)
-		fmt.Printf("📡 WebSocket: ws://localhost%s/api/live\n", addr)
-		fmt.Printf("💬 Type 'help' for available commands, Ctrl+D to quit\n\n")
-
-		// Start HTTP server in background
-		go func() {
-			log.Fatal(http.ListenAndServe(addr, router))
-		}()
-
-		// Store canvas for global access
-		currentCanvas = webServer.GetCanvas()
+		// CLIENT MODE: Connect to server
+		fmt.Printf("🔌 SDL Console Client v1.0\n")
+		fmt.Printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
+		fmt.Printf("🎯 Server:       %s\n", serverURL)
+		
+		// Test server connection
+		if err := testServerConnection(serverURL); err != nil {
+			fmt.Printf("❌ Cannot connect to SDL server at %s\n\n", serverURL)
+			fmt.Printf("To use SDL console, first start the server:\n\n")
+			fmt.Printf("🚀 Terminal 1: Start SDL server\n")
+			fmt.Printf("   sdl serve\n\n")
+			fmt.Printf("🔌 Terminal 2: Connect console client\n")
+			fmt.Printf("   sdl console\n\n")
+			fmt.Printf("Or connect to a different server:\n")
+			fmt.Printf("   sdl console --server http://other-host:8080\n\n")
+			fmt.Printf("💡 The server hosts the Canvas engine, web dashboard, and logs.\n")
+			fmt.Printf("   The console provides a clean REPL experience.\n")
+			os.Exit(1)
+		}
+		
+		fmt.Printf("📊 Dashboard:    %s (open in browser)\n", serverURL)
+		fmt.Printf("💬 Type 'help' for available commands, Ctrl+D to quit\n")
+		fmt.Printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n")
+		fmt.Printf("✅ Connected to SDL server\n\n")
 
 		// Initialize command history
 		initializeHistory()
@@ -792,7 +805,10 @@ func executeCommand(canvas *console.Canvas, line string) error {
 		if len(args) < 1 {
 			return fmt.Errorf("usage: load <file_path>")
 		}
-		if err := canvas.Load(args[0]); err != nil {
+		
+		// Client mode: use API
+		_, err := makeAPICall("POST", "/api/console/load", map[string]string{"filePath": args[0]})
+		if err != nil {
 			return err
 		}
 		fmt.Printf("✅ Loaded: %s\n", args[0])
@@ -802,7 +818,10 @@ func executeCommand(canvas *console.Canvas, line string) error {
 		if len(args) < 1 {
 			return fmt.Errorf("usage: use <system_name>")
 		}
-		if err := canvas.Use(args[0]); err != nil {
+		
+		// Client mode: use API
+		_, err := makeAPICall("POST", "/api/console/use", map[string]string{"systemName": args[0]})
+		if err != nil {
 			return err
 		}
 		fmt.Printf("✅ System activated: %s\n", args[0])
@@ -825,7 +844,12 @@ func executeCommand(canvas *console.Canvas, line string) error {
 			value = valueStr
 		}
 
-		if err := canvas.Set(path, value); err != nil {
+		// Client mode: use API
+		_, err := makeAPICall("POST", "/api/console/set", map[string]interface{}{
+			"path":  path,
+			"value": value,
+		})
+		if err != nil {
 			return err
 		}
 		fmt.Printf("✅ Set %s = %v\n", path, value)
@@ -845,7 +869,13 @@ func executeCommand(canvas *console.Canvas, line string) error {
 			}
 		}
 
-		if err := canvas.Run(varName, target, console.WithRuns(runs)); err != nil {
+		// Client mode: use API
+		_, err := makeAPICall("POST", "/api/console/run", map[string]interface{}{
+			"varName": varName,
+			"target":  target,
+			"runs":    runs,
+		})
+		if err != nil {
 			return err
 		}
 		fmt.Printf("✅ Simulation completed: %d runs of %s\n", runs, target)
@@ -1016,47 +1046,44 @@ func handleGenCommand(canvas *console.Canvas, args []string) error {
 		if len(subArgs) < 3 {
 			return fmt.Errorf("usage: gen add <id> <target> <rate>")
 		}
-		return handleGenAdd(canvas, subArgs)
+		return handleGenAdd(subArgs)
 
 	case "list":
-		return handleGenList(canvas)
+		return handleGenList()
 
 	case "remove":
 		if len(subArgs) < 1 {
 			return fmt.Errorf("usage: gen remove <id>")
 		}
-		return handleGenRemove(canvas, subArgs[0])
+		return handleGenRemove(subArgs[0])
 
 	case "start":
-		return handleGenStart(canvas)
+		if len(subArgs) == 0 {
+			return handleGenStartAll()
+		}
+		return handleGenStart(subArgs[0])
 
 	case "stop":
-		return handleGenStop(canvas)
-
-	case "pause":
-		if len(subArgs) < 1 {
-			return fmt.Errorf("usage: gen pause <id>")
+		if len(subArgs) == 0 {
+			return handleGenStopAll()
 		}
-		return handleGenPause(canvas, subArgs[0])
+		return handleGenStop(subArgs[0])
 
-	case "resume":
-		if len(subArgs) < 1 {
-			return fmt.Errorf("usage: gen resume <id>")
-		}
-		return handleGenResume(canvas, subArgs[0])
+	case "status":
+		return handleGenStatus()
 
-	case "modify":
+	case "set":
 		if len(subArgs) < 3 {
-			return fmt.Errorf("usage: gen modify <id> <field> <value>")
+			return fmt.Errorf("usage: gen set <id> <property> <value>")
 		}
-		return handleGenModify(canvas, subArgs)
+		return handleGenSet(subArgs[0], subArgs[1], subArgs[2])
 
 	default:
-		return fmt.Errorf("unknown gen subcommand: %s\nAvailable subcommands: add, list, remove, start, stop, pause, resume, modify", subcommand)
+		return fmt.Errorf("unknown gen subcommand: %s\nAvailable subcommands: add, list, remove, start, stop, status, set", subcommand)
 	}
 }
 
-func handleGenAdd(canvas *console.Canvas, args []string) error {
+func handleGenAdd(args []string) error {
 	id := args[0]
 	target := args[1]
 	rateStr := args[2]
@@ -1066,131 +1093,170 @@ func handleGenAdd(canvas *console.Canvas, args []string) error {
 		return fmt.Errorf("invalid rate '%s': must be a number", rateStr)
 	}
 
-	config := &console.GeneratorConfig{
-		ID:      id,
-		Name:    fmt.Sprintf("Generator-%s", id),
-		Target:  target,
-		Rate:    rate,
-		Enabled: true,
-	}
-
-	if err := canvas.AddGenerator(config); err != nil {
+	_, err = makeAPICall("POST", "/api/canvas/generators", map[string]interface{}{
+		"id":      id,
+		"name":    fmt.Sprintf("Generator-%s", id),
+		"target":  target,
+		"rate":    rate,
+		"enabled": false,
+	})
+	if err != nil {
 		return err
 	}
 
-	fmt.Printf("✅ Added generator: %s -> %s at %d rps\n", id, target, rate)
+	fmt.Printf("✅ Generator '%s' created\n", id)
+	fmt.Printf("🎯 Target: %s\n", target)
+	fmt.Printf("⚡ Rate: %d calls/second\n", rate)
+	fmt.Printf("🔄 Status: Stopped\n")
 	return nil
 }
 
-func handleGenList(canvas *console.Canvas) error {
-	generators := canvas.GetGenerators()
+func handleGenList() error {
+	result, err := makeAPICall("GET", "/api/canvas/generators", nil)
+	if err != nil {
+		return err
+	}
 
-	if len(generators) == 0 {
-		fmt.Println("📋 No traffic generators configured")
+	generators, ok := result["data"].(map[string]interface{})
+	if !ok || len(generators) == 0 {
+		fmt.Println("Active Traffic Generators:")
+		fmt.Println("┌─────────────┬─────────────────────┬──────┬─────────┐")
+		fmt.Println("│ Name        │ Target              │ Rate │ Status  │")
+		fmt.Println("├─────────────┼─────────────────────┼──────┼─────────┤")
+		fmt.Println("│ (none)      │                     │      │         │")
+		fmt.Println("└─────────────┴─────────────────────┴──────┴─────────┘")
 		return nil
 	}
 
-	fmt.Printf("📋 Traffic Generators (%d):\n", len(generators))
-	for id, gen := range generators {
-		status := "⏸️ paused"
-		if gen.Enabled {
-			status = "▶️ running"
+	fmt.Println("Active Traffic Generators:")
+	fmt.Println("┌─────────────┬─────────────────────┬──────┬─────────┐")
+	fmt.Println("│ Name        │ Target              │ Rate │ Status  │")
+	fmt.Println("├─────────────┼─────────────────────┼──────┼─────────┤")
+	
+	for id, genData := range generators {
+		gen := genData.(map[string]interface{})
+		target := gen["target"].(string)
+		rate := gen["rate"].(float64)
+		enabled := gen["enabled"].(bool)
+		
+		status := "Stopped"
+		if enabled {
+			status = "Running"
 		}
-		fmt.Printf("  %s: %s -> %s (%d rps) [%s]\n", id, gen.Name, gen.Target, gen.Rate, status)
+		
+		fmt.Printf("│ %-11s │ %-19s │ %4.0f │ %-7s │\n", id, target, rate, status)
 	}
+	fmt.Println("└─────────────┴─────────────────────┴──────┴─────────┘")
 	return nil
 }
 
-func handleGenRemove(canvas *console.Canvas, id string) error {
-	if err := canvas.RemoveGenerator(id); err != nil {
+func handleGenRemove(id string) error {
+	_, err := makeAPICall("DELETE", fmt.Sprintf("/api/canvas/generators/%s", id), nil)
+	if err != nil {
 		return err
 	}
 
-	fmt.Printf("✅ Removed generator: %s\n", id)
+	fmt.Printf("✅ Generator '%s' removed\n", id)
 	return nil
 }
 
-func handleGenStart(canvas *console.Canvas) error {
-	if err := canvas.StartGenerators(); err != nil {
+func handleGenStartAll() error {
+	_, err := makeAPICall("POST", "/api/canvas/generators/start", nil)
+	if err != nil {
 		return err
 	}
 
-	fmt.Println("✅ Started all traffic generators")
+	fmt.Println("✅ All generators started")
 	return nil
 }
 
-func handleGenStop(canvas *console.Canvas) error {
-	if err := canvas.StopGenerators(); err != nil {
+func handleGenStart(id string) error {
+	_, err := makeAPICall("POST", fmt.Sprintf("/api/canvas/generators/%s/resume", id), nil)
+	if err != nil {
 		return err
 	}
 
-	fmt.Println("✅ Stopped all traffic generators")
+	fmt.Printf("✅ Generator '%s' started\n", id)
 	return nil
 }
 
-func handleGenPause(canvas *console.Canvas, id string) error {
-	if err := canvas.PauseGenerator(id); err != nil {
+func handleGenStopAll() error {
+	_, err := makeAPICall("POST", "/api/canvas/generators/stop", nil)
+	if err != nil {
 		return err
 	}
 
-	fmt.Printf("✅ Paused generator: %s\n", id)
+	fmt.Println("✅ All generators stopped")
+	fmt.Println("🛑 All traffic generation halted")
 	return nil
 }
 
-func handleGenResume(canvas *console.Canvas, id string) error {
-	if err := canvas.ResumeGenerator(id); err != nil {
+func handleGenStop(id string) error {
+	_, err := makeAPICall("POST", fmt.Sprintf("/api/canvas/generators/%s/pause", id), nil)
+	if err != nil {
 		return err
 	}
 
-	fmt.Printf("✅ Resumed generator: %s\n", id)
+	fmt.Printf("✅ Generator '%s' stopped\n", id)
+	fmt.Println("🛑 Traffic generation halted")
 	return nil
 }
 
-func handleGenModify(canvas *console.Canvas, args []string) error {
-	id := args[0]
-	field := args[1]
-	valueStr := args[2]
-
-	// Get current generator
-	generators := canvas.GetGenerators()
-	gen, exists := generators[id]
-	if !exists {
-		return fmt.Errorf("generator '%s' not found", id)
+func handleGenStatus() error {
+	result, err := makeAPICall("GET", "/api/canvas/generators", nil)
+	if err != nil {
+		return err
 	}
 
-	// Create a copy to modify
-	newGen := *gen
+	generators, ok := result["data"].(map[string]interface{})
+	if !ok || len(generators) == 0 {
+		fmt.Println("Generator Status:")
+		fmt.Println("📊 Total Generators: 0")
+		return nil
+	}
 
-	switch field {
-	case "rate":
-		rate, err := strconv.Atoi(valueStr)
-		if err != nil {
-			return fmt.Errorf("invalid rate '%s': must be a number", valueStr)
+	runningCount := 0
+	for _, genData := range generators {
+		gen := genData.(map[string]interface{})
+		if gen["enabled"].(bool) {
+			runningCount++
 		}
-		newGen.Rate = rate
-
-	case "target":
-		newGen.Target = valueStr
-
-	case "name":
-		newGen.Name = valueStr
-
-	case "enabled":
-		enabled, err := strconv.ParseBool(valueStr)
-		if err != nil {
-			return fmt.Errorf("invalid enabled value '%s': must be true or false", valueStr)
-		}
-		newGen.Enabled = enabled
-
-	default:
-		return fmt.Errorf("unknown field '%s'. Available fields: rate, target, name, enabled", field)
 	}
 
-	if err := canvas.UpdateGenerator(&newGen); err != nil {
+	fmt.Println("Generator Status (Live):")
+	fmt.Println("┌─────────────┬─────────────────────┬──────┬─────────┬───────────┐")
+	fmt.Println("│ Name        │ Target              │ Rate │ Status  │ Uptime    │")
+	fmt.Println("├─────────────┼─────────────────────┼──────┼─────────┼───────────┤")
+	
+	for id, genData := range generators {
+		gen := genData.(map[string]interface{})
+		target := gen["target"].(string)
+		rate := gen["rate"].(float64)
+		enabled := gen["enabled"].(bool)
+		
+		status := "Stopped"
+		uptime := "--"
+		if enabled {
+			status = "Running"
+			uptime = "00:00:00" // Placeholder - would need actual uptime from server
+		}
+		
+		fmt.Printf("│ %-11s │ %-19s │ %4.0f │ %-7s │ %-9s │\n", id, target, rate, status, uptime)
+	}
+	fmt.Println("└─────────────┴─────────────────────┴──────┴─────────┴───────────┘")
+	fmt.Printf("Total Active Load: %d generators running\n", runningCount)
+	return nil
+}
+
+func handleGenSet(id, property, value string) error {
+	_, err := makeAPICall("PUT", fmt.Sprintf("/api/canvas/generators/%s", id), map[string]interface{}{
+		property: value,
+	})
+	if err != nil {
 		return err
 	}
 
-	fmt.Printf("✅ Modified generator %s: %s = %s\n", id, field, valueStr)
+	fmt.Printf("✅ Generator '%s' %s updated to %s\n", id, property, value)
 	return nil
 }
 
@@ -1204,35 +1270,41 @@ func handleMeasureCommand(canvas *console.Canvas, args []string) error {
 		if len(subArgs) < 3 {
 			return fmt.Errorf("usage: measure add <id> <target> <metric_type>")
 		}
-		return handleMeasureAdd(canvas, subArgs)
+		return handleMeasureAdd(subArgs)
 
 	case "list":
-		return handleMeasureList(canvas)
+		return handleMeasureList()
 
 	case "remove":
 		if len(subArgs) < 1 {
-			return fmt.Errorf("usage: measure remove <target>")
+			return fmt.Errorf("usage: measure remove <id>")
 		}
-		return handleMeasureRemove(canvas, subArgs[0])
+		return handleMeasureRemove(subArgs[0])
 
-	case "clear":
-		return handleMeasureClear(canvas)
+	case "data":
+		if len(subArgs) < 1 {
+			return fmt.Errorf("usage: measure data <id>")
+		}
+		return handleMeasureData(subArgs[0])
 
 	case "stats":
-		return handleMeasureStats(canvas)
+		if len(subArgs) < 1 {
+			return fmt.Errorf("usage: measure stats <id>")
+		}
+		return handleMeasureStats(subArgs[0])
 
 	case "sql":
 		if len(subArgs) < 1 {
-			return fmt.Errorf("usage: measure sql <query>")
+			return fmt.Errorf("usage: sql <query>")
 		}
-		return handleMeasureSQL(canvas, strings.Join(subArgs, " "))
+		return handleMeasureSQL(strings.Join(subArgs, " "))
 
 	default:
-		return fmt.Errorf("unknown measure subcommand: %s\nAvailable subcommands: add, list, remove, clear, stats, sql", subcommand)
+		return fmt.Errorf("unknown measure subcommand: %s\nAvailable subcommands: add, list, remove, data, stats, sql", subcommand)
 	}
 }
 
-func handleMeasureAdd(canvas *console.Canvas, args []string) error {
+func handleMeasureAdd(args []string) error {
 	id := args[0]
 	target := args[1]
 	metricType := args[2]
@@ -1241,131 +1313,186 @@ func handleMeasureAdd(canvas *console.Canvas, args []string) error {
 	validMetrics := map[string]bool{
 		"latency":    true,
 		"throughput": true,
-		"errors":     true,
+		"error_rate": true,
 	}
 
 	if !validMetrics[metricType] {
-		return fmt.Errorf("invalid metric type '%s'. Valid types: latency, throughput, errors", metricType)
+		return fmt.Errorf("invalid metric type '%s'. Valid types: latency, throughput, error_rate", metricType)
 	}
 
-	// Generate name from ID
-	name := fmt.Sprintf("Measurement-%s", id)
-
-	err := canvas.AddCanvasMeasurement(id, name, target, metricType, true)
+	_, err := makeAPICall("POST", "/api/canvas/measurements", map[string]interface{}{
+		"id":         id,
+		"name":       fmt.Sprintf("Measurement-%s", id),
+		"target":     target,
+		"metricType": metricType,
+		"enabled":    true,
+	})
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("✅ Added measurement: %s -> %s (%s)\n", id, target, metricType)
+	fmt.Printf("✅ Measurement '%s' created\n", id)
+	fmt.Printf("🎯 Target: %s\n", target)
+	fmt.Printf("📊 Metric: %s\n", metricType)
+	fmt.Printf("💾 Storage: DuckDB time-series database\n")
 	return nil
 }
 
-func handleMeasureList(canvas *console.Canvas) error {
-	measurements := canvas.GetCanvasMeasurements()
+func handleMeasureList() error {
+	result, err := makeAPICall("GET", "/api/canvas/measurements", nil)
+	if err != nil {
+		return err
+	}
 
-	if len(measurements) == 0 {
-		fmt.Println("📊 No measurements configured")
+	measurements, ok := result["data"].(map[string]interface{})
+	if !ok || len(measurements) == 0 {
+		fmt.Println("Active Measurements:")
+		fmt.Println("┌─────────────┬─────────────────────┬─────────────┬────────────┐")
+		fmt.Println("│ Name        │ Target              │ Type        │ Data Points│")
+		fmt.Println("├─────────────┼─────────────────────┼─────────────┼────────────┤")
+		fmt.Println("│ (none)      │                     │             │            │")
+		fmt.Println("└─────────────┴─────────────────────┴─────────────┴────────────┘")
 		return nil
 	}
 
-	fmt.Printf("📊 Measurements (%d):\n", len(measurements))
-	for target, measurement := range measurements {
-		status := "⏸️ paused"
-		if measurement.Enabled {
-			status = "📋 registered"
-		}
-		fmt.Printf("  %s: %s -> %s (%s) [%s]\n",
-			measurement.ID, measurement.Name, target, measurement.MetricType, status)
+	fmt.Println("Active Measurements:")
+	fmt.Println("┌─────────────┬─────────────────────┬─────────────┬────────────┐")
+	fmt.Println("│ Name        │ Target              │ Type        │ Data Points│")
+	fmt.Println("├─────────────┼─────────────────────┼─────────────┼────────────┤")
+	
+	for id, measData := range measurements {
+		meas := measData.(map[string]interface{})
+		target := meas["target"].(string)
+		metricType := meas["metricType"].(string)
+		dataPoints := int(meas["dataPoints"].(float64))
+		
+		fmt.Printf("│ %-11s │ %-19s │ %-11s │ %10d │\n", id, target, metricType, dataPoints)
 	}
+	fmt.Println("└─────────────┴─────────────────────┴─────────────┴────────────┘")
 	return nil
 }
 
-func handleMeasureRemove(canvas *console.Canvas, target string) error {
-	err := canvas.RemoveCanvasMeasurement(target)
+func handleMeasureRemove(id string) error {
+	_, err := makeAPICall("DELETE", fmt.Sprintf("/api/canvas/measurements/%s", id), nil)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("✅ Removed measurement: %s\n", target)
+	fmt.Printf("✅ Measurement '%s' removed\n", id)
 	return nil
 }
 
-func handleMeasureClear(canvas *console.Canvas) error {
-	canvas.ClearMeasurements()
-	fmt.Println("✅ Cleared all measurements")
-	return nil
-}
-
-func handleMeasureStats(canvas *console.Canvas) error {
-	stats, err := canvas.GetMeasurementStats()
+func handleMeasureData(id string) error {
+	result, err := makeAPICall("GET", fmt.Sprintf("/api/measurements/%s/data", id), nil)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("📊 Measurement Database Statistics:\n")
-	fmt.Printf("  Total traces: %v\n", stats["total_traces"])
-	fmt.Printf("  Unique targets: %v\n", stats["unique_targets"])
-	fmt.Printf("  Unique runs: %v\n", stats["unique_runs"])
-	fmt.Printf("  Database path: %v\n", stats["database_path"])
-
-	if earliest, ok := stats["earliest_trace"]; ok {
-		fmt.Printf("  Earliest trace: %v\n", earliest)
-	}
-	if latest, ok := stats["latest_trace"]; ok {
-		fmt.Printf("  Latest trace: %v\n", latest)
-	}
-
-	return nil
-}
-
-func handleMeasureSQL(canvas *console.Canvas, query string) error {
-	results, err := canvas.ExecuteMeasurementSQL(query)
-	if err != nil {
-		return fmt.Errorf("SQL query failed: %v", err)
-	}
-
-	if len(results) == 0 {
-		fmt.Println("No results found")
+	data, ok := result["data"].([]interface{})
+	if !ok || len(data) == 0 {
+		fmt.Printf("📊 No data points available for measurement '%s'\n", id)
 		return nil
 	}
 
-	// Print column headers
-	if len(results) > 0 {
-		headers := make([]string, 0)
-		for key := range results[0] {
-			headers = append(headers, key)
-		}
-		sort.Strings(headers) // Consistent column order
+	fmt.Printf("Recent data for '%s' (last %d points):\n", id, len(data))
+	fmt.Println("┌─────────────────────┬─────────────────────┬─────────┐")
+	fmt.Println("│ Timestamp           │ Target              │ Value   │")
+	fmt.Println("├─────────────────────┼─────────────────────┼─────────┤")
+	
+	for _, pointData := range data {
+		point := pointData.(map[string]interface{})
+		timestamp := point["timestamp"].(string)
+		target := point["target"].(string)
+		value := point["value"].(float64)
+		
+		fmt.Printf("│ %-19s │ %-19s │ %7.1f │\n", timestamp, target, value)
+	}
+	fmt.Println("└─────────────────────┴─────────────────────┴─────────┘")
+	return nil
+}
 
-		// Print header row
-		fmt.Print("| ")
-		for _, h := range headers {
-			fmt.Printf("%-15s | ", h)
-		}
-		fmt.Println()
-
-		// Print separator
-		fmt.Print("|")
-		for range headers {
-			fmt.Print("-----------------|")
-		}
-		fmt.Println()
-
-		// Print data rows
-		for _, row := range results {
-			fmt.Print("| ")
-			for _, h := range headers {
-				fmt.Printf("%-15v | ", row[h])
-			}
-			fmt.Println()
-		}
+func handleMeasureStats(id string) error {
+	result, err := makeAPICall("GET", fmt.Sprintf("/api/canvas/measurements/%s", id), nil)
+	if err != nil {
+		return err
 	}
 
-	fmt.Printf("\n(%d rows)\n", len(results))
+	stats := result["stats"].(map[string]interface{})
+	
+	fmt.Printf("Statistics for '%s':\n", id)
+	fmt.Printf("📊 Total Samples: %.0f\n", stats["totalSamples"].(float64))
+	fmt.Printf("⏱️  Average: %.1fms\n", stats["average"].(float64))
+	fmt.Printf("📈 95th Percentile: %.1fms\n", stats["p95"].(float64))
+	fmt.Printf("📉 Min: %.1fms\n", stats["min"].(float64))
+	fmt.Printf("📊 Max: %.1fms\n", stats["max"].(float64))
+	return nil
+}
+
+func handleMeasureSQL(query string) error {
+	// For SQL queries, we'll need a different approach since there's no specific SQL endpoint
+	// For now, return an error indicating this feature needs implementation
+	return fmt.Errorf("SQL queries not yet supported in client mode - please use the tools/monitor_traces.sh script for direct SQL access")
+}
+
+// HTTP client for API calls
+func makeAPICall(method, endpoint string, body interface{}) (map[string]interface{}, error) {
+	
+	url := strings.TrimSuffix(serverURL, "/") + endpoint
+	
+	var reqBody []byte
+	var err error
+	if body != nil {
+		reqBody, err = json.Marshal(body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal request: %v", err)
+		}
+	}
+	
+	req, err := http.NewRequest(method, url, strings.NewReader(string(reqBody)))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %v", err)
+	}
+	
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	
+	var result map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %v", err)
+	}
+	
+	if !result["success"].(bool) {
+		return nil, fmt.Errorf("API error: %v", result["error"])
+	}
+	
+	return result, nil
+}
+
+// Test connection to server
+func testServerConnection(serverURL string) error {
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Get(serverURL + "/api/console/help")
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("server returned status %d", resp.StatusCode)
+	}
+	
 	return nil
 }
 
 func init() {
-	consoleCmd.Flags().IntVar(&consolePort, "port", 8080, "Port to serve the web interface on")
+	consoleCmd.Flags().StringVar(&serverURL, "server", "http://localhost:8080", "SDL server URL to connect to")
 	rootCmd.AddCommand(consoleCmd)
 }

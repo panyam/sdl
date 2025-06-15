@@ -735,6 +735,38 @@ func (c *Canvas) GetMeasurementStats() (map[string]interface{}, error) {
 	return c.measurementTracer.GetStats()
 }
 
+// CanvasStats represents Canvas statistics for server monitoring
+type CanvasStats struct {
+	LoadedFiles        int `json:"loaded_files"`
+	ActiveSystems      int `json:"active_systems"`
+	ActiveGenerators   int `json:"active_generators"`
+	ActiveMeasurements int `json:"active_measurements"`
+	TotalRuns          int `json:"total_runs"`
+}
+
+// GetStats returns current Canvas statistics
+func (c *Canvas) GetStats() CanvasStats {
+	stats := CanvasStats{
+		LoadedFiles:   len(c.loadedFiles),
+		ActiveSystems: 0,
+		TotalRuns:     len(c.sessionVars),
+	}
+	
+	if c.activeSystem != nil {
+		stats.ActiveSystems = 1
+	}
+	
+	if c.genManager != nil {
+		stats.ActiveGenerators = len(c.genManager.generators)
+	}
+	
+	if c.measManager != nil {
+		stats.ActiveMeasurements = len(c.measManager.measurements)
+	}
+	
+	return stats
+}
+
 // Close closes the Canvas and cleans up resources
 func (c *Canvas) Close() error {
 	if c.measurementTracer != nil {
