@@ -1,4 +1,5 @@
 dist
+*.log
 bin
 web/diagnose-dashboard.*
 ./sdl
