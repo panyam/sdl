@@ -32,23 +32,23 @@ type MeasurementConfig struct {
 
 // MetricSnapshot represents a point-in-time metric value
 type MetricSnapshot struct {
-	Timestamp   int64   `json:"timestamp"`   // Unix timestamp in milliseconds
-	MetricType  string  `json:"metricType"`  // e.g., "latency", "qps", "errorRate"
-	Value       float64 `json:"value"`       // The metric value
-	Source      string  `json:"source"`      // Source component/measurement
+	Timestamp  int64   `json:"timestamp"`  // Unix timestamp in milliseconds
+	MetricType string  `json:"metricType"` // e.g., "latency", "qps", "errorRate"
+	Value      float64 `json:"value"`      // The metric value
+	Source     string  `json:"source"`     // Source component/measurement
 }
 
 // CanvasState represents the complete state of a Canvas session
 type CanvasState struct {
-	LoadedFiles       []string                     `json:"loadedFiles"`
-	ActiveFile        string                       `json:"activeFile"`
-	ActiveSystem      string                       `json:"activeSystem"`
-	Generators        map[string]*GeneratorConfig  `json:"generators"`
-	Measurements      map[string]*MeasurementConfig `json:"measurements"`
-	SessionVars       map[string]interface{}       `json:"sessionVars"`
-	LastRunResult     interface{}                  `json:"lastRunResult,omitempty"`
-	SystemParameters  map[string]interface{}       `json:"systemParameters,omitempty"`  // Current parameter values
-	MetricsHistory    []MetricSnapshot             `json:"metricsHistory,omitempty"`    // Recent metrics for charts
+	LoadedFiles      []string                      `json:"loadedFiles"`
+	ActiveFile       string                        `json:"activeFile"`
+	ActiveSystem     string                        `json:"activeSystem"`
+	Generators       map[string]*GeneratorConfig   `json:"generators"`
+	Measurements     map[string]*MeasurementConfig `json:"measurements"`
+	SessionVars      map[string]interface{}        `json:"sessionVars"`
+	LastRunResult    interface{}                   `json:"lastRunResult,omitempty"`
+	SystemParameters map[string]interface{}        `json:"systemParameters,omitempty"` // Current parameter values
+	MetricsHistory   []MetricSnapshot              `json:"metricsHistory,omitempty"`   // Recent metrics for charts
 }
 
 // generatorManager manages traffic generators
@@ -88,18 +88,18 @@ func (c *Canvas) initManagers() {
 // AddGenerator adds a new traffic generator configuration
 func (c *Canvas) AddGenerator(config *GeneratorConfig) error {
 	c.initManagers()
-	
+
 	if config.ID == "" {
 		return fmt.Errorf("generator ID cannot be empty")
 	}
-	
+
 	c.genManager.mu.Lock()
 	defer c.genManager.mu.Unlock()
-	
+
 	if _, exists := c.genManager.generators[config.ID]; exists {
 		return fmt.Errorf("generator with ID '%s' already exists", config.ID)
 	}
-	
+
 	c.genManager.generators[config.ID] = config
 	return nil
 }
@@ -107,14 +107,14 @@ func (c *Canvas) AddGenerator(config *GeneratorConfig) error {
 // RemoveGenerator removes a traffic generator
 func (c *Canvas) RemoveGenerator(id string) error {
 	c.initManagers()
-	
+
 	c.genManager.mu.Lock()
 	defer c.genManager.mu.Unlock()
-	
+
 	if _, exists := c.genManager.generators[id]; !exists {
 		return fmt.Errorf("generator with ID '%s' not found", id)
 	}
-	
+
 	// Stop if running
 	if c.genManager.running[id] {
 		if stopChan, ok := c.genManager.stopChans[id]; ok {
@@ -123,7 +123,7 @@ func (c *Canvas) RemoveGenerator(id string) error {
 		}
 		delete(c.genManager.running, id)
 	}
-	
+
 	delete(c.genManager.generators, id)
 	return nil
 }
@@ -131,14 +131,14 @@ func (c *Canvas) RemoveGenerator(id string) error {
 // UpdateGenerator updates an existing generator configuration
 func (c *Canvas) UpdateGenerator(config *GeneratorConfig) error {
 	c.initManagers()
-	
+
 	c.genManager.mu.Lock()
 	defer c.genManager.mu.Unlock()
-	
+
 	if _, exists := c.genManager.generators[config.ID]; !exists {
 		return fmt.Errorf("generator with ID '%s' not found", config.ID)
 	}
-	
+
 	c.genManager.generators[config.ID] = config
 	return nil
 }
@@ -146,15 +146,15 @@ func (c *Canvas) UpdateGenerator(config *GeneratorConfig) error {
 // PauseGenerator pauses a running generator
 func (c *Canvas) PauseGenerator(id string) error {
 	c.initManagers()
-	
+
 	c.genManager.mu.Lock()
 	defer c.genManager.mu.Unlock()
-	
+
 	gen, exists := c.genManager.generators[id]
 	if !exists {
 		return fmt.Errorf("generator with ID '%s' not found", id)
 	}
-	
+
 	gen.Enabled = false
 	return nil
 }
@@ -162,15 +162,15 @@ func (c *Canvas) PauseGenerator(id string) error {
 // ResumeGenerator resumes a paused generator
 func (c *Canvas) ResumeGenerator(id string) error {
 	c.initManagers()
-	
+
 	c.genManager.mu.Lock()
 	defer c.genManager.mu.Unlock()
-	
+
 	gen, exists := c.genManager.generators[id]
 	if !exists {
 		return fmt.Errorf("generator with ID '%s' not found", id)
 	}
-	
+
 	gen.Enabled = true
 	return nil
 }
@@ -178,35 +178,35 @@ func (c *Canvas) ResumeGenerator(id string) error {
 // StartGenerators starts all enabled generators
 func (c *Canvas) StartGenerators() error {
 	c.initManagers()
-	
+
 	if c.activeSystem == nil {
 		return fmt.Errorf("no active system. Call Use() before starting generators")
 	}
-	
+
 	c.genManager.mu.Lock()
 	defer c.genManager.mu.Unlock()
-	
+
 	for id, gen := range c.genManager.generators {
 		if gen.Enabled && !c.genManager.running[id] {
 			stopChan := make(chan struct{})
 			c.genManager.stopChans[id] = stopChan
 			c.genManager.running[id] = true
-			
+
 			// Start generator goroutine
 			go c.runGenerator(id, gen, stopChan)
 		}
 	}
-	
+
 	return nil
 }
 
 // StopGenerators stops all running generators
 func (c *Canvas) StopGenerators() error {
 	c.initManagers()
-	
+
 	c.genManager.mu.Lock()
 	defer c.genManager.mu.Unlock()
-	
+
 	for id, running := range c.genManager.running {
 		if running {
 			if stopChan, ok := c.genManager.stopChans[id]; ok {
@@ -216,17 +216,17 @@ func (c *Canvas) StopGenerators() error {
 			c.genManager.running[id] = false
 		}
 	}
-	
+
 	return nil
 }
 
 // GetGenerators returns all generator configurations
 func (c *Canvas) GetGenerators() map[string]*GeneratorConfig {
 	c.initManagers()
-	
+
 	c.genManager.mu.RLock()
 	defer c.genManager.mu.RUnlock()
-	
+
 	// Return a copy to prevent external modification
 	result := make(map[string]*GeneratorConfig)
 	for k, v := range c.genManager.generators {
@@ -238,39 +238,38 @@ func (c *Canvas) GetGenerators() map[string]*GeneratorConfig {
 // AddMeasurement adds a new measurement configuration
 func (c *Canvas) AddMeasurement(config *MeasurementConfig) error {
 	c.initManagers()
-	
+
 	if config.ID == "" {
 		return fmt.Errorf("measurement ID cannot be empty")
 	}
-	
+
 	c.measManager.mu.Lock()
 	defer c.measManager.mu.Unlock()
-	
+
 	if _, exists := c.measManager.measurements[config.ID]; exists {
 		return fmt.Errorf("measurement with ID '%s' already exists", config.ID)
 	}
-	
-	c.measManager.measurements[config.ID] = config
-	
-	// If enabled, start measurement
-	if config.Enabled {
-		c.startMeasurement(config)
+
+	// Set default interval if not specified to prevent panic
+	if config.Interval == 0 {
+		config.Interval = 5 * time.Second // Default 5 second interval
 	}
-	
+
+	c.measManager.measurements[config.ID] = config
 	return nil
 }
 
 // RemoveMeasurement removes a measurement
 func (c *Canvas) RemoveMeasurement(id string) error {
 	c.initManagers()
-	
+
 	c.measManager.mu.Lock()
 	defer c.measManager.mu.Unlock()
-	
+
 	if _, exists := c.measManager.measurements[id]; !exists {
 		return fmt.Errorf("measurement with ID '%s' not found", id)
 	}
-	
+
 	// Stop if active
 	if c.measManager.active[id] {
 		if stopChan, ok := c.measManager.stopChans[id]; ok {
@@ -279,7 +278,7 @@ func (c *Canvas) RemoveMeasurement(id string) error {
 		}
 		delete(c.measManager.active, id)
 	}
-	
+
 	delete(c.measManager.measurements, id)
 	return nil
 }
@@ -287,10 +286,10 @@ func (c *Canvas) RemoveMeasurement(id string) error {
 // GetMeasurements returns all measurement configurations
 func (c *Canvas) GetMeasurements() map[string]*MeasurementConfig {
 	c.initManagers()
-	
+
 	c.measManager.mu.RLock()
 	defer c.measManager.mu.RUnlock()
-	
+
 	// Return a copy to prevent external modification
 	result := make(map[string]*MeasurementConfig)
 	for k, v := range c.measManager.measurements {
@@ -302,7 +301,7 @@ func (c *Canvas) GetMeasurements() map[string]*MeasurementConfig {
 // Save serializes the current Canvas state
 func (c *Canvas) Save() (*CanvasState, error) {
 	c.initManagers()
-	
+
 	state := &CanvasState{
 		LoadedFiles:      make([]string, 0, len(c.loadedFiles)),
 		Generators:       c.GetGenerators(),
@@ -311,12 +310,12 @@ func (c *Canvas) Save() (*CanvasState, error) {
 		SystemParameters: make(map[string]interface{}),
 		MetricsHistory:   make([]MetricSnapshot, 0),
 	}
-	
+
 	// Copy loaded files
 	for path := range c.loadedFiles {
 		state.LoadedFiles = append(state.LoadedFiles, path)
 	}
-	
+
 	// Set active file and system
 	if c.activeFile != nil {
 		state.ActiveFile = c.activeFile.FullPath
@@ -324,17 +323,17 @@ func (c *Canvas) Save() (*CanvasState, error) {
 	if c.activeSystem != nil {
 		state.ActiveSystem = c.activeSystem.System.Name.Value
 	}
-	
+
 	// Copy session vars (shallow copy for now)
 	for k, v := range c.sessionVars {
 		state.SessionVars[k] = v
 	}
-	
+
 	// Copy system parameters
 	for k, v := range c.systemParameters {
 		state.SystemParameters[k] = v
 	}
-	
+
 	return state, nil
 }
 
@@ -342,19 +341,19 @@ func (c *Canvas) Save() (*CanvasState, error) {
 func (c *Canvas) Restore(state *CanvasState) error {
 	// Stop all generators and measurements first
 	c.StopGenerators()
-	
+
 	// Clear current state
 	c.loadedFiles = make(map[string]*loader.FileStatus)
 	c.sessionVars = make(map[string]any)
 	c.initManagers()
-	
+
 	// Reload files
 	for _, filePath := range state.LoadedFiles {
 		if err := c.Load(filePath); err != nil {
 			return fmt.Errorf("failed to reload file '%s': %w", filePath, err)
 		}
 	}
-	
+
 	// Set active system
 	if state.ActiveSystem != "" && state.ActiveFile != "" {
 		// First ensure the correct file is active
@@ -365,26 +364,26 @@ func (c *Canvas) Restore(state *CanvasState) error {
 			}
 		}
 	}
-	
+
 	// Restore generators
 	for _, gen := range state.Generators {
 		if err := c.AddGenerator(gen); err != nil {
 			return fmt.Errorf("failed to restore generator '%s': %w", gen.ID, err)
 		}
 	}
-	
+
 	// Restore measurements
 	for _, meas := range state.Measurements {
 		if err := c.AddMeasurement(meas); err != nil {
 			return fmt.Errorf("failed to restore measurement '%s': %w", meas.ID, err)
 		}
 	}
-	
+
 	// Restore session vars
 	for k, v := range state.SessionVars {
 		c.sessionVars[k] = v
 	}
-	
+
 	// Restore system parameters (reapply all parameter changes)
 	for path, value := range state.SystemParameters {
 		if err := c.Set(path, value); err != nil {
@@ -392,7 +391,7 @@ func (c *Canvas) Restore(state *CanvasState) error {
 			fmt.Printf("Warning: failed to restore parameter %s: %v\n", path, err)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -402,9 +401,9 @@ func (c *Canvas) runGenerator(id string, config *GeneratorConfig, stopChan <-cha
 	// We generate config.Rate requests per second worth of load
 	ticker := time.NewTicker(time.Second) // Check every second
 	defer ticker.Stop()
-	
+
 	fmt.Printf("🚀 Generator %s started: %s @ %d rps\n", id, config.Target, config.Rate)
-	
+
 	for {
 		select {
 		case <-stopChan:
@@ -415,7 +414,7 @@ func (c *Canvas) runGenerator(id string, config *GeneratorConfig, stopChan <-cha
 				// Generate a batch of requests based on the rate
 				// This simulates config.Rate requests happening over 1 second
 				varName := fmt.Sprintf("gen_%s_%d", id, time.Now().Unix())
-				
+
 				// Run simulation batch - this will auto-inject measurements if configured
 				err := c.Run(varName, config.Target, WithRuns(config.Rate))
 				if err != nil {
@@ -436,11 +435,11 @@ func (c *Canvas) startMeasurement(config *MeasurementConfig) {
 	stopChan := make(chan struct{})
 	c.measManager.stopChans[config.ID] = stopChan
 	c.measManager.active[config.ID] = true
-	
+
 	go func() {
 		ticker := time.NewTicker(config.Interval)
 		defer ticker.Stop()
-		
+
 		for {
 			select {
 			case <-stopChan:
