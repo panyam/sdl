@@ -10,6 +10,9 @@
     "test": "playwright test",
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",
+    "pre-dev-test": "npm run build",
+    "pre-dev-quick": "npm run build",
+    "pre-dev-screenshot": "npm run build",
     "dev-test": "playwright test development-loop.spec.ts --reporter=line",
     "dev-quick": "playwright test development-loop.spec.ts --grep='quick dashboard validation' --reporter=line",
     "dev-screenshot": "playwright test development-loop.spec.ts --grep='quick dashboard validation' --reporter=line"
