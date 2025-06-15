@@ -1,4 +1,5 @@
 dist
+bin
 web/diagnose-dashboard.*
 ./sdl
 playwright-report
