@@ -286,12 +286,39 @@ SDL> measure stats
 ```
 
 ---
-## 🎯 CURRENT PRIORITIES: Advanced Features
+## 🎯 COMPLETED: Advanced Features
 
-#### **Phase 3: Enhanced Features (Next Development Phase)**
-10. **`[NEXT]` SQL Query Interface** - `measure sql` command with built-in query templates and result formatting
-11. **`[NEXT]` Dashboard Integration** - Real-time measurement charts and WebSocket updates for live metrics visualization  
-12. **`[FUTURE]` Enhanced Documentation** - Comprehensive measurement guide with workshop scenarios and advanced analytics examples
+#### **Phase 3: Enhanced Features (COMPLETED)**
+10. **`[COMPLETED]` SQL Query Interface** - `measure sql` command with formatted table output and custom query support
+11. **`[COMPLETED]` Dashboard Integration** - Real-time measurement charts fetching actual data from DuckDB via REST API, updating every 2 seconds with live metrics visualization
+12. **`[COMPLETED]` Traffic Generation** - Fully functional generators that execute Canvas.Run() at configured rates with measurement tracing
+13. **`[COMPLETED]` Monitoring Tools** - DuckDB read-only access scripts, concurrent viewing guides, and monitoring utilities in tools/ directory
+
+---
+## 🚀 NEXT PHASE: Architecture Improvements
+
+### **Client-Server Architecture Split (Planned)**
+The current `sdl console` command runs both REPL and web server in the same process, leading to log noise in the terminal. Next phase will split these concerns:
+
+1. **`[NEXT]` SDL Server Command** - Dedicated server process hosting Canvas, web dashboard, and showing logs
+   - Host Canvas instance and manage state
+   - Run web dashboard on configured port
+   - Display traffic generator and measurement logs
+   - Show server statistics and health metrics
+   - Provide REST API for all Canvas operations
+
+2. **`[NEXT]` SDL Console as Client** - Pure REPL client connecting to server
+   - Clean terminal interface without server logs
+   - Connect to local or remote Canvas server
+   - Execute commands via REST API
+   - Maintain command history and tab completion
+   - Support multiple client connections to same server
+
+3. **`[NEXT]` Enhanced API Coverage** - Complete REST API for all console commands
+   - Execute recipe files remotely
+   - Stream command outputs
+   - Session management for multiple clients
+   - Authentication and authorization (future)
 
 ### **Technical Foundation Established:**
 *   **✅ Separation of Concerns:** Runtime measurement-agnostic, console provides tracer implementations

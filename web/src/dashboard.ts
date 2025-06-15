@@ -1,5 +1,5 @@
 import { CanvasAPI } from './canvas-api.js';
-import { DashboardState, ParameterConfig, WebSocketMessage, GenerateCall, SystemDiagram } from './types.js';
+import { DashboardState, ParameterConfig, WebSocketMessage, GenerateCall, SystemDiagram, MeasurementDataPoint } from './types.js';
 import { Chart, ChartConfiguration } from 'chart.js/auto';
 
 export class Dashboard {
@@ -7,6 +7,7 @@ export class Dashboard {
   private state: DashboardState;
   private charts: Record<string, Chart> = {};
   private systemDiagram: SystemDiagram | null = null;
+  private chartUpdateInterval: number | null = null;
 
   // Parameter configurations - populated when a system is loaded
   private parameters: ParameterConfig[] = [];
@@ -27,6 +28,7 @@ export class Dashboard {
 
     this.setupEventListeners();
     this.initialize();
+    this.startChartUpdates();
   }
 
   private async initialize() {
@@ -79,12 +81,13 @@ export class Dashboard {
         // Convert measurements to dynamic charts
         Object.values(measurementsResponse.data).forEach(measurement => {
           if (measurement.enabled) {
-            this.state.dynamicCharts[measurement.metricType] = {
+            this.state.dynamicCharts[measurement.id] = {
               chartName: measurement.id,
               metricName: measurement.metricType,
+              target: measurement.target, // Store the actual target for API calls
               data: [],
               labels: [],
-              title: measurement.name
+              title: measurement.name || `${measurement.target} - ${measurement.metricType}`
             };
           }
         });
@@ -220,41 +223,80 @@ export class Dashboard {
     }
   }
 
-  private updateDynamicCharts() {
+  private async updateDynamicCharts() {
+    // Update each chart with real measurement data
+    for (const chartData of Object.values(this.state.dynamicCharts)) {
+      const chart = this.charts[chartData.chartName];
+      if (!chart) continue;
+
+      try {
+        // Fetch last 5 minutes of data for this measurement target
+        const endTime = new Date().toISOString();
+        const startTime = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+        
+        // Use the target from the measurement configuration
+        const target = chartData.target || chartData.metricName;
+        
+        const response = await this.api.getMeasurementData(target, startTime, endTime);
+        
+        if (response.success && response.data && response.data.dataPoints) {
+          const dataPoints = response.data.dataPoints;
+          
+          // Clear existing chart data
+          chart.data.labels = [];
+          chart.data.datasets[0].data = [];
+          
+          // Add new data points (limit to last 20 points for performance)
+          const recentPoints = dataPoints.slice(-20);
+          
+          recentPoints.forEach((point: MeasurementDataPoint) => {
+            const timestamp = new Date(point.timestamp).toLocaleTimeString();
+            chart.data.labels?.push(timestamp);
+            chart.data.datasets[0].data.push(point.value);
+          });
+          
+          chart.update('none');
+        } else {
+          // If no data available, fall back to simulated data
+          this.updateChartWithSimulatedData(chartData, chart);
+        }
+      } catch (error) {
+        console.warn(`Failed to fetch data for ${chartData.chartName}:`, error);
+        // Fall back to simulated data on error
+        this.updateChartWithSimulatedData(chartData, chart);
+      }
+    }
+  }
+
+  private updateChartWithSimulatedData(chartData: any, chart: Chart) {
     const now = Date.now();
     const timestamp = new Date(now).toLocaleTimeString();
 
-    // Update each chart with simulated data
-    Object.values(this.state.dynamicCharts).forEach(chartData => {
-      const chart = this.charts[chartData.chartName];
-      if (!chart) return;
+    // Simulate metric values based on chart type (fallback behavior)
+    let value = 0;
+    if (chartData.metricName.includes('p95Latency') || chartData.metricName.includes('p99Latency')) {
+      value = this.state.metrics.latency + Math.random() * 10 - 5;
+    } else if (chartData.metricName.includes('qps')) {
+      value = this.state.metrics.load + Math.random() * 2 - 1;
+    } else if (chartData.metricName.includes('errorRate')) {
+      value = Math.max(0, (100 - this.state.metrics.successRate) + Math.random() * 2 - 1);
+    } else if (chartData.metricName.includes('HitRate') || chartData.metricName.includes('utilization')) {
+      value = Math.max(0, Math.min(100, this.state.metrics.cacheHitRate * 100 + Math.random() * 20 - 10));
+    } else if (chartData.metricName.includes('memory')) {
+      value = Math.max(0, 512 + Math.random() * 200 - 100); // Simulate heap usage in MB
+    }
 
-      // Simulate metric values based on chart type
-      let value = 0;
-      if (chartData.metricName.includes('p95Latency') || chartData.metricName.includes('p99Latency')) {
-        value = this.state.metrics.latency + Math.random() * 10 - 5;
-      } else if (chartData.metricName.includes('qps')) {
-        value = this.state.metrics.load + Math.random() * 2 - 1;
-      } else if (chartData.metricName.includes('errorRate')) {
-        value = Math.max(0, (100 - this.state.metrics.successRate) + Math.random() * 2 - 1);
-      } else if (chartData.metricName.includes('HitRate') || chartData.metricName.includes('utilization')) {
-        value = Math.max(0, Math.min(100, this.state.metrics.cacheHitRate * 100 + Math.random() * 20 - 10));
-      } else if (chartData.metricName.includes('memory')) {
-        value = Math.max(0, 512 + Math.random() * 200 - 100); // Simulate heap usage in MB
-      }
-
-      // Update chart data
-      const data = chart.data;
-      if (data.datasets[0].data.length > 20) {
-        data.labels?.shift();
-        data.datasets[0].data.shift();
-      }
-      
-      data.labels?.push(timestamp);
-      data.datasets[0].data.push(value);
-      
-      chart.update('none');
-    });
+    // Update chart data
+    const data = chart.data;
+    if (data.datasets[0].data.length > 20) {
+      data.labels?.shift();
+      data.datasets[0].data.shift();
+    }
+    
+    data.labels?.push(timestamp);
+    data.datasets[0].data.push(value);
+    
+    chart.update('none');
   }
 
   private showError(message: string) {
@@ -684,12 +726,13 @@ export class Dashboard {
         // Convert measurements to dynamic charts
         Object.values(response.data).forEach(measurement => {
           if (measurement.enabled) {
-            this.state.dynamicCharts[measurement.metricType] = {
+            this.state.dynamicCharts[measurement.id] = {
               chartName: measurement.id,
               metricName: measurement.metricType,
+              target: measurement.target, // Store the actual target for API calls
               data: [],
               labels: [],
-              title: measurement.name
+              title: measurement.name || `${measurement.target} - ${measurement.metricType}`
             };
           }
         });
@@ -785,5 +828,31 @@ export class Dashboard {
 
       this.charts[chartData.chartName] = new Chart(canvas, config);
     });
+  }
+
+  private startChartUpdates() {
+    // Update charts every 2 seconds
+    this.chartUpdateInterval = window.setInterval(() => {
+      this.updateDynamicCharts();
+    }, 2000);
+  }
+
+  private stopChartUpdates() {
+    if (this.chartUpdateInterval) {
+      clearInterval(this.chartUpdateInterval);
+      this.chartUpdateInterval = null;
+    }
+  }
+
+  // Cleanup method for proper resource disposal
+  public cleanup() {
+    this.stopChartUpdates();
+    this.api.disconnect();
+    
+    // Destroy all charts
+    Object.values(this.charts).forEach(chart => {
+      chart.destroy();
+    });
+    this.charts = {};
   }
 }

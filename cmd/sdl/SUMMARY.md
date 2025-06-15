@@ -16,7 +16,7 @@ This package implements the main command-line interface (CLI) tool for the Syste
     *   **`trace.go`**: Implements `sdl trace ...` to perform a single-run execution of a method and save the detailed event trace to a JSON file.
     *   **`plot.go`**: A versatile plotting command that generates immediate visualizations for workshop demonstrations. Creates comparison plots showing before/after performance that generate "aha moments" for audiences.
     *   **`diagram.go`**: A command that generates system architecture diagrams essential for workshop presentations. Creates static diagrams from SDL source and dynamic sequence diagrams from execution traces.
-    *   **`console.go`**: Interactive REPL console with shared Canvas state. Provides real-time web dashboard synchronization, command history, and eliminates need for curl commands during demonstrations.
+    *   **`console.go`**: Interactive REPL console with shared Canvas state. Provides real-time web dashboard synchronization, command history, and eliminates need for curl commands during demonstrations. Features `measure` commands for DuckDB-based metrics collection and `execute` command for recipe file execution.
     *   **`shared_types.go`**: Defines shared data structures, like `RunResult`, used for serialization between commands.
 
 **🎪 Upcoming Workshop Commands:**

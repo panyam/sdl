@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
@@ -347,6 +348,73 @@ func (ws *WebServer) setupCanvasAPIRoutes(router *mux.Router) {
 	router.HandleFunc("/api/canvas/measurements/{id}", ws.handleGetMeasurement).Methods("GET")
 	router.HandleFunc("/api/canvas/measurements/{id}", ws.handleUpdateMeasurement).Methods("PUT")
 	router.HandleFunc("/api/canvas/measurements/{id}", ws.handleRemoveMeasurement).Methods("DELETE")
+	
+	// Measurement data endpoints
+	router.HandleFunc("/api/measurements/{target}/data", ws.handleGetMeasurementData).Methods("GET")
+}
+
+// Measurement data handler
+func (ws *WebServer) handleGetMeasurementData(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	target := vars["target"]
+	
+	// Parse query parameters for time range
+	query := r.URL.Query()
+	startTimeStr := query.Get("startTime")
+	endTimeStr := query.Get("endTime")
+	
+	// Default to last 5 minutes if no time range specified
+	endTime := time.Now()
+	startTime := endTime.Add(-5 * time.Minute)
+	
+	// Parse custom time range if provided
+	if startTimeStr != "" {
+		if parsed, err := time.Parse(time.RFC3339, startTimeStr); err == nil {
+			startTime = parsed
+		}
+	}
+	if endTimeStr != "" {
+		if parsed, err := time.Parse(time.RFC3339, endTimeStr); err == nil {
+			endTime = parsed
+		}
+	}
+	
+	// Get measurement data from DuckDB
+	points, err := ws.canvas.tsdb.QueryLatency(target, startTime)
+	if err != nil {
+		ws.sendError(w, fmt.Sprintf("Failed to query measurement data: %v", err), http.StatusInternalServerError)
+		return
+	}
+	
+	// Filter points within end time
+	var filteredPoints []TracePoint
+	for _, point := range points {
+		pointTime := time.Unix(0, point.Timestamp)
+		if pointTime.Before(endTime) || pointTime.Equal(endTime) {
+			filteredPoints = append(filteredPoints, point)
+		}
+	}
+	
+	// Convert to chart-friendly format
+	dataPoints := make([]map[string]interface{}, len(filteredPoints))
+	for i, point := range filteredPoints {
+		dataPoints[i] = map[string]interface{}{
+			"timestamp": point.Timestamp / 1000000, // Convert to milliseconds for JavaScript
+			"value":     point.Duration,
+			"target":    point.Target,
+			"run_id":    point.RunID,
+		}
+	}
+	
+	response := map[string]interface{}{
+		"target":     target,
+		"startTime":  startTime.Format(time.RFC3339),
+		"endTime":    endTime.Format(time.RFC3339),
+		"dataPoints": dataPoints,
+		"count":      len(dataPoints),
+	}
+	
+	ws.sendSuccess(w, response)
 }
 
 // Generator handlers

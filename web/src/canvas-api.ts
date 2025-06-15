@@ -126,6 +126,25 @@ export class CanvasAPI {
     return this.delete(`/canvas/measurements/${id}`);
   }
 
+  // Measurement data endpoints
+  async getMeasurementData(target: string, startTime?: string, endTime?: string): Promise<APIResponse> {
+    let url = `/measurements/${target}/data`;
+    const params = new URLSearchParams();
+    
+    if (startTime) {
+      params.append('startTime', startTime);
+    }
+    if (endTime) {
+      params.append('endTime', endTime);
+    }
+    
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
+    
+    return this.get(url);
+  }
+
   // WebSocket connection
   private connectWebSocket() {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';

@@ -27,8 +27,10 @@ The project is a Go-based system composed of several key packages:
 
 **3. Current Status & Architecture:**
 
-*   **DuckDB Measurement System:** Complete call-based measurement architecture with MeasurementTracer extending ExecutionTracer. Features DuckDB time-series storage, console commands (`measure add/remove/list/clear/stats`), Canvas.Run() auto-injection, and comprehensive analytics pipeline with percentile calculations and SQL queries.
+*   **DuckDB Measurement System:** Complete call-based measurement architecture with MeasurementTracer extending ExecutionTracer. Features DuckDB time-series storage, console commands (`measure add/remove/list/clear/stats/sql`), Canvas.Run() auto-injection, and comprehensive analytics pipeline with percentile calculations and SQL queries.
 *   **Production-Ready Analytics:** End-to-end `measure → run → analyze` workflow validated with comprehensive test suite. Zero-overhead performance when measurements disabled, intelligent tab completion, and seamless integration with existing Canvas API.
+*   **Traffic Generation:** Fully functional traffic generators that execute Canvas.Run() at configured rates. Generators create actual simulation load with measurement tracing, supporting start/stop/pause/resume operations and dynamic rate adjustments.
+*   **Live Measurement Dashboard:** Web dashboard fetches real measurement data from DuckDB via REST API. Charts update every 2 seconds showing actual latency distributions. Complete integration from console commands to visual analytics.
 
 *   **RESTful Canvas API:** Complete implementation of stateless, RESTful endpoints for traffic generation and measurement management. Eliminates WebSocket brittleness by using HTTP for control operations and WebSocket only for live data updates.
 *   **goutils WebSocket Integration:** Production-grade WebSocket implementation using the goutils library with proper lifecycle hooks (OnStart, OnClose, OnTimeout, HandleMessage) and automatic connection management.

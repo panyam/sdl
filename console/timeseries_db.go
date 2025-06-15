@@ -46,10 +46,16 @@ func NewDuckDBTimeSeriesStore(dataDir string) (*DuckDBTimeSeriesStore, error) {
 	dbPath := filepath.Join(dataDir, "traces.duckdb")
 	
 	// Connect to DuckDB
+	// Default settings should allow concurrent reads
 	db, err := sql.Open("duckdb", dbPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open DuckDB at %s: %w", dbPath, err)
 	}
+	
+	// Set connection pool settings for better concurrency
+	db.SetMaxOpenConns(1)    // DuckDB works best with single writer
+	db.SetMaxIdleConns(1)    // Keep connection ready
+	db.SetConnMaxLifetime(0) // Connection doesn't expire
 
 	store := &DuckDBTimeSeriesStore{
 		db:     db,
@@ -112,6 +118,7 @@ func (ts *DuckDBTimeSeriesStore) prepareStatements() error {
 
 // Insert stores a trace point in the database
 func (ts *DuckDBTimeSeriesStore) Insert(point TracePoint) error {
+	// Use RWMutex for reads, only lock for writes
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
 
@@ -134,6 +141,7 @@ func (ts *DuckDBTimeSeriesStore) Insert(point TracePoint) error {
 		errorStr = point.Error
 	}
 
+	// Execute insert without explicit transaction - DuckDB will handle it
 	_, err := ts.insertStmt.Exec(
 		timestamp,
 		point.Target,

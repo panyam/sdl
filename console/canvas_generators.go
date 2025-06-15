@@ -398,19 +398,32 @@ func (c *Canvas) Restore(state *CanvasState) error {
 
 // runGenerator is the internal method that executes a generator
 func (c *Canvas) runGenerator(id string, config *GeneratorConfig, stopChan <-chan struct{}) {
-	// This is a placeholder implementation
-	// In a real implementation, this would generate traffic according to the config
-	ticker := time.NewTicker(time.Second / time.Duration(config.Rate))
+	// Run simulations in batches at regular intervals
+	// We generate config.Rate requests per second worth of load
+	ticker := time.NewTicker(time.Second) // Check every second
 	defer ticker.Stop()
+	
+	fmt.Printf("🚀 Generator %s started: %s @ %d rps\n", id, config.Target, config.Rate)
 	
 	for {
 		select {
 		case <-stopChan:
+			fmt.Printf("🛑 Generator %s stopped\n", id)
 			return
 		case <-ticker.C:
 			if config.Enabled {
-				// Generate traffic here
-				// This would call the target method with appropriate parameters
+				// Generate a batch of requests based on the rate
+				// This simulates config.Rate requests happening over 1 second
+				varName := fmt.Sprintf("gen_%s_%d", id, time.Now().Unix())
+				
+				// Run simulation batch - this will auto-inject measurements if configured
+				err := c.Run(varName, config.Target, WithRuns(config.Rate))
+				if err != nil {
+					// Log error but continue generating
+					fmt.Printf("❌ Generator %s error: %v\n", id, err)
+				} else {
+					fmt.Printf("✅ Generator %s: executed %d calls to %s\n", id, config.Rate, config.Target)
+				}
 			}
 		}
 	}

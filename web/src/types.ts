@@ -68,6 +68,7 @@ export interface DashboardState {
 export interface ChartData {
   chartName: string;
   metricName: string;
+  target?: string;
   data: number[];
   labels: string[];
   title: string;
@@ -119,6 +120,13 @@ export interface MeasurementConfig {
   interval: number; // in milliseconds
   enabled: boolean;
   options?: Record<string, any>;
+}
+
+export interface MeasurementDataPoint {
+  timestamp: number; // Timestamp in milliseconds
+  value: number;
+  target: string;
+  run_id: string;
 }
 
 export interface CanvasState {
