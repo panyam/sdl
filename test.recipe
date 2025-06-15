@@ -1,4 +1,6 @@
-load ./examples/contacts/contacts.sdl
-use ContactsSystem
-gen add load1 server.HandleLookup 10
-measure add lat1 server.HandleLookup latency
+#!/bin/zsh
+
+sdl load ./examples/contacts/contacts.sdl
+sdl use ContactsSystem
+sdl gen add load1 server.HandleLookup 10
+sdl measure add lat1 server.HandleLookup latency
