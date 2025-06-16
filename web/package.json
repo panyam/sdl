@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@hpcc-js/wasm": "^2.23.0",
-    "chart.js": "^4.4.0"
+    "chart.js": "^4.4.0",
+    "golden-layout": "file:../../golden-layout"
   }
 }

@@ -2,6 +2,7 @@ import { CanvasAPI } from './canvas-api.js';
 import { DashboardState, ParameterConfig, WebSocketMessage, GenerateCall, SystemDiagram, MeasurementDataPoint } from './types.js';
 import { Chart, ChartConfiguration } from 'chart.js/auto';
 import { Graphviz } from "@hpcc-js/wasm";
+import { GoldenLayout, LayoutConfig } from 'golden-layout';
 
 export class Dashboard {
   private api: CanvasAPI;
@@ -10,6 +11,7 @@ export class Dashboard {
   private systemDiagram: SystemDiagram | null = null;
   private chartUpdateInterval: number | null = null;
   private graphviz: any = null; // Will be initialized asynchronously
+  private layout: GoldenLayout | null = null;
 
   // Parameter configurations - populated when a system is loaded
   private parameters: ParameterConfig[] = [];
@@ -28,10 +30,8 @@ export class Dashboard {
       generateCalls: []
     };
 
-    this.setupEventListeners();
     this.initializeGraphviz();
     this.initialize();
-    this.startChartUpdates();
   }
 
   private async initializeGraphviz() {
@@ -45,13 +45,19 @@ export class Dashboard {
 
   private async initialize() {
     try {
+      // First render the layout structure
+      this.render();
+      
+      // Then setup WebSocket after layout is ready
+      setTimeout(() => {
+        this.setupEventListeners();
+        this.startChartUpdates();
+      }, 100);
+      
       // Load current Canvas state to see if there's an existing session
       await this.loadCanvasState();
-      
-      this.render();
     } catch (error) {
       console.error('❌ Failed to initialize dashboard:', error);
-      this.render(); // Render anyway with empty state
     }
   }
 
@@ -166,7 +172,7 @@ export class Dashboard {
         break;
     }
 
-    this.render();
+    // Don't update layout on WebSocket messages - layout is static once created
   }
 
   private async updateMetrics() {
@@ -208,8 +214,8 @@ export class Dashboard {
       if (response.success && response.data) {
         this.systemDiagram = response.data;
         console.log('📊 System diagram loaded:', this.systemDiagram);
-        // Re-render to show the diagram
-        this.render();
+        // Update only the system architecture panel
+        this.updateSystemArchitecturePanel();
       } else {
         console.warn('Failed to load system diagram:', response.error);
         this.systemDiagram = null;
@@ -326,68 +332,173 @@ export class Dashboard {
     if (!app) return;
 
     app.innerHTML = `
-      <div class="h-screen flex flex-col p-4">
+      <div class="h-screen flex flex-col">
         <!-- Header -->
-        <div class="mb-4 flex-shrink-0">
-          <h1 class="text-2xl font-bold text-blue-300 mb-2">SDL Canvas Dashboard</h1>
+        <div class="p-4 flex-shrink-0 bg-gray-900 border-b border-gray-700">
+          <h1 class="text-xl font-bold text-blue-300 mb-2">SDL Canvas Dashboard</h1>
           <div class="flex items-center gap-4">
             <div class="flex items-center gap-2">
               <div class="w-2 h-2 rounded-full ${this.state.isConnected ? 'bg-green-400' : 'bg-red-400'}"></div>
-              <span class="text-sm text-gray-400">${this.state.isConnected ? 'Connected' : 'Disconnected'}</span>
+              <span class="text-xs text-gray-400">${this.state.isConnected ? 'Connected' : 'Disconnected'}</span>
             </div>
             ${this.state.currentSystem ? `
-              <div class="text-sm text-gray-300">
+              <div class="text-xs text-gray-300">
                 <span class="text-gray-400">System:</span> ${this.state.currentSystem}
               </div>
             ` : ''}
+            <button id="reset-layout-btn" class="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-gray-300" title="Reset layout to default">
+              ⚙️ Reset Layout
+            </button>
           </div>
           <div id="error-display" class="hidden mt-2 p-2 bg-red-800 text-red-200 rounded text-sm"></div>
         </div>
 
-        <!-- Row 1: System Architecture + Right Side Panels (50% height) -->
-        <div class="flex gap-4 mb-4" style="height: 45%;">
-          <!-- System Architecture Panel (70% width) -->
-          <div class="panel overflow-hidden" style="flex: 0 0 70%;">
-            <div class="panel-header">System Architecture</div>
-            <div class="h-full overflow-y-auto p-4 space-y-4">
-              ${this.renderSystemArchitectureOnly()}
-            </div>
-          </div>
-
-          <!-- Right Side: Traffic Generation + System Parameters (30% width) -->
-          <div class="flex flex-col gap-4" style="flex: 0 0 28%;">
-            <!-- Traffic Generation Panel (Top 50%) -->
-            <div class="panel overflow-hidden" style="height: 48%;">
-              <div class="panel-header">Traffic Generation</div>
-              <div class="p-3 h-full overflow-y-auto">
-                ${this.renderGenerateControls()}
-              </div>
-            </div>
-
-            <!-- System Parameters Panel (Bottom 50%) -->
-            <div class="panel overflow-hidden" style="height: 48%;">
-              <div class="panel-header">System Parameters</div>
-              <div class="p-3 h-full overflow-y-auto">
-                ${this.renderSystemParameters()}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Row 2: Dynamic Metrics Grid (50% height) -->
-        <div class="panel overflow-hidden" style="height: 45%;">
-          <div class="panel-header">Live Metrics</div>
-          <div class="p-4 h-full overflow-y-auto">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" style="grid-auto-rows: 200px;">
-              ${this.renderDynamicCharts()}
-            </div>
-          </div>
-        </div>
+        <!-- GoldenLayout Container -->
+        <div id="layout-container" class="flex-1"></div>
       </div>
     `;
 
-    this.setupInteractivity();
-    this.initDynamicCharts();
+    this.initializeLayout();
+  }
+
+  private initializeLayout() {
+    // Destroy existing layout if it exists
+    if (this.layout) {
+      this.layout.destroy();
+      this.layout = null;
+    }
+
+    // Try to load saved layout configuration
+    let config: LayoutConfig;
+    try {
+      const savedConfig = this.loadLayoutConfig();
+      config = savedConfig || this.getDefaultLayoutConfig();
+    } catch (error) {
+      console.warn('Failed to load saved layout, using default:', error);
+      // Clear potentially corrupted data
+      localStorage.removeItem('sdl-dashboard-layout');
+      config = this.getDefaultLayoutConfig();
+    }
+
+    const container = document.getElementById('layout-container');
+    if (!container) {
+      console.error('❌ Layout container not found');
+      return;
+    }
+
+    try {
+      this.layout = new GoldenLayout(config, container);
+      console.log('🔧 GoldenLayout instance created');
+    } catch (error) {
+      console.error('Failed to create GoldenLayout with saved config, falling back to default:', error);
+      // Clear corrupted data and retry with default
+      localStorage.removeItem('sdl-dashboard-layout');
+      const defaultConfig = this.getDefaultLayoutConfig();
+      this.layout = new GoldenLayout(defaultConfig, container);
+      console.log('🔧 GoldenLayout instance created with default config');
+    }
+
+    // Save layout configuration whenever it changes
+    this.layout.on('stateChanged', () => {
+      this.saveLayoutConfig();
+    });
+
+    // Register components
+    this.layout.registerComponentFactoryFunction('systemArchitecture', (container) => {
+      container.element.innerHTML = `
+        <div class="h-full p-4 overflow-auto">
+          ${this.renderSystemArchitectureOnly()}
+        </div>
+      `;
+    });
+
+    this.layout.registerComponentFactoryFunction('trafficGeneration', (container) => {
+      container.element.innerHTML = `
+        <div class="h-full p-3 overflow-auto">
+          ${this.renderGenerateControls()}
+        </div>
+      `;
+    });
+
+    this.layout.registerComponentFactoryFunction('measurements', (container) => {
+      container.element.innerHTML = `
+        <div class="h-full p-3 overflow-auto">
+          ${this.renderMeasurements()}
+        </div>
+      `;
+    });
+
+    this.layout.registerComponentFactoryFunction('systemParameters', (container) => {
+      container.element.innerHTML = `
+        <div class="h-full p-3 overflow-auto">
+          ${this.renderSystemParameters()}
+        </div>
+      `;
+    });
+
+    this.layout.registerComponentFactoryFunction('liveMetrics', (container) => {
+      container.element.innerHTML = `
+        <div class="h-full p-4 overflow-auto">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" style="grid-auto-rows: 200px;">
+            ${this.renderDynamicCharts()}
+          </div>
+        </div>
+      `;
+    });
+
+    this.layout.resizeWithContainerAutomatically = true;
+    this.layout.init();
+
+    // Setup interactivity after layout is initialized
+    setTimeout(() => {
+      this.setupInteractivity();
+      this.initDynamicCharts();
+    }, 100);
+  }
+
+  private updateSystemArchitecturePanel() {
+    if (!this.layout) return;
+    
+    // Find and update only the system architecture panel
+    this.findAndUpdatePanel('systemArchitecture', () => this.renderSystemArchitectureOnly());
+  }
+
+  private findAndUpdatePanel(componentType: string, contentRenderer: () => string) {
+    if (!this.layout) return;
+    
+    try {
+      const rootElement = this.layout.rootItem;
+      this.searchAndUpdatePanel(rootElement, componentType, contentRenderer);
+    } catch (error) {
+      console.warn(`Error updating ${componentType} panel:`, error);
+    }
+  }
+
+  private searchAndUpdatePanel(item: any, targetType: string, contentRenderer: () => string) {
+    if (!item) return;
+
+    if (item.type === 'component' && item.componentType === targetType) {
+      const container = item.container;
+      if (container && container.element) {
+        container.element.innerHTML = `
+          <div class="h-full p-4 overflow-auto">
+            ${contentRenderer()}
+          </div>
+        `;
+        
+        // Re-setup interactivity for updated content
+        setTimeout(() => {
+          this.setupInteractivity();
+          if (targetType === 'liveMetrics') {
+            this.initDynamicCharts();
+          }
+        }, 10);
+      }
+    } else if (item.contentItems) {
+      item.contentItems.forEach((child: any) => 
+        this.searchAndUpdatePanel(child, targetType, contentRenderer)
+      );
+    }
   }
 
   private renderSystemArchitectureOnly(): string {
@@ -413,24 +524,6 @@ export class Dashboard {
           ${this.renderSystemDiagramSVG()}
         </div>
 
-        <!-- System Health Summary -->
-        <div class="mt-4 p-3 bg-gray-800/50 rounded border border-gray-600">
-          <h4 class="text-sm font-semibold text-gray-300 mb-2">System Health</h4>
-          <div class="grid grid-cols-3 gap-2 text-xs">
-            <div class="text-center">
-              <div class="text-lg font-bold text-green-400">${this.state.metrics.successRate.toFixed(1)}%</div>
-              <div class="text-xs text-gray-400">Success</div>
-            </div>
-            <div class="text-center">
-              <div class="text-lg font-bold text-blue-400">${this.state.metrics.latency.toFixed(0)}ms</div>
-              <div class="text-xs text-gray-400">Latency</div>
-            </div>
-            <div class="text-center">
-              <div class="text-lg font-bold text-yellow-400">${this.state.metrics.load.toFixed(1)}</div>
-              <div class="text-xs text-gray-400">Load</div>
-            </div>
-          </div>
-        </div>
       </div>
     `;
   }
@@ -576,6 +669,40 @@ export class Dashboard {
     `;
   }
 
+  private renderMeasurements(): string {
+    const measurements = Object.values(this.state.dynamicCharts);
+    
+    if (measurements.length === 0) {
+      return `
+        <div class="flex items-center justify-center h-full">
+          <div class="text-center text-gray-400">
+            <div class="text-sm">No Measurements</div>
+            <div class="text-xs mt-1">Add measurements to track system metrics</div>
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="space-y-3">
+        <div class="text-xs text-gray-400 mb-3">
+          Active measurements for system monitoring
+        </div>
+        ${measurements.map(measurement => `
+          <div class="bg-gray-800 border border-gray-600 rounded p-2">
+            <div class="text-xs font-medium text-gray-300 mb-1">${measurement.title}</div>
+            <div class="text-xs text-gray-500">Target: ${measurement.target || measurement.metricName}</div>
+            <div class="text-xs text-green-400">Type: ${measurement.metricName}</div>
+          </div>
+        `).join('')}
+        
+        <button class="w-full btn btn-outline text-xs py-1" ${!this.state.currentSystem ? 'disabled' : ''}>
+          + Add Measurement
+        </button>
+      </div>
+    `;
+  }
+
   private renderSystemParameters(): string {
     if (this.parameters.length === 0) {
       return `
@@ -697,6 +824,14 @@ export class Dashboard {
 
 
   private setupInteractivity() {
+    // Reset layout button
+    const resetLayoutBtn = document.getElementById('reset-layout-btn');
+    resetLayoutBtn?.addEventListener('click', () => {
+      if (confirm('Reset layout to default? This will reload the page.')) {
+        this.resetLayout();
+      }
+    });
+
     // Toggle all generators button
     const toggleAllBtn = document.getElementById('toggle-all-generators');
     toggleAllBtn?.addEventListener('click', () => this.toggleAllGenerators());
@@ -709,7 +844,7 @@ export class Dashboard {
           const value = parseFloat((e.target as HTMLInputElement).value);
           param.value = value;
           this.setParameter(param.path, value);
-          this.render(); // Re-render to update display
+          // Parameter changes only affect the system parameters panel
         });
       }
     });
@@ -729,7 +864,7 @@ export class Dashboard {
         const value = parseFloat((e.target as HTMLInputElement).value);
         call.rate = value;
         this.handleGenerateRateChange(call);
-        this.render(); // Re-render to update display
+        // Chart updates handled by real-time chart updates // Update content without recreating layout
       });
     });
 
@@ -892,7 +1027,7 @@ export class Dashboard {
     };
     
     console.log(`📊 Server added new metric: ${metricName} -> "${chartTitle}"`);
-    this.render();
+    // Chart updates handled by real-time chart updates
   }
 
   private initDynamicCharts() {
@@ -988,5 +1123,130 @@ export class Dashboard {
       chart.destroy();
     });
     this.charts = {};
+
+    // Cleanup GoldenLayout
+    if (this.layout) {
+      this.layout.destroy();
+      this.layout = null;
+    }
+  }
+
+  // Layout persistence methods
+  private getDefaultLayoutConfig(): LayoutConfig {
+    return {
+      root: {
+        type: 'row',
+        content: [
+          {
+            type: 'column',
+            content: [
+              {
+                type: 'component',
+                componentType: 'systemArchitecture',
+                title: 'System Architecture'
+              },
+              {
+                type: 'component',
+                componentType: 'liveMetrics', 
+                title: 'Live Metrics'
+              }
+            ],
+            width: 60
+          },
+          {
+            type: 'column',
+            content: [
+              {
+                type: 'component',
+                componentType: 'trafficGeneration',
+                title: 'Traffic Generation'
+              },
+              {
+                type: 'component',
+                componentType: 'measurements',
+                title: 'Measurements'
+              },
+              {
+                type: 'component',
+                componentType: 'systemParameters',
+                title: 'System Parameters'
+              }
+            ],
+            width: 40
+          }
+        ]
+      }
+    };
+  }
+
+  private saveLayoutConfig() {
+    if (!this.layout) return;
+    
+    try {
+      const config = this.layout.saveLayout();
+      localStorage.setItem('sdl-dashboard-layout', JSON.stringify(config));
+      console.log('💾 Layout configuration saved');
+    } catch (error) {
+      console.warn('Failed to save layout configuration:', error);
+    }
+  }
+
+  private loadLayoutConfig(): LayoutConfig | null {
+    try {
+      const saved = localStorage.getItem('sdl-dashboard-layout');
+      if (saved) {
+        const config = JSON.parse(saved);
+        console.log('📂 Layout configuration loaded from localStorage');
+        // Sanitize the config to fix GoldenLayout trimStart bug
+        return this.sanitizeLayoutConfig(config);
+      }
+    } catch (error) {
+      console.warn('Failed to load layout configuration:', error);
+      // Clear corrupted data
+      localStorage.removeItem('sdl-dashboard-layout');
+    }
+    return null;
+  }
+
+  private sanitizeLayoutConfig(config: any): LayoutConfig {
+    // Recursively convert numeric properties that GoldenLayout expects as strings
+    const sanitize = (obj: any): any => {
+      if (obj === null || obj === undefined) {
+        return obj;
+      }
+      
+      if (Array.isArray(obj)) {
+        return obj.map(sanitize);
+      }
+      
+      if (typeof obj === 'object') {
+        const sanitized: any = {};
+        for (const [key, value] of Object.entries(obj)) {
+          // Convert numeric properties that GoldenLayout expects as strings
+          const numericStringProperties = [
+            'width', 'height', 'minWidth', 'minHeight', 'maxWidth', 'maxHeight',
+            'x', 'y', 'activeItemIndex', 'selectedItemIndex'
+          ];
+          
+          if (numericStringProperties.includes(key) && typeof value === 'number') {
+            sanitized[key] = value.toString();
+          } else if (typeof value === 'object') {
+            sanitized[key] = sanitize(value);
+          } else {
+            sanitized[key] = value;
+          }
+        }
+        return sanitized;
+      }
+      
+      return obj;
+    };
+    
+    return sanitize(config);
+  }
+
+  private resetLayout() {
+    localStorage.removeItem('sdl-dashboard-layout');
+    location.reload();
   }
 }
