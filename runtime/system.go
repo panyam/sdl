@@ -1,8 +1,10 @@
 package runtime
 
 import (
+	"fmt"
 	"log"
 	"reflect"
+	"strings"
 
 	"github.com/panyam/sdl/decl"
 )
@@ -130,4 +132,114 @@ func (s *SystemInstance) GetUninitializedComponents(env *Env[Value]) (items []*I
 		})
 	}
 	return
+}
+
+// UpdateMethodArrivalRate updates the arrival rate for a specific method on a component
+// and triggers FlowEval to recompute downstream effects.
+func (si *SystemInstance) UpdateMethodArrivalRate(componentName, methodName string, rate float64) error {
+	// Get component instance
+	compVal, ok := si.Env.Get(componentName)
+	if !ok {
+		return fmt.Errorf("component %s not found", componentName)
+	}
+	
+	comp, ok := compVal.Value.(*ComponentInstance)
+	if !ok {
+		return fmt.Errorf("%s is not a component", componentName)
+	}
+	
+	// Set the arrival rate
+	if err := comp.SetArrivalRate(methodName, rate); err != nil {
+		return fmt.Errorf("failed to set arrival rate: %w", err)
+	}
+	
+	// Trigger FlowEval to compute downstream effects
+	return si.RecomputeFlows(componentName, methodName, rate)
+}
+
+// RecomputeFlows uses FlowEval to compute downstream traffic flows from a given entry point.
+func (si *SystemInstance) RecomputeFlows(component, method string, inputRate float64) error {
+	// Create flow context with current system parameters
+	parameters := make(map[string]interface{})
+	// TODO: Collect actual system parameters from si.Env
+	
+	context := NewFlowContext(si.System, parameters)
+	flows := FlowEval(component, method, inputRate, context)
+	
+	// Apply computed flows to downstream components
+	for target, rate := range flows {
+		downstreamComp, downstreamMethod := si.parseFlowTarget(target)
+		if downstreamComp != "" && downstreamMethod != "" {
+			compVal, ok := si.Env.Get(downstreamComp)
+			if ok {
+				if comp, ok := compVal.Value.(*ComponentInstance); ok {
+					if err := comp.SetArrivalRate(downstreamMethod, rate); err != nil {
+						log.Printf("Warning: Failed to set arrival rate for %s.%s: %v", 
+							downstreamComp, downstreamMethod, err)
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// RecomputeAllFlows recalculates flows for all entry points in the system.
+// Entry points are typically traffic generators or external interfaces.
+func (si *SystemInstance) RecomputeAllFlows(entryPoints map[string]float64) error {
+	// Safety check
+	if si.Env == nil {
+		return fmt.Errorf("system instance has no environment")
+	}
+	
+	// Create flow context
+	parameters := make(map[string]interface{})
+	// TODO: Collect actual system parameters
+	
+	context := NewFlowContext(si.System, parameters)
+	
+	// Aggregate all flows
+	allFlows := make(map[string]float64)
+	
+	// Compute flows from each entry point
+	for target, rate := range entryPoints {
+		component, method := si.parseFlowTarget(target)
+		if component != "" && method != "" {
+			flows := FlowEval(component, method, rate, context)
+			for flowTarget, flowRate := range flows {
+				allFlows[flowTarget] += flowRate
+			}
+			log.Printf("FlowEval: %s.%s @ %.1f RPS -> %v", component, method, rate, flows)
+		}
+	}
+	
+	// Apply all computed flows
+	for target, rate := range allFlows {
+		component, method := si.parseFlowTarget(target)
+		if component != "" && method != "" {
+			compVal, ok := si.Env.Get(component)
+			if ok {
+				if comp, ok := compVal.Value.(*ComponentInstance); ok {
+					if err := comp.SetArrivalRate(method, rate); err != nil {
+						log.Printf("Warning: Failed to set arrival rate for %s.%s: %v", 
+							component, method, err)
+					} else {
+						log.Printf("Applied arrival rate: %s.%s = %.2f RPS", component, method, rate)
+					}
+				}
+			}
+		}
+	}
+	
+	return nil
+}
+
+// parseFlowTarget splits "component.method" into component and method names.
+func (si *SystemInstance) parseFlowTarget(target string) (component, method string) {
+	parts := strings.Split(target, ".")
+	if len(parts) >= 2 {
+		method = parts[len(parts)-1]
+		component = strings.Join(parts[:len(parts)-1], ".")
+	}
+	return component, method
 }

@@ -133,13 +133,20 @@ func (c *Canvas) UpdateGenerator(config *GeneratorConfig) error {
 	c.initManagers()
 
 	c.genManager.mu.Lock()
-	defer c.genManager.mu.Unlock()
-
 	if _, exists := c.genManager.generators[config.ID]; !exists {
+		c.genManager.mu.Unlock()
 		return fmt.Errorf("generator with ID '%s' not found", config.ID)
 	}
-
 	c.genManager.generators[config.ID] = config
+	c.genManager.mu.Unlock()
+	
+	// Trigger FlowEval to update downstream component loads
+	// This must be called after releasing the lock to avoid deadlock
+	if err := c.recomputeSystemFlows(); err != nil {
+		fmt.Printf("Warning: Failed to recompute system flows: %v\n", err)
+		// Don't fail the update - just log the warning
+	}
+	
 	return nil
 }
 
@@ -336,6 +343,33 @@ func (c *Canvas) Save() (*CanvasState, error) {
 
 	return state, nil
 }
+
+// recomputeSystemFlows uses FlowEval to calculate downstream loads from traffic generators
+func (c *Canvas) recomputeSystemFlows() error {
+	// Only recompute if we have an active system
+	if c.activeSystem == nil {
+		return fmt.Errorf("no active system")
+	}
+
+	// Collect all active generator entry points
+	c.genManager.mu.RLock()
+	entryPoints := make(map[string]float64)
+	for _, gen := range c.genManager.generators {
+		if gen.Enabled {
+			entryPoints[gen.Target] = float64(gen.Rate)
+		}
+	}
+	c.genManager.mu.RUnlock()
+
+	if len(entryPoints) == 0 {
+		// No active generators, let runtime handle resetting
+		return c.activeSystem.RecomputeAllFlows(entryPoints)
+	}
+
+	// Let the runtime handle all FlowEval computation and application
+	return c.activeSystem.RecomputeAllFlows(entryPoints)
+}
+
 
 // Restore loads a previously saved Canvas state
 func (c *Canvas) Restore(state *CanvasState) error {

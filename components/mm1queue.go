@@ -110,3 +110,58 @@ func (q *MM1Queue) Dequeue() *Outcomes[Duration] {
 
 	return outcomes
 }
+
+// GetFlowPattern implements FlowAnalyzable interface for MM1Queue
+func (q *MM1Queue) GetFlowPattern(methodName string, inputRate float64, params map[string]interface{}) FlowPattern {
+	switch methodName {
+	case "Enqueue":
+		// Enqueue always succeeds (infinite capacity queue)
+		return FlowPattern{
+			Outflows:      map[string]float64{}, // No downstream calls
+			SuccessRate:   1.0,
+			Amplification: 1.0,
+			ServiceTime:   0.001, // Very fast enqueue operation
+		}
+		
+	case "Dequeue":
+		// Update arrival rate for this analysis
+		currentArrivalRate := inputRate
+		if currentArrivalRate <= 0 {
+			currentArrivalRate = q.ArrivalRate
+		}
+		
+		// Calculate utilization and stability
+		serviceRate := 1.0 / q.AvgServiceTime
+		utilization := currentArrivalRate / serviceRate
+		
+		// Determine success rate and service time based on utilization
+		successRate := 1.0
+		serviceTime := q.AvgServiceTime
+		
+		if utilization >= 1.0 {
+			// Queue is unstable - very poor performance
+			successRate = 0.1 // Most requests will timeout or fail
+			serviceTime = q.AvgServiceTime * 10 // Much longer service times
+		} else if utilization > 0.9 {
+			// High utilization - some degradation
+			degradationFactor := 1.0 + (utilization-0.9)*10 // Linear degradation
+			successRate = math.Max(0.5, 1.0-degradationFactor*0.1)
+			serviceTime = q.AvgServiceTime * degradationFactor
+		}
+		
+		return FlowPattern{
+			Outflows:      map[string]float64{}, // MM1Queue is typically a leaf node
+			SuccessRate:   successRate,
+			Amplification: 1.0, // Input rate = output rate for successful dequeues
+			ServiceTime:   serviceTime,
+		}
+	}
+	
+	// Unknown method
+	return FlowPattern{
+		Outflows:      map[string]float64{},
+		SuccessRate:   1.0,
+		Amplification: 1.0,
+		ServiceTime:   0.001,
+	}
+}

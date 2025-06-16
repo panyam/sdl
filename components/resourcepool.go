@@ -163,3 +163,53 @@ func (rp *ResourcePool) Acquire() *core.Outcomes[core.AccessResult] {
 	}
 	return outcomes
 }
+
+// GetFlowPattern implements FlowAnalyzable interface for ResourcePool
+func (rp *ResourcePool) GetFlowPattern(methodName string, inputRate float64, params map[string]interface{}) FlowPattern {
+	switch methodName {
+	case "Acquire":
+		// Update arrival rate for this analysis
+		currentArrivalRate := inputRate
+		if currentArrivalRate <= 0 {
+			currentArrivalRate = rp.ArrivalRate
+		}
+		
+		// Calculate utilization and stability
+		serviceRate := 1.0 / rp.AvgHoldTime
+		utilization := currentArrivalRate / (serviceRate * float64(rp.Size))
+		
+		// Determine success rate based on utilization
+		successRate := 1.0
+		if utilization >= 1.0 {
+			// System is overloaded - success rate drops significantly
+			successRate = math.Max(0.1, 2.0-utilization) // Drops to 0.1 at utilization = 1.9
+		} else if utilization > 0.8 {
+			// High utilization - some degradation
+			successRate = math.Max(0.9, 1.0-utilization*0.25)
+		}
+		
+		return FlowPattern{
+			Outflows:      map[string]float64{}, // ResourcePool is typically a leaf node
+			SuccessRate:   successRate,
+			Amplification: 1.0, // Input rate = output rate for successful acquisitions
+			ServiceTime:   rp.AvgHoldTime,
+		}
+		
+	case "Release":
+		// Release operations typically succeed
+		return FlowPattern{
+			Outflows:      map[string]float64{}, // No downstream calls
+			SuccessRate:   1.0,
+			Amplification: 1.0,
+			ServiceTime:   0.001, // Very fast operation
+		}
+	}
+	
+	// Unknown method
+	return FlowPattern{
+		Outflows:      map[string]float64{},
+		SuccessRate:   1.0,
+		Amplification: 1.0,
+		ServiceTime:   0.001,
+	}
+}

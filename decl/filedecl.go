@@ -228,7 +228,7 @@ func (f *FileDecl) RegisterDefinition(name string, decl Node) error {
 		return fmt.Errorf("definition '%s' already registered", name)
 	}
 	f.allDefinitions[name] = decl
-	log.Printf("Registered definition '%s' of type %T", name, decl)
+	// log.Printf("Registered definition '%s' of type %T", name, decl)
 	return nil
 }
 
