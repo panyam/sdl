@@ -555,6 +555,7 @@ func (c *Canvas) GetAvailableSystemNames() []string {
 	return systemNames
 }
 
+
 // GetSystemDiagram returns the topology of the currently active system
 func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
 	if c.activeSystem == nil {
@@ -574,19 +575,26 @@ func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
 			nodeID := instDecl.Name.Value
 			instanceNameToID[nodeID] = nodeID
 			
-			// Get component methods
+			// Get component methods using runtime system
 			var methods []viz.MethodInfo
-			if component, err := c.activeFile.FileDecl.GetComponent(instDecl.ComponentName.Value); err == nil && component != nil {
-				componentMethods, _ := component.Methods()
-				for methodName, methodDecl := range componentMethods {
-					returnType := "void"
-					if methodDecl.ReturnType != nil {
-						returnType = methodDecl.ReturnType.Name
+			if c.runtime != nil {
+				// Use runtime system to resolve component - it has already resolved imports
+				fileInstance := c.runtime.LoadFile(c.activeFile.FullPath)
+				if fileInstance != nil {
+					component, err := fileInstance.GetComponentDecl(instDecl.ComponentName.Value)
+					if err == nil && component != nil {
+						componentMethods, _ := component.Methods()
+						for methodName, methodDecl := range componentMethods {
+							returnType := "void"
+							if methodDecl.ReturnType != nil {
+								returnType = methodDecl.ReturnType.Name
+							}
+							methods = append(methods, viz.MethodInfo{
+								Name:       methodName,
+								ReturnType: returnType,
+							})
+						}
 					}
-					methods = append(methods, viz.MethodInfo{
-						Name:       methodName,
-						ReturnType: returnType,
-					})
 				}
 			}
 			
@@ -604,6 +612,8 @@ func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
 	for _, item := range c.activeSystem.System.Body {
 		if instDecl, ok := item.(*decl.InstanceDecl); ok {
 			fromNodeID := instanceNameToID[instDecl.Name.Value]
+			
+			// Add edges from instance overrides (system-level dependencies)
 			for _, assignment := range instDecl.Overrides {
 				if targetIdent, okIdent := assignment.Value.(*decl.IdentifierExpr); okIdent {
 					if toNodeID, isInstance := instanceNameToID[targetIdent.Value]; isInstance {

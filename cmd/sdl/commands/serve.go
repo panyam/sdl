@@ -18,6 +18,7 @@ var (
 	showLogs      = true
 	showStats     = true
 	statsInterval = 10 * time.Second
+	loadFiles     []string
 )
 
 // Serve command
@@ -46,6 +47,9 @@ Example:
   sdl use ContactsSystem
   sdl gen add load1 server.HandleLookup 10
   sdl gen start load1
+  
+  # Or start server with initial files loaded
+  sdl serve --load examples/contacts/contacts.sdl examples/common.sdl
   
   # Or start server on custom port
   sdl serve --port 9090 --no-logs
@@ -103,6 +107,11 @@ Example:
 			}
 		}
 
+		// Load initial files if specified
+		if len(loadFiles) > 0 {
+			go loadInitialFiles(canvas, loadFiles)
+		}
+
 		// Wait for shutdown signal
 		<-sigChan
 
@@ -143,10 +152,43 @@ func displayServerStats(ctx context.Context, canvas *console.Canvas) {
 	}
 }
 
+// loadInitialFiles loads SDL files into the canvas on server startup
+func loadInitialFiles(canvas *console.Canvas, files []string) {
+	// Give the server a moment to fully start
+	time.Sleep(1 * time.Second)
+	
+	if showLogs {
+		log.Printf("📂 Loading %d initial file(s)...", len(files))
+	}
+	
+	for _, file := range files {
+		if showLogs {
+			log.Printf("📂 Loading file: %s", file)
+		}
+		
+		err := canvas.Load(file)
+		if err != nil {
+			if showLogs {
+				log.Printf("❌ Failed to load file %s: %v", file, err)
+			}
+			continue
+		}
+		
+		if showLogs {
+			log.Printf("✅ Successfully loaded: %s", file)
+		}
+	}
+	
+	if showLogs {
+		log.Printf("📂 Initial file loading completed")
+	}
+}
+
 func init() {
 	// Port and host are now handled by persistent flags in root.go
 	serveCmd.Flags().BoolVar(&showLogs, "logs", true, "Show server logs")
 	serveCmd.Flags().BoolVar(&showStats, "stats", true, "Show periodic statistics")
 	serveCmd.Flags().DurationVar(&statsInterval, "stats-interval", 5*time.Second, "Statistics display interval")
+	serveCmd.Flags().StringSliceVar(&loadFiles, "load", []string{}, "Initial SDL files to load on server startup")
 	rootCmd.AddCommand(serveCmd)
 }

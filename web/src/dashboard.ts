@@ -626,7 +626,7 @@ export class Dashboard {
       dotContent += `    fontname="Monaco,Menlo,monospace";\n`;
       dotContent += `    color="#4b5563";\n`;
       dotContent += `    penwidth=2;\n`;
-      dotContent += `    margin=16;\n\n`;
+      dotContent += `    margin=12;\n\n`;
 
       if (methods.length > 0) {
         // Create method nodes inside the cluster
@@ -636,9 +636,9 @@ export class Dashboard {
           
           // Disabling return type in label for now
           // dotContent += `    ${methodNodeId} [label="${method.Name}() → ${method.ReturnType}\\n \\n ${traffic} rps"`;
-          dotContent += `    ${methodNodeId} [label="${method.Name}()\\n \\n ${traffic} rps"`;
+          dotContent += `    ${methodNodeId} [label="${method.Name}()\\n${traffic} rps"`;
           dotContent += ` shape=box style="filled,rounded" fillcolor="#2d3748" fontcolor="#a3e635"`;
-          dotContent += ` fontsize=12 fontname="Monaco,Menlo,monospace" margin=0.3 penwidth=1];\n`;
+          dotContent += ` fontsize=12 fontname="Monaco,Menlo,monospace" margin=0.15 penwidth=1];\n`;
           
           methodNodes.push(methodNodeId);
         });
@@ -654,22 +654,38 @@ export class Dashboard {
       dotContent += `  }\n\n`;
     });
 
-    // Generate edges between method nodes based on system dependencies
-    // For now, connect sequential nodes (this could be enhanced with actual dependency data)
-    for (let i = 0; i < this.systemDiagram.nodes.length - 1; i++) {
-      const currentNode = this.systemDiagram.nodes[i];
-      const nextNode = this.systemDiagram.nodes[i + 1];
+    // Generate edges between method nodes based on actual system dependencies
+    this.systemDiagram.edges.forEach(edge => {
+      const fromNode = (this.systemDiagram?.nodes || []).find(n => n.ID === edge.FromID);
+      const toNode = (this.systemDiagram?.nodes || []).find(n => n.ID === edge.ToID);
       
-      const currentMethods = currentNode.Methods || [];
-      const nextMethods = nextNode.Methods || [];
-      
-      if (currentMethods.length > 0 && nextMethods.length > 0) {
-        // Connect first method of current to first method of next
-        const fromMethod = `${currentNode.ID}_${currentMethods[0].Name}`;
-        const toMethod = `${nextNode.ID}_${nextMethods[0].Name}`;
-        edges.push(`  ${fromMethod} -> ${toMethod};`);
+      if (fromNode && toNode) {
+        const fromMethods = fromNode.Methods || [];
+        const toMethods = toNode.Methods || [];
+        
+        // Connect first method of source to first method of target
+        if (fromMethods.length > 0 && toMethods.length > 0) {
+          const fromMethod = `${fromNode.ID}_${fromMethods[0].Name}`;
+          const toMethod = `${toNode.ID}_${toMethods[0].Name}`;
+          edges.push(`  ${fromMethod} -> ${toMethod} [label="${edge.Label}"];`);
+        } else if (fromMethods.length > 0) {
+          // From has methods, to doesn't - connect method to component
+          const fromMethod = `${fromNode.ID}_${fromMethods[0].Name}`;
+          const toComponent = `${toNode.ID}_component`;
+          edges.push(`  ${fromMethod} -> ${toComponent} [label="${edge.Label}"];`);
+        } else if (toMethods.length > 0) {
+          // From doesn't have methods, to has methods - connect component to method
+          const fromComponent = `${fromNode.ID}_component`;
+          const toMethod = `${toNode.ID}_${toMethods[0].Name}`;
+          edges.push(`  ${fromComponent} -> ${toMethod} [label="${edge.Label}"];`);
+        } else {
+          // Neither has methods - connect components directly
+          const fromComponent = `${fromNode.ID}_component`;
+          const toComponent = `${toNode.ID}_component`;
+          edges.push(`  ${fromComponent} -> ${toComponent} [label="${edge.Label}"];`);
+        }
       }
-    }
+    });
 
     // Add all edges
     edges.forEach(edge => {
@@ -793,21 +809,25 @@ export class Dashboard {
           <div class="bg-gray-800 border border-gray-600 rounded p-2">
             <div class="flex items-center justify-between mb-1">
               <span class="text-xs font-medium truncate">${call.name}</span>
-              <input type="checkbox" ${call.enabled ? 'checked' : ''} 
-                     data-generate-id="${call.id}"
-                     class="form-checkbox h-3 w-3 text-blue-600">
+              <div class="flex items-center gap-2">
+                <div class="flex items-center border border-gray-600 rounded overflow-hidden">
+                  <button class="bg-gray-700 hover:bg-gray-600 px-2 py-1 text-xs" 
+                          data-rate-dec-id="${call.id}">−</button>
+                  <input type="number" 
+                         min="0" max="20" step="1" 
+                         value="${Math.round(call.rate)}"
+                         data-rate-input-id="${call.id}"
+                         class="w-12 px-1 py-1 text-xs text-center bg-gray-800 border-0 outline-none">
+                  <button class="bg-gray-700 hover:bg-gray-600 px-2 py-1 text-xs" 
+                          data-rate-inc-id="${call.id}">+</button>
+                </div>
+                <input type="checkbox" ${call.enabled ? 'checked' : ''} 
+                       data-generate-id="${call.id}"
+                       class="form-checkbox h-4 w-4 text-blue-600">
+              </div>
             </div>
             
-            <div class="text-xs text-gray-500 mb-1">${call.target}</div>
-            
-            <div class="flex items-center gap-1">
-              <input type="range" 
-                     min="0" max="20" step="0.5" 
-                     value="${call.rate}"
-                     data-rate-id="${call.id}"
-                     class="flex-1 h-1 bg-gray-600 rounded appearance-none slider">
-              <span class="text-xs text-gray-300 w-10 text-right">${call.rate}</span>
-            </div>
+            <div class="text-xs text-gray-500">${call.target}</div>
           </div>
         `).join('') : `
           <div class="flex items-center justify-center py-4">
@@ -885,13 +905,32 @@ export class Dashboard {
         this.handleGenerateToggle(call);
       });
 
-      // Rate slider
-      const rateSlider = document.querySelector(`[data-rate-id="${call.id}"]`) as HTMLInputElement;
-      rateSlider?.addEventListener('input', (e) => {
-        const value = parseFloat((e.target as HTMLInputElement).value);
-        call.rate = Math.round(value);
+      // Rate input field
+      const rateInput = document.querySelector(`[data-rate-input-id="${call.id}"]`) as HTMLInputElement;
+      rateInput?.addEventListener('input', (e) => {
+        const value = parseInt((e.target as HTMLInputElement).value);
+        if (!isNaN(value) && value >= 0 && value <= 20) {
+          call.rate = value; // Use integer values
+          this.handleGenerateRateChange(call);
+        }
+      });
+
+      // Rate decrement button
+      const rateDecBtn = document.querySelector(`[data-rate-dec-id="${call.id}"]`) as HTMLButtonElement;
+      rateDecBtn?.addEventListener('click', () => {
+        const newRate = Math.max(0, Math.round(call.rate) - 1);
+        call.rate = newRate;
+        if (rateInput) rateInput.value = newRate.toString();
         this.handleGenerateRateChange(call);
-        // Chart updates handled by real-time chart updates // Update content without recreating layout
+      });
+
+      // Rate increment button
+      const rateIncBtn = document.querySelector(`[data-rate-inc-id="${call.id}"]`) as HTMLButtonElement;
+      rateIncBtn?.addEventListener('click', () => {
+        const newRate = Math.min(20, Math.round(call.rate) + 1);
+        call.rate = newRate;
+        if (rateInput) rateInput.value = newRate.toString();
+        this.handleGenerateRateChange(call);
       });
     });
 

@@ -7,7 +7,7 @@ tmp_dir = "/tmp"
   # cmd = "go build -o /tmp/main *.go && ( cd web &&  npm run build & ) "
   cmd = "make"
   bin = "/Users/sri/go/bin/sdl serve 2>&1 | tee /tmp/sdlserver.log"
-  # bin = "/go/bin/dlv --listen=:9091 --headless=true --log=true --accept-multiclient --api-version=2 exec --continue ./tmp/main"
+  # bin = "/Users/sri/go/bin/dlv --listen=:9091 --headless=true --log=true --accept-multiclient --api-version=2 exec --continue /Users/sri/go/bin/sdl serve"
 
   delay = 1000
   exclude_dir = ["assets", "testdata", "tmp", "cli", "vendors", "output", "static/js/gen", "web"]

@@ -207,6 +207,15 @@ func (l *Loader) GetFileStatus(filePath string, importerPath string) *FileStatus
 	return fileStatus
 }
 
+// GetAllLoadedFiles returns all files that have been loaded (including imports)
+func (l *Loader) GetAllLoadedFiles() map[string]*FileStatus {
+	result := make(map[string]*FileStatus)
+	for path, status := range l.fileStatuses {
+		result[path] = status
+	}
+	return result
+}
+
 // Validates an already loaded file
 // Performs all kinds of static checks like type checking/inference etc
 // If the file is not loaded it is also loaded.

@@ -85,3 +85,23 @@ func (e *Env[T]) String() string {
 	}
 	return fmt.Sprintf("Env[T]{store: %v, outer: %v}", keys, e.outer != nil)
 }
+
+// Keys returns all keys in this environment (not including outer environments)
+func (e *Env[T]) Keys() []string {
+	keys := make([]string, 0, len(e.store))
+	for k := range e.store {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+// All returns all key-value pairs in this environment (not including outer environments)
+func (e *Env[T]) All() map[string]T {
+	result := make(map[string]T)
+	for k, ref := range e.store {
+		if ref != nil {
+			result[k] = ref.Value
+		}
+	}
+	return result
+}
