@@ -601,7 +601,7 @@ export class Dashboard {
 
     const systemName = this.systemDiagram.systemName || 'System';
     let dotContent = `digraph "${systemName}" {\n`;
-    dotContent += `  rankdir=TB;\n`;
+    dotContent += `  rankdir=LR;\n`;
     dotContent += `  bgcolor="#1a1a1a";\n`;
     dotContent += `  compound=true;\n`;
     dotContent += `  node [fontname="Monaco,Menlo,monospace" fontcolor="white" style=filled];\n`;
@@ -634,7 +634,9 @@ export class Dashboard {
           const methodNodeId = `${node.ID}_${method.Name}`;
           const traffic = this.getMethodTraffic(node.ID, method.Name);
           
-          dotContent += `    ${methodNodeId} [label="${method.Name}()\\n→ ${method.ReturnType}\\n🔄 ${traffic} rps"`;
+          // Disabling return type in label for now
+          // dotContent += `    ${methodNodeId} [label="${method.Name}() → ${method.ReturnType}\\n \\n ${traffic} rps"`;
+          dotContent += `    ${methodNodeId} [label="${method.Name}()\\n \\n ${traffic} rps"`;
           dotContent += ` shape=box style="filled,rounded" fillcolor="#2d3748" fontcolor="#a3e635"`;
           dotContent += ` fontsize=12 fontname="Monaco,Menlo,monospace" margin=0.3 penwidth=1];\n`;
           

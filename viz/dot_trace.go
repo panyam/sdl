@@ -16,7 +16,7 @@ type DotTraceGenerator struct{}
 func (g *DotTraceGenerator) Generate(trace *runtime.TraceData) (string, error) {
 	var b bytes.Buffer
 	b.WriteString(fmt.Sprintf("digraph \"%s_Trace\" {\n", trace.System))
-	b.WriteString("  rankdir=TB;\n")
+	b.WriteString("  rankdir=LR;\n")
 	b.WriteString(fmt.Sprintf("  label=\"Dynamic Trace for: %s\";\n", trace.EntryPoint))
 	b.WriteString("  node [shape=box, style=rounded];\n")
 
