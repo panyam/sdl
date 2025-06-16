@@ -377,6 +377,9 @@ export class Dashboard {
     // Try to load saved layout configuration
     const savedLayout = this.loadLayoutConfig();
     
+    // Apply dark theme to container
+    container.className = 'dockview-theme-dark flex-1';
+    
     // Create DockView component
     const dockviewComponent = new DockviewComponent(container, {
       createComponent: (options: any) => {
