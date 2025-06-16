@@ -442,8 +442,10 @@ export class Dashboard {
     let dotContent = `digraph "${systemName}" {\n`;
     dotContent += `  rankdir=TB;\n`;
     dotContent += `  bgcolor="#1a1a1a";\n`;
-    dotContent += `  node [fontname="monospace" fontcolor="white"];\n`;
-    dotContent += `  edge [color="#9ca3af" arrowhead="normal"];\n\n`;
+    dotContent += `  compound=true;\n`;
+    dotContent += `  node [fontname="Monaco,Menlo,monospace" fontcolor="white" style=filled];\n`;
+    dotContent += `  edge [color="#9ca3af" arrowhead="normal" penwidth=2];\n`;
+    dotContent += `  graph [ranksep=1.0 nodesep=0.8 pad=0.5];\n\n`;
 
     // Create a map to track method nodes and their connections
     const methodNodes: string[] = [];
@@ -456,11 +458,14 @@ export class Dashboard {
       
       dotContent += `  subgraph ${clusterName} {\n`;
       dotContent += `    label="${node.Name}\\n(${node.Type})";\n`;
-      dotContent += `    style=filled;\n`;
+      dotContent += `    style="filled,rounded";\n`;
       dotContent += `    fillcolor="#1f2937";\n`;
       dotContent += `    fontcolor="#60a5fa";\n`;
-      dotContent += `    fontsize=14;\n`;
-      dotContent += `    color="#4b5563";\n\n`;
+      dotContent += `    fontsize=16;\n`;
+      dotContent += `    fontname="Monaco,Menlo,monospace";\n`;
+      dotContent += `    color="#4b5563";\n`;
+      dotContent += `    penwidth=2;\n`;
+      dotContent += `    margin=16;\n\n`;
 
       if (methods.length > 0) {
         // Create method nodes inside the cluster
@@ -469,7 +474,8 @@ export class Dashboard {
           const traffic = this.getMethodTraffic(node.ID, method.Name);
           
           dotContent += `    ${methodNodeId} [label="${method.Name}()\\n→ ${method.ReturnType}\\n🔄 ${traffic} rps"`;
-          dotContent += ` shape=box style=filled fillcolor="#2d3748" fontcolor="#a3e635" fontsize=12];\n`;
+          dotContent += ` shape=box style="filled,rounded" fillcolor="#2d3748" fontcolor="#a3e635"`;
+          dotContent += ` fontsize=12 fontname="Monaco,Menlo,monospace" margin=0.3 penwidth=1];\n`;
           
           methodNodes.push(methodNodeId);
         });
@@ -477,7 +483,8 @@ export class Dashboard {
         // Component with no methods - create a simple node
         const nodeId = `${node.ID}_component`;
         dotContent += `    ${nodeId} [label="No Methods\\n🔄 0 rps"`;
-        dotContent += ` shape=box style=filled fillcolor="#2d3748" fontcolor="#9ca3af" fontsize=10];\n`;
+        dotContent += ` shape=box style="filled,rounded" fillcolor="#374151" fontcolor="#9ca3af"`;
+        dotContent += ` fontsize=11 fontname="Monaco,Menlo,monospace" margin=0.2];\n`;
         methodNodes.push(nodeId);
       }
       
