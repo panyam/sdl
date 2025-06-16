@@ -5,29 +5,48 @@ import (
 	"log"
 	"math"
 	"strings"
-	
+
 	"github.com/panyam/sdl/components"
 )
 
+// FlowPathInfo tracks information about a flow path for visualization
+type FlowPathInfo struct {
+	Order       float64 // Execution order (supports decimals for conditional paths)
+	Condition   string  // Condition expression if this is a conditional path
+	Probability float64 // Probability of this path being taken
+}
+
 // FlowContext holds the system state and configuration for flow evaluation
 type FlowContext struct {
-	System     *SystemDecl                  // SDL system definition
-	Parameters map[string]interface{}       // Current parameter values (hitRate, poolSize, etc.)
-	
+	System     *SystemDecl            // SDL system definition
+	Parameters map[string]interface{} // Current parameter values (hitRate, poolSize, etc.)
+
 	// Back-pressure and convergence tracking
-	ArrivalRates   map[string]float64        // Current arrival rates per component.method
-	SuccessRates   map[string]float64        // Current success rates per component.method
-	ServiceTimes   map[string]float64        // Service times per component.method (seconds)
-	ResourceLimits map[string]int            // Pool sizes, capacities per component
-	
+	ArrivalRates   map[string]float64 // Current arrival rates per component.method
+	SuccessRates   map[string]float64 // Current success rates per component.method
+	ServiceTimes   map[string]float64 // Service times per component.method (seconds)
+	ResourceLimits map[string]int     // Pool sizes, capacities per component
+
 	// Native component instances for FlowAnalyzable interface
 	NativeComponents map[string]components.FlowAnalyzable // component name -> FlowAnalyzable instance
-	
+
 	// Cycle handling configuration
-	MaxRetries           int     // Limit exponential growth (recommended: 50)
-	ConvergenceThreshold float64 // Fixed-point iteration threshold (recommended: 0.01)
-	MaxIterations        int     // Maximum fixed-point iterations (recommended: 10)
+	MaxRetries           int      // Limit exponential growth (recommended: 50)
+	ConvergenceThreshold float64  // Fixed-point iteration threshold (recommended: 0.01)
+	MaxIterations        int      // Maximum fixed-point iterations (recommended: 10)
 	CallStack            []string // Detect infinite recursion
+
+	// Current calling component context for dependency resolution
+	CurrentComponent string // Component currently being analyzed
+
+	// Variable outcome tracking for conditional flow analysis
+	VariableOutcomes map[string]float64 // variable name -> success rate (for method-local analysis)
+
+	// Flow order tracking for visualization
+	FlowOrder          int                     // Current flow order counter
+	FlowPaths          map[string]FlowPathInfo // flowKey -> path info for visualization
+	currentCondition   string                  // Current condition context
+	currentProbability float64                 // Current condition probability
 }
 
 // NewFlowContext creates a new FlowContext with sensible defaults
@@ -44,6 +63,9 @@ func NewFlowContext(system *SystemDecl, parameters map[string]interface{}) *Flow
 		ConvergenceThreshold: 0.01,
 		MaxIterations:        10,
 		CallStack:            make([]string, 0),
+		VariableOutcomes:     make(map[string]float64),
+		FlowOrder:            0,
+		FlowPaths:            make(map[string]FlowPathInfo),
 	}
 }
 
@@ -71,7 +93,7 @@ func SolveSystemFlows(entryPoints map[string]float64, context *FlowContext) map[
 
 		// Recompute outgoing flows for each component with current load
 		newRates := make(map[string]float64)
-		
+
 		// Start with entry points
 		for componentMethod, rate := range entryPoints {
 			newRates[componentMethod] = rate
@@ -136,7 +158,7 @@ func FlowEval(component, method string, inputRate float64, context *FlowContext)
 	}
 
 	callKey := fmt.Sprintf("%s.%s", component, method)
-	
+
 	// Detect cycles using call stack
 	if context.isInCallStack(callKey) {
 		log.Printf("FlowEval: Cycle detected for %s, breaking recursion", callKey)
@@ -149,11 +171,23 @@ func FlowEval(component, method string, inputRate float64, context *FlowContext)
 		return map[string]float64{}
 	}
 
-	// Add to call stack
+	// Add to call stack and set current component context
 	context.CallStack = append(context.CallStack, callKey)
-	defer func() { 
-		context.CallStack = context.CallStack[:len(context.CallStack)-1] 
+	oldComponent := context.CurrentComponent
+	context.CurrentComponent = component
+	defer func() {
+		context.CallStack = context.CallStack[:len(context.CallStack)-1]
+		context.CurrentComponent = oldComponent
 	}()
+
+	// Clear variable outcomes for this method analysis
+	context.VariableOutcomes = make(map[string]float64)
+
+	// Reset flow order for this analysis if at the top level
+	if len(context.CallStack) == 1 {
+		context.FlowOrder = 0
+		context.FlowPaths = make(map[string]FlowPathInfo)
+	}
 
 	// Check if this is a native component first
 	if flowAnalyzable, exists := context.NativeComponents[component]; exists {
@@ -170,7 +204,12 @@ func FlowEval(component, method string, inputRate float64, context *FlowContext)
 
 	// Analyze method body for call patterns
 	outflows := make(map[string]float64)
-	context.analyzeStatements(methodDecl.Body.Statements, inputRate, outflows)
+	if methodDecl.Body != nil && methodDecl.Body.Statements != nil {
+		context.analyzeStatements(methodDecl.Body.Statements, inputRate, outflows)
+	} else {
+		// Method has no body (likely imported/native) - no outflows to propagate
+		log.Printf("FlowEval: Method %s.%s has no body, no outflows to analyze", component, method)
+	}
 
 	return outflows
 }
@@ -185,7 +224,7 @@ func (fc *FlowContext) isInCallStack(callKey string) bool {
 	return false
 }
 
-// getMethodDecl finds a method declaration in the system
+// getMethodDecl finds a method declaration in the system using pre-resolved component declarations
 func (fc *FlowContext) getMethodDecl(component, method string) *MethodDecl {
 	if fc.System == nil {
 		return nil
@@ -195,10 +234,9 @@ func (fc *FlowContext) getMethodDecl(component, method string) *MethodDecl {
 	for _, bodyItem := range fc.System.Body {
 		if instance, ok := bodyItem.(*InstanceDecl); ok {
 			if instance.Name.Value == component {
-				// Get the component type declaration
-				if compDecl := fc.getComponentDecl(instance.ComponentName.Value); compDecl != nil {
-					// Find the method in the component
-					methods, err := compDecl.Methods()
+				// Use the pre-resolved component declaration from type inference
+				if instance.ResolvedComponentDecl != nil {
+					methods, err := instance.ResolvedComponentDecl.Methods()
 					if err == nil {
 						for _, methodDecl := range methods {
 							if methodDecl.Name.Value == method {
@@ -206,6 +244,9 @@ func (fc *FlowContext) getMethodDecl(component, method string) *MethodDecl {
 							}
 						}
 					}
+				} else {
+					log.Printf("FlowEval: ResolvedComponentDecl not set for instance %s (component type %s) - was type inference run?",
+						instance.Name.Value, instance.ComponentName.Value)
 				}
 			}
 		}
@@ -214,17 +255,10 @@ func (fc *FlowContext) getMethodDecl(component, method string) *MethodDecl {
 	return nil
 }
 
-// getComponentDecl finds a component declaration (this is a placeholder - needs proper loader integration)
-func (fc *FlowContext) getComponentDecl(componentType string) *ComponentDecl {
-	// TODO: This needs to be integrated with the loader to get the actual component declaration
-	// For now, return nil - we'll need to pass component declarations through the context
-	log.Printf("FlowEval: getComponentDecl not yet implemented for %s", componentType)
-	return nil
-}
-
 // analyzeStatements processes a list of statements and accumulates outflows
 func (fc *FlowContext) analyzeStatements(statements []Stmt, inputRate float64, outflows map[string]float64) {
-	for _, stmt := range statements {
+	for i, stmt := range statements {
+		log.Printf("FlowEval: Analyzing statement %d of type %T", i, stmt)
 		fc.analyzeStatement(stmt, inputRate, outflows)
 	}
 }
@@ -242,6 +276,10 @@ func (fc *FlowContext) analyzeStatement(stmt Stmt, inputRate float64, outflows m
 		fc.analyzeReturnStatement(s, inputRate, outflows)
 	case *ForStmt:
 		fc.analyzeForStatement(s, inputRate, outflows)
+	case *BlockStmt:
+		fc.analyzeBlockStatement(s, inputRate, outflows)
+	case *LetStmt:
+		fc.analyzeLetStatement(s, inputRate, outflows)
 	default:
 		// Other statement types don't generate flows
 		log.Printf("FlowEval: Unhandled statement type: %T", stmt)
@@ -258,9 +296,12 @@ func (fc *FlowContext) analyzeExprStatement(stmt *ExprStmt, inputRate float64, o
 			if component != "" && method != "" {
 				flowKey := fmt.Sprintf("%s.%s", component, method)
 				outflows[flowKey] += inputRate
-				
-				log.Printf("FlowEval: Expression call flow: %s -> %s (%.2f RPS)", 
+
+				log.Printf("FlowEval: Expression call flow: %s -> %s (%.2f RPS)",
 					strings.Join(fc.CallStack, " -> "), flowKey, inputRate)
+
+				// Track flow path with current conditional context
+				fc.trackFlowPath(flowKey, fc.currentCondition, fc.currentProbability)
 			}
 		}
 	}
@@ -270,15 +311,27 @@ func (fc *FlowContext) analyzeExprStatement(stmt *ExprStmt, inputRate float64, o
 func (fc *FlowContext) analyzeIfStatement(stmt *IfStmt, inputRate float64, outflows map[string]float64) {
 	// Determine condition probability from parameters or heuristics
 	conditionProb := fc.evaluateConditionProbability(stmt.Condition)
-	
+	conditionStr := fc.conditionToString(stmt.Condition)
+
+	log.Printf("FlowEval: Processing if statement with condition probability %.2f", conditionProb)
+
+	// Save current order level for conditional paths
+	savedOrder := fc.FlowOrder
+
 	// Analyze then branch with probability-weighted rate
 	if stmt.Then != nil {
-		fc.analyzeStatement(stmt.Then, inputRate*conditionProb, outflows)
+		// Track this as a conditional path
+		fc.analyzeStatementWithCondition(stmt.Then, inputRate*conditionProb, outflows, conditionStr, conditionProb)
 	}
-	
+
+	// Restore order for else branch
+	fc.FlowOrder = savedOrder
+
 	// Analyze else branch with inverted probability
 	if stmt.Else != nil {
-		fc.analyzeStatement(stmt.Else, inputRate*(1.0-conditionProb), outflows)
+		// Track this as the else conditional path
+		elseCondition := fmt.Sprintf("!(%s)", conditionStr)
+		fc.analyzeStatementWithCondition(stmt.Else, inputRate*(1.0-conditionProb), outflows, elseCondition, 1.0-conditionProb)
 	}
 }
 
@@ -292,8 +345,8 @@ func (fc *FlowContext) analyzeAssignStatement(stmt *AssignmentStmt, inputRate fl
 			if component != "" && method != "" {
 				flowKey := fmt.Sprintf("%s.%s", component, method)
 				outflows[flowKey] += inputRate
-				
-				log.Printf("FlowEval: Assignment call flow: %s -> %s (%.2f RPS)", 
+
+				log.Printf("FlowEval: Assignment call flow: %s -> %s (%.2f RPS)",
 					strings.Join(fc.CallStack, " -> "), flowKey, inputRate)
 			}
 		}
@@ -310,9 +363,12 @@ func (fc *FlowContext) analyzeReturnStatement(stmt *ReturnStmt, inputRate float6
 				if component != "" && method != "" {
 					flowKey := fmt.Sprintf("%s.%s", component, method)
 					outflows[flowKey] += inputRate
-					
-					log.Printf("FlowEval: Return call flow: %s -> %s (%.2f RPS)", 
+
+					log.Printf("FlowEval: Return call flow: %s -> %s (%.2f RPS)",
 						strings.Join(fc.CallStack, " -> "), flowKey, inputRate)
+					
+					// Track flow path with current conditional context
+					fc.trackFlowPath(flowKey, fc.currentCondition, fc.currentProbability)
 				}
 			}
 		}
@@ -325,6 +381,45 @@ func (fc *FlowContext) analyzeForStatement(stmt *ForStmt, inputRate float64, out
 	// TODO: Implement proper loop analysis based on loop bounds
 	if stmt.Body != nil {
 		fc.analyzeStatement(stmt.Body, inputRate, outflows)
+	}
+}
+
+// analyzeBlockStatement handles block statements by analyzing all contained statements
+func (fc *FlowContext) analyzeBlockStatement(stmt *BlockStmt, inputRate float64, outflows map[string]float64) {
+	if stmt.Statements != nil {
+		fc.analyzeStatements(stmt.Statements, inputRate, outflows)
+	}
+}
+
+// analyzeLetStatement handles let statements that might contain calls in their assigned expressions
+func (fc *FlowContext) analyzeLetStatement(stmt *LetStmt, inputRate float64, outflows map[string]float64) {
+	// Check if the assigned expression contains a call
+	if stmt.Value != nil {
+		if callExpr, ok := stmt.Value.(*CallExpr); ok {
+			target := fc.extractCallTarget(callExpr)
+			if target != "" {
+				component, method := fc.parseCallTarget(target)
+				if component != "" && method != "" {
+					flowKey := fmt.Sprintf("%s.%s", component, method)
+					outflows[flowKey] += inputRate
+
+					log.Printf("FlowEval: Let statement call flow: %s -> %s (%.2f RPS)",
+						strings.Join(fc.CallStack, " -> "), flowKey, inputRate)
+
+					// Track flow path with current conditional context
+					fc.trackFlowPath(flowKey, fc.currentCondition, fc.currentProbability)
+
+					// Track the success rate of this method call for the variable
+					if len(stmt.Variables) > 0 && stmt.Variables[0] != nil && stmt.Variables[0].Value != "" {
+						// Get the success rate of the called method
+						successRate := fc.getMethodSuccessRate(component, method)
+						fc.VariableOutcomes[stmt.Variables[0].Value] = successRate
+						log.Printf("FlowEval: Variable '%s' assigned from %s with success rate %.2f",
+							stmt.Variables[0].Value, flowKey, successRate)
+					}
+				}
+			}
+		}
 	}
 }
 
@@ -350,14 +445,14 @@ func (fc *FlowContext) extractCallTarget(call *CallExpr) string {
 // memberExpressionToString converts a member expression to a string
 func (fc *FlowContext) memberExpressionToString(expr *MemberAccessExpr) string {
 	var parts []string
-	
+
 	// Recursively build the member access chain
 	current := expr
 	for current != nil {
 		if current.Member != nil {
 			parts = append([]string{current.Member.Value}, parts...)
 		}
-		
+
 		if memberExpr, ok := current.Receiver.(*MemberAccessExpr); ok {
 			current = memberExpr
 		} else if ident, ok := current.Receiver.(*IdentifierExpr); ok {
@@ -369,28 +464,76 @@ func (fc *FlowContext) memberExpressionToString(expr *MemberAccessExpr) string {
 			break
 		}
 	}
-	
+
 	return strings.Join(parts, ".")
 }
 
 // parseCallTarget parses "db.LookupByPhone" into component "db" and method "LookupByPhone"
+// It also resolves dependency names to actual instance names in the system
 func (fc *FlowContext) parseCallTarget(target string) (component, method string) {
 	parts := strings.Split(target, ".")
 	if len(parts) >= 2 {
 		// Last part is the method, everything before is the component path
 		method = parts[len(parts)-1]
-		component = strings.Join(parts[:len(parts)-1], ".")
+		dependencyName := strings.Join(parts[:len(parts)-1], ".")
+
+		// Resolve dependency name to actual instance name using current call context
+		component = fc.resolveDependencyToInstance(dependencyName)
+		if component == "" {
+			// Fallback to dependency name if resolution fails
+			component = dependencyName
+		}
+
 		return component, method
 	}
 	return "", ""
 }
 
+// resolveDependencyToInstance resolves a dependency name to the actual instance name in the system
+func (fc *FlowContext) resolveDependencyToInstance(dependencyName string) string {
+	if fc.System == nil || fc.CurrentComponent == "" {
+		return dependencyName // Cannot resolve without context
+	}
+
+	// Find the current component's instance declaration in the system
+	for _, bodyItem := range fc.System.Body {
+		if instance, ok := bodyItem.(*InstanceDecl); ok {
+			if instance.Name.Value == fc.CurrentComponent {
+				// Look through the instance overrides to find dependency mapping
+				for _, assignment := range instance.Overrides {
+					if assignment.Var.Value == dependencyName {
+						// Found the mapping: dependencyName = actualInstanceName
+						if targetIdent, ok := assignment.Value.(*IdentifierExpr); ok {
+							log.Printf("FlowEval: Resolved dependency '%s' in component '%s' to instance '%s'",
+								dependencyName, fc.CurrentComponent, targetIdent.Value)
+							return targetIdent.Value
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// No mapping found, return the dependency name as-is
+	log.Printf("FlowEval: No dependency mapping found for '%s' in component '%s', using as-is",
+		dependencyName, fc.CurrentComponent)
+	return dependencyName
+}
+
 // evaluateConditionProbability determines the probability of a condition being true
 func (fc *FlowContext) evaluateConditionProbability(condition Expr) float64 {
-	// For now, use simple heuristics based on parameter values
-	// TODO: Implement sophisticated condition analysis
-	
-	// Try to extract cache hit rate from parameters
+	// Check if the condition is a simple identifier (variable reference)
+	if identExpr, ok := condition.(*IdentifierExpr); ok {
+		varName := identExpr.Value
+
+		// Check if we have tracked outcome for this variable
+		if outcome, exists := fc.VariableOutcomes[varName]; exists {
+			log.Printf("FlowEval: Using tracked outcome for variable '%s': %.2f", varName, outcome)
+			return outcome
+		}
+	}
+
+	// Legacy fallback: Try to extract cache hit rate from parameters
 	if fc.Parameters != nil {
 		if hitRate, ok := fc.Parameters["CacheHitRate"]; ok {
 			if rate, ok := hitRate.(float64); ok {
@@ -398,8 +541,9 @@ func (fc *FlowContext) evaluateConditionProbability(condition Expr) float64 {
 			}
 		}
 	}
-	
+
 	// Default to 50% probability for unknown conditions
+	log.Printf("FlowEval: No tracked outcome for condition, using default 0.5")
 	return 0.5
 }
 
@@ -434,7 +578,7 @@ func (fc *FlowContext) updateSuccessRates() {
 		// Default success rate modeling for SDL components
 		// This is a placeholder - could be enhanced with specific component analysis
 		successRate := 1.0
-		
+
 		// Simple back-pressure model: success rate degrades with high arrival rates
 		if limit, hasLimit := fc.ResourceLimits[component]; hasLimit && limit > 0 {
 			utilization := arrivalRate * fc.getServiceTime(componentMethod) / float64(limit)
@@ -443,7 +587,7 @@ func (fc *FlowContext) updateSuccessRates() {
 				successRate = math.Max(0.1, 1.0-utilization*0.5)
 			}
 		}
-		
+
 		fc.SuccessRates[componentMethod] = successRate
 	}
 }
@@ -473,6 +617,25 @@ func (fc *FlowContext) getServiceTime(componentMethod string) float64 {
 	return 0.001 // 1ms default
 }
 
+// getMethodSuccessRate returns the success rate for a component method
+func (fc *FlowContext) getMethodSuccessRate(component, method string) float64 {
+	flowKey := fmt.Sprintf("%s.%s", component, method)
+
+	// First check if we have a tracked success rate from the flow analysis
+	if rate, exists := fc.SuccessRates[flowKey]; exists {
+		return rate
+	}
+
+	// Check if this is a native component with FlowAnalyzable interface
+	if flowAnalyzable, exists := fc.NativeComponents[component]; exists {
+		pattern := flowAnalyzable.GetFlowPattern(method, 1.0, fc.getComponentParams(component))
+		return pattern.SuccessRate
+	}
+
+	// Default to 100% success rate
+	return 1.0
+}
+
 // SetNativeComponent registers a native component for flow analysis
 func (fc *FlowContext) SetNativeComponent(name string, component components.FlowAnalyzable) {
 	fc.NativeComponents[name] = component
@@ -481,4 +644,69 @@ func (fc *FlowContext) SetNativeComponent(name string, component components.Flow
 // SetResourceLimit sets the resource limit for a component
 func (fc *FlowContext) SetResourceLimit(component string, limit int) {
 	fc.ResourceLimits[component] = limit
+}
+
+// trackFlowPath records a flow path with order and condition information
+func (fc *FlowContext) trackFlowPath(flowKey string, condition string, probability float64) {
+	fc.FlowOrder++
+	baseOrder := float64(fc.FlowOrder)
+
+	// If this is a conditional path, use decimal numbering
+	if condition != "" {
+		// Check if we already have a conditional at this level
+		for _, info := range fc.FlowPaths {
+			if int(info.Order) == fc.FlowOrder && info.Condition != "" {
+				// Use decimal for alternative path
+				baseOrder = float64(fc.FlowOrder) + 0.1
+				break
+			}
+		}
+	}
+
+	// For method-to-method flows, we need to track the source
+	fromKey := ""
+	if len(fc.CallStack) > 0 {
+		fromKey = fc.CallStack[len(fc.CallStack)-1]
+	}
+	
+	// Create unique flow path key including source
+	pathKey := fmt.Sprintf("%s->%s", fromKey, flowKey)
+	
+	fc.FlowPaths[pathKey] = FlowPathInfo{
+		Order:       baseOrder,
+		Condition:   condition,
+		Probability: probability,
+	}
+	
+	log.Printf("FlowEval: Tracked flow path %s with order %.1f, condition: %s", pathKey, baseOrder, condition)
+}
+
+// conditionToString converts a condition expression to a readable string
+func (fc *FlowContext) conditionToString(condition Expr) string {
+	switch c := condition.(type) {
+	case *IdentifierExpr:
+		return c.Value
+	case *UnaryExpr:
+		return fmt.Sprintf("%s%s", c.Operator, fc.conditionToString(c.Right))
+	case *BinaryExpr:
+		return fmt.Sprintf("%s %s %s", fc.conditionToString(c.Left), c.Operator, fc.conditionToString(c.Right))
+	default:
+		return "condition"
+	}
+}
+
+// analyzeStatementWithCondition analyzes a statement within a conditional context
+func (fc *FlowContext) analyzeStatementWithCondition(stmt Stmt, inputRate float64, outflows map[string]float64, condition string, probability float64) {
+	// Store current condition context
+	savedCondition := fc.currentCondition
+	savedProbability := fc.currentProbability
+	fc.currentCondition = condition
+	fc.currentProbability = probability
+
+	// Analyze the statement
+	fc.analyzeStatement(stmt, inputRate, outflows)
+
+	// Restore previous context
+	fc.currentCondition = savedCondition
+	fc.currentProbability = savedProbability
 }

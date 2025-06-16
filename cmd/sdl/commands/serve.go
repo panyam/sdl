@@ -134,6 +134,7 @@ func displayServerStats(ctx context.Context, canvas *console.Canvas) {
 	ticker := time.NewTicker(statsInterval)
 	defer ticker.Stop()
 
+	lastStats := canvas.GetStats()
 	for {
 		select {
 		case <-ctx.Done():
@@ -141,12 +142,19 @@ func displayServerStats(ctx context.Context, canvas *console.Canvas) {
 		case <-ticker.C:
 			stats := canvas.GetStats()
 			if showLogs {
-				log.Printf("📊 Stats: Files=%d Systems=%d Generators=%d Measurements=%d Runs=%d",
-					stats.LoadedFiles,
-					stats.ActiveSystems,
-					stats.ActiveGenerators,
-					stats.ActiveMeasurements,
-					stats.TotalRuns)
+				if lastStats.LoadedFiles != stats.LoadedFiles ||
+					lastStats.ActiveSystems != stats.ActiveSystems ||
+					lastStats.ActiveGenerators != stats.ActiveGenerators ||
+					lastStats.ActiveMeasurements != stats.ActiveMeasurements ||
+					lastStats.TotalRuns != stats.TotalRuns {
+					log.Printf("📊 Stats: Files=%d Systems=%d Generators=%d Measurements=%d Runs=%d",
+						stats.LoadedFiles,
+						stats.ActiveSystems,
+						stats.ActiveGenerators,
+						stats.ActiveMeasurements,
+						stats.TotalRuns)
+				}
+				lastStats = stats
 			}
 		}
 	}

@@ -94,13 +94,20 @@ func (c *Canvas) AddGenerator(config *GeneratorConfig) error {
 	}
 
 	c.genManager.mu.Lock()
-	defer c.genManager.mu.Unlock()
-
 	if _, exists := c.genManager.generators[config.ID]; exists {
+		c.genManager.mu.Unlock()
 		return fmt.Errorf("generator with ID '%s' already exists", config.ID)
 	}
-
 	c.genManager.generators[config.ID] = config
+	c.genManager.mu.Unlock()
+
+	// Trigger flow recalculation if generator is enabled
+	if config.Enabled {
+		if err := c.recomputeSystemFlows(); err != nil {
+			fmt.Printf("Warning: Failed to recompute system flows: %v\n", err)
+		}
+	}
+
 	return nil
 }
 
@@ -109,11 +116,13 @@ func (c *Canvas) RemoveGenerator(id string) error {
 	c.initManagers()
 
 	c.genManager.mu.Lock()
-	defer c.genManager.mu.Unlock()
-
-	if _, exists := c.genManager.generators[id]; !exists {
+	gen, exists := c.genManager.generators[id]
+	if !exists {
+		c.genManager.mu.Unlock()
 		return fmt.Errorf("generator with ID '%s' not found", id)
 	}
+
+	wasEnabled := gen.Enabled
 
 	// Stop if running
 	if c.genManager.running[id] {
@@ -125,6 +134,15 @@ func (c *Canvas) RemoveGenerator(id string) error {
 	}
 
 	delete(c.genManager.generators, id)
+	c.genManager.mu.Unlock()
+
+	// Trigger flow recalculation if generator was enabled
+	if wasEnabled {
+		if err := c.recomputeSystemFlows(); err != nil {
+			fmt.Printf("Warning: Failed to recompute system flows: %v\n", err)
+		}
+	}
+
 	return nil
 }
 
@@ -155,14 +173,23 @@ func (c *Canvas) PauseGenerator(id string) error {
 	c.initManagers()
 
 	c.genManager.mu.Lock()
-	defer c.genManager.mu.Unlock()
-
 	gen, exists := c.genManager.generators[id]
 	if !exists {
+		c.genManager.mu.Unlock()
 		return fmt.Errorf("generator with ID '%s' not found", id)
 	}
 
+	wasEnabled := gen.Enabled
 	gen.Enabled = false
+	c.genManager.mu.Unlock()
+
+	// Trigger flow recalculation if generator was enabled
+	if wasEnabled {
+		if err := c.recomputeSystemFlows(); err != nil {
+			fmt.Printf("Warning: Failed to recompute system flows: %v\n", err)
+		}
+	}
+
 	return nil
 }
 
@@ -171,14 +198,23 @@ func (c *Canvas) ResumeGenerator(id string) error {
 	c.initManagers()
 
 	c.genManager.mu.Lock()
-	defer c.genManager.mu.Unlock()
-
 	gen, exists := c.genManager.generators[id]
 	if !exists {
+		c.genManager.mu.Unlock()
 		return fmt.Errorf("generator with ID '%s' not found", id)
 	}
 
+	wasDisabled := !gen.Enabled
 	gen.Enabled = true
+	c.genManager.mu.Unlock()
+
+	// Trigger flow recalculation if generator was disabled
+	if wasDisabled {
+		if err := c.recomputeSystemFlows(); err != nil {
+			fmt.Printf("Warning: Failed to recompute system flows: %v\n", err)
+		}
+	}
+
 	return nil
 }
 
@@ -344,30 +380,19 @@ func (c *Canvas) Save() (*CanvasState, error) {
 	return state, nil
 }
 
-// recomputeSystemFlows uses FlowEval to calculate downstream loads from traffic generators
+// recomputeSystemFlows evaluates proposed flows and automatically applies them
 func (c *Canvas) recomputeSystemFlows() error {
-	// Only recompute if we have an active system
-	if c.activeSystem == nil {
-		return fmt.Errorf("no active system")
+	// Evaluate what the new flows would be
+	err := c.evaluateProposedFlows()
+	if err != nil {
+		return err
 	}
-
-	// Collect all active generator entry points
-	c.genManager.mu.RLock()
-	entryPoints := make(map[string]float64)
-	for _, gen := range c.genManager.generators {
-		if gen.Enabled {
-			entryPoints[gen.Target] = float64(gen.Rate)
-		}
-	}
-	c.genManager.mu.RUnlock()
-
-	if len(entryPoints) == 0 {
-		// No active generators, let runtime handle resetting
-		return c.activeSystem.RecomputeAllFlows(entryPoints)
-	}
-
-	// Let the runtime handle all FlowEval computation and application
-	return c.activeSystem.RecomputeAllFlows(entryPoints)
+	
+	// Automatically apply the proposed flows
+	// In the future, we could add confirmation logic here
+	c.applyProposedFlows()
+	
+	return nil
 }
 
 

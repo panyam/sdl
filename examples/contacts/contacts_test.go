@@ -30,8 +30,9 @@ func TestContactsServiceBasic(t *testing.T) {
 	// Set initial parameters
 	canvas.Set("server.pool.ArrivalRate", 5.0)     // 5 RPS baseline load
 	canvas.Set("server.pool.AvgHoldTime", "15ms")  // 5ms processing + 10ms DB time
-	canvas.Set("server.db.pool.ArrivalRate", 3.0)  // 3 RPS to DB (60% cache miss)
-	canvas.Set("server.db.pool.AvgHoldTime", "12ms") // 10ms query + 2ms overhead
+	canvas.Set("database.pool.ArrivalRate", 3.0)   // 3 RPS to DB (60% cache miss)
+	canvas.Set("database.pool.AvgHoldTime", "12ms") // 10ms query + 2ms overhead
+	canvas.Set("contactCache.HitRate", 0.6)         // 60% cache hit rate
 
 	err = canvas.Run("baseline", "server.HandleLookup", console.WithRuns(1000))
 	if err != nil {
@@ -44,7 +45,7 @@ func TestContactsServiceBasic(t *testing.T) {
 	
 	// Increase load to test capacity limits
 	canvas.Set("server.pool.ArrivalRate", 15.0)    // 3x load increase
-	canvas.Set("server.db.pool.ArrivalRate", 9.0)  // Corresponding DB load
+	canvas.Set("database.pool.ArrivalRate", 9.0)   // Corresponding DB load
 
 	err = canvas.Run("high_load", "server.HandleLookup", console.WithRuns(1000))
 	if err != nil {
@@ -56,8 +57,8 @@ func TestContactsServiceBasic(t *testing.T) {
 	t.Log("=== CACHE OPTIMIZATION ===")
 	
 	// Improve cache hit rate to reduce DB load
-	canvas.Set("server.db.CacheHitRate", 0.8)       // 80% cache hit rate
-	canvas.Set("server.db.pool.ArrivalRate", 3.0)   // Reduced DB load due to better cache
+	canvas.Set("contactCache.HitRate", 0.8)         // 80% cache hit rate
+	canvas.Set("database.pool.ArrivalRate", 3.0)    // Reduced DB load due to better cache
 
 	err = canvas.Run("optimized_cache", "server.HandleLookup", console.WithRuns(1000))
 	if err != nil {
@@ -81,7 +82,7 @@ func TestContactsServiceBasic(t *testing.T) {
 	t.Log("=== DATABASE BOTTLENECK ===")
 	
 	// Create database bottleneck by increasing DB load
-	canvas.Set("server.db.pool.ArrivalRate", 20.0)  // High DB load
+	canvas.Set("database.pool.ArrivalRate", 20.0)   // High DB load
 
 	err = canvas.Run("db_bottleneck", "server.HandleLookup", console.WithRuns(1000))
 	if err != nil {
@@ -115,19 +116,19 @@ func TestContactsParameterModification(t *testing.T) {
 	}{
 		// Native component parameters (ResourcePool)
 		{"Server Pool Size", "server.pool.Size", 15},
-		{"DB Pool Size", "server.db.pool.Size", 8},
+		{"DB Pool Size", "database.pool.Size", 8},
 		{"Server Arrival Rate", "server.pool.ArrivalRate", 12.5},
-		{"DB Arrival Rate", "server.db.pool.ArrivalRate", 8.0},
+		{"DB Arrival Rate", "database.pool.ArrivalRate", 8.0},
 		{"Hold Time", "server.pool.AvgHoldTime", 0.020},  // 20ms = 0.020 seconds
 
-		// User-defined component parameters
-		{"Cache Hit Rate", "server.db.CacheHitRate", 0.6},
+		// Cache component parameters
+		{"Cache Hit Rate", "contactCache.HitRate", 0.6},
 
 		// Edge cases
 		{"Zero Pool Size", "server.pool.Size", 0},
 		{"Minimal Pool", "server.pool.Size", 1},
-		{"Perfect Cache", "server.db.CacheHitRate", 1.0},
-		{"No Cache", "server.db.CacheHitRate", 0.0},
+		{"Perfect Cache", "contactCache.HitRate", 1.0},
+		{"No Cache", "contactCache.HitRate", 0.0},
 	}
 
 	for _, test := range paramTests {
@@ -221,8 +222,8 @@ func TestContactsRapidIteration(t *testing.T) {
 		serverCap   int
 		description string
 	}{
-		{"Normal Load", 5.0, 3.0, 0.4, 10, "Typical usage"},
-		{"Busy Period", 10.0, 6.0, 0.4, 10, "Peak hours"},
+		{"Normal Load", 5.0, 3.0, 0.6, 10, "Typical usage"},
+		{"Busy Period", 10.0, 6.0, 0.6, 10, "Peak hours"},
 		{"Cache Warmed", 10.0, 2.0, 0.8, 10, "Better cache performance"},
 		{"Scaled Server", 15.0, 3.0, 0.8, 20, "Server capacity doubled"},
 		{"DB Overload", 15.0, 15.0, 0.2, 20, "Database becomes bottleneck"},
@@ -234,8 +235,8 @@ func TestContactsRapidIteration(t *testing.T) {
 			
 			// Set parameters rapidly
 			canvas.Set("server.pool.ArrivalRate", scenario.serverLoad)
-			canvas.Set("server.db.pool.ArrivalRate", scenario.dbLoad)
-			canvas.Set("server.db.CacheHitRate", scenario.cacheHit)
+			canvas.Set("database.pool.ArrivalRate", scenario.dbLoad)
+			canvas.Set("contactCache.HitRate", scenario.cacheHit)
 			canvas.Set("server.pool.Size", scenario.serverCap)
 
 			// Run quick simulation

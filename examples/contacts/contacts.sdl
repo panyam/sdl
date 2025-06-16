@@ -1,14 +1,12 @@
 // Simple contacts lookup service for Canvas API validation
-// Demonstrates: AppServer → Database → HashIndex with capacity modeling
+// Demonstrates: AppServer with cache-aside pattern → Cache and Database → HashIndex
 
-import ResourcePool, HashIndex, delay from "../common.sdl"
+import ResourcePool, HashIndex, Cache, delay from "../common.sdl"
 
-// Database component with connection pooling and cache
+// Database component with connection pooling (no cache simulation)
 component ContactDatabase {
     uses pool ResourcePool(Size = 5)          // 5 concurrent connections
     uses index HashIndex                      // Phone number → Contact lookup
-    
-    param CacheHitRate = 0.4                  // 40% cache hit rate initially
     
     method LookupByPhone() Bool {
         // Try to acquire database connection
@@ -17,26 +15,16 @@ component ContactDatabase {
             return false  // Connection pool exhausted
         }
         
-        // Check cache first
-        let cached = sample dist {
-            40 => true,   // Cache hit
-            60 => false   // Cache miss - need index lookup
-        }
-        
-        if cached {
-            delay(2ms)    // Fast cache lookup
-            return true
-        } else {
-            // Cache miss - query the hash index
-            delay(10ms)   // Database query time
-            return self.index.Find()
-        }
+        // Query the hash index
+        delay(10ms)   // Database query time
+        return self.index.Find()
     }
 }
 
-// Application server with request handling capacity
+// Application server with cache-aside pattern
 component ContactAppServer {
     uses db ContactDatabase
+    uses cache Cache                          // Explicit cache component
     uses pool ResourcePool(Size = 10)        // 10 concurrent request handlers
     
     method HandleLookup() Bool {
@@ -49,14 +37,29 @@ component ContactAppServer {
         // Process request overhead
         delay(5ms)
         
-        // Delegate to database
-        return self.db.LookupByPhone()
+        // Cache-aside pattern: Check cache first
+        let cached = self.cache.Read()
+        if cached {
+            // Cache hit - return immediately
+            return true
+        } else {
+            // Cache miss - query database
+            let result = self.db.LookupByPhone()
+            
+            if result {
+                // Write successful result back to cache
+                self.cache.Write()
+            }
+            
+            return result
+        }
     }
 }
 
-// Complete contacts lookup system
+// Complete contacts lookup system with explicit cache
 system ContactsSystem {
-    use server ContactAppServer(db = database)
+    use server ContactAppServer(db = database, cache = contactCache)
     use database ContactDatabase(index = idx)
     use idx HashIndex
+    use contactCache Cache
 }

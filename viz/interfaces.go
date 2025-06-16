@@ -16,15 +16,21 @@ type Node struct {
 
 // MethodInfo represents information about a component method
 type MethodInfo struct {
-	Name       string // Method name
-	ReturnType string // Return type (e.g., "Bool", "Int", etc.)
+	Name       string  // Method name
+	ReturnType string  // Return type (e.g., "Bool", "Int", etc.)
+	Traffic    float64 // Current traffic rate in RPS (calculated by FlowEval)
 }
 
 // Edge represents a connection between nodes in a static diagram.
 type Edge struct {
-	FromID string
-	ToID   string
-	Label  string
+	FromID      string
+	ToID        string
+	FromMethod  string  // Source method name (for flow edges)
+	ToMethod    string  // Target method name (for flow edges)
+	Label       string
+	Order       float64 // Execution order (supports decimals for conditional paths)
+	Condition   string  // Condition expression if this is a conditional path
+	Probability float64 // Probability of this path being taken
 }
 
 // DataPoint represents a single plot point for time-series charts.

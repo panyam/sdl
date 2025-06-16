@@ -660,29 +660,64 @@ export class Dashboard {
       const toNode = (this.systemDiagram?.nodes || []).find(n => n.ID === edge.ToID);
       
       if (fromNode && toNode) {
-        const fromMethods = fromNode.Methods || [];
-        const toMethods = toNode.Methods || [];
-        
-        // Connect first method of source to first method of target
-        if (fromMethods.length > 0 && toMethods.length > 0) {
-          const fromMethod = `${fromNode.ID}_${fromMethods[0].Name}`;
-          const toMethod = `${toNode.ID}_${toMethods[0].Name}`;
-          edges.push(`  ${fromMethod} -> ${toMethod} [label="${edge.Label}"];`);
-        } else if (fromMethods.length > 0) {
-          // From has methods, to doesn't - connect method to component
-          const fromMethod = `${fromNode.ID}_${fromMethods[0].Name}`;
-          const toComponent = `${toNode.ID}_component`;
-          edges.push(`  ${fromMethod} -> ${toComponent} [label="${edge.Label}"];`);
-        } else if (toMethods.length > 0) {
-          // From doesn't have methods, to has methods - connect component to method
-          const fromComponent = `${fromNode.ID}_component`;
-          const toMethod = `${toNode.ID}_${toMethods[0].Name}`;
-          edges.push(`  ${fromComponent} -> ${toMethod} [label="${edge.Label}"];`);
+        // For flow-based edges with order numbers, we need to be more specific
+        if (edge.Order && edge.Order > 0) {
+          // This is a flow-based edge - parse the actual method from the label or condition
+          const fromMethods = fromNode.Methods || [];
+          let fromMethod = '';
+          let toMethod = '';
+          
+          // Default to first method if we can't determine the specific method
+          if (fromMethods.length > 0) {
+            fromMethod = `${fromNode.ID}_${fromMethods[0].Name}`;
+          } else {
+            fromMethod = `${fromNode.ID}_component`;
+          }
+          
+          // For the target, try to infer from the condition or label
+          const toMethods = toNode.Methods || [];
+          if (edge.Label && edge.Label.includes('result') && toNode.ID === 'contactCache') {
+            // Special case: if condition mentions 'result' and target is cache, it's likely Write
+            const writeMethod = toMethods.find(m => m.Name === 'Write');
+            if (writeMethod) {
+              toMethod = `${toNode.ID}_Write`;
+            }
+          } else if (toMethods.length > 0) {
+            // Default to first method
+            toMethod = `${toNode.ID}_${toMethods[0].Name}`;
+          } else {
+            toMethod = `${toNode.ID}_component`;
+          }
+          
+          // Style flow edges differently based on condition
+          let edgeStyle = '';
+          if (edge.Condition) {
+            edgeStyle = ' fontcolor="#fbbf24" color="#fbbf24"';
+          }
+          
+          edges.push(`  ${fromMethod} -> ${toMethod} [label="${edge.Label}"${edgeStyle}];`);
         } else {
-          // Neither has methods - connect components directly
-          const fromComponent = `${fromNode.ID}_component`;
-          const toComponent = `${toNode.ID}_component`;
-          edges.push(`  ${fromComponent} -> ${toComponent} [label="${edge.Label}"];`);
+          // Regular dependency edges
+          const fromMethods = fromNode.Methods || [];
+          const toMethods = toNode.Methods || [];
+          
+          if (fromMethods.length > 0 && toMethods.length > 0) {
+            const fromMethod = `${fromNode.ID}_${fromMethods[0].Name}`;
+            const toMethod = `${toNode.ID}_${toMethods[0].Name}`;
+            edges.push(`  ${fromMethod} -> ${toMethod} [label="${edge.Label}"];`);
+          } else if (fromMethods.length > 0) {
+            const fromMethod = `${fromNode.ID}_${fromMethods[0].Name}`;
+            const toComponent = `${toNode.ID}_component`;
+            edges.push(`  ${fromMethod} -> ${toComponent} [label="${edge.Label}"];`);
+          } else if (toMethods.length > 0) {
+            const fromComponent = `${fromNode.ID}_component`;
+            const toMethod = `${toNode.ID}_${toMethods[0].Name}`;
+            edges.push(`  ${fromComponent} -> ${toMethod} [label="${edge.Label}"];`);
+          } else {
+            const fromComponent = `${fromNode.ID}_component`;
+            const toComponent = `${toNode.ID}_component`;
+            edges.push(`  ${fromComponent} -> ${toComponent} [label="${edge.Label}"];`);
+          }
         }
       }
     });

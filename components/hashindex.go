@@ -287,3 +287,54 @@ func (h *HashIndex) Delete() *Outcomes[sc.AccessResult] {
 
 	return finalOutcomes
 }
+// GetFlowPattern implements FlowAnalyzable interface for HashIndex
+func (h *HashIndex) GetFlowPattern(methodName string, inputRate float64, params map[string]interface{}) FlowPattern {
+	switch methodName {
+	case "Find":
+		// HashIndex Find is typically a leaf operation with no outflows
+		return FlowPattern{
+			Outflows:      map[string]float64{}, // No downstream calls
+			SuccessRate:   1.0,                  // Hash lookups typically succeed
+			Amplification: 1.0,                  // Input rate = output rate
+			ServiceTime:   0.002,                // Typical hash lookup time (2ms)
+		}
+		
+	case "Insert":
+		// Insert operations may occasionally trigger resizes but are mostly leaf operations
+		successRate := 1.0
+		serviceTime := 0.003 // Slightly slower than Find due to potential writes
+		
+		// Adjust based on load - higher load = more collisions/slower inserts
+		if h.NumRecords > 10000 {
+			loadFactor := h.currentLoadFactor()
+			if loadFactor > 0.8 {
+				serviceTime *= (1.0 + loadFactor) // Increase service time with load
+				successRate = math.Max(0.95, 1.0-loadFactor*0.1) // Slight degradation at high load
+			}
+		}
+		
+		return FlowPattern{
+			Outflows:      map[string]float64{}, // No downstream calls
+			SuccessRate:   successRate,
+			Amplification: 1.0,
+			ServiceTime:   serviceTime,
+		}
+		
+	case "Delete":
+		// Delete operations are similar to Insert but typically faster
+		return FlowPattern{
+			Outflows:      map[string]float64{}, // No downstream calls
+			SuccessRate:   1.0,
+			Amplification: 1.0,
+			ServiceTime:   0.003, // Similar to Insert
+		}
+	}
+	
+	// Unknown method
+	return FlowPattern{
+		Outflows:      map[string]float64{},
+		SuccessRate:   1.0,
+		Amplification: 1.0,
+		ServiceTime:   0.001,
+	}
+}

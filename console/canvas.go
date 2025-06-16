@@ -2,12 +2,15 @@ package console
 
 import (
 	"fmt"
+	"log"
+	"math"
 	"os"
 	"reflect"
 	"sort"
 	"strings"
 	"time"
 
+	"github.com/panyam/sdl/components"
 	"github.com/panyam/sdl/decl"
 	"github.com/panyam/sdl/loader"
 	"github.com/panyam/sdl/runtime"
@@ -19,17 +22,19 @@ import (
 // modifying, and analyzing SDL models. It acts as the core engine
 // for both scripted tests and future interactive tools like a REPL.
 type Canvas struct {
-	loader           *loader.Loader
-	runtime          *runtime.Runtime
-	activeFile       *loader.FileStatus
-	activeSystem     *runtime.SystemInstance
-	sessionVars      map[string]any
-	loadedFiles      map[string]*loader.FileStatus
-	genManager       *generatorManager
-	measManager      *measurementManager
-	systemParameters map[string]interface{} // Track parameter changes
-	tsdb             *DuckDBTimeSeriesStore  // Time-series database for measurements
-	measurementTracer *MeasurementTracer     // Current measurement tracer
+	loader              *loader.Loader
+	runtime             *runtime.Runtime
+	activeFile          *loader.FileStatus
+	activeSystem        *runtime.SystemInstance
+	sessionVars         map[string]any
+	loadedFiles         map[string]*loader.FileStatus
+	genManager          *generatorManager
+	measManager         *measurementManager
+	systemParameters    map[string]interface{} // Track parameter changes
+	tsdb                *DuckDBTimeSeriesStore // Time-series database for measurements
+	measurementTracer   *MeasurementTracer     // Current measurement tracer
+	currentFlowContext  *runtime.FlowContext   // Current flow state (applied/active)
+	proposedFlowContext *runtime.FlowContext   // Proposed flow state (being evaluated)
 }
 
 // NewCanvas creates a new interactive canvas session.
@@ -64,6 +69,10 @@ func (c *Canvas) Load(filePath string) error {
 
 	c.loadedFiles[fileStatus.FullPath] = fileStatus
 	c.activeFile = fileStatus
+
+	// Invalidate flow contexts since file changed
+	c.invalidateFlowContexts()
+
 	return nil
 }
 
@@ -96,6 +105,9 @@ func (c *Canvas) Use(systemName string) error {
 
 	// Crucially, assign the populated environment back to the active system
 	c.activeSystem.Env = env
+
+	// Initialize flow contexts for the new system
+	c.initializeFlowContexts()
 
 	return nil
 }
@@ -146,7 +158,7 @@ func (c *Canvas) Set(path string, value any) error {
 
 	// Now currentComp is the component on which we need to set the final parameter
 	finalParamName := parts[len(parts)-1]
-	
+
 	// Debug removed
 
 	if currentComp.IsNative {
@@ -290,7 +302,7 @@ func (c *Canvas) Run(varName string, target string, opts ...RunOption) error {
 		// Standard execution without measurements
 		runtime.RunCallInBatches(c.activeSystem, instanceName, methodName, numBatches, batchSize, cfg.Workers, onBatch)
 	}
-	
+
 	c.sessionVars[varName] = allResults
 	return nil
 }
@@ -299,20 +311,20 @@ func (c *Canvas) Run(varName string, target string, opts ...RunOption) error {
 func (c *Canvas) runWithMeasurementTracer(instanceName, methodName string, numBatches, batchSize, numWorkers int, onBatch func(int, []runtime.Value)) error {
 	// Generate unique run ID for this simulation
 	runID := fmt.Sprintf("run_%d", time.Now().UnixMilli())
-	
+
 	// Ensure measurement tracer is initialized
 	tracer, err := c.GetMeasurementTracer("./data")
 	if err != nil {
 		return fmt.Errorf("failed to initialize measurement tracer: %w", err)
 	}
-	
+
 	// Set the run ID for this session
 	tracer.SetRunID(runID)
-	
+
 	// Create a custom simulation runner with tracer support
 	fi := c.activeSystem.File
 	se := runtime.NewSimpleEval(fi, tracer.ExecutionTracer)
-	
+
 	// Use the existing system environment
 	var env *runtime.Env[runtime.Value]
 	if c.activeSystem.Env != nil {
@@ -320,11 +332,11 @@ func (c *Canvas) runWithMeasurementTracer(instanceName, methodName string, numBa
 	} else {
 		env = fi.Env()
 	}
-	
+
 	// Run the simulation in batches with the tracer
 	for batch := 0; batch < numBatches; batch++ {
 		batchVals := make([]runtime.Value, 0, batchSize)
-		
+
 		for i := 0; i < batchSize; i++ {
 			// Create call expression for instance.method
 			var runLatency runtime.Duration
@@ -334,27 +346,27 @@ func (c *Canvas) runWithMeasurementTracer(instanceName, methodName string, numBa
 					Member:   &runtime.IdentifierExpr{Value: methodName},
 				},
 			}
-			
+
 			// Execute single call with tracer
 			result, _ := se.Eval(ce, env, &runLatency)
 			result.Time = runLatency // Capture the latency of this single run
-			
+
 			if se.HasErrors() {
 				return fmt.Errorf("simulation error in batch %d: %v", batch, se.Errors)
 			}
 			batchVals = append(batchVals, result)
 		}
-		
+
 		// Process batch results
 		onBatch(batch, batchVals)
 	}
-	
+
 	// Post-process the tracer events to extract measurements
 	err = c.processTracerEvents(tracer)
 	if err != nil {
 		return fmt.Errorf("failed to process tracer events: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -362,10 +374,10 @@ func (c *Canvas) runWithMeasurementTracer(instanceName, methodName string, numBa
 func (c *Canvas) processTracerEvents(tracer *MeasurementTracer) error {
 	events := tracer.ExecutionTracer.Events
 	measurements := tracer.GetMeasurements()
-	
+
 	// Match Enter/Exit events to extract measurements
 	enterStack := make(map[int]*runtime.TraceEvent) // eventID -> Enter event
-	
+
 	for _, event := range events {
 		if event.Kind == runtime.EventEnter {
 			enterStack[event.ID] = event
@@ -379,7 +391,7 @@ func (c *Canvas) processTracerEvents(tracer *MeasurementTracer) error {
 				delete(enterStack, id)
 				break
 			}
-			
+
 			if enterEvent != nil {
 				// Check if this target is being measured
 				target := enterEvent.Target
@@ -393,7 +405,7 @@ func (c *Canvas) processTracerEvents(tracer *MeasurementTracer) error {
 			}
 		}
 	}
-	
+
 	return nil
 }
 
@@ -401,7 +413,7 @@ func (c *Canvas) processTracerEvents(tracer *MeasurementTracer) error {
 func (c *Canvas) storeMeasurementFromEvent(tracer *MeasurementTracer, measurement *MeasurementConfig, enterEvent, exitEvent *runtime.TraceEvent) error {
 	// Use current wall clock time instead of simulation timestamp
 	timestampNs := time.Now().UnixNano()
-	
+
 	var metricValue float64
 	switch measurement.MetricType {
 	case "latency":
@@ -414,7 +426,7 @@ func (c *Canvas) storeMeasurementFromEvent(tracer *MeasurementTracer, measuremen
 	default:
 		metricValue = float64(exitEvent.Duration)
 	}
-	
+
 	point := TracePoint{
 		Timestamp:   timestampNs,
 		Target:      measurement.Target,
@@ -424,7 +436,7 @@ func (c *Canvas) storeMeasurementFromEvent(tracer *MeasurementTracer, measuremen
 		Args:        enterEvent.Arguments,
 		RunID:       tracer.runID,
 	}
-	
+
 	return tracer.tsdb.Insert(point)
 }
 
@@ -533,28 +545,27 @@ type SystemDiagram struct {
 // GetAvailableSystemNames returns all system names from loaded SDL files
 func (c *Canvas) GetAvailableSystemNames() []string {
 	var systemNames []string
-	
+
 	// Iterate through all loaded files
 	for _, fileStatus := range c.loadedFiles {
 		if fileStatus == nil || fileStatus.FileDecl == nil {
 			continue
 		}
-		
+
 		// Get systems from this file
 		systems, err := fileStatus.FileDecl.GetSystems()
 		if err != nil {
 			continue // Skip files with errors
 		}
-		
+
 		// Add system names to our list
 		for _, system := range systems {
 			systemNames = append(systemNames, system.Name.Value)
 		}
 	}
-	
+
 	return systemNames
 }
-
 
 // GetSystemDiagram returns the topology of the currently active system
 func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
@@ -563,7 +574,10 @@ func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
 	}
 
 	systemName := c.activeSystem.System.Name.Value
-	
+
+	// Get current flow rates (no need to recalculate - they are kept up to date)
+	currentFlowRates := c.GetCurrentFlowRates()
+
 	// Extract nodes and edges from the system declaration
 	var nodes []viz.Node
 	var edges []viz.Edge
@@ -574,7 +588,7 @@ func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
 		if instDecl, ok := item.(*decl.InstanceDecl); ok {
 			nodeID := instDecl.Name.Value
 			instanceNameToID[nodeID] = nodeID
-			
+
 			// Get component methods using runtime system
 			var methods []viz.MethodInfo
 			if c.runtime != nil {
@@ -589,21 +603,39 @@ func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
 							if methodDecl.ReturnType != nil {
 								returnType = methodDecl.ReturnType.Name
 							}
-							methods = append(methods, viz.MethodInfo{
-								Name:       methodName,
-								ReturnType: returnType,
-							})
+
+							// Get traffic rate for this method from current flow rates
+							methodTarget := fmt.Sprintf("%s.%s", nodeID, methodName)
+							methodTraffic := currentFlowRates[methodTarget]
+
+							// Only include methods with non-zero traffic to reduce clutter
+							if methodTraffic > 0 {
+								methods = append(methods, viz.MethodInfo{
+									Name:       methodName,
+									ReturnType: returnType,
+									Traffic:    methodTraffic,
+								})
+							}
 						}
 					}
 				}
 			}
-			
+
+			// Calculate total traffic for this component
+			componentTotalRPS := c.GetComponentTotalRPS(nodeID)
+			var trafficDisplay string
+			if componentTotalRPS > 0 {
+				trafficDisplay = fmt.Sprintf("%.1f rps", componentTotalRPS)
+			} else {
+				trafficDisplay = "0 rps"
+			}
+
 			nodes = append(nodes, viz.Node{
 				ID:      nodeID,
 				Name:    instDecl.Name.Value,
 				Type:    instDecl.ComponentName.Value,
 				Methods: methods,
-				Traffic: "0 rps", // Default traffic for now
+				Traffic: trafficDisplay,
 			})
 		}
 	}
@@ -612,7 +644,7 @@ func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
 	for _, item := range c.activeSystem.System.Body {
 		if instDecl, ok := item.(*decl.InstanceDecl); ok {
 			fromNodeID := instanceNameToID[instDecl.Name.Value]
-			
+
 			// Add edges from instance overrides (system-level dependencies)
 			for _, assignment := range instDecl.Overrides {
 				if targetIdent, okIdent := assignment.Value.(*decl.IdentifierExpr); okIdent {
@@ -622,6 +654,81 @@ func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
 							ToID:   toNodeID,
 							Label:  assignment.Var.Value,
 						})
+					}
+				}
+			}
+		}
+	}
+
+	// Add flow-based edges from FlowContext if available
+	if c.currentFlowContext != nil && len(c.currentFlowContext.FlowPaths) > 0 {
+		log.Printf("Canvas: Processing %d flow paths for edges", len(c.currentFlowContext.FlowPaths))
+
+		// Clear existing edges to replace with flow-based edges
+		edges = []viz.Edge{}
+
+		// Process each flow path
+		for pathKey, pathInfo := range c.currentFlowContext.FlowPaths {
+			// Parse the flow path key (e.g., "server.HandleLookup->contactCache.Read")
+			parts := strings.Split(pathKey, "->")
+			if len(parts) != 2 {
+				continue
+			}
+
+			fromParts := strings.Split(parts[0], ".")
+			toParts := strings.Split(parts[1], ".")
+
+			if len(fromParts) >= 2 && len(toParts) >= 2 {
+				fromComponent := fromParts[0]
+				fromMethod := fromParts[1]
+				toComponent := toParts[0]
+				toMethod := toParts[1]
+
+				// Create label with order and condition
+				label := fmt.Sprintf("%.0f", pathInfo.Order)
+				if pathInfo.Condition != "" {
+					if pathInfo.Order == math.Trunc(pathInfo.Order) {
+						label = fmt.Sprintf("%.0f: %s", pathInfo.Order, pathInfo.Condition)
+					} else {
+						label = fmt.Sprintf("%.1f: %s", pathInfo.Order, pathInfo.Condition)
+					}
+				}
+
+				log.Printf("Canvas: Creating edge %s.%s -> %s.%s with label %s",
+					fromComponent, fromMethod, toComponent, toMethod, label)
+
+				edges = append(edges, viz.Edge{
+					FromID:      fromComponent,
+					ToID:        toComponent,
+					FromMethod:  fromMethod,
+					ToMethod:    toMethod,
+					Label:       label,
+					Order:       pathInfo.Order,
+					Condition:   pathInfo.Condition,
+					Probability: pathInfo.Probability,
+				})
+			}
+		}
+
+		// If no flow paths, fall back to dependency edges
+		if len(edges) == 0 {
+			log.Printf("Canvas: No flow edges created, using dependency edges")
+			// Re-create dependency edges
+			for _, bodyItem := range c.activeSystem.System.Body {
+				if instance, ok := bodyItem.(*decl.InstanceDecl); ok {
+					fromNodeID := instance.Name.Value
+
+					// Process overrides to find dependencies
+					for _, assignment := range instance.Overrides {
+						if targetIdent, okIdent := assignment.Value.(*decl.IdentifierExpr); okIdent {
+							if toNodeID, isInstance := instanceNameToID[targetIdent.Value]; isInstance {
+								edges = append(edges, viz.Edge{
+									FromID: fromNodeID,
+									ToID:   toNodeID,
+									Label:  assignment.Var.Value,
+								})
+							}
+						}
 					}
 				}
 			}
@@ -780,20 +887,107 @@ func (c *Canvas) GetStats() CanvasStats {
 		ActiveSystems: 0,
 		TotalRuns:     len(c.sessionVars),
 	}
-	
+
 	if c.activeSystem != nil {
 		stats.ActiveSystems = 1
 	}
-	
+
 	if c.genManager != nil {
 		stats.ActiveGenerators = len(c.genManager.generators)
 	}
-	
+
 	if c.measManager != nil {
 		stats.ActiveMeasurements = len(c.measManager.measurements)
 	}
-	
+
 	return stats
+}
+
+// evaluateProposedFlows calculates what the system flows would be with current generator settings
+func (c *Canvas) evaluateProposedFlows() error {
+	if c.activeSystem == nil {
+		return fmt.Errorf("no active system available for flow calculation")
+	}
+
+	// Build entry points from enabled generators
+	entryPoints := make(map[string]float64)
+	if c.genManager != nil {
+		for _, gen := range c.genManager.generators {
+			if gen.Enabled {
+				entryPoints[gen.Target] = float64(gen.Rate)
+			}
+		}
+	}
+
+	// Create proposed flow context
+	c.proposedFlowContext = runtime.NewFlowContext(c.activeSystem.System, c.systemParameters)
+	c.registerNativeComponents(c.proposedFlowContext)
+
+	// Run FlowEval to calculate proposed system-wide flows
+	if len(entryPoints) > 0 {
+		runtime.SolveSystemFlows(entryPoints, c.proposedFlowContext)
+	}
+
+	return nil
+}
+
+// applyProposedFlows moves the proposed flow context to current (accepting the new flow state)
+func (c *Canvas) applyProposedFlows() {
+	if c.proposedFlowContext != nil {
+		c.currentFlowContext = c.proposedFlowContext
+		c.proposedFlowContext = nil
+	}
+}
+
+// invalidateFlowContexts clears flow contexts when system state changes
+func (c *Canvas) invalidateFlowContexts() {
+	c.currentFlowContext = nil
+	c.proposedFlowContext = nil
+}
+
+// initializeFlowContexts sets up initial flow contexts for a new system
+func (c *Canvas) initializeFlowContexts() {
+	if c.activeSystem == nil {
+		return
+	}
+
+	// Initialize current context with zero flows
+	c.currentFlowContext = runtime.NewFlowContext(c.activeSystem.System, c.systemParameters)
+	c.registerNativeComponents(c.currentFlowContext)
+
+	// Clear proposed context
+	c.proposedFlowContext = nil
+}
+
+// GetCurrentFlowRates returns the current (applied) flow rates
+func (c *Canvas) GetCurrentFlowRates() map[string]float64 {
+	if c.currentFlowContext == nil {
+		return make(map[string]float64)
+	}
+	return c.currentFlowContext.ArrivalRates
+}
+
+// GetProposedFlowRates returns the proposed flow rates (being evaluated)
+func (c *Canvas) GetProposedFlowRates() map[string]float64 {
+	if c.proposedFlowContext == nil {
+		return make(map[string]float64)
+	}
+	return c.proposedFlowContext.ArrivalRates
+}
+
+// GetComponentTotalRPS calculates total RPS for a component by summing all its methods
+func (c *Canvas) GetComponentTotalRPS(componentID string) float64 {
+	rates := c.GetCurrentFlowRates()
+	total := 0.0
+	prefix := componentID + "."
+
+	for target, rps := range rates {
+		if strings.HasPrefix(target, prefix) {
+			total += rps
+		}
+	}
+
+	return total
 }
 
 // Close closes the Canvas and cleans up resources
@@ -805,4 +999,49 @@ func (c *Canvas) Close() error {
 		return err
 	}
 	return nil
+}
+
+// registerNativeComponents registers native component instances in the FlowContext
+// for flow analysis delegation
+func (c *Canvas) registerNativeComponents(flowContext *runtime.FlowContext) {
+	if c.activeSystem == nil || flowContext == nil {
+		return
+	}
+
+	// Iterate through system instances and register native components
+	for _, item := range c.activeSystem.System.Body {
+		if instDecl, ok := item.(*decl.InstanceDecl); ok {
+			componentName := instDecl.ComponentName.Value
+			instanceName := instDecl.Name.Value
+
+			// Check if this is a known native component type and create an instance
+			var nativeComponent components.FlowAnalyzable
+			switch componentName {
+			case "ResourcePool":
+				nativeComponent = &components.ResourcePool{
+					Name:        instanceName,
+					Size:        5, // Default size - could be overridden by parameters
+					ArrivalRate: 1.0,
+					AvgHoldTime: 0.01, // 10ms default hold time
+				}
+				nativeComponent.(*components.ResourcePool).Init()
+
+			case "HashIndex":
+				nativeComponent = &components.HashIndex{}
+				nativeComponent.(*components.HashIndex).Init()
+
+			case "Cache":
+				nativeComponent = &components.Cache{
+					HitRate: 0.6, // Default 60% hit rate matching the original simulation
+				}
+				nativeComponent.(*components.Cache).Init()
+			}
+
+			// Register the native component in the FlowContext
+			if nativeComponent != nil {
+				flowContext.SetNativeComponent(instanceName, nativeComponent)
+				log.Printf("Canvas: Registered native component '%s' (type %s) for flow analysis", instanceName, componentName)
+			}
+		}
+	}
 }
