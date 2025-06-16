@@ -10,7 +10,8 @@ import (
 
 // Tests for Init, Height remain the same...
 func TestBTreeIndex_Init(t *testing.T) {
-	bt := (&BTreeIndex{}).Init() // Use constructor style matching BTreeIndex.Init()
+	bt := &BTreeIndex{}
+	bt.Init() // Use constructor style matching BTreeIndex.Init()
 
 	if bt.Disk.ReadOutcomes == nil {
 		t.Fatal("BTreeIndex Disk not initialized")
@@ -28,7 +29,8 @@ func TestBTreeIndex_Init(t *testing.T) {
 }
 
 func TestBTreeIndex_Height(t *testing.T) {
-	bt := (&BTreeIndex{}).Init()
+	bt := &BTreeIndex{}
+	bt.Init()
 	bt.PageSize = 4096
 	bt.RecordSize = 100 // ~40 records/page
 	bt.NodeFanout = 50  // Lower fanout for testing height changes
@@ -65,7 +67,8 @@ func TestBTreeIndex_Height(t *testing.T) {
 }
 
 func TestBTreeIndex_Operations_Metrics(t *testing.T) {
-	bt := (&BTreeIndex{}).Init()
+	bt := &BTreeIndex{}
+	bt.Init()
 	// Use SSD for faster base operations
 	bt.Disk.Init()
 	bt.MaxOutcomeLen = 15

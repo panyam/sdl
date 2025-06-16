@@ -101,10 +101,21 @@ type Queue struct {
 
 // Init initializes the M/M/c/K Queue component with default configuration.
 func (q *Queue) Init() {
-	q.ArrivalRate = 1e-9
-	q.AvgServiceTime = 1e-9
-	q.Servers = 1
-	q.Capacity = 0 // Infinite capacity by default
+	// Step 1: No embedded components to initialize
+	
+	// Step 2: Set defaults only for uninitialized fields (zero values)
+	if q.ArrivalRate == 0 {
+		q.ArrivalRate = 1e-9
+	}
+	if q.AvgServiceTime == 0 {
+		q.AvgServiceTime = 1e-9
+	}
+	if q.Servers == 0 {
+		q.Servers = 1
+	}
+	// Capacity defaults to 0 (infinite) which is the zero value, so no need to check
+	
+	// Step 3: No derived values to calculate (computed dynamically in methods)
 }
 
 // NewMMCKQueue creates and initializes a new M/M/c/K Queue component.

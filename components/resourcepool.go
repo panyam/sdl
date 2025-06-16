@@ -47,9 +47,20 @@ type ResourcePool struct {
 // Init initializes the ResourcePool with default parameters.
 // The core queuing calculations are now done in Acquire() to allow for dynamic changes.
 func (rp *ResourcePool) Init() {
-	rp.Size = 1
-	rp.ArrivalRate = 1e-9
-	rp.AvgHoldTime = 1e-9
+	// Step 1: No embedded components to initialize
+	
+	// Step 2: Set defaults only for uninitialized fields (zero values)
+	if rp.Size == 0 {
+		rp.Size = 1
+	}
+	if rp.ArrivalRate == 0 {
+		rp.ArrivalRate = 1e-9
+	}
+	if rp.AvgHoldTime == 0 {
+		rp.AvgHoldTime = 1e-9
+	}
+	
+	// Step 3: No derived values to calculate (computed dynamically in methods)
 }
 
 // NewResourcePool creates and initializes a new ResourcePool component.
@@ -59,15 +70,9 @@ func NewResourcePool(name string) *ResourcePool {
 	return rp
 }
 
-// Acquire predicts the queuing delay for acquiring one resource from the pool.
-// It dynamically calculates the steady-state M/M/c queuing delay (Wq) based on
-// the component's current ArrivalRate and AvgHoldTime parameters.
-//
-// Returns Outcomes[AccessResult]:
-//   - Success=true with queuing delay if the pool is stable (utilization < 1).
-//   - Success=false with high latency if the pool is unstable (utilization >= 1).
-func (rp *ResourcePool) Acquire() *core.Outcomes[core.AccessResult] {
-	// --- Dynamic M/M/c Calculation ---
+// calculateMMCMetrics performs the M/M/c calculation and returns (isStable, avgWaitTimeQ).
+// This is extracted from the Acquire method for testing purposes.
+func (rp *ResourcePool) calculateMMCMetrics() (bool, float64) {
 	if rp.AvgHoldTime < 1e-12 {
 		rp.AvgHoldTime = 1e-12 // Avoid division by zero
 	}
@@ -76,8 +81,6 @@ func (rp *ResourcePool) Acquire() *core.Outcomes[core.AccessResult] {
 	utilization := offeredLoad / float64(rp.Size)
 	isStable := utilization < 1.0
 	
-	// Debug removed for cleaner output
-
 	var avgWaitTimeQ float64 = 0 // Wq
 	if !isStable {
 		avgWaitTimeQ = math.Inf(1)
@@ -105,12 +108,25 @@ func (rp *ResourcePool) Acquire() *core.Outcomes[core.AccessResult] {
 	if avgWaitTimeQ < 0 {
 		avgWaitTimeQ = 0
 	}
-	// --- End Dynamic M/M/c Calculation ---
+	
+	return isStable, avgWaitTimeQ
+}
+
+// Acquire predicts the queuing delay for acquiring one resource from the pool.
+// It dynamically calculates the steady-state M/M/c queuing delay (Wq) based on
+// the component's current ArrivalRate and AvgHoldTime parameters.
+//
+// Returns Outcomes[AccessResult]:
+//   - Success=true with queuing delay if the pool is stable (utilization < 1).
+//   - Success=false with high latency if the pool is unstable (utilization >= 1).
+func (rp *ResourcePool) Acquire() *core.Outcomes[core.AccessResult] {
+	// Use the extracted calculation method
+	isStable, avgWaitTimeQ := rp.calculateMMCMetrics()
 
 	outcomes := &core.Outcomes[core.AccessResult]{}
 
 	// If unstable (rho >= 1), return failure with high latency
-	if math.IsInf(avgWaitTimeQ, 1) || avgWaitTimeQ > 3600.0*24 {
+	if !isStable || avgWaitTimeQ > 3600.0*24 {
 		outcomes.Add(1.0, core.AccessResult{Success: false, Latency: 3600.0*24}) // 1 day timeout
 		return outcomes
 	}

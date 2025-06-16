@@ -12,7 +12,10 @@ This package provides concrete Go implementations of common distributed system c
 
 2.  **Component Go Models (e.g., `disk.go`, `cache.go`, `hashindex.go`):**
     *   Each component (e.g., `Disk`, `Cache`, `Queue`, `ResourcePool`, `BTreeIndex`, `HashIndex`, `LSMTree`, `NetworkLink`, `Batcher`, `HeapFile`, `SortedFile`) is represented by a Go struct.
-    *   They typically have an `Init()` method and/or a `New...()` constructor to set default parameters and perform initial setup.
+    *   **Standardized Initialization Pattern:** All components follow a consistent initialization pattern:
+        -   `NewComponent(name)` constructor that sets the name and calls `Init()`
+        -   `Init()` method that: (1) initializes embedded components first, (2) sets defaults only for zero values, (3) calculates derived values
+        -   Alternative usage: `&Component{Name: "name", Param: value}` followed by `Init()`
     *   Key methods representing operations (`Read()`, `Write()`, `Acquire()`, `Enqueue()`, `Find()`, etc.) return `*core.Outcomes[V]` (usually `*core.Outcomes[AccessResult]` or `*core.Outcomes[Duration]`). These return values encapsulate the probabilistic performance model of that operation.
     *   Models often compose operations on underlying dependencies (e.g., `BTreeIndex.Find` composes multiple `Disk.Read` operations internally).
 
@@ -36,6 +39,8 @@ This package provides concrete Go implementations of common distributed system c
 *   Provides a comprehensive suite of standard system components with defined performance models based on `sdl/core`.
 *   The `decl/` sub-package provides the necessary wrappers to make these Go components callable from the SDL runtime as native components.
 *   **Capacity Modeling Ready:** The `ResourcePool` component now supports full capacity modeling with M/M/c queuing calculations, enabling realistic analysis of system performance under different loads and identification of capacity bottlenecks.
+*   **Initialization Standardized:** All components now follow a consistent initialization pattern that respects pre-configured values and provides predictable behavior for both constructor and struct-literal usage patterns.
+*   **Test Suite Complete:** All component tests pass with standardized patterns for component configuration and initialization.
 
 **Relationship with other packages:**
 

@@ -1,9 +1,6 @@
 package components
 
 import (
-	"math/rand"
-	"time"
-
 	"github.com/panyam/sdl/core"
 	sc "github.com/panyam/sdl/core"
 	// "log"
@@ -28,34 +25,33 @@ type NetworkLink struct {
 
 	// Pre-calculated outcomes for efficiency (can be nil initially)
 	transferOutcomes *Outcomes[sc.AccessResult]
-
-	// Random source for jitter calculation
-	rng *rand.Rand
 }
 
 // Init initializes the NetworkLink with provided parameters or defaults.
 func (nl *NetworkLink) Init() {
-	nl.BaseLatency = core.Millis(1)
-	nl.MaxJitter = 0
-	nl.PacketLossProb = 0.01
-	nl.LatencyBuckets = 5 // Default number of buckets for jitter distribution
+	// Step 1: No embedded components to initialize
+	
+	// Step 2: Set defaults only for uninitialized fields (zero values)
+	if nl.BaseLatency == 0 {
+		nl.BaseLatency = core.Millis(1)
+	}
+	// MaxJitter and PacketLossProb can be zero (no jitter/loss), so no defaults needed
+	if nl.LatencyBuckets == 0 {
+		nl.LatencyBuckets = 5 // Default number of buckets for jitter distribution
+	}
 
-	// Ensure probabilities are valid
+	// Validate parameters
 	if nl.PacketLossProb < 0.0 {
 		nl.PacketLossProb = 0.0
 	}
 	if nl.PacketLossProb > 1.0 {
 		nl.PacketLossProb = 1.0
 	}
-	// Ensure jitter is non-negative
 	if nl.MaxJitter < 0 {
 		nl.MaxJitter = 0
 	}
 
-	// Initialize random source
-	nl.rng = rand.New(rand.NewSource(time.Now().UnixNano()))
-
-	// Pre-calculate the outcomes distribution
+	// Step 3: Always calculate derived values
 	nl.calculateTransferOutcomes()
 }
 
@@ -78,7 +74,7 @@ func (nl *NetworkLink) calculateTransferOutcomes() {
 		bucketWeight := successProb / float64(nl.LatencyBuckets)
 		latencyStep := (2 * nl.MaxJitter) / float64(nl.LatencyBuckets-1) // Step between latency points
 
-		for i := range nl.LatencyBuckets {
+		for i := 0; i < nl.LatencyBuckets; i++ {
 			// Calculate latency for this bucket: Base +/- Jitter
 			// Simple linear distribution for jitter for now:
 			// Bucket 0: Base - MaxJitter

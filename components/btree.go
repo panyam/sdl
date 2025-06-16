@@ -28,12 +28,24 @@ func NewBTreeIndex() (out *BTreeIndex) {
 
 // Init initializes the BTreeIndex with defaults.
 func (bt *BTreeIndex) Init() {
+	// Step 1: Initialize embedded components first
 	bt.Index.Init()
-	bt.NodeFanout = 100       // Default fanout (e.g., for 8KB pages, ~100 keys/pointers)
-	bt.Occupancy = 0.67       // Default occupancy (B-Trees aim for >50%)
-	bt.AvgSplitPropCost = 0.1 // Default: Avg 0.1 extra R/W pairs per insert (low split chance)
-	bt.AvgMergePropCost = 0.1 // Default: Avg 0.1 extra R/W pairs per delete (low merge chance)
-	return
+	
+	// Step 2: Set defaults only for uninitialized fields (zero values)
+	if bt.NodeFanout == 0 {
+		bt.NodeFanout = 100 // Default fanout (e.g., for 8KB pages, ~100 keys/pointers)
+	}
+	if bt.Occupancy == 0 {
+		bt.Occupancy = 0.67 // Default occupancy (B-Trees aim for >50%)
+	}
+	if bt.AvgSplitPropCost == 0 {
+		bt.AvgSplitPropCost = 0.1 // Default: Avg 0.1 extra R/W pairs per insert (low split chance)
+	}
+	if bt.AvgMergePropCost == 0 {
+		bt.AvgMergePropCost = 0.1 // Default: Avg 0.1 extra R/W pairs per delete (low merge chance)
+	}
+	
+	// Step 3: No derived values to calculate (computed in methods as needed)
 }
 
 // RecordsPerPage estimates how many records fit in a leaf page based on occupancy.

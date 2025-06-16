@@ -10,7 +10,7 @@ import (
 
 // Tests for Init remain the same...
 func TestNetworkLink_Init_Defaults(t *testing.T) {
-	nl := NewNetworkLink(0, 0, 0)
+	nl := NewNetworkLink()
 	if nl.BaseLatency <= 0 {
 		t.Error("Default BaseLatency should be > 0")
 	}
@@ -31,7 +31,12 @@ func TestNetworkLink_Init_Params(t *testing.T) {
 	baseLat := sc.Millis(50)
 	jitter := sc.Millis(5)
 	loss := 0.01
-	nl := NewNetworkLink(baseLat, jitter, loss)
+	nl := &NetworkLink{
+		BaseLatency:    baseLat,
+		MaxJitter:      jitter,
+		PacketLossProb: loss,
+	}
+	nl.Init()
 	if nl.BaseLatency != baseLat {
 		t.Errorf("BaseLatency mismatch: expected %f, got %f", baseLat, nl.BaseLatency)
 	}
@@ -47,7 +52,12 @@ func TestNetworkLink_Transfer_Metrics_NoLoss(t *testing.T) {
 	baseLat := sc.Millis(20)
 	jitter := sc.Millis(4)
 	loss := 0.0
-	nl := NewNetworkLink(baseLat, jitter, loss)
+	nl := &NetworkLink{
+		BaseLatency:    baseLat,
+		MaxJitter:      jitter,
+		PacketLossProb: loss,
+	}
+	nl.Init()
 
 	outcomes := nl.Transfer()
 	if outcomes == nil {
@@ -103,7 +113,12 @@ func TestNetworkLink_Transfer_Metrics_WithLoss(t *testing.T) {
 	baseLat := sc.Millis(100)
 	jitter := sc.Millis(20)
 	loss := 0.10
-	nl := NewNetworkLink(baseLat, jitter, loss)
+	nl := &NetworkLink{
+		BaseLatency:    baseLat,
+		MaxJitter:      jitter,
+		PacketLossProb: loss,
+	}
+	nl.Init()
 
 	outcomes := nl.Transfer()
 	if outcomes == nil {

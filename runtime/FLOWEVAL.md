@@ -493,31 +493,58 @@ func (fc *FlowCache) GetFlowsIfValid(paramHash string) (map[string]map[string]fl
 
 ---
 
-## 🎯 **Implementation Roadmap**
+## 📊 **Current Implementation Status**
 
-### **Phase 1: Basic FlowEval (Week 1)**
-- [ ] Implement core FlowEval function for SDL components
-- [ ] Handle simple patterns: 1:1 calls, conditional flows
-- [ ] Basic retry analysis with exponential limiting
-- [ ] Parameter snapshot approach
+### **✅ Completed Foundation Work:**
+- **Component Standardization:** All components now follow consistent initialization patterns
+- **Test Suite:** Complete test coverage with standardized configuration patterns
+- **FlowEval Core:** Basic implementation exists in `runtime/floweval.go` with:
+  - Static flow analysis through SDL method bodies
+  - Cycle detection and recursion prevention
+  - Parameter snapshot approach for condition probability
+  - Flow aggregation from multiple entry points
 
-### **Phase 2: Cycle Resolution (Week 2)**  
-- [ ] Fixed-point iteration solver
-- [ ] Call stack limiting as fallback
-- [ ] Convergence detection and damping
+### **🔧 Current FlowEval Implementation:**
+- **Location:** `runtime/floweval.go`, `runtime/system.go`
+- **Core Function:** `FlowEval(component, method, inputRate, context)` ✅
+- **Features Available:**
+  - AST traversal for SDL method analysis
+  - Conditional flow analysis with probability weighting
+  - Call target parsing and flow accumulation
+  - Integration with system instance management
 
-### **Phase 3: Native Component Integration (Week 3)**
-- [ ] FlowAnalyzable interface definition
-- [ ] Update existing native components (ResourcePool, Cache, Disk)
-- [ ] Integration with FlowEvaluator
-
-### **Phase 4: Advanced Features (Week 4+)**
-- [ ] Parameter dependency tracking
-- [ ] Confidence bounds for uncertain parameters
-- [ ] Performance optimization and caching
-- [ ] Comprehensive testing with Netflix demo scenario
+### **⚠️ Known Limitations (Next Phase Targets):**
+- **No True Convergence:** Uses single-pass static analysis instead of iterative fixed-point computation
+- **No Back-Pressure:** Downstream capacity limits don't affect upstream rates
+- **Missing Component Integration:** `getComponentDecl()` is stubbed out
+- **Limited Native Support:** No `FlowAnalyzable` interface for native components
 
 ---
 
-**Last Updated:** Conference Workshop Development Phase  
-**Next Review:** After Phase 1 implementation completion
+## 🎯 **Implementation Roadmap**
+
+### **Phase 1: Back-Pressure & Convergence (Current Priority)**
+- [ ] Implement iterative fixed-point solver for true convergence
+- [ ] Add back-pressure propagation for capacity-limited components
+- [ ] Enhance component integration with performance feedback loops
+- [ ] Test with multi-component dependency scenarios (A→C, B→C case)
+
+### **Phase 2: Native Component Integration**
+- [ ] Implement FlowAnalyzable interface for ResourcePool, Queue, etc.
+- [ ] Add performance models that compute latency based on arrival rates
+- [ ] Integration with existing capacity modeling (M/M/c, M/M/1)
+
+### **Phase 3: Advanced Flow Analysis**
+- [ ] Parameter dependency tracking and multi-pass resolution
+- [ ] Confidence bounds and uncertainty propagation
+- [ ] Performance optimization and caching
+
+### **Phase 4: Dashboard Integration**
+- [ ] Real-time flow visualization in web interface
+- [ ] Interactive parameter sensitivity analysis
+- [ ] Live workshop demonstration capabilities
+
+---
+
+**Last Updated:** Component Standardization Complete  
+**Next Priority:** Back-pressure and convergence implementation

@@ -22,13 +22,22 @@ type MM1Queue struct {
 
 // Init initializes the Queue component with default parameters.
 func (q *MM1Queue) Init() {
-	q.ArrivalRate = 1e-9
-	q.AvgServiceTime = 1e-9
+	// Step 1: No embedded components to initialize
+	
+	// Step 2: Set defaults only for uninitialized fields (zero values)
+	if q.ArrivalRate == 0 {
+		q.ArrivalRate = 1e-9
+	}
+	if q.AvgServiceTime == 0 {
+		q.AvgServiceTime = 1e-9
+	}
+	
+	// Step 3: No derived values to calculate (computed dynamically in methods)
 }
 
 // NewMM1Queue creates and initializes a new Queue component.
 func NewMM1Queue(name string) *MM1Queue {
-	q := &MM1Queue{}
+	q := &MM1Queue{Name: name}
 	q.Init()
 	return q
 }

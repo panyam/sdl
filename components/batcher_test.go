@@ -37,7 +37,15 @@ func NewMockProcessor() *MockProcessor {
 // Test Init remains the same...
 func TestBatcher_Init(t *testing.T) {
 	mockProc := NewMockProcessor()
-	bSize := NewBatcher("SizeB", SizeBased, 10, 0, 50.0, mockProc)
+	// Use standardized pattern: configure struct, then call Init()
+	bSize := &Batcher{
+		Name:        "SizeB",
+		Policy:      SizeBased,
+		BatchSize:   10,
+		ArrivalRate: 50.0,
+		Downstream:  mockProc,
+	}
+	bSize.Init()
 	expWaitSize := 0.09
 	expNSize := 10.0
 	if !approxEqualTest(bSize.avgWaitTime, expWaitSize, 1e-9) {
@@ -46,7 +54,14 @@ func TestBatcher_Init(t *testing.T) {
 	if !approxEqualTest(bSize.avgBatchSize, expNSize, 1e-9) {
 		t.Errorf("SizeBased AvgN mismatch: exp %.1f, got %.2f", expNSize, bSize.avgBatchSize)
 	}
-	bTime := NewBatcher("TimeB", TimeBased, 0, sc.Millis(200), 60.0, mockProc)
+	bTime := &Batcher{
+		Name:        "TimeB",
+		Policy:      TimeBased,
+		Timeout:     sc.Millis(200),
+		ArrivalRate: 60.0,
+		Downstream:  mockProc,
+	}
+	bTime.Init()
 	expWaitTime := sc.Millis(200) / 2.0
 	expNTime := 60.0 * sc.Millis(200)
 	if !approxEqualTest(bTime.avgWaitTime, expWaitTime, 1e-9) {
@@ -55,7 +70,14 @@ func TestBatcher_Init(t *testing.T) {
 	if !approxEqualTest(bTime.avgBatchSize, expNTime, 1e-9) {
 		t.Errorf("TimeBased AvgN mismatch: exp %.1f, got %.2f", expNTime, bTime.avgBatchSize)
 	}
-	bTimeLow := NewBatcher("TimeBLow", TimeBased, 0, sc.Millis(200), 2.0, mockProc)
+	bTimeLow := &Batcher{
+		Name:        "TimeBLow",
+		Policy:      TimeBased,
+		Timeout:     sc.Millis(200),
+		ArrivalRate: 2.0,
+		Downstream:  mockProc,
+	}
+	bTimeLow.Init()
 	expNTimeLow := 1.0
 	if !approxEqualTest(bTimeLow.avgBatchSize, expNTimeLow, 1e-9) {
 		t.Errorf("TimeBased LowLambda AvgN mismatch: exp %.1f, got %.2f", expNTimeLow, bTimeLow.avgBatchSize)
@@ -73,7 +95,14 @@ func TestBatcher_Submit_Metrics_Policies(t *testing.T) {
 	// --- Test SizeBased ---
 	batchSizeN := uint(8)
 	arrivalRateN := 100.0
-	bSize := NewBatcher("SizeSubmit", SizeBased, batchSizeN, 0, arrivalRateN, mockProc)
+	bSize := &Batcher{
+		Name:        "SizeSubmit",
+		Policy:      SizeBased,
+		BatchSize:   batchSizeN,
+		ArrivalRate: arrivalRateN,
+		Downstream:  mockProc,
+	}
+	bSize.Init()
 	submitNOutcomes := bSize.Submit()
 	// Manual
 	submitNAvail := sc.Availability(submitNOutcomes)
@@ -104,7 +133,14 @@ func TestBatcher_Submit_Metrics_Policies(t *testing.T) {
 	// --- Test TimeBased ---
 	timeoutT := sc.Millis(200)
 	arrivalRateT := 60.0
-	bTime := NewBatcher("TimeSubmit", TimeBased, 0, timeoutT, arrivalRateT, mockProc)
+	bTime := &Batcher{
+		Name:        "TimeSubmit",
+		Policy:      TimeBased,
+		Timeout:     timeoutT,
+		ArrivalRate: arrivalRateT,
+		Downstream:  mockProc,
+	}
+	bTime.Init()
 	calculatedAvgN := bTime.avgBatchSize
 	expectedDownstreamN := uint(math.Ceil(calculatedAvgN))
 	if expectedDownstreamN != 12 {

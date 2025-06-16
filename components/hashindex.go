@@ -16,7 +16,6 @@ type HashIndex struct {
 	ResizeCostFactor float64 // Multiplier for disk R/W during a resize operation
 
 	// Internal state / derived values
-	// rng *rand.Rand
 	// numBuckets uint // Could explicitly track number of buckets if needed
 }
 
@@ -33,7 +32,6 @@ func (h *HashIndex) Init() {
 	// h.LoadFactorThreshold = 0.75 // Typical threshold for resizing
 	h.AvgOverflowReads = 0.2 // Default: 20% chance of needing 1 extra read on avg
 	h.ResizeCostFactor = 1.5 // Default: Resize costs 1.5x a full scan/write
-	// h.rng = rand.New(rand.NewSource(time.Now().UnixNano()))
 }
 
 // Probability of collision needing overflow access

@@ -2,8 +2,6 @@ package components
 
 import (
 	"math"
-	"math/rand"
-	"time"
 
 	sc "github.com/panyam/sdl/core"
 )
@@ -44,17 +42,33 @@ type Batcher struct {
 	// Internal derived values
 	avgWaitTime  float64 // Estimated average time an item waits
 	avgBatchSize float64 // Estimated average batch size (esp. for TimeBased)
-	rng          *rand.Rand
 }
 
-// Init initializes the Batcher component.
+// Init initializes the Batcher component with defaults and calculates derived values.
 func (b *Batcher) Init() {
-	b.BatchSize = 1
-	b.Timeout = 1.0
-	b.ArrivalRate = 1e-9
-	b.rng = rand.New(rand.NewSource(time.Now().UnixNano()))
+	// Step 1: No embedded components to initialize
+	
+	// Step 2: Set defaults only for uninitialized fields (zero values)
+	if b.BatchSize == 0 {
+		b.BatchSize = 1
+	}
+	if b.Timeout == 0 {
+		b.Timeout = 1.0
+	}
+	if b.ArrivalRate == 0 {
+		b.ArrivalRate = 1e-9
+	}
+	
+	// Step 3: Always calculate derived values based on current parameters
+	b.calculateMetrics()
+	
+	// log.Printf("Batcher '%s' Init: Policy=%v, N=%d, T=%.3fs, lambda=%.2f, AvgWait=%.6fs, AvgN=%.2f",
+	//      b.Name, b.Policy, b.BatchSize, b.Timeout, b.ArrivalRate, b.avgWaitTime, b.avgBatchSize)
+}
 
-	// --- Calculate estimated average values based on policy ---
+// calculateMetrics computes the estimated average values based on current parameters.
+// Call this after changing Policy, BatchSize, Timeout, or ArrivalRate.
+func (b *Batcher) calculateMetrics() {
 	b.avgWaitTime = 0
 	b.avgBatchSize = float64(b.BatchSize) // Default for SizeBased
 
@@ -69,28 +83,13 @@ func (b *Batcher) Init() {
 		b.avgWaitTime = b.Timeout / 2.0
 		// Average batch size heuristic: lambda * T (capped by BatchSize if treated as max)
 		b.avgBatchSize = b.ArrivalRate * b.Timeout
-		// If BatchSize acts as a cap even for time-based (e.g., limited buffer)
-		// if b.avgBatchSize > float64(b.BatchSize) {
-		//     b.avgBatchSize = float64(b.BatchSize)
-		// }
 		if b.avgBatchSize < 1.0 {
 			b.avgBatchSize = 1.0
 		} // Process at least 1 on average if T>0
-
-		// case Combined: // TODO
-		// Requires more complex calculation based on which limit is hit first.
-		// avgWaitTime = ...?
-		// avgBatchSize = ...?
-		// Fallback to TimeBased for now if Combined is specified but not implemented
-		// b.avgWaitTime = b.Timeout / 2.0 // Placeholder
-		// b.avgBatchSize = b.ArrivalRate * b.Timeout // Placeholder
 	}
 	if b.avgWaitTime < 0 {
 		b.avgWaitTime = 0
 	}
-
-	// log.Printf("Batcher '%s' Init: Policy=%v, N=%d, T=%.3fs, lambda=%.2f, AvgWait=%.6fs, AvgN=%.2f",
-	//      b.Name, b.Policy, b.BatchSize, b.Timeout, b.ArrivalRate, b.avgWaitTime, b.avgBatchSize)
 }
 
 // NewBatcher creates and initializes a new Batcher component.

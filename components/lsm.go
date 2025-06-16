@@ -1,9 +1,6 @@
 package components
 
 import (
-	"math/rand"
-	"time"
-
 	sc "github.com/panyam/sdl/core"
 	// "math" // If needed later
 )
@@ -47,8 +44,6 @@ type LSMTree struct {
 	CompactionImpactProb float64            // Probability foreground op is slowed by compaction
 	CompactionSlowdown   Outcomes[Duration] // Extra latency when impacted
 
-	// Internal state for calculations (can be precomputed)
-	rng *rand.Rand
 	// Precomputed outcomes if needed (or calculate on the fly)
 }
 
@@ -64,9 +59,6 @@ func (lsm *LSMTree) Init() {
 	lsm.WriteAmpFactor = 1.5                   // Avg write cost is 1.5x the base WAL/memtable op cost
 	lsm.CompactionImpactProb = 0.05            // 5% chance of interference
 	lsm.CompactionSlowdown.Add(100, Millis(5)) // Default 5ms slowdown when impacted
-
-	// Initialize RNG
-	lsm.rng = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	// Ensure RecordProcessingTime (from Index) is initialized if not already
 	if lsm.Index.RecordProcessingTime.Len() == 0 {
