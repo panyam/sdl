@@ -166,6 +166,7 @@ export interface SystemNode {
 export interface MethodInfo {
   Name: string;
   ReturnType: string;
+  Traffic: number; // Current traffic rate in RPS (calculated by FlowEval)
 }
 
 export interface SystemEdge {

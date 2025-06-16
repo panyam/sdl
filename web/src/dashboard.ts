@@ -632,11 +632,11 @@ export class Dashboard {
         // Create method nodes inside the cluster
         methods.forEach((method) => {
           const methodNodeId = `${node.ID}_${method.Name}`;
-          const traffic = this.getMethodTraffic(node.ID, method.Name);
+          const traffic = method.Traffic || 0; // Use backend-calculated traffic directly
           
           // Disabling return type in label for now
           // dotContent += `    ${methodNodeId} [label="${method.Name}() → ${method.ReturnType}\\n \\n ${traffic} rps"`;
-          dotContent += `    ${methodNodeId} [label="${method.Name}()\\n${traffic} rps"`;
+          dotContent += `    ${methodNodeId} [label="${method.Name}()\\n${traffic.toFixed(1)} rps"`;
           dotContent += ` shape=box style="filled,rounded" fillcolor="#2d3748" fontcolor="#a3e635"`;
           dotContent += ` fontsize=12 fontname="Monaco,Menlo,monospace" margin=0.15 penwidth=1];\n`;
           
@@ -694,14 +694,6 @@ export class Dashboard {
 
     dotContent += `}\n`;
     return dotContent;
-  }
-
-  private getMethodTraffic(componentId: string, methodName: string): number {
-    // Get traffic for specific method from generator data
-    const generator = this.state.generateCalls.find(g => 
-      g.target.includes(componentId) && g.target.includes(methodName)
-    );
-    return generator?.enabled ? generator.rate : 0;
   }
 
   private async convertDotToSVG(dotContent: string): Promise<string> {
