@@ -159,6 +159,13 @@ export interface SystemNode {
   ID: string;
   Name: string;
   Type: string;
+  Methods: MethodInfo[];
+  Traffic: string;
+}
+
+export interface MethodInfo {
+  Name: string;
+  ReturnType: string;
 }
 
 export interface SystemEdge {

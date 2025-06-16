@@ -27,6 +27,7 @@
     "vite": "^5.0.0"
   },
   "dependencies": {
+    "@hpcc-js/wasm": "^2.23.0",
     "chart.js": "^4.4.0"
   }
 }

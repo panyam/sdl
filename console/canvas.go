@@ -573,10 +573,29 @@ func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
 		if instDecl, ok := item.(*decl.InstanceDecl); ok {
 			nodeID := instDecl.Name.Value
 			instanceNameToID[nodeID] = nodeID
+			
+			// Get component methods
+			var methods []viz.MethodInfo
+			if component, err := c.activeFile.FileDecl.GetComponent(instDecl.ComponentName.Value); err == nil && component != nil {
+				componentMethods, _ := component.Methods()
+				for methodName, methodDecl := range componentMethods {
+					returnType := "void"
+					if methodDecl.ReturnType != nil {
+						returnType = methodDecl.ReturnType.Name
+					}
+					methods = append(methods, viz.MethodInfo{
+						Name:       methodName,
+						ReturnType: returnType,
+					})
+				}
+			}
+			
 			nodes = append(nodes, viz.Node{
-				ID:   nodeID,
-				Name: instDecl.Name.Value,
-				Type: instDecl.ComponentName.Value,
+				ID:      nodeID,
+				Name:    instDecl.Name.Value,
+				Type:    instDecl.ComponentName.Value,
+				Methods: methods,
+				Traffic: "0 rps", // Default traffic for now
 			})
 		}
 	}

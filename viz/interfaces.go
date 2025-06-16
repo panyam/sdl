@@ -7,9 +7,17 @@ import "github.com/panyam/sdl/runtime"
 
 // Node represents a component or instance in a static diagram.
 type Node struct {
-	ID   string // Unique identifier for the node
-	Name string // Display name
-	Type string // Component type for display
+	ID      string       // Unique identifier for the node
+	Name    string       // Display name
+	Type    string       // Component type for display
+	Methods []MethodInfo // Methods provided by this component
+	Traffic string       // Current traffic flow (e.g., "0 rps")
+}
+
+// MethodInfo represents information about a component method
+type MethodInfo struct {
+	Name       string // Method name
+	ReturnType string // Return type (e.g., "Bool", "Int", etc.)
 }
 
 // Edge represents a connection between nodes in a static diagram.

@@ -1,6 +1,7 @@
 import { CanvasAPI } from './canvas-api.js';
 import { DashboardState, ParameterConfig, WebSocketMessage, GenerateCall, SystemDiagram, MeasurementDataPoint } from './types.js';
 import { Chart, ChartConfiguration } from 'chart.js/auto';
+import { Graphviz } from "@hpcc-js/wasm";
 
 export class Dashboard {
   private api: CanvasAPI;
@@ -8,6 +9,7 @@ export class Dashboard {
   private charts: Record<string, Chart> = {};
   private systemDiagram: SystemDiagram | null = null;
   private chartUpdateInterval: number | null = null;
+  private graphviz: any = null; // Will be initialized asynchronously
 
   // Parameter configurations - populated when a system is loaded
   private parameters: ParameterConfig[] = [];
@@ -27,8 +29,18 @@ export class Dashboard {
     };
 
     this.setupEventListeners();
+    this.initializeGraphviz();
     this.initialize();
     this.startChartUpdates();
+  }
+
+  private async initializeGraphviz() {
+    try {
+      this.graphviz = await Graphviz.load();
+      console.log('✅ Graphviz WASM loaded successfully');
+    } catch (error) {
+      console.error('❌ Failed to load Graphviz WASM:', error);
+    }
   }
 
   private async initialize() {
@@ -390,38 +402,19 @@ export class Dashboard {
       `;
     }
 
-    const getNodeColor = (type: string) => {
-      const colors: Record<string, string> = {
-        'ContactAppServer': 'bg-blue-900/30 border-blue-600',
-        'ContactDatabase': 'bg-green-900/30 border-green-600', 
-        'HashIndex': 'bg-purple-900/30 border-purple-600',
-        'ResourcePool': 'bg-yellow-900/30 border-yellow-600',
-        'Cache': 'bg-orange-900/30 border-orange-600'
-      };
-      return colors[type] || 'bg-gray-900/30 border-gray-600';
-    };
-
     return `
-      <div class="space-y-4">
+      <div class="w-full h-full flex flex-col">
         <div class="text-center mb-4">
           <h3 class="text-lg font-semibold text-gray-300">${this.systemDiagram.systemName}</h3>
         </div>
         
-        <!-- Component Topology -->
-        <div class="space-y-3">
-          ${this.systemDiagram.nodes.map((node, index) => `
-            <div class="component-box ${getNodeColor(node.Type)}">
-              <div class="component-title text-sm font-bold">${node.Name}</div>
-              <div class="text-xs text-gray-400 mt-1">${node.Type}</div>
-            </div>
-            ${index < this.systemDiagram!.nodes.length - 1 ? `
-              <div class="text-center text-gray-400 text-lg">↓</div>
-            ` : ''}
-          `).join('')}
+        <!-- SVG System Architecture -->
+        <div id="architecture-svg-container" class="flex-1 overflow-auto">
+          ${this.renderSystemDiagramSVG()}
         </div>
 
         <!-- System Health Summary -->
-        <div class="mt-6 p-3 bg-gray-800/50 rounded border border-gray-600">
+        <div class="mt-4 p-3 bg-gray-800/50 rounded border border-gray-600">
           <h4 class="text-sm font-semibold text-gray-300 mb-2">System Health</h4>
           <div class="grid grid-cols-3 gap-2 text-xs">
             <div class="text-center">
@@ -437,6 +430,140 @@ export class Dashboard {
               <div class="text-xs text-gray-400">Load</div>
             </div>
           </div>
+        </div>
+      </div>
+    `;
+  }
+
+  private generateDotFile(): string {
+    if (!this.systemDiagram) return '';
+
+    const systemName = this.systemDiagram.systemName || 'System';
+    let dotContent = `digraph "${systemName}" {\n`;
+    dotContent += `  rankdir=TB;\n`;
+    dotContent += `  bgcolor="#1a1a1a";\n`;
+    dotContent += `  node [fontname="monospace" fontcolor="white"];\n`;
+    dotContent += `  edge [color="#9ca3af" arrowhead="normal"];\n\n`;
+
+    // Create a map to track method nodes and their connections
+    const methodNodes: string[] = [];
+    const edges: string[] = [];
+
+    // Generate clusters (components) with method nodes inside
+    this.systemDiagram.nodes.forEach((node) => {
+      const clusterName = `cluster_${node.ID}`;
+      const methods = node.Methods || [];
+      
+      dotContent += `  subgraph ${clusterName} {\n`;
+      dotContent += `    label="${node.Name}\\n(${node.Type})";\n`;
+      dotContent += `    style=filled;\n`;
+      dotContent += `    fillcolor="#1f2937";\n`;
+      dotContent += `    fontcolor="#60a5fa";\n`;
+      dotContent += `    fontsize=14;\n`;
+      dotContent += `    color="#4b5563";\n\n`;
+
+      if (methods.length > 0) {
+        // Create method nodes inside the cluster
+        methods.forEach((method) => {
+          const methodNodeId = `${node.ID}_${method.Name}`;
+          const traffic = this.getMethodTraffic(node.ID, method.Name);
+          
+          dotContent += `    ${methodNodeId} [label="${method.Name}()\\n→ ${method.ReturnType}\\n🔄 ${traffic} rps"`;
+          dotContent += ` shape=box style=filled fillcolor="#2d3748" fontcolor="#a3e635" fontsize=12];\n`;
+          
+          methodNodes.push(methodNodeId);
+        });
+      } else {
+        // Component with no methods - create a simple node
+        const nodeId = `${node.ID}_component`;
+        dotContent += `    ${nodeId} [label="No Methods\\n🔄 0 rps"`;
+        dotContent += ` shape=box style=filled fillcolor="#2d3748" fontcolor="#9ca3af" fontsize=10];\n`;
+        methodNodes.push(nodeId);
+      }
+      
+      dotContent += `  }\n\n`;
+    });
+
+    // Generate edges between method nodes based on system dependencies
+    // For now, connect sequential nodes (this could be enhanced with actual dependency data)
+    for (let i = 0; i < this.systemDiagram.nodes.length - 1; i++) {
+      const currentNode = this.systemDiagram.nodes[i];
+      const nextNode = this.systemDiagram.nodes[i + 1];
+      
+      const currentMethods = currentNode.Methods || [];
+      const nextMethods = nextNode.Methods || [];
+      
+      if (currentMethods.length > 0 && nextMethods.length > 0) {
+        // Connect first method of current to first method of next
+        const fromMethod = `${currentNode.ID}_${currentMethods[0].Name}`;
+        const toMethod = `${nextNode.ID}_${nextMethods[0].Name}`;
+        edges.push(`  ${fromMethod} -> ${toMethod};`);
+      }
+    }
+
+    // Add all edges
+    edges.forEach(edge => {
+      dotContent += `${edge}\n`;
+    });
+
+    dotContent += `}\n`;
+    return dotContent;
+  }
+
+  private getMethodTraffic(componentId: string, methodName: string): number {
+    // Get traffic for specific method from generator data
+    const generator = this.state.generateCalls.find(g => 
+      g.target.includes(componentId) && g.target.includes(methodName)
+    );
+    return generator?.enabled ? generator.rate : 0;
+  }
+
+  private async convertDotToSVG(dotContent: string): Promise<string> {
+    try {
+      if (!this.graphviz) {
+        console.warn('Graphviz not loaded yet, falling back to placeholder');
+        return this.generateFallbackSVG();
+      }
+
+      // Use WASM Graphviz to convert dot to SVG
+      const svg = this.graphviz.dot(dotContent);
+      return svg;
+    } catch (error) {
+      console.warn('Dot conversion error:', error);
+      return this.generateFallbackSVG();
+    }
+  }
+
+  private generateFallbackSVG(): string {
+    return `
+      <svg width="300" height="200" viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
+        <rect width="100%" height="100%" fill="#1f2937" stroke="#4b5563"/>
+        <text x="150" y="100" text-anchor="middle" fill="#9ca3af" font-family="monospace">
+          Dot rendering unavailable
+        </text>
+      </svg>
+    `;
+  }
+
+  private renderSystemDiagramSVG(): string {
+    if (!this.systemDiagram) return '';
+
+    // Generate dot file content
+    const dotContent = this.generateDotFile();
+    
+    // Convert to SVG and render
+    this.convertDotToSVG(dotContent).then(svg => {
+      const container = document.getElementById('architecture-svg-container');
+      if (container) {
+        container.innerHTML = svg;
+      }
+    });
+    
+    // Return placeholder while conversion happens
+    return `
+      <div id="architecture-svg-container" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+        <div style="color: #9ca3af; font-family: monospace;">
+          ${this.graphviz ? 'Rendering diagram...' : 'Loading Graphviz...'}
         </div>
       </div>
     `;
