@@ -662,29 +662,23 @@ export class Dashboard {
       if (fromNode && toNode) {
         // For flow-based edges with order numbers, we need to be more specific
         if (edge.Order && edge.Order > 0) {
-          // This is a flow-based edge - parse the actual method from the label or condition
-          const fromMethods = fromNode.Methods || [];
+          // This is a flow-based edge - use the specific methods from the edge
           let fromMethod = '';
           let toMethod = '';
           
-          // Default to first method if we can't determine the specific method
-          if (fromMethods.length > 0) {
-            fromMethod = `${fromNode.ID}_${fromMethods[0].Name}`;
+          // Use the FromMethod and ToMethod fields if available
+          if (edge.FromMethod) {
+            fromMethod = `${fromNode.ID}_${edge.FromMethod}`;
+          } else if (fromNode.Methods && fromNode.Methods.length > 0) {
+            fromMethod = `${fromNode.ID}_${fromNode.Methods[0].Name}`;
           } else {
             fromMethod = `${fromNode.ID}_component`;
           }
           
-          // For the target, try to infer from the condition or label
-          const toMethods = toNode.Methods || [];
-          if (edge.Label && edge.Label.includes('result') && toNode.ID === 'contactCache') {
-            // Special case: if condition mentions 'result' and target is cache, it's likely Write
-            const writeMethod = toMethods.find(m => m.Name === 'Write');
-            if (writeMethod) {
-              toMethod = `${toNode.ID}_Write`;
-            }
-          } else if (toMethods.length > 0) {
-            // Default to first method
-            toMethod = `${toNode.ID}_${toMethods[0].Name}`;
+          if (edge.ToMethod) {
+            toMethod = `${toNode.ID}_${edge.ToMethod}`;
+          } else if (toNode.Methods && toNode.Methods.length > 0) {
+            toMethod = `${toNode.ID}_${toNode.Methods[0].Name}`;
           } else {
             toMethod = `${toNode.ID}_component`;
           }

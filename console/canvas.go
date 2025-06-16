@@ -684,6 +684,15 @@ func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
 				toComponent := toParts[0]
 				toMethod := toParts[1]
 
+				// Only create edge if both components exist in the system
+				_, fromExists := instanceNameToID[fromComponent]
+				_, toExists := instanceNameToID[toComponent]
+				
+				if !fromExists || !toExists {
+					// Skip edges to/from components not in the visible system
+					continue
+				}
+
 				// Create label with order and condition
 				label := fmt.Sprintf("%.0f", pathInfo.Order)
 				if pathInfo.Condition != "" {

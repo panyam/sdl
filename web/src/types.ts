@@ -172,5 +172,10 @@ export interface MethodInfo {
 export interface SystemEdge {
   FromID: string;
   ToID: string;
+  FromMethod?: string;  // Source method name (for flow edges)
+  ToMethod?: string;    // Target method name (for flow edges)
   Label: string;
+  Order?: number;       // Execution order (supports decimals for conditional paths)
+  Condition?: string;   // Condition expression if this is a conditional path
+  Probability?: number; // Probability of this path being taken
 }

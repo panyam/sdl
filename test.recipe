@@ -3,4 +3,5 @@
 sdl load ./examples/contacts/contacts.sdl
 sdl use ContactsSystem
 sdl gen add load1 server.HandleLookup 10
+sdl gen start load1
 sdl measure add lat1 server.HandleLookup latency

@@ -76,6 +76,10 @@ func SolveSystemFlows(entryPoints map[string]float64, context *FlowContext) map[
 		return make(map[string]float64)
 	}
 
+	// Reset flow tracking for this analysis
+	context.FlowOrder = 0
+	context.FlowPaths = make(map[string]FlowPathInfo)
+
 	// Initialize arrival rates with entry points
 	for componentMethod, rate := range entryPoints {
 		context.ArrivalRates[componentMethod] = rate
@@ -182,12 +186,6 @@ func FlowEval(component, method string, inputRate float64, context *FlowContext)
 
 	// Clear variable outcomes for this method analysis
 	context.VariableOutcomes = make(map[string]float64)
-
-	// Reset flow order for this analysis if at the top level
-	if len(context.CallStack) == 1 {
-		context.FlowOrder = 0
-		context.FlowPaths = make(map[string]FlowPathInfo)
-	}
 
 	// Check if this is a native component first
 	if flowAnalyzable, exists := context.NativeComponents[component]; exists {
@@ -648,6 +646,21 @@ func (fc *FlowContext) SetResourceLimit(component string, limit int) {
 
 // trackFlowPath records a flow path with order and condition information
 func (fc *FlowContext) trackFlowPath(flowKey string, condition string, probability float64) {
+	// Only track flow paths if we haven't seen this path before
+	// This prevents accumulation across iterations
+	fromKey := ""
+	if len(fc.CallStack) > 0 {
+		fromKey = fc.CallStack[len(fc.CallStack)-1]
+	}
+	
+	// Create unique flow path key including source
+	pathKey := fmt.Sprintf("%s->%s", fromKey, flowKey)
+	
+	// If we've already tracked this path, don't update it
+	if _, exists := fc.FlowPaths[pathKey]; exists {
+		return
+	}
+	
 	fc.FlowOrder++
 	baseOrder := float64(fc.FlowOrder)
 
@@ -662,15 +675,6 @@ func (fc *FlowContext) trackFlowPath(flowKey string, condition string, probabili
 			}
 		}
 	}
-
-	// For method-to-method flows, we need to track the source
-	fromKey := ""
-	if len(fc.CallStack) > 0 {
-		fromKey = fc.CallStack[len(fc.CallStack)-1]
-	}
-	
-	// Create unique flow path key including source
-	pathKey := fmt.Sprintf("%s->%s", fromKey, flowKey)
 	
 	fc.FlowPaths[pathKey] = FlowPathInfo{
 		Order:       baseOrder,
