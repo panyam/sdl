@@ -3,7 +3,7 @@ import ResourcePool, delay, log from "./common.sdl"
 
 // A basic disk that has no concept of contention and have the same
 // performance guarantees regardless of inbound QPS
-component InfiniteBandwidtthDisk {
+component InfiniteBandwidthDisk {
   // How about *just* latencies
   // Option 1 - Define them purely as a single dimentional entities
   param ReadSuccessLatencies = dist {
