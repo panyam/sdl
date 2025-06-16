@@ -62,6 +62,7 @@ export class Dashboard {
   }
 
   private async loadCanvasState() {
+    console.log('🔄 loadCanvasState() called - loading initial data');
     try {
       const stateResponse = await this.api.getState();
       if (stateResponse.success && stateResponse.data) {
@@ -70,6 +71,11 @@ export class Dashboard {
         // Update dashboard state from Canvas state
         this.state.currentFile = canvasState.activeFile;
         this.state.currentSystem = canvasState.activeSystem;
+        
+        // If there's an active system, load its diagram
+        if (this.state.currentSystem) {
+          this.loadSystemDiagram();
+        }
         
         // Convert Canvas generators to dashboard generate calls
         this.state.generateCalls = Object.values(canvasState.generators || {}).map(gen => ({
@@ -82,8 +88,10 @@ export class Dashboard {
       }
 
       // Load generators from API
+      console.log('🔄 Loading generators from API...');
       const generatorsResponse = await this.api.getGenerators();
       if (generatorsResponse.success && generatorsResponse.data) {
+        console.log('✅ Generators loaded:', Object.keys(generatorsResponse.data).length);
         this.state.generateCalls = Object.values(generatorsResponse.data).map(gen => ({
           id: gen.id,
           name: gen.name,
@@ -91,11 +99,15 @@ export class Dashboard {
           rate: gen.rate,
           enabled: gen.enabled
         }));
+      } else {
+        console.log('⚠️ No generators found or failed to load');
       }
 
       // Load measurements and create dynamic charts
+      console.log('🔄 Loading measurements from API...');
       const measurementsResponse = await this.api.getMeasurements();
       if (measurementsResponse.success && measurementsResponse.data) {
+        console.log('✅ Measurements loaded:', Object.keys(measurementsResponse.data).length);
         // Convert measurements to dynamic charts
         Object.values(measurementsResponse.data).forEach(measurement => {
           if (measurement.enabled) {
@@ -109,7 +121,13 @@ export class Dashboard {
             };
           }
         });
+      } else {
+        console.log('⚠️ No measurements found or failed to load');
       }
+
+      // Update UI panels AFTER loading all data
+      console.log('🔄 Updating all panels with loaded data...');
+      this.updateAllPanels();
 
     } catch (error) {
       console.error('❌ Failed to load Canvas state:', error);
@@ -136,6 +154,10 @@ export class Dashboard {
         this.state.currentSystem = message.system;
         this.state.isConnected = true;
         this.loadSystemDiagram();
+        // Also refresh generators and measurements when system is activated
+        this.refreshGenerators();
+        this.refreshMeasurements();
+        this.updateAllPanels();
         break;
       case 'parameterChanged':
         // Update parameter value in UI
@@ -158,11 +180,14 @@ export class Dashboard {
       case 'generatorsStarted':
       case 'generatorsStopped':
         this.refreshGenerators();
+        this.updateTrafficGenerationPanel();
         break;
       case 'measurementAdded':
       case 'measurementUpdated':
       case 'measurementRemoved':
         this.refreshMeasurements();
+        this.updateMeasurementsPanel();
+        this.updateLiveMetricsPanel();
         break;
       case 'plotGenerated':
         console.log('📊 Plot generated:', message.outputFile);
@@ -490,6 +515,59 @@ export class Dashboard {
     }
   }
 
+  private updateAllPanels() {
+    if (!this.dockview) return;
+    
+    // Update all panel contents with current state
+    this.updateTrafficGenerationPanel();
+    this.updateMeasurementsPanel();
+    this.updateLiveMetricsPanel();
+  }
+
+  private updateTrafficGenerationPanel() {
+    if (!this.dockview) return;
+    
+    const panel = this.dockview.getPanel('trafficGeneration');
+    if (panel) {
+      const element = panel.view.content.element;
+      element.innerHTML = this.renderGenerateControls();
+      
+      // Re-setup interactivity
+      setTimeout(() => {
+        this.setupInteractivity();
+      }, 10);
+    }
+  }
+
+  private updateMeasurementsPanel() {
+    if (!this.dockview) return;
+    
+    const panel = this.dockview.getPanel('measurements');
+    if (panel) {
+      const element = panel.view.content.element;
+      element.innerHTML = this.renderMeasurements();
+    }
+  }
+
+  private updateLiveMetricsPanel() {
+    if (!this.dockview) return;
+    
+    const panel = this.dockview.getPanel('liveMetrics');
+    if (panel) {
+      const element = panel.view.content.element;
+      element.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" style="grid-auto-rows: 200px;">
+          ${this.renderDynamicCharts()}
+        </div>
+      `;
+      
+      // Re-initialize charts
+      setTimeout(() => {
+        this.initDynamicCharts();
+      }, 10);
+    }
+  }
+
 
   private renderSystemArchitectureOnly(): string {
     if (!this.state.currentSystem || !this.systemDiagram) {
@@ -809,7 +887,7 @@ export class Dashboard {
       const rateSlider = document.querySelector(`[data-rate-id="${call.id}"]`) as HTMLInputElement;
       rateSlider?.addEventListener('input', (e) => {
         const value = parseFloat((e.target as HTMLInputElement).value);
-        call.rate = value;
+        call.rate = Math.round(value);
         this.handleGenerateRateChange(call);
         // Chart updates handled by real-time chart updates // Update content without recreating layout
       });
@@ -870,7 +948,7 @@ export class Dashboard {
         id: call.id,
         name: call.name,
         target: call.target,
-        rate: call.rate,
+        rate: Math.round(call.rate),
         enabled: call.enabled
       };
       const result = await this.api.updateGenerator(call.id, config);
