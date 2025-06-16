@@ -987,6 +987,8 @@ func (i *Inference) EvalForSystemDecl(systemDecl *SystemDecl, nodeScope *TypeSco
 			instanceType := ComponentType(compDefinition)
 			nodeScope.env.Set(it.Name.Value, it) // Store InstanceDecl node in env by its name
 			it.Name.SetInferredType(instanceType)
+			// Store resolved component declaration for efficient FlowEval lookup
+			it.ResolvedComponentDecl = compDefinition
 			instanceDecls = append(instanceDecls, it)
 		case *LetStmt:
 			_, ok2 := i.EvalForLetStmt(it, nodeScope)
