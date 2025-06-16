@@ -40,6 +40,10 @@ This package provides concrete Go implementations of common distributed system c
 *   The `decl/` sub-package provides the necessary wrappers to make these Go components callable from the SDL runtime as native components.
 *   **Capacity Modeling Ready:** The `ResourcePool` component now supports full capacity modeling with M/M/c queuing calculations, enabling realistic analysis of system performance under different loads and identification of capacity bottlenecks.
 *   **Initialization Standardized:** All components now follow a consistent initialization pattern that respects pre-configured values and provides predictable behavior for both constructor and struct-literal usage patterns.
+*   **FlowAnalyzable Integration:** Components implement the `FlowAnalyzable` interface for back-pressure and convergence modeling:
+    -   `ResourcePool`: Reports success rate degradation under high utilization (M/M/c based)
+    -   `MM1Queue`: Models performance degradation and service time increases under overload
+    -   Back-pressure effects enable realistic flow analysis with capacity constraints
 *   **Test Suite Complete:** All component tests pass with standardized patterns for component configuration and initialization.
 
 **Relationship with other packages:**
