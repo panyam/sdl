@@ -17,7 +17,7 @@ import (
 var (
 	showLogs      = true
 	showStats     = true
-	statsInterval = 10 * time.Second
+	statsInterval = 30 * time.Second
 	loadFiles     []string
 )
 
@@ -156,16 +156,16 @@ func displayServerStats(ctx context.Context, canvas *console.Canvas) {
 func loadInitialFiles(canvas *console.Canvas, files []string) {
 	// Give the server a moment to fully start
 	time.Sleep(1 * time.Second)
-	
+
 	if showLogs {
 		log.Printf("📂 Loading %d initial file(s)...", len(files))
 	}
-	
+
 	for _, file := range files {
 		if showLogs {
 			log.Printf("📂 Loading file: %s", file)
 		}
-		
+
 		err := canvas.Load(file)
 		if err != nil {
 			if showLogs {
@@ -173,12 +173,12 @@ func loadInitialFiles(canvas *console.Canvas, files []string) {
 			}
 			continue
 		}
-		
+
 		if showLogs {
 			log.Printf("✅ Successfully loaded: %s", file)
 		}
 	}
-	
+
 	if showLogs {
 		log.Printf("📂 Initial file loading completed")
 	}
