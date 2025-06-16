@@ -159,6 +159,9 @@ type InstanceDecl struct {
 	Name          *IdentifierExpr
 	ComponentName *IdentifierExpr
 	Overrides     []*AssignmentStmt
+	
+	// Resolved during type inference/checking
+	ResolvedComponentDecl *ComponentDecl // The resolved component declaration (handles imports)
 }
 
 func (i *InstanceDecl) systemBodyItemNode() {}
