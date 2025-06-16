@@ -1,6 +1,6 @@
 # SDL Web Dashboard Summary
 
-**Version:** Simple 2-Row Dynamic Layout (Post-Conference Enhancement)
+**Version:** DockView Professional Layout (v2.0)
 
 ## 🎯 Purpose
 
@@ -11,30 +11,40 @@ The SDL Web Dashboard provides an interactive "Incredible Machine" style interfa
 ### Frontend Stack
 - **Build System**: Vite for fast development and optimized production builds
 - **Language**: TypeScript for type safety and better development experience
-- **Styling**: Tailwind CSS for rapid, utility-first styling
+- **Styling**: Tailwind CSS for rapid, utility-first styling with custom DockView theme overrides
+- **Layout System**: DockView for professional dockable panels with persistence
 - **Charting**: Chart.js for real-time performance visualization
+- **System Visualization**: Graphviz WASM for automatic system diagram layout
 - **Communication**: Native WebSocket API for live updates
 
 ### Layout Architecture
 
-#### Simple 2-Row Design
-The dashboard features a carefully designed 2-row layout that maximizes both system visualization and metrics analysis:
+#### DockView Professional Layout
+The dashboard features a modern, professional dockable layout system using DockView that provides maximum flexibility and customization:
 
-**Row 1 (45% height): System Architecture + Split Controls**
-- **Left Panel (70% width)**: Enhanced System Architecture with full component topology visualization
+**4-Panel Dockable System**
+- **System Architecture Panel**: Enhanced system visualization with Graphviz/dot rendering
   - Displays complete system structure from Canvas API
-  - Shows all components, connections, and dependencies
-  - Matches output of `sdl diagram` command
+  - Shows all components with per-method traffic values
+  - Automatic layout via dot engine for clean presentation
   - Dynamically updates based on loaded SDL file
-- **Right Side (30% width)**: Vertically split into two panels:
-  - **Top Panel (48% height)**: Traffic Generation controls with Start/Stop functionality
-  - **Bottom Panel (48% height)**: System Parameters controls for real-time modification
+- **Traffic Generation Panel**: Generator controls with Start/Stop functionality
+  - Real-time traffic control and monitoring
+  - Add/remove generators dynamically
+- **Measurements Panel**: System measurement configuration
+  - Add and configure custom metrics
+  - Real-time measurement management
+- **Live Metrics Panel**: Dynamic charts grid
+  - Unlimited scrollable charts supporting infinite metrics via `canvas.Measure()` calls
+  - 3-column responsive grid that adapts to screen size
+  - Real-time chart updates with proper scaling
 
-**Row 2 (45% height): Dynamic Metrics Grid**
-- **Unlimited Scrollable Charts**: Supports infinite metrics via `canvas.Measure()` calls
-- **3-Column Responsive Grid**: Automatically adapts to screen size
-- **Proper Clipping**: All content contained within panel boundaries
-- **Empty State**: Dashboard starts empty until Canvas state is loaded
+**DockView Features**
+- **Fully Resizable**: Drag splitters to adjust panel sizes
+- **Dockable Tabs**: Drag tabs to rearrange panel positions
+- **Layout Persistence**: Custom layouts automatically saved to localStorage
+- **Professional Styling**: Dark theme with blue highlights for active tabs
+- **Reset Functionality**: One-click return to default 2x2 grid layout
 
 ### Key Components
 

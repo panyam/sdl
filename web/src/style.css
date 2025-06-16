@@ -1,6 +1,6 @@
-/* Import GoldenLayout CSS */
-@import 'golden-layout/dist/css/goldenlayout-base.css';
-@import 'golden-layout/dist/css/themes/goldenlayout-dark-theme.css';
+/* Import DockView CSS */
+@import 'dockview-core/dist/styles/dockview.css';
+
 
 @tailwind base;
 @tailwind components;
@@ -67,4 +67,88 @@
   .component-detail {
     @apply text-xs text-gray-400;
   }
+}
+
+/* DockView Theme Overrides */
+.dockview-container {
+  background-color: #111827; /* bg-gray-900 */
+}
+
+/* Splitter styling - make them visible and wider */
+.dockview-splitter {
+  background-color: #6b7280 !important; /* bg-gray-500 */
+  border: 1px solid #9ca3af !important; /* border-gray-400 */
+  min-width: 8px !important;
+  min-height: 8px !important;
+  opacity: 0.8 !important;
+}
+
+.dockview-splitter:hover {
+  background-color: #3b82f6 !important; /* bg-blue-500 */
+  border-color: #2563eb !important; /* border-blue-600 */
+  opacity: 1 !important;
+  cursor: col-resize !important;
+}
+
+.dockview-splitter.dockview-splitter-vertical:hover {
+  cursor: row-resize !important;
+}
+
+/* Panel header/tab styling */
+.dockview-tab {
+  background-color: #1f2937 !important; /* bg-gray-800 */
+  border: 1px solid #374151 !important; /* border-gray-700 */
+  color: #d1d5db !important; /* text-gray-300 */
+  font-size: 0.875rem !important; /* text-sm */
+  padding: 8px 12px !important;
+  border-radius: 6px 6px 0 0 !important;
+  margin-right: 2px !important;
+}
+
+.dockview-tab:hover {
+  background-color: #374151 !important; /* bg-gray-700 */
+  color: #f3f4f6 !important; /* text-gray-100 */
+}
+
+.dockview-tab.dockview-tab-active {
+  background-color: #3b82f6 !important; /* bg-blue-500 */
+  color: #ffffff !important; /* text-white */
+  border-color: #2563eb !important; /* border-blue-600 */
+  font-weight: 500 !important;
+}
+
+/* Panel content area */
+.dockview-panel-content {
+  background-color: #1f2937 !important; /* bg-gray-800 */
+  border: 1px solid #374151 !important; /* border-gray-700 */
+  border-top: none !important;
+}
+
+/* Tab container */
+.dockview-tabs-container {
+  background-color: #111827 !important; /* bg-gray-900 */
+  border-bottom: 1px solid #374151 !important; /* border-gray-700 */
+  padding: 4px 8px !important;
+}
+
+/* Group frame */
+.dockview-group-frame {
+  border: 1px solid #374151 !important; /* border-gray-700 */
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  background-color: #1f2937 !important; /* bg-gray-800 */
+}
+
+/* Panel actions (close buttons, etc.) */
+.dockview-tab .dockview-tab-action {
+  color: #9ca3af !important; /* text-gray-400 */
+  opacity: 0.7 !important;
+}
+
+.dockview-tab:hover .dockview-tab-action {
+  opacity: 1 !important;
+}
+
+.dockview-tab.dockview-tab-active .dockview-tab-action {
+  color: #e5e7eb !important; /* text-gray-200 */
 }
