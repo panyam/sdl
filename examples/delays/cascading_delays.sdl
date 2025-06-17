@@ -1,0 +1,85 @@
+// Example: Cascading delays and timeout propagation
+// Shows how delays in one component affect the entire chain
+
+import delay from "../common.sdl"
+
+// Frontend API gateway
+component APIGateway {
+    uses backend Backend
+    
+    method HandleRequest() Bool {
+        // Small processing overhead
+        delay(1ms)
+        
+        // Call backend (which may be slow)
+        let result = self.backend.Process()
+        
+        // If backend times out, this propagates up
+        return result
+    }
+}
+
+// Backend service with variable delays
+component Backend {
+    uses database Database
+    uses cache Cache
+    
+    method Process() Bool {
+        // Check cache first
+        let cached = self.cache.Read()
+        if cached {
+            delay(1ms)  // Fast path
+            return true
+        }
+        
+        // Cache miss - hit database (slow path)
+        delay(5ms)  // Processing before DB call
+        let result = self.database.Query()
+        
+        if result {
+            // Update cache
+            self.cache.Write()
+        }
+        
+        return result
+    }
+}
+
+// Slow database
+component Database {
+    method Query() Bool {
+        // Variable delay: sometimes fast, sometimes slow
+        // In real systems, this could model:
+        // - Lock contention
+        // - Large result sets
+        // - Network hiccups
+        delay(50ms)  // P50 latency
+        
+        // Note: We can't model P95/P99 delays in SDL directly
+        // This is where native components with Outcomes help
+        return true
+    }
+}
+
+// Fast cache (from common.sdl already has timing)
+import Cache from "../common.sdl"
+
+// System wiring
+system CascadingDelayDemo {
+    use cache Cache(HitRate = 0.8)  // 80% hit rate
+    use db Database
+    use backend Backend(database = db, cache = cache)
+    use api APIGateway(backend = backend)
+}
+
+// Delay cascade analysis:
+// - Cache hit path: 1ms (API) + 1ms (Backend) + cache latency = ~2-3ms
+// - Cache miss path: 1ms (API) + 5ms (Backend) + 50ms (DB) + cache write = ~57ms+
+// 
+// At 80% cache hit rate:
+// - Average latency: 0.8 * 3ms + 0.2 * 57ms = 2.4ms + 11.4ms = ~13.8ms
+// - P95+ latency: ~57ms+ (cache misses)
+//
+// System capacity:
+// - Database bottleneck: Can handle ~20 RPS (1000ms/50ms)
+// - With 80% cache: Can handle ~100 RPS (20% of 100 = 20 RPS to DB)

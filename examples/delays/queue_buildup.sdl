@@ -1,0 +1,29 @@
+// Example: Queue buildup due to processing delays
+// Demonstrates how delays cause backpressure and dropped requests
+
+import delay from "../common.sdl"
+
+// SlowProcessor simulates a service with fixed processing time
+// At 100 RPS with 10ms processing, it reaches capacity
+component SlowProcessor {
+    method Process() Bool {
+        // Fixed 10ms processing time
+        delay(10ms)
+        
+        // In reality, when overloaded:
+        // - Queue builds up
+        // - Latency increases  
+        // - Eventually timeouts/drops occur
+        return true
+    }
+}
+
+// System that sends traffic to the slow processor
+system QueueBuildupDemo {
+    use processor SlowProcessor
+}
+
+// Test scenarios:
+// 1. Light load (50 RPS): Works fine, 10ms latency
+// 2. At capacity (100 RPS): Works but no headroom
+// 3. Overloaded (200 RPS): Queue builds, drops begin
