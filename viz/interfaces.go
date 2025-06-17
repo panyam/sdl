@@ -31,6 +31,8 @@ type Edge struct {
 	Order       float64 // Execution order (supports decimals for conditional paths)
 	Condition   string  // Condition expression if this is a conditional path
 	Probability float64 // Probability of this path being taken
+	GeneratorID string  // ID of the generator that originated this flow
+	Color       string  // Color for visualization (based on generator)
 }
 
 // DataPoint represents a single plot point for time-series charts.

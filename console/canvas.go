@@ -35,6 +35,7 @@ type Canvas struct {
 	measurementTracer   *MeasurementTracer     // Current measurement tracer
 	currentFlowContext  *runtime.FlowContext   // Current flow state (applied/active)
 	proposedFlowContext *runtime.FlowContext   // Proposed flow state (being evaluated)
+	generatorPrefixes   map[string]string      // Generator ID -> letter prefix mapping
 }
 
 // NewCanvas creates a new interactive canvas session.
@@ -42,11 +43,12 @@ func NewCanvas() *Canvas {
 	l := loader.NewLoader(nil, nil, 10)
 	r := runtime.NewRuntime(l)
 	return &Canvas{
-		loader:           l,
-		runtime:          r,
-		sessionVars:      make(map[string]any),
-		loadedFiles:      make(map[string]*loader.FileStatus),
-		systemParameters: make(map[string]interface{}),
+		loader:            l,
+		runtime:           r,
+		sessionVars:       make(map[string]any),
+		loadedFiles:       make(map[string]*loader.FileStatus),
+		systemParameters:  make(map[string]interface{}),
+		generatorPrefixes: make(map[string]string),
 	}
 }
 
@@ -667,6 +669,9 @@ func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
 		// Clear existing edges to replace with flow-based edges
 		edges = []viz.Edge{}
 
+		// Create renumbered flow sequences for each generator
+		generatorSequences := c.createGeneratorSequences(c.currentFlowContext.FlowPaths, componentInstanceMap)
+
 		// Process each flow path
 		for pathKey, pathInfo := range c.currentFlowContext.FlowPaths {
 			// Parse the flow path key (e.g., "server.HandleLookup->contactCache.Read")
@@ -693,14 +698,24 @@ func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
 					continue
 				}
 
-				// Create label with order and condition
+				// Create label with generator prefix and order
 				label := ""
+				orderStr := ""
 				if pathInfo.Order == math.Trunc(pathInfo.Order) {
 					// Whole number order
-					label = fmt.Sprintf("%.0f", pathInfo.Order)
+					orderStr = fmt.Sprintf("%.0f", pathInfo.Order)
 				} else {
 					// Decimal order (nested calls)
-					label = fmt.Sprintf("%.1f", pathInfo.Order)
+					orderStr = fmt.Sprintf("%.1f", pathInfo.Order)
+				}
+				
+				// Add generator prefix if available
+				if pathInfo.GeneratorID != "" {
+					// Use unique letter prefix for each generator (A, B, C, etc.)
+					prefix := c.getGeneratorPrefix(pathInfo.GeneratorID)
+					label = fmt.Sprintf("%s%s", prefix, orderStr)
+				} else {
+					label = orderStr
 				}
 				
 				if pathInfo.Condition != "" {
@@ -719,6 +734,8 @@ func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
 					Order:       pathInfo.Order,
 					Condition:   pathInfo.Condition,
 					Probability: pathInfo.Probability,
+					GeneratorID: pathInfo.GeneratorID,
+					Color:       pathInfo.Color,
 				})
 			}
 		}
@@ -922,12 +939,16 @@ func (c *Canvas) evaluateProposedFlows() error {
 		return fmt.Errorf("no active system available for flow calculation")
 	}
 
-	// Build entry points from enabled generators
-	entryPoints := make(map[string]float64)
+	// Build generator entry points with IDs for per-generator flow tracking
+	var generators []runtime.GeneratorEntryPoint
 	if c.genManager != nil {
 		for _, gen := range c.genManager.generators {
 			if gen.Enabled {
-				entryPoints[gen.Target] = float64(gen.Rate)
+				generators = append(generators, runtime.GeneratorEntryPoint{
+					Target:      gen.Target,
+					Rate:        float64(gen.Rate),
+					GeneratorID: gen.ID,
+				})
 			}
 		}
 	}
@@ -936,9 +957,9 @@ func (c *Canvas) evaluateProposedFlows() error {
 	c.proposedFlowContext = runtime.NewFlowContext(c.activeSystem.System, c.systemParameters)
 	c.registerNativeComponents(c.proposedFlowContext)
 
-	// Run FlowEval to calculate proposed system-wide flows
-	if len(entryPoints) > 0 {
-		runtime.SolveSystemFlows(entryPoints, c.proposedFlowContext)
+	// Run FlowEval to calculate proposed system-wide flows with per-generator tracking
+	if len(generators) > 0 {
+		runtime.SolveSystemFlowsWithGenerators(generators, c.proposedFlowContext)
 	}
 
 	return nil
@@ -1057,4 +1078,28 @@ func (c *Canvas) registerNativeComponents(flowContext *runtime.FlowContext) {
 			}
 		}
 	}
+}
+
+// getGeneratorPrefix returns a unique letter prefix for each generator (A, B, C, etc.)
+func (c *Canvas) getGeneratorPrefix(generatorID string) string {
+	if c.generatorPrefixes == nil {
+		c.generatorPrefixes = make(map[string]string)
+	}
+	
+	// Return existing prefix if already assigned
+	if prefix, exists := c.generatorPrefixes[generatorID]; exists {
+		return prefix
+	}
+	
+	// Assign next available letter
+	letters := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	nextIndex := len(c.generatorPrefixes)
+	if nextIndex < len(letters) {
+		prefix := string(letters[nextIndex])
+		c.generatorPrefixes[generatorID] = prefix
+		return prefix
+	}
+	
+	// Fallback to numbers if we run out of letters
+	return fmt.Sprintf("%d", nextIndex-25)
 }

@@ -14,6 +14,8 @@ type FlowPathInfo struct {
 	Order       float64 // Execution order (supports decimals for conditional paths)
 	Condition   string  // Condition expression if this is a conditional path
 	Probability float64 // Probability of this path being taken
+	GeneratorID string  // ID of the generator that originated this flow
+	Color       string  // Color for visualization (based on generator)
 }
 
 // FlowContext holds the system state and configuration for flow evaluation
@@ -47,6 +49,11 @@ type FlowContext struct {
 	FlowPaths          map[string]FlowPathInfo // flowKey -> path info for visualization
 	currentCondition   string                  // Current condition context
 	currentProbability float64                 // Current condition probability
+	
+	// Generator-specific flow tracking
+	CurrentGeneratorID string             // ID of the generator currently being analyzed
+	GeneratorFlowOrder map[string]int     // Per-generator flow order counters
+	GeneratorColors    map[string]string  // Generator ID -> color mapping
 }
 
 // NewFlowContext creates a new FlowContext with sensible defaults
@@ -66,7 +73,174 @@ func NewFlowContext(system *SystemDecl, parameters map[string]interface{}) *Flow
 		VariableOutcomes:     make(map[string]float64),
 		FlowOrder:            0,
 		FlowPaths:            make(map[string]FlowPathInfo),
+		GeneratorFlowOrder:   make(map[string]int),
+		GeneratorColors:      make(map[string]string),
 	}
+}
+
+// GeneratorEntryPoint represents an entry point with generator information
+type GeneratorEntryPoint struct {
+	Target      string  // component.method target
+	Rate        float64 // requests per second
+	GeneratorID string  // generator identifier
+}
+
+// SolveSystemFlowsWithGenerators performs flow analysis with per-generator tracking
+func SolveSystemFlowsWithGenerators(generators []GeneratorEntryPoint, context *FlowContext) map[string]float64 {
+	if context == nil {
+		log.Printf("SolveSystemFlowsWithGenerators: context is nil")
+		return make(map[string]float64)
+	}
+
+	// Reset flow tracking for this analysis
+	context.FlowOrder = 0
+	context.FlowPaths = make(map[string]FlowPathInfo)
+	context.GeneratorFlowOrder = make(map[string]int)
+	
+	// Set up generator colors (cycling through a palette)
+	colors := []string{"#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#06b6d4", "#84cc16", "#f97316"}
+	for i, gen := range generators {
+		context.GeneratorColors[gen.GeneratorID] = colors[i%len(colors)]
+		context.GeneratorFlowOrder[gen.GeneratorID] = 0
+	}
+
+	// Build combined entry points map for convergence analysis
+	entryPoints := make(map[string]float64)
+	for _, gen := range generators {
+		entryPoints[gen.Target] = gen.Rate
+	}
+
+	// Initialize arrival rates with entry points
+	for componentMethod, rate := range entryPoints {
+		context.ArrivalRates[componentMethod] = rate
+	}
+
+	log.Printf("SolveSystemFlowsWithGenerators: Starting with %d generators", len(generators))
+
+	// Analyze flows for each generator separately for visualization
+	for _, gen := range generators {
+		context.CurrentGeneratorID = gen.GeneratorID
+		log.Printf("SolveSystemFlowsWithGenerators: Analyzing flows for generator %s", gen.GeneratorID)
+		
+		// Reset arrival rates and analyze this generator in isolation
+		// to capture all its nested calls with proper generator context
+		isolatedRates := make(map[string]float64)
+		isolatedRates[gen.Target] = gen.Rate
+		
+		// Temporarily save and clear arrival rates
+		savedRates := context.ArrivalRates
+		context.ArrivalRates = isolatedRates
+		
+		// Run a few iterations to capture nested calls for this generator
+		for iteration := 0; iteration < 3; iteration++ {
+			newRates := make(map[string]float64)
+			newRates[gen.Target] = gen.Rate
+			
+			for componentMethod, inRate := range context.ArrivalRates {
+				if inRate > 1e-9 {
+					component, method := parseComponentMethod(componentMethod)
+					if component != "" && method != "" {
+						outflows := FlowEval(component, method, inRate, context)
+						for target, outRate := range outflows {
+							newRates[target] += outRate
+						}
+					}
+				}
+			}
+			
+			context.ArrivalRates = newRates
+		}
+		
+		// Restore arrival rates
+		context.ArrivalRates = savedRates
+	}
+
+	// Clear the current generator context for convergence analysis
+	context.CurrentGeneratorID = ""
+	
+	// Run convergence analysis for back-pressure modeling
+	// The FlowPaths are already populated with per-generator information
+	// so we just need the convergence without resetting flow paths
+	return SolveSystemFlowsPreservingPaths(entryPoints, context)
+}
+
+// SolveSystemFlowsPreservingPaths performs convergence analysis while preserving existing flow paths
+func SolveSystemFlowsPreservingPaths(entryPoints map[string]float64, context *FlowContext) map[string]float64 {
+	if context == nil {
+		log.Printf("SolveSystemFlowsPreservingPaths: context is nil")
+		return make(map[string]float64)
+	}
+
+	// Initialize arrival rates with entry points (don't reset flow paths)
+	for componentMethod, rate := range entryPoints {
+		context.ArrivalRates[componentMethod] = rate
+	}
+
+	log.Printf("SolveSystemFlowsPreservingPaths: Starting fixed-point iteration with %d entry points", len(entryPoints))
+
+	// Iterate until convergence
+	for iteration := 0; iteration < context.MaxIterations; iteration++ {
+		// Save old rates for convergence check
+		oldRates := make(map[string]float64)
+		for k, v := range context.ArrivalRates {
+			oldRates[k] = v
+		}
+
+		// Recompute outgoing flows for each component with current load
+		newRates := make(map[string]float64)
+
+		// Start with entry points
+		for componentMethod, rate := range entryPoints {
+			newRates[componentMethod] = rate
+		}
+
+		// Propagate flows through the system
+		for componentMethod, inRate := range context.ArrivalRates {
+			if inRate > 1e-9 { // Only process non-trivial rates
+				component, method := parseComponentMethod(componentMethod)
+				if component != "" && method != "" {
+					outflows := FlowEval(component, method, inRate, context)
+					for target, outRate := range outflows {
+						newRates[target] += outRate
+					}
+				}
+			}
+		}
+
+		// Check convergence (all rates changed by < threshold)
+		maxChange := 0.0
+		for componentMethod := range newRates {
+			oldRate := oldRates[componentMethod]
+			newRate := newRates[componentMethod]
+			change := math.Abs(newRate - oldRate)
+			if change > maxChange {
+				maxChange = change
+			}
+		}
+
+		log.Printf("SolveSystemFlowsPreservingPaths: Iteration %d, max change: %.6f", iteration, maxChange)
+
+		if maxChange < context.ConvergenceThreshold {
+			log.Printf("SolveSystemFlowsPreservingPaths: Converged after %d iterations", iteration)
+			// Update final arrival rates and success rates
+			for k, v := range newRates {
+				context.ArrivalRates[k] = v
+			}
+			context.updateSuccessRates()
+			return newRates
+		}
+
+		// Apply damping to prevent oscillation (0.5 damping factor)
+		for componentMethod := range newRates {
+			oldRate := oldRates[componentMethod]
+			newRate := newRates[componentMethod]
+			context.ArrivalRates[componentMethod] = oldRate + 0.5*(newRate-oldRate)
+		}
+	}
+
+	log.Printf("SolveSystemFlowsPreservingPaths: Did not converge after %d iterations", context.MaxIterations)
+	context.updateSuccessRates()
+	return context.ArrivalRates
 }
 
 // SolveSystemFlows performs iterative fixed-point computation for system-wide flows with back-pressure
@@ -680,20 +854,50 @@ func (fc *FlowContext) trackFlowPath(flowKey string, condition string, probabili
 			baseOrder = float64(fc.FlowOrder)
 		}
 	} else {
-		// Regular flow tracking
-		fc.FlowOrder++
-		baseOrder = float64(fc.FlowOrder)
-		
-		// If this is a conditional path, use decimal numbering
-		if condition != "" {
-			// Check if we already have a conditional at this level
-			for _, info := range fc.FlowPaths {
-				if int(info.Order) == fc.FlowOrder && info.Condition != "" {
-					// Use decimal for alternative path
-					baseOrder = float64(fc.FlowOrder) + 0.1
-					break
+		// Use per-generator flow tracking if available
+		if fc.CurrentGeneratorID != "" {
+			// Increment the generator-specific order counter
+			fc.GeneratorFlowOrder[fc.CurrentGeneratorID]++
+			generatorOrder := fc.GeneratorFlowOrder[fc.CurrentGeneratorID]
+			
+			// Create prefixed order (e.g., "A1", "B1", "A2", "B2")
+			baseOrder = float64(generatorOrder)
+			
+			// If this is a conditional path, use decimal numbering
+			if condition != "" {
+				// Check if we already have a conditional at this level for this generator
+				for _, info := range fc.FlowPaths {
+					if info.GeneratorID == fc.CurrentGeneratorID && int(info.Order) == generatorOrder && info.Condition != "" {
+						// Use decimal for alternative path
+						baseOrder = float64(generatorOrder) + 0.1
+						break
+					}
 				}
 			}
+		} else {
+			// Fallback to global flow tracking
+			fc.FlowOrder++
+			baseOrder = float64(fc.FlowOrder)
+			
+			// If this is a conditional path, use decimal numbering
+			if condition != "" {
+				// Check if we already have a conditional at this level
+				for _, info := range fc.FlowPaths {
+					if int(info.Order) == fc.FlowOrder && info.Condition != "" {
+						// Use decimal for alternative path
+						baseOrder = float64(fc.FlowOrder) + 0.1
+						break
+					}
+				}
+			}
+		}
+	}
+	
+	// Get generator color
+	color := "#fbbf24" // Default amber color
+	if fc.CurrentGeneratorID != "" {
+		if genColor, exists := fc.GeneratorColors[fc.CurrentGeneratorID]; exists {
+			color = genColor
 		}
 	}
 	
@@ -701,9 +905,11 @@ func (fc *FlowContext) trackFlowPath(flowKey string, condition string, probabili
 		Order:       baseOrder,
 		Condition:   condition,
 		Probability: probability,
+		GeneratorID: fc.CurrentGeneratorID,
+		Color:       color,
 	}
 	
-	log.Printf("FlowEval: Tracked flow path %s with order %.1f, condition: %s", pathKey, baseOrder, condition)
+	log.Printf("FlowEval: Tracked flow path %s with order %.1f, condition: %s, generator: %s, color: %s", pathKey, baseOrder, condition, fc.CurrentGeneratorID, color)
 }
 
 // conditionToString converts a condition expression to a readable string

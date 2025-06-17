@@ -683,8 +683,9 @@ export class Dashboard {
             toMethod = `${toNode.ID}_component`;
           }
           
-          // Style all flow edges consistently
-          let edgeStyle = ' fontcolor="#fbbf24" color="#fbbf24" fontsize=11';
+          // Use generator-specific color if available, otherwise default amber
+          const edgeColor = edge.Color || "#fbbf24";
+          let edgeStyle = ` fontcolor="${edgeColor}" color="${edgeColor}" fontsize=11`;
           
           edges.push(`  ${fromMethod} -> ${toMethod} [label="${edge.Label}"${edgeStyle}];`);
         } else {
