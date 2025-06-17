@@ -24,7 +24,7 @@ func TestFlowEvalIntegration(t *testing.T) {
 	genConfig := &GeneratorConfig{
 		ID:      "test-gen",
 		Name:    "Test Generator",
-		Target:  "server.HandleLookup",
+		Target:  "server.Lookup",
 		Rate:    15, // 15 RPS
 		Enabled: true,
 	}
