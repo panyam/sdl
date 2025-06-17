@@ -20,6 +20,7 @@ func ensureTypes(typ *Type, types ...*Type) {
 // A simple evaluator
 type SimpleEval struct {
 	ErrorCollector
+	idgen    SimpleIDGen
 	RootFile *FileInstance
 	Rand     *rand.Rand
 	Tracer   *ExecutionTracer
@@ -290,7 +291,7 @@ func (s *SimpleEval) evalSampleExpr(samp *decl.SampleExpr, env *Env[Value], curr
 }
 
 func (s *SimpleEval) evalNewExpr(n *decl.NewExpr, _ *Env[Value], currTime *core.Duration) (result Value, returned bool) {
-	compInst, result, err := NewComponentInstance(s.RootFile, n.ComponentDecl)
+	compInst, result, err := NewComponentInstance(s.idgen.NextID("comp"), s.RootFile, n.ComponentDecl)
 	ensureNoErr(err)
 	if !compInst.IsNative {
 		stmts, err := compInst.Initializer()
