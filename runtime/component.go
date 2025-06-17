@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"github.com/panyam/sdl/components"
 	"github.com/panyam/sdl/decl"
 )
 
@@ -10,13 +11,19 @@ type ComponentInstance struct {
 
 	// The specs about the component
 	ComponentDecl *ComponentDecl
-	
+
 	// Arrival rates for SDL components (native components handle their own)
 	arrivalRates map[string]float64
+
+	id string
+}
+
+func (c *ComponentInstance) ID() string {
+	return c.id
 }
 
 // NewComponentInstance creates a new component instanceof the given type.
-func NewComponentInstance(file *FileInstance, compDecl *ComponentDecl) (*ComponentInstance, Value, error) {
+func NewComponentInstance(id string, file *FileInstance, compDecl *ComponentDecl) (*ComponentInstance, Value, error) {
 	// Create the component instance
 	var nativeValue NativeObject
 	if compDecl.IsNative {
@@ -32,6 +39,7 @@ func NewComponentInstance(file *FileInstance, compDecl *ComponentDecl) (*Compone
 			NativeInstance: nativeValue,
 		},
 		ComponentDecl: compDecl,
+		id:            id,
 	}
 	compType := decl.ComponentType(compDecl)
 	compValue, err := NewValue(compType, compInst)
@@ -115,7 +123,7 @@ func (ci *ComponentInstance) SetArrivalRate(methodName string, rate float64) err
 		// No error if not supported - just means infinite bandwidth
 		return nil
 	}
-	
+
 	// For SDL components, store the rate
 	if ci.arrivalRates == nil {
 		ci.arrivalRates = make(map[string]float64)
@@ -134,7 +142,7 @@ func (ci *ComponentInstance) GetArrivalRate(methodName string) float64 {
 		}
 		return -1 // Not supported = infinite bandwidth
 	}
-	
+
 	// For SDL components, return stored rate
 	if ci.arrivalRates != nil {
 		if rate, ok := ci.arrivalRates[methodName]; ok {
@@ -159,12 +167,12 @@ func (ci *ComponentInstance) GetTotalArrivalRate() float64 {
 		}
 		return -1 // Not supported
 	}
-	
+
 	// For SDL components, sum all rates
 	if ci.arrivalRates == nil || len(ci.arrivalRates) == 0 {
 		return 0
 	}
-	
+
 	total := 0.0
 	for _, rate := range ci.arrivalRates {
 		total += rate
@@ -172,61 +180,10 @@ func (ci *ComponentInstance) GetTotalArrivalRate() float64 {
 	return total
 }
 
-/*
-func (ci *ComponentInstance) InvokeMethod(methodName string, args []Value, vm *VM, callFrame *Frame) (val Value, err error) {
-	// 1. Find the Method Definition in the ComponentDefinition
-	methodDef, err := ci.ComponentDecl.GetMethod(methodName)
-	ensureNoErr(err) {
-		return
+func (c *ComponentInstance) GetFlowPattern(method string, inputRate float64) components.FlowPattern {
+	type analyzable interface {
+		GetFlowPattern(method string, inputRate float64) components.FlowPattern
 	}
-	if methodDef == nil {
-		err = fmt.Errorf("method not found")
-		return
-	}
-
-	// 2. Create a new frame for the method call.
-	//    The outer frame should be the frame where the *component instance* lives?
-	//    Or should it be the frame where the *call* is made? Let's use callFrame for now.
-	methodFrame := NewFrame(nil)
-
-	// 3. Bind parameters (args) to local variables in methodFrame.
-	//    (Needs implementation: check arg count, types?, store Values in methodFrame)
-	if len(args) != len(methodDef.Parameters) {
-		err = fmt.Errorf("argument count mismatch for method '%s': expected %d, got %d", methodName, len(methodDef.Parameters), len(args))
-		return
-	}
-	for i, paramDef := range methodDef.Parameters {
-		// Store the provided argument Value under the parameter's name
-		methodFrame.Set(paramDef.Name.Name, args[i])
-	}
-
-	// 4. Bind 'self'/'this' maybe? Store ci (*ComponentInstance) itself?
-	val, err = NewValue(ComponentType, ci)
-	ensureNoErr(err) {
-		return
-	}
-	methodFrame.Set("self", val) // Allow methods to access instance params/deps via self.
-
-	// 5. Bind dependencies ('uses') to local variables in methodFrame.
-	for depName, depInstance := range ci.Dependencies {
-		depVal, err := NewValue(ComponentType, depInstance)
-		ensureNoErr(err) {
-			return nil, err
-		}
-		methodFrame.Set(depName, depVal) // Store the ComponentRuntime dependency
-	}
-
-	// 6. Evaluate the method body (BlockStmt) using the methodFrame.
-	//    The result of the block is the result of the method.
-	resultValue, err := Eval(methodDef.Body, methodFrame, vm)
-	ensureNoErr(err) {
-		err = fmt.Errorf("error executing method '%s' body for instance '%s': %w", methodName, ci.InstanceName, err)
-		return
-	}
-
-	// TODO: Handle 'return' statements within the block? Eval needs modification.
-	// TODO: Check return type compatibility?
-
-	return resultValue, nil
+	result := c.NativeInstance.(analyzable)
+	return result.GetFlowPattern(method, inputRate)
 }
-*/
