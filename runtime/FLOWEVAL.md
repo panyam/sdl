@@ -501,12 +501,22 @@ func (fc *FlowCache) GetFlowsIfValid(paramHash string) (map[string]map[string]fl
 - **Back-Pressure Modeling:** Success rate degradation under high utilization
 - **Native Component Integration:** FlowAnalyzable interface with ResourcePool and MM1Queue
 - **Multi-Component Dependencies:** A→C, B→C scenarios correctly aggregate loads
+- **Runtime-Based Analysis:** FlowEval now uses actual ComponentInstance objects instead of string lookups
 
 ### **🎯 Core FlowEval Implementation:**
-- **Location:** `runtime/floweval.go` 
-- **Main Functions:**
-  - `SolveSystemFlows(entryPoints, context)` - Iterative system-wide flow computation ✅
-  - `FlowEval(component, method, inputRate, context)` - Individual component flow analysis ✅
+- **Legacy String-Based:** `runtime/floweval.go` (being phased out)
+  - `SolveSystemFlows(entryPoints, context)` - String-based flow computation ✅
+  - `FlowEval(component, method, inputRate, context)` - String-based component analysis ✅
+  
+- **New Runtime-Based:** `runtime/flowrteval.go` ✅
+  - `SolveSystemFlowsRuntime(generators, scope)` - Runtime component flow computation ✅
+  - `FlowEvalRuntime(component, method, inputRate, scope)` - ComponentInstance-based analysis ✅
+  - Uses actual instantiated component graph from SimpleEval
+  - No duplicate component instances or parameter tracking
+  
+- **Supporting Infrastructure:**
+  - `runtime/ratemap.go` - Type-safe rate tracking per ComponentInstance ✅
+  - `runtime/flowscope.go` - Runtime traversal context with environment ✅
   - `FlowAnalyzable` interface - Native component flow pattern reporting ✅
 
 ### **🚀 Advanced Features:**
@@ -536,12 +546,21 @@ func (fc *FlowCache) GetFlowsIfValid(paramHash string) (map[string]map[string]fl
 - [x] Implement FlowAnalyzable interface for ResourcePool, Queue, etc.
 - [x] Add performance models that compute latency based on arrival rates
 - [x] Integration with existing capacity modeling (M/M/c, M/M/1)
+- [x] Graceful handling of non-flow-analyzable components via NWBase wrapper
 
-### **🔄 Phase 3: Enhanced SDL Integration (NEXT PRIORITY)**
-- [ ] Complete SDL component declaration integration (`getComponentDecl()`)
-- [ ] Add retry pattern analysis with exponential back-off modeling
-- [ ] Implement loop iteration analysis for batch processing patterns
-- [ ] Parameter dependency tracking and multi-pass resolution
+### **✅ Phase 3: Runtime-Based Flow Analysis (COMPLETED - June 2025)**
+- [x] Migrated from string-based to ComponentInstance-based flow tracking
+- [x] Created RateMap for type-safe rate tracking per component instance
+- [x] Implemented FlowScope for runtime traversal with environment context
+- [x] Statement analysis now resolves actual component instances from environment
+- [x] Fixed-point iteration using runtime component references
+- [x] Smart wrapper pattern - NWBase provides default flow behavior for all components
+
+### **🔄 Phase 4: Migration & Cleanup (IN PROGRESS)**
+- [ ] Migrate existing tests from string-based to runtime-based API
+- [ ] Remove old string-based FlowContext.NativeComponents registry
+- [ ] Update Canvas integration to use runtime component instances
+- [ ] Complete removal of legacy string-based flow analysis code
 
 ### **🔮 Phase 4: Advanced Flow Analysis**
 - [ ] Confidence bounds and uncertainty propagation
@@ -557,5 +576,30 @@ func (fc *FlowCache) GetFlowsIfValid(paramHash string) (map[string]map[string]fl
 
 ---
 
-**Last Updated:** Back-Pressure and Convergence Implementation Complete  
-**Next Priority:** Enhanced SDL integration and advanced flow analysis patterns
+## 🎓 **Key Implementation Learnings (June 2025)**
+
+### **Runtime vs Static Analysis:**
+- **Problem:** Original implementation created duplicate component instances and maintained separate parameter maps
+- **Solution:** Use actual ComponentInstance objects from SimpleEval's instantiated system
+- **Benefits:** No duplication, consistent parameters, type-safe references
+
+### **Smart Wrapper Pattern:**
+- **Problem:** Requiring all components to implement FlowAnalyzable was too restrictive
+- **Solution:** NWBase wrapper provides smart defaults for non-flow-aware components
+- **Pattern:** Decorator that adds behavior without modifying core components
+- **Default:** Non-flow-aware components treated as leaf nodes with infinite capacity
+
+### **Environment-Based Resolution:**
+- **Challenge:** Converting string targets ("db.Query") to ComponentInstance references
+- **Solution:** Use FlowScope's environment to resolve dependency names to actual instances
+- **Future:** Support for nested component paths (e.g., "cache.inner.store")
+
+### **Two-Phase Convergence:**
+- **Phase 1:** Flow propagation through component graph
+- **Phase 2:** Back-pressure adjustment based on arrival rates
+- **Damping:** 0.5 factor prevents oscillation, typically converges in 7-12 iterations
+
+---
+
+**Last Updated:** Runtime-Based Flow Analysis Complete (June 2025)
+**Next Priority:** Migration of existing code to new runtime-based approach

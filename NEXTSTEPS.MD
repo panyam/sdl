@@ -108,6 +108,14 @@ This document outlines the workshop-focused development status and next steps fo
 *   **🎨 Consistent Edge Styling:** All flow edges use amber/yellow color (#fbbf24) for visual consistency
 *   **🚀 Real-time RPS Calculations:** Dashboard shows accurate traffic rates based on conditional probabilities (80% cache hit = 2 RPS to database)
 
+### **`[COMPLETED]` Runtime-Based Flow Analysis**
+*   **🏗️ Architecture Migration:** Complete transition from string-based to ComponentInstance-based flow tracking
+*   **📦 RateMap Implementation:** Type-safe flow rate tracking per component instance and method
+*   **🌐 FlowScope Context:** Runtime traversal with environment-based component resolution
+*   **🔍 Statement Analysis:** SDL method body analysis with actual component instance resolution
+*   **⚡ Fixed-Point Solver:** Two-phase convergence with damping factor for stable results
+*   **🎭 Smart Wrapper Pattern:** NWBase provides default flow behavior for non-flow-analyzable components
+
 ### **Key Implementation Details:**
 *   **FlowContext Enhancement:** Added FlowPathInfo struct tracking Order, Condition, and Probability for each edge
 *   **Variable Success Tracking:** LetStmt analysis captures method outcomes for use in conditional evaluation  
@@ -258,6 +266,36 @@ This document outlines the workshop-focused development status and next steps fo
 - Professional web interface suitable for presentations
 - Multiple demo scenarios available (contacts, Netflix)
 - Build pipeline and testing suite operational
+
+---
+## 🚀 IMMEDIATE NEXT STEPS (June 2025)
+
+### **FlowEval Runtime Migration Completion**
+1. **Migrate Existing Tests** (Step 8)
+   - Convert floweval_test.go to use runtime-based API
+   - Update integration tests to use ComponentInstance references
+   - Ensure all test scenarios work with new approach
+
+2. **Remove Legacy Code** (Step 9)
+   - Remove string-based FlowContext.NativeComponents registry
+   - Clean up old SolveSystemFlows and FlowEval functions
+   - Remove string-based GeneratorEntryPoint struct
+
+3. **Canvas Integration Update**
+   - Update Canvas to create GeneratorEntryPointRuntime with ComponentInstance
+   - Modify generator management to resolve component names to instances
+   - Ensure dashboard flow visualization works with runtime components
+
+### **Technical Debt Cleanup**
+- Remove duplicate mock components from test files
+- Consolidate all flow analysis code in flowrteval.go
+- Update documentation to reflect new architecture
+
+### **Future Enhancements**
+- Support for nested component paths (e.g., "cache.inner.store")
+- Add retry pattern analysis with exponential back-off
+- Implement loop iteration analysis for batch processing
+- Performance optimization with result caching
 
 ---
 ## DEVELOPMENT TIMELINE

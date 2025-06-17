@@ -33,8 +33,8 @@ type FlowPath struct {
 // FlowMetrics represents flow statistics for monitoring
 type FlowMetrics struct {
 	TotalRPS     float64            `json:"totalRPS"`     // Total system RPS
-	ComponentRPS map[string]float64 `json:"componentRPS"` // RPS per component
-	GeneratorRPS map[string]float64 `json:"generatorRPS"` // RPS per generator
+	ComponentRPS RateMap            `json:"componentRPS"` // RPS per component instance
+	GeneratorRPS map[string]float64 `json:"generatorRPS"` // RPS per generator (still string-based for generator IDs)
 }
 
 // FlowPathInfo tracks information about a flow path for visualization (LEGACY - will be replaced by FlowPath)
@@ -117,12 +117,13 @@ func NewFlowContext(system *SystemDecl, parameters map[string]interface{}) *Flow
 	}
 }
 
-// GeneratorEntryPoint represents an entry point with generator information
+// GeneratorEntryPoint represents an entry point with generator information (LEGACY)
 type GeneratorEntryPoint struct {
 	Target      string  // component.method target
 	Rate        float64 // requests per second
 	GeneratorID string  // generator identifier
 }
+
 
 // SolveSystemFlowsWithGenerators performs flow analysis with per-generator tracking
 func SolveSystemFlowsWithGenerators(generators []GeneratorEntryPoint, context *FlowContext) map[string]float64 {
@@ -1101,7 +1102,7 @@ func (fc *FlowContext) GetAggregatedFlows() map[string]float64 {
 // GetFlowMetrics returns flow statistics for monitoring
 func (fc *FlowContext) GetFlowMetrics() FlowMetrics {
 	metrics := FlowMetrics{
-		ComponentRPS: make(map[string]float64),
+		ComponentRPS: NewRateMap(),
 		GeneratorRPS: make(map[string]float64),
 	}
 
@@ -1115,17 +1116,15 @@ func (fc *FlowContext) GetFlowMetrics() FlowMetrics {
 		}
 	}
 
+	// TODO: Convert this to use ComponentInstance instead of string-based lookups
+	// For now, ComponentRPS will remain empty until we migrate to runtime-based approach
 	// Calculate component RPS from aggregated flows
-	if fc.AggregatedFlows != nil {
-		for target, rate := range fc.AggregatedFlows {
-			// Extract component name from "component.method"
-			parts := strings.Split(target, ".")
-			if len(parts) >= 1 {
-				component := parts[0]
-				metrics.ComponentRPS[component] += rate
-			}
-		}
-	}
+	// if fc.AggregatedFlows != nil {
+	// 	for target, rate := range fc.AggregatedFlows {
+	// 		// Need to resolve string targets to ComponentInstance references
+	// 		// This will be fixed when we complete the migration
+	// 	}
+	// }
 
 	return metrics
 }
