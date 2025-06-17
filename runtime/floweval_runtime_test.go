@@ -179,14 +179,16 @@ func TestSolveSystemFlowsRuntime(t *testing.T) {
 			t.Errorf("Expected compA rate 50.0, got %f", rate)
 		}
 
-		// Verify B receives flow from A
-		if rate := result.GetRate(compB, "Process"); rate != 50.0 {
-			t.Errorf("Expected compB rate 50.0 (from A), got %f", rate)
+		// Verify B receives flow from A (with tolerance for convergence)
+		rateB := result.GetRate(compB, "Process")
+		if rateB < 49.9 || rateB > 50.1 {
+			t.Errorf("Expected compB rate ~50.0 (from A), got %f", rateB)
 		}
 
-		// Verify total system rate
-		if total := result.GetTotalRate(); total != 100.0 {
-			t.Errorf("Expected total rate 100.0, got %f", total)
+		// Verify total system rate (with tolerance)
+		total := result.GetTotalRate()
+		if total < 99.9 || total > 100.1 {
+			t.Errorf("Expected total rate ~100.0, got %f", total)
 		}
 	})
 }

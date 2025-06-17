@@ -349,8 +349,8 @@ func SolveSystemFlowsRuntime(generators []GeneratorEntryPointRuntime, scope *Flo
 	log.Printf("SolveSystemFlowsRuntime: Starting fixed-point iteration with %d entry points", len(generators))
 	
 	// Configuration for convergence
-	maxIterations := 20
-	convergenceThreshold := 0.1 // Accept 0.1 RPS difference as converged
+	maxIterations := 10
+	convergenceThreshold := 0.01 // Match string-based convergence threshold
 	dampingFactor := 0.5
 	
 	// Iterate until convergence
