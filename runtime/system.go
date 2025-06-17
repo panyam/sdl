@@ -24,6 +24,19 @@ func NewSystemInstance(file *FileInstance, system *SystemDecl) *SystemInstance {
 	return sysinst
 }
 
+// Finds a nested component a.b.c starting at the root of a system
+func (s *SystemInstance) FindComponent(fqn string) (out *ComponentInstance) {
+	parts := strings.Split(fqn, ".")
+	if len(parts) != 1 {
+		panic("Despite the name we dont support fqn yet.  It is coming")
+	}
+	v, ok := s.Env.Get(parts[0])
+	if !ok {
+		return nil
+	}
+	return v.Value.(*ComponentInstance)
+}
+
 // A system declaration contains instantiations of components and other statemetns.
 // Specifically in initializers it is important to not be bound by order.
 // This method compiles the System into a set of statements that can be executed so that
@@ -142,17 +155,17 @@ func (si *SystemInstance) UpdateMethodArrivalRate(componentName, methodName stri
 	if !ok {
 		return fmt.Errorf("component %s not found", componentName)
 	}
-	
+
 	comp, ok := compVal.Value.(*ComponentInstance)
 	if !ok {
 		return fmt.Errorf("%s is not a component", componentName)
 	}
-	
+
 	// Set the arrival rate
 	if err := comp.SetArrivalRate(methodName, rate); err != nil {
 		return fmt.Errorf("failed to set arrival rate: %w", err)
 	}
-	
+
 	// Trigger FlowEval to compute downstream effects
 	return si.RecomputeFlows(componentName, methodName, rate)
 }
@@ -162,10 +175,10 @@ func (si *SystemInstance) RecomputeFlows(component, method string, inputRate flo
 	// Create flow context with current system parameters
 	parameters := make(map[string]interface{})
 	// TODO: Collect actual system parameters from si.Env
-	
+
 	context := NewFlowContext(si.System, parameters)
 	flows := FlowEval(component, method, inputRate, context)
-	
+
 	// Apply computed flows to downstream components
 	for target, rate := range flows {
 		downstreamComp, downstreamMethod := si.parseFlowTarget(target)
@@ -174,7 +187,7 @@ func (si *SystemInstance) RecomputeFlows(component, method string, inputRate flo
 			if ok {
 				if comp, ok := compVal.Value.(*ComponentInstance); ok {
 					if err := comp.SetArrivalRate(downstreamMethod, rate); err != nil {
-						log.Printf("Warning: Failed to set arrival rate for %s.%s: %v", 
+						log.Printf("Warning: Failed to set arrival rate for %s.%s: %v",
 							downstreamComp, downstreamMethod, err)
 					}
 				}
@@ -191,16 +204,16 @@ func (si *SystemInstance) RecomputeAllFlows(entryPoints map[string]float64) erro
 	if si.Env == nil {
 		return fmt.Errorf("system instance has no environment")
 	}
-	
+
 	// Create flow context
 	parameters := make(map[string]interface{})
 	// TODO: Collect actual system parameters
-	
+
 	context := NewFlowContext(si.System, parameters)
-	
+
 	// Aggregate all flows
 	allFlows := make(map[string]float64)
-	
+
 	// Compute flows from each entry point
 	for target, rate := range entryPoints {
 		component, method := si.parseFlowTarget(target)
@@ -212,7 +225,7 @@ func (si *SystemInstance) RecomputeAllFlows(entryPoints map[string]float64) erro
 			log.Printf("FlowEval: %s.%s @ %.1f RPS -> %v", component, method, rate, flows)
 		}
 	}
-	
+
 	// Apply all computed flows
 	for target, rate := range allFlows {
 		component, method := si.parseFlowTarget(target)
@@ -221,7 +234,7 @@ func (si *SystemInstance) RecomputeAllFlows(entryPoints map[string]float64) erro
 			if ok {
 				if comp, ok := compVal.Value.(*ComponentInstance); ok {
 					if err := comp.SetArrivalRate(method, rate); err != nil {
-						log.Printf("Warning: Failed to set arrival rate for %s.%s: %v", 
+						log.Printf("Warning: Failed to set arrival rate for %s.%s: %v",
 							component, method, err)
 					} else {
 						log.Printf("Applied arrival rate: %s.%s = %.2f RPS", component, method, rate)
@@ -230,7 +243,7 @@ func (si *SystemInstance) RecomputeAllFlows(entryPoints map[string]float64) erro
 			}
 		}
 	}
-	
+
 	return nil
 }
 
