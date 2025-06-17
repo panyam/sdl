@@ -1,27 +1,33 @@
 package runtime
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/panyam/sdl/decl"
+)
 
 // FlowScope manages the runtime context for flow evaluation
 type FlowScope struct {
 	Outer            *FlowScope
-	Evaluator        *FlowEvaluator
 	SysEnv           *Env[Value]
 	CurrentComponent *ComponentInstance
 	CurrentMethod    *MethodDecl
 	ArrivalRates     RateMap
 	SuccessRates     RateMap
 	CallStack        []*ComponentInstance
-	
+
 	// Variable outcome tracking for conditional flow analysis
 	VariableOutcomes map[string]float64
 }
 
 // NewFlowScope creates a new root flow scope
-func NewFlowScope(evaluator *FlowEvaluator, sysEnv *Env[Value]) *FlowScope {
+func NewFlowScope(sysEnv *Env[Value]) *FlowScope {
+	if sysEnv == nil {
+		// Create a mock environment
+		sysEnv = decl.NewEnv[Value](nil)
+	}
 	return &FlowScope{
 		Outer:            nil,
-		Evaluator:        evaluator,
 		SysEnv:           sysEnv,
 		ArrivalRates:     NewRateMap(),
 		SuccessRates:     NewRateMap(),
@@ -34,7 +40,6 @@ func NewFlowScope(evaluator *FlowEvaluator, sysEnv *Env[Value]) *FlowScope {
 func (fs *FlowScope) Push(component *ComponentInstance, method *MethodDecl) *FlowScope {
 	return &FlowScope{
 		Outer:            fs,
-		Evaluator:        fs.Evaluator,
 		SysEnv:           fs.SysEnv.Push(), // Push new env scope
 		CurrentComponent: component,
 		CurrentMethod:    method,
@@ -71,13 +76,13 @@ func (fs *FlowScope) ResolveTarget(target string) (*ComponentInstance, string) {
 	if len(parts) < 2 {
 		return nil, ""
 	}
-	
+
 	// Last part is the method
 	method := parts[len(parts)-1]
-	
+
 	// Everything before is the component path
 	componentPath := strings.Join(parts[:len(parts)-1], ".")
-	
+
 	// Try to find the component in the environment
 	if value, exists := fs.SysEnv.Get(componentPath); exists {
 		if value.Value != nil {
@@ -86,7 +91,7 @@ func (fs *FlowScope) ResolveTarget(target string) (*ComponentInstance, string) {
 			}
 		}
 	}
-	
+
 	// If not found directly, try just the first part (common case)
 	if len(parts) > 2 {
 		if value, exists := fs.SysEnv.Get(parts[0]); exists {
@@ -99,7 +104,7 @@ func (fs *FlowScope) ResolveTarget(target string) (*ComponentInstance, string) {
 			}
 		}
 	}
-	
+
 	return nil, ""
 }
 

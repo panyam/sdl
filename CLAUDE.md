@@ -20,3 +20,7 @@ Do not refer to claude or anthropic in your commit messages
 Do not rebuild the server - it will be continuosly be rebuilt and run by the air configs.  Output of the server will be written to /tmp/sdlserver.log.  Build errors will also be shown in this log file.
 Find the root cause of an issue before figuring out a solution.  Fix problems.
 Do not create workarounds for issues without asking.  Always find the root cause of an issue and fix it.
+
+# Summary instructions
+
+When you are using compact, please focus on test output and code changes
