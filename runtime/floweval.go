@@ -402,7 +402,7 @@ func FlowEval(component, method string, inputRate float64, context *FlowContext)
 
 	// Check if this is a native component first
 	if flowAnalyzable, exists := context.NativeComponents[component]; exists {
-		pattern := flowAnalyzable.GetFlowPattern(method, inputRate, context.getComponentParams(component))
+		pattern := flowAnalyzable.GetFlowPattern(method, inputRate)
 		return pattern.Outflows
 	}
 
@@ -780,7 +780,7 @@ func (fc *FlowContext) updateSuccessRates() {
 
 		// Check if this is a native component with FlowAnalyzable interface
 		if flowAnalyzable, exists := fc.NativeComponents[component]; exists {
-			pattern := flowAnalyzable.GetFlowPattern(method, arrivalRate, fc.getComponentParams(component))
+			pattern := flowAnalyzable.GetFlowPattern(method, arrivalRate)
 			fc.SuccessRates[componentMethod] = pattern.SuccessRate
 			fc.ServiceTimes[componentMethod] = pattern.ServiceTime
 			continue
@@ -839,7 +839,7 @@ func (fc *FlowContext) getMethodSuccessRate(component, method string) float64 {
 
 	// Check if this is a native component with FlowAnalyzable interface
 	if flowAnalyzable, exists := fc.NativeComponents[component]; exists {
-		pattern := flowAnalyzable.GetFlowPattern(method, 1.0, fc.getComponentParams(component))
+		pattern := flowAnalyzable.GetFlowPattern(method, 1.0)
 		return pattern.SuccessRate
 	}
 

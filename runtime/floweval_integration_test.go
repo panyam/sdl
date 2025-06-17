@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"testing"
+
 	"github.com/panyam/sdl/components"
 )
 
@@ -9,7 +10,7 @@ import (
 type MockComponentA struct{}
 type MockComponentB struct{}
 
-func (m *MockComponentA) GetFlowPattern(methodName string, inputRate float64, params map[string]interface{}) components.FlowPattern {
+func (m *MockComponentA) GetFlowPattern(methodName string, inputRate float64) components.FlowPattern {
 	if methodName == "Process" {
 		return components.FlowPattern{
 			Outflows:      map[string]float64{"componentC.Acquire": inputRate}, // Forward all traffic to C
@@ -21,7 +22,7 @@ func (m *MockComponentA) GetFlowPattern(methodName string, inputRate float64, pa
 	return components.FlowPattern{}
 }
 
-func (m *MockComponentB) GetFlowPattern(methodName string, inputRate float64, params map[string]interface{}) components.FlowPattern {
+func (m *MockComponentB) GetFlowPattern(methodName string, inputRate float64) components.FlowPattern {
 	if methodName == "Process" {
 		return components.FlowPattern{
 			Outflows:      map[string]float64{"componentC.Acquire": inputRate}, // Forward all traffic to C
@@ -50,9 +51,9 @@ func TestFlowEvalWithBackPressure(t *testing.T) {
 	// Register component C with capacity constraints
 	poolC := &components.ResourcePool{
 		Name:        "componentC",
-		Size:        2,              // Very limited - only 2 concurrent resources
-		ArrivalRate: 1e-9,          // Will be updated by flow evaluation
-		AvgHoldTime: 0.1,           // 100ms average hold time (much longer)
+		Size:        2,    // Very limited - only 2 concurrent resources
+		ArrivalRate: 1e-9, // Will be updated by flow evaluation
+		AvgHoldTime: 0.1,  // 100ms average hold time (much longer)
 	}
 	poolC.Init()
 	context.SetNativeComponent("componentC", poolC)
@@ -91,7 +92,7 @@ func TestFlowEvalWithBackPressure(t *testing.T) {
 	for componentMethod, successRate := range context.SuccessRates {
 		t.Logf("  %s: %.3f", componentMethod, successRate)
 	}
-	
+
 	if successRate, exists := context.SuccessRates["componentC.Acquire"]; exists {
 		t.Logf("ComponentC success rate under load: %.3f", successRate)
 		if successRate >= 1.0 {
@@ -113,7 +114,7 @@ func TestFlowEvalWithBackPressure(t *testing.T) {
 	contextLow.ConvergenceThreshold = 0.1
 	contextLow.SetNativeComponent("componentA", &MockComponentA{})
 	contextLow.SetNativeComponent("componentB", &MockComponentB{})
-	
+
 	poolCLow := &components.ResourcePool{
 		Name:        "componentC",
 		Size:        2,
@@ -148,7 +149,7 @@ func TestFlowAnalyzableInterface(t *testing.T) {
 	pool.Init()
 
 	// Test under normal load
-	pattern := pool.GetFlowPattern("Acquire", 50.0, nil)
+	pattern := pool.GetFlowPattern("Acquire", 50.0)
 	t.Logf("ResourcePool under normal load (50 RPS):")
 	t.Logf("  Success Rate: %.3f", pattern.SuccessRate)
 	t.Logf("  Service Time: %.3fs", pattern.ServiceTime)
@@ -158,7 +159,7 @@ func TestFlowAnalyzableInterface(t *testing.T) {
 	}
 
 	// Test under high load (should trigger back-pressure)
-	patternHigh := pool.GetFlowPattern("Acquire", 500.0, nil)
+	patternHigh := pool.GetFlowPattern("Acquire", 500.0)
 	t.Logf("ResourcePool under high load (500 RPS):")
 	t.Logf("  Success Rate: %.3f", patternHigh.SuccessRate)
 	t.Logf("  Service Time: %.3fs", patternHigh.ServiceTime)
@@ -176,7 +177,7 @@ func TestFlowAnalyzableInterface(t *testing.T) {
 	queue.Init()
 
 	// Test under stable load
-	queuePattern := queue.GetFlowPattern("Dequeue", 50.0, nil)
+	queuePattern := queue.GetFlowPattern("Dequeue", 50.0)
 	t.Logf("MM1Queue under stable load (50 RPS):")
 	t.Logf("  Success Rate: %.3f", queuePattern.SuccessRate)
 	t.Logf("  Service Time: %.3fs", queuePattern.ServiceTime)
@@ -186,7 +187,7 @@ func TestFlowAnalyzableInterface(t *testing.T) {
 	}
 
 	// Test under overload (should be unstable)
-	queuePatternUnstable := queue.GetFlowPattern("Dequeue", 200.0, nil) // > 100 RPS = unstable
+	queuePatternUnstable := queue.GetFlowPattern("Dequeue", 200.0) // > 100 RPS = unstable
 	t.Logf("MM1Queue under overload (200 RPS):")
 	t.Logf("  Success Rate: %.3f", queuePatternUnstable.SuccessRate)
 	t.Logf("  Service Time: %.3fs", queuePatternUnstable.ServiceTime)
