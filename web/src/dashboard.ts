@@ -683,11 +683,8 @@ export class Dashboard {
             toMethod = `${toNode.ID}_component`;
           }
           
-          // Style flow edges differently based on condition
-          let edgeStyle = '';
-          if (edge.Condition) {
-            edgeStyle = ' fontcolor="#fbbf24" color="#fbbf24"';
-          }
+          // Style all flow edges consistently
+          let edgeStyle = ' fontcolor="#fbbf24" color="#fbbf24" fontsize=11';
           
           edges.push(`  ${fromMethod} -> ${toMethod} [label="${edge.Label}"${edgeStyle}];`);
         } else {

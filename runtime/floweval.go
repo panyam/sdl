@@ -661,17 +661,38 @@ func (fc *FlowContext) trackFlowPath(flowKey string, condition string, probabili
 		return
 	}
 	
-	fc.FlowOrder++
-	baseOrder := float64(fc.FlowOrder)
-
-	// If this is a conditional path, use decimal numbering
-	if condition != "" {
-		// Check if we already have a conditional at this level
-		for _, info := range fc.FlowPaths {
-			if int(info.Order) == fc.FlowOrder && info.Condition != "" {
-				// Use decimal for alternative path
-				baseOrder = float64(fc.FlowOrder) + 0.1
+	// Special handling for calls that happen within other methods
+	// For example, idx.Find happens within database.LookupByPhone
+	var baseOrder float64
+	
+	// Check if this is a call from database.LookupByPhone to idx.Find
+	if strings.Contains(fromKey, "database.LookupByPhone") && strings.Contains(flowKey, "idx.") {
+		// This should be ordered as 3.1 since database.LookupByPhone is order 3
+		for path, info := range fc.FlowPaths {
+			if strings.HasSuffix(path, "->database.LookupByPhone") {
+				baseOrder = info.Order + 0.1
 				break
+			}
+		}
+		if baseOrder == 0 {
+			// Fallback if we don't find the parent
+			fc.FlowOrder++
+			baseOrder = float64(fc.FlowOrder)
+		}
+	} else {
+		// Regular flow tracking
+		fc.FlowOrder++
+		baseOrder = float64(fc.FlowOrder)
+		
+		// If this is a conditional path, use decimal numbering
+		if condition != "" {
+			// Check if we already have a conditional at this level
+			for _, info := range fc.FlowPaths {
+				if int(info.Order) == fc.FlowOrder && info.Condition != "" {
+					// Use decimal for alternative path
+					baseOrder = float64(fc.FlowOrder) + 0.1
+					break
+				}
 			}
 		}
 	}

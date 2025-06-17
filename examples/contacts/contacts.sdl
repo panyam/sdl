@@ -8,6 +8,16 @@ component ContactDatabase {
     uses pool ResourcePool(Size = 5)          // 5 concurrent connections
     uses index HashIndex                      // Phone number → Contact lookup
     
+    method Insert() Bool {
+        let acquired = self.pool.Acquire()
+        if not acquired {
+            return false  // Connection pool exhausted
+        }
+
+        delay(5ms)
+        return self.index.Insert()
+    }
+
     method LookupByPhone() Bool {
         // Try to acquire database connection
         let acquired = self.pool.Acquire()
@@ -27,7 +37,11 @@ component ContactAppServer {
     uses cache Cache                          // Explicit cache component
     uses pool ResourcePool(Size = 10)        // 10 concurrent request handlers
     
-    method HandleLookup() Bool {
+    method Insert() Bool {
+      return db.Insert()
+    }
+
+    method Lookup() Bool {
         // Acquire request handler
         let acquired = self.pool.Acquire()
         if not acquired {

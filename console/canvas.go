@@ -694,13 +694,17 @@ func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
 				}
 
 				// Create label with order and condition
-				label := fmt.Sprintf("%.0f", pathInfo.Order)
+				label := ""
+				if pathInfo.Order == math.Trunc(pathInfo.Order) {
+					// Whole number order
+					label = fmt.Sprintf("%.0f", pathInfo.Order)
+				} else {
+					// Decimal order (nested calls)
+					label = fmt.Sprintf("%.1f", pathInfo.Order)
+				}
+				
 				if pathInfo.Condition != "" {
-					if pathInfo.Order == math.Trunc(pathInfo.Order) {
-						label = fmt.Sprintf("%.0f: %s", pathInfo.Order, pathInfo.Condition)
-					} else {
-						label = fmt.Sprintf("%.1f: %s", pathInfo.Order, pathInfo.Condition)
-					}
+					label = fmt.Sprintf("%s: %s", label, pathInfo.Condition)
 				}
 
 				log.Printf("Canvas: Creating edge %s.%s -> %s.%s with label %s",

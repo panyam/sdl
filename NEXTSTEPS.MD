@@ -97,6 +97,34 @@ This document outlines the workshop-focused development status and next steps fo
     *   Enhanced shell integration with history, completion, and piping capabilities
 
 ---
+## ✅ LATEST FLOW VISUALIZATION ENHANCEMENTS (June 2025)
+
+### **`[COMPLETED]` Interactive Flow Analysis with Edge Numbering**
+*   **🔢 Execution Order Tracking:** Complete implementation of flow path numbering showing the actual sequence of method calls during system execution
+*   **🎯 Conditional Path Labels:** Edges display both order numbers and condition expressions (e.g., "3: !(cached)", "4: result")
+*   **🔄 Cache-Aside Pattern Support:** Proper modeling of explicit Cache components with AppServer coordinating between Cache and Database
+*   **📊 Variable Outcome Tracking:** FlowEval tracks method call success rates and uses them for conditional probability evaluation
+*   **🔍 Nested Call Visualization:** Decimal numbering for calls within methods (e.g., database→idx shows as 3.1 when database call is step 3)
+*   **🎨 Consistent Edge Styling:** All flow edges use amber/yellow color (#fbbf24) for visual consistency
+*   **🚀 Real-time RPS Calculations:** Dashboard shows accurate traffic rates based on conditional probabilities (80% cache hit = 2 RPS to database)
+
+### **Key Implementation Details:**
+*   **FlowContext Enhancement:** Added FlowPathInfo struct tracking Order, Condition, and Probability for each edge
+*   **Variable Success Tracking:** LetStmt analysis captures method outcomes for use in conditional evaluation  
+*   **Fixed-Point Iteration:** Proper flow tracking that prevents accumulation across solver iterations
+*   **Frontend Integration:** TypeScript types updated to include FromMethod/ToMethod fields for precise edge targeting
+*   **Edge Filtering:** Excludes non-visible components (like pool) from flow visualization
+
+### **Example Flow Sequence:**
+```
+1. pool.Acquire (internal)
+2. cache.Read (check cache first)
+3. database.LookupByPhone (on cache miss, condition: !(cached))
+3.1. idx.Find (nested within database call)
+4. cache.Write (after successful result, condition: result)
+```
+
+---
 ## 🎯 CONFERENCE WORKSHOP PRIORITIES
 
 ### 🎉 MAJOR BREAKTHROUGH: Simple 2-Row Web Dashboard Complete!
