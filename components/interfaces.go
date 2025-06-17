@@ -23,5 +23,5 @@ type ConditionalFlow struct {
 
 // FlowAnalyzable interface for native components to report their flow patterns
 type FlowAnalyzable interface {
-	GetFlowPattern(methodName string, inputRate float64, params map[string]interface{}) FlowPattern
+	GetFlowPattern(methodName string, inputRate float64) FlowPattern
 }

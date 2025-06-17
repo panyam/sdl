@@ -23,7 +23,7 @@ type MM1Queue struct {
 // Init initializes the Queue component with default parameters.
 func (q *MM1Queue) Init() {
 	// Step 1: No embedded components to initialize
-	
+
 	// Step 2: Set defaults only for uninitialized fields (zero values)
 	if q.ArrivalRate == 0 {
 		q.ArrivalRate = 1e-9
@@ -31,7 +31,7 @@ func (q *MM1Queue) Init() {
 	if q.AvgServiceTime == 0 {
 		q.AvgServiceTime = 1e-9
 	}
-	
+
 	// Step 3: No derived values to calculate (computed dynamically in methods)
 }
 
@@ -112,7 +112,7 @@ func (q *MM1Queue) Dequeue() *Outcomes[Duration] {
 }
 
 // GetFlowPattern implements FlowAnalyzable interface for MM1Queue
-func (q *MM1Queue) GetFlowPattern(methodName string, inputRate float64, params map[string]interface{}) FlowPattern {
+func (q *MM1Queue) GetFlowPattern(methodName string, inputRate float64) FlowPattern {
 	switch methodName {
 	case "Enqueue":
 		// Enqueue always succeeds (infinite capacity queue)
@@ -122,25 +122,25 @@ func (q *MM1Queue) GetFlowPattern(methodName string, inputRate float64, params m
 			Amplification: 1.0,
 			ServiceTime:   0.001, // Very fast enqueue operation
 		}
-		
+
 	case "Dequeue":
 		// Update arrival rate for this analysis
 		currentArrivalRate := inputRate
 		if currentArrivalRate <= 0 {
 			currentArrivalRate = q.ArrivalRate
 		}
-		
+
 		// Calculate utilization and stability
 		serviceRate := 1.0 / q.AvgServiceTime
 		utilization := currentArrivalRate / serviceRate
-		
+
 		// Determine success rate and service time based on utilization
 		successRate := 1.0
 		serviceTime := q.AvgServiceTime
-		
+
 		if utilization >= 1.0 {
 			// Queue is unstable - very poor performance
-			successRate = 0.1 // Most requests will timeout or fail
+			successRate = 0.1                   // Most requests will timeout or fail
 			serviceTime = q.AvgServiceTime * 10 // Much longer service times
 		} else if utilization > 0.9 {
 			// High utilization - some degradation
@@ -148,7 +148,7 @@ func (q *MM1Queue) GetFlowPattern(methodName string, inputRate float64, params m
 			successRate = math.Max(0.5, 1.0-degradationFactor*0.1)
 			serviceTime = q.AvgServiceTime * degradationFactor
 		}
-		
+
 		return FlowPattern{
 			Outflows:      map[string]float64{}, // MM1Queue is typically a leaf node
 			SuccessRate:   successRate,
@@ -156,7 +156,7 @@ func (q *MM1Queue) GetFlowPattern(methodName string, inputRate float64, params m
 			ServiceTime:   serviceTime,
 		}
 	}
-	
+
 	// Unknown method
 	return FlowPattern{
 		Outflows:      map[string]float64{},

@@ -192,20 +192,20 @@ func (c *Cache) Write() *Outcomes[sc.AccessResult] {
 }
 
 // GetFlowPattern implements FlowAnalyzable interface for Cache
-func (c *Cache) GetFlowPattern(methodName string, inputRate float64, params map[string]interface{}) FlowPattern {
+func (c *Cache) GetFlowPattern(methodName string, inputRate float64) FlowPattern {
 	switch methodName {
 	case "Read":
 		// Cache reads are leaf operations with no downstream calls
 		// Service time based on hit rate (hits are fast, misses are slower)
 		avgServiceTime := c.HitRate*0.0001 + (1-c.HitRate)*0.0002 // 0.1ms hit, 0.2ms miss
-		
+
 		return FlowPattern{
 			Outflows:      map[string]float64{}, // No downstream calls
 			SuccessRate:   c.HitRate,            // Success = hit rate
 			Amplification: 1.0,                  // Input rate = output rate
 			ServiceTime:   avgServiceTime,
 		}
-		
+
 	case "Write":
 		// Cache writes are also leaf operations
 		return FlowPattern{
@@ -215,7 +215,7 @@ func (c *Cache) GetFlowPattern(methodName string, inputRate float64, params map[
 			ServiceTime:   0.00012, // ~0.12ms for cache write
 		}
 	}
-	
+
 	// Unknown method
 	return FlowPattern{
 		Outflows:      map[string]float64{},

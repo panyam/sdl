@@ -48,7 +48,7 @@ type ResourcePool struct {
 // The core queuing calculations are now done in Acquire() to allow for dynamic changes.
 func (rp *ResourcePool) Init() {
 	// Step 1: No embedded components to initialize
-	
+
 	// Step 2: Set defaults only for uninitialized fields (zero values)
 	if rp.Size == 0 {
 		rp.Size = 1
@@ -59,7 +59,7 @@ func (rp *ResourcePool) Init() {
 	if rp.AvgHoldTime == 0 {
 		rp.AvgHoldTime = 1e-9
 	}
-	
+
 	// Step 3: No derived values to calculate (computed dynamically in methods)
 }
 
@@ -80,7 +80,7 @@ func (rp *ResourcePool) calculateMMCMetrics() (bool, float64) {
 	offeredLoad := rp.ArrivalRate / serviceRate
 	utilization := offeredLoad / float64(rp.Size)
 	isStable := utilization < 1.0
-	
+
 	var avgWaitTimeQ float64 = 0 // Wq
 	if !isStable {
 		avgWaitTimeQ = math.Inf(1)
@@ -108,7 +108,7 @@ func (rp *ResourcePool) calculateMMCMetrics() (bool, float64) {
 	if avgWaitTimeQ < 0 {
 		avgWaitTimeQ = 0
 	}
-	
+
 	return isStable, avgWaitTimeQ
 }
 
@@ -127,7 +127,7 @@ func (rp *ResourcePool) Acquire() *core.Outcomes[core.AccessResult] {
 
 	// If unstable (rho >= 1), return failure with high latency
 	if !isStable || avgWaitTimeQ > 3600.0*24 {
-		outcomes.Add(1.0, core.AccessResult{Success: false, Latency: 3600.0*24}) // 1 day timeout
+		outcomes.Add(1.0, core.AccessResult{Success: false, Latency: 3600.0 * 24}) // 1 day timeout
 		return outcomes
 	}
 
@@ -165,7 +165,7 @@ func (rp *ResourcePool) Acquire() *core.Outcomes[core.AccessResult] {
 }
 
 // GetFlowPattern implements FlowAnalyzable interface for ResourcePool
-func (rp *ResourcePool) GetFlowPattern(methodName string, inputRate float64, params map[string]interface{}) FlowPattern {
+func (rp *ResourcePool) GetFlowPattern(methodName string, inputRate float64) FlowPattern {
 	switch methodName {
 	case "Acquire":
 		// Update arrival rate for this analysis
@@ -173,11 +173,11 @@ func (rp *ResourcePool) GetFlowPattern(methodName string, inputRate float64, par
 		if currentArrivalRate <= 0 {
 			currentArrivalRate = rp.ArrivalRate
 		}
-		
+
 		// Calculate utilization and stability
 		serviceRate := 1.0 / rp.AvgHoldTime
 		utilization := currentArrivalRate / (serviceRate * float64(rp.Size))
-		
+
 		// Determine success rate based on utilization
 		successRate := 1.0
 		if utilization >= 1.0 {
@@ -187,14 +187,14 @@ func (rp *ResourcePool) GetFlowPattern(methodName string, inputRate float64, par
 			// High utilization - some degradation
 			successRate = math.Max(0.9, 1.0-utilization*0.25)
 		}
-		
+
 		return FlowPattern{
 			Outflows:      map[string]float64{}, // ResourcePool is typically a leaf node
 			SuccessRate:   successRate,
 			Amplification: 1.0, // Input rate = output rate for successful acquisitions
 			ServiceTime:   rp.AvgHoldTime,
 		}
-		
+
 	case "Release":
 		// Release operations typically succeed
 		return FlowPattern{
@@ -204,7 +204,7 @@ func (rp *ResourcePool) GetFlowPattern(methodName string, inputRate float64, par
 			ServiceTime:   0.001, // Very fast operation
 		}
 	}
-	
+
 	// Unknown method
 	return FlowPattern{
 		Outflows:      map[string]float64{},
