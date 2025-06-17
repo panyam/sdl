@@ -669,9 +669,6 @@ func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
 		// Clear existing edges to replace with flow-based edges
 		edges = []viz.Edge{}
 
-		// Create renumbered flow sequences for each generator
-		generatorSequences := c.createGeneratorSequences(c.currentFlowContext.FlowPaths, componentInstanceMap)
-
 		// Process each flow path
 		for pathKey, pathInfo := range c.currentFlowContext.FlowPaths {
 			// Parse the flow path key (e.g., "server.HandleLookup->contactCache.Read")
@@ -692,7 +689,7 @@ func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
 				// Only create edge if both components exist in the system
 				_, fromExists := instanceNameToID[fromComponent]
 				_, toExists := instanceNameToID[toComponent]
-				
+
 				if !fromExists || !toExists {
 					// Skip edges to/from components not in the visible system
 					continue
@@ -708,7 +705,7 @@ func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
 					// Decimal order (nested calls)
 					orderStr = fmt.Sprintf("%.1f", pathInfo.Order)
 				}
-				
+
 				// Add generator prefix if available
 				if pathInfo.GeneratorID != "" {
 					// Use unique letter prefix for each generator (A, B, C, etc.)
@@ -717,7 +714,7 @@ func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
 				} else {
 					label = orderStr
 				}
-				
+
 				if pathInfo.Condition != "" {
 					label = fmt.Sprintf("%s: %s", label, pathInfo.Condition)
 				}
@@ -1085,12 +1082,12 @@ func (c *Canvas) getGeneratorPrefix(generatorID string) string {
 	if c.generatorPrefixes == nil {
 		c.generatorPrefixes = make(map[string]string)
 	}
-	
+
 	// Return existing prefix if already assigned
 	if prefix, exists := c.generatorPrefixes[generatorID]; exists {
 		return prefix
 	}
-	
+
 	// Assign next available letter
 	letters := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	nextIndex := len(c.generatorPrefixes)
@@ -1099,7 +1096,7 @@ func (c *Canvas) getGeneratorPrefix(generatorID string) string {
 		c.generatorPrefixes[generatorID] = prefix
 		return prefix
 	}
-	
+
 	// Fallback to numbers if we run out of letters
 	return fmt.Sprintf("%d", nextIndex-25)
 }
