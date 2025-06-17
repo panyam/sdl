@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/panyam/sdl/components"
 	"github.com/panyam/sdl/decl"
 	"github.com/panyam/sdl/loader"
 	"github.com/panyam/sdl/runtime"
@@ -22,20 +21,16 @@ import (
 // modifying, and analyzing SDL models. It acts as the core engine
 // for both scripted tests and future interactive tools like a REPL.
 type Canvas struct {
-	loader              *loader.Loader
-	runtime             *runtime.Runtime
-	activeFile          *loader.FileStatus
-	activeSystem        *runtime.SystemInstance
-	sessionVars         map[string]any
-	loadedFiles         map[string]*loader.FileStatus
-	genManager          *generatorManager
-	measManager         *measurementManager
-	systemParameters    map[string]interface{} // Track parameter changes
-	tsdb                *DuckDBTimeSeriesStore // Time-series database for measurements
-	measurementTracer   *MeasurementTracer     // Current measurement tracer
-	currentFlowContext  *runtime.FlowContext   // Current flow state (applied/active)
-	proposedFlowContext *runtime.FlowContext   // Proposed flow state (being evaluated)
-	generatorPrefixes   map[string]string      // Generator ID -> letter prefix mapping
+	loader            *loader.Loader
+	runtime           *runtime.Runtime
+	activeFile        *loader.FileStatus
+	activeSystem      *runtime.SystemInstance // System now owns its flow state
+	sessionVars       map[string]any
+	loadedFiles       map[string]*loader.FileStatus
+	measManager       *measurementManager     // Keep measurement management
+	tsdb              *DuckDBTimeSeriesStore  // Time-series database for measurements
+	measurementTracer *MeasurementTracer      // Current measurement tracer
+	generatorPrefixes map[string]string       // Generator ID -> letter prefix mapping (UI only)
 }
 
 // NewCanvas creates a new interactive canvas session.
@@ -47,7 +42,6 @@ func NewCanvas() *Canvas {
 		runtime:           r,
 		sessionVars:       make(map[string]any),
 		loadedFiles:       make(map[string]*loader.FileStatus),
-		systemParameters:  make(map[string]interface{}),
 		generatorPrefixes: make(map[string]string),
 	}
 }
@@ -72,8 +66,7 @@ func (c *Canvas) Load(filePath string) error {
 	c.loadedFiles[fileStatus.FullPath] = fileStatus
 	c.activeFile = fileStatus
 
-	// Invalidate flow contexts since file changed
-	c.invalidateFlowContexts()
+	// System will be created fresh with new FlowContext in Use()
 
 	return nil
 }
@@ -108,8 +101,7 @@ func (c *Canvas) Use(systemName string) error {
 	// Crucially, assign the populated environment back to the active system
 	c.activeSystem.Env = env
 
-	// Initialize flow contexts for the new system
-	c.initializeFlowContexts()
+	// System now owns its flow state - no Canvas-level initialization needed
 
 	return nil
 }
@@ -167,8 +159,10 @@ func (c *Canvas) Set(path string, value any) error {
 		// For native components, use reflection to set the field on the underlying Go struct.
 		err := c.setField(currentComp.NativeInstance, []string{finalParamName}, value)
 		if err == nil {
-			// Track parameter change for state persistence
-			c.systemParameters[path] = value
+			// Track parameter change in system's flow context
+			if c.activeSystem != nil {
+				c.activeSystem.SetParameter(path, value)
+			}
 		}
 		return err
 	} else {
@@ -195,8 +189,10 @@ func (c *Canvas) Set(path string, value any) error {
 		}
 		err = currentComp.Set(finalParamName, newValue)
 		if err == nil {
-			// Track parameter change for state persistence
-			c.systemParameters[path] = value
+			// Track parameter change in system's flow context
+			if c.activeSystem != nil {
+				c.activeSystem.SetParameter(path, value)
+			}
 		}
 		return err
 	}
@@ -662,18 +658,15 @@ func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
 		}
 	}
 
-	// Add flow-based edges from FlowContext if available
-	if c.currentFlowContext != nil && len(c.currentFlowContext.FlowPaths) > 0 {
-		log.Printf("Canvas: Processing %d flow paths for edges", len(c.currentFlowContext.FlowPaths))
+	// Add flow-based edges from SystemInstance FlowContext if available
+	if c.activeSystem != nil && c.activeSystem.FlowContext != nil && len(c.activeSystem.FlowContext.FlowPaths) > 0 {
+		log.Printf("Canvas: Processing %d flow paths for edges", len(c.activeSystem.FlowContext.FlowPaths))
 
 		// Clear existing edges to replace with flow-based edges
 		edges = []viz.Edge{}
 
-		// Create renumbered flow sequences for each generator
-		generatorSequences := c.createGeneratorSequences(c.currentFlowContext.FlowPaths, componentInstanceMap)
-
 		// Process each flow path
-		for pathKey, pathInfo := range c.currentFlowContext.FlowPaths {
+		for pathKey, pathInfo := range c.activeSystem.FlowContext.FlowPaths {
 			// Parse the flow path key (e.g., "server.HandleLookup->contactCache.Read")
 			parts := strings.Split(pathKey, "->")
 			if len(parts) != 2 {
@@ -922,8 +915,8 @@ func (c *Canvas) GetStats() CanvasStats {
 		stats.ActiveSystems = 1
 	}
 
-	if c.genManager != nil {
-		stats.ActiveGenerators = len(c.genManager.generators)
+	if c.activeSystem != nil && c.activeSystem.FlowContext != nil {
+		stats.ActiveGenerators = len(c.activeSystem.FlowContext.Generators)
 	}
 
 	if c.measManager != nil {
@@ -933,95 +926,39 @@ func (c *Canvas) GetStats() CanvasStats {
 	return stats
 }
 
-// evaluateProposedFlows calculates what the system flows would be with current generator settings
+// evaluateProposedFlows delegates flow analysis to SystemInstance
 func (c *Canvas) evaluateProposedFlows() error {
 	if c.activeSystem == nil {
 		return fmt.Errorf("no active system available for flow calculation")
 	}
 
-	// Build generator entry points with IDs for per-generator flow tracking
-	var generators []runtime.GeneratorEntryPoint
-	if c.genManager != nil {
-		for _, gen := range c.genManager.generators {
-			if gen.Enabled {
-				generators = append(generators, runtime.GeneratorEntryPoint{
-					Target:      gen.Target,
-					Rate:        float64(gen.Rate),
-					GeneratorID: gen.ID,
-				})
-			}
-		}
-	}
-
-	// Create proposed flow context
-	c.proposedFlowContext = runtime.NewFlowContext(c.activeSystem.System, c.systemParameters)
-	c.registerNativeComponents(c.proposedFlowContext)
-
-	// Run FlowEval to calculate proposed system-wide flows with per-generator tracking
-	if len(generators) > 0 {
-		runtime.SolveSystemFlowsWithGenerators(generators, c.proposedFlowContext)
-	}
-
-	return nil
+	// SystemInstance now handles all flow analysis
+	return c.activeSystem.AnalyzeFlows()
 }
 
-// applyProposedFlows moves the proposed flow context to current (accepting the new flow state)
+// applyProposedFlows is no longer needed - SystemInstance handles flows directly
 func (c *Canvas) applyProposedFlows() {
-	if c.proposedFlowContext != nil {
-		c.currentFlowContext = c.proposedFlowContext
-		c.proposedFlowContext = nil
-	}
+	// No-op: SystemInstance manages flows directly without proposal/apply pattern
 }
 
-// invalidateFlowContexts clears flow contexts when system state changes
-func (c *Canvas) invalidateFlowContexts() {
-	c.currentFlowContext = nil
-	c.proposedFlowContext = nil
-}
+// Flow context management moved to SystemInstance
 
-// initializeFlowContexts sets up initial flow contexts for a new system
-func (c *Canvas) initializeFlowContexts() {
-	if c.activeSystem == nil {
-		return
-	}
-
-	// Initialize current context with zero flows
-	c.currentFlowContext = runtime.NewFlowContext(c.activeSystem.System, c.systemParameters)
-	c.registerNativeComponents(c.currentFlowContext)
-
-	// Clear proposed context
-	c.proposedFlowContext = nil
-}
-
-// GetCurrentFlowRates returns the current (applied) flow rates
+// GetCurrentFlowRates returns the current flow rates via SystemInstance
 func (c *Canvas) GetCurrentFlowRates() map[string]float64 {
-	if c.currentFlowContext == nil {
+	if c.activeSystem == nil {
 		return make(map[string]float64)
 	}
-	return c.currentFlowContext.ArrivalRates
+	return c.activeSystem.GetCurrentFlowRates()
 }
 
-// GetProposedFlowRates returns the proposed flow rates (being evaluated)
-func (c *Canvas) GetProposedFlowRates() map[string]float64 {
-	if c.proposedFlowContext == nil {
-		return make(map[string]float64)
-	}
-	return c.proposedFlowContext.ArrivalRates
-}
+// GetProposedFlowRates removed - flows are now analyzed on-demand by SystemInstance
 
-// GetComponentTotalRPS calculates total RPS for a component by summing all its methods
+// GetComponentTotalRPS calculates total RPS for a component by delegating to SystemInstance
 func (c *Canvas) GetComponentTotalRPS(componentID string) float64 {
-	rates := c.GetCurrentFlowRates()
-	total := 0.0
-	prefix := componentID + "."
-
-	for target, rps := range rates {
-		if strings.HasPrefix(target, prefix) {
-			total += rps
-		}
+	if c.activeSystem == nil {
+		return 0.0
 	}
-
-	return total
+	return c.activeSystem.GetComponentTotalRPS(componentID)
 }
 
 // Close closes the Canvas and cleans up resources
@@ -1035,50 +972,7 @@ func (c *Canvas) Close() error {
 	return nil
 }
 
-// registerNativeComponents registers native component instances in the FlowContext
-// for flow analysis delegation
-func (c *Canvas) registerNativeComponents(flowContext *runtime.FlowContext) {
-	if c.activeSystem == nil || flowContext == nil {
-		return
-	}
-
-	// Iterate through system instances and register native components
-	for _, item := range c.activeSystem.System.Body {
-		if instDecl, ok := item.(*decl.InstanceDecl); ok {
-			componentName := instDecl.ComponentName.Value
-			instanceName := instDecl.Name.Value
-
-			// Check if this is a known native component type and create an instance
-			var nativeComponent components.FlowAnalyzable
-			switch componentName {
-			case "ResourcePool":
-				nativeComponent = &components.ResourcePool{
-					Name:        instanceName,
-					Size:        5, // Default size - could be overridden by parameters
-					ArrivalRate: 1.0,
-					AvgHoldTime: 0.01, // 10ms default hold time
-				}
-				nativeComponent.(*components.ResourcePool).Init()
-
-			case "HashIndex":
-				nativeComponent = &components.HashIndex{}
-				nativeComponent.(*components.HashIndex).Init()
-
-			case "Cache":
-				nativeComponent = &components.Cache{
-					HitRate: 0.6, // Default 60% hit rate matching the original simulation
-				}
-				nativeComponent.(*components.Cache).Init()
-			}
-
-			// Register the native component in the FlowContext
-			if nativeComponent != nil {
-				flowContext.SetNativeComponent(instanceName, nativeComponent)
-				log.Printf("Canvas: Registered native component '%s' (type %s) for flow analysis", instanceName, componentName)
-			}
-		}
-	}
-}
+// Native component registration moved to SystemInstance
 
 // getGeneratorPrefix returns a unique letter prefix for each generator (A, B, C, etc.)
 func (c *Canvas) getGeneratorPrefix(generatorID string) string {

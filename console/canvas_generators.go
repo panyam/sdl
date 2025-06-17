@@ -67,15 +67,8 @@ type measurementManager struct {
 	stopChans    map[string]chan struct{}
 }
 
-// Extend Canvas struct with generator and measurement managers
+// initManagers initializes measurement manager only (generators now managed by SystemInstance)
 func (c *Canvas) initManagers() {
-	if c.genManager == nil {
-		c.genManager = &generatorManager{
-			generators: make(map[string]*GeneratorConfig),
-			running:    make(map[string]bool),
-			stopChans:  make(map[string]chan struct{}),
-		}
-	}
 	if c.measManager == nil {
 		c.measManager = &measurementManager{
 			measurements: make(map[string]*MeasurementConfig),
@@ -85,196 +78,103 @@ func (c *Canvas) initManagers() {
 	}
 }
 
-// AddGenerator adds a new traffic generator configuration
+// AddGenerator delegates to SystemInstance (legacy Canvas compatibility)
 func (c *Canvas) AddGenerator(config *GeneratorConfig) error {
-	c.initManagers()
+	if c.activeSystem == nil {
+		return fmt.Errorf("no active system. Call Use() before adding generators")
+	}
 
 	if config.ID == "" {
 		return fmt.Errorf("generator ID cannot be empty")
 	}
 
-	c.genManager.mu.Lock()
-	if _, exists := c.genManager.generators[config.ID]; exists {
-		c.genManager.mu.Unlock()
-		return fmt.Errorf("generator with ID '%s' already exists", config.ID)
-	}
-	c.genManager.generators[config.ID] = config
-	c.genManager.mu.Unlock()
-
-	// Trigger flow recalculation if generator is enabled
-	if config.Enabled {
-		if err := c.recomputeSystemFlows(); err != nil {
-			fmt.Printf("Warning: Failed to recompute system flows: %v\n", err)
-		}
-	}
-
-	return nil
+	// Convert Canvas GeneratorConfig to runtime GeneratorConfig
+	return c.activeSystem.AddGenerator(config.ID, config.Name, config.Target, float64(config.Rate))
 }
 
-// RemoveGenerator removes a traffic generator
+// RemoveGenerator delegates to SystemInstance
 func (c *Canvas) RemoveGenerator(id string) error {
-	c.initManagers()
-
-	c.genManager.mu.Lock()
-	gen, exists := c.genManager.generators[id]
-	if !exists {
-		c.genManager.mu.Unlock()
-		return fmt.Errorf("generator with ID '%s' not found", id)
+	if c.activeSystem == nil {
+		return fmt.Errorf("no active system available")
 	}
 
-	wasEnabled := gen.Enabled
-
-	// Stop if running
-	if c.genManager.running[id] {
-		if stopChan, ok := c.genManager.stopChans[id]; ok {
-			close(stopChan)
-			delete(c.genManager.stopChans, id)
-		}
-		delete(c.genManager.running, id)
-	}
-
-	delete(c.genManager.generators, id)
-	c.genManager.mu.Unlock()
-
-	// Trigger flow recalculation if generator was enabled
-	if wasEnabled {
-		if err := c.recomputeSystemFlows(); err != nil {
-			fmt.Printf("Warning: Failed to recompute system flows: %v\n", err)
-		}
-	}
-
-	return nil
+	return c.activeSystem.RemoveGenerator(id)
 }
 
-// UpdateGenerator updates an existing generator configuration
+// UpdateGenerator delegates to SystemInstance
 func (c *Canvas) UpdateGenerator(config *GeneratorConfig) error {
-	c.initManagers()
+	if c.activeSystem == nil {
+		return fmt.Errorf("no active system available")
+	}
 
-	c.genManager.mu.Lock()
-	if _, exists := c.genManager.generators[config.ID]; !exists {
-		c.genManager.mu.Unlock()
-		return fmt.Errorf("generator with ID '%s' not found", config.ID)
-	}
-	c.genManager.generators[config.ID] = config
-	c.genManager.mu.Unlock()
-	
-	// Trigger FlowEval to update downstream component loads
-	// This must be called after releasing the lock to avoid deadlock
-	if err := c.recomputeSystemFlows(); err != nil {
-		fmt.Printf("Warning: Failed to recompute system flows: %v\n", err)
-		// Don't fail the update - just log the warning
-	}
-	
-	return nil
+	return c.activeSystem.UpdateGenerator(config.ID, float64(config.Rate), config.Enabled)
 }
 
-// PauseGenerator pauses a running generator
+// PauseGenerator delegates to SystemInstance
 func (c *Canvas) PauseGenerator(id string) error {
-	c.initManagers()
+	if c.activeSystem == nil {
+		return fmt.Errorf("no active system available")
+	}
 
-	c.genManager.mu.Lock()
-	gen, exists := c.genManager.generators[id]
+	gen, exists := c.activeSystem.GetGenerator(id)
 	if !exists {
-		c.genManager.mu.Unlock()
 		return fmt.Errorf("generator with ID '%s' not found", id)
 	}
 
-	wasEnabled := gen.Enabled
-	gen.Enabled = false
-	c.genManager.mu.Unlock()
-
-	// Trigger flow recalculation if generator was enabled
-	if wasEnabled {
-		if err := c.recomputeSystemFlows(); err != nil {
-			fmt.Printf("Warning: Failed to recompute system flows: %v\n", err)
-		}
-	}
-
-	return nil
+	return c.activeSystem.UpdateGenerator(id, gen.Rate, false) // Disable the generator
 }
 
-// ResumeGenerator resumes a paused generator
+// ResumeGenerator delegates to SystemInstance  
 func (c *Canvas) ResumeGenerator(id string) error {
-	c.initManagers()
+	if c.activeSystem == nil {
+		return fmt.Errorf("no active system available")
+	}
 
-	c.genManager.mu.Lock()
-	gen, exists := c.genManager.generators[id]
+	gen, exists := c.activeSystem.GetGenerator(id)
 	if !exists {
-		c.genManager.mu.Unlock()
 		return fmt.Errorf("generator with ID '%s' not found", id)
 	}
 
-	wasDisabled := !gen.Enabled
-	gen.Enabled = true
-	c.genManager.mu.Unlock()
-
-	// Trigger flow recalculation if generator was disabled
-	if wasDisabled {
-		if err := c.recomputeSystemFlows(); err != nil {
-			fmt.Printf("Warning: Failed to recompute system flows: %v\n", err)
-		}
-	}
-
-	return nil
+	return c.activeSystem.UpdateGenerator(id, gen.Rate, true) // Enable the generator
 }
 
-// StartGenerators starts all enabled generators
+// StartGenerators - simplified for flow analysis (no actual simulation running)
 func (c *Canvas) StartGenerators() error {
-	c.initManagers()
-
 	if c.activeSystem == nil {
 		return fmt.Errorf("no active system. Call Use() before starting generators")
 	}
 
-	c.genManager.mu.Lock()
-	defer c.genManager.mu.Unlock()
-
-	for id, gen := range c.genManager.generators {
-		if gen.Enabled && !c.genManager.running[id] {
-			stopChan := make(chan struct{})
-			c.genManager.stopChans[id] = stopChan
-			c.genManager.running[id] = true
-
-			// Start generator goroutine
-			go c.runGenerator(id, gen, stopChan)
-		}
-	}
-
-	return nil
+	// For flow analysis, we just trigger flow recalculation
+	return c.activeSystem.AnalyzeFlows()
 }
 
-// StopGenerators stops all running generators
+// StopGenerators - simplified for flow analysis
 func (c *Canvas) StopGenerators() error {
-	c.initManagers()
-
-	c.genManager.mu.Lock()
-	defer c.genManager.mu.Unlock()
-
-	for id, running := range c.genManager.running {
-		if running {
-			if stopChan, ok := c.genManager.stopChans[id]; ok {
-				close(stopChan)
-				delete(c.genManager.stopChans, id)
-			}
-			c.genManager.running[id] = false
-		}
-	}
-
+	// For flow analysis, generators don't actually "run" - this is a no-op
 	return nil
 }
 
-// GetGenerators returns all generator configurations
+// GetGenerators returns all generator configurations from SystemInstance
 func (c *Canvas) GetGenerators() map[string]*GeneratorConfig {
-	c.initManagers()
-
-	c.genManager.mu.RLock()
-	defer c.genManager.mu.RUnlock()
-
-	// Return a copy to prevent external modification
-	result := make(map[string]*GeneratorConfig)
-	for k, v := range c.genManager.generators {
-		result[k] = v
+	if c.activeSystem == nil {
+		return make(map[string]*GeneratorConfig)
 	}
+
+	activeGenerators := c.activeSystem.GetActiveGenerators()
+	result := make(map[string]*GeneratorConfig)
+	
+	// Convert runtime.GeneratorConfig to console.GeneratorConfig
+	for _, gen := range activeGenerators {
+		result[gen.ID] = &GeneratorConfig{
+			ID:      gen.ID,
+			Name:    gen.Name,
+			Target:  gen.Target,
+			Rate:    int(gen.Rate),
+			Enabled: gen.Enabled,
+			Options: gen.Options,
+		}
+	}
+	
 	return result
 }
 
@@ -372,9 +272,11 @@ func (c *Canvas) Save() (*CanvasState, error) {
 		state.SessionVars[k] = v
 	}
 
-	// Copy system parameters
-	for k, v := range c.systemParameters {
-		state.SystemParameters[k] = v
+	// Copy system parameters from SystemInstance
+	if c.activeSystem != nil && c.activeSystem.FlowContext != nil {
+		for k, v := range c.activeSystem.FlowContext.Parameters {
+			state.SystemParameters[k] = v
+		}
 	}
 
 	return state, nil
