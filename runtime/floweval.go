@@ -9,7 +9,35 @@ import (
 	"github.com/panyam/sdl/components"
 )
 
-// FlowPathInfo tracks information about a flow path for visualization
+// GeneratorConfig represents a traffic generator specification
+type GeneratorConfig struct {
+	ID      string                 `json:"id"`      // Unique identifier (e.g., "load1")
+	Name    string                 `json:"name"`    // Human-readable name
+	Target  string                 `json:"target"`  // Method target (e.g., "server.Lookup")
+	Rate    float64                `json:"rate"`    // Requests per second
+	Enabled bool                   `json:"enabled"` // Whether generator is active
+	Options map[string]interface{} `json:"options"` // Extensible config
+}
+
+// FlowPath represents a single flow between components with attribution
+type FlowPath struct {
+	From        string  `json:"from"`        // Source component.method
+	To          string  `json:"to"`          // Target component.method
+	Rate        float64 `json:"rate"`        // Flow rate (RPS)
+	Order       float64 `json:"order"`       // Execution order (supports decimals)
+	Condition   string  `json:"condition"`   // Condition expression (e.g., "!(cached)")
+	Probability float64 `json:"probability"` // Condition probability [0,1]
+	GeneratorID string  `json:"generatorId"` // Which generator originated this flow
+}
+
+// FlowMetrics represents flow statistics for monitoring
+type FlowMetrics struct {
+	TotalRPS     float64            `json:"totalRPS"`     // Total system RPS
+	ComponentRPS map[string]float64 `json:"componentRPS"` // RPS per component
+	GeneratorRPS map[string]float64 `json:"generatorRPS"` // RPS per generator
+}
+
+// FlowPathInfo tracks information about a flow path for visualization (LEGACY - will be replaced by FlowPath)
 type FlowPathInfo struct {
 	Order       float64 // Execution order (supports decimals for conditional paths)
 	Condition   string  // Condition expression if this is a conditional path
@@ -44,16 +72,21 @@ type FlowContext struct {
 	// Variable outcome tracking for conditional flow analysis
 	VariableOutcomes map[string]float64 // variable name -> success rate (for method-local analysis)
 
-	// Flow order tracking for visualization
+	// Traffic generators and their flows (NEW ARCHITECTURE)
+	Generators      map[string]*GeneratorConfig `json:"generators"`      // ID -> generator config
+	GeneratorFlows  map[string][]FlowPath       `json:"generatorFlows"`  // GeneratorID -> flow paths
+	AggregatedFlows map[string]float64          `json:"aggregatedFlows"` // "comp.method" -> total RPS
+
+	// Flow order tracking for visualization (LEGACY - will be replaced)
 	FlowOrder          int                     // Current flow order counter
 	FlowPaths          map[string]FlowPathInfo // flowKey -> path info for visualization
 	currentCondition   string                  // Current condition context
 	currentProbability float64                 // Current condition probability
-	
-	// Generator-specific flow tracking
-	CurrentGeneratorID string             // ID of the generator currently being analyzed
-	GeneratorFlowOrder map[string]int     // Per-generator flow order counters
-	GeneratorColors    map[string]string  // Generator ID -> color mapping
+
+	// Generator-specific flow tracking (LEGACY - will be replaced)
+	CurrentGeneratorID string            // ID of the generator currently being analyzed
+	GeneratorFlowOrder map[string]int    // Per-generator flow order counters
+	GeneratorColors    map[string]string // Generator ID -> color mapping
 }
 
 // NewFlowContext creates a new FlowContext with sensible defaults
@@ -71,10 +104,16 @@ func NewFlowContext(system *SystemDecl, parameters map[string]interface{}) *Flow
 		MaxIterations:        10,
 		CallStack:            make([]string, 0),
 		VariableOutcomes:     make(map[string]float64),
-		FlowOrder:            0,
-		FlowPaths:            make(map[string]FlowPathInfo),
-		GeneratorFlowOrder:   make(map[string]int),
-		GeneratorColors:      make(map[string]string),
+		// NEW ARCHITECTURE - Initialize new generator fields
+		Generators:      make(map[string]*GeneratorConfig),
+		GeneratorFlows:  make(map[string][]FlowPath),
+		AggregatedFlows: make(map[string]float64),
+
+		// LEGACY FIELDS - Keep for backward compatibility during transition
+		FlowOrder:          0,
+		FlowPaths:          make(map[string]FlowPathInfo),
+		GeneratorFlowOrder: make(map[string]int),
+		GeneratorColors:    make(map[string]string),
 	}
 }
 
@@ -96,7 +135,7 @@ func SolveSystemFlowsWithGenerators(generators []GeneratorEntryPoint, context *F
 	context.FlowOrder = 0
 	context.FlowPaths = make(map[string]FlowPathInfo)
 	context.GeneratorFlowOrder = make(map[string]int)
-	
+
 	// Set up generator colors (cycling through a palette)
 	colors := []string{"#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#06b6d4", "#84cc16", "#f97316"}
 	for i, gen := range generators {
@@ -121,21 +160,21 @@ func SolveSystemFlowsWithGenerators(generators []GeneratorEntryPoint, context *F
 	for _, gen := range generators {
 		context.CurrentGeneratorID = gen.GeneratorID
 		log.Printf("SolveSystemFlowsWithGenerators: Analyzing flows for generator %s", gen.GeneratorID)
-		
+
 		// Reset arrival rates and analyze this generator in isolation
 		// to capture all its nested calls with proper generator context
 		isolatedRates := make(map[string]float64)
 		isolatedRates[gen.Target] = gen.Rate
-		
+
 		// Temporarily save and clear arrival rates
 		savedRates := context.ArrivalRates
 		context.ArrivalRates = isolatedRates
-		
+
 		// Run a few iterations to capture nested calls for this generator
 		for iteration := 0; iteration < 3; iteration++ {
 			newRates := make(map[string]float64)
 			newRates[gen.Target] = gen.Rate
-			
+
 			for componentMethod, inRate := range context.ArrivalRates {
 				if inRate > 1e-9 {
 					component, method := parseComponentMethod(componentMethod)
@@ -147,17 +186,17 @@ func SolveSystemFlowsWithGenerators(generators []GeneratorEntryPoint, context *F
 					}
 				}
 			}
-			
+
 			context.ArrivalRates = newRates
 		}
-		
+
 		// Restore arrival rates
 		context.ArrivalRates = savedRates
 	}
 
 	// Clear the current generator context for convergence analysis
 	context.CurrentGeneratorID = ""
-	
+
 	// Run convergence analysis for back-pressure modeling
 	// The FlowPaths are already populated with per-generator information
 	// so we just need the convergence without resetting flow paths
@@ -538,7 +577,7 @@ func (fc *FlowContext) analyzeReturnStatement(stmt *ReturnStmt, inputRate float6
 
 					log.Printf("FlowEval: Return call flow: %s -> %s (%.2f RPS)",
 						strings.Join(fc.CallStack, " -> "), flowKey, inputRate)
-					
+
 					// Track flow path with current conditional context
 					fc.trackFlowPath(flowKey, fc.currentCondition, fc.currentProbability)
 				}
@@ -826,19 +865,19 @@ func (fc *FlowContext) trackFlowPath(flowKey string, condition string, probabili
 	if len(fc.CallStack) > 0 {
 		fromKey = fc.CallStack[len(fc.CallStack)-1]
 	}
-	
+
 	// Create unique flow path key including source
 	pathKey := fmt.Sprintf("%s->%s", fromKey, flowKey)
-	
+
 	// If we've already tracked this path, don't update it
 	if _, exists := fc.FlowPaths[pathKey]; exists {
 		return
 	}
-	
+
 	// Special handling for calls that happen within other methods
 	// For example, idx.Find happens within database.LookupByPhone
 	var baseOrder float64
-	
+
 	// Check if this is a call from database.LookupByPhone to idx.Find
 	if strings.Contains(fromKey, "database.LookupByPhone") && strings.Contains(flowKey, "idx.") {
 		// This should be ordered as 3.1 since database.LookupByPhone is order 3
@@ -859,10 +898,10 @@ func (fc *FlowContext) trackFlowPath(flowKey string, condition string, probabili
 			// Increment the generator-specific order counter
 			fc.GeneratorFlowOrder[fc.CurrentGeneratorID]++
 			generatorOrder := fc.GeneratorFlowOrder[fc.CurrentGeneratorID]
-			
+
 			// Create prefixed order (e.g., "A1", "B1", "A2", "B2")
 			baseOrder = float64(generatorOrder)
-			
+
 			// If this is a conditional path, use decimal numbering
 			if condition != "" {
 				// Check if we already have a conditional at this level for this generator
@@ -878,7 +917,7 @@ func (fc *FlowContext) trackFlowPath(flowKey string, condition string, probabili
 			// Fallback to global flow tracking
 			fc.FlowOrder++
 			baseOrder = float64(fc.FlowOrder)
-			
+
 			// If this is a conditional path, use decimal numbering
 			if condition != "" {
 				// Check if we already have a conditional at this level
@@ -892,7 +931,7 @@ func (fc *FlowContext) trackFlowPath(flowKey string, condition string, probabili
 			}
 		}
 	}
-	
+
 	// Get generator color
 	color := "#fbbf24" // Default amber color
 	if fc.CurrentGeneratorID != "" {
@@ -900,7 +939,7 @@ func (fc *FlowContext) trackFlowPath(flowKey string, condition string, probabili
 			color = genColor
 		}
 	}
-	
+
 	fc.FlowPaths[pathKey] = FlowPathInfo{
 		Order:       baseOrder,
 		Condition:   condition,
@@ -908,7 +947,7 @@ func (fc *FlowContext) trackFlowPath(flowKey string, condition string, probabili
 		GeneratorID: fc.CurrentGeneratorID,
 		Color:       color,
 	}
-	
+
 	log.Printf("FlowEval: Tracked flow path %s with order %.1f, condition: %s, generator: %s, color: %s", pathKey, baseOrder, condition, fc.CurrentGeneratorID, color)
 }
 
@@ -940,4 +979,191 @@ func (fc *FlowContext) analyzeStatementWithCondition(stmt Stmt, inputRate float6
 	// Restore previous context
 	fc.currentCondition = savedCondition
 	fc.currentProbability = savedProbability
+}
+
+// ===== NEW GENERATOR MANAGEMENT METHODS =====
+
+// AddGenerator adds a new traffic generator to the flow context
+func (fc *FlowContext) AddGenerator(id, name, target string, rate float64) error {
+	if fc.Generators == nil {
+		fc.Generators = make(map[string]*GeneratorConfig)
+	}
+
+	if _, exists := fc.Generators[id]; exists {
+		return fmt.Errorf("generator with ID '%s' already exists", id)
+	}
+
+	fc.Generators[id] = &GeneratorConfig{
+		ID:      id,
+		Name:    name,
+		Target:  target,
+		Rate:    rate,
+		Enabled: true,
+		Options: make(map[string]interface{}),
+	}
+
+	return nil
+}
+
+// RemoveGenerator removes a traffic generator from the flow context
+func (fc *FlowContext) RemoveGenerator(id string) error {
+	if fc.Generators == nil {
+		return fmt.Errorf("no generators configured")
+	}
+
+	if _, exists := fc.Generators[id]; !exists {
+		return fmt.Errorf("generator with ID '%s' not found", id)
+	}
+
+	delete(fc.Generators, id)
+
+	// Clean up associated flow data
+	if fc.GeneratorFlows != nil {
+		delete(fc.GeneratorFlows, id)
+	}
+
+	return nil
+}
+
+// UpdateGenerator modifies an existing generator
+func (fc *FlowContext) UpdateGenerator(id string, rate float64, enabled bool) error {
+	if fc.Generators == nil {
+		return fmt.Errorf("no generators configured")
+	}
+
+	generator, exists := fc.Generators[id]
+	if !exists {
+		return fmt.Errorf("generator with ID '%s' not found", id)
+	}
+
+	generator.Rate = rate
+	generator.Enabled = enabled
+
+	return nil
+}
+
+// GetGenerator retrieves a generator by ID
+func (fc *FlowContext) GetGenerator(id string) (*GeneratorConfig, bool) {
+	if fc.Generators == nil {
+		return nil, false
+	}
+
+	generator, exists := fc.Generators[id]
+	return generator, exists
+}
+
+// GetActiveGenerators returns all enabled generators
+func (fc *FlowContext) GetActiveGenerators() []*GeneratorConfig {
+	var active []*GeneratorConfig
+
+	if fc.Generators == nil {
+		return active
+	}
+
+	for _, generator := range fc.Generators {
+		if generator.Enabled {
+			active = append(active, generator)
+		}
+	}
+
+	return active
+}
+
+// GetGeneratorFlows returns flows originating from a specific generator
+func (fc *FlowContext) GetGeneratorFlows(generatorID string) []FlowPath {
+	if fc.GeneratorFlows == nil {
+		return []FlowPath{}
+	}
+
+	flows, exists := fc.GeneratorFlows[generatorID]
+	if !exists {
+		return []FlowPath{}
+	}
+
+	return flows
+}
+
+// GetAggregatedFlows returns total flow rates per component.method
+func (fc *FlowContext) GetAggregatedFlows() map[string]float64 {
+	if fc.AggregatedFlows == nil {
+		return make(map[string]float64)
+	}
+
+	// Return a copy to prevent external modification
+	result := make(map[string]float64)
+	for k, v := range fc.AggregatedFlows {
+		result[k] = v
+	}
+
+	return result
+}
+
+// GetFlowMetrics returns flow statistics for monitoring
+func (fc *FlowContext) GetFlowMetrics() FlowMetrics {
+	metrics := FlowMetrics{
+		ComponentRPS: make(map[string]float64),
+		GeneratorRPS: make(map[string]float64),
+	}
+
+	// Calculate total RPS and generator RPS
+	if fc.Generators != nil {
+		for id, generator := range fc.Generators {
+			if generator.Enabled {
+				metrics.GeneratorRPS[id] = generator.Rate
+				metrics.TotalRPS += generator.Rate
+			}
+		}
+	}
+
+	// Calculate component RPS from aggregated flows
+	if fc.AggregatedFlows != nil {
+		for target, rate := range fc.AggregatedFlows {
+			// Extract component name from "component.method"
+			parts := strings.Split(target, ".")
+			if len(parts) >= 1 {
+				component := parts[0]
+				metrics.ComponentRPS[component] += rate
+			}
+		}
+	}
+
+	return metrics
+}
+
+// Reset clears all flow state while preserving generators
+func (fc *FlowContext) Reset() {
+	// Clear flow state but keep generators
+	fc.GeneratorFlows = make(map[string][]FlowPath)
+	fc.AggregatedFlows = make(map[string]float64)
+	fc.ArrivalRates = make(map[string]float64)
+	fc.SuccessRates = make(map[string]float64)
+
+	// Reset legacy fields too
+	fc.FlowOrder = 0
+	fc.FlowPaths = make(map[string]FlowPathInfo)
+	fc.VariableOutcomes = make(map[string]float64)
+}
+
+// Validate checks flow context consistency
+func (fc *FlowContext) Validate() error {
+	if fc.System == nil {
+		return fmt.Errorf("flow context missing system definition")
+	}
+
+	if fc.Generators == nil {
+		fc.Generators = make(map[string]*GeneratorConfig)
+	}
+
+	if fc.GeneratorFlows == nil {
+		fc.GeneratorFlows = make(map[string][]FlowPath)
+	}
+
+	if fc.AggregatedFlows == nil {
+		fc.AggregatedFlows = make(map[string]float64)
+	}
+
+	// Validate generator targets exist in system
+	// TODO: Add system validation logic here
+
+	return nil
 }
