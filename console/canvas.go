@@ -36,6 +36,8 @@ type Canvas struct {
 	currentFlowRates    runtime.RateMap        // Current flow rates (runtime-based)
 	proposedFlowRates   runtime.RateMap        // Proposed flow rates (runtime-based)
 	generatorPrefixes   map[string]string      // Generator ID -> letter prefix mapping
+	currentFlowStrategy string                 // Strategy used for current flow rates
+	manualRateOverrides map[string]float64     // Manual arrival rate overrides
 }
 
 // NewCanvas creates a new interactive canvas session.
@@ -43,12 +45,14 @@ func NewCanvas() *Canvas {
 	l := loader.NewLoader(nil, nil, 10)
 	r := runtime.NewRuntime(l)
 	return &Canvas{
-		loader:            l,
-		runtime:           r,
-		sessionVars:       make(map[string]any),
-		loadedFiles:       make(map[string]*loader.FileStatus),
-		systemParameters:  make(map[string]interface{}),
-		generatorPrefixes: make(map[string]string),
+		loader:              l,
+		runtime:             r,
+		sessionVars:         make(map[string]any),
+		loadedFiles:         make(map[string]*loader.FileStatus),
+		systemParameters:    make(map[string]interface{}),
+		generatorPrefixes:   make(map[string]string),
+		manualRateOverrides: make(map[string]float64),
+		currentFlowStrategy: runtime.GetDefaultFlowStrategy(),
 	}
 }
 
@@ -845,12 +849,17 @@ func (c *Canvas) GetStats() CanvasStats {
 
 // evaluateProposedFlows calculates what the system flows would be with current generator settings
 func (c *Canvas) evaluateProposedFlows() error {
+	return c.evaluateProposedFlowsWithStrategy(c.currentFlowStrategy)
+}
+
+// evaluateProposedFlowsWithStrategy calculates flows using specified strategy
+func (c *Canvas) evaluateProposedFlowsWithStrategy(strategy string) error {
 	if c.activeSystem == nil {
 		return fmt.Errorf("no active system available for flow calculation")
 	}
 
-	// Build runtime generator entry points with ComponentInstance references
-	var generators []runtime.GeneratorEntryPointRuntime
+	// Build API generator configs
+	var generators []runtime.GeneratorConfigAPI
 	if c.genManager != nil {
 		for _, gen := range c.genManager.generators {
 			if gen.Enabled {
@@ -864,36 +873,64 @@ func (c *Canvas) evaluateProposedFlows() error {
 				componentName := parts[0]
 				methodName := strings.Join(parts[1:], ".")
 				
-				// Find the component instance using SystemInstance.FindComponent
-				compInst := c.activeSystem.FindComponent(componentName)
-				if compInst == nil {
-					log.Printf("Canvas: Component not found: %s", componentName)
-					continue
-				}
-				log.Printf("Canvas: Found component %s (ID: %s) for generator target %s", 
-					componentName, compInst.ID(), gen.Target)
-				
-				generators = append(generators, runtime.GeneratorEntryPointRuntime{
-					Component:   compInst,
-					Method:      methodName,
-					Rate:        float64(gen.Rate),
-					GeneratorID: gen.ID,
+				generators = append(generators, runtime.GeneratorConfigAPI{
+					ID:        gen.ID,
+					Component: componentName,
+					Method:    methodName,
+					Rate:      float64(gen.Rate),
 				})
 			}
 		}
 	}
 
-	// Create runtime flow scope with the system's environment
-	c.proposedFlowScope = runtime.NewFlowScope(c.activeSystem.Env)
-
-	// Run runtime-based FlowEval to calculate proposed system-wide flows
-	if len(generators) > 0 {
-		c.proposedFlowRates = runtime.SolveSystemFlowsRuntime(generators, c.proposedFlowScope)
-	} else {
-		c.proposedFlowRates = runtime.NewRateMap()
+	// Evaluate flows using the strategy
+	result, err := runtime.EvaluateFlowStrategy(strategy, c.activeSystem, generators)
+	if err != nil {
+		return err
 	}
 
+	// Convert results back to runtime format for compatibility
+	// This is temporary until we fully migrate to the new API
+	c.proposedFlowScope = runtime.NewFlowScope(c.activeSystem.Env)
+	c.proposedFlowRates = c.convertFlowResultToRateMap(result)
+
 	return nil
+}
+
+// convertFlowResultToRateMap converts API flow result back to RateMap
+// This is a temporary compatibility layer
+func (c *Canvas) convertFlowResultToRateMap(result *runtime.FlowAnalysisResult) runtime.RateMap {
+	rateMap := runtime.NewRateMap()
+	
+	for compMethod, rate := range result.Flows.ComponentRates {
+		parts := strings.Split(compMethod, ".")
+		if len(parts) >= 2 {
+			componentName := parts[0]
+			methodName := strings.Join(parts[1:], ".")
+			
+			// Find the component instance
+			compInst := c.activeSystem.FindComponent(componentName)
+			if compInst != nil {
+				rateMap.SetRate(compInst, methodName, rate)
+			}
+		}
+	}
+	
+	// Apply manual overrides
+	for compMethod, rate := range c.manualRateOverrides {
+		parts := strings.Split(compMethod, ".")
+		if len(parts) >= 2 {
+			componentName := parts[0]
+			methodName := strings.Join(parts[1:], ".")
+			
+			compInst := c.activeSystem.FindComponent(componentName)
+			if compInst != nil {
+				rateMap.SetRate(compInst, methodName, rate)
+			}
+		}
+	}
+	
+	return rateMap
 }
 
 // applyProposedFlows moves the proposed flow state to current (accepting the new flow state)
@@ -1033,4 +1070,110 @@ func (c *Canvas) getGeneratorPrefix(generatorID string) string {
 
 	// Fallback to numbers if we run out of letters
 	return fmt.Sprintf("%d", nextIndex-25)
+}
+
+// Flow Strategy API Methods
+
+// GetFlowStrategies returns all available flow strategies
+func (c *Canvas) GetFlowStrategies() map[string]runtime.StrategyInfo {
+	return runtime.ListFlowStrategies()
+}
+
+// EvaluateFlowWithStrategy evaluates flows using specified strategy
+func (c *Canvas) EvaluateFlowWithStrategy(strategy string) (*runtime.FlowAnalysisResult, error) {
+	if c.activeSystem == nil {
+		return nil, fmt.Errorf("no active system")
+	}
+
+	// Build API generator configs
+	var generators []runtime.GeneratorConfigAPI
+	if c.genManager != nil {
+		for _, gen := range c.genManager.generators {
+			if gen.Enabled {
+				parts := strings.Split(gen.Target, ".")
+				if len(parts) < 2 {
+					continue
+				}
+				
+				componentName := parts[0]
+				methodName := strings.Join(parts[1:], ".")
+				
+				generators = append(generators, runtime.GeneratorConfigAPI{
+					ID:        gen.ID,
+					Component: componentName,
+					Method:    methodName,
+					Rate:      float64(gen.Rate),
+				})
+			}
+		}
+	}
+
+	return runtime.EvaluateFlowStrategy(strategy, c.activeSystem, generators)
+}
+
+// ApplyFlowStrategy applies flows from specified strategy as current arrival rates
+func (c *Canvas) ApplyFlowStrategy(strategy string) error {
+	// Evaluate flows with the strategy
+	err := c.evaluateProposedFlowsWithStrategy(strategy)
+	if err != nil {
+		return err
+	}
+	
+	// Apply the proposed flows
+	c.applyProposedFlows()
+	c.currentFlowStrategy = strategy
+	
+	return nil
+}
+
+// GetCurrentFlowState returns the current flow state
+func (c *Canvas) GetCurrentFlowState() *runtime.FlowState {
+	rates := make(map[string]float64)
+	
+	// Convert current flow rates to API format
+	if c.currentFlowRates != nil {
+		for comp, methods := range c.currentFlowRates {
+			// Find component name
+			compName := ""
+			for name, value := range c.activeSystem.Env.All() {
+				if compInst, ok := value.Value.(*runtime.ComponentInstance); ok && compInst == comp {
+					compName = name
+					break
+				}
+			}
+			
+			if compName != "" {
+				for method, rate := range methods {
+					key := fmt.Sprintf("%s.%s", compName, method)
+					rates[key] = rate
+				}
+			}
+		}
+	}
+	
+	return &runtime.FlowState{
+		Strategy:        c.currentFlowStrategy,
+		Rates:           rates,
+		ManualOverrides: c.manualRateOverrides,
+	}
+}
+
+// SetComponentArrivalRate sets a manual arrival rate override
+func (c *Canvas) SetComponentArrivalRate(component, method string, rate float64) error {
+	if c.activeSystem == nil {
+		return fmt.Errorf("no active system")
+	}
+	
+	// Verify component exists
+	compInst := c.activeSystem.FindComponent(component)
+	if compInst == nil {
+		return fmt.Errorf("component '%s' not found", component)
+	}
+	
+	// Store the override
+	key := fmt.Sprintf("%s.%s", component, method)
+	c.manualRateOverrides[key] = rate
+	
+	// Recompute flows to apply the override
+	return c.recomputeSystemFlows()
 }

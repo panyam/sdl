@@ -19,13 +19,11 @@ var loadCmd = &cobra.Command{
 		if err := checkServerConnection(); err != nil {
 			return
 		}
-		
-		_, err := makeAPICall("POST", "/api/console/load", map[string]string{"filePath": args[0]})
-		if err != nil {
-			fmt.Printf("❌ Error: %v\n", err)
-			return
+
+		_, err := makeAPICall("POST", "/api/console/load", map[string]any{"filePath": args[0]})
+		if err == nil {
+			fmt.Printf("✅ Loaded %s successfully\n", args[0])
 		}
-		fmt.Printf("✅ Loaded %s successfully\n", args[0])
 	},
 }
 
@@ -34,12 +32,10 @@ var useCmd = &cobra.Command{
 	Short: "Select the active system",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		_, err := makeAPICall("POST", "/api/console/use", map[string]string{"systemName": args[0]})
-		if err != nil {
-			fmt.Printf("❌ Error: %v\n", err)
-			return
+		_, err := makeAPICall("POST", "/api/console/use", map[string]any{"systemName": args[0]})
+		if err == nil {
+			fmt.Printf("✅ Now using system: %s\n", args[0])
 		}
-		fmt.Printf("✅ Now using system: %s\n", args[0])
 	},
 }
 
@@ -52,11 +48,9 @@ var setCmd = &cobra.Command{
 			"parameter": args[0],
 			"value":     args[1],
 		})
-		if err != nil {
-			fmt.Printf("❌ Error: %v\n", err)
-			return
+		if err == nil {
+			fmt.Printf("✅ Set %s = %s\n", args[0], args[1])
 		}
-		fmt.Printf("✅ Set %s = %s\n", args[0], args[1])
 	},
 }
 
@@ -67,13 +61,12 @@ var getCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		result, err := makeAPICall("GET", "/api/console/state", nil)
 		if err != nil {
-			fmt.Printf("❌ Error: %v\n", err)
 			return
 		}
-		
+
 		state := result["state"].(map[string]interface{})
 		params := state["systemParameters"].(map[string]interface{})
-		
+
 		if len(args) == 0 {
 			// Show all parameters
 			if len(params) == 0 {
@@ -104,17 +97,15 @@ var runCanvasCmd = &cobra.Command{
 			fmt.Printf("❌ Invalid call count '%s': must be a number\n", args[2])
 			return
 		}
-		
+
 		_, err = makeAPICall("POST", "/api/console/run", map[string]interface{}{
 			"name":   args[0],
 			"method": args[1],
 			"calls":  calls,
 		})
-		if err != nil {
-			fmt.Printf("❌ Error: %v\n", err)
-			return
+		if err == nil {
+			fmt.Printf("✅ Running %s: %s (%d calls)\n", args[0], args[1], calls)
 		}
-		fmt.Printf("✅ Running %s: %s (%d calls)\n", args[0], args[1], calls)
 	},
 }
 
@@ -124,12 +115,11 @@ var infoCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		result, err := makeAPICall("GET", "/api/console/state", nil)
 		if err != nil {
-			fmt.Printf("❌ Error: %v\n", err)
 			return
 		}
-		
+
 		state := result["state"].(map[string]interface{})
-		
+
 		fmt.Printf("SDL Canvas State:\n")
 		if activeFile := state["activeFile"]; activeFile != nil && activeFile != "" {
 			fmt.Printf("📁 Active File: %s\n", activeFile)
@@ -137,7 +127,7 @@ var infoCmd = &cobra.Command{
 		if activeSystem := state["activeSystem"]; activeSystem != nil && activeSystem != "" {
 			fmt.Printf("🎯 Active System: %s\n", activeSystem)
 		}
-		
+
 		// Show generators
 		if generators := state["generators"]; generators != nil {
 			genMap := generators.(map[string]interface{})
@@ -145,7 +135,7 @@ var infoCmd = &cobra.Command{
 				fmt.Printf("⚡ Generators: %d\n", len(genMap))
 			}
 		}
-		
+
 		// Show measurements
 		if measurements := state["measurements"]; measurements != nil {
 			measMap := measurements.(map[string]interface{})
@@ -161,12 +151,10 @@ var executeCmd = &cobra.Command{
 	Short: "Execute a recipe file",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		_, err := makeAPICall("POST", "/api/console/execute", map[string]string{"filePath": args[0]})
-		if err != nil {
-			fmt.Printf("❌ Error: %v\n", err)
-			return
+		_, err := makeAPICall("POST", "/api/console/execute", map[string]any{"filePath": args[0]})
+		if err == nil {
+			fmt.Printf("✅ Executed recipe: %s\n", args[0])
 		}
-		fmt.Printf("✅ Executed recipe: %s\n", args[0])
 	},
 }
 

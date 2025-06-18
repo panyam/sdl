@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -9,23 +8,25 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	ghttp "github.com/panyam/goutils/http"
 )
 
 // Global server configuration - variables declared in root.go
 
 // getServerURL returns the server URL using the priority:
 // 1. Command line flag (--server)
-// 2. Environment variable (CANVAS_SERVER_URL)  
+// 2. Environment variable (CANVAS_SERVER_URL)
 // 3. Default (http://localhost:8080)
 func getServerURL() string {
 	if serverURL != "" {
 		return serverURL
 	}
-	
+
 	if envURL := os.Getenv("CANVAS_SERVER_URL"); envURL != "" {
 		return envURL
 	}
-	
+
 	return "http://localhost:8080"
 }
 
@@ -38,20 +39,20 @@ func getServeConfig() (host string, port int) {
 	if serveHost != "" && servePort != 0 {
 		return serveHost, servePort
 	}
-	
+
 	// Check environment variables
 	envHost := os.Getenv("CANVAS_SERVE_HOST")
 	if envHost == "" {
 		envHost = "localhost"
 	}
-	
+
 	envPort := 8080
 	if envPortStr := os.Getenv("CANVAS_SERVE_PORT"); envPortStr != "" {
 		if parsed, err := strconv.Atoi(envPortStr); err == nil {
 			envPort = parsed
 		}
 	}
-	
+
 	// Use environment or command line values
 	if serveHost == "" {
 		serveHost = envHost
@@ -59,73 +60,47 @@ func getServeConfig() (host string, port int) {
 	if servePort == 0 {
 		servePort = envPort
 	}
-	
+
 	return serveHost, servePort
 }
 
+func apiEndpoint(endpoint string) string {
+	return strings.TrimSuffix(getServerURL(), "/") + endpoint
+}
+
 // makeAPICall makes HTTP requests to the SDL server
-func makeAPICall(method, endpoint string, body interface{}) (map[string]interface{}, error) {
-	apiURL := strings.TrimSuffix(getServerURL(), "/") + endpoint
-	
-	var reqBody []byte
-	var err error
-	if body != nil {
-		reqBody, err = json.Marshal(body)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal request: %v", err)
-		}
-	}
-	
-	req, err := http.NewRequest(method, apiURL, strings.NewReader(string(reqBody)))
+func makeAPICall(method, endpoint string, body map[string]any) (map[string]any, error) {
+	req, _ := ghttp.NewJsonRequest(method, apiEndpoint(endpoint), body)
+	resp, err := ghttp.Call(req, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %v", err)
+		fmt.Printf("❌ Error: %v\n", err)
+		return nil, err
 	}
-	
-	if body != nil {
-		req.Header.Set("Content-Type", "application/json")
-	}
-	
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("request failed: %v", err)
-	}
-	defer resp.Body.Close()
-	
-	var result map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %v", err)
-	}
-	
-	if !result["success"].(bool) {
-		return nil, fmt.Errorf("API error: %v", result["error"])
-	}
-	
-	return result, nil
+	return resp.(map[string]any), err
 }
 
 // testServerConnection verifies the server is reachable
 func testServerConnection() error {
 	client := &http.Client{Timeout: 5 * time.Second}
-	
+
 	// Parse server URL to build health check endpoint
 	baseURL := getServerURL()
 	parsedURL, err := url.Parse(baseURL)
 	if err != nil {
 		return fmt.Errorf("invalid server URL: %v", err)
 	}
-	
+
 	healthURL := fmt.Sprintf("%s://%s/api/console/help", parsedURL.Scheme, parsedURL.Host)
 	resp, err := client.Get(healthURL)
 	if err != nil {
 		return fmt.Errorf("cannot connect to SDL server at %s: %v", baseURL, err)
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("server returned status %d", resp.StatusCode)
 	}
-	
+
 	return nil
 }
 

@@ -352,6 +352,13 @@ func (ws *WebServer) setupCanvasAPIRoutes(router *mux.Router) {
 	// Measurement data endpoints
 	router.HandleFunc("/api/measurements/{target}/data", ws.handleGetMeasurementData).Methods("GET")
 	
+	// Flow analysis endpoints
+	router.HandleFunc("/api/flows/strategies", ws.handleGetFlowStrategies).Methods("GET")
+	router.HandleFunc("/api/flows/{strategy}/eval", ws.handleEvaluateFlow).Methods("GET")
+	router.HandleFunc("/api/flows/{strategy}/apply", ws.handleApplyFlow).Methods("POST")
+	router.HandleFunc("/api/flows/current", ws.handleGetCurrentFlow).Methods("GET")
+	router.HandleFunc("/api/components/{component}/methods/{method}/arrival-rate", ws.handleSetArrivalRate).Methods("PUT")
+	
 	// Console command endpoints
 	router.HandleFunc("/api/console/load", ws.handleConsoleLoad).Methods("POST")
 	router.HandleFunc("/api/console/use", ws.handleConsoleUse).Methods("POST")
@@ -643,6 +650,90 @@ func (ws *WebServer) handleRemoveMeasurement(w http.ResponseWriter, r *http.Requ
 	ws.sendSuccess(w, map[string]string{"status": "success"})
 	ws.broadcast("measurementRemoved", map[string]interface{}{
 		"measurementId": id,
+	})
+}
+
+// Flow analysis handlers
+func (ws *WebServer) handleGetFlowStrategies(w http.ResponseWriter, r *http.Request) {
+	strategies := ws.canvas.GetFlowStrategies()
+	ws.sendSuccess(w, map[string]interface{}{
+		"strategies": strategies,
+		"default":    "runtime",
+	})
+}
+
+func (ws *WebServer) handleEvaluateFlow(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	strategy := vars["strategy"]
+	
+	result, err := ws.canvas.EvaluateFlowWithStrategy(strategy)
+	if err != nil {
+		ws.sendError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	
+	ws.sendSuccess(w, result)
+}
+
+func (ws *WebServer) handleApplyFlow(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	strategy := vars["strategy"]
+	
+	err := ws.canvas.ApplyFlowStrategy(strategy)
+	if err != nil {
+		ws.sendError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	
+	// Get updated flow state
+	state := ws.canvas.GetCurrentFlowState()
+	
+	ws.sendSuccess(w, map[string]interface{}{
+		"applied": true,
+		"strategy": strategy,
+		"state": state,
+	})
+	
+	ws.broadcast("flowsApplied", map[string]interface{}{
+		"strategy": strategy,
+		"rates": state.Rates,
+	})
+}
+
+func (ws *WebServer) handleGetCurrentFlow(w http.ResponseWriter, r *http.Request) {
+	state := ws.canvas.GetCurrentFlowState()
+	ws.sendSuccess(w, state)
+}
+
+func (ws *WebServer) handleSetArrivalRate(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	component := vars["component"]
+	method := vars["method"]
+	
+	var req struct {
+		Rate float64 `json:"rate"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		ws.sendError(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+	
+	err := ws.canvas.SetComponentArrivalRate(component, method, req.Rate)
+	if err != nil {
+		ws.sendError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	
+	ws.sendSuccess(w, map[string]interface{}{
+		"component": component,
+		"method": method,
+		"rate": req.Rate,
+	})
+	
+	ws.broadcast("arrivalRateSet", map[string]interface{}{
+		"component": component,
+		"method": method,
+		"rate": req.Rate,
 	})
 }
 
