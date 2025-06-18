@@ -754,3 +754,104 @@ FlowEval maintains its own evaluation engine because:
 3. **Hybrid Approach**: Use SimpleEval for component behavior, custom logic for flow aggregation
 
 But for now, keeping them separate maintains clarity and avoids over-engineering.
+
+---
+
+## 🚨 **Current Limitations (June 2025)**
+
+### **1. Early Return Control Flow**
+**Issue**: FlowEval doesn't properly handle early returns in conditional branches.
+
+**Example**:
+```sdl
+if cached {
+    return true  // Early return
+}
+// This code is analyzed as unconditional!
+// Should only see (1 - cache_hit_rate) of traffic
+database.Query()
+```
+
+**Impact**: Overestimates downstream traffic. A cache with 80% hit rate sends ~99% of traffic to database instead of 20%.
+
+**Workaround**: Use explicit else blocks or manually adjust arrival rates.
+
+### **2. Delay-Based Capacity Modeling**
+**Issue**: FlowEval detects delays but doesn't use them for capacity constraints.
+
+**Impact**: No backpressure modeling - components appear to have infinite capacity.
+
+**Workaround**: Manually set arrival rates based on known capacity limits.
+
+### **3. Complex Control Flow**
+**Issue**: Limited support for:
+- Multiple early returns at different nesting levels
+- Switch/case statements with different flow rates
+- Exception handling paths
+- Nested conditionals with correlated probabilities
+
+**Impact**: Flow rates may be significantly off for complex business logic.
+
+### **4. State-Dependent Flows**
+**Issue**: Cannot model flows that depend on runtime state (e.g., circuit breakers, rate limiters).
+
+**Impact**: Static analysis assumes all paths are always available.
+
+### **Acceptable For:**
+- Simple request/response patterns
+- Basic conditional flows with explicit else blocks
+- Fan-out/fan-in patterns
+- Initial system sizing (overestimation is conservative)
+
+### **Not Suitable For:**
+- Production capacity planning
+- Cost optimization (overestimates lead to overprovisioning)
+- Complex business logic with many conditional paths
+- Systems with dynamic flow control
+
+---
+
+## 🔄 **Flow Evaluation Strategies**
+
+### **Current Strategies:**
+1. **String-Based FlowEval** (legacy)
+   - Original implementation
+   - Being phased out
+
+2. **Runtime-Based FlowEval** (current)
+   - Uses ComponentInstance objects
+   - Handles basic conditionals
+   - Overestimates due to control flow limitations
+
+### **Planned Strategies:**
+1. **Control-Flow Aware**
+   - Tracks early returns and their impact
+   - More accurate conditional flow analysis
+   - Handles complex nesting
+
+2. **Capacity-Aware**
+   - Uses delay information for capacity limits
+   - Models backpressure and queue buildup
+   - Degrades success rates under load
+
+3. **Monte Carlo Simulation**
+   - Run SimpleEval many times with different random seeds
+   - Statistically analyze flow patterns
+   - More accurate but computationally expensive
+
+4. **Feedback-Based**
+   - Start with initial estimates
+   - Run SimpleEval and observe actual flows
+   - Adjust estimates based on observations
+   - Converges to accurate values over time
+
+5. **ML-Based**
+   - Train on historical flow data
+   - Predict flows based on system topology
+   - Handles complex patterns
+
+### **Strategy Selection:**
+- **Default**: Use Runtime-Based FlowEval for initial estimates
+- **Manual Override**: Users can set arrival rates directly
+- **CLI Command**: `sdl flows apply <strategy>` to switch strategies
+- **Validation**: Compare predicted vs actual flows during simulation

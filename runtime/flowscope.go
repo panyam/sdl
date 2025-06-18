@@ -15,6 +15,7 @@ type FlowScope struct {
 	ArrivalRates     RateMap
 	SuccessRates     RateMap
 	CallStack        []*ComponentInstance
+	FlowEdges        *FlowEdgeMap
 
 	// Variable outcome tracking for conditional flow analysis
 	VariableOutcomes map[string]float64
@@ -32,6 +33,7 @@ func NewFlowScope(sysEnv *Env[Value]) *FlowScope {
 		ArrivalRates:     NewRateMap(),
 		SuccessRates:     NewRateMap(),
 		CallStack:        make([]*ComponentInstance, 0),
+		FlowEdges:        NewFlowEdgeMap(),
 		VariableOutcomes: make(map[string]float64),
 	}
 }
@@ -45,6 +47,7 @@ func (fs *FlowScope) Push(component *ComponentInstance, method *MethodDecl) *Flo
 		CurrentMethod:    method,
 		ArrivalRates:     fs.ArrivalRates, // Share rate maps with parent
 		SuccessRates:     fs.SuccessRates,
+		FlowEdges:        fs.FlowEdges, // Share flow edges with parent
 		CallStack:        append(fs.CallStack, component),
 		VariableOutcomes: make(map[string]float64), // Fresh variable tracking per method
 	}

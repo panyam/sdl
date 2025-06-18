@@ -124,7 +124,6 @@ type GeneratorEntryPoint struct {
 	GeneratorID string  // generator identifier
 }
 
-
 // SolveSystemFlowsWithGenerators performs flow analysis with per-generator tracking
 func SolveSystemFlowsWithGenerators(generators []GeneratorEntryPoint, context *FlowContext) map[string]float64 {
 	if context == nil {
@@ -299,7 +298,7 @@ func SolveSystemFlows(entryPoints map[string]float64, context *FlowContext) map[
 		context.ArrivalRates[componentMethod] = rate
 	}
 
-	log.Printf("SolveSystemFlows: Starting fixed-point iteration with %d entry points", len(entryPoints))
+	// log.Printf("SolveSystemFlows: Starting fixed-point iteration with %d entry points", len(entryPoints))
 
 	// Iterate until convergence
 	for iteration := 0; iteration < context.MaxIterations; iteration++ {
@@ -341,10 +340,10 @@ func SolveSystemFlows(entryPoints map[string]float64, context *FlowContext) map[
 			}
 		}
 
-		log.Printf("SolveSystemFlows: Iteration %d, max change: %.6f", iteration, maxChange)
+		// log.Printf("SolveSystemFlows: Iteration %d, max change: %.6f", iteration, maxChange)
 
 		if maxChange < context.ConvergenceThreshold {
-			log.Printf("SolveSystemFlows: Converged after %d iterations", iteration)
+			// log.Printf("SolveSystemFlows: Converged after %d iterations", iteration)
 			// Update final arrival rates and success rates
 			for k, v := range newRates {
 				context.ArrivalRates[k] = v
@@ -525,7 +524,7 @@ func (fc *FlowContext) analyzeIfStatement(stmt *IfStmt, inputRate float64, outfl
 	conditionProb := fc.evaluateConditionProbability(stmt.Condition)
 	conditionStr := fc.conditionToString(stmt.Condition)
 
-	log.Printf("FlowEval: Processing if statement with condition probability %.2f", conditionProb)
+	// log.Printf("FlowEval: Processing if statement with condition probability %.2f", conditionProb)
 
 	// Save current order level for conditional paths
 	savedOrder := fc.FlowOrder

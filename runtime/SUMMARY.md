@@ -35,12 +35,13 @@ This package is responsible for the execution and evaluation of System Design La
     *   Defines the bridge to native Go components (from the `components` package). It uses reflection to invoke methods on Go objects, transparently converting between the runtime's `decl.Value` and standard Go types.
     *   **Enhanced InvokeMethod**: The `InvokeMethod` function now includes a `shouldSample` parameter to support future extensibility for `OutcomesEval`, preparing for more sophisticated probabilistic evaluation strategies.
 
-*   **Flow Evaluation System (`floweval.go`):**
-    *   **Core Features**: Advanced flow analysis with iterative fixed-point computation, back-pressure modeling, and convergence detection
-    *   **`SolveSystemFlows()`**: System-wide flow computation that handles multi-component dependencies (A→C, B→C scenarios)
-    *   **`FlowAnalyzable` Interface**: Enables native components to report traffic patterns and performance characteristics
-    *   **Back-Pressure Effects**: Components model success rate degradation under high utilization with realistic capacity constraints
-    *   **Convergence Algorithm**: Fixed-point iteration with damping (typically converges in 7-12 iterations)
+*   **Flow Evaluation System (`floweval.go`, `flowrteval.go`):**
+    *   **Dual Implementation**: String-based (legacy) and Runtime-based (current) flow evaluation
+    *   **Runtime-Based FlowEval**: Uses actual ComponentInstance objects from SimpleEval, avoiding duplication
+    *   **`SolveSystemFlowsRuntime()`**: Iterative fixed-point solver for system-wide flow analysis
+    *   **`FlowAnalyzable` Interface**: Native components report traffic patterns; NWBase provides smart defaults
+    *   **Known Limitations**: Overestimates flows for early return patterns, no capacity-based backpressure yet
+    *   **Convergence**: Typically converges in 7-12 iterations with 0.5 damping factor
 
 **Role in the Project:**
 
@@ -53,7 +54,7 @@ The runtime package is the engine that brings SDL models to life. It enables the
 *   The placeholder implementation of the `WaitAll` aggregator has been fixed to unblock the simulation of simple concurrent patterns.
 *   The native component factory `CreateNativeComponent` has been updated to support all available native components.
 *   **Capacity Modeling Support**: The runtime now fully supports capacity modeling workflows with proper boolean evaluation for `Outcomes[Bool]` types, correct instance management for parameter modification, and enhanced native method invocation for probabilistic components.
-*   **Advanced Flow Analysis**: Complete implementation of back-pressure and convergence modeling with iterative fixed-point computation, enabling realistic analysis of system performance under capacity constraints and multi-component dependencies.
+*   **Runtime-Based Flow Analysis**: Migrated from string-based to ComponentInstance-based flow evaluation, using actual runtime components. Current implementation provides reasonable estimates for simple flows but overestimates in presence of early returns. Suitable for initial system sizing where overestimation is conservative.
 
 **Key Dependencies:**
 
