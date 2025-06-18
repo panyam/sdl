@@ -865,7 +865,7 @@ func (c *Canvas) evaluateProposedFlowsWithStrategy(strategy string) error {
 				// Parse the target to get component and method
 				parts := strings.Split(gen.Target, ".")
 				if len(parts) < 2 {
-					log.Printf("Invalid generator target: %s", gen.Target)
+					Warn("Invalid generator target: %s", gen.Target)
 					continue
 				}
 				

@@ -30,7 +30,6 @@ func (f *FileInstance) Env() *Env[Value] {
 			if n, ok := defn.(*MethodDecl); ok {
 				methodDecl = n
 			} else if n, ok := defn.(*ImportDecl); ok {
-				// log.Println("TODO - How to handle imports of methods here??: ", n.ResolvedItem)
 				if _, ok := n.ResolvedItem.(*ImportDecl); ok {
 					panic("where should we handle recursive imports - in the loader?")
 				}

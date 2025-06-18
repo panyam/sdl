@@ -10,8 +10,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
-	gohttp "github.com/panyam/goutils/http"
 	"github.com/panyam/goutils/conc"
+	gohttp "github.com/panyam/goutils/http"
 )
 
 // CanvasWSMessage represents a WebSocket message for the Canvas API
@@ -50,13 +50,13 @@ func NewWebServer() *WebServer {
 	ws := &WebServer{
 		canvas: NewCanvas(),
 	}
-	
+
 	// Initialize WebSocket handler
 	ws.wsHandler = &CanvasWSHandler{
 		webServer: ws,
 		clients:   make(map[string]*CanvasWSConn),
 	}
-	
+
 	return ws
 }
 
@@ -66,15 +66,15 @@ func (c *CanvasWSConn) OnStart(conn *websocket.Conn) error {
 	if err := c.JSONConn.OnStart(conn); err != nil {
 		return err
 	}
-	
+
 	c.id = fmt.Sprintf("conn_%s", conn.RemoteAddr().String())
-	
+
 	c.handler.mu.Lock()
 	c.handler.clients[c.id] = c
 	c.handler.mu.Unlock()
-	
+
 	Info("WebSocket client connected: %s", c.id)
-	
+
 	// Send initial connection message
 	message := CanvasWSMessage{
 		Type: "connected",
@@ -84,7 +84,7 @@ func (c *CanvasWSConn) OnStart(conn *websocket.Conn) error {
 			"id":     c.id,
 		},
 	}
-	
+
 	// Now the Writer should be properly initialized
 	c.Writer.Send(conc.Message[any]{Value: message})
 	return nil
@@ -95,15 +95,15 @@ func (c *CanvasWSConn) OnClose() {
 	c.handler.mu.Lock()
 	delete(c.handler.clients, c.id)
 	c.handler.mu.Unlock()
-	
+
 	Info("WebSocket client disconnected: %s", c.id)
-	
+
 	// Call the embedded JSONConn's OnClose
 	c.JSONConn.OnClose()
 }
 
 func (c *CanvasWSConn) OnTimeout() bool {
-	log.Printf("⏰ WebSocket connection timeout: %s", c.id)
+	Warn("⏰ WebSocket connection timeout: %s", c.id)
 	return true // Close the connection on timeout
 }
 
@@ -112,17 +112,17 @@ func (c *CanvasWSConn) HandleMessage(msgData any) error {
 	if !ok {
 		return fmt.Errorf("invalid message type")
 	}
-	
-	log.Printf("📡 Received WebSocket message: %s from %s", message.Type, c.id)
-	
+
+	Debug("Received WebSocket message: %s from %s", message.Type, c.id)
+
 	// Handle different message types
 	switch message.Type {
 	case "ping":
 		c.Writer.Send(conc.Message[any]{Value: CanvasWSMessage{Type: "pong", Data: message.Data}})
 	default:
-		log.Printf("Unknown WebSocket message type: %s", message.Type)
+		Warn("Unknown WebSocket message type: %s", message.Type)
 	}
-	
+
 	return nil
 }
 
@@ -147,7 +147,7 @@ func (ws *WebServer) GetRouter() *mux.Router {
 	api.HandleFunc("/set", ws.handleSet).Methods("POST")
 	api.HandleFunc("/run", ws.handleRun).Methods("POST")
 	api.HandleFunc("/plot", ws.handlePlot).Methods("POST")
-	
+
 	// WebSocket endpoint using goutils
 	api.HandleFunc("/live", gohttp.WSServe(ws.wsHandler, nil))
 
@@ -185,7 +185,6 @@ type PlotRequest struct {
 	OutputFile string       `json:"outputFile"`
 	Title      string       `json:"title"`
 }
-
 
 type APIResponse struct {
 	Success bool        `json:"success"`
@@ -319,14 +318,13 @@ func (ws *WebServer) handlePlot(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-
 // RESTful Canvas API Routes
 func (ws *WebServer) setupCanvasAPIRoutes(router *mux.Router) {
 	// Canvas state management
 	router.HandleFunc("/api/canvas/state", ws.handleGetState).Methods("GET")
 	router.HandleFunc("/api/canvas/state", ws.handleSaveState).Methods("POST")
 	router.HandleFunc("/api/canvas/state/restore", ws.handleRestoreState).Methods("POST")
-	
+
 	// System diagram
 	router.HandleFunc("/api/canvas/diagram", ws.handleGetDiagram).Methods("GET")
 
@@ -347,17 +345,17 @@ func (ws *WebServer) setupCanvasAPIRoutes(router *mux.Router) {
 	router.HandleFunc("/api/canvas/measurements/{id}", ws.handleGetMeasurement).Methods("GET")
 	router.HandleFunc("/api/canvas/measurements/{id}", ws.handleUpdateMeasurement).Methods("PUT")
 	router.HandleFunc("/api/canvas/measurements/{id}", ws.handleRemoveMeasurement).Methods("DELETE")
-	
+
 	// Measurement data endpoints
 	router.HandleFunc("/api/measurements/{target}/data", ws.handleGetMeasurementData).Methods("GET")
-	
+
 	// Flow analysis endpoints
 	router.HandleFunc("/api/flows/strategies", ws.handleGetFlowStrategies).Methods("GET")
 	router.HandleFunc("/api/flows/{strategy}/eval", ws.handleEvaluateFlow).Methods("GET")
 	router.HandleFunc("/api/flows/{strategy}/apply", ws.handleApplyFlow).Methods("POST")
 	router.HandleFunc("/api/flows/current", ws.handleGetCurrentFlow).Methods("GET")
 	router.HandleFunc("/api/components/{component}/methods/{method}/arrival-rate", ws.handleSetArrivalRate).Methods("PUT")
-	
+
 	// Console command endpoints
 	router.HandleFunc("/api/console/load", ws.handleConsoleLoad).Methods("POST")
 	router.HandleFunc("/api/console/use", ws.handleConsoleUse).Methods("POST")
@@ -372,16 +370,16 @@ func (ws *WebServer) setupCanvasAPIRoutes(router *mux.Router) {
 func (ws *WebServer) handleGetMeasurementData(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	target := vars["target"]
-	
+
 	// Parse query parameters for time range
 	query := r.URL.Query()
 	startTimeStr := query.Get("startTime")
 	endTimeStr := query.Get("endTime")
-	
+
 	// Default to last 5 minutes if no time range specified
 	endTime := time.Now()
 	startTime := endTime.Add(-5 * time.Minute)
-	
+
 	// Parse custom time range if provided
 	if startTimeStr != "" {
 		if parsed, err := time.Parse(time.RFC3339, startTimeStr); err == nil {
@@ -393,7 +391,7 @@ func (ws *WebServer) handleGetMeasurementData(w http.ResponseWriter, r *http.Req
 			endTime = parsed
 		}
 	}
-	
+
 	// Ensure time-series database is initialized
 	if ws.canvas.tsdb == nil {
 		if err := ws.canvas.initMeasurementTracing(""); err != nil {
@@ -401,14 +399,14 @@ func (ws *WebServer) handleGetMeasurementData(w http.ResponseWriter, r *http.Req
 			return
 		}
 	}
-	
+
 	// Get measurement data from DuckDB
 	points, err := ws.canvas.tsdb.QueryLatency(target, startTime)
 	if err != nil {
 		ws.sendError(w, fmt.Sprintf("Failed to query measurement data: %v", err), http.StatusInternalServerError)
 		return
 	}
-	
+
 	// Filter points within end time
 	var filteredPoints []TracePoint
 	for _, point := range points {
@@ -417,7 +415,7 @@ func (ws *WebServer) handleGetMeasurementData(w http.ResponseWriter, r *http.Req
 			filteredPoints = append(filteredPoints, point)
 		}
 	}
-	
+
 	// Convert to chart-friendly format
 	dataPoints := make([]map[string]interface{}, len(filteredPoints))
 	for i, point := range filteredPoints {
@@ -428,7 +426,7 @@ func (ws *WebServer) handleGetMeasurementData(w http.ResponseWriter, r *http.Req
 			"run_id":    point.RunID,
 		}
 	}
-	
+
 	response := map[string]interface{}{
 		"target":     target,
 		"startTime":  startTime.Format(time.RFC3339),
@@ -436,7 +434,7 @@ func (ws *WebServer) handleGetMeasurementData(w http.ResponseWriter, r *http.Req
 		"dataPoints": dataPoints,
 		"count":      len(dataPoints),
 	}
-	
+
 	ws.sendSuccess(w, response)
 }
 
@@ -578,7 +576,7 @@ func (ws *WebServer) handleAddMeasurement(w http.ResponseWriter, r *http.Request
 		MetricType string `json:"metricType"`
 		Enabled    bool   `json:"enabled"`
 	}
-	
+
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		ws.sendError(w, "Invalid request body", http.StatusBadRequest)
 		return
@@ -664,38 +662,38 @@ func (ws *WebServer) handleGetFlowStrategies(w http.ResponseWriter, r *http.Requ
 func (ws *WebServer) handleEvaluateFlow(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	strategy := vars["strategy"]
-	
+
 	result, err := ws.canvas.EvaluateFlowWithStrategy(strategy)
 	if err != nil {
 		ws.sendError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	
+
 	ws.sendSuccess(w, result)
 }
 
 func (ws *WebServer) handleApplyFlow(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	strategy := vars["strategy"]
-	
+
 	err := ws.canvas.ApplyFlowStrategy(strategy)
 	if err != nil {
 		ws.sendError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	
+
 	// Get updated flow state
 	state := ws.canvas.GetCurrentFlowState()
-	
+
 	ws.sendSuccess(w, map[string]interface{}{
-		"applied": true,
+		"applied":  true,
 		"strategy": strategy,
-		"state": state,
+		"state":    state,
 	})
-	
+
 	ws.broadcast("flowsApplied", map[string]interface{}{
 		"strategy": strategy,
-		"rates": state.Rates,
+		"rates":    state.Rates,
 	})
 }
 
@@ -708,7 +706,7 @@ func (ws *WebServer) handleSetArrivalRate(w http.ResponseWriter, r *http.Request
 	vars := mux.Vars(r)
 	component := vars["component"]
 	method := vars["method"]
-	
+
 	var req struct {
 		Rate float64 `json:"rate"`
 	}
@@ -716,23 +714,23 @@ func (ws *WebServer) handleSetArrivalRate(w http.ResponseWriter, r *http.Request
 		ws.sendError(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
-	
+
 	err := ws.canvas.SetComponentArrivalRate(component, method, req.Rate)
 	if err != nil {
 		ws.sendError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	
+
 	ws.sendSuccess(w, map[string]interface{}{
 		"component": component,
-		"method": method,
-		"rate": req.Rate,
+		"method":    method,
+		"rate":      req.Rate,
 	})
-	
+
 	ws.broadcast("arrivalRateSet", map[string]interface{}{
 		"component": component,
-		"method": method,
-		"rate": req.Rate,
+		"method":    method,
+		"rate":      req.Rate,
 	})
 }
 
@@ -804,11 +802,11 @@ func (ws *WebServer) broadcast(messageType string, data interface{}) {
 		Type: messageType,
 		Data: data,
 	}
-	
+
 	// Broadcast to all connected WebSocket clients
 	ws.wsHandler.mu.RLock()
 	defer ws.wsHandler.mu.RUnlock()
-	
+
 	for _, client := range ws.wsHandler.clients {
 		client.Writer.Send(conc.Message[any]{Value: message})
 	}
