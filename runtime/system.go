@@ -24,6 +24,14 @@ func NewSystemInstance(file *FileInstance, system *SystemDecl) *SystemInstance {
 	return sysinst
 }
 
+// GetSystemName returns the name of the system
+func (s *SystemInstance) GetSystemName() string {
+	if s.System != nil && s.System.Name != nil {
+		return s.System.Name.Value
+	}
+	return ""
+}
+
 // Finds a nested component a.b.c starting at the root of a system
 func (s *SystemInstance) FindComponent(fqn string) (out *ComponentInstance) {
 	parts := strings.Split(fqn, ".")
