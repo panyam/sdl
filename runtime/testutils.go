@@ -17,9 +17,9 @@ func loadSystem(t *testing.T, sdlfile, systemName string) (*SystemInstance, *Env
 		t.Skip("Skipping - cascading_delays.sdl not found")
 	}
 
-	system := fileInstance.NewSystem("CascadingDelayDemo")
+	system := fileInstance.NewSystem(systemName)
 	if system == nil {
-		t.Fatal("System 'CascadingDelayDemo' not found")
+		t.Fatalf("System '%s' not found", systemName)
 	}
 
 	// Initialize system
