@@ -269,11 +269,13 @@ func analyzeIfStatementRuntime(stmt *IfStmt, inputRate float64, scope *FlowScope
 
 	// Analyze then branch with probability-weighted rate
 	if stmt.Then != nil {
+		log.Printf("analyzeIfStatementRuntime: Then branch with rate %.2f (%.2f * %.2f)", inputRate*conditionProb, inputRate, conditionProb)
 		analyzeStatementRuntime(stmt.Then, inputRate*conditionProb, scope, outflows)
 	}
 
 	// Analyze else branch with inverted probability
 	if stmt.Else != nil {
+		log.Printf("analyzeIfStatementRuntime: Else branch with rate %.2f (%.2f * %.2f)", inputRate*(1.0-conditionProb), inputRate, 1.0-conditionProb)
 		analyzeStatementRuntime(stmt.Else, inputRate*(1.0-conditionProb), scope, outflows)
 	}
 }
@@ -351,7 +353,7 @@ func analyzeLetStatementRuntime(stmt *LetStmt, inputRate float64, scope *FlowSco
 					// Get the success rate of the called method
 					successRate := getMethodSuccessRateRuntime(targetComp, targetMethod, scope)
 					scope.TrackVariableOutcome(stmt.Variables[0].Value, successRate)
-					// log.Printf("analyzeLetStatementRuntime: Variable '%s' assigned from %s.%s with success rate %.2f", stmt.Variables[0].Value, targetComp.ID(), targetMethod, successRate)
+					log.Printf("analyzeLetStatementRuntime: Variable '%s' assigned from %s.%s with success rate %.2f", stmt.Variables[0].Value, targetComp.ID(), targetMethod, successRate)
 				}
 			}
 		}
@@ -414,16 +416,31 @@ func SolveSystemFlowsRuntime(generators []GeneratorEntryPointRuntime, scope *Flo
 			}
 		}
 
+		// Create a fresh scope for this iteration to avoid state pollution
+		// This ensures variable outcomes and other state don't persist between iterations
+		iterScope := NewFlowScope(scope.SysEnv)
+		iterScope.ArrivalRates = scope.ArrivalRates.Copy()
+		iterScope.SuccessRates = NewRateMap() // Fresh success rates for this iteration
+		
+		// Clear flow edges at the start of each iteration to prevent accumulation
+		// We'll keep the final iteration's edges for visualization
+		if scope.FlowEdges != nil {
+			scope.FlowEdges.Clear()
+		}
+		iterScope.FlowEdges = scope.FlowEdges   // Share flow edges for visualization
+
 		// Propagate flows through the system
-		for component, methods := range scope.ArrivalRates {
+		for component, methods := range iterScope.ArrivalRates {
 			for method, inRate := range methods {
 				if inRate > 1e-9 { // Only process non-trivial rates
+					log.Printf("SolveSystemFlowsRuntime: Processing %s.%s with rate %.2f", component.ID(), method, inRate)
 					// Get outflows from this component.method
-					outflows := FlowEvalRuntime(component, method, inRate, scope)
+					outflows := FlowEvalRuntime(component, method, inRate, iterScope)
 
 					// Add outflows to the new rates
 					for targetComp, targetMethods := range outflows {
 						for targetMethod, outRate := range targetMethods {
+							log.Printf("SolveSystemFlowsRuntime:   -> %s.%s: %.2f", targetComp.ID(), targetMethod, outRate)
 							newRates.AddFlow(targetComp, targetMethod, outRate)
 						}
 					}
@@ -432,7 +449,7 @@ func SolveSystemFlowsRuntime(generators []GeneratorEntryPointRuntime, scope *Flo
 		}
 
 		// Phase 2: Update success rates based on new arrival rates
-		updateSuccessRatesRuntime(newRates, scope)
+		updateSuccessRatesRuntime(newRates, iterScope)
 
 		// Check convergence (all rates changed by < threshold)
 		maxChange := computeMaxChange(oldRates, newRates)
