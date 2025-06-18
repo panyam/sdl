@@ -2,26 +2,11 @@ package runtime
 
 import (
 	"testing"
-
-	"github.com/panyam/sdl/core"
-	"github.com/panyam/sdl/loader"
 )
 
 // TestFlowEvalWithContactsSDL tests flow evaluation with the actual contacts.sdl file
 func TestFlowEvalWithContactsSDL(t *testing.T) {
-	// Create loader and runtime
-	l := loader.NewLoader(nil, nil, 10)
-	r := NewRuntime(l)
-	// Get the file instance
-	fileInstance := r.LoadFile("../examples/contacts/contacts.sdl")
-
-	var currTime core.Duration
-	se := NewSimpleEval(fileInstance, nil)
-	env := fileInstance.Env()
-
-	// Create the ContactsSystem
-	system := fileInstance.NewSystem("ContactsSystem")
-	se.EvalInitSystem(system, env, &currTime)
+	_, env := loadSystem(t, "../examples/contacts/contacts.sdl", "ContactsSystem")
 
 	// Get the server component
 	serverVal, exists := env.Get("server")
