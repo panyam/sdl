@@ -3,14 +3,12 @@ package console
 import (
 	"fmt"
 	"log"
-	"math"
 	"os"
 	"reflect"
 	"sort"
 	"strings"
 	"time"
 
-	"github.com/panyam/sdl/components"
 	"github.com/panyam/sdl/decl"
 	"github.com/panyam/sdl/loader"
 	"github.com/panyam/sdl/runtime"
@@ -33,8 +31,10 @@ type Canvas struct {
 	systemParameters    map[string]interface{} // Track parameter changes
 	tsdb                *DuckDBTimeSeriesStore // Time-series database for measurements
 	measurementTracer   *MeasurementTracer     // Current measurement tracer
-	currentFlowContext  *runtime.FlowContext   // Current flow state (applied/active)
-	proposedFlowContext *runtime.FlowContext   // Proposed flow state (being evaluated)
+	currentFlowScope    *runtime.FlowScope     // Current flow state (applied/active)
+	proposedFlowScope   *runtime.FlowScope     // Proposed flow state (being evaluated)
+	currentFlowRates    runtime.RateMap        // Current flow rates (runtime-based)
+	proposedFlowRates   runtime.RateMap        // Proposed flow rates (runtime-based)
 	generatorPrefixes   map[string]string      // Generator ID -> letter prefix mapping
 }
 
@@ -662,105 +662,18 @@ func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
 		}
 	}
 
-	// Add flow-based edges from FlowContext if available
-	if c.currentFlowContext != nil && len(c.currentFlowContext.FlowPaths) > 0 {
-		log.Printf("Canvas: Processing %d flow paths for edges", len(c.currentFlowContext.FlowPaths))
-
-		// Clear existing edges to replace with flow-based edges
-		edges = []viz.Edge{}
-
-		// Process each flow path
-		for pathKey, pathInfo := range c.currentFlowContext.FlowPaths {
-			// Parse the flow path key (e.g., "server.HandleLookup->contactCache.Read")
-			parts := strings.Split(pathKey, "->")
-			if len(parts) != 2 {
-				continue
-			}
-
-			fromParts := strings.Split(parts[0], ".")
-			toParts := strings.Split(parts[1], ".")
-
-			if len(fromParts) >= 2 && len(toParts) >= 2 {
-				fromComponent := fromParts[0]
-				fromMethod := fromParts[1]
-				toComponent := toParts[0]
-				toMethod := toParts[1]
-
-				// Only create edge if both components exist in the system
-				_, fromExists := instanceNameToID[fromComponent]
-				_, toExists := instanceNameToID[toComponent]
-
-				if !fromExists || !toExists {
-					// Skip edges to/from components not in the visible system
-					continue
-				}
-
-				// Create label with generator prefix and order
-				label := ""
-				orderStr := ""
-				if pathInfo.Order == math.Trunc(pathInfo.Order) {
-					// Whole number order
-					orderStr = fmt.Sprintf("%.0f", pathInfo.Order)
-				} else {
-					// Decimal order (nested calls)
-					orderStr = fmt.Sprintf("%.1f", pathInfo.Order)
-				}
-
-				// Add generator prefix if available
-				if pathInfo.GeneratorID != "" {
-					// Use unique letter prefix for each generator (A, B, C, etc.)
-					prefix := c.getGeneratorPrefix(pathInfo.GeneratorID)
-					label = fmt.Sprintf("%s%s", prefix, orderStr)
-				} else {
-					label = orderStr
-				}
-
-				if pathInfo.Condition != "" {
-					label = fmt.Sprintf("%s: %s", label, pathInfo.Condition)
-				}
-
-				log.Printf("Canvas: Creating edge %s.%s -> %s.%s with label %s",
-					fromComponent, fromMethod, toComponent, toMethod, label)
-
-				edges = append(edges, viz.Edge{
-					FromID:      fromComponent,
-					ToID:        toComponent,
-					FromMethod:  fromMethod,
-					ToMethod:    toMethod,
-					Label:       label,
-					Order:       pathInfo.Order,
-					Condition:   pathInfo.Condition,
-					Probability: pathInfo.Probability,
-					GeneratorID: pathInfo.GeneratorID,
-					Color:       pathInfo.Color,
-				})
-			}
-		}
-
-		// If no flow paths, fall back to dependency edges
-		if len(edges) == 0 {
-			log.Printf("Canvas: No flow edges created, using dependency edges")
-			// Re-create dependency edges
-			for _, bodyItem := range c.activeSystem.System.Body {
-				if instance, ok := bodyItem.(*decl.InstanceDecl); ok {
-					fromNodeID := instance.Name.Value
-
-					// Process overrides to find dependencies
-					for _, assignment := range instance.Overrides {
-						if targetIdent, okIdent := assignment.Value.(*decl.IdentifierExpr); okIdent {
-							if toNodeID, isInstance := instanceNameToID[targetIdent.Value]; isInstance {
-								edges = append(edges, viz.Edge{
-									FromID: fromNodeID,
-									ToID:   toNodeID,
-									Label:  assignment.Var.Value,
-								})
-							}
-						}
-					}
-				}
-			}
-		}
+	// TODO: Add flow-based edges from runtime flow analysis
+	// The runtime-based flow evaluation doesn't track flow paths in the same way
+	// as the string-based implementation. This will need to be reimplemented
+	// if flow visualization is needed.
+	/*
+	if c.currentFlowScope != nil && c.currentFlowRates != nil {
+		// Future implementation of flow path visualization
 	}
+	*/
+	
+	// Note: Flow path visualization needs to be reimplemented for runtime-based evaluation
+	// The runtime approach doesn't track individual flow paths like the string-based version
 
 	return &SystemDiagram{
 		SystemName: systemName,
@@ -936,13 +849,33 @@ func (c *Canvas) evaluateProposedFlows() error {
 		return fmt.Errorf("no active system available for flow calculation")
 	}
 
-	// Build generator entry points with IDs for per-generator flow tracking
-	var generators []runtime.GeneratorEntryPoint
+	// Build runtime generator entry points with ComponentInstance references
+	var generators []runtime.GeneratorEntryPointRuntime
 	if c.genManager != nil {
 		for _, gen := range c.genManager.generators {
 			if gen.Enabled {
-				generators = append(generators, runtime.GeneratorEntryPoint{
-					Target:      gen.Target,
+				// Parse the target to get component and method
+				parts := strings.Split(gen.Target, ".")
+				if len(parts) < 2 {
+					log.Printf("Invalid generator target: %s", gen.Target)
+					continue
+				}
+				
+				componentName := parts[0]
+				methodName := strings.Join(parts[1:], ".")
+				
+				// Find the component instance using SystemInstance.FindComponent
+				compInst := c.activeSystem.FindComponent(componentName)
+				if compInst == nil {
+					log.Printf("Canvas: Component not found: %s", componentName)
+					continue
+				}
+				log.Printf("Canvas: Found component %s (ID: %s) for generator target %s", 
+					componentName, compInst.ID(), gen.Target)
+				
+				generators = append(generators, runtime.GeneratorEntryPointRuntime{
+					Component:   compInst,
+					Method:      methodName,
 					Rate:        float64(gen.Rate),
 					GeneratorID: gen.ID,
 				})
@@ -950,30 +883,35 @@ func (c *Canvas) evaluateProposedFlows() error {
 		}
 	}
 
-	// Create proposed flow context
-	c.proposedFlowContext = runtime.NewFlowContext(c.activeSystem.System, c.systemParameters)
-	c.registerNativeComponents(c.proposedFlowContext)
+	// Create runtime flow scope with the system's environment
+	c.proposedFlowScope = runtime.NewFlowScope(c.activeSystem.Env)
 
-	// Run FlowEval to calculate proposed system-wide flows with per-generator tracking
+	// Run runtime-based FlowEval to calculate proposed system-wide flows
 	if len(generators) > 0 {
-		runtime.SolveSystemFlowsWithGenerators(generators, c.proposedFlowContext)
+		c.proposedFlowRates = runtime.SolveSystemFlowsRuntime(generators, c.proposedFlowScope)
+	} else {
+		c.proposedFlowRates = runtime.NewRateMap()
 	}
 
 	return nil
 }
 
-// applyProposedFlows moves the proposed flow context to current (accepting the new flow state)
+// applyProposedFlows moves the proposed flow state to current (accepting the new flow state)
 func (c *Canvas) applyProposedFlows() {
-	if c.proposedFlowContext != nil {
-		c.currentFlowContext = c.proposedFlowContext
-		c.proposedFlowContext = nil
+	if c.proposedFlowScope != nil {
+		c.currentFlowScope = c.proposedFlowScope
+		c.proposedFlowScope = nil
+		c.currentFlowRates = c.proposedFlowRates
+		c.proposedFlowRates = nil
 	}
 }
 
 // invalidateFlowContexts clears flow contexts when system state changes
 func (c *Canvas) invalidateFlowContexts() {
-	c.currentFlowContext = nil
-	c.proposedFlowContext = nil
+	c.currentFlowScope = nil
+	c.proposedFlowScope = nil
+	c.currentFlowRates = nil
+	c.proposedFlowRates = nil
 }
 
 // initializeFlowContexts sets up initial flow contexts for a new system
@@ -982,28 +920,31 @@ func (c *Canvas) initializeFlowContexts() {
 		return
 	}
 
-	// Initialize current context with zero flows
-	c.currentFlowContext = runtime.NewFlowContext(c.activeSystem.System, c.systemParameters)
-	c.registerNativeComponents(c.currentFlowContext)
+	// Initialize current scope with system environment
+	c.currentFlowScope = runtime.NewFlowScope(c.activeSystem.Env)
+	c.currentFlowRates = runtime.NewRateMap()
 
 	// Clear proposed context
-	c.proposedFlowContext = nil
+	c.proposedFlowScope = nil
+	c.proposedFlowRates = nil
 }
 
 // GetCurrentFlowRates returns the current (applied) flow rates
 func (c *Canvas) GetCurrentFlowRates() map[string]float64 {
-	if c.currentFlowContext == nil {
+	if c.currentFlowRates == nil {
 		return make(map[string]float64)
 	}
-	return c.currentFlowContext.ArrivalRates
+	// Convert RateMap to map[string]float64 for API compatibility
+	return c.rateMapToStringMap(c.currentFlowRates)
 }
 
 // GetProposedFlowRates returns the proposed flow rates (being evaluated)
 func (c *Canvas) GetProposedFlowRates() map[string]float64 {
-	if c.proposedFlowContext == nil {
+	if c.proposedFlowRates == nil {
 		return make(map[string]float64)
 	}
-	return c.proposedFlowContext.ArrivalRates
+	// Convert RateMap to map[string]float64 for API compatibility
+	return c.rateMapToStringMap(c.proposedFlowRates)
 }
 
 // GetComponentTotalRPS calculates total RPS for a component by summing all its methods
@@ -1032,49 +973,42 @@ func (c *Canvas) Close() error {
 	return nil
 }
 
-// registerNativeComponents registers native component instances in the FlowContext
-// for flow analysis delegation
-func (c *Canvas) registerNativeComponents(flowContext *runtime.FlowContext) {
-	if c.activeSystem == nil || flowContext == nil {
-		return
-	}
-
-	// Iterate through system instances and register native components
-	for _, item := range c.activeSystem.System.Body {
-		if instDecl, ok := item.(*decl.InstanceDecl); ok {
-			componentName := instDecl.ComponentName.Value
-			instanceName := instDecl.Name.Value
-
-			// Check if this is a known native component type and create an instance
-			var nativeComponent components.FlowAnalyzable
-			switch componentName {
-			case "ResourcePool":
-				nativeComponent = &components.ResourcePool{
-					Name:        instanceName,
-					Size:        5, // Default size - could be overridden by parameters
-					ArrivalRate: 1.0,
-					AvgHoldTime: 0.01, // 10ms default hold time
+// rateMapToStringMap converts a runtime RateMap to string-based map for API compatibility
+func (c *Canvas) rateMapToStringMap(rateMap runtime.RateMap) map[string]float64 {
+	result := make(map[string]float64)
+	
+	// Build a reverse map from component instance to variable name
+	instanceToName := make(map[*runtime.ComponentInstance]string)
+	if c.activeSystem != nil && c.activeSystem.System != nil {
+		// Look through the system declaration to find instance names
+		for _, item := range c.activeSystem.System.Body {
+			if instDecl, ok := item.(*decl.InstanceDecl); ok {
+				instanceName := instDecl.Name.Value
+				// Try to find the actual component instance
+				if comp := c.activeSystem.FindComponent(instanceName); comp != nil {
+					instanceToName[comp] = instanceName
 				}
-				nativeComponent.(*components.ResourcePool).Init()
-
-			case "HashIndex":
-				nativeComponent = &components.HashIndex{}
-				nativeComponent.(*components.HashIndex).Init()
-
-			case "Cache":
-				nativeComponent = &components.Cache{
-					HitRate: 0.6, // Default 60% hit rate matching the original simulation
-				}
-				nativeComponent.(*components.Cache).Init()
-			}
-
-			// Register the native component in the FlowContext
-			if nativeComponent != nil {
-				flowContext.SetNativeComponent(instanceName, nativeComponent)
-				log.Printf("Canvas: Registered native component '%s' (type %s) for flow analysis", instanceName, componentName)
 			}
 		}
 	}
+	
+	// Convert each component.method entry to "name.method" string key
+	for component, methods := range rateMap {
+		if component != nil {
+			// Use variable name if available, otherwise fall back to ID
+			componentName := component.ID()
+			if name, found := instanceToName[component]; found {
+				componentName = name
+			}
+			
+			for method, rate := range methods {
+				key := fmt.Sprintf("%s.%s", componentName, method)
+				result[key] = rate
+			}
+		}
+	}
+	
+	return result
 }
 
 // getGeneratorPrefix returns a unique letter prefix for each generator (A, B, C, etc.)
