@@ -603,3 +603,154 @@ func (fc *FlowCache) GetFlowsIfValid(paramHash string) (map[string]map[string]fl
 
 **Last Updated:** Runtime-Based Flow Analysis Complete (June 2025)
 **Next Priority:** Migration of existing code to new runtime-based approach
+
+---
+
+## 🔬 **Current Challenges and Design Decisions (June 2025)**
+
+### **1. SimpleEval vs FlowEval Relationship**
+
+**Core Challenge:** Should FlowEval reuse SimpleEval's evaluation engine?
+
+**Analysis:**
+- SimpleEval executes one concrete path through code (like a debugger)
+- FlowEval needs to analyze all possible paths statistically
+- They have fundamentally different evaluation semantics
+
+**Attempted Approaches:**
+1. **Multiple SimpleEval Runs**: Run SimpleEval many times with different random seeds
+   - Problem: Expensive and might miss low-probability paths
+   
+2. **Deterministic Sampling**: Make sample() calls deterministic to explore all paths
+   - Problem: Combinatorial explosion (3 samples × 10 buckets = 1000 combinations)
+   - Real issue: Only need 8 control flow paths (2³), not 1000 sample combinations
+   
+3. **Path-Based Analysis**: Track only control flow paths, not all sample combinations
+   - Problem: Hard to work backwards from arbitrary conditions to probabilities
+   - Example: `if sample(errors) == Error.NetworkTimeout` requires constraint solving
+   - Distributions aren't just binary - could be enums with complex conditions
+
+**Current Decision:** Keep FlowEval separate with its own abstract interpretation that tracks probability distributions instead of concrete values.
+
+### **2. Delay-Aware Flow Analysis**
+
+**Challenge:** How should delays affect flow propagation and capacity modeling?
+
+**Current State:**
+- FlowEval detects `delay()` calls but doesn't use them for capacity modeling
+- Flows propagate without considering if components can handle the load
+- Missing the feedback loop where high arrival rates → increased delays → backpressure → reduced effective rates
+
+**Proposed Architecture:**
+```go
+// In FlowEval's iterative solver:
+for iteration := 0; iteration < maxIterations; iteration++ {
+    // Phase 1: Propagate flows (current behavior)
+    newRates := propagateFlows(currentRates)
+    
+    // Phase 2: Capacity adjustment based on delays (NEW)
+    for component, method, rate := range newRates {
+        serviceTime := getServiceTime(component, method)  // From delay() analysis
+        capacity := 1.0 / serviceTime  // Single-threaded assumption
+        
+        if rate > capacity {
+            // Component is overloaded - apply backpressure
+            successRate = degradeSuccessRate(rate, capacity)
+            // This affects downstream flows in next iteration
+        }
+    }
+}
+```
+
+**Design Decision:** Add capacity-aware flow adjustment in Phase 2 of the solver, using delay information to calculate component capacity limits.
+
+### **3. Cache Hit Rate Bug**
+
+**Issue:** Cache with 80% hit rate shows ~99 RPS to database instead of expected ~20 RPS
+
+**Root Cause Analysis:**
+- Cache hit rate correctly set to 0.80
+- Variable tracking correctly identifies 'cached' with 0.80 success rate
+- Conditional evaluation uses the tracked 0.80 probability
+- BUT: Iterative solver accumulates flows across iterations
+
+**Problem:** Scope state (variable outcomes, success rates) persists across iterations, causing incorrect accumulation.
+
+**Solution:** Create fresh scope for each iteration:
+```go
+// Create a fresh scope for this iteration to avoid state pollution
+iterScope := NewFlowScope(scope.SysEnv)
+iterScope.ArrivalRates = scope.ArrivalRates.Copy()
+iterScope.SuccessRates = NewRateMap() // Fresh success rates
+iterScope.FlowEdges = scope.FlowEdges   // Share for visualization
+```
+
+### **4. Native Method Flow Analysis**
+
+**Design Decision:** Separate registry for flow-analyzable native methods
+
+**Rationale:**
+- Not all native methods need flow analysis
+- Keeps execution (SimpleEval) and analysis (FlowEval) concerns separate
+- Allows different evaluation engines to have different method subsets
+
+**Implementation:**
+```go
+var flowNativeMethods = map[string]*FlowNativeMethodInfo{
+    "delay": {
+        HasDelay: true,
+        ExtractDelay: func(args []Expr) core.Duration { ... }
+    }
+}
+```
+
+---
+
+## 📐 **Architecture Principles**
+
+### **1. Separation of Concerns**
+- **SimpleEval**: Concrete execution with real values (single path)
+- **FlowEval**: Statistical analysis of all paths (probability distributions)
+- Don't mix execution and analysis logic - they have different semantics
+
+### **2. Probabilistic Abstraction**
+- Variables hold success rates/probabilities, not concrete values
+- Conditions evaluate to probabilities, not booleans
+- Flows split based on conditional probabilities
+- All paths are explored with their respective weights
+
+### **3. Component Reuse**
+- Use ComponentInstance from SimpleEval (no duplication)
+- Leverage NWBase wrapper for smart defaults
+- Share type system and AST structures
+- But maintain separate evaluation semantics
+
+### **4. Iterative Convergence**
+- Start with entry point rates
+- Propagate flows through system
+- Adjust for capacity constraints
+- Iterate until steady state
+- Use damping to prevent oscillation
+
+---
+
+## 🎯 **Implementation Strategy**
+
+### **Current Approach (June 2025)**
+FlowEval maintains its own evaluation engine because:
+1. It needs to explore all paths, not just one
+2. It tracks probability distributions, not concrete values
+3. It models system-wide steady state, not single execution
+
+### **Key Components:**
+- **FlowScope**: Maintains evaluation context with fresh state per iteration
+- **RateMap**: Tracks component/method → rate mappings
+- **FlowEdges**: Records flow paths for visualization
+- **VariableOutcomes**: Tracks success rates for conditional analysis
+
+### **Future Considerations:**
+1. **Shared Evaluation Infrastructure**: Could extract common AST walking logic
+2. **Pluggable Samplers**: SimpleEval could accept custom samplers for different modes
+3. **Hybrid Approach**: Use SimpleEval for component behavior, custom logic for flow aggregation
+
+But for now, keeping them separate maintains clarity and avoids over-engineering.
