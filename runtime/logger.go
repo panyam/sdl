@@ -58,10 +58,10 @@ func ParseLogLevel(s string) (LogLevel, error) {
 
 // Logger interface for structured logging
 type Logger interface {
-	Debug(format string, args ...interface{})
-	Info(format string, args ...interface{})
-	Warn(format string, args ...interface{})
-	Error(format string, args ...interface{})
+	Debug(format string, args ...any)
+	Info(format string, args ...any)
+	Warn(format string, args ...any)
+	Error(format string, args ...any)
 	SetLevel(level LogLevel)
 	GetLevel() LogLevel
 }
@@ -98,35 +98,35 @@ func (l *DefaultLogger) GetLevel() LogLevel {
 }
 
 // log writes a log message if the level is enabled
-func (l *DefaultLogger) log(level LogLevel, format string, args ...interface{}) {
+func (l *DefaultLogger) log(level LogLevel, format string, args ...any) {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
-	
+
 	if level < l.level {
 		return
 	}
-	
+
 	msg := fmt.Sprintf(format, args...)
 	l.logger.Printf("[%s] %s", level.String(), msg)
 }
 
 // Debug logs a debug message
-func (l *DefaultLogger) Debug(format string, args ...interface{}) {
+func (l *DefaultLogger) Debug(format string, args ...any) {
 	l.log(LogLevelDebug, format, args...)
 }
 
 // Info logs an info message
-func (l *DefaultLogger) Info(format string, args ...interface{}) {
+func (l *DefaultLogger) Info(format string, args ...any) {
 	l.log(LogLevelInfo, format, args...)
 }
 
 // Warn logs a warning message
-func (l *DefaultLogger) Warn(format string, args ...interface{}) {
+func (l *DefaultLogger) Warn(format string, args ...any) {
 	l.log(LogLevelWarn, format, args...)
 }
 
 // Error logs an error message
-func (l *DefaultLogger) Error(format string, args ...interface{}) {
+func (l *DefaultLogger) Error(format string, args ...any) {
 	l.log(LogLevelError, format, args...)
 }
 
@@ -146,22 +146,22 @@ func GetLogLevel() LogLevel {
 }
 
 // Debug logs a debug message using the global logger
-func Debug(format string, args ...interface{}) {
+func Debug(format string, args ...any) {
 	globalLogger.Debug(format, args...)
 }
 
 // Info logs an info message using the global logger
-func Info(format string, args ...interface{}) {
+func Info(format string, args ...any) {
 	globalLogger.Info(format, args...)
 }
 
 // Warn logs a warning message using the global logger
-func Warn(format string, args ...interface{}) {
+func Warn(format string, args ...any) {
 	globalLogger.Warn(format, args...)
 }
 
 // Error logs an error message using the global logger
-func Error(format string, args ...interface{}) {
+func Error(format string, args ...any) {
 	globalLogger.Error(format, args...)
 }
 
@@ -173,7 +173,7 @@ func init() {
 			SetLogLevel(level)
 		}
 	}
-	
+
 	// In test mode, default to ERROR level only
 	if strings.HasSuffix(os.Args[0], ".test") {
 		SetLogLevel(LogLevelError)
