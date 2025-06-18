@@ -60,6 +60,7 @@ used by other commands like 'diagram dynamic' to generate visualizations.`,
 
 		// 3. Create the tracer and the instrumented evaluator
 		tracer := runtime.NewExecutionTracer()
+		tracer.SetRuntime(rt)
 		eval := runtime.NewSimpleEval(fileInstance, tracer)
 
 		// 4. Prepare the system environment

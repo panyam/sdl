@@ -18,15 +18,35 @@ const (
 
 // TraceEvent represents a single event in an execution trace.
 type TraceEvent struct {
-	Kind         TraceEventKind `json:"kind"`
-	ParentID     int            `json:"parent_id,omitempty"`
-	ID           int            `json:"id"`
-	Timestamp    float64        `json:"ts"`
-	Duration     float64        `json:"dur,omitempty"`
-	Target       string         `json:"target"`
-	Arguments    []string       `json:"args,omitempty"`
-	ReturnValue  string         `json:"ret,omitempty"`
-	ErrorMessage string         `json:"err,omitempty"`
+	Kind         TraceEventKind     `json:"kind"`
+	ParentID     int                `json:"parent_id,omitempty"`
+	ID           int                `json:"id"`
+	Timestamp    core.Duration      `json:"ts"`       // Virtual time in simulation
+	Duration     core.Duration      `json:"dur,omitempty"` // Duration in virtual time
+	Component    *ComponentInstance `json:"-"`        // Component instance (nil for native/global methods)
+	Method       *MethodDecl        `json:"-"`        // Method declaration
+	Arguments    []string           `json:"args,omitempty"`
+	ReturnValue  string             `json:"ret,omitempty"`
+	ErrorMessage string             `json:"err,omitempty"`
+	// Computed fields for JSON serialization
+	ComponentName string             `json:"component,omitempty"`
+	MethodName    string             `json:"method,omitempty"`
+}
+
+// GetComponentName returns the component name for metrics/display
+func (e *TraceEvent) GetComponentName() string {
+	if e.Component != nil {
+		return e.Component.ComponentDecl.Name.Value
+	}
+	return ""
+}
+
+// GetMethodName returns the method name for metrics/display
+func (e *TraceEvent) GetMethodName() string {
+	if e.Method != nil {
+		return e.Method.Name.Value
+	}
+	return ""
 }
 
 // TraceData is the top-level structure for a trace file.
@@ -42,6 +62,7 @@ type ExecutionTracer struct {
 	Events []*TraceEvent
 	nextID int
 	stack  []int
+	runtime *Runtime // Reference to runtime for metrics processing
 }
 
 // NewExecutionTracer creates a new tracer.
@@ -51,6 +72,13 @@ func NewExecutionTracer() *ExecutionTracer {
 		nextID: 1,
 		stack:  []int{0},
 	}
+}
+
+// SetRuntime sets the runtime reference for metrics processing
+func (t *ExecutionTracer) SetRuntime(runtime *Runtime) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.runtime = runtime
 }
 
 // PushParentID manually pushes a parent ID onto the stack.
@@ -79,21 +107,27 @@ func (t *ExecutionTracer) currentParentID() int {
 
 // Enter logs the entry into a function or block.
 // It returns the ID of the newly created event.
-func (t *ExecutionTracer) Enter(ts float64, kind TraceEventKind, target string, args ...string) int {
+func (t *ExecutionTracer) Enter(ts core.Duration, kind TraceEventKind, comp *ComponentInstance, method *MethodDecl, args ...string) int {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
 	eventID := t.nextID
 	t.nextID++
-
+	
 	event := &TraceEvent{
 		Kind:      kind,
 		ID:        eventID,
 		ParentID:  t.currentParentID(),
 		Timestamp: ts,
-		Target:    target,
+		Component: comp,
+		Method:    method,
 		Arguments: args,
 	}
+	
+	// Set computed fields for JSON serialization
+	event.ComponentName = event.GetComponentName()
+	event.MethodName = event.GetMethodName()
+	
 	t.Events = append(t.Events, event)
 
 	// If it's a standard call, it becomes the new parent for subsequent nested calls.
@@ -105,8 +139,14 @@ func (t *ExecutionTracer) Enter(ts float64, kind TraceEventKind, target string, 
 	return eventID
 }
 
+// EnterString logs entry for non-method calls (like "wait", "goroutine_for_").
+// This is for backward compatibility with existing code.
+func (t *ExecutionTracer) EnterString(ts core.Duration, kind TraceEventKind, target string, args ...string) int {
+	return t.Enter(ts, kind, nil, nil, args...)
+}
+
 // Exit logs the exit from a function or block.
-func (t *ExecutionTracer) Exit(ts float64, duration core.Duration, retVal Value, err error) {
+func (t *ExecutionTracer) Exit(ts core.Duration, duration core.Duration, comp *ComponentInstance, method *MethodDecl, retVal Value, err error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -121,8 +161,14 @@ func (t *ExecutionTracer) Exit(ts float64, duration core.Duration, retVal Value,
 		ParentID:  t.currentParentID(),
 		Timestamp: ts,
 		Duration:  duration,
+		Component: comp,
+		Method:    method,
 	}
 	t.nextID++
+
+	// Set computed fields for JSON serialization
+	event.ComponentName = event.GetComponentName()
+	event.MethodName = event.GetMethodName()
 
 	if !retVal.IsNil() {
 		event.ReturnValue = retVal.String()
@@ -132,4 +178,9 @@ func (t *ExecutionTracer) Exit(ts float64, duration core.Duration, retVal Value,
 	}
 
 	t.Events = append(t.Events, event)
+	
+	// Process metrics if enabled
+	if t.runtime != nil && t.runtime.metricStore != nil {
+		t.runtime.metricStore.ProcessTraceEvent(event)
+	}
 }

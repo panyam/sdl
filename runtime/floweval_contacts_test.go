@@ -6,7 +6,7 @@ import (
 
 // TestFlowEvalWithContactsSDL tests flow evaluation with the actual contacts.sdl file
 func TestFlowEvalWithContactsSDL(t *testing.T) {
-	_, env := loadSystem(t, "../examples/contacts/contacts.sdl", "ContactsSystem")
+	_, env, _ := loadSystem(t, "../examples/contacts/contacts.sdl", "ContactsSystem")
 
 	// Get the server component
 	serverVal, exists := env.Get("server")

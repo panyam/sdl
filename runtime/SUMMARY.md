@@ -43,6 +43,15 @@ This package is responsible for the execution and evaluation of System Design La
     *   **Known Limitations**: Overestimates flows for early return patterns, no capacity-based backpressure yet
     *   **Convergence**: Typically converges in 7-12 iterations with 0.5 damping factor
 
+*   **Live Metrics System (`metrics_*.go`, `trace.go`):**
+    *   **MetricStore**: System-aware measurement management with component instance resolution
+    *   **Virtual Time**: All timestamps use `core.Duration` for deterministic simulation
+    *   **Component Resolution**: Maps instance names (e.g., "server") to actual ComponentInstance pointers
+    *   **Efficient Matching**: Direct pointer comparison between TraceEvent and resolved components
+    *   **CircularBuffer**: Memory-efficient storage for recent metric points
+    *   **Aggregations**: Comprehensive support for sum, rate, percentiles (p50, p90, p95, p99)
+    *   **Enhanced Tracer**: TraceEvent carries Component and Method references directly
+
 **Role in the Project:**
 
 The runtime package is the engine that brings SDL models to life. It enables the powerful simulation capabilities of the toolchain by executing the user-defined logic and providing the raw data (latency, results) needed for performance analysis.
@@ -55,6 +64,7 @@ The runtime package is the engine that brings SDL models to life. It enables the
 *   The native component factory `CreateNativeComponent` has been updated to support all available native components.
 *   **Capacity Modeling Support**: The runtime now fully supports capacity modeling workflows with proper boolean evaluation for `Outcomes[Bool]` types, correct instance management for parameter modification, and enhanced native method invocation for probabilistic components.
 *   **Runtime-Based Flow Analysis**: Migrated from string-based to ComponentInstance-based flow evaluation, using actual runtime components. Current implementation provides reasonable estimates for simple flows but overestimates in presence of early returns. Suitable for initial system sizing where overestimation is conservative.
+*   **Live Metrics System**: Complete implementation of real-time performance monitoring with virtual time support, component instance resolution, and comprehensive aggregation functions. Seamlessly integrated with SimpleEval through enhanced ExecutionTracer.
 
 **Key Dependencies:**
 

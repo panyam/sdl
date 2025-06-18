@@ -1,0 +1,252 @@
+package runtime
+
+import (
+	"fmt"
+	"math"
+	"sort"
+	"time"
+
+	"github.com/panyam/sdl/core"
+)
+
+// GetAggregatedData computes the aggregated metric for a measurement
+func (ms *MetricStore) GetAggregatedData(id string) (*AggregatedMetric, error) {
+	ms.mu.RLock()
+	m, exists := ms.measurements[id]
+	if !exists {
+		ms.mu.RUnlock()
+		return nil, fmt.Errorf("measurement %s not found", id)
+	}
+	ms.mu.RUnlock()
+
+	m.mu.RLock()
+	spec := m.Spec
+	points := m.Buffer.GetInWindow(spec.Window)
+	m.mu.RUnlock()
+
+	if len(points) == 0 {
+		return &AggregatedMetric{
+			MeasurementID: id,
+			Window:        spec.Window,
+			Aggregation:   spec.Aggregation,
+			Value:         0,
+			Count:         0,
+			StartTime:     time.Now().Add(-spec.Window),
+			EndTime:       time.Now(),
+		}, nil
+	}
+
+	// Calculate time bounds
+	startTime := points[0].Timestamp
+	endTime := points[len(points)-1].Timestamp
+
+	// Compute aggregation based on metric type
+	var value float64
+	var err error
+
+	switch spec.Metric {
+	case MetricCount:
+		value, err = aggregateCount(points, spec.Aggregation, startTime, endTime)
+	case MetricLatency:
+		value, err = aggregateLatency(points, spec.Aggregation)
+	default:
+		return nil, fmt.Errorf("unknown metric type: %s", spec.Metric)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &AggregatedMetric{
+		MeasurementID: id,
+		Window:        spec.Window,
+		Aggregation:   spec.Aggregation,
+		Value:         value,
+		Count:         len(points),
+		StartTime:     time.Unix(0, int64(startTime)),
+		EndTime:       time.Unix(0, int64(endTime)),
+	}, nil
+}
+
+// aggregateCount computes count-based aggregations
+func aggregateCount(points []MetricPoint, agg AggregationType, startTime, endTime core.Duration) (float64, error) {
+	switch agg {
+	case AggSum:
+		// Sum of all counts
+		sum := 0.0
+		for _, p := range points {
+			sum += p.Value
+		}
+		return sum, nil
+
+	case AggRate:
+		// Count per second
+		sum := 0.0
+		for _, p := range points {
+			sum += p.Value
+		}
+		duration := float64(endTime - startTime) / 1e9 // Convert to seconds
+		if duration <= 0 {
+			return 0, nil
+		}
+		return sum / duration, nil
+
+	default:
+		return 0, fmt.Errorf("invalid aggregation type for count metric: %s", agg)
+	}
+}
+
+// aggregateLatency computes latency-based aggregations
+func aggregateLatency(points []MetricPoint, agg AggregationType) (float64, error) {
+	if len(points) == 0 {
+		return 0, nil
+	}
+
+	// Extract values and convert from nanoseconds to milliseconds
+	values := make([]float64, len(points))
+	for i, p := range points {
+		values[i] = p.Value / 1e6 // Convert to milliseconds
+	}
+
+	switch agg {
+	case AggAvg:
+		return average(values), nil
+
+	case AggMin:
+		return minimum(values), nil
+
+	case AggMax:
+		return maximum(values), nil
+
+	case AggP50:
+		return percentile(values, 0.50), nil
+
+	case AggP90:
+		return percentile(values, 0.90), nil
+
+	case AggP95:
+		return percentile(values, 0.95), nil
+
+	case AggP99:
+		return percentile(values, 0.99), nil
+
+	default:
+		return 0, fmt.Errorf("invalid aggregation type for latency metric: %s", agg)
+	}
+}
+
+// average computes the mean of values
+func average(values []float64) float64 {
+	if len(values) == 0 {
+		return 0
+	}
+	sum := 0.0
+	for _, v := range values {
+		sum += v
+	}
+	return sum / float64(len(values))
+}
+
+// minimum finds the smallest value
+func minimum(values []float64) float64 {
+	if len(values) == 0 {
+		return 0
+	}
+	min := values[0]
+	for _, v := range values[1:] {
+		if v < min {
+			min = v
+		}
+	}
+	return min
+}
+
+// maximum finds the largest value
+func maximum(values []float64) float64 {
+	if len(values) == 0 {
+		return 0
+	}
+	max := values[0]
+	for _, v := range values[1:] {
+		if v > max {
+			max = v
+		}
+	}
+	return max
+}
+
+// percentile computes the given percentile (0.0 to 1.0)
+func percentile(values []float64, p float64) float64 {
+	if len(values) == 0 {
+		return 0
+	}
+
+	// Sort values
+	sorted := make([]float64, len(values))
+	copy(sorted, values)
+	sort.Float64s(sorted)
+
+	// Calculate percentile index
+	index := p * float64(len(sorted)-1)
+	lower := int(math.Floor(index))
+	upper := int(math.Ceil(index))
+
+	if lower == upper {
+		return sorted[lower]
+	}
+
+	// Linear interpolation
+	weight := index - float64(lower)
+	return sorted[lower]*(1-weight) + sorted[upper]*weight
+}
+
+// GetMultipleAggregations computes multiple aggregations for the same measurement
+func (ms *MetricStore) GetMultipleAggregations(id string, aggregations []AggregationType) (map[AggregationType]float64, error) {
+	ms.mu.RLock()
+	m, exists := ms.measurements[id]
+	if !exists {
+		ms.mu.RUnlock()
+		return nil, fmt.Errorf("measurement %s not found", id)
+	}
+	ms.mu.RUnlock()
+
+	m.mu.RLock()
+	spec := m.Spec
+	points := m.Buffer.GetInWindow(spec.Window)
+	m.mu.RUnlock()
+
+	results := make(map[AggregationType]float64)
+
+	if len(points) == 0 {
+		for _, agg := range aggregations {
+			results[agg] = 0
+		}
+		return results, nil
+	}
+
+	// Calculate time bounds for rate calculations
+	startTime := points[0].Timestamp
+	endTime := points[len(points)-1].Timestamp
+
+	// Compute each requested aggregation
+	for _, agg := range aggregations {
+		var value float64
+		var err error
+
+		switch spec.Metric {
+		case MetricCount:
+			value, err = aggregateCount(points, agg, startTime, endTime)
+		case MetricLatency:
+			value, err = aggregateLatency(points, agg)
+		}
+
+		if err != nil {
+			// Skip invalid aggregations
+			continue
+		}
+
+		results[agg] = value
+	}
+
+	return results, nil
+}

@@ -378,7 +378,7 @@ func (s *SimpleEval) evalGoExpr(m *GoExpr, env *Env[Value], currTime *core.Durat
 			}
 		}
 		target := fmt.Sprintf("goroutine_for_%s", m.InferredType().String())
-		traceID = s.Tracer.Enter(*currTime, EventGo, target, loopCount)
+		traceID = s.Tracer.EnterString(*currTime, EventGo, target, loopCount)
 	}
 
 	target := m.Stmt
@@ -404,10 +404,8 @@ func (s *SimpleEval) evalWaitExpr(expr *WaitExpr, env *Env[Value], currTime *cor
 	if expr.AggregatorName != nil {
 		aggName = expr.AggregatorName.Value
 	}
-	if s.Tracer != nil {
-		s.Tracer.Enter(*currTime, EventWait, "wait", aggName)
-		defer s.Tracer.Exit(*currTime, 0, Nil, nil)
-	}
+	// Note: Wait expressions don't emit trace events themselves.
+	// The aggregator is responsible for emitting events when evaluating futures.
 
 	var futureValues []Value
 	for _, fname := range expr.FutureNames {
@@ -490,10 +488,10 @@ func (s *SimpleEval) evalMemberAccessExpr(m *MemberAccessExpr, env *Env[Value], 
 	if methodDecl != nil {
 		methodType := decl.MethodType(methodDecl)
 		methodVal := &decl.MethodValue{
-			Method: methodDecl, SavedEnv: compInst.InitialEnv.Push(), IsNative: compDecl.IsNative,
-		}
-		if compInst.IsNative {
-			methodVal.BoundInstance = compInst.NativeInstance
+			Method: methodDecl, 
+			SavedEnv: compInst.InitialEnv.Push(), 
+			IsNative: compDecl.IsNative,
+			BoundInstance: compInst, // Always set to ComponentInstance
 		}
 		result, err = NewValue(methodType, methodVal)
 		ensureNoErr(err)
@@ -517,17 +515,22 @@ func (s *SimpleEval) evalCallExpr(expr *CallExpr, env *Env[Value], currTime *cor
 		argValues[i] = argValue
 	}
 
+	// Extract ComponentInstance from BoundInstance
+	var compInst *ComponentInstance
+	if methodValue.BoundInstance != nil {
+		compInst, _ = methodValue.BoundInstance.(*ComponentInstance)
+	}
+
 	if s.Tracer != nil {
 		argStrings := make([]string, len(argValues))
 		for i, v := range argValues {
 			argStrings[i] = v.String()
 		}
-		target := expr.Function.String()
-		eventID := s.Tracer.Enter(*currTime, EventEnter, target, argStrings...)
+		eventID := s.Tracer.Enter(*currTime, EventEnter, compInst, methodDecl, argStrings...)
 		startTime := *currTime
 		defer func() {
 			duration := *currTime - startTime
-			s.Tracer.Exit(*currTime, duration, result, nil)
+			s.Tracer.Exit(*currTime, duration, compInst, methodDecl, result, nil)
 			_ = eventID // To silence unused error, though it's conceptually used by Exit
 		}()
 	}
@@ -538,8 +541,8 @@ func (s *SimpleEval) evalCallExpr(expr *CallExpr, env *Env[Value], currTime *cor
 	}
 
 	if methodValue.IsNative {
-		if methodValue.BoundInstance != nil {
-			result, err := InvokeMethod(methodValue.BoundInstance, methodValue.Method.Name.Value, argValues, env, currTime, s.Rand, true)
+		if compInst != nil {
+			result, err := InvokeMethod(compInst.NativeInstance, methodValue.Method.Name.Value, argValues, env, currTime, s.Rand, true)
 			ensureNoErr(err, "Error calling method: ", err)
 			return result, false
 		} else {

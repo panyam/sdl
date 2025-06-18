@@ -268,7 +268,30 @@ This document outlines the workshop-focused development status and next steps fo
 - Build pipeline and testing suite operational
 
 ---
-## 🚀 IMMEDIATE NEXT STEPS (June 2025)
+## 🚀 IMMEDIATE NEXT STEPS (December 2025)
+
+### **Live Metrics System - Phase 1 Complete ✅**
+The runtime metrics infrastructure is now complete and ready for console integration:
+
+1. **✅ Core Runtime Metrics** 
+   - Virtual time support using `core.Duration` for deterministic simulation
+   - Component instance resolution by name (e.g., "server" not "ContactAppServer")
+   - Efficient event matching with direct pointer comparison
+   - CircularBuffer for memory-efficient data storage
+   - Comprehensive aggregation functions (sum, rate, percentiles)
+   - Full integration with SimpleEval through ExecutionTracer
+
+2. **✅ Key Design Decisions**
+   - Metrics owned by runtime, not console (for testability)
+   - System-aware MetricStore resolves component names from environment
+   - TraceEvent simplified to carry Component/Method references directly
+   - Tests use real SDL systems instead of mocks
+
+3. **Next: Console API Layer**
+   - Create REST endpoints for measurement CRUD operations
+   - Add data retrieval endpoints with aggregation support
+   - Wire into existing Canvas web infrastructure
+   - Update dashboard to display live metrics
 
 ### **Flow Analysis API Implementation**
 1. **Abstract Flow API** 

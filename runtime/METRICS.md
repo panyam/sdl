@@ -269,5 +269,55 @@ As SDL evolves, we could add:
 ## Progress Tracking
 
 **Last Updated**: December 2024
-**Current Status**: Design Phase Complete
-**Next Step**: Implement metrics_types.go
+**Current Status**: Phase 1 Core Runtime Metrics Complete ✅
+
+### Completed Items:
+- ✅ Created metrics_types.go with core types using virtual time (core.Duration)
+- ✅ Implemented CircularBuffer for efficient in-memory storage
+- ✅ Created MetricStore with system-aware measurement management
+- ✅ Added ProcessTraceEvent with component instance resolution
+- ✅ Implemented aggregation functions (sum, rate, avg, min, max, percentiles)
+- ✅ Integrated with SimpleEval through ExecutionTracer
+- ✅ Added comprehensive unit tests using real SDL systems
+
+### Key Implementation Decisions:
+1. **Virtual Time**: All timestamps use `core.Duration` starting from 0 for deterministic simulation
+2. **Instance-based Tracking**: Components are tracked by instance name (e.g., "server") not type name
+3. **Efficient Matching**: Direct pointer comparison between TraceEvent.Component and resolved ComponentInstance
+4. **System Integration**: MetricStore is system-aware and resolves component names from the environment
+
+### Next Steps:
+- Phase 2: Console API Layer
+  - Add metrics_api.go with REST handlers
+  - Create measurement CRUD endpoints
+  - Add data retrieval endpoint
+  - Wire up routes in canvas_web.go
+
+## Virtual Time Design
+
+The metrics system uses virtual simulation time (`core.Duration`) instead of wall clock time:
+
+- **Consistency**: All components use the same time type as SimpleEval's currTime
+- **Determinism**: Tests produce identical results regardless of execution speed
+- **Simplicity**: No timezone or clock synchronization issues
+- **Integration**: Natural fit with SDL's simulation model
+
+Time starts at 0 when a simulation begins and advances based on simulated operations.
+
+## Component Instance Resolution
+
+When creating measurements, users specify component instance names as they appear in the system definition:
+
+```yaml
+system ContactsSystem {
+    use server ContactAppServer(...)  # "server" is the instance name
+    use database ContactDatabase(...)  # "database" is the instance name
+}
+```
+
+The MetricStore resolves these names to actual ComponentInstance pointers:
+1. When adding a measurement, look up the component in the system's environment
+2. Store the resolved ComponentInstance pointer in the measurement
+3. During event processing, use direct pointer comparison for efficient matching
+
+This approach provides intuitive naming while maintaining high performance.

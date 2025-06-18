@@ -19,6 +19,7 @@ type Runtime struct {
 	nativeAggrs    map[string]Aggregator
 	nativeComps    map[string]any
 	nativeCompCons map[string]func(name string) any
+	metricStore    *MetricStore
 }
 
 func NewRuntime(loader *loader.Loader) (r *Runtime) {
@@ -26,6 +27,7 @@ func NewRuntime(loader *loader.Loader) (r *Runtime) {
 		Loader:        loader,
 		fileInstances: make(map[string]*FileInstance),
 		nativeMethods: make(map[string]NativeMethod),
+		metricStore:   NewMetricStore(10000), // Default buffer size of 10k points
 	}
 	r.RegisterNativeMethod("log", Native_log)
 	r.RegisterNativeMethod("delay", Native_delay)
@@ -34,6 +36,21 @@ func NewRuntime(loader *loader.Loader) (r *Runtime) {
 
 func (r *Runtime) RegisterNativeMethod(name string, f NativeMethod) {
 	r.nativeMethods[name] = f
+}
+
+// GetMetricStore returns the runtime's metric store
+func (r *Runtime) GetMetricStore() *MetricStore {
+	return r.metricStore
+}
+
+// EnableMetrics enables metric collection with the specified buffer size
+func (r *Runtime) EnableMetrics(bufferSize int) {
+	r.metricStore = NewMetricStore(bufferSize)
+}
+
+// DisableMetrics disables metric collection
+func (r *Runtime) DisableMetrics() {
+	r.metricStore = nil
 }
 
 // Gets the initial run time environment for a File which would include its parameters and component creators

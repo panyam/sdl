@@ -37,8 +37,10 @@ func (t *WaitAll) Eval(eval *SimpleEval, env *Env[Value], currTime *core.Duratio
 		var futureLatency core.Duration
 		res, ret := eval.Eval(fval.Body.Stmt, fval.Body.SavedEnv, &futureLatency)
 
-		// Restore the tracer's parent context
+		// Emit exit event for the future
 		if eval.Tracer != nil && fval.TraceID > 0 {
+			// For go expressions, we don't have component/method info
+			eval.Tracer.Exit(float64(*currTime)/1e9, futureLatency, nil, nil, res, nil)
 			eval.Tracer.PopParent()
 		}
 

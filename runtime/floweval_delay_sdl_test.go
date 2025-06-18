@@ -11,7 +11,7 @@ import (
 // TestFlowEvalWithDelaySDL tests flow evaluation with SDL files that have delays
 func TestFlowEvalWithDelaySDL(t *testing.T) {
 	t.Run("Queue buildup example", func(t *testing.T) {
-		_, env := loadSystem(t, "../examples/delays/queue_buildup.sdl", "QueueBuildupDemo")
+		_, env, _ := loadSystem(t, "../examples/delays/queue_buildup.sdl", "QueueBuildupDemo")
 
 		// Get processor component
 		processorVal, _ := env.Get("processor")
@@ -55,7 +55,7 @@ func TestFlowEvalWithDelaySDL(t *testing.T) {
 	})
 
 	t.Run("Cascading delays example", func(t *testing.T) {
-		_, env := loadSystem(t, "../examples/delays/cascading_delays.sdl", "CascadingDelayDemo")
+		_, env, _ := loadSystem(t, "../examples/delays/cascading_delays.sdl", "CascadingDelayDemo")
 
 		// Get components
 		apiVal, _ := env.Get("api")
