@@ -2,7 +2,6 @@ package console
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"reflect"
 	"sort"
@@ -405,7 +404,7 @@ func (c *Canvas) processTracerEvents(tracer *MeasurementTracer) error {
 					// Extract metric and store in database
 					err := c.storeMeasurementFromEvent(tracer, measurement, enterEvent, event)
 					if err != nil {
-						fmt.Printf("Warning: Failed to store measurement for %s: %v\n", target, err)
+						Warn("Failed to store measurement for %s: %v", target, err)
 					}
 				}
 			}

@@ -461,12 +461,12 @@ func (c *Canvas) runGenerator(id string, config *GeneratorConfig, stopChan <-cha
 	ticker := time.NewTicker(time.Second) // Check every second
 	defer ticker.Stop()
 
-	fmt.Printf("🚀 Generator %s started: %s @ %d rps\n", id, config.Target, config.Rate)
+	Start("Generator %s started: %s @ %d rps", id, config.Target, config.Rate)
 
 	for {
 		select {
 		case <-stopChan:
-			fmt.Printf("🛑 Generator %s stopped\n", id)
+			Stop("Generator %s stopped", id)
 			return
 		case <-ticker.C:
 			if config.Enabled {
@@ -478,9 +478,9 @@ func (c *Canvas) runGenerator(id string, config *GeneratorConfig, stopChan <-cha
 				err := c.Run(varName, config.Target, WithRuns(config.Rate))
 				if err != nil {
 					// Log error but continue generating
-					fmt.Printf("❌ Generator %s error: %v\n", id, err)
+					Failure("Generator %s error: %v", id, err)
 				} else {
-					fmt.Printf("✅ Generator %s: executed %d calls to %s\n", id, config.Rate, config.Target)
+					Debug("Generator %s: executed %d calls to %s", id, config.Rate, config.Target)
 				}
 			}
 		}

@@ -1,31 +1,67 @@
 package runtime
 
 import (
+	"bytes"
+	"strings"
 	"testing"
-
-	"github.com/panyam/sdl/loader"
 )
 
-// Test utility to load a system from a sdl file and initialize it
-func loadSystem(t *testing.T, sdlfile, systemName string) (*SystemInstance, *Env[Value]) {
-	// Load and test the cascading delays example
-	l := loader.NewLoader(nil, nil, 10)
-	r := NewRuntime(l)
-
-	fileInstance := r.LoadFile(sdlfile)
-	if fileInstance == nil {
-		t.Skip("Skipping - cascading_delays.sdl not found")
+// QuietTest disables logging for the duration of a test
+// Usage: defer QuietTest(t)()
+func QuietTest(t *testing.T) func() {
+	oldLevel := GetLogLevel()
+	SetLogLevel(LogLevelOff)
+	return func() {
+		SetLogLevel(oldLevel)
 	}
+}
 
-	system := fileInstance.NewSystem(systemName)
-	if system == nil {
-		t.Fatalf("System '%s' not found", systemName)
+// CaptureLog captures log output during test execution
+// Returns the captured output and a cleanup function
+func CaptureLog(t *testing.T, level LogLevel) (*bytes.Buffer, func()) {
+	oldLogger := globalLogger
+	buffer := &bytes.Buffer{}
+	
+	// Create new logger that writes to buffer
+	globalLogger = NewLogger(buffer, level)
+	
+	return buffer, func() {
+		globalLogger = oldLogger
 	}
+}
 
-	// Initialize system
-	var currTime Duration
-	se := NewSimpleEval(fileInstance, nil)
-	env := fileInstance.Env()
-	se.EvalInitSystem(system, env, &currTime)
-	return system, env
+// VerboseTest enables debug logging if test is run with -v flag
+func VerboseTest(t *testing.T) func() {
+	oldLevel := GetLogLevel()
+	if testing.Verbose() {
+		SetLogLevel(LogLevelDebug)
+	}
+	return func() {
+		SetLogLevel(oldLevel)
+	}
+}
+
+// AssertNoLogErrors checks that no ERROR level logs were produced
+func AssertNoLogErrors(t *testing.T, logs string) {
+	if strings.Contains(logs, "[ERROR]") {
+		t.Errorf("Unexpected error logs found:\n%s", logs)
+	}
+}
+
+// AssertLogContains checks that logs contain expected message
+func AssertLogContains(t *testing.T, logs string, expected string) {
+	if !strings.Contains(logs, expected) {
+		t.Errorf("Expected log message not found.\nExpected: %s\nActual logs:\n%s", expected, logs)
+	}
+}
+
+// TestLogLevel sets log level for a specific test
+// Useful for debugging individual tests
+func TestLogLevel(t *testing.T, level LogLevel) func() {
+	oldLevel := GetLogLevel()
+	SetLogLevel(level)
+	t.Logf("Set log level to %s for test %s", level.String(), t.Name())
+	return func() {
+		SetLogLevel(oldLevel)
+	}
 }

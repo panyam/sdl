@@ -3,7 +3,6 @@ package console
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 	"sync"
@@ -74,7 +73,7 @@ func (c *CanvasWSConn) OnStart(conn *websocket.Conn) error {
 	c.handler.clients[c.id] = c
 	c.handler.mu.Unlock()
 	
-	log.Printf("🔌 WebSocket client connected: %s", c.id)
+	Info("WebSocket client connected: %s", c.id)
 	
 	// Send initial connection message
 	message := CanvasWSMessage{
@@ -97,7 +96,7 @@ func (c *CanvasWSConn) OnClose() {
 	delete(c.handler.clients, c.id)
 	c.handler.mu.Unlock()
 	
-	log.Printf("🔌 WebSocket client disconnected: %s", c.id)
+	Info("WebSocket client disconnected: %s", c.id)
 	
 	// Call the embedded JSONConn's OnClose
 	c.JSONConn.OnClose()

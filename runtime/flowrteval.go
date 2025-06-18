@@ -1,7 +1,6 @@
 package runtime
 
 import (
-	"log"
 	"log/slog"
 )
 
@@ -24,13 +23,13 @@ func FlowEvalRuntime(component *ComponentInstance, method string, inputRate floa
 
 	// Check for cycles using component instance
 	if scope.IsInCallStack(component) {
-		log.Printf("FlowEvalRuntime: Cycle detected for %s.%s, breaking recursion", component.ID(), method)
+		Warn("FlowEvalRuntime: Cycle detected for %s.%s, breaking recursion", component.ID(), method)
 		return outflows
 	}
 
 	// Prevent infinite recursion
 	if len(scope.CallStack) >= 20 {
-		log.Printf("FlowEvalRuntime: Maximum call depth reached, stopping recursion")
+		Debug("FlowEvalRuntime: Maximum call depth reached, stopping recursion")
 		return outflows
 	}
 
@@ -43,9 +42,9 @@ func FlowEvalRuntime(component *ComponentInstance, method string, inputRate floa
 			targetComp, targetMethod := scope.ResolveTarget(target)
 			if targetComp != nil {
 				outflows.AddFlow(targetComp, targetMethod, rate)
-				// log.Printf("FlowEvalRuntime: Native component %s.%s flows to %s.%s (%.2f RPS)", component.ID(), method, targetComp.ID(), targetMethod, rate)
+				// Debug("FlowEvalRuntime: Native component %s.%s flows to %s.%s (%.2f RPS)", component.ID(), method, targetComp.ID(), targetMethod, rate)
 			} else {
-				log.Printf("FlowEvalRuntime: Failed to resolve target '%s' from %s.%s",
+				Debug("FlowEvalRuntime: Failed to resolve target '%s' from %s.%s",
 					target, component.ID(), method)
 			}
 		}
@@ -55,7 +54,7 @@ func FlowEvalRuntime(component *ComponentInstance, method string, inputRate floa
 	// For SDL components, get the method declaration
 	methodDecl, err := component.ComponentDecl.GetMethod(method)
 	if err != nil || methodDecl == nil {
-		log.Printf("FlowEvalRuntime: Method %s.%s not found", component.ID(), method)
+		Debug("FlowEvalRuntime: Method %s.%s not found", component.ID(), method)
 		return outflows
 	}
 
@@ -99,7 +98,7 @@ func analyzeStatementRuntime(stmt Stmt, inputRate float64, scope *FlowScope, out
 		analyzeLetStatementRuntime(s, inputRate, scope, outflows)
 	default:
 		// Other statement types don't generate flows
-		log.Printf("analyzeStatementRuntime: Unhandled statement type: %T", stmt)
+		Debug("analyzeStatementRuntime: Unhandled statement type: %T", stmt)
 	}
 }
 
@@ -139,7 +138,7 @@ func analyzeCallExprRuntime(callExpr *CallExpr, inputRate float64, scope *FlowSc
 				inputRate,
 			)
 		}
-		// log.Printf("analyzeCallExprRuntime: Flow from %s.%s to %s.%s (%.2f RPS)", scope.CurrentComponent.ID(), scope.CurrentMethod.Name.Value, targetComp.ID(), targetMethod, inputRate)
+		// Debug("analyzeCallExprRuntime: Flow from %s.%s to %s.%s (%.2f RPS)", scope.CurrentComponent.ID(), scope.CurrentMethod.Name.Value, targetComp.ID(), targetMethod, inputRate)
 	}
 }
 
@@ -223,10 +222,10 @@ func resolveComponentPath(path []string, scope *FlowScope) *ComponentInstance {
 			if depValue.Value != nil {
 				compInst, ok := depValue.Value.(*ComponentInstance)
 				if ok {
-					// log.Printf("resolveComponentPath: Found dependency '%s' in component instance", depName)
+					// Debug("resolveComponentPath: Found dependency '%s' in component instance", depName)
 					// TODO: Handle nested paths (e.g., cache.inner) if needed
 					if len(path) > 1 {
-						log.Printf("resolveComponentPath: Nested paths not yet implemented: %v", path)
+						Debug("resolveComponentPath: Nested paths not yet implemented: %v", path)
 					}
 					return compInst
 				}
@@ -237,7 +236,7 @@ func resolveComponentPath(path []string, scope *FlowScope) *ComponentInstance {
 	// If not found in component, try the system environment
 	depValue, exists := scope.SysEnv.Get(depName)
 	if !exists {
-		log.Printf("resolveComponentPath: Dependency '%s' not found in component or system scope", depName)
+		Debug("resolveComponentPath: Dependency '%s' not found in component or system scope", depName)
 		return nil
 	}
 
@@ -254,7 +253,7 @@ func resolveComponentPath(path []string, scope *FlowScope) *ComponentInstance {
 
 	// TODO: Handle nested paths (e.g., cache.inner) if needed
 	if len(path) > 1 {
-		log.Printf("resolveComponentPath: Nested paths not yet implemented: %v", path)
+		Debug("resolveComponentPath: Nested paths not yet implemented: %v", path)
 	}
 
 	return compInst
@@ -265,17 +264,17 @@ func analyzeIfStatementRuntime(stmt *IfStmt, inputRate float64, scope *FlowScope
 	// Evaluate condition probability
 	conditionProb := evaluateConditionProbabilityRuntime(stmt.Condition, scope)
 
-	// log.Printf("analyzeIfStatementRuntime: Processing if statement with condition probability %.2f", conditionProb)
+	// Debug("analyzeIfStatementRuntime: Processing if statement with condition probability %.2f", conditionProb)
 
 	// Analyze then branch with probability-weighted rate
 	if stmt.Then != nil {
-		log.Printf("analyzeIfStatementRuntime: Then branch with rate %.2f (%.2f * %.2f)", inputRate*conditionProb, inputRate, conditionProb)
+		Debug("analyzeIfStatementRuntime: Then branch with rate %.2f (%.2f * %.2f)", inputRate*conditionProb, inputRate, conditionProb)
 		analyzeStatementRuntime(stmt.Then, inputRate*conditionProb, scope, outflows)
 	}
 
 	// Analyze else branch with inverted probability
 	if stmt.Else != nil {
-		log.Printf("analyzeIfStatementRuntime: Else branch with rate %.2f (%.2f * %.2f)", inputRate*(1.0-conditionProb), inputRate, 1.0-conditionProb)
+		Debug("analyzeIfStatementRuntime: Else branch with rate %.2f (%.2f * %.2f)", inputRate*(1.0-conditionProb), inputRate, 1.0-conditionProb)
 		analyzeStatementRuntime(stmt.Else, inputRate*(1.0-conditionProb), scope, outflows)
 	}
 }
@@ -288,7 +287,7 @@ func evaluateConditionProbabilityRuntime(condition Expr, scope *FlowScope) float
 
 		// Check if we have tracked outcome for this variable
 		if outcome, exists := scope.VariableOutcomes[varName]; exists {
-			// log.Printf("evaluateConditionProbabilityRuntime: Using tracked outcome for variable '%s': %.2f", varName, outcome)
+			// Debug("evaluateConditionProbabilityRuntime: Using tracked outcome for variable '%s': %.2f", varName, outcome)
 			return outcome
 		}
 
@@ -301,7 +300,7 @@ func evaluateConditionProbabilityRuntime(condition Expr, scope *FlowScope) float
 	}
 
 	// Default to 50% probability for unknown conditions
-	// log.Printf("evaluateConditionProbabilityRuntime: No tracked outcome for condition, using default 0.5")
+	// Debug("evaluateConditionProbabilityRuntime: No tracked outcome for condition, using default 0.5")
 	return 0.5
 }
 
@@ -353,7 +352,7 @@ func analyzeLetStatementRuntime(stmt *LetStmt, inputRate float64, scope *FlowSco
 					// Get the success rate of the called method
 					successRate := getMethodSuccessRateRuntime(targetComp, targetMethod, scope)
 					scope.TrackVariableOutcome(stmt.Variables[0].Value, successRate)
-					log.Printf("analyzeLetStatementRuntime: Variable '%s' assigned from %s.%s with success rate %.2f", stmt.Variables[0].Value, targetComp.ID(), targetMethod, successRate)
+					Debug("analyzeLetStatementRuntime: Variable '%s' assigned from %s.%s with success rate %.2f", stmt.Variables[0].Value, targetComp.ID(), targetMethod, successRate)
 				}
 			}
 		}
@@ -383,7 +382,7 @@ func getMethodSuccessRateRuntime(component *ComponentInstance, method string, sc
 // 2. Iterative back-pressure adjustment until convergence
 func SolveSystemFlowsRuntime(generators []GeneratorEntryPointRuntime, scope *FlowScope) RateMap {
 	if scope == nil {
-		// log.Printf("SolveSystemFlowsRuntime: scope is nil")
+		// Debug("SolveSystemFlowsRuntime: scope is nil")
 		return NewRateMap()
 	}
 
@@ -394,7 +393,7 @@ func SolveSystemFlowsRuntime(generators []GeneratorEntryPointRuntime, scope *Flo
 		}
 	}
 
-	// log.Printf("SolveSystemFlowsRuntime: Starting fixed-point iteration with %d entry points", len(generators))
+	// Debug("SolveSystemFlowsRuntime: Starting fixed-point iteration with %d entry points", len(generators))
 
 	// Configuration for convergence
 	maxIterations := 10
@@ -433,14 +432,14 @@ func SolveSystemFlowsRuntime(generators []GeneratorEntryPointRuntime, scope *Flo
 		for component, methods := range iterScope.ArrivalRates {
 			for method, inRate := range methods {
 				if inRate > 1e-9 { // Only process non-trivial rates
-					log.Printf("SolveSystemFlowsRuntime: Processing %s.%s with rate %.2f", component.ID(), method, inRate)
+					Debug("SolveSystemFlowsRuntime: Processing %s.%s with rate %.2f", component.ID(), method, inRate)
 					// Get outflows from this component.method
 					outflows := FlowEvalRuntime(component, method, inRate, iterScope)
 
 					// Add outflows to the new rates
 					for targetComp, targetMethods := range outflows {
 						for targetMethod, outRate := range targetMethods {
-							log.Printf("SolveSystemFlowsRuntime:   -> %s.%s: %.2f", targetComp.ID(), targetMethod, outRate)
+							Debug("SolveSystemFlowsRuntime:   -> %s.%s: %.2f", targetComp.ID(), targetMethod, outRate)
 							newRates.AddFlow(targetComp, targetMethod, outRate)
 						}
 					}
@@ -454,10 +453,10 @@ func SolveSystemFlowsRuntime(generators []GeneratorEntryPointRuntime, scope *Flo
 		// Check convergence (all rates changed by < threshold)
 		maxChange := computeMaxChange(oldRates, newRates)
 
-		// log.Printf("SolveSystemFlowsRuntime: Iteration %d, max change: %.6f", iteration, maxChange)
+		// Debug("SolveSystemFlowsRuntime: Iteration %d, max change: %.6f", iteration, maxChange)
 
 		if maxChange < convergenceThreshold {
-			// log.Printf("SolveSystemFlowsRuntime: Converged after %d iterations", iteration+1)
+			// Debug("SolveSystemFlowsRuntime: Converged after %d iterations", iteration+1)
 			scope.ArrivalRates = newRates
 			return newRates
 		}
@@ -466,7 +465,7 @@ func SolveSystemFlowsRuntime(generators []GeneratorEntryPointRuntime, scope *Flo
 		scope.ArrivalRates = applyDamping(oldRates, newRates, dampingFactor)
 	}
 
-	log.Printf("SolveSystemFlowsRuntime: Did not converge after %d iterations", maxIterations)
+	Debug("SolveSystemFlowsRuntime: Did not converge after %d iterations", maxIterations)
 	return scope.ArrivalRates
 }
 

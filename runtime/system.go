@@ -2,7 +2,6 @@ package runtime
 
 import (
 	"fmt"
-	"log"
 	"reflect"
 	"strings"
 
@@ -77,7 +76,7 @@ func (s *SystemInstance) Initializer() (blockStmt *BlockStmt, err error) {
 			// Add this as is
 			stmts = append(stmts, it)
 		default:
-			log.Fatal("Invalid type: ", it, reflect.TypeOf(it))
+			Error("Invalid type: %v %v", it, reflect.TypeOf(it))
 			// i.Errorf(item.Pos(), "type inference for system body item type %T not implemented yet", item)
 		}
 	}
@@ -195,7 +194,7 @@ func (si *SystemInstance) RecomputeFlows(component, method string, inputRate flo
 			if ok {
 				if comp, ok := compVal.Value.(*ComponentInstance); ok {
 					if err := comp.SetArrivalRate(downstreamMethod, rate); err != nil {
-						log.Printf("Warning: Failed to set arrival rate for %s.%s: %v",
+						Warn("Failed to set arrival rate for %s.%s: %v",
 							downstreamComp, downstreamMethod, err)
 					}
 				}
@@ -230,7 +229,7 @@ func (si *SystemInstance) RecomputeAllFlows(entryPoints map[string]float64) erro
 			for flowTarget, flowRate := range flows {
 				allFlows[flowTarget] += flowRate
 			}
-			log.Printf("FlowEval: %s.%s @ %.1f RPS -> %v", component, method, rate, flows)
+			Debug("FlowEval: %s.%s @ %.1f RPS -> %v", component, method, rate, flows)
 		}
 	}
 
@@ -242,10 +241,10 @@ func (si *SystemInstance) RecomputeAllFlows(entryPoints map[string]float64) erro
 			if ok {
 				if comp, ok := compVal.Value.(*ComponentInstance); ok {
 					if err := comp.SetArrivalRate(method, rate); err != nil {
-						log.Printf("Warning: Failed to set arrival rate for %s.%s: %v",
+						Warn("Failed to set arrival rate for %s.%s: %v",
 							component, method, err)
 					} else {
-						log.Printf("Applied arrival rate: %s.%s = %.2f RPS", component, method, rate)
+						Debug("Applied arrival rate: %s.%s = %.2f RPS", component, method, rate)
 					}
 				}
 			}

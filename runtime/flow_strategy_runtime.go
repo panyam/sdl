@@ -2,7 +2,6 @@ package runtime
 
 import (
 	"fmt"
-	"log"
 )
 
 // RuntimeFlowStrategy implements flow evaluation using the runtime-based approach
@@ -20,7 +19,7 @@ func (s *RuntimeFlowStrategy) Evaluate(system *SystemInstance, generators []Gene
 		// Find the component instance
 		compInst := system.FindComponent(gen.Component)
 		if compInst == nil {
-			log.Printf("RuntimeFlowStrategy: Component not found: %s", gen.Component)
+			Warn("RuntimeFlowStrategy: Component not found: %s", gen.Component)
 			continue
 		}
 		
