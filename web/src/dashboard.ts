@@ -156,7 +156,7 @@ export class Dashboard {
         this.loadSystemDiagram();
         // Also refresh generators and measurements when system is activated
         this.refreshGenerators();
-        this.refreshMeasurements();
+        // this.refreshMeasurements();
         this.updateAllPanels();
         break;
       case 'parameterChanged':
@@ -185,8 +185,8 @@ export class Dashboard {
       case 'measurementAdded':
       case 'measurementUpdated':
       case 'measurementRemoved':
-        this.refreshMeasurements();
-        this.updateMeasurementsPanel();
+        // this.refreshMeasurements();
+        // this.updateMeasurementsPanel();
         this.updateLiveMetricsPanel();
         break;
       case 'plotGenerated':
@@ -418,9 +418,7 @@ export class Dashboard {
           case 'trafficGeneration':
             element.innerHTML = this.renderGenerateControls();
             break;
-          case 'measurements':
-            element.innerHTML = this.renderMeasurements();
-            break;
+          // case 'measurements': element.innerHTML = this.renderMeasurements(); break;
           case 'liveMetrics':
             element.innerHTML = `
               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" style="grid-auto-rows: 200px;">
@@ -484,12 +482,14 @@ export class Dashboard {
       position: { direction: 'right' }
     });
 
+    /*
     this.dockview!.addPanel({
       id: 'measurements',
       component: 'measurements', 
       title: 'Measurements',
       position: { direction: 'below' }
     });
+   */
 
     this.dockview!.addPanel({
       id: 'liveMetrics',
@@ -520,7 +520,7 @@ export class Dashboard {
     
     // Update all panel contents with current state
     this.updateTrafficGenerationPanel();
-    this.updateMeasurementsPanel();
+    // this.updateMeasurementsPanel();
     this.updateLiveMetricsPanel();
   }
 
@@ -536,16 +536,6 @@ export class Dashboard {
       setTimeout(() => {
         this.setupInteractivity();
       }, 10);
-    }
-  }
-
-  private updateMeasurementsPanel() {
-    if (!this.dockview) return;
-    
-    const panel = this.dockview.getPanel('measurements');
-    if (panel) {
-      const element = panel.view.content.element;
-      element.innerHTML = this.renderMeasurements();
     }
   }
 
@@ -773,41 +763,6 @@ export class Dashboard {
       </div>
     `;
   }
-
-  private renderMeasurements(): string {
-    const measurements = Object.values(this.state.dynamicCharts);
-    
-    if (measurements.length === 0) {
-      return `
-        <div class="flex items-center justify-center h-full">
-          <div class="text-center text-gray-400">
-            <div class="text-sm">No Measurements</div>
-            <div class="text-xs mt-1">Add measurements to track system metrics</div>
-          </div>
-        </div>
-      `;
-    }
-
-    return `
-      <div class="space-y-3">
-        <div class="text-xs text-gray-400 mb-3">
-          Active measurements for system monitoring
-        </div>
-        ${measurements.map(measurement => `
-          <div class="bg-gray-800 border border-gray-600 rounded p-2">
-            <div class="text-xs font-medium text-gray-300 mb-1">${measurement.title}</div>
-            <div class="text-xs text-gray-500">Target: ${measurement.target || measurement.metricName}</div>
-            <div class="text-xs text-green-400">Type: ${measurement.metricName}</div>
-          </div>
-        `).join('')}
-        
-        <button class="w-full btn btn-outline text-xs py-1" ${!this.state.currentSystem ? 'disabled' : ''}>
-          + Add Measurement
-        </button>
-      </div>
-    `;
-  }
-
 
   private renderGenerateControls(): string {
     const hasGenerators = this.state.generateCalls.length > 0;
@@ -1248,4 +1203,52 @@ export class Dashboard {
     localStorage.removeItem('sdl-dockview-layout');
     this.initializeLayout();
   }
+
+  // NO LONGER SHOWING MEASUREMENTS PANEL - LiveMetrics panel is doing the same thing anyway
+  /* 
+  private updateMeasurementsPanel() {
+    if (!this.dockview) return;
+    
+    const panel = this.dockview.getPanel('measurements');
+    if (panel) {
+      const element = panel.view.content.element;
+      element.innerHTML = this.renderMeasurements();
+    }
+  }
+
+  private renderMeasurements(): string {
+    const measurements = Object.values(this.state.dynamicCharts);
+    
+    if (measurements.length === 0) {
+      return `
+        <div class="flex items-center justify-center h-full">
+          <div class="text-center text-gray-400">
+            <div class="text-sm">No Measurements</div>
+            <div class="text-xs mt-1">Add measurements to track system metrics</div>
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="space-y-3">
+        <div class="text-xs text-gray-400 mb-3">
+          Active measurements for system monitoring
+        </div>
+        ${measurements.map(measurement => `
+          <div class="bg-gray-800 border border-gray-600 rounded p-2">
+            <div class="text-xs font-medium text-gray-300 mb-1">${measurement.title}</div>
+            <div class="text-xs text-gray-500">Target: ${measurement.target || measurement.metricName}</div>
+            <div class="text-xs text-green-400">Type: ${measurement.metricName}</div>
+          </div>
+        `).join('')}
+        
+        <button class="w-full btn btn-outline text-xs py-1" ${!this.state.currentSystem ? 'disabled' : ''}>
+          + Add Measurement
+        </button>
+      </div>
+    `;
+  }
+
+ */
 }
