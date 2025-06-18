@@ -270,32 +270,42 @@ This document outlines the workshop-focused development status and next steps fo
 ---
 ## 🚀 IMMEDIATE NEXT STEPS (June 2025)
 
-### **FlowEval Runtime Migration Completion**
-1. **Migrate Existing Tests** (Step 8)
-   - Convert floweval_test.go to use runtime-based API
-   - Update integration tests to use ComponentInstance references
-   - Ensure all test scenarios work with new approach
+### **Flow Analysis API Implementation**
+1. **Abstract Flow API** 
+   - Create `/api/flows/{strategy}/eval` endpoint for strategy-agnostic flow evaluation
+   - Implement flow strategy registry with pluggable implementations
+   - Return consistent FlowEdge and rate information regardless of strategy
+   - Support for listing available strategies and their capabilities
 
-2. **Remove Legacy Code** (Step 9)
-   - Remove string-based FlowContext.NativeComponents registry
-   - Clean up old SolveSystemFlows and FlowEval functions
-   - Remove string-based GeneratorEntryPoint struct
+2. **CLI Flow Commands**
+   - `sdl flows list` - Show available flow evaluation strategies
+   - `sdl flows eval --strategy=runtime` - Evaluate flows with specific strategy
+   - `sdl flows apply <strategy>` - Apply calculated rates as arrival rates
+   - `sdl flows show` - Display current arrival rates and source strategy
 
-3. **Canvas Integration Update**
-   - Update Canvas to create GeneratorEntryPointRuntime with ComponentInstance
-   - Modify generator management to resolve component names to instances
-   - Ensure dashboard flow visualization works with runtime components
+3. **Manual Rate Override**
+   - API endpoint for setting component method arrival rates
+   - CLI command: `sdl component <comp>.<method> set-arrival-rate <rate>`
+   - Track manual overrides separately from calculated rates
+   - Show warnings when manual rates differ significantly from calculated
 
-### **Technical Debt Cleanup**
-- Remove duplicate mock components from test files
-- Consolidate all flow analysis code in flowrteval.go
-- Update documentation to reflect new architecture
+### **FlowEval Strategy Development**
+1. **Document Current Limitations**
+   - ✅ Early return control flow causes overestimation
+   - ✅ No capacity-based backpressure modeling yet
+   - ✅ Suitable for initial sizing (conservative overestimation)
+   
+2. **Future Strategy Types**
+   - Monte Carlo simulation-based (run SimpleEval multiple times)
+   - Feedback-based (observe actual flows during runs)
+   - Control-flow aware (handle early returns properly)
+   - Capacity-aware (use delays for backpressure)
 
-### **Future Enhancements**
-- Support for nested component paths (e.g., "cache.inner.store")
-- Add retry pattern analysis with exponential back-off
-- Implement loop iteration analysis for batch processing
-- Performance optimization with result caching
+### **Technical Foundation**
+- Keep FlowEval and SimpleEval separate (different evaluation semantics)
+- Use current runtime-based FlowEval as default strategy
+- Allow users to manually adjust rates where needed
+- Focus on making flow analysis a helper tool, not a critical dependency
 
 ---
 ## DEVELOPMENT TIMELINE
