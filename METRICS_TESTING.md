@@ -69,6 +69,11 @@ $SDL measure add server_errors server.Lookup count --aggregation rate --result-v
 
 ### 3. Generate Traffic to Create Metrics
 
+Using `sdl run`:
+```bash
+$SDL run results server.Lookup --runs 100 --workers 10
+```
+
 Using traffic generators:
 ```bash
 $SDL gen add lookup server.Lookup 20
