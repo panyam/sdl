@@ -77,7 +77,7 @@ func (mt *MeasurementTracer) SetRunID(runID string) {
 }
 
 // Exit overrides the base tracer to capture measurements
-func (mt *MeasurementTracer) Exit(ts float64, duration core.Duration, retVal runtime.Value, err error) {
+func (mt *MeasurementTracer) Exit(ts core.Duration, duration core.Duration, comp *runtime.ComponentInstance, method *runtime.MethodDecl, retVal runtime.Value, err error) {
 	// Check if we have any measurements to capture before calling base tracer
 	var target string
 	var args []string
@@ -90,7 +90,7 @@ func (mt *MeasurementTracer) Exit(ts float64, duration core.Duration, retVal run
 			// Find the most recent Enter event (should be the last event since Exit hasn't been called yet)
 			for i := len(events) - 1; i >= 0; i-- {
 				if events[i].Kind == runtime.EventEnter {
-					target = events[i].Target
+					target = events[i].Target()
 					args = events[i].Arguments
 					shouldCapture = true
 					break
@@ -100,7 +100,7 @@ func (mt *MeasurementTracer) Exit(ts float64, duration core.Duration, retVal run
 	}
 
 	// Always call the base tracer to maintain proper event recording
-	mt.ExecutionTracer.Exit(ts, duration, retVal, err)
+	mt.ExecutionTracer.Exit(ts, duration, comp, method, retVal, err)
 
 	// Now capture measurement if we found a target
 	if shouldCapture {

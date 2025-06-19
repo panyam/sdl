@@ -72,6 +72,7 @@ type MeasurementInfo struct {
 	Name        string          `json:"name"`
 	Component   string          `json:"component"`
 	Methods     []string        `json:"methods"`
+	ResultValue string          `json:"resultValue"`
 	Metric      MetricType      `json:"metric"`
 	Aggregation AggregationType `json:"aggregation"`
 	Window      time.Duration   `json:"window"`

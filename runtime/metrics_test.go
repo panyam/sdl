@@ -33,7 +33,7 @@ func TestMetricStore(t *testing.T) {
 	spec := MeasurementSpec{
 		ID:          "server_lookups",
 		Name:        "Server Lookups",
-		Component:   "server", // The actual component type name
+		Component:   "server", // The actual component instance name
 		Methods:     []string{"Lookup"},
 		ResultValue: "Val(Bool: true)", // Look for successful lookups
 		Metric:      MetricCount,
@@ -73,6 +73,13 @@ func TestMetricStore(t *testing.T) {
 		t.Fatalf("Failed to get measurement data: %v", err)
 	}
 
+	// Debug: print what we got
+	t.Logf("Got %d metric points", len(points))
+	for i, p := range points {
+		t.Logf("Point %d: timestamp=%v, value=%v, component=%s, method=%s", 
+			i, p.Timestamp, p.Value, p.Component, p.Method)
+	}
+
 	// The server.Lookup() method should have been called 10 times
 	if len(points) != 10 {
 		t.Errorf("Expected 10 server lookup events, got %d", len(points))
@@ -89,6 +96,92 @@ func TestMetricStore(t *testing.T) {
 	if agg.Value < expectedRate-0.1 || agg.Value > expectedRate+0.1 {
 		t.Errorf("Expected rate ~%f, got %f", expectedRate, agg.Value)
 	}
+}
+
+func TestMetricsWithLatency(t *testing.T) {
+	// Load and initialize the ContactsSystem
+	system, env, currTime := loadSystem(t, "../examples/contacts/contacts.sdl", "ContactsSystem")
+
+	// Create a runtime with metrics enabled
+	rt := system.File.Runtime
+	rt.EnableMetrics(1000)
+	rt.metricStore.SetSystem(system)
+
+	// Create tracer and evaluator
+	tracer := NewExecutionTracer()
+	tracer.SetRuntime(rt)
+	eval := NewSimpleEval(system.File, tracer)
+
+	// Add a latency measurement for server.Lookup
+	spec := MeasurementSpec{
+		ID:          "server_latency",
+		Name:        "Server Latency",
+		Component:   "server",
+		Methods:     []string{"Lookup"},
+		ResultValue: "*", // All results
+		Metric:      MetricLatency,
+		Aggregation: AggP95,
+		Window:      10 * time.Second,
+	}
+
+	err := rt.metricStore.AddMeasurement(spec)
+	if err != nil {
+		t.Fatalf("Failed to add measurement: %v", err)
+	}
+
+	// Get the server component
+	serverVal, _ := env.Get("server")
+	serverComp := serverVal.Value.(*ComponentInstance)
+
+	// Create call expression
+	serverExpr := &decl.IdentifierExpr{Value: "server"}
+	serverExpr.SetInferredType(decl.ComponentType(serverComp.ComponentDecl))
+
+	callExpr := &CallExpr{
+		Function: &MemberAccessExpr{
+			Receiver: serverExpr,
+			Member:   &decl.IdentifierExpr{Value: "Lookup"},
+		},
+		ArgList: []Expr{},
+	}
+
+	// Run 5 calls
+	simTime := currTime
+	for i := 0; i < 5; i++ {
+		result, _ := eval.Eval(callExpr, env, &simTime)
+		t.Logf("Call %d: latency=%v", i, result.Time)
+		simTime += 1e9 // Advance 1 second
+	}
+
+	// Get latency data
+	points, err := rt.metricStore.GetMeasurementData("server_latency", 100)
+	if err != nil {
+		t.Fatalf("Failed to get measurement data: %v", err)
+	}
+
+	if len(points) != 5 {
+		t.Errorf("Expected 5 latency measurements, got %d", len(points))
+	}
+
+	// Check that latency values are reasonable (should be > 0)
+	for i, p := range points {
+		if p.Value <= 0 {
+			t.Errorf("Point %d has invalid latency: %v", i, p.Value)
+		}
+		// Convert from nanoseconds to milliseconds for display
+		t.Logf("Latency point %d: %v ms", i, p.Value/1e6)
+	}
+
+	// Test P95 aggregation
+	agg, err := rt.metricStore.GetAggregatedData("server_latency")
+	if err != nil {
+		t.Fatalf("Failed to get aggregated data: %v", err)
+	}
+
+	if agg.Value <= 0 {
+		t.Errorf("Expected positive P95 latency, got %v", agg.Value)
+	}
+	t.Logf("P95 latency: %v ms", agg.Value)
 }
 
 func TestCircularBuffer(t *testing.T) {

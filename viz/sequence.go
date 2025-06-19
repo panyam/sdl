@@ -50,7 +50,7 @@ func (g *MermaidSequenceGenerator) Generate(trace *runtime.TraceData) (string, e
 
 		switch event.Kind {
 		case runtime.EventEnter:
-			_, method := getParticipantAndMethod(event.Target)
+			_, method := getParticipantAndMethod(event.Target())
 			b.WriteString(fmt.Sprintf("  %s->>%s: %s(%s)\n", caller, callee, method, strings.Join(event.Arguments, ", ")))
 			b.WriteString(fmt.Sprintf("  activate %s\n", callee))
 
@@ -102,7 +102,7 @@ func (g *MermaidSequenceGenerator) calculateScopeOwners(trace *runtime.TraceData
 
 		currentOwner := owner
 		if event.Kind == runtime.EventEnter {
-			callee, _ := getParticipantAndMethod(event.Target)
+			callee, _ := getParticipantAndMethod(event.Target())
 			if callee != "self" {
 				currentOwner = callee
 			}

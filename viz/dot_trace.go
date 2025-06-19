@@ -34,7 +34,7 @@ func (g *DotTraceGenerator) Generate(trace *runtime.TraceData) (string, error) {
 		}
 
 		if event.Kind == runtime.EventEnter {
-			callee, _ := getParticipantAndMethod(event.Target)
+			callee, _ := getParticipantAndMethod(event.Target())
 			if callee == "self" {
 				scopeOwner[event.ID] = owner // 'self' call remains within the owner's scope
 			} else {
@@ -51,7 +51,7 @@ func (g *DotTraceGenerator) Generate(trace *runtime.TraceData) (string, error) {
 	participantSet := map[string]bool{"User": true}
 	for _, event := range trace.Events {
 		if event.Kind == runtime.EventEnter {
-			callee, _ := getParticipantAndMethod(event.Target)
+			callee, _ := getParticipantAndMethod(event.Target())
 			if callee != "self" && !participantSet[callee] {
 				participantList = append(participantList, callee)
 				participantSet[callee] = true
@@ -71,7 +71,7 @@ func (g *DotTraceGenerator) Generate(trace *runtime.TraceData) (string, error) {
 		caller := scopeOwner[event.ParentID]
 
 		if event.Kind == runtime.EventEnter {
-			callee, method := getParticipantAndMethod(event.Target)
+			callee, method := getParticipantAndMethod(event.Target())
 			if callee == "self" {
 				callee = caller
 			}

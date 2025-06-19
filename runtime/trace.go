@@ -49,6 +49,19 @@ func (e *TraceEvent) GetMethodName() string {
 	return ""
 }
 
+// Target returns the target string for backward compatibility with viz package
+func (e *TraceEvent) Target() string {
+	compName := e.GetComponentName()
+	methodName := e.GetMethodName()
+	
+	if compName != "" && methodName != "" {
+		return compName + "." + methodName
+	} else if methodName != "" {
+		return methodName
+	}
+	return ""
+}
+
 // TraceData is the top-level structure for a trace file.
 type TraceData struct {
 	System     string        `json:"system"`

@@ -206,6 +206,7 @@ func (ms *MetricStore) GetMeasurementInfo(id string) (*MeasurementInfo, error) {
 		Name:        m.Spec.Name,
 		Component:   m.Spec.Component,
 		Methods:     m.Spec.Methods,
+		ResultValue: m.Spec.ResultValue,
 		Metric:      m.Spec.Metric,
 		Aggregation: m.Spec.Aggregation,
 		Window:      m.Spec.Window,
@@ -257,6 +258,7 @@ func (ms *MetricStore) GetMeasurementDataInWindow(id string, window time.Duratio
 	
 	return m.Buffer.GetInWindow(window), nil
 }
+
 
 // Clear removes all data from all measurements
 func (ms *MetricStore) Clear() {

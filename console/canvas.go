@@ -81,6 +81,11 @@ func (c *Canvas) Load(filePath string) error {
 	return nil
 }
 
+// CurrentSystem returns the currently active system
+func (c *Canvas) CurrentSystem() *runtime.SystemInstance {
+	return c.activeSystem
+}
+
 // Use sets the active system for subsequent commands.
 func (c *Canvas) Use(systemName string) error {
 	if c.activeFile == nil {
@@ -399,7 +404,7 @@ func (c *Canvas) processTracerEvents(tracer *MeasurementTracer) error {
 
 			if enterEvent != nil {
 				// Check if this target is being measured
-				target := enterEvent.Target
+				target := enterEvent.Target()
 				if measurement, exists := measurements[target]; exists && measurement.Enabled {
 					// Extract metric and store in database
 					err := c.storeMeasurementFromEvent(tracer, measurement, enterEvent, event)
@@ -511,6 +516,12 @@ type RunOption func(*RunConfig)
 func WithRuns(n int) RunOption {
 	return func(cfg *RunConfig) {
 		cfg.Runs = n
+	}
+}
+
+func WithWorkers(w int) RunOption {
+	return func(cfg *RunConfig) {
+		cfg.Workers = w
 	}
 }
 

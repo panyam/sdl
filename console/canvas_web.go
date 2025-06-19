@@ -154,6 +154,10 @@ func (ws *WebServer) GetRouter() *mux.Router {
 	// RESTful Canvas API routes
 	ws.setupCanvasAPIRoutes(r)
 
+	// Metrics API routes
+	metricsAPI := NewMetricsAPI(ws.canvas)
+	metricsAPI.RegisterRoutes(r)
+
 	// Static file serving (will serve the built frontend)
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./web/dist/")))
 
