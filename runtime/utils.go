@@ -12,6 +12,7 @@ func RunCallInBatches(system *SystemInstance, obj, method string, nbatches, batc
 	fi := system.File
 	se := NewSimpleEval(fi, nil)
 	var totalSimTime core.Duration
+	var simTimeMutex sync.Mutex
 
 	// Use the existing system environment if available, otherwise create new one
 	var env *Env[Value]
@@ -22,11 +23,11 @@ func RunCallInBatches(system *SystemInstance, obj, method string, nbatches, batc
 		se.EvalInitSystem(system, env, &totalSimTime)
 	}
 
-	// startTime := time.Now()
-	// ncalls := nbatches * batchsize
+	startTime := time.Now()
+	ncalls := nbatches * batchsize
 	defer func() {
 		log.Printf("Total Simulation Time: %v", totalSimTime)
-		// log.Printf("Wall Clock Time for %d calls: %v", ncalls, time.Now().Sub(startTime))
+		log.Printf("Wall Clock Time for %d calls: %v", ncalls, time.Since(startTime))
 	}()
 
 	if nbatches < numworkers {
@@ -42,6 +43,7 @@ func RunCallInBatches(system *SystemInstance, obj, method string, nbatches, batc
 			defer wg.Done()
 			workerEnv := env.Push() // Each worker gets its own environment to avoid data races
 			workerSE := NewSimpleEval(fi, nil)
+			var workerSimTime core.Duration
 
 			startBatch := workerIndex * batchesPerWorker
 			endBatch := min((workerIndex+1)*batchesPerWorker, nbatches)
@@ -56,6 +58,7 @@ func RunCallInBatches(system *SystemInstance, obj, method string, nbatches, batc
 					ce := &CallExpr{Function: &MemberAccessExpr{Receiver: &IdentifierExpr{Value: obj}, Member: &IdentifierExpr{Value: method}}}
 					res, _ := workerSE.Eval(ce, workerEnv, &runLatency) // a fresh runLatency for each call
 					res.Time = runLatency                               // The latency is the duration of this single run
+					workerSimTime += runLatency                          // Accumulate worker's simulation time
 					batchVals = append(batchVals, res)
 				}
 				results = append(results, batchVals)
@@ -63,6 +66,11 @@ func RunCallInBatches(system *SystemInstance, obj, method string, nbatches, batc
 					onBatch(batch, batchVals)
 				}
 			}
+
+			// Add worker's total simulation time to the global total
+			simTimeMutex.Lock()
+			totalSimTime += workerSimTime
+			simTimeMutex.Unlock()
 		}(i)
 	}
 
