@@ -20,7 +20,7 @@ var loadCmd = &cobra.Command{
 			return
 		}
 
-		_, err := makeAPICall("POST", "/api/console/load", map[string]any{"filePath": args[0]})
+		_, err := makeAPICall[any]("POST", "/api/console/load", map[string]any{"filePath": args[0]})
 		if err == nil {
 			fmt.Printf("✅ Loaded %s successfully\n", args[0])
 		}
@@ -32,7 +32,7 @@ var useCmd = &cobra.Command{
 	Short: "Select the active system",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		_, err := makeAPICall("POST", "/api/console/use", map[string]any{"systemName": args[0]})
+		_, err := makeAPICall[any]("POST", "/api/console/use", map[string]any{"systemName": args[0]})
 		if err == nil {
 			fmt.Printf("✅ Now using system: %s\n", args[0])
 		}
@@ -44,7 +44,7 @@ var setCmd = &cobra.Command{
 	Short: "Set a parameter value",
 	Args:  cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
-		_, err := makeAPICall("POST", "/api/console/set", map[string]interface{}{
+		_, err := makeAPICall[any]("POST", "/api/console/set", map[string]any{
 			"parameter": args[0],
 			"value":     args[1],
 		})
@@ -59,13 +59,13 @@ var getCmd = &cobra.Command{
 	Short: "View parameter values",
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		result, err := makeAPICall("GET", "/api/console/state", nil)
+		result, err := makeAPICall[any]("GET", "/api/console/state", nil)
 		if err != nil {
 			return
 		}
 
-		state := result["state"].(map[string]interface{})
-		params := state["systemParameters"].(map[string]interface{})
+		state := result.(map[string]any)["state"].(map[string]any)
+		params := state["systemParameters"].(map[string]any)
 
 		if len(args) == 0 {
 			// Show all parameters
@@ -98,7 +98,7 @@ var runCanvasCmd = &cobra.Command{
 			return
 		}
 
-		_, err = makeAPICall("POST", "/api/console/run", map[string]interface{}{
+		_, err = makeAPICall[any]("POST", "/api/console/run", map[string]any{
 			"name":   args[0],
 			"method": args[1],
 			"calls":  calls,
@@ -113,12 +113,12 @@ var infoCmd = &cobra.Command{
 	Use:   "info",
 	Short: "Show current canvas state",
 	Run: func(cmd *cobra.Command, args []string) {
-		result, err := makeAPICall("GET", "/api/console/state", nil)
+		result, err := makeAPICall[any]("GET", "/api/console/state", nil)
 		if err != nil {
 			return
 		}
 
-		state := result["state"].(map[string]interface{})
+		state := result.(map[string]any)["state"].(map[string]any)
 
 		fmt.Printf("SDL Canvas State:\n")
 		if activeFile := state["activeFile"]; activeFile != nil && activeFile != "" {
@@ -130,7 +130,7 @@ var infoCmd = &cobra.Command{
 
 		// Show generators
 		if generators := state["generators"]; generators != nil {
-			genMap := generators.(map[string]interface{})
+			genMap := generators.(map[string]any)
 			if len(genMap) > 0 {
 				fmt.Printf("⚡ Generators: %d\n", len(genMap))
 			}
@@ -138,7 +138,7 @@ var infoCmd = &cobra.Command{
 
 		// Show measurements
 		if measurements := state["measurements"]; measurements != nil {
-			measMap := measurements.(map[string]interface{})
+			measMap := measurements.(map[string]any)
 			if len(measMap) > 0 {
 				fmt.Printf("📊 Measurements: %d\n", len(measMap))
 			}
@@ -151,7 +151,7 @@ var executeCmd = &cobra.Command{
 	Short: "Execute a recipe file",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		_, err := makeAPICall("POST", "/api/console/execute", map[string]any{"filePath": args[0]})
+		_, err := makeAPICall[any]("POST", "/api/console/execute", map[string]any{"filePath": args[0]})
 		if err == nil {
 			fmt.Printf("✅ Executed recipe: %s\n", args[0])
 		}

@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -69,14 +70,18 @@ func apiEndpoint(endpoint string) string {
 }
 
 // makeAPICall makes HTTP requests to the SDL server
-func makeAPICall(method, endpoint string, body map[string]any) (map[string]any, error) {
+func makeAPICall[T any](method, endpoint string, body map[string]any) (out T, err error) {
 	req, _ := ghttp.NewJsonRequest(method, apiEndpoint(endpoint), body)
 	resp, err := ghttp.Call(req, nil)
 	if err != nil {
 		fmt.Printf("❌ Error: %v\n", err)
-		return nil, err
+		return
 	}
-	return resp.(map[string]any), err
+	var ok bool
+	if out, ok = resp.(T); !ok {
+		log.Println("Could not cast to type: ", resp)
+	}
+	return
 }
 
 // testServerConnection verifies the server is reachable
