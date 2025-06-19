@@ -12,7 +12,7 @@ func RunCallInBatches(system *SystemInstance, obj, method string, nbatches, batc
 	fi := system.File
 	se := NewSimpleEval(fi, nil)
 	var totalSimTime core.Duration
-	
+
 	// Use the existing system environment if available, otherwise create new one
 	var env *Env[Value]
 	if system.Env != nil {
@@ -22,11 +22,11 @@ func RunCallInBatches(system *SystemInstance, obj, method string, nbatches, batc
 		se.EvalInitSystem(system, env, &totalSimTime)
 	}
 
-	startTime := time.Now()
-	ncalls := nbatches * batchsize
+	// startTime := time.Now()
+	// ncalls := nbatches * batchsize
 	defer func() {
 		log.Printf("Total Simulation Time: %v", totalSimTime)
-		log.Printf("Wall Clock Time for %d calls: %v", ncalls, time.Now().Sub(startTime))
+		// log.Printf("Wall Clock Time for %d calls: %v", ncalls, time.Now().Sub(startTime))
 	}()
 
 	if nbatches < numworkers {
@@ -36,7 +36,7 @@ func RunCallInBatches(system *SystemInstance, obj, method string, nbatches, batc
 	var wg sync.WaitGroup
 	batchesPerWorker := (nbatches + numworkers - 1) / numworkers
 
-	for i := 0; i < numworkers; i++ {
+	for i := range numworkers {
 		wg.Add(1)
 		go func(workerIndex int) {
 			defer wg.Done()
@@ -44,17 +44,14 @@ func RunCallInBatches(system *SystemInstance, obj, method string, nbatches, batc
 			workerSE := NewSimpleEval(fi, nil)
 
 			startBatch := workerIndex * batchesPerWorker
-			endBatch := (workerIndex + 1) * batchesPerWorker
-			if endBatch > nbatches {
-				endBatch = nbatches
-			}
+			endBatch := min((workerIndex+1)*batchesPerWorker, nbatches)
 			// log.Printf("Starting worker %d, Batch Range: %d -> %d", workerIndex, startBatch, endBatch)
 
 			for batch := startBatch; batch < endBatch; batch++ {
 				var batchVals []Value
 				// For simulations, we don't advance a single shared clock.
 				// Each run is independent. We capture the latency of each run.
-				for k := 0; k < batchsize; k++ {
+				for range batchsize {
 					var runLatency core.Duration
 					ce := &CallExpr{Function: &MemberAccessExpr{Receiver: &IdentifierExpr{Value: obj}, Member: &IdentifierExpr{Value: method}}}
 					res, _ := workerSE.Eval(ce, workerEnv, &runLatency) // a fresh runLatency for each call

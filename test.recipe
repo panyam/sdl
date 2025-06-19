@@ -2,8 +2,14 @@
 
 sdl load ./examples/contacts/contacts.sdl
 sdl use ContactsSystem
-sdl gen add load1 server.Lookup 10
-sdl gen start load1
-sdl gen add load2 server.Insert 1
-sdl gen start load2
-sdl measure add lat1 server.HandleLookup latency
+
+sdl gen add g1 server.Lookup 10
+sdl gen start g1
+
+# Now start it
+sdl gen start
+
+# sdl gen add load2 server.Insert 1
+# sdl gen start load2
+
+sdl measure add m1 server.Lookup count
