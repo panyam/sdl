@@ -1,0 +1,291 @@
+// protos/sdl/v1/canvas.proto
+
+syntax = "proto3";
+import "google/protobuf/field_mask.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "github.com/sdl/protos";
+package sdl.v1;
+
+import "sdl/v1/models.proto";
+import "google/api/annotations.proto";
+
+/**
+ * Service for interacting with a canvas.
+ */
+service CanvasService {
+  /**
+   * Create a new canvas sesssion.
+   */
+  rpc CreateCanvas(CreateCanvasRequest) returns (CreateCanvasResponse) {
+    option (google.api.http) = {
+      post: "/v1/canvases",
+      body: "*",
+    };
+  }
+
+  /**
+   * List all canvases from a user.
+   */
+  rpc ListCanvases(ListCanvasesRequest) returns (ListCanvasesResponse) { 
+    option (google.api.http) = {
+      get: "/v1/canvases"
+    };
+  }
+
+  /**
+   * Get details/stats for a particular canvas
+   */
+  rpc GetCanvas(GetCanvasRequest) returns (GetCanvasResponse) { 
+    option (google.api.http) = {
+      get: "/v1/canvases/{id=*}"
+    };
+  }
+
+  rpc LoadFile(LoadFileRequest) returns (LoadFileResponse) {
+    option (google.api.http) = {
+      post: "/v1/canvases/{canvas_id=*}/actions:load"
+      body: "*" // Contains initial title, type, content, and positioning info
+    };
+  }
+
+  rpc UseSystem(UseSystemRequest) returns (UseSystemResponse) {
+    option (google.api.http) = {
+      post: "/v1/canvases/{canvas_id=*}/actions:use"
+      body: "*" // Contains initial title, type, content, and positioning info
+    };
+  }
+
+  /**
+   * Delete a particular canvas.  Frees up resources used by it and all the connections
+   */
+  rpc DeleteCanvas(DeleteCanvasRequest) returns (DeleteCanvasResponse) { 
+    option (google.api.http) = {
+      delete: "/v1/canvases/{id=*}"
+    };
+  }
+
+  //  ----- Generator Operations -----
+  // Adds a generator to a canvas's generator_ids list and creates the generator resource.
+  rpc AddGenerator (AddGeneratorRequest) returns (AddGeneratorResponse) {
+    option (google.api.http) = {
+      post: "/v1/canvases/{generator.canvas_id}/generators"
+      body: "*" // Contains initial title, type, content, and positioning info
+    };
+  }
+
+  // Request to start all generators
+  rpc StartAllGenerators (StartAllGeneratorsRequest) returns (StartAllGeneratorsResponse) {
+    option (google.api.http) = {
+      put: "/v1/canvases/{canvas_id}/generators/actions:startall"
+      body: "*" // Contains initial title, type, content, and positioning info
+    };
+  }
+
+  // Request to start all generators
+  rpc StopAllGenerators (StopAllGeneratorsRequest) returns (StopAllGeneratorsResponse) {
+    option (google.api.http) = {
+      put: "/v1/canvases/{canvas_id}/generators/actions:stopall"
+      body: "*" // Contains initial title, type, content, and positioning info
+    };
+  }
+
+  rpc GetGenerator (GetGeneratorRequest) returns (GetGeneratorResponse) {
+    option (google.api.http) = {
+      get: "/v1/canvases/{canvas_id}/generators/{generator_id}"
+    };
+  }
+
+  // Use PATCH for partial updates to a generator (title, content)
+  rpc UpdateGenerator (UpdateGeneratorRequest) returns (UpdateGeneratorResponse) {
+     option (google.api.http) = {
+       patch: "/v1/canvases/{generator.canvas_id}/generators/{generator.id}"
+       body: "*" // Only the 'generator' field goes in the body
+     };
+  }
+
+  rpc PauseGenerator (PauseGeneratorRequest) returns (PauseGeneratorResponse) {
+     option (google.api.http) = {
+       post: "/v1/canvases/{canvas_id}/generators/{generator_id}/actions:pause"
+       body: "*" // Only the 'generator' field goes in the body
+     };
+  }
+
+  rpc ResumeGenerator (ResumeGeneratorRequest) returns (ResumeGeneratorResponse) {
+     option (google.api.http) = {
+       post: "/v1/canvases/{canvas_id}/generators/{generator_id}/actions:resume"
+       body: "*" // Only the 'generator' field goes in the body
+     };
+  }
+
+  rpc DeleteGenerator (DeleteGeneratorRequest) returns (DeleteGeneratorResponse) {
+    option (google.api.http) = {
+      delete: "/v1/canvases/{canvas_id}/generators/{generator_id}"
+    };
+  }
+}
+
+/**
+ * Canvas creation request object
+ */
+message CreateCanvasRequest {
+  /**
+   * Canvas being updated
+   */
+  Canvas canvas = 1;
+}
+
+/**
+ * Response of an canvas creation.
+ */
+message CreateCanvasResponse {
+  /**
+   * Canvas being created
+   */
+  Canvas canvas = 1;
+
+  /**
+   * Error specific to a field if there are any errors.
+   */
+  map<string, string> field_errors = 2;
+}
+
+/**
+ * An canvas search request.  For now only paginations params are provided.
+ */
+message ListCanvasesRequest {
+  // Pagination info
+  Pagination pagination = 1;
+}
+
+/**
+ * Response of a canvas search/listing.
+ */
+message ListCanvasesResponse {
+  /**
+   * The list of canvases found as part of this response.
+   */
+  repeated Canvas canvases = 1;
+
+  PaginationResponse pagination = 2;
+}
+
+/**
+ * Request to get a canvas.
+ */
+message GetCanvasRequest {
+  /**
+   * ID of the canvas to be fetched
+   */
+  string id = 1;
+}
+
+/**
+ * Canvas get response
+ */
+message GetCanvasResponse {
+  Canvas canvas = 1;
+}
+
+/**
+ * Request to delete an canvas.
+ */
+message DeleteCanvasRequest {
+  /**
+   * ID of the canvas to be deleted.
+   */
+  string id = 1;
+}
+
+/**
+ * Canvas deletion response
+ */
+message DeleteCanvasResponse {
+}
+
+// --- Generator Messages ---
+
+message AddGeneratorRequest {
+  Generator generator = 1;
+}
+
+message AddGeneratorResponse {
+  Generator generator = 1;
+}
+
+message StartAllGeneratorsRequest {
+  string canvas_id = 1;
+}
+
+message StartAllGeneratorsResponse {
+}
+
+message StopAllGeneratorsRequest {
+  string canvas_id = 1;
+}
+
+message StopAllGeneratorsResponse {
+}
+
+message GetGeneratorRequest {
+  string canvas_id = 1;
+  string generator_id = 2;
+}
+
+message GetGeneratorResponse {
+  Generator generator = 1;
+}
+
+// Consolidate generator updates into one RPC using PATCH and FieldMask
+message UpdateGeneratorRequest {
+  // Generator object containing *only* the fields to be updated.
+  // The server will use the update_mask to know which fields from
+  // this 'generator' message to apply to the stored generator.
+  Generator generator = 1;
+  google.protobuf.FieldMask update_mask = 2; // e.g., paths: "title", paths: "text_content"
+}
+
+message UpdateGeneratorResponse {
+  Generator generator = 1;
+}
+
+message ResumeGeneratorRequest {
+  string canvas_id = 1;
+  string generator_id = 2; // The generator being moved
+}
+
+message ResumeGeneratorResponse {
+}
+
+message PauseGeneratorRequest {
+  string canvas_id = 1;
+  string generator_id = 2; // The generator being moved
+}
+
+message PauseGeneratorResponse {
+}
+
+message DeleteGeneratorRequest {
+  string canvas_id = 1;
+  string generator_id = 2;
+}
+
+message DeleteGeneratorResponse {
+}
+
+message LoadFileRequest {
+  string canvas_id = 1;
+  string sdl_file_path = 2;
+}
+
+message LoadFileResponse {
+}
+
+message UseSystemRequest {
+  string canvas_id = 1;
+  string system_name = 2;
+}
+
+message UseSystemResponse {
+}
+

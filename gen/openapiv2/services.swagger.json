@@ -1,0 +1,992 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "sdl/v1/models.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "CanvasService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/canvases": {
+      "get": {
+        "summary": "*\nList all canvases from a user.",
+        "operationId": "CanvasService_ListCanvases",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListCanvasesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "pagination.pageKey",
+            "description": "*\nInstead of an offset an abstract  \"page\" key is provided that offers\nan opaque \"pointer\" into some offset in a result set.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.pageOffset",
+            "description": "*\nIf a pagekey is not supported we can also support a direct integer offset\nfor cases where it makes sense.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.pageSize",
+            "description": "*\nNumber of results to return.",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "CanvasService"
+        ]
+      },
+      "post": {
+        "summary": "*\nCreate a new canvas sesssion.",
+        "operationId": "CanvasService_CreateCanvas",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CreateCanvasResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateCanvasRequest"
+            }
+          }
+        ],
+        "tags": [
+          "CanvasService"
+        ]
+      }
+    },
+    "/v1/canvases/{canvasId}/actions:load": {
+      "post": {
+        "operationId": "CanvasService_LoadFile",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1LoadFileResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "canvasId",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "pattern": "[^/]+"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "sdlFilePath": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "CanvasService"
+        ]
+      }
+    },
+    "/v1/canvases/{canvasId}/actions:use": {
+      "post": {
+        "operationId": "CanvasService_UseSystem",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UseSystemResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "canvasId",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "pattern": "[^/]+"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "systemName": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "CanvasService"
+        ]
+      }
+    },
+    "/v1/canvases/{canvasId}/generators/actions:startall": {
+      "put": {
+        "summary": "Request to start all generators",
+        "operationId": "CanvasService_StartAllGenerators",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1StartAllGeneratorsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "canvasId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ],
+        "tags": [
+          "CanvasService"
+        ]
+      }
+    },
+    "/v1/canvases/{canvasId}/generators/actions:stopall": {
+      "put": {
+        "summary": "Request to start all generators",
+        "operationId": "CanvasService_StopAllGenerators",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1StopAllGeneratorsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "canvasId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ],
+        "tags": [
+          "CanvasService"
+        ]
+      }
+    },
+    "/v1/canvases/{canvasId}/generators/{generatorId}": {
+      "get": {
+        "operationId": "CanvasService_GetGenerator",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetGeneratorResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "canvasId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "generatorId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "CanvasService"
+        ]
+      },
+      "delete": {
+        "operationId": "CanvasService_DeleteGenerator",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DeleteGeneratorResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "canvasId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "generatorId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "CanvasService"
+        ]
+      }
+    },
+    "/v1/canvases/{canvasId}/generators/{generatorId}/actions:pause": {
+      "post": {
+        "operationId": "CanvasService_PauseGenerator",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1PauseGeneratorResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "canvasId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "generatorId",
+            "description": "The generator being moved",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ],
+        "tags": [
+          "CanvasService"
+        ]
+      }
+    },
+    "/v1/canvases/{canvasId}/generators/{generatorId}/actions:resume": {
+      "post": {
+        "operationId": "CanvasService_ResumeGenerator",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ResumeGeneratorResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "canvasId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "generatorId",
+            "description": "The generator being moved",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ],
+        "tags": [
+          "CanvasService"
+        ]
+      }
+    },
+    "/v1/canvases/{generator.canvasId}/generators": {
+      "post": {
+        "summary": "----- Generator Operations -----\nAdds a generator to a canvas's generator_ids list and creates the generator resource.",
+        "operationId": "CanvasService_AddGenerator",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1AddGeneratorResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "generator.canvasId",
+            "description": "Canvas this generator is sending traffic to",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "generator": {
+                  "type": "object",
+                  "properties": {
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "id": {
+                      "type": "string",
+                      "title": "ID of the generator"
+                    },
+                    "name": {
+                      "type": "string",
+                      "title": "A descriptive label"
+                    },
+                    "component": {
+                      "type": "string",
+                      "title": "Name of the target component to generate traffic on. This component should be defined in the System,\neg \"server\""
+                    },
+                    "method": {
+                      "type": "string",
+                      "description": "Method in the target component to generate traffic on."
+                    },
+                    "rate": {
+                      "type": "number",
+                      "format": "double",
+                      "title": "Traffic rate in RPS (\u003e= 1).  Does not support \u003c 1 yet"
+                    },
+                    "duration": {
+                      "type": "number",
+                      "format": "double",
+                      "title": "Duration in seconds over which the genarator is run. 0 =\u003e For ever"
+                    },
+                    "enabled": {
+                      "type": "boolean",
+                      "title": "whether it is enabled or not"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "CanvasService"
+        ]
+      }
+    },
+    "/v1/canvases/{generator.canvasId}/generators/{generator.id}": {
+      "patch": {
+        "summary": "Use PATCH for partial updates to a generator (title, content)",
+        "operationId": "CanvasService_UpdateGenerator",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateGeneratorResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "generator.canvasId",
+            "description": "Canvas this generator is sending traffic to",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "generator.id",
+            "description": "ID of the generator",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "generator": {
+                  "type": "object",
+                  "properties": {
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "name": {
+                      "type": "string",
+                      "title": "A descriptive label"
+                    },
+                    "component": {
+                      "type": "string",
+                      "title": "Name of the target component to generate traffic on. This component should be defined in the System,\neg \"server\""
+                    },
+                    "method": {
+                      "type": "string",
+                      "description": "Method in the target component to generate traffic on."
+                    },
+                    "rate": {
+                      "type": "number",
+                      "format": "double",
+                      "title": "Traffic rate in RPS (\u003e= 1).  Does not support \u003c 1 yet"
+                    },
+                    "duration": {
+                      "type": "number",
+                      "format": "double",
+                      "title": "Duration in seconds over which the genarator is run. 0 =\u003e For ever"
+                    },
+                    "enabled": {
+                      "type": "boolean",
+                      "title": "whether it is enabled or not"
+                    }
+                  },
+                  "description": "Generator object containing *only* the fields to be updated.\nThe server will use the update_mask to know which fields from\nthis 'generator' message to apply to the stored generator.",
+                  "title": "Generator object containing *only* the fields to be updated.\nThe server will use the update_mask to know which fields from\nthis 'generator' message to apply to the stored generator."
+                },
+                "updateMask": {
+                  "type": "string",
+                  "title": "e.g., paths: \"title\", paths: \"text_content\""
+                }
+              },
+              "title": "Consolidate generator updates into one RPC using PATCH and FieldMask"
+            }
+          }
+        ],
+        "tags": [
+          "CanvasService"
+        ]
+      }
+    },
+    "/v1/canvases/{id}": {
+      "get": {
+        "summary": "*\nGet details/stats for a particular canvas",
+        "operationId": "CanvasService_GetCanvas",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetCanvasResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "*\nID of the canvas to be fetched",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "pattern": "[^/]+"
+          }
+        ],
+        "tags": [
+          "CanvasService"
+        ]
+      },
+      "delete": {
+        "summary": "*\nDelete a particular canvas.  Frees up resources used by it and all the connections",
+        "operationId": "CanvasService_DeleteCanvas",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DeleteCanvasResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "*\nID of the canvas to be deleted.",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "pattern": "[^/]+"
+          }
+        ],
+        "tags": [
+          "CanvasService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v1AddGeneratorResponse": {
+      "type": "object",
+      "properties": {
+        "generator": {
+          "$ref": "#/definitions/v1Generator"
+        }
+      }
+    },
+    "v1Canvas": {
+      "type": "object",
+      "properties": {
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "id": {
+          "type": "string",
+          "title": "Unique ID for the canvas"
+        },
+        "activeSystem": {
+          "type": "string",
+          "title": "Active system being observed"
+        },
+        "loadedFiles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "Files that have been loaded so far"
+        },
+        "generators": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Generator"
+          },
+          "title": "Registered generators for this canvas"
+        },
+        "metrics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Metric"
+          },
+          "title": "Registered live metrics for this canvas"
+        }
+      }
+    },
+    "v1CreateCanvasRequest": {
+      "type": "object",
+      "properties": {
+        "canvas": {
+          "$ref": "#/definitions/v1Canvas",
+          "title": "*\nCanvas being updated"
+        }
+      },
+      "title": "*\nCanvas creation request object"
+    },
+    "v1CreateCanvasResponse": {
+      "type": "object",
+      "properties": {
+        "canvas": {
+          "$ref": "#/definitions/v1Canvas",
+          "title": "*\nCanvas being created"
+        },
+        "fieldErrors": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "*\nError specific to a field if there are any errors."
+        }
+      },
+      "description": "*\nResponse of an canvas creation."
+    },
+    "v1DeleteCanvasResponse": {
+      "type": "object",
+      "title": "*\nCanvas deletion response"
+    },
+    "v1DeleteGeneratorResponse": {
+      "type": "object"
+    },
+    "v1Generator": {
+      "type": "object",
+      "properties": {
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "id": {
+          "type": "string",
+          "title": "ID of the generator"
+        },
+        "canvasId": {
+          "type": "string",
+          "title": "Canvas this generator is sending traffic to"
+        },
+        "name": {
+          "type": "string",
+          "title": "A descriptive label"
+        },
+        "component": {
+          "type": "string",
+          "title": "Name of the target component to generate traffic on. This component should be defined in the System,\neg \"server\""
+        },
+        "method": {
+          "type": "string",
+          "description": "Method in the target component to generate traffic on."
+        },
+        "rate": {
+          "type": "number",
+          "format": "double",
+          "title": "Traffic rate in RPS (\u003e= 1).  Does not support \u003c 1 yet"
+        },
+        "duration": {
+          "type": "number",
+          "format": "double",
+          "title": "Duration in seconds over which the genarator is run. 0 =\u003e For ever"
+        },
+        "enabled": {
+          "type": "boolean",
+          "title": "whether it is enabled or not"
+        }
+      }
+    },
+    "v1GetCanvasResponse": {
+      "type": "object",
+      "properties": {
+        "canvas": {
+          "$ref": "#/definitions/v1Canvas"
+        }
+      },
+      "title": "*\nCanvas get response"
+    },
+    "v1GetGeneratorResponse": {
+      "type": "object",
+      "properties": {
+        "generator": {
+          "$ref": "#/definitions/v1Generator"
+        }
+      }
+    },
+    "v1ListCanvasesResponse": {
+      "type": "object",
+      "properties": {
+        "canvases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Canvas"
+          },
+          "description": "*\nThe list of canvases found as part of this response."
+        },
+        "pagination": {
+          "$ref": "#/definitions/v1PaginationResponse"
+        }
+      },
+      "description": "*\nResponse of a canvas search/listing."
+    },
+    "v1LoadFileResponse": {
+      "type": "object"
+    },
+    "v1Metric": {
+      "type": "object",
+      "properties": {
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "id": {
+          "type": "string"
+        },
+        "canvasId": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string",
+          "title": "A descriptive label"
+        },
+        "component": {
+          "type": "string",
+          "title": "Name of the target component to monitor\neg \"server\""
+        },
+        "methods": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Method in the target component to generate traffic on."
+        },
+        "enabled": {
+          "type": "boolean",
+          "title": "whether it is enabled or not"
+        },
+        "metricType": {
+          "type": "string",
+          "title": "Type of metric \"count\" or \"latency\""
+        },
+        "aggregation": {
+          "type": "string",
+          "title": "Type of aggregation on the metric"
+        },
+        "aggregationWindow": {
+          "type": "string",
+          "title": "Aggregation window to match on"
+        },
+        "matchResult": {
+          "type": "string",
+          "title": "Result value to match"
+        },
+        "matchResultType": {
+          "type": "string",
+          "title": "The result \"type\" if a matching result is provided\nThis will be parsed into a type declaration so we know how to treat\nthe match_result value provided"
+        }
+      }
+    },
+    "v1Pagination": {
+      "type": "object",
+      "properties": {
+        "pageKey": {
+          "type": "string",
+          "description": "*\nInstead of an offset an abstract  \"page\" key is provided that offers\nan opaque \"pointer\" into some offset in a result set."
+        },
+        "pageOffset": {
+          "type": "integer",
+          "format": "int32",
+          "description": "*\nIf a pagekey is not supported we can also support a direct integer offset\nfor cases where it makes sense."
+        },
+        "pageSize": {
+          "type": "integer",
+          "format": "int32",
+          "description": "*\nNumber of results to return."
+        }
+      }
+    },
+    "v1PaginationResponse": {
+      "type": "object",
+      "properties": {
+        "nextPageKey": {
+          "type": "string",
+          "description": "*\nThe key/pointer string that subsequent List requests should pass to\ncontinue the pagination."
+        },
+        "nextPageOffset": {
+          "type": "integer",
+          "format": "int32",
+          "title": "*\nAlso support an integer offset if possible"
+        },
+        "hasMore": {
+          "type": "boolean",
+          "description": "*\nWhether theere are more results."
+        },
+        "totalResults": {
+          "type": "integer",
+          "format": "int32",
+          "description": "*\nTotal number of results."
+        }
+      }
+    },
+    "v1PauseGeneratorResponse": {
+      "type": "object"
+    },
+    "v1ResumeGeneratorResponse": {
+      "type": "object"
+    },
+    "v1StartAllGeneratorsResponse": {
+      "type": "object"
+    },
+    "v1StopAllGeneratorsResponse": {
+      "type": "object"
+    },
+    "v1UpdateGeneratorResponse": {
+      "type": "object",
+      "properties": {
+        "generator": {
+          "$ref": "#/definitions/v1Generator"
+        }
+      }
+    },
+    "v1UseSystemResponse": {
+      "type": "object"
+    }
+  }
+}
