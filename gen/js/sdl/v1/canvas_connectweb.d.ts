@@ -5,7 +5,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { AddGeneratorRequest, AddGeneratorResponse, AddMetricRequest, AddMetricResponse, CreateCanvasRequest, CreateCanvasResponse, DeleteCanvasRequest, DeleteCanvasResponse, DeleteGeneratorRequest, DeleteGeneratorResponse, DeleteMetricRequest, DeleteMetricResponse, GetCanvasRequest, GetCanvasResponse, GetGeneratorRequest, GetGeneratorResponse, ListCanvasesRequest, ListCanvasesResponse, LiveMetricsRequest, LiveMetricsResponse, LoadFileRequest, LoadFileResponse, PauseGeneratorRequest, PauseGeneratorResponse, ResumeGeneratorRequest, ResumeGeneratorResponse, StartAllGeneratorsRequest, StartAllGeneratorsResponse, StopAllGeneratorsRequest, StopAllGeneratorsResponse, UpdateGeneratorRequest, UpdateGeneratorResponse, UseSystemRequest, UseSystemResponse } from "./canvas_pb.js";
+import { AddGeneratorRequest, AddGeneratorResponse, AddMetricRequest, AddMetricResponse, CreateCanvasRequest, CreateCanvasResponse, DeleteCanvasRequest, DeleteCanvasResponse, DeleteGeneratorRequest, DeleteGeneratorResponse, DeleteMetricRequest, DeleteMetricResponse, GetCanvasRequest, GetCanvasResponse, GetGeneratorRequest, GetGeneratorResponse, ListCanvasesRequest, ListCanvasesResponse, ListGeneratorsRequest, ListGeneratorsResponse, LiveMetricsRequest, LiveMetricsResponse, LoadFileRequest, LoadFileResponse, PauseGeneratorRequest, PauseGeneratorResponse, ResumeGeneratorRequest, ResumeGeneratorResponse, StartAllGeneratorsRequest, StartAllGeneratorsResponse, StopAllGeneratorsRequest, StopAllGeneratorsResponse, UpdateGeneratorRequest, UpdateGeneratorResponse, UseSystemRequest, UseSystemResponse } from "./canvas_pb.js";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -115,6 +115,15 @@ export declare const CanvasService: {
       readonly name: "StopAllGenerators",
       readonly I: typeof StopAllGeneratorsRequest,
       readonly O: typeof StopAllGeneratorsResponse,
+      readonly kind: MethodKind.Unary,
+    },
+    /**
+     * @generated from rpc sdl.v1.CanvasService.ListGenerators
+     */
+    readonly listGenerators: {
+      readonly name: "ListGenerators",
+      readonly I: typeof ListGeneratorsRequest,
+      readonly O: typeof ListGeneratorsResponse,
       readonly kind: MethodKind.Unary,
     },
     /**

@@ -30,6 +30,7 @@ const (
 	CanvasService_AddGenerator_FullMethodName       = "/sdl.v1.CanvasService/AddGenerator"
 	CanvasService_StartAllGenerators_FullMethodName = "/sdl.v1.CanvasService/StartAllGenerators"
 	CanvasService_StopAllGenerators_FullMethodName  = "/sdl.v1.CanvasService/StopAllGenerators"
+	CanvasService_ListGenerators_FullMethodName     = "/sdl.v1.CanvasService/ListGenerators"
 	CanvasService_GetGenerator_FullMethodName       = "/sdl.v1.CanvasService/GetGenerator"
 	CanvasService_UpdateGenerator_FullMethodName    = "/sdl.v1.CanvasService/UpdateGenerator"
 	CanvasService_PauseGenerator_FullMethodName     = "/sdl.v1.CanvasService/PauseGenerator"
@@ -69,6 +70,7 @@ type CanvasServiceClient interface {
 	StartAllGenerators(ctx context.Context, in *StartAllGeneratorsRequest, opts ...grpc.CallOption) (*StartAllGeneratorsResponse, error)
 	// Request to start all generators
 	StopAllGenerators(ctx context.Context, in *StopAllGeneratorsRequest, opts ...grpc.CallOption) (*StopAllGeneratorsResponse, error)
+	ListGenerators(ctx context.Context, in *ListGeneratorsRequest, opts ...grpc.CallOption) (*ListGeneratorsResponse, error)
 	GetGenerator(ctx context.Context, in *GetGeneratorRequest, opts ...grpc.CallOption) (*GetGeneratorResponse, error)
 	// Use PATCH for partial updates to a generator (title, content)
 	UpdateGenerator(ctx context.Context, in *UpdateGeneratorRequest, opts ...grpc.CallOption) (*UpdateGeneratorResponse, error)
@@ -177,6 +179,16 @@ func (c *canvasServiceClient) StopAllGenerators(ctx context.Context, in *StopAll
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(StopAllGeneratorsResponse)
 	err := c.cc.Invoke(ctx, CanvasService_StopAllGenerators_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *canvasServiceClient) ListGenerators(ctx context.Context, in *ListGeneratorsRequest, opts ...grpc.CallOption) (*ListGeneratorsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListGeneratorsResponse)
+	err := c.cc.Invoke(ctx, CanvasService_ListGenerators_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -301,6 +313,7 @@ type CanvasServiceServer interface {
 	StartAllGenerators(context.Context, *StartAllGeneratorsRequest) (*StartAllGeneratorsResponse, error)
 	// Request to start all generators
 	StopAllGenerators(context.Context, *StopAllGeneratorsRequest) (*StopAllGeneratorsResponse, error)
+	ListGenerators(context.Context, *ListGeneratorsRequest) (*ListGeneratorsResponse, error)
 	GetGenerator(context.Context, *GetGeneratorRequest) (*GetGeneratorResponse, error)
 	// Use PATCH for partial updates to a generator (title, content)
 	UpdateGenerator(context.Context, *UpdateGeneratorRequest) (*UpdateGeneratorResponse, error)
@@ -350,6 +363,9 @@ func (UnimplementedCanvasServiceServer) StartAllGenerators(context.Context, *Sta
 }
 func (UnimplementedCanvasServiceServer) StopAllGenerators(context.Context, *StopAllGeneratorsRequest) (*StopAllGeneratorsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StopAllGenerators not implemented")
+}
+func (UnimplementedCanvasServiceServer) ListGenerators(context.Context, *ListGeneratorsRequest) (*ListGeneratorsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListGenerators not implemented")
 }
 func (UnimplementedCanvasServiceServer) GetGenerator(context.Context, *GetGeneratorRequest) (*GetGeneratorResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetGenerator not implemented")
@@ -557,6 +573,24 @@ func _CanvasService_StopAllGenerators_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CanvasService_ListGenerators_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListGeneratorsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CanvasServiceServer).ListGenerators(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CanvasService_ListGenerators_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CanvasServiceServer).ListGenerators(ctx, req.(*ListGeneratorsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CanvasService_GetGenerator_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetGeneratorRequest)
 	if err := dec(in); err != nil {
@@ -736,6 +770,10 @@ var CanvasService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "StopAllGenerators",
 			Handler:    _CanvasService_StopAllGenerators_Handler,
+		},
+		{
+			MethodName: "ListGenerators",
+			Handler:    _CanvasService_ListGenerators_Handler,
 		},
 		{
 			MethodName: "GetGenerator",

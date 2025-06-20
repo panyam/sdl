@@ -183,6 +183,36 @@
         ]
       }
     },
+    "/v1/canvases/{canvasId}/generators": {
+      "get": {
+        "operationId": "CanvasService_ListGenerators",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListGeneratorsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "canvasId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "CanvasService"
+        ]
+      }
+    },
     "/v1/canvases/{canvasId}/generators/actions:startall": {
       "put": {
         "summary": "Request to start all generators",
@@ -1045,6 +1075,18 @@
         }
       },
       "description": "*\nResponse of a canvas search/listing."
+    },
+    "v1ListGeneratorsResponse": {
+      "type": "object",
+      "properties": {
+        "generators": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Generator"
+          }
+        }
+      }
     },
     "v1LiveMetricsResponse": {
       "type": "object"

@@ -61,6 +61,11 @@ class CanvasServiceStub(object):
                 request_serializer=sdl_dot_v1_dot_canvas__pb2.StopAllGeneratorsRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_canvas__pb2.StopAllGeneratorsResponse.FromString,
                 _registered_method=True)
+        self.ListGenerators = channel.unary_unary(
+                '/sdl.v1.CanvasService/ListGenerators',
+                request_serializer=sdl_dot_v1_dot_canvas__pb2.ListGeneratorsRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_canvas__pb2.ListGeneratorsResponse.FromString,
+                _registered_method=True)
         self.GetGenerator = channel.unary_unary(
                 '/sdl.v1.CanvasService/GetGenerator',
                 request_serializer=sdl_dot_v1_dot_canvas__pb2.GetGeneratorRequest.SerializeToString,
@@ -174,6 +179,12 @@ class CanvasServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ListGenerators(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def GetGenerator(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -274,6 +285,11 @@ def add_CanvasServiceServicer_to_server(servicer, server):
                     servicer.StopAllGenerators,
                     request_deserializer=sdl_dot_v1_dot_canvas__pb2.StopAllGeneratorsRequest.FromString,
                     response_serializer=sdl_dot_v1_dot_canvas__pb2.StopAllGeneratorsResponse.SerializeToString,
+            ),
+            'ListGenerators': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListGenerators,
+                    request_deserializer=sdl_dot_v1_dot_canvas__pb2.ListGeneratorsRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_canvas__pb2.ListGeneratorsResponse.SerializeToString,
             ),
             'GetGenerator': grpc.unary_unary_rpc_method_handler(
                     servicer.GetGenerator,
@@ -561,6 +577,33 @@ class CanvasService(object):
             '/sdl.v1.CanvasService/StopAllGenerators',
             sdl_dot_v1_dot_canvas__pb2.StopAllGeneratorsRequest.SerializeToString,
             sdl_dot_v1_dot_canvas__pb2.StopAllGeneratorsResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ListGenerators(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.CanvasService/ListGenerators',
+            sdl_dot_v1_dot_canvas__pb2.ListGeneratorsRequest.SerializeToString,
+            sdl_dot_v1_dot_canvas__pb2.ListGeneratorsResponse.FromString,
             options,
             channel_credentials,
             insecure,

@@ -373,6 +373,42 @@ func local_request_CanvasService_StopAllGenerators_0(ctx context.Context, marsha
 	return msg, metadata, err
 }
 
+func request_CanvasService_ListGenerators_0(ctx context.Context, marshaler runtime.Marshaler, client CanvasServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq ListGeneratorsRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	val, ok := pathParams["canvas_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "canvas_id")
+	}
+	protoReq.CanvasId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "canvas_id", err)
+	}
+	msg, err := client.ListGenerators(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_CanvasService_ListGenerators_0(ctx context.Context, marshaler runtime.Marshaler, server CanvasServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq ListGeneratorsRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	val, ok := pathParams["canvas_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "canvas_id")
+	}
+	protoReq.CanvasId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "canvas_id", err)
+	}
+	msg, err := server.ListGenerators(ctx, &protoReq)
+	return msg, metadata, err
+}
+
 func request_CanvasService_GetGenerator_0(ctx context.Context, marshaler runtime.Marshaler, client CanvasServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
 		protoReq GetGeneratorRequest
@@ -957,6 +993,26 @@ func RegisterCanvasServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		}
 		forward_CanvasService_StopAllGenerators_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
+	mux.Handle(http.MethodGet, pattern_CanvasService_ListGenerators_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/sdl.v1.CanvasService/ListGenerators", runtime.WithHTTPPathPattern("/v1/canvases/{canvas_id}/generators"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_CanvasService_ListGenerators_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_CanvasService_ListGenerators_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
 	mux.Handle(http.MethodGet, pattern_CanvasService_GetGenerator_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -1297,6 +1353,23 @@ func RegisterCanvasServiceHandlerClient(ctx context.Context, mux *runtime.ServeM
 		}
 		forward_CanvasService_StopAllGenerators_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
+	mux.Handle(http.MethodGet, pattern_CanvasService_ListGenerators_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/sdl.v1.CanvasService/ListGenerators", runtime.WithHTTPPathPattern("/v1/canvases/{canvas_id}/generators"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_CanvasService_ListGenerators_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_CanvasService_ListGenerators_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
 	mux.Handle(http.MethodGet, pattern_CanvasService_GetGenerator_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -1446,6 +1519,7 @@ var (
 	pattern_CanvasService_AddGenerator_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "canvases", "generator.canvas_id", "generators"}, ""))
 	pattern_CanvasService_StartAllGenerators_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 2, 4}, []string{"v1", "canvases", "canvas_id", "generators", "actions"}, "startall"))
 	pattern_CanvasService_StopAllGenerators_0  = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 2, 4}, []string{"v1", "canvases", "canvas_id", "generators", "actions"}, "stopall"))
+	pattern_CanvasService_ListGenerators_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "canvases", "canvas_id", "generators"}, ""))
 	pattern_CanvasService_GetGenerator_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "canvases", "canvas_id", "generators", "generator_id"}, ""))
 	pattern_CanvasService_UpdateGenerator_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "canvases", "generator.canvas_id", "generators", "generator.id"}, ""))
 	pattern_CanvasService_PauseGenerator_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5}, []string{"v1", "canvases", "canvas_id", "generators", "generator_id", "actions"}, "pause"))
@@ -1466,6 +1540,7 @@ var (
 	forward_CanvasService_AddGenerator_0       = runtime.ForwardResponseMessage
 	forward_CanvasService_StartAllGenerators_0 = runtime.ForwardResponseMessage
 	forward_CanvasService_StopAllGenerators_0  = runtime.ForwardResponseMessage
+	forward_CanvasService_ListGenerators_0     = runtime.ForwardResponseMessage
 	forward_CanvasService_GetGenerator_0       = runtime.ForwardResponseMessage
 	forward_CanvasService_UpdateGenerator_0    = runtime.ForwardResponseMessage
 	forward_CanvasService_PauseGenerator_0     = runtime.ForwardResponseMessage

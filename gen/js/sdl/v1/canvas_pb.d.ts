@@ -225,6 +225,38 @@ export declare type AddGeneratorResponse = Message<"sdl.v1.AddGeneratorResponse"
 export declare const AddGeneratorResponseSchema: GenMessage<AddGeneratorResponse>;
 
 /**
+ * @generated from message sdl.v1.ListGeneratorsRequest
+ */
+export declare type ListGeneratorsRequest = Message<"sdl.v1.ListGeneratorsRequest"> & {
+  /**
+   * @generated from field: string canvas_id = 1;
+   */
+  canvasId: string;
+};
+
+/**
+ * Describes the message sdl.v1.ListGeneratorsRequest.
+ * Use `create(ListGeneratorsRequestSchema)` to create a new message.
+ */
+export declare const ListGeneratorsRequestSchema: GenMessage<ListGeneratorsRequest>;
+
+/**
+ * @generated from message sdl.v1.ListGeneratorsResponse
+ */
+export declare type ListGeneratorsResponse = Message<"sdl.v1.ListGeneratorsResponse"> & {
+  /**
+   * @generated from field: repeated sdl.v1.Generator generators = 1;
+   */
+  generators: Generator[];
+};
+
+/**
+ * Describes the message sdl.v1.ListGeneratorsResponse.
+ * Use `create(ListGeneratorsResponseSchema)` to create a new message.
+ */
+export declare const ListGeneratorsResponseSchema: GenMessage<ListGeneratorsResponse>;
+
+/**
  * @generated from message sdl.v1.StartAllGeneratorsRequest
  */
 export declare type StartAllGeneratorsRequest = Message<"sdl.v1.StartAllGeneratorsRequest"> & {
@@ -721,6 +753,14 @@ export declare const CanvasService: GenService<{
     methodKind: "unary";
     input: typeof StopAllGeneratorsRequestSchema;
     output: typeof StopAllGeneratorsResponseSchema;
+  },
+  /**
+   * @generated from rpc sdl.v1.CanvasService.ListGenerators
+   */
+  listGenerators: {
+    methodKind: "unary";
+    input: typeof ListGeneratorsRequestSchema;
+    output: typeof ListGeneratorsResponseSchema;
   },
   /**
    * @generated from rpc sdl.v1.CanvasService.GetGenerator
