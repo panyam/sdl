@@ -158,24 +158,36 @@ func (s *CanvasService) DeleteGenerator(ctx context.Context, req *protos.DeleteG
 func (s *CanvasService) StartAllGenerators(ctx context.Context, req *protos.StartAllGeneratorsRequest) (resp *protos.StartAllGeneratorsResponse, err error) {
 	slog.Info("StartAllGenerators Request", "req", req)
 	resp = &protos.StartAllGeneratorsResponse{}
+	s.withCanvas(req.CanvasId, func(canvas *Canvas) {
+		err = canvas.ToggleAllGenerators(true)
+	})
 	return
 }
 
 func (s *CanvasService) StopAllGenerators(ctx context.Context, req *protos.StopAllGeneratorsRequest) (resp *protos.StopAllGeneratorsResponse, err error) {
 	slog.Info("StopAllGenerators  Request", "req", req)
 	resp = &protos.StopAllGeneratorsResponse{}
+	s.withCanvas(req.CanvasId, func(canvas *Canvas) {
+		err = canvas.ToggleAllGenerators(false)
+	})
 	return
 }
 
 func (s *CanvasService) ResumeGenerator(ctx context.Context, req *protos.ResumeGeneratorRequest) (resp *protos.ResumeGeneratorResponse, err error) {
 	slog.Info("ResumeGenerator Request", "req", req)
 	resp = &protos.ResumeGeneratorResponse{}
+	s.withCanvas(req.CanvasId, func(canvas *Canvas) {
+		err = canvas.ResumeGenerator(req.GeneratorId)
+	})
 	return
 }
 
 func (s *CanvasService) PauseGenerator(ctx context.Context, req *protos.PauseGeneratorRequest) (resp *protos.PauseGeneratorResponse, err error) {
 	slog.Info("PauseGenerator Request", "req", req)
 	resp = &protos.PauseGeneratorResponse{}
+	s.withCanvas(req.CanvasId, func(canvas *Canvas) {
+		err = canvas.PauseGenerator(req.GeneratorId)
+	})
 	return
 }
 
@@ -207,7 +219,7 @@ func (s *CanvasService) DeleteMetric(ctx context.Context, req *protos.DeleteMetr
 func (s *CanvasService) ExecuteTrace(ctx context.Context, req *protos.ExecuteTraceRequest) (resp *protos.ExecuteTraceResponse, err error) {
 	slog.Info("ExecuteTrace Request", "req", req)
 	resp = &protos.ExecuteTraceResponse{}
-	
+
 	err = s.withCanvas(req.CanvasId, func(canvas *Canvas) {
 		// Execute trace on the canvas
 		traceData, traceErr := canvas.ExecuteTrace(req.Component, req.Method)
@@ -215,7 +227,7 @@ func (s *CanvasService) ExecuteTrace(ctx context.Context, req *protos.ExecuteTra
 			err = traceErr
 			return
 		}
-		
+
 		// Convert runtime.TraceData to proto.TraceData
 		resp.TraceData = convertTraceDataToProto(traceData)
 	})
@@ -227,7 +239,7 @@ func convertTraceDataToProto(td *runtime.TraceData) *protos.TraceData {
 	if td == nil {
 		return nil
 	}
-	
+
 	protoEvents := make([]*protos.TraceEvent, len(td.Events))
 	for i, event := range td.Events {
 		protoEvents[i] = &protos.TraceEvent{
@@ -243,7 +255,7 @@ func convertTraceDataToProto(td *runtime.TraceData) *protos.TraceData {
 			ErrorMessage: event.ErrorMessage,
 		}
 	}
-	
+
 	return &protos.TraceData{
 		System:     td.System,
 		EntryPoint: td.EntryPoint,
