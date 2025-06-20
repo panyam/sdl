@@ -106,6 +106,11 @@ class CanvasServiceStub(object):
                 request_serializer=sdl_dot_v1_dot_canvas__pb2.LiveMetricsRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_canvas__pb2.LiveMetricsResponse.FromString,
                 _registered_method=True)
+        self.ExecuteTrace = channel.unary_unary(
+                '/sdl.v1.CanvasService/ExecuteTrace',
+                request_serializer=sdl_dot_v1_dot_canvas__pb2.ExecuteTraceRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_canvas__pb2.ExecuteTraceResponse.FromString,
+                _registered_method=True)
 
 
 class CanvasServiceServicer(object):
@@ -238,6 +243,13 @@ class CanvasServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ExecuteTrace(self, request, context):
+        """Execute a single trace for debugging/analysis
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_CanvasServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -330,6 +342,11 @@ def add_CanvasServiceServicer_to_server(servicer, server):
                     servicer.LiveMetric,
                     request_deserializer=sdl_dot_v1_dot_canvas__pb2.LiveMetricsRequest.FromString,
                     response_serializer=sdl_dot_v1_dot_canvas__pb2.LiveMetricsResponse.SerializeToString,
+            ),
+            'ExecuteTrace': grpc.unary_unary_rpc_method_handler(
+                    servicer.ExecuteTrace,
+                    request_deserializer=sdl_dot_v1_dot_canvas__pb2.ExecuteTraceRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_canvas__pb2.ExecuteTraceResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -820,6 +837,33 @@ class CanvasService(object):
             '/sdl.v1.CanvasService/LiveMetric',
             sdl_dot_v1_dot_canvas__pb2.LiveMetricsRequest.SerializeToString,
             sdl_dot_v1_dot_canvas__pb2.LiveMetricsResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ExecuteTrace(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.CanvasService/ExecuteTrace',
+            sdl_dot_v1_dot_canvas__pb2.ExecuteTraceRequest.SerializeToString,
+            sdl_dot_v1_dot_canvas__pb2.ExecuteTraceResponse.FromString,
             options,
             channel_credentials,
             insecure,

@@ -153,6 +153,13 @@ service CanvasService {
       get: "/v1/canvases/{canvas_id}/metrics/subscribe"
     };
   }
+
+  // Execute a single trace for debugging/analysis
+  rpc ExecuteTrace(ExecuteTraceRequest) returns (ExecuteTraceResponse) {
+    option (google.api.http) = {
+      get: "/v1/canvases/{canvas_id}/trace/{component}/{method}"
+    };
+  }
 }
 
 /**
@@ -349,4 +356,38 @@ message LiveMetricsRequest {
 }
 
 message LiveMetricsResponse {
+}
+
+message ExecuteTraceRequest {
+  string canvas_id = 1;
+  string component = 2;
+  string method = 3;
+  // Optional: arguments for the method call (for future enhancement)
+  // repeated string args = 4;
+}
+
+message ExecuteTraceResponse {
+  // The complete trace data
+  TraceData trace_data = 1;
+}
+
+// TraceData matches the runtime.TraceData structure
+message TraceData {
+  string system = 1;
+  string entry_point = 2;
+  repeated TraceEvent events = 3;
+}
+
+// TraceEvent matches the runtime.TraceEvent structure
+message TraceEvent {
+  string kind = 1;  // "enter", "exit", "go", "wait"
+  int64 id = 2;
+  int64 parent_id = 3;
+  double timestamp = 4;  // Virtual time in seconds
+  double duration = 5;   // Duration in seconds (for exit events)
+  string component = 6;
+  string method = 7;
+  repeated string args = 8;
+  string return_value = 9;
+  string error_message = 10;
 }

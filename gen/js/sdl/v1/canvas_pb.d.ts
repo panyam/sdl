@@ -657,6 +657,150 @@ export declare type LiveMetricsResponse = Message<"sdl.v1.LiveMetricsResponse"> 
 export declare const LiveMetricsResponseSchema: GenMessage<LiveMetricsResponse>;
 
 /**
+ * @generated from message sdl.v1.ExecuteTraceRequest
+ */
+export declare type ExecuteTraceRequest = Message<"sdl.v1.ExecuteTraceRequest"> & {
+  /**
+   * @generated from field: string canvas_id = 1;
+   */
+  canvasId: string;
+
+  /**
+   * @generated from field: string component = 2;
+   */
+  component: string;
+
+  /**
+   * Optional: arguments for the method call (for future enhancement)
+   * repeated string args = 4;
+   *
+   * @generated from field: string method = 3;
+   */
+  method: string;
+};
+
+/**
+ * Describes the message sdl.v1.ExecuteTraceRequest.
+ * Use `create(ExecuteTraceRequestSchema)` to create a new message.
+ */
+export declare const ExecuteTraceRequestSchema: GenMessage<ExecuteTraceRequest>;
+
+/**
+ * @generated from message sdl.v1.ExecuteTraceResponse
+ */
+export declare type ExecuteTraceResponse = Message<"sdl.v1.ExecuteTraceResponse"> & {
+  /**
+   * The complete trace data
+   *
+   * @generated from field: sdl.v1.TraceData trace_data = 1;
+   */
+  traceData?: TraceData;
+};
+
+/**
+ * Describes the message sdl.v1.ExecuteTraceResponse.
+ * Use `create(ExecuteTraceResponseSchema)` to create a new message.
+ */
+export declare const ExecuteTraceResponseSchema: GenMessage<ExecuteTraceResponse>;
+
+/**
+ * TraceData matches the runtime.TraceData structure
+ *
+ * @generated from message sdl.v1.TraceData
+ */
+export declare type TraceData = Message<"sdl.v1.TraceData"> & {
+  /**
+   * @generated from field: string system = 1;
+   */
+  system: string;
+
+  /**
+   * @generated from field: string entry_point = 2;
+   */
+  entryPoint: string;
+
+  /**
+   * @generated from field: repeated sdl.v1.TraceEvent events = 3;
+   */
+  events: TraceEvent[];
+};
+
+/**
+ * Describes the message sdl.v1.TraceData.
+ * Use `create(TraceDataSchema)` to create a new message.
+ */
+export declare const TraceDataSchema: GenMessage<TraceData>;
+
+/**
+ * TraceEvent matches the runtime.TraceEvent structure
+ *
+ * @generated from message sdl.v1.TraceEvent
+ */
+export declare type TraceEvent = Message<"sdl.v1.TraceEvent"> & {
+  /**
+   * "enter", "exit", "go", "wait"
+   *
+   * @generated from field: string kind = 1;
+   */
+  kind: string;
+
+  /**
+   * @generated from field: int64 id = 2;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: int64 parent_id = 3;
+   */
+  parentId: bigint;
+
+  /**
+   * Virtual time in seconds
+   *
+   * @generated from field: double timestamp = 4;
+   */
+  timestamp: number;
+
+  /**
+   * Duration in seconds (for exit events)
+   *
+   * @generated from field: double duration = 5;
+   */
+  duration: number;
+
+  /**
+   * @generated from field: string component = 6;
+   */
+  component: string;
+
+  /**
+   * @generated from field: string method = 7;
+   */
+  method: string;
+
+  /**
+   * @generated from field: repeated string args = 8;
+   */
+  args: string[];
+
+  /**
+   * @generated from field: string return_value = 9;
+   */
+  returnValue: string;
+
+  /**
+   * @generated from field: string error_message = 10;
+   */
+  errorMessage: string;
+};
+
+/**
+ * Describes the message sdl.v1.TraceEvent.
+ * Use `create(TraceEventSchema)` to create a new message.
+ */
+export declare const TraceEventSchema: GenMessage<TraceEvent>;
+
+/**
  * *
  * Service for interacting with a canvas.
  *
@@ -833,6 +977,16 @@ export declare const CanvasService: GenService<{
     methodKind: "server_streaming";
     input: typeof LiveMetricsRequestSchema;
     output: typeof LiveMetricsResponseSchema;
+  },
+  /**
+   * Execute a single trace for debugging/analysis
+   *
+   * @generated from rpc sdl.v1.CanvasService.ExecuteTrace
+   */
+  executeTrace: {
+    methodKind: "unary";
+    input: typeof ExecuteTraceRequestSchema;
+    output: typeof ExecuteTraceResponseSchema;
   },
 }>;
 

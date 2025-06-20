@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/panyam/sdl/core"
 	"github.com/panyam/sdl/decl"
 	"github.com/panyam/sdl/loader"
 	"github.com/panyam/sdl/runtime"
@@ -650,6 +651,56 @@ func (c *Canvas) Close() error {
 		c.metricTracer = nil
 	}
 	return nil
+}
+
+// ExecuteTrace runs a single method call and returns detailed trace data
+func (c *Canvas) ExecuteTrace(componentName, methodName string) (*runtime.TraceData, error) {
+	if c.activeSystem == nil {
+		return nil, status.Error(codes.FailedPrecondition, "no active system. Call Use() before executing trace")
+	}
+
+	// Find the component instance
+	compInst := c.activeSystem.FindComponent(componentName)
+	if compInst == nil {
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("component '%s' not found in system", componentName))
+	}
+
+	// Check method exists
+	methodDecl, err := compInst.ComponentDecl.GetMethod(methodName)
+	if err != nil || methodDecl == nil {
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("method '%s' not found in component '%s'", methodName, componentName))
+	}
+
+	// Create execution tracer
+	tracer := runtime.NewExecutionTracer()
+	tracer.SetRuntime(c.runtime)
+
+	// Create evaluator with the tracer
+	eval := runtime.NewSimpleEval(c.activeSystem.File, tracer)
+
+	// Execute the method call
+	env := c.activeSystem.Env.Push()
+	var currTime core.Duration = 0
+
+	// Create a call expression to invoke the method
+	callExpr := &decl.CallExpr{
+		Function: &decl.MemberAccessExpr{
+			Receiver: &decl.IdentifierExpr{Value: componentName},
+			Member:   &decl.IdentifierExpr{Value: methodName},
+		},
+	}
+
+	// Execute the call
+	_, _ = eval.Eval(callExpr, env, &currTime)
+
+	// Build trace data
+	traceData := &runtime.TraceData{
+		System:     c.activeSystem.System.Name.Value,
+		EntryPoint: fmt.Sprintf("%s.%s", componentName, methodName),
+		Events:     tracer.Events,
+	}
+
+	return traceData, nil
 }
 
 // rateMapToStringMap converts a runtime RateMap to string-based map for API compatibility

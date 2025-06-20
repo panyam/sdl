@@ -10,6 +10,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	protos "github.com/panyam/sdl/gen/go/sdl/v1"
+	"github.com/panyam/sdl/runtime"
 	// Add if using SectionMetadataToProto helper:
 	// tspb "google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -201,4 +202,51 @@ func (s *CanvasService) DeleteMetric(ctx context.Context, req *protos.DeleteMetr
 		canvas.metricTracer.RemoveMetricSpec(req.MetricId)
 	})
 	return
+}
+
+func (s *CanvasService) ExecuteTrace(ctx context.Context, req *protos.ExecuteTraceRequest) (resp *protos.ExecuteTraceResponse, err error) {
+	slog.Info("ExecuteTrace Request", "req", req)
+	resp = &protos.ExecuteTraceResponse{}
+	
+	err = s.withCanvas(req.CanvasId, func(canvas *Canvas) {
+		// Execute trace on the canvas
+		traceData, traceErr := canvas.ExecuteTrace(req.Component, req.Method)
+		if traceErr != nil {
+			err = traceErr
+			return
+		}
+		
+		// Convert runtime.TraceData to proto.TraceData
+		resp.TraceData = convertTraceDataToProto(traceData)
+	})
+	return
+}
+
+// Helper to convert runtime.TraceData to proto.TraceData
+func convertTraceDataToProto(td *runtime.TraceData) *protos.TraceData {
+	if td == nil {
+		return nil
+	}
+	
+	protoEvents := make([]*protos.TraceEvent, len(td.Events))
+	for i, event := range td.Events {
+		protoEvents[i] = &protos.TraceEvent{
+			Kind:         string(event.Kind),
+			Id:           event.ID,
+			ParentId:     event.ParentID,
+			Timestamp:    float64(event.Timestamp),
+			Duration:     float64(event.Duration),
+			Component:    event.ComponentName,
+			Method:       event.MethodName,
+			Args:         event.Arguments,
+			ReturnValue:  event.ReturnValue,
+			ErrorMessage: event.ErrorMessage,
+		}
+	}
+	
+	return &protos.TraceData{
+		System:     td.System,
+		EntryPoint: td.EntryPoint,
+		Events:     protoEvents,
+	}
 }

@@ -1,28 +1,30 @@
 package commands
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
 
-	"github.com/panyam/sdl/core"
-	"github.com/panyam/sdl/decl"
-	"github.com/panyam/sdl/loader"
-	"github.com/panyam/sdl/runtime"
+	v1 "github.com/panyam/sdl/gen/go/sdl/v1"
 	"github.com/spf13/cobra"
 )
 
 var traceCmd = &cobra.Command{
-	Use:   "trace <system_name> <method_call_string>",
+	Use:   "trace <component.method>",
 	Short: "Traces the execution of a specific operation",
-	Long: `Executes a specific method call within a system (e.g., "myService.doWork")
+	Long: `Executes a specific method call within the active system (e.g., "server.Lookup")
 and outputs a detailed execution trace. The output is a JSON file that can be
-used by other commands like 'diagram dynamic' to generate visualizations.`,
-	Args: cobra.ExactArgs(2), // system_name and method_call_string
+used by other commands like 'diagram dynamic' to generate visualizations.
+
+Prerequisites:
+- SDL server must be running (sdl serve)
+- A file must be loaded (sdl load <file>)
+- A system must be active (sdl use <system>)`,
+	Args: cobra.ExactArgs(1), // component.method string
 	Run: func(cmd *cobra.Command, args []string) {
-		systemName := args[0]
-		methodCallString := args[1]
+		methodCallString := args[0]
 
 		outputFile, _ := cmd.Flags().GetString("out")
 		if outputFile == "" {
@@ -30,87 +32,48 @@ used by other commands like 'diagram dynamic' to generate visualizations.`,
 			os.Exit(1)
 		}
 
-		if dslFilePath == "" {
-			fmt.Fprintln(os.Stderr, "Error: DSL file path must be specified with -f or --file.")
-			os.Exit(1)
-		}
-
-		// 1. Load and validate the SDL file
-		sdlLoader := loader.NewLoader(nil, nil, 10)
-		fileStatus, err := sdlLoader.LoadFile(dslFilePath, "", 0)
-		if err != nil || fileStatus.HasErrors() {
-			fmt.Fprintf(os.Stderr, "Error loading or parsing SDL file '%s': %v\n", dslFilePath, err)
-			fileStatus.PrintErrors()
-			os.Exit(1)
-		}
-		if !sdlLoader.Validate(fileStatus) {
-			fmt.Fprintf(os.Stderr, "Validation failed for file '%s':\n", dslFilePath)
-			fileStatus.PrintErrors()
-			os.Exit(1)
-		}
-
-		// 2. Initialize the runtime and the target system
-		rt := runtime.NewRuntime(sdlLoader)
-		fileInstance, _ := rt.LoadFile(dslFilePath)
-		system, _ := fileInstance.NewSystem(systemName, true)
-		if system == nil {
-			fmt.Fprintf(os.Stderr, "System '%s' not found in file '%s'.\n", systemName, dslFilePath)
-			os.Exit(1)
-		}
-
-		// 3. Create the tracer and the instrumented evaluator
-		tracer := runtime.NewExecutionTracer()
-		tracer.SetRuntime(rt)
-		eval := runtime.NewSimpleEval(fileInstance, tracer)
-
-		// 4. Prepare the system environment
-		var totalSimTime core.Duration
-		env := fileInstance.Env()
-		eval.EvalInitSystem(system, env, &totalSimTime)
-
-		// 5. Parse the method call string (simplified)
+		// Parse the method call string
 		parts := strings.Split(methodCallString, ".")
 		if len(parts) != 2 {
-			fmt.Fprintf(os.Stderr, "Error: Invalid method call string format. Expected 'instance.method', got '%s'\n", methodCallString)
+			fmt.Fprintf(os.Stderr, "Error: Invalid method call format. Expected 'component.method', got '%s'\n", methodCallString)
 			os.Exit(1)
 		}
-		instanceName := parts[0]
+		componentName := parts[0]
 		methodName := parts[1]
 
-		// 6. Create the call expression AST node to be evaluated
-		callExpr := &decl.CallExpr{
-			Function: &decl.MemberAccessExpr{
-				Receiver: &decl.IdentifierExpr{Value: instanceName},
-				Member:   &decl.IdentifierExpr{Value: methodName},
-			},
-			// Note: No arguments are parsed or passed in this simplified version
-		}
+		// Execute trace via gRPC
+		err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+			req := &v1.ExecuteTraceRequest{
+				CanvasId:  canvasID,
+				Component: componentName,
+				Method:    methodName,
+			}
 
-		fmt.Printf("Tracing method '%s' in system '%s'...\n", methodCallString, systemName)
+			resp, err := client.ExecuteTrace(ctx, req)
+			if err != nil {
+				return fmt.Errorf("trace execution failed: %v", err)
+			}
 
-		// 7. Execute the trace
-		_, _ = eval.Eval(callExpr, env, &totalSimTime)
+			// Convert proto TraceData to JSON
+			jsonData, err := json.MarshalIndent(resp.TraceData, "", "  ")
+			if err != nil {
+				return fmt.Errorf("error marshalling trace data to JSON: %v", err)
+			}
 
-		// 8. Process and save the results
-		traceData := &runtime.TraceData{
-			System:     systemName,
-			EntryPoint: methodCallString,
-			Events:     tracer.Events,
-		}
+			// Write to output file
+			err = os.WriteFile(outputFile, jsonData, 0644)
+			if err != nil {
+				return fmt.Errorf("error writing trace data to %s: %v", outputFile, err)
+			}
 
-		jsonData, err := json.MarshalIndent(traceData, "", "  ")
+			fmt.Printf("Trace data successfully written to %s\n", outputFile)
+			return nil
+		})
+
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error marshalling trace data to JSON: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
-
-		err = os.WriteFile(outputFile, jsonData, 0644)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error writing trace data to %s: %v\n", outputFile, err)
-			os.Exit(1)
-		}
-
-		fmt.Printf("Trace data successfully written to %s\n", outputFile)
 	},
 }
 

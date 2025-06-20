@@ -162,34 +162,35 @@ This document outlines the workshop-focused development status and next steps fo
 ---
 ## 🚀 IMMEDIATE NEXT STEPS (June 2025)
 
-### 1. Complete Generator Implementation
-*   **Fix Generator Start/Stop**: Implement proper GenFunc initialization in AddGenerator
+### 1. Complete Generator Implementation with Virtual Time
+*   **Implement GeneratorInfo.GenFunc**: Create proper eval integration with SimpleEval
+*   **Virtual Time Tracking**: Add nextVirtualTime management per generator
+*   **Batched Execution**: Implement efficient batching for 10k-100k QPS scale
+*   **Test with ContactsSystem**: Validate trace events are properly captured
+
+### 2. Design and Implement MetricStore
+*   **Define Interface**: Create abstract MetricStore interface for pluggable storage
+*   **RingBufferStore**: Implement fixed-memory store for real-time monitoring
+*   **Integration**: Update MetricTracer to use MetricStore for persistence
+*   **Query API**: Add time-range queries and aggregation support
+
+### 3. Complete Generator Management
+*   **Update Endpoints**: Implement StartAllGenerators, StopAllGenerators
 *   **Flow Integration**: Connect generators to flow analysis for rate propagation
-*   **Update Endpoints**: Implement StartAllGenerators, StopAllGenerators, PauseGenerator, ResumeGenerator
-*   **List Generators**: Update Canvas proto to include generators list
+*   **Canvas State**: Add generators list to Canvas proto for API exposure
+*   **Error Handling**: Add proper gRPC status codes for all error cases
 
-### 2. Finish Metric Collection
-*   **Fix MetricTracer Initialization**: Ensure proper setup in Canvas.Use()
-*   **Implement LiveMetric**: Add streaming endpoint for real-time metrics
-*   **Add Aggregation**: Implement time-windowed aggregations
-*   **Update Canvas Proto**: Add metrics list to Canvas for API exposure
-
-### 3. Dashboard Integration
+### 4. Dashboard Integration
 *   **Update API Calls**: Migrate dashboard to use new gRPC gateway endpoints
-*   **WebSocket Migration**: Move from custom WebSocket to gRPC streaming
-*   **Real-time Updates**: Connect LiveMetric stream to chart updates
+*   **Live Metrics**: Implement server-streaming for real-time updates
 *   **Generator Controls**: Update UI to use new generator endpoints
-
-### 4. Parameter Management
-*   **Implement Set/Get**: Add parameter storage to Canvas
-*   **gRPC Endpoints**: Create SetParameter/GetParameter methods
-*   **Update CLI**: Migrate set/get commands to gRPC
+*   **Trace Visualization**: Add trace output display to dashboard
 
 ### 5. Testing & Documentation
-*   **Integration Tests**: Add tests for gRPC endpoints
+*   **Generator Tests**: Add comprehensive tests for virtual time and batching
 *   **API Documentation**: Generate OpenAPI docs from proto definitions
-*   **Update Examples**: Ensure all examples work with new architecture
-*   **Migration Guide**: Document changes for existing users
+*   **Performance Tests**: Validate 10k-100k QPS capability
+*   **Update ARCHITECTURE.md**: Keep design decisions documented
 
 ---
 ## 🎯 CONFERENCE WORKSHOP PRIORITIES

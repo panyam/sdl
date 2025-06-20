@@ -527,6 +527,50 @@
         ]
       }
     },
+    "/v1/canvases/{canvasId}/trace/{component}/{method}": {
+      "get": {
+        "summary": "Execute a single trace for debugging/analysis",
+        "operationId": "CanvasService_ExecuteTrace",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ExecuteTraceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "canvasId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "component",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "method",
+            "description": "Optional: arguments for the method call (for future enhancement)\n repeated string args = 4;",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "CanvasService"
+        ]
+      }
+    },
     "/v1/canvases/{generator.canvasId}/generators": {
       "post": {
         "summary": "----- Generator Operations -----\nAdds a generator to a canvas's generator_ids list and creates the generator resource.",
@@ -995,6 +1039,15 @@
     "v1DeleteMetricResponse": {
       "type": "object"
     },
+    "v1ExecuteTraceResponse": {
+      "type": "object",
+      "properties": {
+        "traceData": {
+          "$ref": "#/definitions/v1TraceData",
+          "title": "The complete trace data"
+        }
+      }
+    },
     "v1Generator": {
       "type": "object",
       "properties": {
@@ -1206,6 +1259,71 @@
     },
     "v1StopAllGeneratorsResponse": {
       "type": "object"
+    },
+    "v1TraceData": {
+      "type": "object",
+      "properties": {
+        "system": {
+          "type": "string"
+        },
+        "entryPoint": {
+          "type": "string"
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1TraceEvent"
+          }
+        }
+      },
+      "title": "TraceData matches the runtime.TraceData structure"
+    },
+    "v1TraceEvent": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "title": "\"enter\", \"exit\", \"go\", \"wait\""
+        },
+        "id": {
+          "type": "string",
+          "format": "int64"
+        },
+        "parentId": {
+          "type": "string",
+          "format": "int64"
+        },
+        "timestamp": {
+          "type": "number",
+          "format": "double",
+          "title": "Virtual time in seconds"
+        },
+        "duration": {
+          "type": "number",
+          "format": "double",
+          "title": "Duration in seconds (for exit events)"
+        },
+        "component": {
+          "type": "string"
+        },
+        "method": {
+          "type": "string"
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "returnValue": {
+          "type": "string"
+        },
+        "errorMessage": {
+          "type": "string"
+        }
+      },
+      "title": "TraceEvent matches the runtime.TraceEvent structure"
     },
     "v1UpdateGeneratorResponse": {
       "type": "object",

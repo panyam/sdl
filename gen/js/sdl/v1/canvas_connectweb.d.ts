@@ -5,7 +5,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { AddGeneratorRequest, AddGeneratorResponse, AddMetricRequest, AddMetricResponse, CreateCanvasRequest, CreateCanvasResponse, DeleteCanvasRequest, DeleteCanvasResponse, DeleteGeneratorRequest, DeleteGeneratorResponse, DeleteMetricRequest, DeleteMetricResponse, GetCanvasRequest, GetCanvasResponse, GetGeneratorRequest, GetGeneratorResponse, ListCanvasesRequest, ListCanvasesResponse, ListGeneratorsRequest, ListGeneratorsResponse, LiveMetricsRequest, LiveMetricsResponse, LoadFileRequest, LoadFileResponse, PauseGeneratorRequest, PauseGeneratorResponse, ResumeGeneratorRequest, ResumeGeneratorResponse, StartAllGeneratorsRequest, StartAllGeneratorsResponse, StopAllGeneratorsRequest, StopAllGeneratorsResponse, UpdateGeneratorRequest, UpdateGeneratorResponse, UseSystemRequest, UseSystemResponse } from "./canvas_pb.js";
+import { AddGeneratorRequest, AddGeneratorResponse, AddMetricRequest, AddMetricResponse, CreateCanvasRequest, CreateCanvasResponse, DeleteCanvasRequest, DeleteCanvasResponse, DeleteGeneratorRequest, DeleteGeneratorResponse, DeleteMetricRequest, DeleteMetricResponse, ExecuteTraceRequest, ExecuteTraceResponse, GetCanvasRequest, GetCanvasResponse, GetGeneratorRequest, GetGeneratorResponse, ListCanvasesRequest, ListCanvasesResponse, ListGeneratorsRequest, ListGeneratorsResponse, LiveMetricsRequest, LiveMetricsResponse, LoadFileRequest, LoadFileResponse, PauseGeneratorRequest, PauseGeneratorResponse, ResumeGeneratorRequest, ResumeGeneratorResponse, StartAllGeneratorsRequest, StartAllGeneratorsResponse, StopAllGeneratorsRequest, StopAllGeneratorsResponse, UpdateGeneratorRequest, UpdateGeneratorResponse, UseSystemRequest, UseSystemResponse } from "./canvas_pb.js";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -205,6 +205,17 @@ export declare const CanvasService: {
       readonly I: typeof LiveMetricsRequest,
       readonly O: typeof LiveMetricsResponse,
       readonly kind: MethodKind.ServerStreaming,
+    },
+    /**
+     * Execute a single trace for debugging/analysis
+     *
+     * @generated from rpc sdl.v1.CanvasService.ExecuteTrace
+     */
+    readonly executeTrace: {
+      readonly name: "ExecuteTrace",
+      readonly I: typeof ExecuteTraceRequest,
+      readonly O: typeof ExecuteTraceResponse,
+      readonly kind: MethodKind.Unary,
     },
   }
 };
