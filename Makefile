@@ -1,7 +1,10 @@
 
-binary:
+binary: gen
 	cd parser && make
 	go build -o ${GOBIN}/sdl ./cmd/sdl/main.go
+
+gen:
+	buf generate
 
 # Development workflow: build and test dashboard
 dev-test: binary
@@ -29,7 +32,7 @@ watch:
 testall: test bench
 
 sdlfiles:
-	@find . | grep -v "\.git" | grep -v "\.sh" | grep -v "\..decl" | grep -v attic | grep -v prompt | grep -v vscode | grep -v dsl | grep -v _test.go | grep -v "\.bak" | grep -v debug | grep -v "\.output" | grep -v "\.svg" | grep -v "\.png" | grep -v parser.go | grep -v CLAUDE | grep -v node_modules | grep -v "\.\/sdl" | grep -v package | grep -v playwright-report | grep -v test-results | grep -v dist
+	@find . | grep -v "\.git" | grep -v "\.sh" | grep -v "\..decl" | grep -v attic | grep -v prompt | grep -v vscode | grep -v dsl | grep -v _test.go | grep -v "\.bak" | grep -v debug | grep -v "\.output" | grep -v "\.svg" | grep -v "\.png" | grep -v parser.go | grep -v CLAUDE | grep -v node_modules | grep -v "\.\/sdl" | grep -v package | grep -v playwright-report | grep -v test-results | grep -v dist | grep -v sdl
 
 sdlprompt:
 	source ~/personal/.shhelpers && files_for_llm `make sdlfiles`
