@@ -125,8 +125,8 @@ message Metric {
   // Type of aggregation on the metric
   string aggregation = 10;
 
-  // Aggregation window to match on
-  string aggregation_window = 11;
+  // Aggregation window (in seconds) to match on
+  double aggregation_window = 11;
 
   // Result value to match
   string match_result = 12;

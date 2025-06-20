@@ -90,6 +90,12 @@ service CanvasService {
     };
   }
 
+  rpc ListGenerators (ListGeneratorsRequest) returns (ListGeneratorsResponse) {
+    option (google.api.http) = {
+      get: "/v1/canvases/{canvas_id}/generators"
+    };
+  }
+
   rpc GetGenerator (GetGeneratorRequest) returns (GetGeneratorResponse) {
     option (google.api.http) = {
       get: "/v1/canvases/{canvas_id}/generators/{generator_id}"
@@ -121,6 +127,30 @@ service CanvasService {
   rpc DeleteGenerator (DeleteGeneratorRequest) returns (DeleteGeneratorResponse) {
     option (google.api.http) = {
       delete: "/v1/canvases/{canvas_id}/generators/{generator_id}"
+    };
+  }
+
+  //  ----- Generator Operations -----
+  // Adds a metric to live plot
+  rpc AddMetric(AddMetricRequest) returns (AddMetricResponse) {
+    option (google.api.http) = {
+      post: "/v1/canvases/{metric.canvas_id}/metrics"
+      body: "*" // Contains initial title, type, content, and positioning info
+    };
+  }
+
+  /**
+   * Delete a particular metriccanvas.  Frees up resources used by it and all the connections
+   */
+  rpc DeleteMetric(DeleteMetricRequest) returns (DeleteMetricResponse) { 
+    option (google.api.http) = {
+      delete: "/v1/canvases/{canvas_id}/metrics/{metric_id}"
+    };
+  }
+
+  rpc LiveMetric(LiveMetricsRequest) returns (stream LiveMetricsResponse) {
+    option (google.api.http) = {
+      get: "/v1/canvases/{canvas_id}/metrics/subscribe"
     };
   }
 }
@@ -213,6 +243,14 @@ message AddGeneratorResponse {
   Generator generator = 1;
 }
 
+message ListGeneratorsRequest {
+  string canvas_id = 1;
+}
+
+message ListGeneratorsResponse {
+  repeated Generator generators = 1;
+}
+
 message StartAllGeneratorsRequest {
   string canvas_id = 1;
 }
@@ -289,3 +327,26 @@ message UseSystemRequest {
 message UseSystemResponse {
 }
 
+
+message AddMetricRequest {
+  Metric metric = 1;
+}
+
+message AddMetricResponse {
+  Metric metric = 1;
+}
+
+message DeleteMetricRequest {
+  string canvas_id = 1;
+  string metric_id = 2;
+}
+
+message DeleteMetricResponse {
+}
+
+message LiveMetricsRequest {
+  string canvas_id = 1;
+}
+
+message LiveMetricsResponse {
+}
