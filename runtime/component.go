@@ -23,14 +23,17 @@ func (c *ComponentInstance) ID() string {
 }
 
 // NewComponentInstance creates a new component instanceof the given type.
-func NewComponentInstance(id string, file *FileInstance, compDecl *ComponentDecl) (*ComponentInstance, Value, error) {
+func NewComponentInstance(id string, file *FileInstance, compDecl *ComponentDecl) (comp *ComponentInstance, result Value, err error) {
 	// Create the component instance
 	var nativeValue NativeObject
 	if compDecl.IsNative {
 		nativeValue = file.Runtime.CreateNativeComponent(compDecl)
 	}
 
-	originFile := file.Runtime.LoadFile(compDecl.ParentFileDecl.FullPath)
+	originFile, err := file.Runtime.LoadFile(compDecl.ParentFileDecl.FullPath)
+	if err != nil {
+		return
+	}
 	compInst := &ComponentInstance{
 		ObjectInstance: ObjectInstance{
 			File:           originFile,
