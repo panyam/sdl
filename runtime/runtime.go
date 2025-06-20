@@ -54,27 +54,50 @@ func (r *Runtime) DisableMetrics() {
 }
 
 // Gets the initial run time environment for a File which would include its parameters and component creators
-func (r *Runtime) LoadFile(filePath string) *FileInstance {
-	if env, ok := r.fileInstances[filePath]; ok && env != nil {
-		return env
+func (r *Runtime) LoadFile(filePath string) (*FileInstance, error) {
+	if inst, ok := r.fileInstances[filePath]; ok && inst != nil {
+		return inst, nil
 	}
 
-	fs, err := r.Loader.LoadFile(filePath, "", 0)
+	fileStatus, err := r.Loader.LoadFile(filePath, "", 0)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	r.Loader.Validate(fs)
-	if fs.HasErrors() {
-		log.Printf("\nError Validating File %s\n", fs.FullPath)
-		fs.PrintErrors()
+	r.Loader.Validate(fileStatus)
+	if fileStatus.HasErrors() {
+		log.Printf("\nError Validating File %s\n", fileStatus.FullPath)
+		fileStatus.PrintErrors()
 	} else {
-		log.Printf("\nFile %s - Validated Successfully at: %v\n", fs.FullPath, fs.LastValidated)
+		log.Printf("\nFile %s - Validated Successfully at: %v\n", fileStatus.FullPath, fileStatus.LastValidated)
 	}
 
-	file := fs.FileDecl
+	file := fileStatus.FileDecl
 	out := NewFileInstance(r, file)
-	r.fileInstances[fs.FullPath] = out
+	r.fileInstances[fileStatus.FullPath] = out
+	return out, nil
+}
+
+// Get all available system declarations across all file instnces as a map
+func (r *Runtime) AvailableSystems() (out map[string]*SystemDecl) {
+	for _, finst := range r.fileInstances {
+		sysDecls, _ := finst.Decl.GetSystems()
+		for name, sysDecl := range sysDecls {
+			out[name] = sysDecl
+		}
+	}
 	return out
+}
+
+// Looks up all the files for the system maching the given name and initializes it
+func (r *Runtime) NewSystem(systemName string) (sysInst *SystemInstance, err error) {
+	for _, finst := range r.fileInstances {
+		sysDecl, _ := finst.Decl.GetSystem(systemName)
+		if sysDecl == nil {
+			continue
+		}
+		sysInst, _ = finst.NewSystem(systemName, true)
+	}
+	return
 }
 
 func (r *Runtime) CreateNativeComponent(compDecl *ComponentDecl) NativeObject {
