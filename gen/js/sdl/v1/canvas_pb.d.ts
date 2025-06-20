@@ -6,7 +6,7 @@
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import type { Message } from "@bufbuild/protobuf";
-import type { Canvas, Generator, Pagination, PaginationResponse } from "./models_pb";
+import type { Canvas, Generator, Metric, Pagination, PaginationResponse } from "./models_pb";
 import type { FieldMask } from "@bufbuild/protobuf/wkt";
 
 /**
@@ -532,6 +532,99 @@ export declare type UseSystemResponse = Message<"sdl.v1.UseSystemResponse"> & {
 export declare const UseSystemResponseSchema: GenMessage<UseSystemResponse>;
 
 /**
+ * @generated from message sdl.v1.AddMetricRequest
+ */
+export declare type AddMetricRequest = Message<"sdl.v1.AddMetricRequest"> & {
+  /**
+   * @generated from field: sdl.v1.Metric metric = 1;
+   */
+  metric?: Metric;
+};
+
+/**
+ * Describes the message sdl.v1.AddMetricRequest.
+ * Use `create(AddMetricRequestSchema)` to create a new message.
+ */
+export declare const AddMetricRequestSchema: GenMessage<AddMetricRequest>;
+
+/**
+ * @generated from message sdl.v1.AddMetricResponse
+ */
+export declare type AddMetricResponse = Message<"sdl.v1.AddMetricResponse"> & {
+  /**
+   * @generated from field: sdl.v1.Metric metric = 1;
+   */
+  metric?: Metric;
+};
+
+/**
+ * Describes the message sdl.v1.AddMetricResponse.
+ * Use `create(AddMetricResponseSchema)` to create a new message.
+ */
+export declare const AddMetricResponseSchema: GenMessage<AddMetricResponse>;
+
+/**
+ * @generated from message sdl.v1.DeleteMetricRequest
+ */
+export declare type DeleteMetricRequest = Message<"sdl.v1.DeleteMetricRequest"> & {
+  /**
+   * @generated from field: string canvas_id = 1;
+   */
+  canvasId: string;
+
+  /**
+   * @generated from field: string metric_id = 2;
+   */
+  metricId: string;
+};
+
+/**
+ * Describes the message sdl.v1.DeleteMetricRequest.
+ * Use `create(DeleteMetricRequestSchema)` to create a new message.
+ */
+export declare const DeleteMetricRequestSchema: GenMessage<DeleteMetricRequest>;
+
+/**
+ * @generated from message sdl.v1.DeleteMetricResponse
+ */
+export declare type DeleteMetricResponse = Message<"sdl.v1.DeleteMetricResponse"> & {
+};
+
+/**
+ * Describes the message sdl.v1.DeleteMetricResponse.
+ * Use `create(DeleteMetricResponseSchema)` to create a new message.
+ */
+export declare const DeleteMetricResponseSchema: GenMessage<DeleteMetricResponse>;
+
+/**
+ * @generated from message sdl.v1.LiveMetricsRequest
+ */
+export declare type LiveMetricsRequest = Message<"sdl.v1.LiveMetricsRequest"> & {
+  /**
+   * @generated from field: string canvas_id = 1;
+   */
+  canvasId: string;
+};
+
+/**
+ * Describes the message sdl.v1.LiveMetricsRequest.
+ * Use `create(LiveMetricsRequestSchema)` to create a new message.
+ */
+export declare const LiveMetricsRequestSchema: GenMessage<LiveMetricsRequest>;
+
+/**
+ * @generated from message sdl.v1.LiveMetricsResponse
+ */
+export declare type LiveMetricsResponse = Message<"sdl.v1.LiveMetricsResponse"> & {
+};
+
+/**
+ * Describes the message sdl.v1.LiveMetricsResponse.
+ * Use `create(LiveMetricsResponseSchema)` to create a new message.
+ */
+export declare const LiveMetricsResponseSchema: GenMessage<LiveMetricsResponse>;
+
+/**
  * *
  * Service for interacting with a canvas.
  *
@@ -670,6 +763,36 @@ export declare const CanvasService: GenService<{
     methodKind: "unary";
     input: typeof DeleteGeneratorRequestSchema;
     output: typeof DeleteGeneratorResponseSchema;
+  },
+  /**
+   *  ----- Generator Operations -----
+   * Adds a metric to live plot
+   *
+   * @generated from rpc sdl.v1.CanvasService.AddMetric
+   */
+  addMetric: {
+    methodKind: "unary";
+    input: typeof AddMetricRequestSchema;
+    output: typeof AddMetricResponseSchema;
+  },
+  /**
+   * *
+   * Delete a particular metriccanvas.  Frees up resources used by it and all the connections
+   *
+   * @generated from rpc sdl.v1.CanvasService.DeleteMetric
+   */
+  deleteMetric: {
+    methodKind: "unary";
+    input: typeof DeleteMetricRequestSchema;
+    output: typeof DeleteMetricResponseSchema;
+  },
+  /**
+   * @generated from rpc sdl.v1.CanvasService.LiveMetric
+   */
+  liveMetric: {
+    methodKind: "server_streaming";
+    input: typeof LiveMetricsRequestSchema;
+    output: typeof LiveMetricsResponseSchema;
   },
 }>;
 

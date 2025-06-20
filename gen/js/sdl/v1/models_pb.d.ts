@@ -296,11 +296,11 @@ export declare type Metric = Message<"sdl.v1.Metric"> & {
   aggregation: string;
 
   /**
-   * Aggregation window to match on
+   * Aggregation window (in seconds) to match on
    *
-   * @generated from field: string aggregation_window = 11;
+   * @generated from field: double aggregation_window = 11;
    */
-  aggregationWindow: string;
+  aggregationWindow: number;
 
   /**
    * Result value to match

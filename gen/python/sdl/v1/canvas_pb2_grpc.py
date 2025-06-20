@@ -86,6 +86,21 @@ class CanvasServiceStub(object):
                 request_serializer=sdl_dot_v1_dot_canvas__pb2.DeleteGeneratorRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_canvas__pb2.DeleteGeneratorResponse.FromString,
                 _registered_method=True)
+        self.AddMetric = channel.unary_unary(
+                '/sdl.v1.CanvasService/AddMetric',
+                request_serializer=sdl_dot_v1_dot_canvas__pb2.AddMetricRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_canvas__pb2.AddMetricResponse.FromString,
+                _registered_method=True)
+        self.DeleteMetric = channel.unary_unary(
+                '/sdl.v1.CanvasService/DeleteMetric',
+                request_serializer=sdl_dot_v1_dot_canvas__pb2.DeleteMetricRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_canvas__pb2.DeleteMetricResponse.FromString,
+                _registered_method=True)
+        self.LiveMetric = channel.unary_stream(
+                '/sdl.v1.CanvasService/LiveMetric',
+                request_serializer=sdl_dot_v1_dot_canvas__pb2.LiveMetricsRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_canvas__pb2.LiveMetricsResponse.FromString,
+                _registered_method=True)
 
 
 class CanvasServiceServicer(object):
@@ -190,6 +205,28 @@ class CanvasServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def AddMetric(self, request, context):
+        """----- Generator Operations -----
+        Adds a metric to live plot
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DeleteMetric(self, request, context):
+        """*
+        Delete a particular metriccanvas.  Frees up resources used by it and all the connections
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def LiveMetric(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_CanvasServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -262,6 +299,21 @@ def add_CanvasServiceServicer_to_server(servicer, server):
                     servicer.DeleteGenerator,
                     request_deserializer=sdl_dot_v1_dot_canvas__pb2.DeleteGeneratorRequest.FromString,
                     response_serializer=sdl_dot_v1_dot_canvas__pb2.DeleteGeneratorResponse.SerializeToString,
+            ),
+            'AddMetric': grpc.unary_unary_rpc_method_handler(
+                    servicer.AddMetric,
+                    request_deserializer=sdl_dot_v1_dot_canvas__pb2.AddMetricRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_canvas__pb2.AddMetricResponse.SerializeToString,
+            ),
+            'DeleteMetric': grpc.unary_unary_rpc_method_handler(
+                    servicer.DeleteMetric,
+                    request_deserializer=sdl_dot_v1_dot_canvas__pb2.DeleteMetricRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_canvas__pb2.DeleteMetricResponse.SerializeToString,
+            ),
+            'LiveMetric': grpc.unary_stream_rpc_method_handler(
+                    servicer.LiveMetric,
+                    request_deserializer=sdl_dot_v1_dot_canvas__pb2.LiveMetricsRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_canvas__pb2.LiveMetricsResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -644,6 +696,87 @@ class CanvasService(object):
             '/sdl.v1.CanvasService/DeleteGenerator',
             sdl_dot_v1_dot_canvas__pb2.DeleteGeneratorRequest.SerializeToString,
             sdl_dot_v1_dot_canvas__pb2.DeleteGeneratorResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def AddMetric(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.CanvasService/AddMetric',
+            sdl_dot_v1_dot_canvas__pb2.AddMetricRequest.SerializeToString,
+            sdl_dot_v1_dot_canvas__pb2.AddMetricResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DeleteMetric(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.CanvasService/DeleteMetric',
+            sdl_dot_v1_dot_canvas__pb2.DeleteMetricRequest.SerializeToString,
+            sdl_dot_v1_dot_canvas__pb2.DeleteMetricResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def LiveMetric(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(
+            request,
+            target,
+            '/sdl.v1.CanvasService/LiveMetric',
+            sdl_dot_v1_dot_canvas__pb2.LiveMetricsRequest.SerializeToString,
+            sdl_dot_v1_dot_canvas__pb2.LiveMetricsResponse.FromString,
             options,
             channel_credentials,
             insecure,

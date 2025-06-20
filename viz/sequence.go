@@ -21,8 +21,8 @@ func (g *MermaidSequenceGenerator) Generate(trace *runtime.TraceData) (string, e
 		return trace.Events[i].Timestamp < trace.Events[j].Timestamp
 	})
 
-	eventMap := make(map[int]*runtime.TraceEvent)
-	childrenMap := make(map[int][]*runtime.TraceEvent)
+	eventMap := make(map[int64]*runtime.TraceEvent)
+	childrenMap := make(map[int64][]*runtime.TraceEvent)
 	for _, event := range trace.Events {
 		eventMap[event.ID] = event
 		childrenMap[event.ParentID] = append(childrenMap[event.ParentID], event)
@@ -36,7 +36,7 @@ func (g *MermaidSequenceGenerator) Generate(trace *runtime.TraceData) (string, e
 	}
 	b.WriteString("\n")
 
-	processedEvents := make(map[int]bool)
+	processedEvents := make(map[int64]bool)
 	var renderBranch func(event *runtime.TraceEvent)
 
 	renderBranch = func(event *runtime.TraceEvent) {
@@ -90,8 +90,8 @@ func (g *MermaidSequenceGenerator) Generate(trace *runtime.TraceData) (string, e
 	return b.String(), nil
 }
 
-func (g *MermaidSequenceGenerator) calculateScopeOwners(trace *runtime.TraceData, eventMap map[int]*runtime.TraceEvent) map[int]string {
-	scopeOwner := make(map[int]string)
+func (g *MermaidSequenceGenerator) calculateScopeOwners(trace *runtime.TraceData, eventMap map[int64]*runtime.TraceEvent) map[int64]string {
+	scopeOwner := make(map[int64]string)
 	scopeOwner[0] = "User"
 
 	for _, event := range trace.Events {
@@ -112,7 +112,7 @@ func (g *MermaidSequenceGenerator) calculateScopeOwners(trace *runtime.TraceData
 	return scopeOwner
 }
 
-func (g *MermaidSequenceGenerator) discoverParticipants(trace *runtime.TraceData, scopeOwner map[int]string) []string {
+func (g *MermaidSequenceGenerator) discoverParticipants(trace *runtime.TraceData, scopeOwner map[int64]string) []string {
 	participantList := []string{"User"}
 	participantSet := map[string]bool{"User": true}
 

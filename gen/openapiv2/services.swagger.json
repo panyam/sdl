@@ -421,6 +421,82 @@
         ]
       }
     },
+    "/v1/canvases/{canvasId}/metrics/subscribe": {
+      "get": {
+        "operationId": "CanvasService_LiveMetric",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/v1LiveMetricsResponse"
+                },
+                "error": {
+                  "$ref": "#/definitions/rpcStatus"
+                }
+              },
+              "title": "Stream result of v1LiveMetricsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "canvasId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "CanvasService"
+        ]
+      }
+    },
+    "/v1/canvases/{canvasId}/metrics/{metricId}": {
+      "delete": {
+        "summary": "*\nDelete a particular metriccanvas.  Frees up resources used by it and all the connections",
+        "operationId": "CanvasService_DeleteMetric",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DeleteMetricResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "canvasId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "metricId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "CanvasService"
+        ]
+      }
+    },
     "/v1/canvases/{generator.canvasId}/generators": {
       "post": {
         "summary": "----- Generator Operations -----\nAdds a generator to a canvas's generator_ids list and creates the generator resource.",
@@ -664,6 +740,103 @@
           "CanvasService"
         ]
       }
+    },
+    "/v1/canvases/{metric.canvasId}/metrics": {
+      "post": {
+        "summary": "----- Generator Operations -----\nAdds a metric to live plot",
+        "operationId": "CanvasService_AddMetric",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1AddMetricResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "metric.canvasId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "metric": {
+                  "type": "object",
+                  "properties": {
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string",
+                      "title": "A descriptive label"
+                    },
+                    "component": {
+                      "type": "string",
+                      "title": "Name of the target component to monitor\neg \"server\""
+                    },
+                    "methods": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Method in the target component to generate traffic on."
+                    },
+                    "enabled": {
+                      "type": "boolean",
+                      "title": "whether it is enabled or not"
+                    },
+                    "metricType": {
+                      "type": "string",
+                      "title": "Type of metric \"count\" or \"latency\""
+                    },
+                    "aggregation": {
+                      "type": "string",
+                      "title": "Type of aggregation on the metric"
+                    },
+                    "aggregationWindow": {
+                      "type": "number",
+                      "format": "double",
+                      "title": "Aggregation window (in seconds) to match on"
+                    },
+                    "matchResult": {
+                      "type": "string",
+                      "title": "Result value to match"
+                    },
+                    "matchResultType": {
+                      "type": "string",
+                      "title": "The result \"type\" if a matching result is provided\nThis will be parsed into a type declaration so we know how to treat\nthe match_result value provided"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "CanvasService"
+        ]
+      }
     }
   },
   "definitions": {
@@ -700,6 +873,14 @@
       "properties": {
         "generator": {
           "$ref": "#/definitions/v1Generator"
+        }
+      }
+    },
+    "v1AddMetricResponse": {
+      "type": "object",
+      "properties": {
+        "metric": {
+          "$ref": "#/definitions/v1Metric"
         }
       }
     },
@@ -779,6 +960,9 @@
       "title": "*\nCanvas deletion response"
     },
     "v1DeleteGeneratorResponse": {
+      "type": "object"
+    },
+    "v1DeleteMetricResponse": {
       "type": "object"
     },
     "v1Generator": {
@@ -862,6 +1046,9 @@
       },
       "description": "*\nResponse of a canvas search/listing."
     },
+    "v1LiveMetricsResponse": {
+      "type": "object"
+    },
     "v1LoadFileResponse": {
       "type": "object"
     },
@@ -910,8 +1097,9 @@
           "title": "Type of aggregation on the metric"
         },
         "aggregationWindow": {
-          "type": "string",
-          "title": "Aggregation window to match on"
+          "type": "number",
+          "format": "double",
+          "title": "Aggregation window (in seconds) to match on"
         },
         "matchResult": {
           "type": "string",

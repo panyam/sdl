@@ -25,7 +25,7 @@ func (g *DotTraceGenerator) Generate(trace *runtime.TraceData) (string, error) {
 	})
 
 	// 1. First pass: Determine the owner of each event's scope
-	scopeOwner := make(map[int]string)
+	scopeOwner := make(map[int64]string)
 	scopeOwner[0] = "User" // Root scope is owned by the User
 	for _, event := range trace.Events {
 		owner := scopeOwner[event.ParentID]

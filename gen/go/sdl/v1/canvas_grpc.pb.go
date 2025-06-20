@@ -35,6 +35,9 @@ const (
 	CanvasService_PauseGenerator_FullMethodName     = "/sdl.v1.CanvasService/PauseGenerator"
 	CanvasService_ResumeGenerator_FullMethodName    = "/sdl.v1.CanvasService/ResumeGenerator"
 	CanvasService_DeleteGenerator_FullMethodName    = "/sdl.v1.CanvasService/DeleteGenerator"
+	CanvasService_AddMetric_FullMethodName          = "/sdl.v1.CanvasService/AddMetric"
+	CanvasService_DeleteMetric_FullMethodName       = "/sdl.v1.CanvasService/DeleteMetric"
+	CanvasService_LiveMetric_FullMethodName         = "/sdl.v1.CanvasService/LiveMetric"
 )
 
 // CanvasServiceClient is the client API for CanvasService service.
@@ -72,6 +75,14 @@ type CanvasServiceClient interface {
 	PauseGenerator(ctx context.Context, in *PauseGeneratorRequest, opts ...grpc.CallOption) (*PauseGeneratorResponse, error)
 	ResumeGenerator(ctx context.Context, in *ResumeGeneratorRequest, opts ...grpc.CallOption) (*ResumeGeneratorResponse, error)
 	DeleteGenerator(ctx context.Context, in *DeleteGeneratorRequest, opts ...grpc.CallOption) (*DeleteGeneratorResponse, error)
+	//	----- Generator Operations -----
+	//
+	// Adds a metric to live plot
+	AddMetric(ctx context.Context, in *AddMetricRequest, opts ...grpc.CallOption) (*AddMetricResponse, error)
+	// *
+	// Delete a particular metriccanvas.  Frees up resources used by it and all the connections
+	DeleteMetric(ctx context.Context, in *DeleteMetricRequest, opts ...grpc.CallOption) (*DeleteMetricResponse, error)
+	LiveMetric(ctx context.Context, in *LiveMetricsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LiveMetricsResponse], error)
 }
 
 type canvasServiceClient struct {
@@ -222,6 +233,45 @@ func (c *canvasServiceClient) DeleteGenerator(ctx context.Context, in *DeleteGen
 	return out, nil
 }
 
+func (c *canvasServiceClient) AddMetric(ctx context.Context, in *AddMetricRequest, opts ...grpc.CallOption) (*AddMetricResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AddMetricResponse)
+	err := c.cc.Invoke(ctx, CanvasService_AddMetric_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *canvasServiceClient) DeleteMetric(ctx context.Context, in *DeleteMetricRequest, opts ...grpc.CallOption) (*DeleteMetricResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteMetricResponse)
+	err := c.cc.Invoke(ctx, CanvasService_DeleteMetric_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *canvasServiceClient) LiveMetric(ctx context.Context, in *LiveMetricsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LiveMetricsResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &CanvasService_ServiceDesc.Streams[0], CanvasService_LiveMetric_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[LiveMetricsRequest, LiveMetricsResponse]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type CanvasService_LiveMetricClient = grpc.ServerStreamingClient[LiveMetricsResponse]
+
 // CanvasServiceServer is the server API for CanvasService service.
 // All implementations should embed UnimplementedCanvasServiceServer
 // for forward compatibility.
@@ -257,6 +307,14 @@ type CanvasServiceServer interface {
 	PauseGenerator(context.Context, *PauseGeneratorRequest) (*PauseGeneratorResponse, error)
 	ResumeGenerator(context.Context, *ResumeGeneratorRequest) (*ResumeGeneratorResponse, error)
 	DeleteGenerator(context.Context, *DeleteGeneratorRequest) (*DeleteGeneratorResponse, error)
+	//	----- Generator Operations -----
+	//
+	// Adds a metric to live plot
+	AddMetric(context.Context, *AddMetricRequest) (*AddMetricResponse, error)
+	// *
+	// Delete a particular metriccanvas.  Frees up resources used by it and all the connections
+	DeleteMetric(context.Context, *DeleteMetricRequest) (*DeleteMetricResponse, error)
+	LiveMetric(*LiveMetricsRequest, grpc.ServerStreamingServer[LiveMetricsResponse]) error
 }
 
 // UnimplementedCanvasServiceServer should be embedded to have
@@ -307,6 +365,15 @@ func (UnimplementedCanvasServiceServer) ResumeGenerator(context.Context, *Resume
 }
 func (UnimplementedCanvasServiceServer) DeleteGenerator(context.Context, *DeleteGeneratorRequest) (*DeleteGeneratorResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteGenerator not implemented")
+}
+func (UnimplementedCanvasServiceServer) AddMetric(context.Context, *AddMetricRequest) (*AddMetricResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddMetric not implemented")
+}
+func (UnimplementedCanvasServiceServer) DeleteMetric(context.Context, *DeleteMetricRequest) (*DeleteMetricResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteMetric not implemented")
+}
+func (UnimplementedCanvasServiceServer) LiveMetric(*LiveMetricsRequest, grpc.ServerStreamingServer[LiveMetricsResponse]) error {
+	return status.Errorf(codes.Unimplemented, "method LiveMetric not implemented")
 }
 func (UnimplementedCanvasServiceServer) testEmbeddedByValue() {}
 
@@ -580,6 +647,53 @@ func _CanvasService_DeleteGenerator_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CanvasService_AddMetric_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddMetricRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CanvasServiceServer).AddMetric(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CanvasService_AddMetric_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CanvasServiceServer).AddMetric(ctx, req.(*AddMetricRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CanvasService_DeleteMetric_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteMetricRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CanvasServiceServer).DeleteMetric(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CanvasService_DeleteMetric_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CanvasServiceServer).DeleteMetric(ctx, req.(*DeleteMetricRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CanvasService_LiveMetric_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(LiveMetricsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(CanvasServiceServer).LiveMetric(m, &grpc.GenericServerStream[LiveMetricsRequest, LiveMetricsResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type CanvasService_LiveMetricServer = grpc.ServerStreamingServer[LiveMetricsResponse]
+
 // CanvasService_ServiceDesc is the grpc.ServiceDesc for CanvasService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -643,7 +757,21 @@ var CanvasService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "DeleteGenerator",
 			Handler:    _CanvasService_DeleteGenerator_Handler,
 		},
+		{
+			MethodName: "AddMetric",
+			Handler:    _CanvasService_AddMetric_Handler,
+		},
+		{
+			MethodName: "DeleteMetric",
+			Handler:    _CanvasService_DeleteMetric_Handler,
+		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "LiveMetric",
+			Handler:       _CanvasService_LiveMetric_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "sdl/v1/canvas.proto",
 }

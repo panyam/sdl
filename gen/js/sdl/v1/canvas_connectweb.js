@@ -5,7 +5,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { AddGeneratorRequest, AddGeneratorResponse, CreateCanvasRequest, CreateCanvasResponse, DeleteCanvasRequest, DeleteCanvasResponse, DeleteGeneratorRequest, DeleteGeneratorResponse, GetCanvasRequest, GetCanvasResponse, GetGeneratorRequest, GetGeneratorResponse, ListCanvasesRequest, ListCanvasesResponse, LoadFileRequest, LoadFileResponse, PauseGeneratorRequest, PauseGeneratorResponse, ResumeGeneratorRequest, ResumeGeneratorResponse, StartAllGeneratorsRequest, StartAllGeneratorsResponse, StopAllGeneratorsRequest, StopAllGeneratorsResponse, UpdateGeneratorRequest, UpdateGeneratorResponse, UseSystemRequest, UseSystemResponse } from "./canvas_pb.js";
+import { AddGeneratorRequest, AddGeneratorResponse, AddMetricRequest, AddMetricResponse, CreateCanvasRequest, CreateCanvasResponse, DeleteCanvasRequest, DeleteCanvasResponse, DeleteGeneratorRequest, DeleteGeneratorResponse, DeleteMetricRequest, DeleteMetricResponse, GetCanvasRequest, GetCanvasResponse, GetGeneratorRequest, GetGeneratorResponse, ListCanvasesRequest, ListCanvasesResponse, LiveMetricsRequest, LiveMetricsResponse, LoadFileRequest, LoadFileResponse, PauseGeneratorRequest, PauseGeneratorResponse, ResumeGeneratorRequest, ResumeGeneratorResponse, StartAllGeneratorsRequest, StartAllGeneratorsResponse, StopAllGeneratorsRequest, StopAllGeneratorsResponse, UpdateGeneratorRequest, UpdateGeneratorResponse, UseSystemRequest, UseSystemResponse } from "./canvas_pb.js";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -163,6 +163,39 @@ export const CanvasService = {
       I: DeleteGeneratorRequest,
       O: DeleteGeneratorResponse,
       kind: MethodKind.Unary,
+    },
+    /**
+     *  ----- Generator Operations -----
+     * Adds a metric to live plot
+     *
+     * @generated from rpc sdl.v1.CanvasService.AddMetric
+     */
+    addMetric: {
+      name: "AddMetric",
+      I: AddMetricRequest,
+      O: AddMetricResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * *
+     * Delete a particular metriccanvas.  Frees up resources used by it and all the connections
+     *
+     * @generated from rpc sdl.v1.CanvasService.DeleteMetric
+     */
+    deleteMetric: {
+      name: "DeleteMetric",
+      I: DeleteMetricRequest,
+      O: DeleteMetricResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * @generated from rpc sdl.v1.CanvasService.LiveMetric
+     */
+    liveMetric: {
+      name: "LiveMetric",
+      I: LiveMetricsRequest,
+      O: LiveMetricsResponse,
+      kind: MethodKind.ServerStreaming,
     },
   }
 };
