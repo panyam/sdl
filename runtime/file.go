@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/panyam/sdl/core"
 	"github.com/panyam/sdl/decl"
 )
 
@@ -53,14 +54,27 @@ func (f *FileInstance) Env() *Env[Value] {
 
 // Initialize a new system with the given name.
 // Returns nil if system name is invalid
-func (f *FileInstance) NewSystem(systemName string) *SystemInstance {
+// If init is true then the initializer commands are also run for the system along with a new env
+// that is created and set for the System as it's "initial" environment which will be used for
+// all further system/method invocations
+func (f *FileInstance) NewSystem(systemName string, init bool) (*SystemInstance, core.Duration) {
 	system, err := f.Decl.GetSystem(systemName)
 	if err != nil {
 		log.Println("error getting system: ", err)
-		return nil
+		return nil, 0
 	}
 
-	return NewSystemInstance(f, system)
+	sysInst := NewSystemInstance(f, system)
+	var currTime core.Duration
+	if init {
+
+		// Initialize the system
+		se := NewSimpleEval(f, nil)
+		env := f.Env().Push() // Create new environment for system
+		se.EvalInitSystem(sysInst, env, &currTime)
+		sysInst.Env = env
+	}
+	return sysInst, currTime
 }
 
 // GetComponentDecl returns the ComponentDecl for the given name even if it is an import by resolving to the original source
