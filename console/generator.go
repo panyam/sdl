@@ -16,7 +16,7 @@ type GeneratorInfo struct {
 	System                    *runtime.SystemInstance
 	resolvedComponentInstance *runtime.ComponentInstance // Resolved from Component name
 
-	GenFunc func()
+	GenFunc func(iter int)
 }
 
 // Stops the generator
@@ -52,19 +52,19 @@ func (g *GeneratorInfo) run() {
 	}()
 
 	if g.GenFunc == nil {
-		g.GenFunc = func() {
-			log.Println("Generating Dummy Logs")
+		g.GenFunc = func(iter int) {
+			log.Println("Generating Dummy Logs: ", iter)
 		}
 	}
 
-	ticker := time.NewTicker(10 * time.Millisecond)
-	for {
+	ticker := time.NewTicker(1000 * time.Millisecond)
+	for i := 0; ; i++ {
 		select {
 		case <-g.stopChan:
 			return
 		case <-ticker.C:
 			// Generate it here
-			g.GenFunc()
+			g.GenFunc(i)
 		}
 	}
 }

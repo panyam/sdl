@@ -4,12 +4,9 @@ sdl load ./examples/contacts/contacts.sdl
 sdl use ContactsSystem
 
 sdl gen add g1 server.Lookup 10
-sdl gen start g1
-
-# Now start it
-sdl gen start
+# sdl gen start g1
+# sdl gen start
 
 # sdl gen add load2 server.Insert 1
 # sdl gen start load2
-
-sdl metric add m1 server.Lookup count
+# sdl metric add m1 server.Lookup count

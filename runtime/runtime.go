@@ -3,6 +3,7 @@ package runtime
 import (
 	"fmt"
 	"log"
+	"log/slog"
 
 	cd "github.com/panyam/sdl/components/decl"
 	"github.com/panyam/sdl/core"
@@ -73,14 +74,19 @@ func (r *Runtime) AvailableSystems() (out map[string]*SystemDecl) {
 
 // Looks up all the files for the system maching the given name and initializes it
 func (r *Runtime) NewSystem(systemName string) (sysInst *SystemInstance, err error) {
+	log.Println("File Instances: ", r.fileInstances)
 	for _, finst := range r.fileInstances {
 		sysDecl, _ := finst.Decl.GetSystem(systemName)
+		slog.Debug("Decl: ", finst.Decl.FullPath, systemName, sysDecl)
 		if sysDecl == nil {
 			continue
 		}
 		sysInst, _ = finst.NewSystem(systemName, true)
+		if sysInst != nil {
+			return sysInst, nil
+		}
 	}
-	return
+	return nil, fmt.Errorf("system '%s' not found in any loaded file", systemName)
 }
 
 func (r *Runtime) CreateNativeComponent(compDecl *ComponentDecl) NativeObject {

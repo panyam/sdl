@@ -2,6 +2,7 @@ package console
 
 import (
 	"fmt"
+	"log"
 	"maps"
 	"slices"
 	"strings"
@@ -25,7 +26,6 @@ type SystemDiagram struct {
 type Canvas struct {
 	id             string
 	runtime        *runtime.Runtime
-	activeFile     *loader.FileStatus
 	activeSystem   *runtime.SystemInstance
 	loadedSystems  map[string]*runtime.SystemInstance
 	generators     map[string]*GeneratorInfo
@@ -60,22 +60,13 @@ func NewCanvas(id string) *Canvas {
 // and re-validated to ensure freshness.
 func (c *Canvas) Load(filePath string) error {
 	// TODO: Handle hot-reloading. For now, we load once.
-	fileStatus, err := c.runtime.Loader.LoadFile(filePath, "", 0)
+	_, err := c.runtime.LoadFile(filePath)
 	if err != nil {
 		return fmt.Errorf("error loading file '%s': %w", filePath, err)
 	}
 
-	if !c.runtime.Loader.Validate(fileStatus) {
-		// Collect errors into a single error object
-		// For now, just return a generic error.
-		fileStatus.PrintErrors()
-		return fmt.Errorf("validation failed for file '%s'", filePath)
-	}
-
-	c.activeFile = fileStatus
-
 	// Invalidate flow contexts since file changed
-	c.invalidateFlowContexts()
+	// c.invalidateFlowContexts()
 
 	return nil
 }
@@ -87,10 +78,6 @@ func (c *Canvas) CurrentSystem() *runtime.SystemInstance {
 
 // Use uses a system in a given file as the one being tested
 func (c *Canvas) Use(systemName string) error {
-	if c.activeFile == nil {
-		return fmt.Errorf("no file loaded. Call Load() before Use()")
-	}
-
 	if c.loadedSystems[systemName] == nil {
 		system, err := c.runtime.NewSystem(systemName)
 		if err != nil {
@@ -98,11 +85,13 @@ func (c *Canvas) Use(systemName string) error {
 		}
 		c.loadedSystems[systemName] = system
 	}
+	log.Println("DId we come here??")
 	c.activeSystem = c.loadedSystems[systemName]
+	// Always create a new metric tracer when switching systems
 	if c.metricTracer != nil {
 		c.metricTracer.Clear()
-		c.metricTracer = NewMetricTracer(c.activeSystem)
 	}
+	c.metricTracer = NewMetricTracer(c.activeSystem)
 
 	// Initialize flow contexts for the new system
 	c.initializeFlowContexts()
@@ -272,6 +261,7 @@ func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
 	instanceNameToID := make(map[string]string)
 
 	// Build nodes from instance declarations
+	fileInstance := c.activeSystem.File
 	for _, item := range c.activeSystem.System.Body {
 		if instDecl, ok := item.(*decl.InstanceDecl); ok {
 			nodeID := instDecl.Name.Value
@@ -281,29 +271,26 @@ func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
 			var methods []viz.MethodInfo
 			if c.runtime != nil {
 				// Use runtime system to resolve component - it has already resolved imports
-				fileInstance, _ := c.runtime.LoadFile(c.activeFile.FullPath)
-				if fileInstance != nil {
-					component, err := fileInstance.GetComponentDecl(instDecl.ComponentName.Value)
-					if err == nil && component != nil {
-						componentMethods, _ := component.Methods()
-						for methodName, methodDecl := range componentMethods {
-							returnType := "void"
-							if methodDecl.ReturnType != nil {
-								returnType = methodDecl.ReturnType.Name
-							}
+				component, err := fileInstance.GetComponentDecl(instDecl.ComponentName.Value)
+				if err == nil && component != nil {
+					componentMethods, _ := component.Methods()
+					for methodName, methodDecl := range componentMethods {
+						returnType := "void"
+						if methodDecl.ReturnType != nil {
+							returnType = methodDecl.ReturnType.Name
+						}
 
-							// Get traffic rate for this method from current flow rates
-							methodTarget := fmt.Sprintf("%s.%s", nodeID, methodName)
-							methodTraffic := currentFlowRates[methodTarget]
+						// Get traffic rate for this method from current flow rates
+						methodTarget := fmt.Sprintf("%s.%s", nodeID, methodName)
+						methodTraffic := currentFlowRates[methodTarget]
 
-							// Only include methods with non-zero traffic to reduce clutter
-							if methodTraffic > 0 {
-								methods = append(methods, viz.MethodInfo{
-									Name:       methodName,
-									ReturnType: returnType,
-									Traffic:    methodTraffic,
-								})
-							}
+						// Only include methods with non-zero traffic to reduce clutter
+						if methodTraffic > 0 {
+							methods = append(methods, viz.MethodInfo{
+								Name:       methodName,
+								ReturnType: returnType,
+								Traffic:    methodTraffic,
+							})
 						}
 					}
 				}

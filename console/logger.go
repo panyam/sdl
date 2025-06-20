@@ -59,7 +59,7 @@ func (l *ConsoleLogger) Stop(format string, args ...any) {
 }
 
 // Global console logger
-var consoleLogger = NewConsoleLogger(os.Stdout, runtime.LogLevelInfo)
+var consoleLogger = NewConsoleLogger(os.Stdout, runtime.LogLevelDebug)
 
 // Package-level convenience functions
 
