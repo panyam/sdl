@@ -461,7 +461,7 @@ type FutureValue struct {
 	// so we can run it later (at Wait time)
 	Body ThunkValue
 
-	TraceID int // ID of the 'go' event in the trace
+	TraceID int64 // ID of the 'go' event in the trace
 }
 
 func TupleValue(values ...Value) (out Value) {

@@ -51,8 +51,8 @@ used by other commands like 'diagram dynamic' to generate visualizations.`,
 
 		// 2. Initialize the runtime and the target system
 		rt := runtime.NewRuntime(sdlLoader)
-		fileInstance := rt.LoadFile(dslFilePath)
-		system := fileInstance.NewSystem(systemName)
+		fileInstance, _ := rt.LoadFile(dslFilePath)
+		system, _ := fileInstance.NewSystem(systemName, true)
 		if system == nil {
 			fmt.Fprintf(os.Stderr, "System '%s' not found in file '%s'.\n", systemName, dslFilePath)
 			os.Exit(1)

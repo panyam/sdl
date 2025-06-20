@@ -17,17 +17,29 @@ func ensureTypes(typ *Type, types ...*Type) {
 	}
 }
 
+type Tracer interface {
+	Enter(ts core.Duration, kind TraceEventKind, comp *ComponentInstance, method *MethodDecl, args ...string) int64
+	Exit(ts core.Duration, duration core.Duration, comp *ComponentInstance, method *MethodDecl, retVal Value, err error)
+
+	// PushParentID manually pushes a parent ID onto the stack.
+	// Used by the aggregator to set the context for evaluating futures.
+	PushParentID(id int64)
+
+	// PopParent removes the most recent event ID from the stack.
+	PopParent()
+}
+
 // A simple evaluator
 type SimpleEval struct {
 	ErrorCollector
 	idgen    SimpleIDGen
 	RootFile *FileInstance
 	Rand     *rand.Rand
-	Tracer   *ExecutionTracer
+	Tracer   Tracer
 	Errors   []error
 }
 
-func NewSimpleEval(fi *FileInstance, tracer *ExecutionTracer) *SimpleEval {
+func NewSimpleEval(fi *FileInstance, tracer Tracer) *SimpleEval {
 	out := &SimpleEval{
 		RootFile: fi,
 		Rand:     rand.New(rand.NewSource(time.Now().UnixMicro())),
@@ -368,7 +380,7 @@ func (s *SimpleEval) evalTupleExpr(m *TupleExpr, env *Env[Value], currTime *core
 }
 
 func (s *SimpleEval) evalGoExpr(m *GoExpr, env *Env[Value], currTime *core.Duration) (result Value, returned bool) {
-	var traceID int
+	var traceID int64
 	loopValue, _ := s.Eval(m.LoopExpr, env, currTime)
 	if s.Tracer != nil {
 		loopCount := "1"
@@ -377,8 +389,8 @@ func (s *SimpleEval) evalGoExpr(m *GoExpr, env *Env[Value], currTime *core.Durat
 				loopCount = strconv.FormatInt(intVal, 10)
 			}
 		}
-		target := fmt.Sprintf("goroutine_for_%s", m.InferredType().String())
-		traceID = s.Tracer.EnterString(*currTime, EventGo, target, loopCount)
+		// target := fmt.Sprintf("goroutine_for_%s", m.InferredType().String())
+		traceID = s.Tracer.Enter(*currTime, EventGo, nil, nil, loopCount)
 	}
 
 	target := m.Stmt
@@ -488,9 +500,9 @@ func (s *SimpleEval) evalMemberAccessExpr(m *MemberAccessExpr, env *Env[Value], 
 	if methodDecl != nil {
 		methodType := decl.MethodType(methodDecl)
 		methodVal := &decl.MethodValue{
-			Method: methodDecl, 
-			SavedEnv: compInst.InitialEnv.Push(), 
-			IsNative: compDecl.IsNative,
+			Method:        methodDecl,
+			SavedEnv:      compInst.InitialEnv.Push(),
+			IsNative:      compDecl.IsNative,
 			BoundInstance: compInst, // Always set to ComponentInstance
 		}
 		result, err = NewValue(methodType, methodVal)

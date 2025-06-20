@@ -1,9 +1,11 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 
+	v1 "github.com/panyam/sdl/gen/go/sdl/v1"
 	"github.com/spf13/cobra"
 )
 
@@ -16,14 +18,24 @@ var loadCmd = &cobra.Command{
 	Short: "Load an SDL file into the server",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := checkServerConnection(); err != nil {
+		err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+			_, err := client.LoadFile(ctx, &v1.LoadFileRequest{
+				CanvasId:    canvasID,
+				SdlFilePath: args[0],
+			})
+			return err
+		})
+		
+		if err != nil {
+			fmt.Printf("❌ Failed to load file: %v\n", err)
+			if err.Error() == "cannot connect to SDL server: failed to connect to gRPC server at localhost:9090: context deadline exceeded" {
+				fmt.Printf("\nTo use SDL commands, first start the server:\n")
+				fmt.Printf("   sdl serve\n")
+			}
 			return
 		}
-
-		_, err := makeAPICall[any]("POST", "/api/console/load", map[string]any{"filePath": args[0]})
-		if err == nil {
-			fmt.Printf("✅ Loaded %s successfully\n", args[0])
-		}
+		
+		fmt.Printf("✅ Loaded %s successfully (canvas: %s)\n", args[0], canvasID)
 	},
 }
 
@@ -32,10 +44,20 @@ var useCmd = &cobra.Command{
 	Short: "Select the active system",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		_, err := makeAPICall[any]("POST", "/api/console/use", map[string]any{"systemName": args[0]})
-		if err == nil {
-			fmt.Printf("✅ Now using system: %s\n", args[0])
+		err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+			_, err := client.UseSystem(ctx, &v1.UseSystemRequest{
+				CanvasId:   canvasID,
+				SystemName: args[0],
+			})
+			return err
+		})
+		
+		if err != nil {
+			fmt.Printf("❌ Failed to use system: %v\n", err)
+			return
 		}
+		
+		fmt.Printf("✅ Now using system: %s\n", args[0])
 	},
 }
 
@@ -113,35 +135,35 @@ var infoCmd = &cobra.Command{
 	Use:   "info",
 	Short: "Show current canvas state",
 	Run: func(cmd *cobra.Command, args []string) {
-		result, err := makeAPICall[any]("GET", "/api/console/state", nil)
+		err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+			resp, err := client.GetCanvas(ctx, &v1.GetCanvasRequest{
+				Id: canvasID,
+			})
+			if err != nil {
+				return err
+			}
+
+			canvas := resp.Canvas
+			fmt.Printf("SDL Canvas State:\n")
+			fmt.Printf("🆔 Canvas ID: %s\n", canvas.Id)
+			
+			if canvas.ActiveSystem != "" {
+				fmt.Printf("🎯 Active System: %s\n", canvas.ActiveSystem)
+			}
+
+			// TODO: When Canvas proto is updated to include generators and metrics
+			// if len(canvas.Generators) > 0 {
+			//     fmt.Printf("⚡ Generators: %d\n", len(canvas.Generators))
+			// }
+			// if len(canvas.Metrics) > 0 {
+			//     fmt.Printf("📊 Metrics: %d\n", len(canvas.Metrics))
+			// }
+			
+			return nil
+		})
+		
 		if err != nil {
-			return
-		}
-
-		state := result.(map[string]any)["state"].(map[string]any)
-
-		fmt.Printf("SDL Canvas State:\n")
-		if activeFile := state["activeFile"]; activeFile != nil && activeFile != "" {
-			fmt.Printf("📁 Active File: %s\n", activeFile)
-		}
-		if activeSystem := state["activeSystem"]; activeSystem != nil && activeSystem != "" {
-			fmt.Printf("🎯 Active System: %s\n", activeSystem)
-		}
-
-		// Show generators
-		if generators := state["generators"]; generators != nil {
-			genMap := generators.(map[string]any)
-			if len(genMap) > 0 {
-				fmt.Printf("⚡ Generators: %d\n", len(genMap))
-			}
-		}
-
-		// Show measurements
-		if measurements := state["measurements"]; measurements != nil {
-			measMap := measurements.(map[string]any)
-			if len(measMap) > 0 {
-				fmt.Printf("📊 Measurements: %d\n", len(measMap))
-			}
+			fmt.Printf("❌ Failed to get canvas info: %v\n", err)
 		}
 	},
 }

@@ -1,14 +1,6 @@
-package runtime
+package console
 
-import (
-	"fmt"
-	"math"
-	"sort"
-	"time"
-
-	"github.com/panyam/sdl/core"
-)
-
+/*
 // GetAggregatedData computes the aggregated metric for a measurement
 func (ms *MetricStore) GetAggregatedData(id string) (*AggregatedMetric, error) {
 	ms.mu.RLock()
@@ -85,7 +77,7 @@ func aggregateCount(points []MetricPoint, agg AggregationType, startTime, endTim
 		for _, p := range points {
 			sum += p.Value
 		}
-		duration := float64(endTime - startTime) / 1e9 // Convert to seconds
+		duration := float64(endTime-startTime) / 1e9 // Convert to seconds
 		if duration <= 0 {
 			return 0, nil
 		}
@@ -250,3 +242,4 @@ func (ms *MetricStore) GetMultipleAggregations(id string, aggregations []Aggrega
 
 	return results, nil
 }
+*/

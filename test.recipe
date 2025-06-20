@@ -12,4 +12,4 @@ sdl gen start
 # sdl gen add load2 server.Insert 1
 # sdl gen start load2
 
-sdl measure add m1 server.Lookup count
+sdl metric add m1 server.Lookup count

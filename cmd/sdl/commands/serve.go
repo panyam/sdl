@@ -2,12 +2,7 @@ package commands
 
 import (
 	"context"
-	"fmt"
 	"log"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/panyam/sdl/console"
@@ -47,89 +42,21 @@ Example:
   sdl use ContactsSystem
   sdl gen add load1 server.HandleLookup 10
   sdl gen start load1
-  
-  # Or start server with initial files loaded
-  sdl serve --load examples/contacts/contacts.sdl examples/common.sdl
-  
-  # Or start server on custom port
-  sdl serve --port 9090 --no-logs
-  sdl load --server http://localhost:9090 examples/contacts/contacts.sdl`,
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Create web server with Canvas
-		webServer := console.NewWebServer()
-		router := webServer.GetRouter()
-		canvas := webServer.GetCanvas()
-
-		// Setup graceful shutdown
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
-		// Handle shutdown signals
-		sigChan := make(chan os.Signal, 1)
-		signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-
-		// Get server configuration
-		host, port := getServeConfig()
-		addr := fmt.Sprintf("%s:%d", host, port)
-		server := &http.Server{
-			Addr:    addr,
-			Handler: router,
-		}
-
-		// Server startup message
-		baseURL := fmt.Sprintf("http://%s", addr)
-		fmt.Printf("🚀 SDL Canvas Server v1.0\n")
-		fmt.Printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
-		fmt.Printf("📊 Dashboard:    %s\n", baseURL)
-		fmt.Printf("🛠️  REST API:     %s/api/canvas\n", baseURL)
-		fmt.Printf("📡 WebSocket:    ws://%s/api/live\n", addr)
-		fmt.Printf("💻 CLI Commands: sdl load/use/gen/measure --server %s\n", baseURL)
-		fmt.Printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n")
-
-		// Start server in goroutine
-		go func() {
-			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-				log.Fatalf("Server failed to start: %v", err)
-			}
-		}()
-
-		// Start statistics display if enabled
-		if showStats {
-			go displayServerStats(ctx, canvas)
-		}
-
-		// Show initial server status
-		if showLogs {
-			log.Printf("✅ Server started successfully on port %d", servePort)
-			log.Printf("📝 Logging enabled (use --no-logs to disable)")
-			if showStats {
-				log.Printf("📈 Statistics display enabled (updates every %v)", statsInterval)
-			}
-		}
-
-		// Load initial files if specified
-		if len(loadFiles) > 0 {
-			go loadInitialFiles(canvas, loadFiles)
-		}
-
-		// Wait for shutdown signal
-		<-sigChan
-
-		fmt.Println("\n🛑 Shutting down server...")
-
-		// Graceful shutdown with timeout
-		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer shutdownCancel()
-
-		if err := server.Shutdown(shutdownCtx); err != nil {
-			log.Printf("⚠️  Server shutdown error: %v", err)
-		} else {
-			fmt.Println("✅ Server stopped gracefully")
-		}
+		log.Println("Grpc, Address: ", grpcAddress)
+		log.Println("gateway, Address: ", gatewayAddress)
+		app := App{Ctx: context.Background()}
+		app.AddServer(&console.Server{Address: grpcAddress})
+		app.AddServer(&console.WebAppServer{GrpcAddress: grpcAddress, Address: gatewayAddress})
+		app.Start()
+		app.Done(nil)
 	},
 }
 
 // displayServerStats shows periodic server statistics
+/*
 func displayServerStats(ctx context.Context, canvas *console.Canvas) {
 	ticker := time.NewTicker(statsInterval)
 	defer ticker.Stop()
@@ -159,6 +86,7 @@ func displayServerStats(ctx context.Context, canvas *console.Canvas) {
 		}
 	}
 }
+*/
 
 // loadInitialFiles loads SDL files into the canvas on server startup
 func loadInitialFiles(canvas *console.Canvas, files []string) {

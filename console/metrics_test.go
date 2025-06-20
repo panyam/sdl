@@ -1,4 +1,4 @@
-package runtime
+package console
 
 import (
 	"testing"
@@ -76,7 +76,7 @@ func TestMetricStore(t *testing.T) {
 	// Debug: print what we got
 	t.Logf("Got %d metric points", len(points))
 	for i, p := range points {
-		t.Logf("Point %d: timestamp=%v, value=%v, component=%s, method=%s", 
+		t.Logf("Point %d: timestamp=%v, value=%v, component=%s, method=%s",
 			i, p.Timestamp, p.Value, p.Component, p.Method)
 	}
 

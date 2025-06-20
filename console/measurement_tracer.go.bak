@@ -1,14 +1,6 @@
 package console
 
-import (
-	"fmt"
-	"sync"
-	"time"
-
-	"github.com/panyam/sdl/core"
-	"github.com/panyam/sdl/runtime"
-)
-
+/*
 // MeasurementTracer extends ExecutionTracer to capture measurements
 type MeasurementTracer struct {
 	*runtime.ExecutionTracer
@@ -82,7 +74,7 @@ func (mt *MeasurementTracer) Exit(ts core.Duration, duration core.Duration, comp
 	var target string
 	var args []string
 	var shouldCapture bool
-	
+
 	if mt.HasMeasurements() {
 		// Get the corresponding Enter event to find the target BEFORE calling base tracer
 		events := mt.ExecutionTracer.Events
@@ -201,3 +193,4 @@ func (mt *MeasurementTracer) Close() error {
 	}
 	return nil
 }
+*/

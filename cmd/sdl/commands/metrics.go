@@ -1,19 +1,21 @@
 package commands
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
 
+	v1 "github.com/panyam/sdl/gen/go/sdl/v1"
 	"github.com/spf13/cobra"
 )
 
-// Measurement management commands
+// Metric management commands
 
-var measureCmd = &cobra.Command{
-	Use:   "measure",
-	Short: "Manage performance measurements",
-	Long:  "Create, monitor, and analyze performance measurements",
+var metricCmd = &cobra.Command{
+	Use:   "metric",
+	Short: "Manage performance metrics",
+	Long:  "Create, monitor, and analyze performance metrics",
 }
 
 var (
@@ -22,28 +24,28 @@ var (
 	measureResultValue string
 )
 
-var measureAddCmd = &cobra.Command{
+var metricAddCmd = &cobra.Command{
 	Use:   "add [id] [component.method] [metric]",
-	Short: "Create a new measurement",
-	Long: `Create a new measurement to track performance metrics.
+	Short: "Create a new metric",
+	Long: `Create a new metric to track performance metrics.
 
 Metric types:
   count    - Number of events (for throughput, error counts)
-  latency  - Duration measurements (for response times)
+  latency  - Duration metrics (for response times)
 
 Aggregation types:
   For count:   sum, rate
   For latency: avg, min, max, p50, p90, p95, p99
 
 Examples:
-  # Throughput measurement
-  sdl measure add server_qps server.Lookup count --aggregation rate
+  # Throughput metric
+  sdl metric add server_qps server.Lookup count --aggregation rate
 
-  # Latency measurement
-  sdl measure add server_p95 server.Lookup latency --aggregation p95
+  # Latency metric
+  sdl metric add server_p95 server.Lookup latency --aggregation p95
 
-  # Error rate measurement
-  sdl measure add server_errors server.Lookup count --aggregation rate --result-value "Val(Bool: false)"`,
+  # Error rate metric
+  sdl metric add server_errors server.Lookup count --aggregation rate --result-value "Val(Bool: false)"`,
 	Args: cobra.ExactArgs(3),
 	Run: func(cmd *cobra.Command, args []string) {
 		id := args[0]
@@ -89,78 +91,69 @@ Examples:
 			measureResultValue = "*"
 		}
 
-		body := map[string]any{
-			"id":          id,
-			"name":        fmt.Sprintf("%s %s", strings.Title(component), strings.Title(method)),
-			"component":   component,
-			"methods":     []string{method},
-			"resultValue": measureResultValue,
-			"metric":      metricType,
-			"aggregation": measureAggregation,
-			"window":      measureWindow,
-		}
-
-		result, err := makeAPICall[map[string]any]("POST", "/api/measurements", body)
+		err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+			_, err := client.AddMetric(ctx, &v1.AddMetricRequest{
+				Metric: &v1.Metric{
+					Id:        id,
+					Name:      fmt.Sprintf("%s %s", strings.Title(component), strings.Title(method)),
+					CanvasId:  canvasID,
+					Component: component,
+					Methods:   []string{method},
+					Enabled:   true,
+				},
+			})
+			return err
+		})
+		
 		if err != nil {
 			fmt.Printf("❌ Error: %v\n", err)
 			return
 		}
 
-		// Parse response to get created measurement details
-		if data, ok := result["data"].(string); ok {
-			var measurement map[string]any
-			if err := json.Unmarshal([]byte(data), &measurement); err == nil {
-				fmt.Printf("✅ Measurement '%s' created\n", id)
-				fmt.Printf("🎯 Target: %s.%s\n", component, method)
-				fmt.Printf("📊 Metric: %s (%s)\n", metricType, measureAggregation)
-				fmt.Printf("⏱️  Window: %s\n", measureWindow)
-				if measureResultValue != "*" {
-					fmt.Printf("🔍 Filter: %s\n", measureResultValue)
-				}
-				return
-			}
-		}
-
-		fmt.Printf("✅ Measurement '%s' created\n", id)
+		fmt.Printf("✅ Metric '%s' created\n", id)
 		fmt.Printf("🎯 Target: %s.%s\n", component, method)
 		fmt.Printf("📊 Metric: %s (%s)\n", metricType, measureAggregation)
+		fmt.Printf("⏱️  Window: %s\n", measureWindow)
+		if measureResultValue != "*" {
+			fmt.Printf("🔍 Filter: %s\n", measureResultValue)
+		}
 	},
 }
 
-var measureListCmd = &cobra.Command{
+var metricListCmd = &cobra.Command{
 	Use:   "list",
-	Short: "List all measurements",
+	Short: "List all metrics",
 	Run: func(cmd *cobra.Command, args []string) {
-		result, err := makeAPICall[[]any]("GET", "/api/measurements", nil)
+		result, err := makeAPICall[[]any]("GET", "/api/metrics", nil)
 		if err != nil {
 			fmt.Printf("❌ Error: %v\n", err)
 			return
 		}
 
 		// Parse the JSON response
-		var measurements []map[string]any
+		var metrics []map[string]any
 		measList := result
 		// Handle direct array response
 		for _, m := range measList {
 			if meas, ok := m.(map[string]any); ok {
-				measurements = append(measurements, meas)
+				metrics = append(metrics, meas)
 			}
 		}
 
-		if len(measurements) == 0 {
-			fmt.Println("No active measurements")
-			fmt.Println("\nUse 'sdl measure add' to create a measurement:")
-			fmt.Println("  sdl measure add server_qps server.Lookup count")
-			fmt.Println("  sdl measure add server_p95 server.Lookup latency --aggregation p95")
+		if len(metrics) == 0 {
+			fmt.Println("No active metrics")
+			fmt.Println("\nUse 'sdl metric add' to create a metric:")
+			fmt.Println("  sdl metric add server_qps server.Lookup count")
+			fmt.Println("  sdl metric add server_p95 server.Lookup latency --aggregation p95")
 			return
 		}
 
-		fmt.Println("Active Measurements:")
+		fmt.Println("Active Metrics:")
 		fmt.Println("┌────────────────┬──────────────────────┬─────────────┬────────────┬────────────┐")
 		fmt.Println("│ ID             │ Target               │ Metric      │ Aggregation│ Points     │")
 		fmt.Println("├────────────────┼──────────────────────┼─────────────┼────────────┼────────────┤")
 
-		for _, meas := range measurements {
+		for _, meas := range metrics {
 			id := meas["id"].(string)
 			component := meas["component"].(string)
 			methods := meas["methods"].([]any)
@@ -193,14 +186,14 @@ var measureListCmd = &cobra.Command{
 	},
 }
 
-var measureDataCmd = &cobra.Command{
+var metricDataCmd = &cobra.Command{
 	Use:   "data [id]",
-	Short: "View measurement data",
+	Short: "View metric data",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		id := args[0]
 
-		result, err := makeAPICall[map[string]any]("GET", fmt.Sprintf("/api/measurements/%s/data?limit=20", id), nil)
+		result, err := makeAPICall[map[string]any]("GET", fmt.Sprintf("/api/metrics/%s/data?limit=20", id), nil)
 		if err != nil {
 			fmt.Printf("❌ Error: %v\n", err)
 			return
@@ -222,15 +215,15 @@ var measureDataCmd = &cobra.Command{
 		}
 
 		if len(dataPoints) == 0 {
-			fmt.Printf("📊 No data points available for measurement '%s'\n", id)
+			fmt.Printf("📊 No data points available for metric '%s'\n", id)
 			fmt.Println("\nGenerate some traffic first:")
 			fmt.Println("  sdl run results server.Lookup --runs 100")
 			fmt.Println("  sdl gen add test server.Lookup 10")
 			return
 		}
 
-		// Get measurement info to determine metric type
-		infoResult, _ := makeAPICall[map[string]any]("GET", fmt.Sprintf("/api/measurements/%s", id), nil)
+		// Get metric info to determine metric type
+		infoResult, _ := makeAPICall[map[string]any]("GET", fmt.Sprintf("/api/metrics/%s", id), nil)
 		metricType := "count"
 		if infoData, ok := infoResult["data"].(string); ok {
 			var info map[string]any
@@ -272,15 +265,15 @@ var measureDataCmd = &cobra.Command{
 	},
 }
 
-var measureStatsCmd = &cobra.Command{
+var metricStatsCmd = &cobra.Command{
 	Use:   "stats [id]",
-	Short: "Show measurement statistics",
+	Short: "Show metric statistics",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		id := args[0]
 
 		// Get aggregated data
-		result, err := makeAPICall[map[string]any]("GET", fmt.Sprintf("/api/measurements/%s/aggregated", id), nil)
+		result, err := makeAPICall[map[string]any]("GET", fmt.Sprintf("/api/metrics/%s/aggregated", id), nil)
 		if err != nil {
 			fmt.Printf("❌ Error: %v\n", err)
 			return
@@ -297,21 +290,21 @@ var measureStatsCmd = &cobra.Command{
 			aggData = agg
 		}
 
-		// Get measurement info for context
-		infoResult, _ := makeAPICall[map[string]any]("GET", fmt.Sprintf("/api/measurements/%s", id), nil)
-		var measurementInfo map[string]any
+		// Get metric info for context
+		infoResult, _ := makeAPICall[map[string]any]("GET", fmt.Sprintf("/api/metrics/%s", id), nil)
+		var metricInfo map[string]any
 		if infoData, ok := infoResult["data"].(string); ok {
-			json.Unmarshal([]byte(infoData), &measurementInfo)
+			json.Unmarshal([]byte(infoData), &metricInfo)
 		}
 
 		fmt.Printf("\nStatistics for '%s':\n", id)
 		fmt.Println("─────────────────────────────────────")
 
-		if measurementInfo != nil {
-			component := measurementInfo["component"].(string)
-			methods := measurementInfo["methods"].([]any)
-			metric := measurementInfo["metric"].(string)
-			aggregation := measurementInfo["aggregation"].(string)
+		if metricInfo != nil {
+			component := metricInfo["component"].(string)
+			methods := metricInfo["methods"].([]any)
+			metric := metricInfo["metric"].(string)
+			aggregation := metricInfo["aggregation"].(string)
 
 			methodList := make([]string, len(methods))
 			for i, m := range methods {
@@ -342,57 +335,63 @@ var measureStatsCmd = &cobra.Command{
 	},
 }
 
-var measureRemoveCmd = &cobra.Command{
+var metricRemoveCmd = &cobra.Command{
 	Use:   "remove [id...]",
-	Short: "Remove measurements",
+	Short: "Remove metrics",
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
-			fmt.Println("❌ Must specify measurement ID(s) to remove")
+			fmt.Println("❌ Must specify metric ID(s) to remove")
 			return
 		}
 
 		for _, id := range args {
-			_, err := makeAPICall[any]("DELETE", fmt.Sprintf("/api/measurements/%s", id), nil)
+			err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+				_, err := client.DeleteMetric(ctx, &v1.DeleteMetricRequest{
+					CanvasId: canvasID,
+					MetricId: id,
+				})
+				return err
+			})
 			if err != nil {
 				fmt.Printf("❌ Error removing '%s': %v\n", id, err)
 				continue
 			}
-			fmt.Printf("✅ Measurement '%s' removed\n", id)
+			fmt.Printf("✅ Metric '%s' removed\n", id)
 		}
 	},
 }
 
-var measureClearCmd = &cobra.Command{
+var metricClearCmd = &cobra.Command{
 	Use:   "clear",
-	Short: "Remove all measurements",
+	Short: "Remove all metrics",
 	Run: func(cmd *cobra.Command, args []string) {
-		// First get the list of measurements
-		result, err := makeAPICall[map[string]any]("GET", "/api/measurements", nil)
+		// First get the list of metrics
+		result, err := makeAPICall[map[string]any]("GET", "/api/metrics", nil)
 		if err != nil {
 			fmt.Printf("❌ Error: %v\n", err)
 			return
 		}
 
-		var measurements []map[string]any
+		var metrics []map[string]any
 		if data, ok := result["data"].(string); ok {
-			json.Unmarshal([]byte(data), &measurements)
+			json.Unmarshal([]byte(data), &metrics)
 		} else if measList, ok := result["data"].([]any); ok {
 			for _, m := range measList {
 				if meas, ok := m.(map[string]any); ok {
-					measurements = append(measurements, meas)
+					metrics = append(metrics, meas)
 				}
 			}
 		}
 
-		if len(measurements) == 0 {
-			fmt.Println("No measurements to remove")
+		if len(metrics) == 0 {
+			fmt.Println("No metrics to remove")
 			return
 		}
 
-		// Remove each measurement
-		for _, meas := range measurements {
+		// Remove each metric
+		for _, meas := range metrics {
 			id := meas["id"].(string)
-			_, err := makeAPICall[any]("DELETE", fmt.Sprintf("/api/measurements/%s", id), nil)
+			_, err := makeAPICall[any]("DELETE", fmt.Sprintf("/api/metrics/%s", id), nil)
 			if err != nil {
 				fmt.Printf("❌ Error removing '%s': %v\n", id, err)
 				continue
@@ -400,24 +399,24 @@ var measureClearCmd = &cobra.Command{
 			fmt.Printf("✅ Removed '%s'\n", id)
 		}
 
-		fmt.Printf("\n🧹 Cleared %d measurements\n", len(measurements))
+		fmt.Printf("\n🧹 Cleared %d metrics\n", len(metrics))
 	},
 }
 
 func init() {
-	// Add flags to measure add command
-	measureAddCmd.Flags().StringVar(&measureAggregation, "aggregation", "", "Aggregation type (e.g., rate, p95, avg)")
-	measureAddCmd.Flags().StringVar(&measureWindow, "window", "10s", "Time window for aggregation")
-	measureAddCmd.Flags().StringVar(&measureResultValue, "result-value", "*", "Filter by result value")
+	// Add flags to metric add command
+	metricAddCmd.Flags().StringVar(&measureAggregation, "aggregation", "", "Aggregation type (e.g., rate, p95, avg)")
+	metricAddCmd.Flags().StringVar(&measureWindow, "window", "10s", "Time window for aggregation")
+	metricAddCmd.Flags().StringVar(&measureResultValue, "result-value", "*", "Filter by result value")
 
 	// Add subcommands to measure
-	measureCmd.AddCommand(measureAddCmd)
-	measureCmd.AddCommand(measureListCmd)
-	measureCmd.AddCommand(measureDataCmd)
-	measureCmd.AddCommand(measureStatsCmd)
-	measureCmd.AddCommand(measureRemoveCmd)
-	measureCmd.AddCommand(measureClearCmd)
+	metricCmd.AddCommand(metricAddCmd)
+	metricCmd.AddCommand(metricListCmd)
+	metricCmd.AddCommand(metricDataCmd)
+	metricCmd.AddCommand(metricStatsCmd)
+	metricCmd.AddCommand(metricRemoveCmd)
+	metricCmd.AddCommand(metricClearCmd)
 
 	// Add to root command
-	rootCmd.AddCommand(measureCmd)
+	rootCmd.AddCommand(metricCmd)
 }

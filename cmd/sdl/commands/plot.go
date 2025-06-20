@@ -280,8 +280,8 @@ func plotFromLiveRun(systemName, instanceName, methodName, outputFile, title str
 
 	l := loader.NewLoader(nil, nil, 10)
 	rt := runtime.NewRuntime(l)
-	fi := rt.LoadFile(dslFilePath)
-	system := fi.NewSystem(systemName)
+	fi, _ := rt.LoadFile(dslFilePath)
+	system, _ := fi.NewSystem(systemName, true)
 
 	avgVals := make([]viz.DataPoint, numBatches)
 	p50Vals := make([]viz.DataPoint, numBatches)

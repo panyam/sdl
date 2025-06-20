@@ -59,8 +59,8 @@ saved to a JSON file for further analysis by commands like 'sdl plot'.`,
 		}
 
 		rt := runtime.NewRuntime(sdlLoader)
-		fileInstance := rt.LoadFile(dslFilePath)
-		system := fileInstance.NewSystem(systemName)
+		fileInstance, _ := rt.LoadFile(dslFilePath)
+		system, _ := fileInstance.NewSystem(systemName, true)
 		if system == nil {
 			fmt.Fprintf(os.Stderr, "System '%s' not found in file '%s'.\n", systemName, dslFilePath)
 			os.Exit(1)

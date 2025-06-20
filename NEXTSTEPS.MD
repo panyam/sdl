@@ -7,7 +7,34 @@
 This document outlines the workshop-focused development status and next steps for delivering a compelling conference presentation that demonstrates SDL as the ultimate system design interview preparation platform.
 
 ---
-## Completed
+## Completed (June 2025 Update)
+
+### gRPC Architecture Migration
+*   **`[COMPLETED]` gRPC Service Implementation:**
+    *   Complete proto definitions for Canvas, Generator, and Metric operations
+    *   Auto-generated gRPC server with HTTP gateway via grpc-gateway
+    *   Thread-safe service implementation with proper error handling
+    *   Dual protocol support: gRPC (9090) and REST (8080)
+    
+*   **`[COMPLETED]` CLI Migration to gRPC:**
+    *   All commands updated to use gRPC client directly
+    *   Added `withCanvasClient` helper for connection reuse
+    *   Canvas selection via `--canvas` flag (default: "default")
+    *   Better error messages with server connection guidance
+
+*   **`[COMPLETED]` Tracer Interface Architecture:**
+    *   Clean interface with just 4 methods (Enter, Exit, PushParentID, PopParent)
+    *   Pluggable design allowing multiple tracer implementations
+    *   MetricTracer implementation for performance measurement
+    *   System-specific tracers created on Canvas.Use()
+
+*   **`[COMPLETED]` Metrics System Redesign:**
+    *   Moved from runtime to console package for proto embedding
+    *   Channel-based asynchronous event processing
+    *   Thread-safe MetricSpec management with result matching
+    *   Direct proto embedding for API consistency
+
+## Completed (Previous)
 
 *   **`[COMPLETED]` RESTful Canvas API Implementation:**
     *   Complete RESTful endpoints for traffic generation management (AddGenerator, RemoveGenerator, UpdateGenerator, PauseGenerator, ResumeGenerator, StartGenerators, StopGenerators)
@@ -131,6 +158,38 @@ This document outlines the workshop-focused development status and next steps fo
 3.1. idx.Find (nested within database call)
 4. cache.Write (after successful result, condition: result)
 ```
+
+---
+## 🚀 IMMEDIATE NEXT STEPS (June 2025)
+
+### 1. Complete Generator Implementation
+*   **Fix Generator Start/Stop**: Implement proper GenFunc initialization in AddGenerator
+*   **Flow Integration**: Connect generators to flow analysis for rate propagation
+*   **Update Endpoints**: Implement StartAllGenerators, StopAllGenerators, PauseGenerator, ResumeGenerator
+*   **List Generators**: Update Canvas proto to include generators list
+
+### 2. Finish Metric Collection
+*   **Fix MetricTracer Initialization**: Ensure proper setup in Canvas.Use()
+*   **Implement LiveMetric**: Add streaming endpoint for real-time metrics
+*   **Add Aggregation**: Implement time-windowed aggregations
+*   **Update Canvas Proto**: Add metrics list to Canvas for API exposure
+
+### 3. Dashboard Integration
+*   **Update API Calls**: Migrate dashboard to use new gRPC gateway endpoints
+*   **WebSocket Migration**: Move from custom WebSocket to gRPC streaming
+*   **Real-time Updates**: Connect LiveMetric stream to chart updates
+*   **Generator Controls**: Update UI to use new generator endpoints
+
+### 4. Parameter Management
+*   **Implement Set/Get**: Add parameter storage to Canvas
+*   **gRPC Endpoints**: Create SetParameter/GetParameter methods
+*   **Update CLI**: Migrate set/get commands to gRPC
+
+### 5. Testing & Documentation
+*   **Integration Tests**: Add tests for gRPC endpoints
+*   **API Documentation**: Generate OpenAPI docs from proto definitions
+*   **Update Examples**: Ensure all examples work with new architecture
+*   **Migration Guide**: Document changes for existing users
 
 ---
 ## 🎯 CONFERENCE WORKSHOP PRIORITIES

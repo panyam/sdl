@@ -1,9 +1,12 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
+	v1 "github.com/panyam/sdl/gen/go/sdl/v1"
 	"github.com/spf13/cobra"
 )
 
@@ -29,14 +32,26 @@ var genAddCmd = &cobra.Command{
 			fmt.Printf("❌ Invalid rate '%s': must be a number\n", rateStr)
 			return
 		}
-
-		_, err = makeAPICall[any]("POST", "/api/canvas/generators", map[string]interface{}{
-			"id":      id,
-			"name":    fmt.Sprintf("Generator-%s", id),
-			"target":  target,
-			"rate":    rate,
-			"enabled": false,
+		parts := strings.Split(target, ".")
+		if len(parts) < 2 {
+			fmt.Printf("❌ Error: Target must be of the form comp1.comp2.comp3...compN.MethodName")
+			return
+		}
+		err = withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+			_, err := client.AddGenerator(ctx, &v1.AddGeneratorRequest{
+				Generator: &v1.Generator{
+					Id:        id,
+					Name:      fmt.Sprintf("Generator-%s", id),
+					CanvasId:  canvasID,
+					Component: strings.Join(parts[:len(parts)-1], "."),
+					Method:    parts[len(parts)-1],
+					Rate:      float64(rate),
+					Enabled:   false,
+				},
+			})
+			return err
 		})
+
 		if err != nil {
 			fmt.Printf("❌ Error: %v\n", err)
 			return
@@ -53,42 +68,33 @@ var genListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all traffic generators",
 	Run: func(cmd *cobra.Command, args []string) {
-		result, err := makeAPICall[map[string]any]("GET", "/api/canvas/generators", nil)
-		if err != nil {
-			fmt.Printf("❌ Error: %v\n", err)
-			return
-		}
-
-		generators, ok := result["data"].(map[string]interface{})
-		if !ok || len(generators) == 0 {
-			fmt.Println("Active Traffic Generators:")
-			fmt.Println("┌─────────────┬─────────────────────┬──────┬─────────┐")
-			fmt.Println("│ Name        │ Target              │ Rate │ Status  │")
-			fmt.Println("├─────────────┼─────────────────────┼──────┼─────────┤")
-			fmt.Println("│ (none)      │                     │      │         │")
-			fmt.Println("└─────────────┴─────────────────────┴──────┴─────────┘")
-			return
-		}
-
-		fmt.Println("Active Traffic Generators:")
-		fmt.Println("┌─────────────┬─────────────────────┬──────┬─────────┐")
-		fmt.Println("│ Name        │ Target              │ Rate │ Status  │")
-		fmt.Println("├─────────────┼─────────────────────┼──────┼─────────┤")
-
-		for id, genData := range generators {
-			gen := genData.(map[string]interface{})
-			target := gen["target"].(string)
-			rate := gen["rate"].(float64)
-			enabled := gen["enabled"].(bool)
-
-			status := "Stopped"
-			if enabled {
-				status = "Running"
+		err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+			resp, err := client.ListGenerators(ctx, &v1.ListGeneratorsRequest{
+				CanvasId: canvasID,
+			})
+			if err != nil {
+				return err
 			}
 
-			fmt.Printf("│ %-11s │ %-19s │ %4.0f │ %-7s │\n", id, target, rate, status)
+			fmt.Println("Traffic Generators:")
+			fmt.Println("┌─────────────┬─────────────────────┬────────────┬─────────┐")
+			fmt.Println("│ Name        │ Target              │    Rate    │ Status  │")
+			fmt.Println("├─────────────┼─────────────────────┼────────────┼─────────┤")
+			for _, gen := range resp.Generators {
+				status := "Stopped"
+				if gen.Enabled {
+					status = "Running"
+				}
+				fmt.Printf("│ %-11s │ %-19s │ %10s │ %-7s │\n", gen.Id, gen.Component+"."+gen.Method, fmt.Sprintf("%0.2f", gen.Rate), status)
+			}
+			fmt.Println("└─────────────┴─────────────────────┴────────────┴─────────┘")
+			_ = resp // Silence unused variable warning for now
+			return nil
+		})
+
+		if err != nil {
+			fmt.Printf("❌ Error: %v\n", err)
 		}
-		fmt.Println("└─────────────┴─────────────────────┴──────┴─────────┘")
 	},
 }
 
@@ -99,7 +105,12 @@ var genStartCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
 			// Start all generators
-			_, err := makeAPICall[any]("POST", "/api/canvas/generators/start", nil)
+			err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+				_, err := client.StartAllGenerators(ctx, &v1.StartAllGeneratorsRequest{
+					CanvasId: canvasID,
+				})
+				return err
+			})
 			if err != nil {
 				fmt.Printf("❌ Error: %v\n", err)
 				return
@@ -108,7 +119,13 @@ var genStartCmd = &cobra.Command{
 		} else {
 			// Start specific generators
 			for _, id := range args {
-				_, err := makeAPICall[any]("POST", fmt.Sprintf("/api/canvas/generators/%s/resume", id), nil)
+				err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+					_, err := client.ResumeGenerator(ctx, &v1.ResumeGeneratorRequest{
+						CanvasId:    canvasID,
+						GeneratorId: id,
+					})
+					return err
+				})
 				if err != nil {
 					fmt.Printf("❌ Error starting '%s': %v\n", id, err)
 					continue
@@ -126,7 +143,12 @@ var genStopCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
 			// Stop all generators
-			_, err := makeAPICall[any]("POST", "/api/canvas/generators/stop", nil)
+			err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+				_, err := client.StopAllGenerators(ctx, &v1.StopAllGeneratorsRequest{
+					CanvasId: canvasID,
+				})
+				return err
+			})
 			if err != nil {
 				fmt.Printf("❌ Error: %v\n", err)
 				return
@@ -136,7 +158,13 @@ var genStopCmd = &cobra.Command{
 		} else {
 			// Stop specific generators
 			for _, id := range args {
-				_, err := makeAPICall[any]("POST", fmt.Sprintf("/api/canvas/generators/%s/pause", id), nil)
+				err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+					_, err := client.PauseGenerator(ctx, &v1.PauseGeneratorRequest{
+						CanvasId:    canvasID,
+						GeneratorId: id,
+					})
+					return err
+				})
 				if err != nil {
 					fmt.Printf("❌ Error stopping '%s': %v\n", id, err)
 					continue
@@ -151,49 +179,34 @@ var genStatusCmd = &cobra.Command{
 	Use:   "status",
 	Short: "Show generator status",
 	Run: func(cmd *cobra.Command, args []string) {
-		result, err := makeAPICall[map[string]any]("GET", "/api/canvas/generators", nil)
-		if err != nil {
-			fmt.Printf("❌ Error: %v\n", err)
-			return
-		}
+		err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+			resp, err := client.GetCanvas(ctx, &v1.GetCanvasRequest{
+				Id: canvasID,
+			})
+			if err != nil {
+				return err
+			}
 
-		generators, ok := result["data"].(map[string]interface{})
-		if !ok || len(generators) == 0 {
+			// TODO: Once Canvas proto includes generators field
 			fmt.Println("Generator Status:")
 			fmt.Println("📊 Total Generators: 0")
-			return
+
+			// When available:
+			// runningCount := 0
+			// for _, gen := range resp.Canvas.Generators {
+			//     if gen.Enabled {
+			//         runningCount++
+			//     }
+			// }
+			// fmt.Printf("Total Active Load: %d generators running\n", runningCount)
+
+			_ = resp // Silence unused variable warning
+			return nil
+		})
+
+		if err != nil {
+			fmt.Printf("❌ Error: %v\n", err)
 		}
-
-		runningCount := 0
-		for _, genData := range generators {
-			gen := genData.(map[string]interface{})
-			if gen["enabled"].(bool) {
-				runningCount++
-			}
-		}
-
-		fmt.Println("Generator Status (Live):")
-		fmt.Println("┌─────────────┬─────────────────────┬──────┬─────────┬───────────┐")
-		fmt.Println("│ Name        │ Target              │ Rate │ Status  │ Uptime    │")
-		fmt.Println("├─────────────┼─────────────────────┼──────┼─────────┼───────────┤")
-
-		for id, genData := range generators {
-			gen := genData.(map[string]interface{})
-			target := gen["target"].(string)
-			rate := gen["rate"].(float64)
-			enabled := gen["enabled"].(bool)
-
-			status := "Stopped"
-			uptime := "--"
-			if enabled {
-				status = "Running"
-				uptime = "00:00:00" // Placeholder - would need actual uptime from server
-			}
-
-			fmt.Printf("│ %-11s │ %-19s │ %4.0f │ %-7s │ %-9s │\n", id, target, rate, status, uptime)
-		}
-		fmt.Println("└─────────────┴─────────────────────┴──────┴─────────┴───────────┘")
-		fmt.Printf("Total Active Load: %d generators running\n", runningCount)
 	},
 }
 
@@ -206,9 +219,41 @@ var genSetCmd = &cobra.Command{
 		property := args[1]
 		value := args[2]
 
-		_, err := makeAPICall[any]("PUT", fmt.Sprintf("/api/canvas/generators/%s", id), map[string]interface{}{
-			property: value,
+		err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+			// Create a generator with just the fields to update
+			gen := &v1.Generator{
+				Id:       id,
+				CanvasId: canvasID,
+			}
+
+			// Set the appropriate field based on property
+			switch property {
+			case "rate":
+				rate, err := strconv.Atoi(value)
+				if err != nil {
+					return fmt.Errorf("invalid rate value: %v", err)
+				}
+				gen.Rate = float64(rate)
+			case "component":
+				gen.Component = value
+			case "method":
+				gen.Method = value
+			case "enabled":
+				enabled, err := strconv.ParseBool(value)
+				if err != nil {
+					return fmt.Errorf("invalid boolean value: %v", err)
+				}
+				gen.Enabled = enabled
+			default:
+				return fmt.Errorf("unknown property: %s", property)
+			}
+
+			_, err := client.UpdateGenerator(ctx, &v1.UpdateGeneratorRequest{
+				Generator: gen,
+			})
+			return err
 		})
+
 		if err != nil {
 			fmt.Printf("❌ Error: %v\n", err)
 			return
@@ -228,7 +273,13 @@ var genRemoveCmd = &cobra.Command{
 		}
 
 		for _, id := range args {
-			_, err := makeAPICall[any]("DELETE", fmt.Sprintf("/api/canvas/generators/%s", id), nil)
+			err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+				_, err := client.DeleteGenerator(ctx, &v1.DeleteGeneratorRequest{
+					CanvasId:    canvasID,
+					GeneratorId: id,
+				})
+				return err
+			})
 			if err != nil {
 				fmt.Printf("❌ Error removing '%s': %v\n", id, err)
 				continue

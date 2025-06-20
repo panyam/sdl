@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -31,46 +30,13 @@ func getServerURL() string {
 	return "http://localhost:8080"
 }
 
-// getServeConfig returns the host and port for the serve command using:
-// 1. Command line flags (--host, --port)
-// 2. Environment variables (CANVAS_SERVE_HOST, CANVAS_SERVE_PORT)
-// 3. Defaults (localhost, 8080)
-func getServeConfig() (host string, port int) {
-	// Use provided values if set
-	if serveHost != "" && servePort != 0 {
-		return serveHost, servePort
-	}
-
-	// Check environment variables
-	envHost := os.Getenv("CANVAS_SERVE_HOST")
-	if envHost == "" {
-		envHost = "localhost"
-	}
-
-	envPort := 8080
-	if envPortStr := os.Getenv("CANVAS_SERVE_PORT"); envPortStr != "" {
-		if parsed, err := strconv.Atoi(envPortStr); err == nil {
-			envPort = parsed
-		}
-	}
-
-	// Use environment or command line values
-	if serveHost == "" {
-		serveHost = envHost
-	}
-	if servePort == 0 {
-		servePort = envPort
-	}
-
-	return serveHost, servePort
-}
-
 func apiEndpoint(endpoint string) string {
 	return strings.TrimSuffix(getServerURL(), "/") + endpoint
 }
 
 // makeAPICall makes HTTP requests to the SDL server
 func makeAPICall[T any](method, endpoint string, body map[string]any) (out T, err error) {
+	log.Printf("Calling Endpoint %s - %s", method, endpoint)
 	req, _ := ghttp.NewJsonRequest(method, apiEndpoint(endpoint), body)
 	resp, err := ghttp.Call(req, nil)
 	if err != nil {
