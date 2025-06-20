@@ -162,35 +162,41 @@ This document outlines the workshop-focused development status and next steps fo
 ---
 ## 🚀 IMMEDIATE NEXT STEPS (June 2025)
 
-### 1. Complete Generator Implementation with Virtual Time
-*   **Implement GeneratorInfo.GenFunc**: Create proper eval integration with SimpleEval
-*   **Virtual Time Tracking**: Add nextVirtualTime management per generator
-*   **Batched Execution**: Implement efficient batching for 10k-100k QPS scale
-*   **Test with ContactsSystem**: Validate trace events are properly captured
+### ✅ COMPLETED: Generator Implementation
+*   **`[COMPLETED]` GeneratorInfo.GenFunc**: Successfully integrated with SimpleEval
+*   **`[COMPLETED]` Virtual Time Tracking**: Each generator maintains consistent virtual clock
+*   **`[COMPLETED]` MetricTracer Integration**: Exit events captured with proper timestamps
+*   **`[COMPLETED]` End-to-End Testing**: Validated with ContactsSystem at 2+ RPS
 
-### 2. Design and Implement MetricStore
-*   **Define Interface**: Create abstract MetricStore interface for pluggable storage
-*   **RingBufferStore**: Implement fixed-memory store for real-time monitoring
-*   **Integration**: Update MetricTracer to use MetricStore for persistence
-*   **Query API**: Add time-range queries and aggregation support
+### 1. Scale Generator to 10k-100k QPS
+*   **Batched Execution**: Implement eval pooling and batch processing
+*   **Bounded Concurrency**: Use semaphore pattern to limit concurrent evals
+*   **Fractional Rate Handling**: Accumulator pattern for non-integer rates
+*   **Performance Testing**: Validate system can handle target QPS
+
+### 2. Implement MetricStore Architecture
+*   **Define Interface**: Create abstract MetricStore with Write/Query/Aggregate methods
+*   **RingBufferStore**: Fixed-size circular buffer for real-time monitoring
+*   **Aggregation Engine**: Time-windowed aggregations (sum, rate, percentiles)
+*   **Integration**: Update MetricSpec to write to MetricStore
 
 ### 3. Complete Generator Management
-*   **Update Endpoints**: Implement StartAllGenerators, StopAllGenerators
-*   **Flow Integration**: Connect generators to flow analysis for rate propagation
-*   **Canvas State**: Add generators list to Canvas proto for API exposure
-*   **Error Handling**: Add proper gRPC status codes for all error cases
+*   **Batch Operations**: Implement StartAllGenerators, StopAllGenerators
+*   **Flow Integration**: Connect generators to flow analysis for automatic rate setting
+*   **State Persistence**: Add generator state to Canvas save/restore
+*   **Error Recovery**: Handle generator failures gracefully
 
 ### 4. Dashboard Integration
-*   **Update API Calls**: Migrate dashboard to use new gRPC gateway endpoints
-*   **Live Metrics**: Implement server-streaming for real-time updates
-*   **Generator Controls**: Update UI to use new generator endpoints
-*   **Trace Visualization**: Add trace output display to dashboard
+*   **gRPC Gateway**: Update all API calls to use new endpoints
+*   **Live Streaming**: Implement server-streaming for real-time metrics
+*   **Generator UI**: Update controls to match new generator model
+*   **Metric Visualization**: Real-time charts with aggregated data
 
 ### 5. Testing & Documentation
-*   **Generator Tests**: Add comprehensive tests for virtual time and batching
-*   **API Documentation**: Generate OpenAPI docs from proto definitions
-*   **Performance Tests**: Validate 10k-100k QPS capability
-*   **Update ARCHITECTURE.md**: Keep design decisions documented
+*   **Load Tests**: Validate 10k, 50k, 100k QPS scenarios
+*   **Latency Tests**: Ensure sub-millisecond event processing
+*   **Memory Tests**: Verify bounded memory usage with RingBuffer
+*   **Update Examples**: Create high-QPS demonstration scenarios
 
 ---
 ## 🎯 CONFERENCE WORKSHOP PRIORITIES

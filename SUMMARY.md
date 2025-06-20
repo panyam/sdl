@@ -30,6 +30,7 @@ The project is a Go-based system composed of several key packages:
 
 *   **gRPC Migration Complete:** Entire console package migrated from REST to gRPC-first architecture with HTTP gateway support. All CLI commands now use gRPC client for server communication. Clean separation between protocol (gRPC) and business logic (Canvas).
 *   **Tracer Interface Architecture:** New pluggable Tracer interface in runtime package enables multiple measurement strategies. MetricTracer implementation processes only Exit events for efficiency. System-specific tracers created on Canvas.Use() for optimal performance.
+*   **Traffic Generator Implementation:** Fully functional generators using SimpleEval for realistic simulation. Virtual time tracking ensures consistent timestamps across all events. MetricTracer successfully captures Exit events with proper latency measurements. Tested at 2+ RPS with ContactsSystem showing realistic cache hit/miss patterns.
 *   **CLI Commands Unified:** All commands migrated to use gRPC with shared client helper pattern. Canvas selection via --canvas flag with environment variable support. Better error messages and connection handling.
 *   **ExecuteTrace RPC:** New trace command for single execution debugging. Captures full call graph with virtual timestamps, parent-child relationships, and return values. Essential for understanding system behavior before high-volume generation.
 

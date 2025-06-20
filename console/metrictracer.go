@@ -63,10 +63,13 @@ func (mt *MetricTracer) AddMetricSpec(spec *MetricSpec) error {
 		return status.Error(codes.InvalidArgument, fmt.Sprintf("invalid metric type: %s", spec.Metric))
 	}
 
+	// Set the system reference
+	spec.System = mt.system
+
 	// Resolve the component instance from the system
 	var resolvedComponent *runtime.ComponentInstance
-	if spec.System != nil && spec.System.Env != nil {
-		if val, ok := spec.System.Env.Get(spec.Component); ok {
+	if mt.system != nil && mt.system.Env != nil {
+		if val, ok := mt.system.Env.Get(spec.Component); ok {
 			if comp, ok := val.Value.(*runtime.ComponentInstance); ok {
 				resolvedComponent = comp
 			} else {
@@ -118,13 +121,13 @@ func (mt *MetricTracer) Exit(ts core.Duration, duration core.Duration, comp *run
 	}
 }
 
-func (mt *MetricTracer) Enter(ts core.Duration, kind runtime.TraceEventKind, comp *runtime.ComponentInstance, method *decl.MethodDecl, args ...string) int {
+func (mt *MetricTracer) Enter(ts core.Duration, kind runtime.TraceEventKind, comp *runtime.ComponentInstance, method *decl.MethodDecl, args ...string) int64 {
 	return 0
 }
 
 // PushParentID manually pushes a parent ID onto the stack.
 // Used by the aggregator to set the context for evaluating futures.
-func (mt *MetricTracer) PushParentID(id int) {}
+func (mt *MetricTracer) PushParentID(id int64) {}
 
 // PopParent removes the most recent event ID from the stack.
 func (mt *MetricTracer) PopParent() {}

@@ -94,12 +94,13 @@ Examples:
 		err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
 			_, err := client.AddMetric(ctx, &v1.AddMetricRequest{
 				Metric: &v1.Metric{
-					Id:        id,
-					Name:      fmt.Sprintf("%s %s", strings.Title(component), strings.Title(method)),
-					CanvasId:  canvasID,
-					Component: component,
-					Methods:   []string{method},
-					Enabled:   true,
+					Id:         id,
+					Name:       fmt.Sprintf("%s %s", strings.Title(component), strings.Title(method)),
+					CanvasId:   canvasID,
+					Component:  component,
+					Methods:    []string{method},
+					MetricType: metricType,
+					Enabled:    true,
 				},
 			})
 			return err

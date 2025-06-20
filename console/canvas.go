@@ -185,6 +185,8 @@ func (c *Canvas) AddGenerator(gen *GeneratorInfo) error {
 	if err != nil || methodDecl == nil {
 		return status.Error(codes.InvalidArgument, fmt.Sprintf("'%s' is not a method in the component", gen.Method))
 	}
+	gen.resolvedMethodDecl = methodDecl
+	gen.canvas = c
 
 	gen.System = c.activeSystem
 	if c.generators[gen.Id] != nil {

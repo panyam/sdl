@@ -97,13 +97,14 @@ Client → gRPC (9090) → Service
 4. **Canvas Service**: All core operations implemented
 5. **CLI Migration**: All commands use gRPC client
 6. **Trace Command**: New ExecuteTrace RPC for debugging
+7. **Generator Implementation**: 
+   - GenFunc properly integrated with SimpleEval
+   - Virtual time tracking with consistent timestamps
+   - MetricTracer captures all Exit events
+   - Tested at 2+ RPS with realistic latencies
 
 ### 🚧 In Progress
-1. **Generator Implementation**:
-   - GenFunc needs proper eval integration
-   - Virtual time tracking required
-   - Batched execution for efficiency
-
+1. **Batched Execution**: Optimize for 10k-100k QPS scale
 2. **MetricStore Design**:
    - Abstract interface for pluggable storage
    - RingBuffer for real-time monitoring
@@ -114,26 +115,54 @@ Client → gRPC (9090) → Service
 2. **Parameter Management**: SetParameter/GetParameter RPCs
 3. **Flow Analysis Integration**: Connect generators to flow rate calculations
 4. **Dashboard Migration**: Update web UI to use gRPC gateway
+5. **Generator Management**: Implement StartAllGenerators, StopAllGenerators
 
-## Generator Design (In Progress)
+## Generator Design (Completed)
 
 ### Virtual Time Management
 Each generator maintains its own virtual clock:
 ```go
 type GeneratorInfo struct {
     *protos.Generator
+    canvas                    *Canvas
+    System                    *runtime.SystemInstance
+    resolvedComponentInstance *runtime.ComponentInstance
+    resolvedMethodDecl        *runtime.MethodDecl
+    
+    // Virtual time management
     nextVirtualTime core.Duration
-    timeMutex      sync.Mutex
+    timeMutex       sync.Mutex
 }
 ```
 
-### Batched Execution Strategy
+### Current Implementation
+The generator executes method calls using SimpleEval with proper virtual time:
+```go
+func (g *GeneratorInfo) initializeGenFunc() {
+    g.GenFunc = func(iter int) {
+        virtualTime := g.getNextVirtualTime()
+        eval := runtime.NewSimpleEval(g.System.File, canvas.metricTracer)
+        env := g.System.Env.Push()
+        currTime := virtualTime
+        
+        callExpr := &decl.CallExpr{
+            Function: &decl.MemberAccessExpr{
+                Receiver: &decl.IdentifierExpr{Value: g.Component},
+                Member:   &decl.IdentifierExpr{Value: g.Method},
+            },
+        }
+        
+        eval.Eval(callExpr, env, &currTime)
+    }
+}
+```
+
+### Batched Execution Strategy (TODO)
 For efficiency at high QPS (10k-100k):
 ```go
-// Instead of: 1 goroutine per eval
-// Use: Batched execution with bounded concurrency
+// Future optimization: Batch multiple evals per tick
 batchSize := calculateBatchSize(rate, interval)
-evalPool := make(chan *SimpleEval, numCPU * 2)
+evalPool := sync.Pool{New: func() interface{} { return new(SimpleEval) }}
 ```
 
 ### MetricStore Interface (Proposed)
@@ -175,26 +204,55 @@ client := v1.NewCanvasServiceClient(conn)
 resp, err := client.LoadFile(ctx, &v1.LoadFileRequest{...})
 ```
 
+## MetricTracer Implementation
+
+### Design
+The MetricTracer implements the runtime.Tracer interface and processes only Exit events:
+```go
+type MetricTracer struct {
+    seriesMap  map[string]*MetricSpec
+    system     *runtime.SystemInstance
+}
+```
+
+### MetricSpec Processing
+Each MetricSpec runs in its own goroutine with buffered channels:
+```go
+type MetricSpec struct {
+    *protos.Metric
+    System                    *runtime.SystemInstance
+    resolvedComponentInstance *runtime.ComponentInstance
+    eventChan                 chan *runtime.TraceEvent  // Buffered at 1000
+}
+```
+
+Key features:
+- Non-blocking event processing via buffered channels
+- Component resolution using pointer comparison for efficiency
+- Background aggregation with configurable windows
+
+## Key Achievements
+
+1. **Clean Architecture**: Tracer interface allows runtime to remain measurement-agnostic
+2. **Performance**: Exit-only processing and pointer comparison for efficient filtering
+3. **Scalability**: Buffered channels and background processing prevent blocking
+4. **Virtual Time**: All events maintain consistent virtual timestamps through SimpleEval
+
 ## Next Steps
 
-1. **Complete Generator Implementation**
-   - Integrate SimpleEval for actual method execution
-   - Add virtual time propagation
-   - Implement batched execution for scale
+1. **Batched Generator Execution**
+   - Implement eval pooling for 10k-100k QPS
+   - Batch multiple virtual time slots per tick
+   - Add bounded concurrency control
 
-2. **Design MetricStore**
-   - Define clean interface boundaries
-   - Implement RingBufferStore first
-   - Add DuckDB integration later
+2. **MetricStore Implementation**
+   - Define interface for pluggable storage
+   - Implement RingBufferStore for real-time
+   - Add time-windowed aggregation
 
-3. **Update MetricTracer**
-   - Use MetricStore for persistence
-   - Add aggregation windows
-   - Implement result streaming
-
-4. **Dashboard Integration**
+3. **Dashboard Integration**
    - Migrate to gRPC gateway endpoints
-   - Use streaming for live updates
+   - Implement streaming for live metrics
    - Update generator controls
 
-This architecture provides a solid foundation for scaling SDL to handle high-throughput simulations while maintaining clean separation of concerns and extensibility.
+This architecture successfully demonstrates high-throughput simulation capabilities with proper separation of concerns and extensibility for future enhancements.

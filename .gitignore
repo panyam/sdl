@@ -3,7 +3,6 @@ data/
 *.log
 bin
 web/diagnose-dashboard.*
-./sdl
 playwright-report
 test-results
 .DS_Store

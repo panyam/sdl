@@ -114,8 +114,14 @@ func (ms *MetricSpec) Start() {
 		return
 	}
 	ms.stopped = false
-	ms.eventChan = make(chan *runtime.TraceEvent)
+	ms.eventChan = make(chan *runtime.TraceEvent, 1000) // Buffered channel
 	ms.stopChan = make(chan bool)
+
+	// Run processing in background
+	go ms.run()
+}
+
+func (ms *MetricSpec) run() {
 	defer func() {
 		close(ms.stopChan)
 		close(ms.eventChan)
@@ -125,15 +131,20 @@ func (ms *MetricSpec) Start() {
 	}()
 
 	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+
 	for {
 		select {
 		case <-ms.stopChan:
 			return
 		case evt := <-ms.eventChan:
-			// Do thigns here
-			log.Println("Evt: ", evt)
+			// Process the event
+			if evt != nil {
+				log.Printf("MetricSpec %s: Processing event for %s.%s (duration: %v)", 
+					ms.Id, evt.GetComponentName(), evt.GetMethodName(), evt.Duration)
+			}
 		case <-ticker.C:
-			// Some kind of garbage collection here??
+			// Periodic aggregation can go here
 		}
 	}
 }
