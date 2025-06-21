@@ -92,7 +92,7 @@ func displayCallTree(event *v1.TraceEvent, exitMap map[int64]*v1.TraceEvent, chi
 	
 	// Format timing information
 	startTime := fmt.Sprintf("%7.2f", event.Timestamp*1000)
-	duration := "        "
+	duration := "         " // 9 spaces to match "X.XXms" format
 	if exitEvent != nil && exitEvent.Duration > 0 {
 		duration = fmt.Sprintf("%7.2fms", exitEvent.Duration*1000)
 	}
