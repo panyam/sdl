@@ -56,21 +56,12 @@ func (g *GeneratorInfo) Start() {
 }
 
 func (g *GeneratorInfo) run() {
-	genFuncMissing := g.GenFunc == nil
 	defer func() {
 		// Don't close stopChan here - it's closed by Stop()
 		g.stopChan = nil
 		g.Enabled = false
-		if genFuncMissing {
-			g.GenFunc = nil
-		}
 		log.Printf("Generator %s: Stopped", g.Id)
 	}()
-
-	// Initialize GenFunc if not provided
-	if g.GenFunc == nil {
-		g.initializeGenFunc()
-	}
 
 	// For high QPS, use batching
 	if g.Rate > 100 {
@@ -87,7 +78,21 @@ func (g *GeneratorInfo) runSimple() {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
+	log.Printf("Generator %s: Starting Simple execution at %v RPS", g.Id, g.Rate)
+
+	if g.GenFunc == nil {
+		// Initialize GenFunc if not provided
+		g.initializeGenFunc()
+		defer func() {
+			g.GenFunc = nil
+		}()
+	}
+
 	for i := 0; ; i++ {
+		// Log every 10 or 20 iterations since this is low qps
+		if i%20 == 0 { // Log every 100 batches (1 second at 10ms intervals)
+			log.Printf("Low RPS Generator %s: Processed %d iterations, Stopped: ", g.Id, i, g.stopped.Load())
+		}
 		select {
 		case <-g.stopChan:
 			return
@@ -163,7 +168,7 @@ func (g *GeneratorInfo) runBatched() {
 	}
 }
 
-// initializeGenFunc sets up the actual eval-based generator function
+// initializeGenFunc sets up the actual eval-based generator function for low QPS generations
 func (g *GeneratorInfo) initializeGenFunc() {
 	g.GenFunc = func(iter int) {
 		// Get next virtual time
@@ -186,14 +191,8 @@ func (g *GeneratorInfo) getNextVirtualTime() core.Duration {
 
 // executeAtVirtualTime executes a single eval at the given virtual time
 func (g *GeneratorInfo) executeAtVirtualTime(virtualTime core.Duration) {
-	// Get tracer from canvas (may be nil)
-	var tracer sdlruntime.Tracer
-	if g.canvas != nil && g.canvas.metricTracer != nil {
-		tracer = g.canvas.metricTracer
-	}
-
-	// Create evaluator with tracer
-	eval := sdlruntime.NewSimpleEval(g.System.File, tracer)
+	// Create evaluator with tracer - ok to panic if nil as it shouldnt be
+	eval := sdlruntime.NewSimpleEval(g.System.File, g.canvas.metricTracer)
 
 	// New environment for isolation
 	env := g.System.Env.Push()

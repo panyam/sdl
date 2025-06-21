@@ -1,7 +1,7 @@
 package console
 
 import (
-	"log"
+	"context"
 	"sync/atomic"
 	"time"
 
@@ -22,23 +22,6 @@ const (
 	MetricLatency MetricType = "latency"
 )
 
-// AggregationType defines how metrics are aggregated over time
-type AggregationType string
-
-const (
-	// For count metrics
-	AggSum  AggregationType = "sum"  // Total count in window
-	AggRate AggregationType = "rate" // Count per second
-
-	// For latency metrics
-	AggAvg AggregationType = "avg" // Average
-	AggMin AggregationType = "min" // Minimum
-	AggMax AggregationType = "max" // Maximum
-	AggP50 AggregationType = "p50" // 50th percentile
-	AggP90 AggregationType = "p90" // 90th percentile
-	AggP95 AggregationType = "p95" // 95th percentile
-	AggP99 AggregationType = "p99" // 99th percentile
-)
 
 // MetricSpec defines what to measure and how
 // The tracer will use this to collect and process events and create metric points out of them
@@ -55,6 +38,7 @@ type MetricSpec struct {
 	stopChan                  chan bool
 	eventChan                 chan *runtime.TraceEvent
 	idCounter                 atomic.Int64
+	store                     MetricStore // Reference to metric store
 }
 
 // Handles the next trace event.  Returns true if event accepted, false otherwise
@@ -130,29 +114,53 @@ func (ms *MetricSpec) run() {
 		ms.stopped = true
 	}()
 
-	ticker := time.NewTicker(1 * time.Second)
-	defer ticker.Stop()
+	ctx := context.Background()
+	batchSize := 100
+	batch := make([]*MetricPoint, 0, batchSize)
+	batchTicker := time.NewTicker(100 * time.Millisecond) // Flush every 100ms
+	defer batchTicker.Stop()
 
 	for {
 		select {
 		case <-ms.stopChan:
+			// Flush remaining batch
+			if len(batch) > 0 && ms.store != nil {
+				ms.store.WriteBatch(ctx, ms.Metric, batch)
+			}
 			return
 		case evt := <-ms.eventChan:
 			// Process the event
-			if evt != nil {
-				log.Printf("MetricSpec %s: Processing event for %s.%s (duration: %v)", 
-					ms.Id, evt.GetComponentName(), evt.GetMethodName(), evt.Duration)
+			if evt != nil && ms.store != nil {
+				// Create metric point based on metric type
+				var value float64
+				if ms.MetricType == MetricLatency {
+					value = float64(evt.Duration)
+				} else {
+					value = 1.0 // Count metric
+				}
+
+				point := &MetricPoint{
+					Timestamp: time.Now(), // Use real time for now
+					Value:     value,
+					Tags:      make(map[string]string),
+				}
+
+				// Add to batch
+				batch = append(batch, point)
+
+				// Flush if batch is full
+				if len(batch) >= batchSize {
+					ms.store.WriteBatch(ctx, ms.Metric, batch)
+					batch = batch[:0] // Reset batch
+				}
 			}
-		case <-ticker.C:
-			// Periodic aggregation can go here
+		case <-batchTicker.C:
+			// Periodic flush
+			if len(batch) > 0 && ms.store != nil {
+				ms.store.WriteBatch(ctx, ms.Metric, batch)
+				batch = batch[:0] // Reset batch
+			}
 		}
 	}
 }
 
-// MetricPoint represents a single metric measurement (this could be based on one or more TraceEvents)
-type MetricPoint struct {
-	Timestamp core.Duration `json:"timestamp"` // Virtual time
-	Value     float64       `json:"value"`     // 1.0 for count, duration for latency
-	// Component string        `json:"component"` // Source component
-	// Method    string        `json:"method"`    // Source method
-}

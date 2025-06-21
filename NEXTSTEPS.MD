@@ -162,26 +162,28 @@ This document outlines the workshop-focused development status and next steps fo
 ---
 ## 🚀 IMMEDIATE NEXT STEPS (June 2025)
 
-### ✅ COMPLETED: Generator Implementation
-*   **`[COMPLETED]` GeneratorInfo.GenFunc**: Successfully integrated with SimpleEval
+### ✅ COMPLETED: High-Throughput Traffic Generation
+*   **`[COMPLETED]` Generator Implementation**: Successfully integrated with SimpleEval for realistic execution
 *   **`[COMPLETED]` Virtual Time Tracking**: Each generator maintains consistent virtual clock
-*   **`[COMPLETED]` MetricTracer Integration**: Exit events captured with proper timestamps
-*   **`[COMPLETED]` End-to-End Testing**: Validated with ContactsSystem at 2+ RPS
+*   **`[COMPLETED]` Batched Execution**: High-rate generators (>100 RPS) use batched execution with bounded concurrency
+*   **`[COMPLETED]` Lifecycle Management**: Proper start/stop with atomic state management
+*   **`[COMPLETED]` Performance Validation**: Tested at 1000+ RPS with multiple concurrent generators
 
-### 1. Scale Generator to 10k-100k QPS
-*   **Batched Execution**: Implement eval pooling and batch processing
-*   **Bounded Concurrency**: Use semaphore pattern to limit concurrent evals
-*   **Fractional Rate Handling**: Accumulator pattern for non-integer rates
-*   **Performance Testing**: Validate system can handle target QPS
+### ✅ COMPLETED: MetricStore Architecture
+*   **`[COMPLETED]` MetricStore Interface**: Clean abstraction for metric storage with single/batch operations
+*   **`[COMPLETED]` RingBufferStore**: Memory-efficient circular buffer implementation with configurable retention
+*   **`[COMPLETED]` Aggregation Support**: Standard functions (count, sum, avg, min, max, percentiles) over time windows
+*   **`[COMPLETED]` MetricTracer Integration**: Asynchronous metric processing with batched writes
+*   **`[COMPLETED]` Query API**: Support for time-range queries and multi-metric correlation
 
-### 2. Implement MetricStore Architecture
-*   **Define Interface**: Create abstract MetricStore with Write/Query/Aggregate methods
-*   **RingBufferStore**: Fixed-size circular buffer for real-time monitoring
-*   **Aggregation Engine**: Time-windowed aggregations (sum, rate, percentiles)
-*   **Integration**: Update MetricSpec to write to MetricStore
+### 1. Enhance Trace Command Output (IN PROGRESS)
+*   **Human-Readable Format**: Display sequence diagram or tree view when -o flag not provided
+*   **Call Graph Visualization**: Show nested method calls with timing information
+*   **Component Interaction**: Highlight cross-component communication patterns
+*   **Performance Insights**: Display latency breakdowns and bottlenecks
 
-### 3. Complete Generator Management
-*   **Batch Operations**: Implement StartAllGenerators, StopAllGenerators
+### 2. Complete Generator Management
+*   **Batch Operations**: Implement StartAllGenerators, StopAllGenerators RPCs
 *   **Flow Integration**: Connect generators to flow analysis for automatic rate setting
 *   **State Persistence**: Add generator state to Canvas save/restore
 *   **Error Recovery**: Handle generator failures gracefully

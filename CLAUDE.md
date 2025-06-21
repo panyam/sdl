@@ -33,10 +33,34 @@ The project has undergone significant architectural changes:
 - **Canvas selection**: `--canvas` flag (default: "default")
 - **Better errors**: Connection guidance when server is down
 
-### 5. Current Status
-- **Working**: Canvas operations, file loading, system selection, basic metrics
-- **In Progress**: Generator start/stop, metric aggregation, live streaming
-- **TODO**: Parameter management, dashboard migration, WebSocket to gRPC streaming
+### 5. Current Status (Updated June 2025)
+- **Working**: 
+  - All Canvas operations via gRPC (load, use, info, etc.)
+  - ExecuteTrace RPC for single execution debugging
+  - Traffic generation with SimpleEval integration
+  - Virtual time tracking for deterministic simulations
+  - Batched execution for high-rate generators (1000+ RPS)
+  - MetricStore architecture with RingBufferStore
+  - Asynchronous metric processing with MetricTracer
+- **Completed Recent Work**:
+  - Generator lifecycle management (start/stop/pause/resume)
+  - MetricStore interface with pluggable backends
+  - Memory-efficient metrics with circular buffers
+  - Standard aggregations (count, sum, avg, min, max, percentiles)
+- **TODO**: 
+  - Human-readable trace command output
+  - Batch generator operations (StartAllGenerators, StopAllGenerators)
+  - Dashboard integration with new gRPC endpoints
+  - Server-streaming for real-time metrics
+
+## Traffic Generation & MetricStore Architecture (June 2025)
+When working with traffic generation and metrics:
+- **Generator Pattern**: Simple ticker for <100 RPS, batched execution for higher rates
+- **Virtual Time**: Each generator maintains consistent virtual clock (1/rate seconds per event)
+- **MetricStore Interface**: Clean abstraction with WritePoint/WriteBatch/Query/Aggregate
+- **RingBufferStore**: Default implementation with configurable retention (e.g., 1 hour)
+- **Async Processing**: MetricTracer writes to store in 100ms batches
+- **Testing**: Use `go test -v ./console -run TestGenerator` for generator tests
 
 ## FlowEval Runtime Migration (June 2025)
 When continuing work on FlowEval, note that we're in the middle of migrating from string-based to runtime-based flow analysis:

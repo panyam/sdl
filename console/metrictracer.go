@@ -1,10 +1,12 @@
 package console
 
 import (
+	"context"
 	"fmt"
 	"maps"
 	"slices"
 	"sync"
+	"time"
 
 	"github.com/panyam/sdl/core"
 	"github.com/panyam/sdl/decl"
@@ -18,13 +20,36 @@ type MetricTracer struct {
 	seriesLock sync.RWMutex
 	seriesMap  map[string]*MetricSpec
 	system     *runtime.SystemInstance
+	store      MetricStore
 }
 
 func NewMetricTracer(system *runtime.SystemInstance) *MetricTracer {
+	// Create default ring buffer store
+	store, _ := NewRingBufferStore(MetricStoreConfig{
+		Type: "ringbuffer",
+		Config: map[string]interface{}{
+			ConfigRingBufferSize:     10000,
+			ConfigRingBufferDuration: 5 * time.Minute,
+		},
+	})
+	
 	return &MetricTracer{
 		seriesMap: map[string]*MetricSpec{},
 		system:    system,
+		store:     store,
 	}
+}
+
+// SetMetricStore sets a custom metric store
+func (mt *MetricTracer) SetMetricStore(store MetricStore) {
+	mt.seriesLock.Lock()
+	defer mt.seriesLock.Unlock()
+	
+	// Close old store if it exists
+	if mt.store != nil {
+		mt.store.Close()
+	}
+	mt.store = store
 }
 
 func (mt *MetricTracer) ListMetricSpec() []*MetricSpec {
@@ -86,6 +111,7 @@ func (mt *MetricTracer) AddMetricSpec(spec *MetricSpec) error {
 
 	// Create the measurement
 	spec.resolvedComponentInstance = resolvedComponent
+	spec.store = mt.store
 	mt.seriesMap[spec.Id] = spec
 	spec.Start()
 	return nil
@@ -131,6 +157,49 @@ func (mt *MetricTracer) PushParentID(id int64) {}
 
 // PopParent removes the most recent event ID from the stack.
 func (mt *MetricTracer) PopParent() {}
+
+// GetMetricStore returns the current metric store
+func (mt *MetricTracer) GetMetricStore() MetricStore {
+	mt.seriesLock.RLock()
+	defer mt.seriesLock.RUnlock()
+	return mt.store
+}
+
+// QueryMetrics queries metrics from the store
+func (mt *MetricTracer) QueryMetrics(ctx context.Context, specId string, opts QueryOptions) (QueryResult, error) {
+	mt.seriesLock.RLock()
+	spec := mt.seriesMap[specId]
+	store := mt.store
+	mt.seriesLock.RUnlock()
+	
+	if spec == nil {
+		return QueryResult{}, fmt.Errorf("metric spec %s not found", specId)
+	}
+	
+	if store == nil {
+		return QueryResult{}, fmt.Errorf("no metric store configured")
+	}
+	
+	return store.Query(ctx, spec.Metric, opts)
+}
+
+// AggregateMetrics computes aggregations for a metric
+func (mt *MetricTracer) AggregateMetrics(ctx context.Context, specId string, opts AggregateOptions) (AggregateResult, error) {
+	mt.seriesLock.RLock()
+	spec := mt.seriesMap[specId]
+	store := mt.store
+	mt.seriesLock.RUnlock()
+	
+	if spec == nil {
+		return AggregateResult{}, fmt.Errorf("metric spec %s not found", specId)
+	}
+	
+	if store == nil {
+		return AggregateResult{}, fmt.Errorf("no metric store configured")
+	}
+	
+	return store.Aggregate(ctx, spec.Metric, opts)
+}
 
 // ResultMatcher determines if a return value matches the expected result
 type ResultMatcher interface {
