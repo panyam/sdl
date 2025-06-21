@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"strings"
 	"sync"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -261,4 +262,166 @@ func convertTraceDataToProto(td *runtime.TraceData) *protos.TraceData {
 		EntryPoint: td.EntryPoint,
 		Events:     protoEvents,
 	}
+}
+
+// ListMetrics returns all available metrics
+func (s *CanvasService) ListMetrics(ctx context.Context, req *protos.ListMetricsRequest) (resp *protos.ListMetricsResponse, err error) {
+	slog.Info("ListMetrics Request", "req", req)
+	resp = &protos.ListMetricsResponse{}
+	
+	err = s.withCanvas(req.CanvasId, func(canvas *Canvas) {
+		if canvas.metricTracer == nil || canvas.metricTracer.store == nil {
+			resp.Metrics = []*protos.MetricInfo{}
+			return
+		}
+		
+		// Get all metrics from the metric tracer
+		metrics := canvas.metricTracer.ListMetrics()
+		resp.Metrics = make([]*protos.MetricInfo, 0, len(metrics))
+		
+		for _, metric := range metrics {
+			// Query the store to get stats about this metric
+			queryOpts := QueryOptions{
+				StartTime: time.Unix(0, 0),
+				EndTime:   time.Now(),
+				Limit:     1, // Just to get count
+			}
+			
+			result, _ := canvas.metricTracer.store.Query(ctx, metric, queryOpts)
+			
+			info := &protos.MetricInfo{
+				Id:         metric.Id,
+				Component:  metric.Component,
+				Method:     strings.Join(metric.Methods, ","),
+				MetricType: metric.MetricType,
+			}
+			
+			info.DataPoints = int64(len(result.Points))
+			if len(result.Points) > 0 {
+				info.OldestTimestamp = float64(result.Points[0].Timestamp.Unix())
+				info.NewestTimestamp = float64(result.Points[len(result.Points)-1].Timestamp.Unix())
+			}
+			
+			resp.Metrics = append(resp.Metrics, info)
+		}
+	})
+	
+	return
+}
+
+// QueryMetrics returns raw metric data points
+func (s *CanvasService) QueryMetrics(ctx context.Context, req *protos.QueryMetricsRequest) (resp *protos.QueryMetricsResponse, err error) {
+	slog.Info("QueryMetrics Request", "req", req)
+	resp = &protos.QueryMetricsResponse{}
+	
+	err = s.withCanvas(req.CanvasId, func(canvas *Canvas) {
+		if canvas.metricTracer == nil || canvas.metricTracer.store == nil {
+			err = status.Error(codes.FailedPrecondition, "no metric store available")
+			return
+		}
+		
+		// Find the metric by ID
+		metric := canvas.metricTracer.GetMetricByID(req.MetricId)
+		if metric == nil {
+			err = status.Errorf(codes.NotFound, "metric %s not found", req.MetricId)
+			return
+		}
+		
+		// Query the store
+		queryOpts := QueryOptions{
+			StartTime: time.Unix(int64(req.StartTime), 0),
+			EndTime:   time.Unix(int64(req.EndTime), 0),
+			Limit:     int(req.Limit),
+		}
+		
+		result, queryErr := canvas.metricTracer.store.Query(ctx, metric, queryOpts)
+		if queryErr != nil {
+			err = status.Errorf(codes.Internal, "failed to query metrics: %v", queryErr)
+			return
+		}
+		
+		// Convert to proto format
+		resp.Points = make([]*protos.MetricPoint, len(result.Points))
+		for i, point := range result.Points {
+			resp.Points[i] = &protos.MetricPoint{
+				Timestamp: float64(point.Timestamp.Unix()),
+				Value:     point.Value,
+			}
+		}
+	})
+	
+	return
+}
+
+// AggregateMetrics returns aggregated metric data
+func (s *CanvasService) AggregateMetrics(ctx context.Context, req *protos.AggregateMetricsRequest) (resp *protos.AggregateMetricsResponse, err error) {
+	slog.Info("AggregateMetrics Request", "req", req)
+	resp = &protos.AggregateMetricsResponse{}
+	
+	err = s.withCanvas(req.CanvasId, func(canvas *Canvas) {
+		if canvas.metricTracer == nil || canvas.metricTracer.store == nil {
+			err = status.Error(codes.FailedPrecondition, "no metric store available")
+			return
+		}
+		
+		// Find the metric by ID
+		metric := canvas.metricTracer.GetMetricByID(req.MetricId)
+		if metric == nil {
+			err = status.Errorf(codes.NotFound, "metric %s not found", req.MetricId)
+			return
+		}
+		
+		// Map string to AggregateFunc
+		var aggFunc AggregateFunc
+		switch req.Function {
+		case "count":
+			aggFunc = AggCount
+		case "sum":
+			aggFunc = AggSum
+		case "avg":
+			aggFunc = AggAvg
+		case "min":
+			aggFunc = AggMin
+		case "max":
+			aggFunc = AggMax
+		case "p50":
+			aggFunc = AggP50
+		case "p90":
+			aggFunc = AggP90
+		case "p95":
+			aggFunc = AggP95
+		case "p99":
+			aggFunc = AggP99
+		default:
+			err = status.Errorf(codes.InvalidArgument, "unknown aggregation function: %s", req.Function)
+			return
+		}
+		
+		// Aggregate the data
+		aggOpts := AggregateOptions{
+			StartTime:  time.Unix(int64(req.StartTime), 0),
+			EndTime:    time.Unix(int64(req.EndTime), 0),
+			Functions:  []AggregateFunc{aggFunc},
+			Window:     time.Duration(req.WindowSize * float64(time.Second)),
+		}
+		
+		result, aggErr := canvas.metricTracer.store.Aggregate(ctx, metric, aggOpts)
+		if aggErr != nil {
+			err = status.Errorf(codes.Internal, "failed to aggregate metrics: %v", aggErr)
+			return
+		}
+		
+		// Convert to proto format
+		resp.Results = make([]*protos.AggregateResult, len(result.Buckets))
+		for i, bucket := range result.Buckets {
+			// Get the value for our requested function
+			value := bucket.Values[aggFunc]
+			resp.Results[i] = &protos.AggregateResult{
+				Timestamp: float64(bucket.Time.Unix()),
+				Value:     value,
+			}
+		}
+	})
+	
+	return
 }

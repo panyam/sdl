@@ -182,19 +182,25 @@ This document outlines the workshop-focused development status and next steps fo
 *   **`[COMPLETED]` Component Interaction**: Tree branches show parent-child relationships
 *   **`[COMPLETED]` Performance Insights**: Duration column and performance summary included
 
+### ✅ COMPLETED: Metric Query Implementation  
+*   **`[COMPLETED]` gRPC Metric Query Endpoints**: ListMetrics, QueryMetrics, AddMetric, DeleteMetric
+*   **`[COMPLETED]` CLI Metrics Command**: add, remove, list, query subcommands with pre-aggregated data
+*   **`[COMPLETED]` Bug Fix**: Fixed nil pointer dereference in RemoveMetricSpec
+*   **`[COMPLETED]` End-to-End Testing**: Created test_metrics_e2e.sh for comprehensive testing
+
 ### 2. Complete Generator Management
 *   **Batch Operations**: Implement StartAllGenerators, StopAllGenerators RPCs
 *   **Flow Integration**: Connect generators to flow analysis for automatic rate setting
 *   **State Persistence**: Add generator state to Canvas save/restore
 *   **Error Recovery**: Handle generator failures gracefully
 
-### 4. Dashboard Integration
+### 3. Dashboard Integration
 *   **gRPC Gateway**: Update all API calls to use new endpoints
 *   **Live Streaming**: Implement server-streaming for real-time metrics
 *   **Generator UI**: Update controls to match new generator model
 *   **Metric Visualization**: Real-time charts with aggregated data
 
-### 5. Testing & Documentation
+### 4. Testing & Documentation
 *   **Load Tests**: Validate 10k, 50k, 100k QPS scenarios
 *   **Latency Tests**: Ensure sub-millisecond event processing
 *   **Memory Tests**: Verify bounded memory usage with RingBuffer

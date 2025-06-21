@@ -48,6 +48,12 @@ SDL is designed as a system modeling and simulation platform with:
 ### 8. Metric-Centric Storage Design
 - **Decision**: MetricPoint doesn't embed Component/Method/MetricType
 - **Rationale**: These are static properties of the Metric, not the data point
+- **Implementation**: MetricPoint only contains timestamp and value
+
+### 9. Pre-Aggregated Metrics Architecture
+- **Decision**: Metrics are aggregated at collection time, not query time
+- **Rationale**: Predictable performance, simplified query logic, bounded storage
+- **Implementation**: MetricTracer calculates aggregations based on MetricSpec during event processing
 - **Implementation**: MetricStore methods accept Metric reference + points
 
 ## Component Architecture

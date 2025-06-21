@@ -10,6 +10,7 @@ import (
 
 	"github.com/panyam/sdl/core"
 	"github.com/panyam/sdl/decl"
+	protos "github.com/panyam/sdl/gen/go/sdl/v1"
 	"github.com/panyam/sdl/runtime"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -129,10 +130,35 @@ func (mt *MetricTracer) Clear() {
 func (mt *MetricTracer) RemoveMetricSpec(specId string) {
 	mt.seriesLock.Lock()
 	defer mt.seriesLock.Unlock()
-	if mt.seriesMap[specId] != nil {
-		mt.seriesMap[specId].Stop()
-		mt.seriesMap[specId] = nil
+	if spec, ok := mt.seriesMap[specId]; ok && spec != nil {
+		spec.Stop()
+		delete(mt.seriesMap, specId)
 	}
+}
+
+// ListMetrics returns all configured metrics
+func (mt *MetricTracer) ListMetrics() []*protos.Metric {
+	mt.seriesLock.RLock()
+	defer mt.seriesLock.RUnlock()
+	
+	metrics := make([]*protos.Metric, 0, len(mt.seriesMap))
+	for _, spec := range mt.seriesMap {
+		if spec.Metric != nil {
+			metrics = append(metrics, spec.Metric)
+		}
+	}
+	return metrics
+}
+
+// GetMetricByID finds a metric by its ID
+func (mt *MetricTracer) GetMetricByID(id string) *protos.Metric {
+	mt.seriesLock.RLock()
+	defer mt.seriesLock.RUnlock()
+	
+	if spec, ok := mt.seriesMap[id]; ok && spec.Metric != nil {
+		return spec.Metric
+	}
+	return nil
 }
 
 // Main Tracer interface methods

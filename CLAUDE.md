@@ -69,7 +69,16 @@ When continuing work on FlowEval, note that we're in the middle of migrating fro
 - **Architecture**: Uses actual ComponentInstance objects from SimpleEval, no duplicate instances
 - **Pattern**: NWBase wrapper provides smart defaults for non-flow-analyzable components
 - **Status**: Steps 1-7 complete, need to finish migration (steps 8-9) and update Canvas integration
-- **Test with**: `go test -v ./runtime -run "TestFlowEvalRuntime|TestSolveSystemFlowsRuntime"`   
+- **Test with**: `go test -v ./runtime -run "TestFlowEvalRuntime|TestSolveSystemFlowsRuntime"`
+
+## Metrics Architecture (June 2025)
+Important: Metrics are pre-aggregated at collection time, not query time:
+- **MetricSpec**: Defines aggregation type (p95, avg, sum) and window size at metric creation
+- **MetricTracer**: Processes events and calculates aggregations based on spec during collection
+- **MetricStore**: Stores pre-aggregated values, not raw events
+- **Query API**: Returns pre-aggregated data points directly (no query-time aggregation)
+- **Bug Fix**: When removing metrics, use `delete(map, key)` not `map[key] = nil` to avoid panics
+- **Testing**: Run `./test_metrics_e2e.sh` for comprehensive end-to-end validation   
 Also be conservative on how many comments are you are adding or modifying unless it is absolutely necessary (for example a comment could be contradicting what is going on - in which case it is prudent to modify it).  
 When modifying files just focus on areas where the change is required instead of diving into a full fledged refactor.
 Make sure you ignore 'gen' and 'node_modules' as it has a lot of files you wont need for most things and are either auto generated or just package dependencies
