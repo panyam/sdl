@@ -657,6 +657,261 @@ export declare type LiveMetricsResponse = Message<"sdl.v1.LiveMetricsResponse"> 
 export declare const LiveMetricsResponseSchema: GenMessage<LiveMetricsResponse>;
 
 /**
+ * @generated from message sdl.v1.QueryMetricsRequest
+ */
+export declare type QueryMetricsRequest = Message<"sdl.v1.QueryMetricsRequest"> & {
+  /**
+   * @generated from field: string canvas_id = 1;
+   */
+  canvasId: string;
+
+  /**
+   * Metric identifier (component.method.type)
+   *
+   * @generated from field: string metric_id = 2;
+   */
+  metricId: string;
+
+  /**
+   * Time range for the query
+   *
+   * Unix timestamp in seconds
+   *
+   * @generated from field: double start_time = 3;
+   */
+  startTime: number;
+
+  /**
+   * Unix timestamp in seconds
+   *
+   * @generated from field: double end_time = 4;
+   */
+  endTime: number;
+
+  /**
+   * Optional: limit number of points returned
+   *
+   * @generated from field: int32 limit = 5;
+   */
+  limit: number;
+};
+
+/**
+ * Describes the message sdl.v1.QueryMetricsRequest.
+ * Use `create(QueryMetricsRequestSchema)` to create a new message.
+ */
+export declare const QueryMetricsRequestSchema: GenMessage<QueryMetricsRequest>;
+
+/**
+ * @generated from message sdl.v1.QueryMetricsResponse
+ */
+export declare type QueryMetricsResponse = Message<"sdl.v1.QueryMetricsResponse"> & {
+  /**
+   * @generated from field: repeated sdl.v1.MetricPoint points = 1;
+   */
+  points: MetricPoint[];
+};
+
+/**
+ * Describes the message sdl.v1.QueryMetricsResponse.
+ * Use `create(QueryMetricsResponseSchema)` to create a new message.
+ */
+export declare const QueryMetricsResponseSchema: GenMessage<QueryMetricsResponse>;
+
+/**
+ * @generated from message sdl.v1.MetricPoint
+ */
+export declare type MetricPoint = Message<"sdl.v1.MetricPoint"> & {
+  /**
+   * Unix timestamp in seconds
+   *
+   * @generated from field: double timestamp = 1;
+   */
+  timestamp: number;
+
+  /**
+   * @generated from field: double value = 2;
+   */
+  value: number;
+};
+
+/**
+ * Describes the message sdl.v1.MetricPoint.
+ * Use `create(MetricPointSchema)` to create a new message.
+ */
+export declare const MetricPointSchema: GenMessage<MetricPoint>;
+
+/**
+ * @generated from message sdl.v1.AggregateMetricsRequest
+ */
+export declare type AggregateMetricsRequest = Message<"sdl.v1.AggregateMetricsRequest"> & {
+  /**
+   * @generated from field: string canvas_id = 1;
+   */
+  canvasId: string;
+
+  /**
+   * @generated from field: string metric_id = 2;
+   */
+  metricId: string;
+
+  /**
+   * @generated from field: double start_time = 3;
+   */
+  startTime: number;
+
+  /**
+   * @generated from field: double end_time = 4;
+   */
+  endTime: number;
+
+  /**
+   * Aggregation function: "count", "sum", "avg", "min", "max", "p50", "p90", "p95", "p99"
+   *
+   * @generated from field: string function = 5;
+   */
+  function: string;
+
+  /**
+   * Optional: window size for time-based aggregation (in seconds)
+   *
+   * @generated from field: double window_size = 6;
+   */
+  windowSize: number;
+};
+
+/**
+ * Describes the message sdl.v1.AggregateMetricsRequest.
+ * Use `create(AggregateMetricsRequestSchema)` to create a new message.
+ */
+export declare const AggregateMetricsRequestSchema: GenMessage<AggregateMetricsRequest>;
+
+/**
+ * @generated from message sdl.v1.AggregateMetricsResponse
+ */
+export declare type AggregateMetricsResponse = Message<"sdl.v1.AggregateMetricsResponse"> & {
+  /**
+   * Single value if no windowing, multiple if windowed
+   *
+   * @generated from field: repeated sdl.v1.AggregateResult results = 1;
+   */
+  results: AggregateResult[];
+};
+
+/**
+ * Describes the message sdl.v1.AggregateMetricsResponse.
+ * Use `create(AggregateMetricsResponseSchema)` to create a new message.
+ */
+export declare const AggregateMetricsResponseSchema: GenMessage<AggregateMetricsResponse>;
+
+/**
+ * @generated from message sdl.v1.AggregateResult
+ */
+export declare type AggregateResult = Message<"sdl.v1.AggregateResult"> & {
+  /**
+   * Start of window (if windowed)
+   *
+   * @generated from field: double timestamp = 1;
+   */
+  timestamp: number;
+
+  /**
+   * @generated from field: double value = 2;
+   */
+  value: number;
+};
+
+/**
+ * Describes the message sdl.v1.AggregateResult.
+ * Use `create(AggregateResultSchema)` to create a new message.
+ */
+export declare const AggregateResultSchema: GenMessage<AggregateResult>;
+
+/**
+ * List all available metrics
+ *
+ * @generated from message sdl.v1.ListMetricsRequest
+ */
+export declare type ListMetricsRequest = Message<"sdl.v1.ListMetricsRequest"> & {
+  /**
+   * @generated from field: string canvas_id = 1;
+   */
+  canvasId: string;
+};
+
+/**
+ * Describes the message sdl.v1.ListMetricsRequest.
+ * Use `create(ListMetricsRequestSchema)` to create a new message.
+ */
+export declare const ListMetricsRequestSchema: GenMessage<ListMetricsRequest>;
+
+/**
+ * @generated from message sdl.v1.ListMetricsResponse
+ */
+export declare type ListMetricsResponse = Message<"sdl.v1.ListMetricsResponse"> & {
+  /**
+   * @generated from field: repeated sdl.v1.MetricInfo metrics = 1;
+   */
+  metrics: MetricInfo[];
+};
+
+/**
+ * Describes the message sdl.v1.ListMetricsResponse.
+ * Use `create(ListMetricsResponseSchema)` to create a new message.
+ */
+export declare const ListMetricsResponseSchema: GenMessage<ListMetricsResponse>;
+
+/**
+ * @generated from message sdl.v1.MetricInfo
+ */
+export declare type MetricInfo = Message<"sdl.v1.MetricInfo"> & {
+  /**
+   * component.method.type
+   *
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string component = 2;
+   */
+  component: string;
+
+  /**
+   * @generated from field: string method = 3;
+   */
+  method: string;
+
+  /**
+   * @generated from field: string metric_type = 4;
+   */
+  metricType: string;
+
+  /**
+   * Number of data points stored
+   *
+   * @generated from field: int64 data_points = 5;
+   */
+  dataPoints: bigint;
+
+  /**
+   * @generated from field: double oldest_timestamp = 6;
+   */
+  oldestTimestamp: number;
+
+  /**
+   * @generated from field: double newest_timestamp = 7;
+   */
+  newestTimestamp: number;
+};
+
+/**
+ * Describes the message sdl.v1.MetricInfo.
+ * Use `create(MetricInfoSchema)` to create a new message.
+ */
+export declare const MetricInfoSchema: GenMessage<MetricInfo>;
+
+/**
  * @generated from message sdl.v1.ExecuteTraceRequest
  */
 export declare type ExecuteTraceRequest = Message<"sdl.v1.ExecuteTraceRequest"> & {
@@ -987,6 +1242,36 @@ export declare const CanvasService: GenService<{
     methodKind: "unary";
     input: typeof ExecuteTraceRequestSchema;
     output: typeof ExecuteTraceResponseSchema;
+  },
+  /**
+   * List all available metrics
+   *
+   * @generated from rpc sdl.v1.CanvasService.ListMetrics
+   */
+  listMetrics: {
+    methodKind: "unary";
+    input: typeof ListMetricsRequestSchema;
+    output: typeof ListMetricsResponseSchema;
+  },
+  /**
+   * Query raw metric data points
+   *
+   * @generated from rpc sdl.v1.CanvasService.QueryMetrics
+   */
+  queryMetrics: {
+    methodKind: "unary";
+    input: typeof QueryMetricsRequestSchema;
+    output: typeof QueryMetricsResponseSchema;
+  },
+  /**
+   * Get aggregated metric data
+   *
+   * @generated from rpc sdl.v1.CanvasService.AggregateMetrics
+   */
+  aggregateMetrics: {
+    methodKind: "unary";
+    input: typeof AggregateMetricsRequestSchema;
+    output: typeof AggregateMetricsResponseSchema;
   },
 }>;
 

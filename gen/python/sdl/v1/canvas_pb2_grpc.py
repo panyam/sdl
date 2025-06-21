@@ -111,6 +111,21 @@ class CanvasServiceStub(object):
                 request_serializer=sdl_dot_v1_dot_canvas__pb2.ExecuteTraceRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_canvas__pb2.ExecuteTraceResponse.FromString,
                 _registered_method=True)
+        self.ListMetrics = channel.unary_unary(
+                '/sdl.v1.CanvasService/ListMetrics',
+                request_serializer=sdl_dot_v1_dot_canvas__pb2.ListMetricsRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_canvas__pb2.ListMetricsResponse.FromString,
+                _registered_method=True)
+        self.QueryMetrics = channel.unary_unary(
+                '/sdl.v1.CanvasService/QueryMetrics',
+                request_serializer=sdl_dot_v1_dot_canvas__pb2.QueryMetricsRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_canvas__pb2.QueryMetricsResponse.FromString,
+                _registered_method=True)
+        self.AggregateMetrics = channel.unary_unary(
+                '/sdl.v1.CanvasService/AggregateMetrics',
+                request_serializer=sdl_dot_v1_dot_canvas__pb2.AggregateMetricsRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_canvas__pb2.AggregateMetricsResponse.FromString,
+                _registered_method=True)
 
 
 class CanvasServiceServicer(object):
@@ -250,6 +265,29 @@ class CanvasServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ListMetrics(self, request, context):
+        """--- Metric Query Operations ---
+
+        List all available metrics
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def QueryMetrics(self, request, context):
+        """Query raw metric data points
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def AggregateMetrics(self, request, context):
+        """Get aggregated metric data
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_CanvasServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -347,6 +385,21 @@ def add_CanvasServiceServicer_to_server(servicer, server):
                     servicer.ExecuteTrace,
                     request_deserializer=sdl_dot_v1_dot_canvas__pb2.ExecuteTraceRequest.FromString,
                     response_serializer=sdl_dot_v1_dot_canvas__pb2.ExecuteTraceResponse.SerializeToString,
+            ),
+            'ListMetrics': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListMetrics,
+                    request_deserializer=sdl_dot_v1_dot_canvas__pb2.ListMetricsRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_canvas__pb2.ListMetricsResponse.SerializeToString,
+            ),
+            'QueryMetrics': grpc.unary_unary_rpc_method_handler(
+                    servicer.QueryMetrics,
+                    request_deserializer=sdl_dot_v1_dot_canvas__pb2.QueryMetricsRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_canvas__pb2.QueryMetricsResponse.SerializeToString,
+            ),
+            'AggregateMetrics': grpc.unary_unary_rpc_method_handler(
+                    servicer.AggregateMetrics,
+                    request_deserializer=sdl_dot_v1_dot_canvas__pb2.AggregateMetricsRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_canvas__pb2.AggregateMetricsResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -864,6 +917,87 @@ class CanvasService(object):
             '/sdl.v1.CanvasService/ExecuteTrace',
             sdl_dot_v1_dot_canvas__pb2.ExecuteTraceRequest.SerializeToString,
             sdl_dot_v1_dot_canvas__pb2.ExecuteTraceResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ListMetrics(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.CanvasService/ListMetrics',
+            sdl_dot_v1_dot_canvas__pb2.ListMetricsRequest.SerializeToString,
+            sdl_dot_v1_dot_canvas__pb2.ListMetricsResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def QueryMetrics(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.CanvasService/QueryMetrics',
+            sdl_dot_v1_dot_canvas__pb2.QueryMetricsRequest.SerializeToString,
+            sdl_dot_v1_dot_canvas__pb2.QueryMetricsResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def AggregateMetrics(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.CanvasService/AggregateMetrics',
+            sdl_dot_v1_dot_canvas__pb2.AggregateMetricsRequest.SerializeToString,
+            sdl_dot_v1_dot_canvas__pb2.AggregateMetricsResponse.FromString,
             options,
             channel_credentials,
             insecure,

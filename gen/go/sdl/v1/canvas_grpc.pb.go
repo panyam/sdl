@@ -40,6 +40,9 @@ const (
 	CanvasService_DeleteMetric_FullMethodName       = "/sdl.v1.CanvasService/DeleteMetric"
 	CanvasService_LiveMetric_FullMethodName         = "/sdl.v1.CanvasService/LiveMetric"
 	CanvasService_ExecuteTrace_FullMethodName       = "/sdl.v1.CanvasService/ExecuteTrace"
+	CanvasService_ListMetrics_FullMethodName        = "/sdl.v1.CanvasService/ListMetrics"
+	CanvasService_QueryMetrics_FullMethodName       = "/sdl.v1.CanvasService/QueryMetrics"
+	CanvasService_AggregateMetrics_FullMethodName   = "/sdl.v1.CanvasService/AggregateMetrics"
 )
 
 // CanvasServiceClient is the client API for CanvasService service.
@@ -88,6 +91,12 @@ type CanvasServiceClient interface {
 	LiveMetric(ctx context.Context, in *LiveMetricsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LiveMetricsResponse], error)
 	// Execute a single trace for debugging/analysis
 	ExecuteTrace(ctx context.Context, in *ExecuteTraceRequest, opts ...grpc.CallOption) (*ExecuteTraceResponse, error)
+	// List all available metrics
+	ListMetrics(ctx context.Context, in *ListMetricsRequest, opts ...grpc.CallOption) (*ListMetricsResponse, error)
+	// Query raw metric data points
+	QueryMetrics(ctx context.Context, in *QueryMetricsRequest, opts ...grpc.CallOption) (*QueryMetricsResponse, error)
+	// Get aggregated metric data
+	AggregateMetrics(ctx context.Context, in *AggregateMetricsRequest, opts ...grpc.CallOption) (*AggregateMetricsResponse, error)
 }
 
 type canvasServiceClient struct {
@@ -297,6 +306,36 @@ func (c *canvasServiceClient) ExecuteTrace(ctx context.Context, in *ExecuteTrace
 	return out, nil
 }
 
+func (c *canvasServiceClient) ListMetrics(ctx context.Context, in *ListMetricsRequest, opts ...grpc.CallOption) (*ListMetricsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListMetricsResponse)
+	err := c.cc.Invoke(ctx, CanvasService_ListMetrics_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *canvasServiceClient) QueryMetrics(ctx context.Context, in *QueryMetricsRequest, opts ...grpc.CallOption) (*QueryMetricsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryMetricsResponse)
+	err := c.cc.Invoke(ctx, CanvasService_QueryMetrics_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *canvasServiceClient) AggregateMetrics(ctx context.Context, in *AggregateMetricsRequest, opts ...grpc.CallOption) (*AggregateMetricsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AggregateMetricsResponse)
+	err := c.cc.Invoke(ctx, CanvasService_AggregateMetrics_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CanvasServiceServer is the server API for CanvasService service.
 // All implementations should embed UnimplementedCanvasServiceServer
 // for forward compatibility.
@@ -343,6 +382,12 @@ type CanvasServiceServer interface {
 	LiveMetric(*LiveMetricsRequest, grpc.ServerStreamingServer[LiveMetricsResponse]) error
 	// Execute a single trace for debugging/analysis
 	ExecuteTrace(context.Context, *ExecuteTraceRequest) (*ExecuteTraceResponse, error)
+	// List all available metrics
+	ListMetrics(context.Context, *ListMetricsRequest) (*ListMetricsResponse, error)
+	// Query raw metric data points
+	QueryMetrics(context.Context, *QueryMetricsRequest) (*QueryMetricsResponse, error)
+	// Get aggregated metric data
+	AggregateMetrics(context.Context, *AggregateMetricsRequest) (*AggregateMetricsResponse, error)
 }
 
 // UnimplementedCanvasServiceServer should be embedded to have
@@ -408,6 +453,15 @@ func (UnimplementedCanvasServiceServer) LiveMetric(*LiveMetricsRequest, grpc.Ser
 }
 func (UnimplementedCanvasServiceServer) ExecuteTrace(context.Context, *ExecuteTraceRequest) (*ExecuteTraceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExecuteTrace not implemented")
+}
+func (UnimplementedCanvasServiceServer) ListMetrics(context.Context, *ListMetricsRequest) (*ListMetricsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListMetrics not implemented")
+}
+func (UnimplementedCanvasServiceServer) QueryMetrics(context.Context, *QueryMetricsRequest) (*QueryMetricsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QueryMetrics not implemented")
+}
+func (UnimplementedCanvasServiceServer) AggregateMetrics(context.Context, *AggregateMetricsRequest) (*AggregateMetricsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AggregateMetrics not implemented")
 }
 func (UnimplementedCanvasServiceServer) testEmbeddedByValue() {}
 
@@ -764,6 +818,60 @@ func _CanvasService_ExecuteTrace_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CanvasService_ListMetrics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListMetricsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CanvasServiceServer).ListMetrics(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CanvasService_ListMetrics_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CanvasServiceServer).ListMetrics(ctx, req.(*ListMetricsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CanvasService_QueryMetrics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryMetricsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CanvasServiceServer).QueryMetrics(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CanvasService_QueryMetrics_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CanvasServiceServer).QueryMetrics(ctx, req.(*QueryMetricsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CanvasService_AggregateMetrics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AggregateMetricsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CanvasServiceServer).AggregateMetrics(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CanvasService_AggregateMetrics_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CanvasServiceServer).AggregateMetrics(ctx, req.(*AggregateMetricsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CanvasService_ServiceDesc is the grpc.ServiceDesc for CanvasService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -842,6 +950,18 @@ var CanvasService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ExecuteTrace",
 			Handler:    _CanvasService_ExecuteTrace_Handler,
+		},
+		{
+			MethodName: "ListMetrics",
+			Handler:    _CanvasService_ListMetrics_Handler,
+		},
+		{
+			MethodName: "QueryMetrics",
+			Handler:    _CanvasService_QueryMetrics_Handler,
+		},
+		{
+			MethodName: "AggregateMetrics",
+			Handler:    _CanvasService_AggregateMetrics_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

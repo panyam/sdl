@@ -451,6 +451,37 @@
         ]
       }
     },
+    "/v1/canvases/{canvasId}/metrics": {
+      "get": {
+        "summary": "List all available metrics",
+        "operationId": "CanvasService_ListMetrics",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListMetricsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "canvasId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "CanvasService"
+        ]
+      }
+    },
     "/v1/canvases/{canvasId}/metrics/subscribe": {
       "get": {
         "operationId": "CanvasService_LiveMetric",
@@ -520,6 +551,134 @@
             "in": "path",
             "required": true,
             "type": "string"
+          }
+        ],
+        "tags": [
+          "CanvasService"
+        ]
+      }
+    },
+    "/v1/canvases/{canvasId}/metrics/{metricId}/aggregate": {
+      "get": {
+        "summary": "Get aggregated metric data",
+        "operationId": "CanvasService_AggregateMetrics",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1AggregateMetricsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "canvasId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "metricId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "startTime",
+            "in": "query",
+            "required": false,
+            "type": "number",
+            "format": "double"
+          },
+          {
+            "name": "endTime",
+            "in": "query",
+            "required": false,
+            "type": "number",
+            "format": "double"
+          },
+          {
+            "name": "function",
+            "description": "Aggregation function: \"count\", \"sum\", \"avg\", \"min\", \"max\", \"p50\", \"p90\", \"p95\", \"p99\"",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "windowSize",
+            "description": "Optional: window size for time-based aggregation (in seconds)",
+            "in": "query",
+            "required": false,
+            "type": "number",
+            "format": "double"
+          }
+        ],
+        "tags": [
+          "CanvasService"
+        ]
+      }
+    },
+    "/v1/canvases/{canvasId}/metrics/{metricId}/query": {
+      "get": {
+        "summary": "Query raw metric data points",
+        "operationId": "CanvasService_QueryMetrics",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1QueryMetricsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "canvasId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "metricId",
+            "description": "Metric identifier (component.method.type)",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "startTime",
+            "description": "Time range for the query\n\nUnix timestamp in seconds",
+            "in": "query",
+            "required": false,
+            "type": "number",
+            "format": "double"
+          },
+          {
+            "name": "endTime",
+            "description": "Unix timestamp in seconds",
+            "in": "query",
+            "required": false,
+            "type": "number",
+            "format": "double"
+          },
+          {
+            "name": "limit",
+            "description": "Optional: limit number of points returned",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
           }
         ],
         "tags": [
@@ -958,6 +1117,33 @@
         }
       }
     },
+    "v1AggregateMetricsResponse": {
+      "type": "object",
+      "properties": {
+        "results": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1AggregateResult"
+          },
+          "title": "Single value if no windowing, multiple if windowed"
+        }
+      }
+    },
+    "v1AggregateResult": {
+      "type": "object",
+      "properties": {
+        "timestamp": {
+          "type": "number",
+          "format": "double",
+          "title": "Start of window (if windowed)"
+        },
+        "value": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
     "v1Canvas": {
       "type": "object",
       "properties": {
@@ -1141,6 +1327,18 @@
         }
       }
     },
+    "v1ListMetricsResponse": {
+      "type": "object",
+      "properties": {
+        "metrics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1MetricInfo"
+          }
+        }
+      }
+    },
     "v1LiveMetricsResponse": {
       "type": "object"
     },
@@ -1206,6 +1404,51 @@
         }
       }
     },
+    "v1MetricInfo": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "component.method.type"
+        },
+        "component": {
+          "type": "string"
+        },
+        "method": {
+          "type": "string"
+        },
+        "metricType": {
+          "type": "string"
+        },
+        "dataPoints": {
+          "type": "string",
+          "format": "int64",
+          "title": "Number of data points stored"
+        },
+        "oldestTimestamp": {
+          "type": "number",
+          "format": "double"
+        },
+        "newestTimestamp": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "v1MetricPoint": {
+      "type": "object",
+      "properties": {
+        "timestamp": {
+          "type": "number",
+          "format": "double",
+          "title": "Unix timestamp in seconds"
+        },
+        "value": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
     "v1Pagination": {
       "type": "object",
       "properties": {
@@ -1250,6 +1493,18 @@
     },
     "v1PauseGeneratorResponse": {
       "type": "object"
+    },
+    "v1QueryMetricsResponse": {
+      "type": "object",
+      "properties": {
+        "points": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1MetricPoint"
+          }
+        }
+      }
     },
     "v1ResumeGeneratorResponse": {
       "type": "object"

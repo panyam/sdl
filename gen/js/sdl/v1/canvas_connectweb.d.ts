@@ -5,7 +5,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { AddGeneratorRequest, AddGeneratorResponse, AddMetricRequest, AddMetricResponse, CreateCanvasRequest, CreateCanvasResponse, DeleteCanvasRequest, DeleteCanvasResponse, DeleteGeneratorRequest, DeleteGeneratorResponse, DeleteMetricRequest, DeleteMetricResponse, ExecuteTraceRequest, ExecuteTraceResponse, GetCanvasRequest, GetCanvasResponse, GetGeneratorRequest, GetGeneratorResponse, ListCanvasesRequest, ListCanvasesResponse, ListGeneratorsRequest, ListGeneratorsResponse, LiveMetricsRequest, LiveMetricsResponse, LoadFileRequest, LoadFileResponse, PauseGeneratorRequest, PauseGeneratorResponse, ResumeGeneratorRequest, ResumeGeneratorResponse, StartAllGeneratorsRequest, StartAllGeneratorsResponse, StopAllGeneratorsRequest, StopAllGeneratorsResponse, UpdateGeneratorRequest, UpdateGeneratorResponse, UseSystemRequest, UseSystemResponse } from "./canvas_pb.js";
+import { AddGeneratorRequest, AddGeneratorResponse, AddMetricRequest, AddMetricResponse, AggregateMetricsRequest, AggregateMetricsResponse, CreateCanvasRequest, CreateCanvasResponse, DeleteCanvasRequest, DeleteCanvasResponse, DeleteGeneratorRequest, DeleteGeneratorResponse, DeleteMetricRequest, DeleteMetricResponse, ExecuteTraceRequest, ExecuteTraceResponse, GetCanvasRequest, GetCanvasResponse, GetGeneratorRequest, GetGeneratorResponse, ListCanvasesRequest, ListCanvasesResponse, ListGeneratorsRequest, ListGeneratorsResponse, ListMetricsRequest, ListMetricsResponse, LiveMetricsRequest, LiveMetricsResponse, LoadFileRequest, LoadFileResponse, PauseGeneratorRequest, PauseGeneratorResponse, QueryMetricsRequest, QueryMetricsResponse, ResumeGeneratorRequest, ResumeGeneratorResponse, StartAllGeneratorsRequest, StartAllGeneratorsResponse, StopAllGeneratorsRequest, StopAllGeneratorsResponse, UpdateGeneratorRequest, UpdateGeneratorResponse, UseSystemRequest, UseSystemResponse } from "./canvas_pb.js";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -215,6 +215,39 @@ export declare const CanvasService: {
       readonly name: "ExecuteTrace",
       readonly I: typeof ExecuteTraceRequest,
       readonly O: typeof ExecuteTraceResponse,
+      readonly kind: MethodKind.Unary,
+    },
+    /**
+     * List all available metrics
+     *
+     * @generated from rpc sdl.v1.CanvasService.ListMetrics
+     */
+    readonly listMetrics: {
+      readonly name: "ListMetrics",
+      readonly I: typeof ListMetricsRequest,
+      readonly O: typeof ListMetricsResponse,
+      readonly kind: MethodKind.Unary,
+    },
+    /**
+     * Query raw metric data points
+     *
+     * @generated from rpc sdl.v1.CanvasService.QueryMetrics
+     */
+    readonly queryMetrics: {
+      readonly name: "QueryMetrics",
+      readonly I: typeof QueryMetricsRequest,
+      readonly O: typeof QueryMetricsResponse,
+      readonly kind: MethodKind.Unary,
+    },
+    /**
+     * Get aggregated metric data
+     *
+     * @generated from rpc sdl.v1.CanvasService.AggregateMetrics
+     */
+    readonly aggregateMetrics: {
+      readonly name: "AggregateMetrics",
+      readonly I: typeof AggregateMetricsRequest,
+      readonly O: typeof AggregateMetricsResponse,
       readonly kind: MethodKind.Unary,
     },
   }
