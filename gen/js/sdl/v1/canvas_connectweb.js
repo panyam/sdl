@@ -5,7 +5,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { AddGeneratorRequest, AddGeneratorResponse, AddMetricRequest, AddMetricResponse, AggregateMetricsRequest, AggregateMetricsResponse, CreateCanvasRequest, CreateCanvasResponse, DeleteCanvasRequest, DeleteCanvasResponse, DeleteGeneratorRequest, DeleteGeneratorResponse, DeleteMetricRequest, DeleteMetricResponse, ExecuteTraceRequest, ExecuteTraceResponse, GetCanvasRequest, GetCanvasResponse, GetGeneratorRequest, GetGeneratorResponse, ListCanvasesRequest, ListCanvasesResponse, ListGeneratorsRequest, ListGeneratorsResponse, ListMetricsRequest, ListMetricsResponse, LiveMetricsRequest, LiveMetricsResponse, LoadFileRequest, LoadFileResponse, PauseGeneratorRequest, PauseGeneratorResponse, QueryMetricsRequest, QueryMetricsResponse, ResumeGeneratorRequest, ResumeGeneratorResponse, StartAllGeneratorsRequest, StartAllGeneratorsResponse, StopAllGeneratorsRequest, StopAllGeneratorsResponse, UpdateGeneratorRequest, UpdateGeneratorResponse, UseSystemRequest, UseSystemResponse } from "./canvas_pb.js";
+import { AddGeneratorRequest, AddGeneratorResponse, AddMetricRequest, AddMetricResponse, AggregateMetricsRequest, AggregateMetricsResponse, CreateCanvasRequest, CreateCanvasResponse, DeleteCanvasRequest, DeleteCanvasResponse, DeleteGeneratorRequest, DeleteGeneratorResponse, DeleteMetricRequest, DeleteMetricResponse, ExecuteTraceRequest, ExecuteTraceResponse, GetCanvasRequest, GetCanvasResponse, GetGeneratorRequest, GetGeneratorResponse, GetParametersRequest, GetParametersResponse, ListCanvasesRequest, ListCanvasesResponse, ListGeneratorsRequest, ListGeneratorsResponse, ListMetricsRequest, ListMetricsResponse, LiveMetricsRequest, LiveMetricsResponse, LoadFileRequest, LoadFileResponse, PauseGeneratorRequest, PauseGeneratorResponse, QueryMetricsRequest, QueryMetricsResponse, ResumeGeneratorRequest, ResumeGeneratorResponse, SetParameterRequest, SetParameterResponse, StartAllGeneratorsRequest, StartAllGeneratorsResponse, StopAllGeneratorsRequest, StopAllGeneratorsResponse, UpdateGeneratorRequest, UpdateGeneratorResponse, UseSystemRequest, UseSystemResponse } from "./canvas_pb.js";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -174,6 +174,40 @@ export const CanvasService = {
       kind: MethodKind.Unary,
     },
     /**
+     * Execute a single trace for debugging/analysis
+     *
+     * @generated from rpc sdl.v1.CanvasService.ExecuteTrace
+     */
+    executeTrace: {
+      name: "ExecuteTrace",
+      I: ExecuteTraceRequest,
+      O: ExecuteTraceResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * ----- Parameter Operations -----
+     * Set a component parameter value
+     *
+     * @generated from rpc sdl.v1.CanvasService.SetParameter
+     */
+    setParameter: {
+      name: "SetParameter",
+      I: SetParameterRequest,
+      O: SetParameterResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * Get parameter values
+     *
+     * @generated from rpc sdl.v1.CanvasService.GetParameters
+     */
+    getParameters: {
+      name: "GetParameters",
+      I: GetParametersRequest,
+      O: GetParametersResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
      *  ----- Generator Operations -----
      * Adds a metric to live plot
      *
@@ -205,17 +239,6 @@ export const CanvasService = {
       I: LiveMetricsRequest,
       O: LiveMetricsResponse,
       kind: MethodKind.ServerStreaming,
-    },
-    /**
-     * Execute a single trace for debugging/analysis
-     *
-     * @generated from rpc sdl.v1.CanvasService.ExecuteTrace
-     */
-    executeTrace: {
-      name: "ExecuteTrace",
-      I: ExecuteTraceRequest,
-      O: ExecuteTraceResponse,
-      kind: MethodKind.Unary,
     },
     /**
      * List all available metrics

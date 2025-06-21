@@ -276,6 +276,40 @@ export declare const StartAllGeneratorsRequestSchema: GenMessage<StartAllGenerat
  * @generated from message sdl.v1.StartAllGeneratorsResponse
  */
 export declare type StartAllGeneratorsResponse = Message<"sdl.v1.StartAllGeneratorsResponse"> & {
+  /**
+   * Total number of generators
+   *
+   * @generated from field: int32 total_generators = 1;
+   */
+  totalGenerators: number;
+
+  /**
+   * Number successfully started
+   *
+   * @generated from field: int32 started_count = 2;
+   */
+  startedCount: number;
+
+  /**
+   * Number already running
+   *
+   * @generated from field: int32 already_running_count = 3;
+   */
+  alreadyRunningCount: number;
+
+  /**
+   * Number that failed to start
+   *
+   * @generated from field: int32 failed_count = 4;
+   */
+  failedCount: number;
+
+  /**
+   * IDs of generators that failed
+   *
+   * @generated from field: repeated string failed_ids = 5;
+   */
+  failedIds: string[];
 };
 
 /**
@@ -304,6 +338,40 @@ export declare const StopAllGeneratorsRequestSchema: GenMessage<StopAllGenerator
  * @generated from message sdl.v1.StopAllGeneratorsResponse
  */
 export declare type StopAllGeneratorsResponse = Message<"sdl.v1.StopAllGeneratorsResponse"> & {
+  /**
+   * Total number of generators
+   *
+   * @generated from field: int32 total_generators = 1;
+   */
+  totalGenerators: number;
+
+  /**
+   * Number successfully stopped
+   *
+   * @generated from field: int32 stopped_count = 2;
+   */
+  stoppedCount: number;
+
+  /**
+   * Number already stopped
+   *
+   * @generated from field: int32 already_stopped_count = 3;
+   */
+  alreadyStoppedCount: number;
+
+  /**
+   * Number that failed to stop
+   *
+   * @generated from field: int32 failed_count = 4;
+   */
+  failedCount: number;
+
+  /**
+   * IDs of generators that failed
+   *
+   * @generated from field: repeated string failed_ids = 5;
+   */
+  failedIds: string[];
 };
 
 /**
@@ -1056,6 +1124,120 @@ export declare type TraceEvent = Message<"sdl.v1.TraceEvent"> & {
 export declare const TraceEventSchema: GenMessage<TraceEvent>;
 
 /**
+ * Request to set a parameter value
+ *
+ * @generated from message sdl.v1.SetParameterRequest
+ */
+export declare type SetParameterRequest = Message<"sdl.v1.SetParameterRequest"> & {
+  /**
+   * @generated from field: string canvas_id = 1;
+   */
+  canvasId: string;
+
+  /**
+   * dot-separated path like "server.cache.HitRate"
+   *
+   * @generated from field: string path = 2;
+   */
+  path: string;
+
+  /**
+   * SDL expression string (e.g., "42", "true", "'hello'", "[1,2,3]", etc.)
+   *
+   * @generated from field: string new_value = 3;
+   */
+  newValue: string;
+};
+
+/**
+ * Describes the message sdl.v1.SetParameterRequest.
+ * Use `create(SetParameterRequestSchema)` to create a new message.
+ */
+export declare const SetParameterRequestSchema: GenMessage<SetParameterRequest>;
+
+/**
+ * Response from setting a parameter
+ *
+ * @generated from message sdl.v1.SetParameterResponse
+ */
+export declare type SetParameterResponse = Message<"sdl.v1.SetParameterResponse"> & {
+  /**
+   * @generated from field: bool success = 1;
+   */
+  success: boolean;
+
+  /**
+   * Set if success is false
+   *
+   * @generated from field: string error_message = 2;
+   */
+  errorMessage: string;
+
+  /**
+   * SDL expression string (e.g., "42", "true", "'hello'", "[1,2,3]", etc.)
+   *
+   * @generated from field: string new_value = 3;
+   */
+  newValue: string;
+
+  /**
+   * @generated from field: string old_value = 4;
+   */
+  oldValue: string;
+};
+
+/**
+ * Describes the message sdl.v1.SetParameterResponse.
+ * Use `create(SetParameterResponseSchema)` to create a new message.
+ */
+export declare const SetParameterResponseSchema: GenMessage<SetParameterResponse>;
+
+/**
+ * Request to get parameter values
+ *
+ * @generated from message sdl.v1.GetParametersRequest
+ */
+export declare type GetParametersRequest = Message<"sdl.v1.GetParametersRequest"> & {
+  /**
+   * @generated from field: string canvas_id = 1;
+   */
+  canvasId: string;
+
+  /**
+   * Optional: if empty, return all parameters
+   *
+   * @generated from field: string path = 2;
+   */
+  path: string;
+};
+
+/**
+ * Describes the message sdl.v1.GetParametersRequest.
+ * Use `create(GetParametersRequestSchema)` to create a new message.
+ */
+export declare const GetParametersRequestSchema: GenMessage<GetParametersRequest>;
+
+/**
+ * Response containing parameter values
+ *
+ * @generated from message sdl.v1.GetParametersResponse
+ */
+export declare type GetParametersResponse = Message<"sdl.v1.GetParametersResponse"> & {
+  /**
+   * Values as SDL expression strings
+   *
+   * @generated from field: map<string, string> parameters = 1;
+   */
+  parameters: { [key: string]: string };
+};
+
+/**
+ * Describes the message sdl.v1.GetParametersResponse.
+ * Use `create(GetParametersResponseSchema)` to create a new message.
+ */
+export declare const GetParametersResponseSchema: GenMessage<GetParametersResponse>;
+
+/**
  * *
  * Service for interacting with a canvas.
  *
@@ -1204,6 +1386,37 @@ export declare const CanvasService: GenService<{
     output: typeof DeleteGeneratorResponseSchema;
   },
   /**
+   * Execute a single trace for debugging/analysis
+   *
+   * @generated from rpc sdl.v1.CanvasService.ExecuteTrace
+   */
+  executeTrace: {
+    methodKind: "unary";
+    input: typeof ExecuteTraceRequestSchema;
+    output: typeof ExecuteTraceResponseSchema;
+  },
+  /**
+   * ----- Parameter Operations -----
+   * Set a component parameter value
+   *
+   * @generated from rpc sdl.v1.CanvasService.SetParameter
+   */
+  setParameter: {
+    methodKind: "unary";
+    input: typeof SetParameterRequestSchema;
+    output: typeof SetParameterResponseSchema;
+  },
+  /**
+   * Get parameter values
+   *
+   * @generated from rpc sdl.v1.CanvasService.GetParameters
+   */
+  getParameters: {
+    methodKind: "unary";
+    input: typeof GetParametersRequestSchema;
+    output: typeof GetParametersResponseSchema;
+  },
+  /**
    *  ----- Generator Operations -----
    * Adds a metric to live plot
    *
@@ -1232,16 +1445,6 @@ export declare const CanvasService: GenService<{
     methodKind: "server_streaming";
     input: typeof LiveMetricsRequestSchema;
     output: typeof LiveMetricsResponseSchema;
-  },
-  /**
-   * Execute a single trace for debugging/analysis
-   *
-   * @generated from rpc sdl.v1.CanvasService.ExecuteTrace
-   */
-  executeTrace: {
-    methodKind: "unary";
-    input: typeof ExecuteTraceRequestSchema;
-    output: typeof ExecuteTraceResponseSchema;
   },
   /**
    * List all available metrics

@@ -105,8 +105,10 @@ var genStartCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
 			// Start all generators
+			var resp *v1.StartAllGeneratorsResponse
 			err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
-				_, err := client.StartAllGenerators(ctx, &v1.StartAllGeneratorsRequest{
+				var err error
+				resp, err = client.StartAllGenerators(ctx, &v1.StartAllGeneratorsRequest{
 					CanvasId: canvasID,
 				})
 				return err
@@ -115,7 +117,27 @@ var genStartCmd = &cobra.Command{
 				fmt.Printf("❌ Error: %v\n", err)
 				return
 			}
-			fmt.Println("✅ All generators started")
+			
+			// Display detailed results
+			if resp.TotalGenerators == 0 {
+				fmt.Println("⚠️  No generators configured")
+				return
+			}
+			
+			fmt.Printf("✅ Generator batch operation completed:\n")
+			fmt.Printf("   📊 Total generators: %d\n", resp.TotalGenerators)
+			if resp.StartedCount > 0 {
+				fmt.Printf("   ▶️  Started: %d\n", resp.StartedCount)
+			}
+			if resp.AlreadyRunningCount > 0 {
+				fmt.Printf("   🔄 Already running: %d\n", resp.AlreadyRunningCount)
+			}
+			if resp.FailedCount > 0 {
+				fmt.Printf("   ❌ Failed: %d\n", resp.FailedCount)
+				for _, id := range resp.FailedIds {
+					fmt.Printf("      - %s\n", id)
+				}
+			}
 		} else {
 			// Start specific generators
 			for _, id := range args {
@@ -143,8 +165,10 @@ var genStopCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
 			// Stop all generators
+			var resp *v1.StopAllGeneratorsResponse
 			err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
-				_, err := client.StopAllGenerators(ctx, &v1.StopAllGeneratorsRequest{
+				var err error
+				resp, err = client.StopAllGenerators(ctx, &v1.StopAllGeneratorsRequest{
 					CanvasId: canvasID,
 				})
 				return err
@@ -153,8 +177,27 @@ var genStopCmd = &cobra.Command{
 				fmt.Printf("❌ Error: %v\n", err)
 				return
 			}
-			fmt.Println("✅ All generators stopped")
-			fmt.Println("🛑 All traffic generation halted")
+			
+			// Display detailed results
+			if resp.TotalGenerators == 0 {
+				fmt.Println("⚠️  No generators configured")
+				return
+			}
+			
+			fmt.Printf("✅ Generator batch operation completed:\n")
+			fmt.Printf("   📊 Total generators: %d\n", resp.TotalGenerators)
+			if resp.StoppedCount > 0 {
+				fmt.Printf("   ⏹️  Stopped: %d\n", resp.StoppedCount)
+			}
+			if resp.AlreadyStoppedCount > 0 {
+				fmt.Printf("   💤 Already stopped: %d\n", resp.AlreadyStoppedCount)
+			}
+			if resp.FailedCount > 0 {
+				fmt.Printf("   ❌ Failed: %d\n", resp.FailedCount)
+				for _, id := range resp.FailedIds {
+					fmt.Printf("      - %s\n", id)
+				}
+			}
 		} else {
 			// Stop specific generators
 			for _, id := range args {

@@ -34,14 +34,32 @@ func (s *SystemInstance) GetSystemName() string {
 // Finds a nested component a.b.c starting at the root of a system
 func (s *SystemInstance) FindComponent(fqn string) (out *ComponentInstance) {
 	parts := strings.Split(fqn, ".")
-	if len(parts) != 1 {
-		panic("Despite the name we dont support fqn yet.  It is coming")
+
+	// Start from the system's environment
+	currentEnv := s.Env
+	var currentComponent *ComponentInstance
+
+	// Navigate through nested components
+	for i, part := range parts {
+		value, ok := currentEnv.Get(part)
+		if !ok {
+			return nil
+		}
+
+		comp, ok := value.Value.(*ComponentInstance)
+		if !ok {
+			return nil
+		}
+
+		currentComponent = comp
+
+		// If this is not the last part, move to the component's environment
+		if i < len(parts)-1 {
+			currentEnv = comp.InitialEnv
+		}
 	}
-	v, ok := s.Env.Get(parts[0])
-	if !ok {
-		return nil
-	}
-	return v.Value.(*ComponentInstance)
+
+	return currentComponent
 }
 
 // A system declaration contains instantiations of components and other statemetns.

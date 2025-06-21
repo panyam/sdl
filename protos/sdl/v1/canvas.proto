@@ -137,6 +137,22 @@ service CanvasService {
     };
   }
 
+  // ----- Parameter Operations -----
+  // Set a component parameter value
+  rpc SetParameter(SetParameterRequest) returns (SetParameterResponse) {
+    option (google.api.http) = {
+      put: "/v1/canvases/{canvas_id}/parameters/{path}"
+      body: "*"
+    };
+  }
+
+  // Get parameter values
+  rpc GetParameters(GetParametersRequest) returns (GetParametersResponse) {
+    option (google.api.http) = {
+      get: "/v1/canvases/{canvas_id}/parameters"
+    };
+  }
+
   //  ----- Generator Operations -----
   // Adds a metric to live plot
   rpc AddMetric(AddMetricRequest) returns (AddMetricResponse) {
@@ -286,6 +302,11 @@ message StartAllGeneratorsRequest {
 }
 
 message StartAllGeneratorsResponse {
+  int32 total_generators = 1;      // Total number of generators
+  int32 started_count = 2;         // Number successfully started
+  int32 already_running_count = 3; // Number already running
+  int32 failed_count = 4;          // Number that failed to start
+  repeated string failed_ids = 5;  // IDs of generators that failed
 }
 
 message StopAllGeneratorsRequest {
@@ -293,6 +314,11 @@ message StopAllGeneratorsRequest {
 }
 
 message StopAllGeneratorsResponse {
+  int32 total_generators = 1;     // Total number of generators
+  int32 stopped_count = 2;        // Number successfully stopped
+  int32 already_stopped_count = 3; // Number already stopped
+  int32 failed_count = 4;         // Number that failed to stop
+  repeated string failed_ids = 5; // IDs of generators that failed
 }
 
 message GetGeneratorRequest {
@@ -475,4 +501,32 @@ message TraceEvent {
   repeated string args = 8;
   string return_value = 9;
   string error_message = 10;
+}
+
+// ----- Parameter Management Messages -----
+
+// Request to set a parameter value
+message SetParameterRequest {
+  string canvas_id = 1;
+  string path = 2;       // dot-separated path like "server.cache.HitRate"
+  string new_value = 3;      // SDL expression string (e.g., "42", "true", "'hello'", "[1,2,3]", etc.)
+}
+
+// Response from setting a parameter
+message SetParameterResponse {
+  bool success = 1;
+  string error_message = 2;  // Set if success is false
+  string new_value = 3;      // SDL expression string (e.g., "42", "true", "'hello'", "[1,2,3]", etc.)
+  string old_value = 4;
+}
+
+// Request to get parameter values
+message GetParametersRequest {
+  string canvas_id = 1;
+  string path = 2;  // Optional: if empty, return all parameters
+}
+
+// Response containing parameter values
+message GetParametersResponse {
+  map<string, string> parameters = 1;  // Values as SDL expression strings
 }

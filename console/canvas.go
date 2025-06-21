@@ -140,18 +140,90 @@ func (c *Canvas) GetAvailableSystemNames() []string {
 }
 
 // Starts/stops all generators
-func (c *Canvas) ToggleAllGenerators(start bool) error {
+// BatchGeneratorResult holds the results of batch generator operations
+type BatchGeneratorResult struct {
+	TotalGenerators     int
+	ProcessedCount      int // started or stopped
+	AlreadyInStateCount int // already running/stopped
+	FailedCount         int
+	FailedIDs           []string
+}
+
+// StartAllGenerators starts all generators and returns detailed results
+func (c *Canvas) StartAllGenerators() (*BatchGeneratorResult, error) {
 	c.generatorsLock.Lock()
 	defer c.generatorsLock.Unlock()
 
-	for _, gen := range c.generators {
-		if start {
-			gen.Start()
+	result := &BatchGeneratorResult{
+		TotalGenerators: len(c.generators),
+		FailedIDs:       []string{},
+	}
+
+	for id, gen := range c.generators {
+		if gen.IsRunning() {
+			result.AlreadyInStateCount++
+			continue
+		}
+		
+		err := gen.Start()
+		if err != nil {
+			result.FailedCount++
+			result.FailedIDs = append(result.FailedIDs, id)
 		} else {
-			gen.Stop()
+			result.ProcessedCount++
 		}
 	}
-	return c.recomputeSystemFlows()
+	
+	// Recompute flows after starting generators
+	if err := c.recomputeSystemFlows(); err != nil {
+		return result, fmt.Errorf("failed to recompute flows: %w", err)
+	}
+	
+	return result, nil
+}
+
+// StopAllGenerators stops all generators and returns detailed results
+func (c *Canvas) StopAllGenerators() (*BatchGeneratorResult, error) {
+	c.generatorsLock.Lock()
+	defer c.generatorsLock.Unlock()
+
+	result := &BatchGeneratorResult{
+		TotalGenerators: len(c.generators),
+		FailedIDs:       []string{},
+	}
+
+	for id, gen := range c.generators {
+		if !gen.IsRunning() {
+			result.AlreadyInStateCount++
+			continue
+		}
+		
+		err := gen.Stop()
+		if err != nil {
+			result.FailedCount++
+			result.FailedIDs = append(result.FailedIDs, id)
+		} else {
+			result.ProcessedCount++
+		}
+	}
+	
+	// Recompute flows after stopping generators
+	if err := c.recomputeSystemFlows(); err != nil {
+		return result, fmt.Errorf("failed to recompute flows: %w", err)
+	}
+	
+	return result, nil
+}
+
+// ToggleAllGenerators toggles all generators (deprecated, use Start/StopAllGenerators)
+func (c *Canvas) ToggleAllGenerators(start bool) error {
+	if start {
+		_, err := c.StartAllGenerators()
+		return err
+	} else {
+		_, err := c.StopAllGenerators()
+		return err
+	}
 }
 
 // AddGenerator adds a new traffic generator configuration
@@ -201,11 +273,11 @@ func (c *Canvas) RemoveGenerator(genId string) error {
 	c.generatorsLock.Lock()
 	defer c.generatorsLock.Unlock()
 
-	if c.generators[genId] == nil {
+	gen, exists := c.generators[genId]
+	if !exists {
 		return status.Error(codes.NotFound, "Generator with name not found")
 	}
-	gen := c.generators[genId]
-	c.generators[genId] = nil
+	delete(c.generators, genId)
 	gen.Stop()
 	return c.recomputeSystemFlows()
 }

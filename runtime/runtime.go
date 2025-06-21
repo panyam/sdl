@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
+	"strings"
 
 	cd "github.com/panyam/sdl/components/decl"
 	"github.com/panyam/sdl/core"
+	"github.com/panyam/sdl/decl"
 	"github.com/panyam/sdl/loader"
 )
 
@@ -59,6 +61,79 @@ func (r *Runtime) LoadFile(filePath string) (*FileInstance, error) {
 	out := NewFileInstance(r, file)
 	r.fileInstances[fileStatus.FullPath] = out
 	return out, nil
+}
+
+// Gets the value of a parameter given by a path "comp1.comp2...compN.ParamName" starting at a given System
+// and returns its Value
+func (r *Runtime) GetParam(system *SystemInstance, paramPath string) (value decl.Value, err error) {
+	// 1. resolve comp1.comp2.compN...ParamName to a nested component
+	// 2. Get the ParamName at compN (look up the component instance's env)
+	// 3. Return the value (if any)
+
+	parts := strings.Split(paramPath, ".")
+	if len(parts) < 2 {
+		return value, fmt.Errorf("invalid parameter path: %s", paramPath)
+	}
+
+	// Extract parameter name (last part)
+	paramName := parts[len(parts)-1]
+	componentPath := strings.Join(parts[:len(parts)-1], ".")
+
+	// Find the component instance using FindComponent
+	componentInstance := system.FindComponent(componentPath)
+	if componentInstance == nil {
+		return value, fmt.Errorf("component '%s' not found", componentPath)
+	}
+
+	// Get the parameter value from the component's environment
+	paramValue, ok := componentInstance.Get(paramName)
+	if !ok {
+		return value, fmt.Errorf("parameter '%s' not found in component '%s'", paramName, componentPath)
+	}
+	return paramValue, nil
+}
+
+// Sets the value of a parameter given by a path "comp1.comp2...compN.ParamName" starting at a given System
+// and sets its new value.  Returns the oldValue (whether success or failure) and returns an error
+// if setting failed
+func (r *Runtime) SetParam(system *SystemInstance, paramPath string, newValue decl.Value) (oldValue decl.Value, err error) {
+	// 1. resolve comp1.comp2.compN...ParamName to a nested component
+	// 2. Get the ParamName at compN (look up the component instance's env)
+	// 3. Eval a SetStmt(ParamName, newValue) at compN using compN's Env
+	// 4. Return oldValue and error (if any)
+
+	parts := strings.Split(paramPath, ".")
+	if len(parts) < 2 {
+		return decl.Nil, fmt.Errorf("invalid parameter path: %s", paramPath)
+	}
+
+	// Extract parameter name (last part)
+	paramName := parts[len(parts)-1]
+	componentPath := strings.Join(parts[:len(parts)-1], ".")
+
+	// Find the component instance using FindComponent
+	componentInstance := system.FindComponent(componentPath)
+	if componentInstance == nil {
+		return decl.Nil, fmt.Errorf("component '%s' not found", componentPath)
+	}
+
+	oldValue, _ = componentInstance.Get(paramName)
+	/* instead of SetStmt, just call teh .Set method on the Component instance
+	// Create a SetStmt to set the parameter
+	setStmt := &decl.SetStmt{
+		TargetExpr: &decl.IdentifierExpr{Value: paramName},
+		Value:      &decl.LiteralExpr{Value: newValue},
+	}
+
+	// Evaluate the SetStmt in the component's environment
+	eval := NewSimpleEval(system.File, nil)
+	eval.Eval(setStmt, componentInstance.InitialEnv, nil)
+	if eval.HasErrors() {
+		err = eval.Errors[0]
+	}
+	*/
+	err = componentInstance.Set(paramName, newValue)
+	return oldValue, err
 }
 
 // Get all available system declarations across all file instnces as a map

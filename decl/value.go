@@ -252,6 +252,22 @@ func (r *Value) IntVal() int64 {
 	return out
 }
 
+func (r *Value) StringVal() string {
+	out, err := r.GetString()
+	if err != nil {
+		panic(err)
+	}
+	return out
+}
+
+func (r *Value) BoolVal() bool {
+	out, err := r.GetBool()
+	if err != nil {
+		panic(err)
+	}
+	return out
+}
+
 func (r *Value) FloatVal() float64 {
 	out, err := r.GetFloat()
 	if err != nil {

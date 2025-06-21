@@ -1,10 +1,12 @@
 
-binary: gen
+binary: 
 	cd parser && make
 	go build -o ${GOBIN}/sdl ./cmd/sdl/main.go
 
-gen:
+buf:
 	buf generate
+
+reload: buf
 
 # Development workflow: build and test dashboard
 dev-test: binary

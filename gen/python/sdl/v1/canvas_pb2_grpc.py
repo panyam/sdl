@@ -91,6 +91,21 @@ class CanvasServiceStub(object):
                 request_serializer=sdl_dot_v1_dot_canvas__pb2.DeleteGeneratorRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_canvas__pb2.DeleteGeneratorResponse.FromString,
                 _registered_method=True)
+        self.ExecuteTrace = channel.unary_unary(
+                '/sdl.v1.CanvasService/ExecuteTrace',
+                request_serializer=sdl_dot_v1_dot_canvas__pb2.ExecuteTraceRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_canvas__pb2.ExecuteTraceResponse.FromString,
+                _registered_method=True)
+        self.SetParameter = channel.unary_unary(
+                '/sdl.v1.CanvasService/SetParameter',
+                request_serializer=sdl_dot_v1_dot_canvas__pb2.SetParameterRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_canvas__pb2.SetParameterResponse.FromString,
+                _registered_method=True)
+        self.GetParameters = channel.unary_unary(
+                '/sdl.v1.CanvasService/GetParameters',
+                request_serializer=sdl_dot_v1_dot_canvas__pb2.GetParametersRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_canvas__pb2.GetParametersResponse.FromString,
+                _registered_method=True)
         self.AddMetric = channel.unary_unary(
                 '/sdl.v1.CanvasService/AddMetric',
                 request_serializer=sdl_dot_v1_dot_canvas__pb2.AddMetricRequest.SerializeToString,
@@ -105,11 +120,6 @@ class CanvasServiceStub(object):
                 '/sdl.v1.CanvasService/LiveMetric',
                 request_serializer=sdl_dot_v1_dot_canvas__pb2.LiveMetricsRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_canvas__pb2.LiveMetricsResponse.FromString,
-                _registered_method=True)
-        self.ExecuteTrace = channel.unary_unary(
-                '/sdl.v1.CanvasService/ExecuteTrace',
-                request_serializer=sdl_dot_v1_dot_canvas__pb2.ExecuteTraceRequest.SerializeToString,
-                response_deserializer=sdl_dot_v1_dot_canvas__pb2.ExecuteTraceResponse.FromString,
                 _registered_method=True)
         self.ListMetrics = channel.unary_unary(
                 '/sdl.v1.CanvasService/ListMetrics',
@@ -236,6 +246,28 @@ class CanvasServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ExecuteTrace(self, request, context):
+        """Execute a single trace for debugging/analysis
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SetParameter(self, request, context):
+        """----- Parameter Operations -----
+        Set a component parameter value
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetParameters(self, request, context):
+        """Get parameter values
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def AddMetric(self, request, context):
         """----- Generator Operations -----
         Adds a metric to live plot
@@ -254,13 +286,6 @@ class CanvasServiceServicer(object):
 
     def LiveMetric(self, request, context):
         """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def ExecuteTrace(self, request, context):
-        """Execute a single trace for debugging/analysis
-        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -366,6 +391,21 @@ def add_CanvasServiceServicer_to_server(servicer, server):
                     request_deserializer=sdl_dot_v1_dot_canvas__pb2.DeleteGeneratorRequest.FromString,
                     response_serializer=sdl_dot_v1_dot_canvas__pb2.DeleteGeneratorResponse.SerializeToString,
             ),
+            'ExecuteTrace': grpc.unary_unary_rpc_method_handler(
+                    servicer.ExecuteTrace,
+                    request_deserializer=sdl_dot_v1_dot_canvas__pb2.ExecuteTraceRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_canvas__pb2.ExecuteTraceResponse.SerializeToString,
+            ),
+            'SetParameter': grpc.unary_unary_rpc_method_handler(
+                    servicer.SetParameter,
+                    request_deserializer=sdl_dot_v1_dot_canvas__pb2.SetParameterRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_canvas__pb2.SetParameterResponse.SerializeToString,
+            ),
+            'GetParameters': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetParameters,
+                    request_deserializer=sdl_dot_v1_dot_canvas__pb2.GetParametersRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_canvas__pb2.GetParametersResponse.SerializeToString,
+            ),
             'AddMetric': grpc.unary_unary_rpc_method_handler(
                     servicer.AddMetric,
                     request_deserializer=sdl_dot_v1_dot_canvas__pb2.AddMetricRequest.FromString,
@@ -380,11 +420,6 @@ def add_CanvasServiceServicer_to_server(servicer, server):
                     servicer.LiveMetric,
                     request_deserializer=sdl_dot_v1_dot_canvas__pb2.LiveMetricsRequest.FromString,
                     response_serializer=sdl_dot_v1_dot_canvas__pb2.LiveMetricsResponse.SerializeToString,
-            ),
-            'ExecuteTrace': grpc.unary_unary_rpc_method_handler(
-                    servicer.ExecuteTrace,
-                    request_deserializer=sdl_dot_v1_dot_canvas__pb2.ExecuteTraceRequest.FromString,
-                    response_serializer=sdl_dot_v1_dot_canvas__pb2.ExecuteTraceResponse.SerializeToString,
             ),
             'ListMetrics': grpc.unary_unary_rpc_method_handler(
                     servicer.ListMetrics,
@@ -820,6 +855,87 @@ class CanvasService(object):
             _registered_method=True)
 
     @staticmethod
+    def ExecuteTrace(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.CanvasService/ExecuteTrace',
+            sdl_dot_v1_dot_canvas__pb2.ExecuteTraceRequest.SerializeToString,
+            sdl_dot_v1_dot_canvas__pb2.ExecuteTraceResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SetParameter(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.CanvasService/SetParameter',
+            sdl_dot_v1_dot_canvas__pb2.SetParameterRequest.SerializeToString,
+            sdl_dot_v1_dot_canvas__pb2.SetParameterResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetParameters(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.CanvasService/GetParameters',
+            sdl_dot_v1_dot_canvas__pb2.GetParametersRequest.SerializeToString,
+            sdl_dot_v1_dot_canvas__pb2.GetParametersResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
     def AddMetric(request,
             target,
             options=(),
@@ -890,33 +1006,6 @@ class CanvasService(object):
             '/sdl.v1.CanvasService/LiveMetric',
             sdl_dot_v1_dot_canvas__pb2.LiveMetricsRequest.SerializeToString,
             sdl_dot_v1_dot_canvas__pb2.LiveMetricsResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def ExecuteTrace(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/sdl.v1.CanvasService/ExecuteTrace',
-            sdl_dot_v1_dot_canvas__pb2.ExecuteTraceRequest.SerializeToString,
-            sdl_dot_v1_dot_canvas__pb2.ExecuteTraceResponse.FromString,
             options,
             channel_credentials,
             insecure,

@@ -686,6 +686,97 @@
         ]
       }
     },
+    "/v1/canvases/{canvasId}/parameters": {
+      "get": {
+        "summary": "Get parameter values",
+        "operationId": "CanvasService_GetParameters",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetParametersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "canvasId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "path",
+            "description": "Optional: if empty, return all parameters",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "CanvasService"
+        ]
+      }
+    },
+    "/v1/canvases/{canvasId}/parameters/{path}": {
+      "put": {
+        "summary": "----- Parameter Operations -----\nSet a component parameter value",
+        "operationId": "CanvasService_SetParameter",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SetParameterResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "canvasId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "path",
+            "description": "dot-separated path like \"server.cache.HitRate\"",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "newValue": {
+                  "type": "string",
+                  "title": "SDL expression string (e.g., \"42\", \"true\", \"'hello'\", \"[1,2,3]\", etc.)"
+                }
+              },
+              "title": "Request to set a parameter value"
+            }
+          }
+        ],
+        "tags": [
+          "CanvasService"
+        ]
+      }
+    },
     "/v1/canvases/{canvasId}/trace/{component}/{method}": {
       "get": {
         "summary": "Execute a single trace for debugging/analysis",
@@ -1298,6 +1389,19 @@
         }
       }
     },
+    "v1GetParametersResponse": {
+      "type": "object",
+      "properties": {
+        "parameters": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Values as SDL expression strings"
+        }
+      },
+      "title": "Response containing parameter values"
+    },
     "v1ListCanvasesResponse": {
       "type": "object",
       "properties": {
@@ -1509,11 +1613,89 @@
     "v1ResumeGeneratorResponse": {
       "type": "object"
     },
+    "v1SetParameterResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean"
+        },
+        "errorMessage": {
+          "type": "string",
+          "title": "Set if success is false"
+        },
+        "newValue": {
+          "type": "string",
+          "title": "SDL expression string (e.g., \"42\", \"true\", \"'hello'\", \"[1,2,3]\", etc.)"
+        },
+        "oldValue": {
+          "type": "string"
+        }
+      },
+      "title": "Response from setting a parameter"
+    },
     "v1StartAllGeneratorsResponse": {
-      "type": "object"
+      "type": "object",
+      "properties": {
+        "totalGenerators": {
+          "type": "integer",
+          "format": "int32",
+          "title": "Total number of generators"
+        },
+        "startedCount": {
+          "type": "integer",
+          "format": "int32",
+          "title": "Number successfully started"
+        },
+        "alreadyRunningCount": {
+          "type": "integer",
+          "format": "int32",
+          "title": "Number already running"
+        },
+        "failedCount": {
+          "type": "integer",
+          "format": "int32",
+          "title": "Number that failed to start"
+        },
+        "failedIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "IDs of generators that failed"
+        }
+      }
     },
     "v1StopAllGeneratorsResponse": {
-      "type": "object"
+      "type": "object",
+      "properties": {
+        "totalGenerators": {
+          "type": "integer",
+          "format": "int32",
+          "title": "Total number of generators"
+        },
+        "stoppedCount": {
+          "type": "integer",
+          "format": "int32",
+          "title": "Number successfully stopped"
+        },
+        "alreadyStoppedCount": {
+          "type": "integer",
+          "format": "int32",
+          "title": "Number already stopped"
+        },
+        "failedCount": {
+          "type": "integer",
+          "format": "int32",
+          "title": "Number that failed to stop"
+        },
+        "failedIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "IDs of generators that failed"
+        }
+      }
     },
     "v1TraceData": {
       "type": "object",

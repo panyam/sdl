@@ -5,7 +5,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { AddGeneratorRequest, AddGeneratorResponse, AddMetricRequest, AddMetricResponse, AggregateMetricsRequest, AggregateMetricsResponse, CreateCanvasRequest, CreateCanvasResponse, DeleteCanvasRequest, DeleteCanvasResponse, DeleteGeneratorRequest, DeleteGeneratorResponse, DeleteMetricRequest, DeleteMetricResponse, ExecuteTraceRequest, ExecuteTraceResponse, GetCanvasRequest, GetCanvasResponse, GetGeneratorRequest, GetGeneratorResponse, ListCanvasesRequest, ListCanvasesResponse, ListGeneratorsRequest, ListGeneratorsResponse, ListMetricsRequest, ListMetricsResponse, LiveMetricsRequest, LiveMetricsResponse, LoadFileRequest, LoadFileResponse, PauseGeneratorRequest, PauseGeneratorResponse, QueryMetricsRequest, QueryMetricsResponse, ResumeGeneratorRequest, ResumeGeneratorResponse, StartAllGeneratorsRequest, StartAllGeneratorsResponse, StopAllGeneratorsRequest, StopAllGeneratorsResponse, UpdateGeneratorRequest, UpdateGeneratorResponse, UseSystemRequest, UseSystemResponse } from "./canvas_pb.js";
+import { AddGeneratorRequest, AddGeneratorResponse, AddMetricRequest, AddMetricResponse, AggregateMetricsRequest, AggregateMetricsResponse, CreateCanvasRequest, CreateCanvasResponse, DeleteCanvasRequest, DeleteCanvasResponse, DeleteGeneratorRequest, DeleteGeneratorResponse, DeleteMetricRequest, DeleteMetricResponse, ExecuteTraceRequest, ExecuteTraceResponse, GetCanvasRequest, GetCanvasResponse, GetGeneratorRequest, GetGeneratorResponse, GetParametersRequest, GetParametersResponse, ListCanvasesRequest, ListCanvasesResponse, ListGeneratorsRequest, ListGeneratorsResponse, ListMetricsRequest, ListMetricsResponse, LiveMetricsRequest, LiveMetricsResponse, LoadFileRequest, LoadFileResponse, PauseGeneratorRequest, PauseGeneratorResponse, QueryMetricsRequest, QueryMetricsResponse, ResumeGeneratorRequest, ResumeGeneratorResponse, SetParameterRequest, SetParameterResponse, StartAllGeneratorsRequest, StartAllGeneratorsResponse, StopAllGeneratorsRequest, StopAllGeneratorsResponse, UpdateGeneratorRequest, UpdateGeneratorResponse, UseSystemRequest, UseSystemResponse } from "./canvas_pb.js";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -174,6 +174,40 @@ export declare const CanvasService: {
       readonly kind: MethodKind.Unary,
     },
     /**
+     * Execute a single trace for debugging/analysis
+     *
+     * @generated from rpc sdl.v1.CanvasService.ExecuteTrace
+     */
+    readonly executeTrace: {
+      readonly name: "ExecuteTrace",
+      readonly I: typeof ExecuteTraceRequest,
+      readonly O: typeof ExecuteTraceResponse,
+      readonly kind: MethodKind.Unary,
+    },
+    /**
+     * ----- Parameter Operations -----
+     * Set a component parameter value
+     *
+     * @generated from rpc sdl.v1.CanvasService.SetParameter
+     */
+    readonly setParameter: {
+      readonly name: "SetParameter",
+      readonly I: typeof SetParameterRequest,
+      readonly O: typeof SetParameterResponse,
+      readonly kind: MethodKind.Unary,
+    },
+    /**
+     * Get parameter values
+     *
+     * @generated from rpc sdl.v1.CanvasService.GetParameters
+     */
+    readonly getParameters: {
+      readonly name: "GetParameters",
+      readonly I: typeof GetParametersRequest,
+      readonly O: typeof GetParametersResponse,
+      readonly kind: MethodKind.Unary,
+    },
+    /**
      *  ----- Generator Operations -----
      * Adds a metric to live plot
      *
@@ -205,17 +239,6 @@ export declare const CanvasService: {
       readonly I: typeof LiveMetricsRequest,
       readonly O: typeof LiveMetricsResponse,
       readonly kind: MethodKind.ServerStreaming,
-    },
-    /**
-     * Execute a single trace for debugging/analysis
-     *
-     * @generated from rpc sdl.v1.CanvasService.ExecuteTrace
-     */
-    readonly executeTrace: {
-      readonly name: "ExecuteTrace",
-      readonly I: typeof ExecuteTraceRequest,
-      readonly O: typeof ExecuteTraceResponse,
-      readonly kind: MethodKind.Unary,
     },
     /**
      * List all available metrics

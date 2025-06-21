@@ -1,0 +1,57 @@
+#!/bin/zsh
+# Test batch generator operations with enhanced feedback
+
+echo "=== Testing Enhanced Batch Generator Operations ==="
+
+# Setup - Load from the correct path (recipes is under the project root)
+sdl load examples/contacts/contacts.sdl
+sdl use ContactsSystem
+
+echo -e "\n--- Test 1: Start with no generators ---"
+sdl gen start
+
+echo -e "\n--- Test 2: Add multiple generators ---"
+sdl gen add gen1 server.Lookup 10
+sdl gen add gen2 database.LookupByPhone 5
+sdl gen add gen3 idx.Find 15
+
+echo -e "\n--- Test 3: List generators ---"
+sdl gen list
+
+echo -e "\n--- Test 4: Start all (currently stopped) ---"
+sdl gen start
+
+# Wait for generators to run
+sleep 2
+
+echo -e "\n--- Test 5: Try to start already running generators ---"
+sdl gen start
+
+echo -e "\n--- Test 6: Stop all generators ---"
+sdl gen stop
+
+echo -e "\n--- Test 7: Try to stop already stopped generators ---"
+sdl gen stop
+
+echo -e "\n--- Test 8: Start specific generators ---"
+sdl gen start gen1 gen3
+
+echo -e "\n--- Test 9: Start all (mixed state) ---"
+sdl gen start
+
+# Wait a bit
+sleep 2
+
+echo -e "\n--- Test 10: Stop all and verify ---"
+sdl gen stop
+sdl gen list
+
+echo -e "\n--- Test 11: Remove generators ---"
+sdl gen remove gen1
+sdl gen remove gen2
+sdl gen remove gen3
+
+echo -e "\n--- Test 12: Verify cleanup ---"
+sdl gen list
+
+echo -e "\n=== Test Complete ==="

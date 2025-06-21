@@ -2,6 +2,7 @@ package console
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"strings"
 	"sync"
@@ -10,7 +11,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/panyam/sdl/decl"
 	protos "github.com/panyam/sdl/gen/go/sdl/v1"
+	"github.com/panyam/sdl/loader"
 	"github.com/panyam/sdl/runtime"
 	// Add if using SectionMetadataToProto helper:
 	// tspb "google.golang.org/protobuf/types/known/timestamppb"
@@ -153,14 +156,28 @@ func (s *CanvasService) AddGenerator(ctx context.Context, req *protos.AddGenerat
 func (s *CanvasService) DeleteGenerator(ctx context.Context, req *protos.DeleteGeneratorRequest) (resp *protos.DeleteGeneratorResponse, err error) {
 	slog.Info("DeleteGenerator Request", "req", req)
 	resp = &protos.DeleteGeneratorResponse{}
+	s.withCanvas(req.CanvasId, func(canvas *Canvas) {
+		err = canvas.RemoveGenerator(req.GeneratorId)
+	})
 	return
 }
 
 func (s *CanvasService) StartAllGenerators(ctx context.Context, req *protos.StartAllGeneratorsRequest) (resp *protos.StartAllGeneratorsResponse, err error) {
 	slog.Info("StartAllGenerators Request", "req", req)
 	resp = &protos.StartAllGeneratorsResponse{}
-	s.withCanvas(req.CanvasId, func(canvas *Canvas) {
-		err = canvas.ToggleAllGenerators(true)
+
+	err = s.withCanvas(req.CanvasId, func(canvas *Canvas) {
+		result, startErr := canvas.StartAllGenerators()
+		if result != nil {
+			resp.TotalGenerators = int32(result.TotalGenerators)
+			resp.StartedCount = int32(result.ProcessedCount)
+			resp.AlreadyRunningCount = int32(result.AlreadyInStateCount)
+			resp.FailedCount = int32(result.FailedCount)
+			resp.FailedIds = result.FailedIDs
+		}
+		if startErr != nil {
+			err = startErr
+		}
 	})
 	return
 }
@@ -168,8 +185,19 @@ func (s *CanvasService) StartAllGenerators(ctx context.Context, req *protos.Star
 func (s *CanvasService) StopAllGenerators(ctx context.Context, req *protos.StopAllGeneratorsRequest) (resp *protos.StopAllGeneratorsResponse, err error) {
 	slog.Info("StopAllGenerators  Request", "req", req)
 	resp = &protos.StopAllGeneratorsResponse{}
-	s.withCanvas(req.CanvasId, func(canvas *Canvas) {
-		err = canvas.ToggleAllGenerators(false)
+
+	err = s.withCanvas(req.CanvasId, func(canvas *Canvas) {
+		result, stopErr := canvas.StopAllGenerators()
+		if result != nil {
+			resp.TotalGenerators = int32(result.TotalGenerators)
+			resp.StoppedCount = int32(result.ProcessedCount)
+			resp.AlreadyStoppedCount = int32(result.AlreadyInStateCount)
+			resp.FailedCount = int32(result.FailedCount)
+			resp.FailedIds = result.FailedIDs
+		}
+		if stopErr != nil {
+			err = stopErr
+		}
 	})
 	return
 }
@@ -268,17 +296,17 @@ func convertTraceDataToProto(td *runtime.TraceData) *protos.TraceData {
 func (s *CanvasService) ListMetrics(ctx context.Context, req *protos.ListMetricsRequest) (resp *protos.ListMetricsResponse, err error) {
 	slog.Info("ListMetrics Request", "req", req)
 	resp = &protos.ListMetricsResponse{}
-	
+
 	err = s.withCanvas(req.CanvasId, func(canvas *Canvas) {
 		if canvas.metricTracer == nil || canvas.metricTracer.store == nil {
 			resp.Metrics = []*protos.MetricInfo{}
 			return
 		}
-		
+
 		// Get all metrics from the metric tracer
 		metrics := canvas.metricTracer.ListMetrics()
 		resp.Metrics = make([]*protos.MetricInfo, 0, len(metrics))
-		
+
 		for _, metric := range metrics {
 			// Query the store to get stats about this metric
 			queryOpts := QueryOptions{
@@ -286,26 +314,26 @@ func (s *CanvasService) ListMetrics(ctx context.Context, req *protos.ListMetrics
 				EndTime:   time.Now(),
 				Limit:     1, // Just to get count
 			}
-			
+
 			result, _ := canvas.metricTracer.store.Query(ctx, metric, queryOpts)
-			
+
 			info := &protos.MetricInfo{
 				Id:         metric.Id,
 				Component:  metric.Component,
 				Method:     strings.Join(metric.Methods, ","),
 				MetricType: metric.MetricType,
 			}
-			
+
 			info.DataPoints = int64(len(result.Points))
 			if len(result.Points) > 0 {
 				info.OldestTimestamp = float64(result.Points[0].Timestamp.Unix())
 				info.NewestTimestamp = float64(result.Points[len(result.Points)-1].Timestamp.Unix())
 			}
-			
+
 			resp.Metrics = append(resp.Metrics, info)
 		}
 	})
-	
+
 	return
 }
 
@@ -313,33 +341,33 @@ func (s *CanvasService) ListMetrics(ctx context.Context, req *protos.ListMetrics
 func (s *CanvasService) QueryMetrics(ctx context.Context, req *protos.QueryMetricsRequest) (resp *protos.QueryMetricsResponse, err error) {
 	slog.Info("QueryMetrics Request", "req", req)
 	resp = &protos.QueryMetricsResponse{}
-	
+
 	err = s.withCanvas(req.CanvasId, func(canvas *Canvas) {
 		if canvas.metricTracer == nil || canvas.metricTracer.store == nil {
 			err = status.Error(codes.FailedPrecondition, "no metric store available")
 			return
 		}
-		
+
 		// Find the metric by ID
 		metric := canvas.metricTracer.GetMetricByID(req.MetricId)
 		if metric == nil {
 			err = status.Errorf(codes.NotFound, "metric %s not found", req.MetricId)
 			return
 		}
-		
+
 		// Query the store
 		queryOpts := QueryOptions{
 			StartTime: time.Unix(int64(req.StartTime), 0),
 			EndTime:   time.Unix(int64(req.EndTime), 0),
 			Limit:     int(req.Limit),
 		}
-		
+
 		result, queryErr := canvas.metricTracer.store.Query(ctx, metric, queryOpts)
 		if queryErr != nil {
 			err = status.Errorf(codes.Internal, "failed to query metrics: %v", queryErr)
 			return
 		}
-		
+
 		// Convert to proto format
 		resp.Points = make([]*protos.MetricPoint, len(result.Points))
 		for i, point := range result.Points {
@@ -349,7 +377,7 @@ func (s *CanvasService) QueryMetrics(ctx context.Context, req *protos.QueryMetri
 			}
 		}
 	})
-	
+
 	return
 }
 
@@ -357,20 +385,20 @@ func (s *CanvasService) QueryMetrics(ctx context.Context, req *protos.QueryMetri
 func (s *CanvasService) AggregateMetrics(ctx context.Context, req *protos.AggregateMetricsRequest) (resp *protos.AggregateMetricsResponse, err error) {
 	slog.Info("AggregateMetrics Request", "req", req)
 	resp = &protos.AggregateMetricsResponse{}
-	
+
 	err = s.withCanvas(req.CanvasId, func(canvas *Canvas) {
 		if canvas.metricTracer == nil || canvas.metricTracer.store == nil {
 			err = status.Error(codes.FailedPrecondition, "no metric store available")
 			return
 		}
-		
+
 		// Find the metric by ID
 		metric := canvas.metricTracer.GetMetricByID(req.MetricId)
 		if metric == nil {
 			err = status.Errorf(codes.NotFound, "metric %s not found", req.MetricId)
 			return
 		}
-		
+
 		// Map string to AggregateFunc
 		var aggFunc AggregateFunc
 		switch req.Function {
@@ -396,21 +424,21 @@ func (s *CanvasService) AggregateMetrics(ctx context.Context, req *protos.Aggreg
 			err = status.Errorf(codes.InvalidArgument, "unknown aggregation function: %s", req.Function)
 			return
 		}
-		
+
 		// Aggregate the data
 		aggOpts := AggregateOptions{
-			StartTime:  time.Unix(int64(req.StartTime), 0),
-			EndTime:    time.Unix(int64(req.EndTime), 0),
-			Functions:  []AggregateFunc{aggFunc},
-			Window:     time.Duration(req.WindowSize * float64(time.Second)),
+			StartTime: time.Unix(int64(req.StartTime), 0),
+			EndTime:   time.Unix(int64(req.EndTime), 0),
+			Functions: []AggregateFunc{aggFunc},
+			Window:    time.Duration(req.WindowSize * float64(time.Second)),
 		}
-		
+
 		result, aggErr := canvas.metricTracer.store.Aggregate(ctx, metric, aggOpts)
 		if aggErr != nil {
 			err = status.Errorf(codes.Internal, "failed to aggregate metrics: %v", aggErr)
 			return
 		}
-		
+
 		// Convert to proto format
 		resp.Results = make([]*protos.AggregateResult, len(result.Buckets))
 		for i, bucket := range result.Buckets {
@@ -422,6 +450,130 @@ func (s *CanvasService) AggregateMetrics(ctx context.Context, req *protos.Aggreg
 			}
 		}
 	})
-	
+
 	return
+}
+
+// SetParameter sets a component parameter value
+func (s *CanvasService) SetParameter(ctx context.Context, req *protos.SetParameterRequest) (resp *protos.SetParameterResponse, err error) {
+	slog.Info("SetParameter Request", "req", req)
+	resp = &protos.SetParameterResponse{Success: true}
+
+	err = s.withCanvas(req.CanvasId, func(canvas *Canvas) {
+		if canvas.activeSystem == nil {
+			err = status.Error(codes.FailedPrecondition, "no active system")
+			resp.Success = false
+			resp.ErrorMessage = "no active system"
+			return
+		}
+
+		// Parse the value expression using SDL parser helper
+		expr, parseErr := loader.ParseExpresssion(req.NewValue)
+		if parseErr != nil {
+			err = status.Errorf(codes.InvalidArgument, "failed to parse value expression: %v", parseErr)
+			resp.Success = false
+			resp.ErrorMessage = parseErr.Error()
+			return
+		}
+
+		// Evaluate the expression to get the actual decl.Value
+		eval := runtime.NewSimpleEval(canvas.activeSystem.File, nil)
+		result, _ := eval.Eval(expr, canvas.activeSystem.Env, nil)
+		if eval.HasErrors() {
+			evalErr := eval.Errors[0]
+			err = status.Errorf(codes.InvalidArgument, "failed to evaluate expression: %v", evalErr)
+			resp.Success = false
+			resp.ErrorMessage = evalErr.Error()
+			return
+		}
+
+		// Use runtime.SetParam to set the parameter
+
+		oldValue, setErr := canvas.runtime.SetParam(canvas.activeSystem, req.Path, result)
+		if setErr != nil {
+			err = status.Errorf(codes.Internal, "failed to set parameter: %v", setErr)
+			resp.Success = false
+			resp.ErrorMessage = setErr.Error()
+			return
+		}
+
+		// Convert decl.Value to Go value for storage
+		resp.OldValue = oldValue.String()
+		resp.NewValue = result.String()
+	})
+
+	return
+}
+
+// GetParameters gets parameter values
+func (s *CanvasService) GetParameters(ctx context.Context, req *protos.GetParametersRequest) (resp *protos.GetParametersResponse, err error) {
+	slog.Info("GetParameters Request", "req", req)
+	resp = &protos.GetParametersResponse{
+		Parameters: make(map[string]string),
+	}
+
+	err = s.withCanvas(req.CanvasId, func(canvas *Canvas) {
+		if canvas.activeSystem == nil {
+			err = status.Error(codes.FailedPrecondition, "no active system")
+			return
+		}
+
+		if req.Path == "" {
+			err = status.Error(codes.FailedPrecondition, "Provide one or more parameter paths")
+			return
+		}
+
+		// Get specific parameter using runtime.GetParam
+		paramValue, getErr := canvas.runtime.GetParam(canvas.activeSystem, req.Path)
+		if getErr != nil {
+			err = status.Errorf(codes.NotFound, "failed to get parameter: %v", getErr)
+			return
+		}
+
+		// Format the value as SDL expression
+		resp.Parameters[req.Path] = formatDeclValueAsSDL(paramValue)
+	})
+
+	return
+}
+
+// formatValueAsSDL converts a Go value to SDL expression string
+func formatValueAsSDL(value any) string {
+	switch v := value.(type) {
+	case float64:
+		return fmt.Sprintf("%g", v)
+	case int64:
+		return fmt.Sprintf("%d", v)
+	case int:
+		return fmt.Sprintf("%d", v)
+	case bool:
+		return fmt.Sprintf("%t", v)
+	case string:
+		// If it's already an SDL expression, return as-is
+		if strings.HasPrefix(v, "'") || strings.HasPrefix(v, "\"") {
+			return v
+		}
+		// Otherwise quote it
+		return fmt.Sprintf("'%s'", v)
+	default:
+		// For complex types, use string representation
+		return fmt.Sprintf("%v", v)
+	}
+}
+
+// formatDeclValueAsSDL converts a decl.Value to SDL expression string
+func formatDeclValueAsSDL(value decl.Value) string {
+	switch value.Type.Tag {
+	case decl.TypeTagSimple:
+		if value.Type.Info == "Int" {
+			return fmt.Sprintf("%d", value.IntVal())
+		} else if value.Type.Info == "Float" {
+			return fmt.Sprintf("%d", value.FloatVal())
+		} else if value.Type.Info == "Bool" {
+			return fmt.Sprintf("%d", value.BoolVal())
+		} else if value.Type.Info == "String" {
+			return fmt.Sprintf("%d", value.StringVal())
+		}
+	}
+	return value.String()
 }

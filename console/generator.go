@@ -33,26 +33,34 @@ type GeneratorInfo struct {
 	GenFunc func(iter int)
 }
 
-// Stops the generator
-func (g *GeneratorInfo) Stop() {
+// IsRunning returns true if the generator is currently running
+func (g *GeneratorInfo) IsRunning() bool {
+	return g.Enabled && !g.stopped.Load()
+}
+
+// Stop stops the generator
+func (g *GeneratorInfo) Stop() error {
 	if g.stopped.Load() || g.stopChan == nil {
-		return
+		return nil
 	}
 	log.Printf("Generator %s: Stopping...", g.Id)
 	g.stopped.Store(true)
 	close(g.stopChan)
+	g.Enabled = false
+	return nil
 }
 
-// Starts a generator
-func (g *GeneratorInfo) Start() {
+// Start starts a generator
+func (g *GeneratorInfo) Start() error {
 	if g.Enabled {
-		return
+		return nil
 	}
 	g.Enabled = true
 	g.stopped.Store(false)
 	g.stopChan = make(chan bool)
 
 	go g.run()
+	return nil
 }
 
 func (g *GeneratorInfo) run() {

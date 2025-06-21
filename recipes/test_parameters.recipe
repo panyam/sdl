@@ -1,0 +1,46 @@
+#!/bin/zsh
+# Test parameter set/get operations
+
+echo "=== Testing Parameter Set/Get Operations ==="
+
+# Setup - Load from the correct path (recipes is under the project root)
+sdl load examples/contacts/contacts.sdl
+sdl use ContactsSystem
+
+echo -e "\n--- Test 1: Try to get parameter before setting any ---"
+sdl get contactCache.HitRate || echo "Expected error - parameter not found"
+
+echo -e "\n--- Test 2: Set a simple numeric parameter (cache hit rate) ---"
+sdl set contactCache.HitRate 0.95
+
+echo -e "\n--- Test 3: Get the parameter we just set ---"
+sdl get contactCache.HitRate
+
+echo -e "\n--- Test 4: Change the hit rate to a different value ---"
+sdl set contactCache.HitRate 0.75
+
+echo -e "\n--- Test 5: Verify the parameter changed ---"
+sdl get contactCache.HitRate
+
+echo -e "\n--- Test 6: Set hit rate to zero ---"
+sdl set contactCache.HitRate 0.0
+
+echo -e "\n--- Test 7: Verify zero value ---"
+sdl get contactCache.HitRate
+
+echo -e "\n--- Test 8: Set boolean value (should work with float param) ---"
+sdl set contactCache.HitRate true
+
+echo -e "\n--- Test 9: Get the boolean as float ---"
+sdl get contactCache.HitRate
+
+echo -e "\n--- Test 10: Try to set parameter on wrong component ---"
+sdl set server.HitRate 0.5 || echo "Expected error - parameter not found"
+
+echo -e "\n--- Test 11: Try invalid component path ---"
+sdl get nonexistent.HitRate || echo "Expected error - component not found"
+
+echo -e "\n--- Test 12: Try invalid syntax ---"
+sdl set contactCache.HitRate "invalid syntax {" || echo "Expected error - parse error"
+
+echo -e "\n=== Test Complete ==="

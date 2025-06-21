@@ -79,6 +79,7 @@ Important: Metrics are pre-aggregated at collection time, not query time:
 - **Query API**: Returns pre-aggregated data points directly (no query-time aggregation)
 - **Bug Fix**: When removing metrics, use `delete(map, key)` not `map[key] = nil` to avoid panics
 - **Testing**: Run `./test_metrics_e2e.sh` for comprehensive end-to-end validation   
+
 Also be conservative on how many comments are you are adding or modifying unless it is absolutely necessary (for example a comment could be contradicting what is going on - in which case it is prudent to modify it).  
 When modifying files just focus on areas where the change is required instead of diving into a full fledged refactor.
 Make sure you ignore 'gen' and 'node_modules' as it has a lot of files you wont need for most things and are either auto generated or just package dependencies
@@ -88,6 +89,12 @@ Do not refer to claude or anthropic in your commit messages
 Do not rebuild the server - it will be continuosly be rebuilt and run by the air configs.  Output of the server will be written to /tmp/sdlserver.log.  Build errors will also be shown in this log file.
 Find the root cause of an issue before figuring out a solution.  Fix problems.
 Do not create workarounds for issues without asking.  Always find the root cause of an issue and fix it.
+
+## Available commands
+
+When generating protos run the command `buf generate`
+
+To build the SDL binary use `make`.  The binary is now already in path and can be run with `sdl`
 
 # Summary instructions
 

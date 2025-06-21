@@ -56,6 +56,12 @@ SDL is designed as a system modeling and simulation platform with:
 - **Implementation**: MetricTracer calculates aggregations based on MetricSpec during event processing
 - **Implementation**: MetricStore methods accept Metric reference + points
 
+### 10. Parameter Management Design (June 21, 2025)
+- **Decision**: Use SDL expression syntax for all parameter values
+- **Rationale**: Consistent with the language, supports complex types, leverages existing parser
+- **Implementation**: SetParameter accepts strings like "42", "true", "'string'" that are parsed as SDL expressions
+- **Design**: Runtime.GetParam/SetParam handle nested component paths with SystemInstance.FindComponent
+
 ## Component Architecture
 
 ### Runtime Layer

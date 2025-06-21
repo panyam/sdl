@@ -25,7 +25,7 @@ var loadCmd = &cobra.Command{
 			})
 			return err
 		})
-		
+
 		if err != nil {
 			fmt.Printf("❌ Failed to load file: %v\n", err)
 			if err.Error() == "cannot connect to SDL server: failed to connect to gRPC server at localhost:9090: context deadline exceeded" {
@@ -34,7 +34,7 @@ var loadCmd = &cobra.Command{
 			}
 			return
 		}
-		
+
 		fmt.Printf("✅ Loaded %s successfully (canvas: %s)\n", args[0], canvasID)
 	},
 }
@@ -51,12 +51,12 @@ var useCmd = &cobra.Command{
 			})
 			return err
 		})
-		
+
 		if err != nil {
 			fmt.Printf("❌ Failed to use system: %v\n", err)
 			return
 		}
-		
+
 		fmt.Printf("✅ Now using system: %s\n", args[0])
 	},
 }
@@ -66,13 +66,27 @@ var setCmd = &cobra.Command{
 	Short: "Set a parameter value",
 	Args:  cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
-		_, err := makeAPICall[any]("POST", "/api/console/set", map[string]any{
-			"parameter": args[0],
-			"value":     args[1],
+		err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+			resp, err := client.SetParameter(ctx, &v1.SetParameterRequest{
+				CanvasId: canvasID,
+				Path:     args[0],
+				NewValue: args[1],
+			})
+			if err != nil {
+				return err
+			}
+			if !resp.Success {
+				return fmt.Errorf(resp.ErrorMessage)
+			}
+			return nil
 		})
-		if err == nil {
-			fmt.Printf("✅ Set %s = %s\n", args[0], args[1])
+
+		if err != nil {
+			fmt.Printf("❌ Failed to set parameter: %v\n", err)
+			return
 		}
+
+		fmt.Printf("✅ Set %s = %s\n", args[0], args[1])
 	},
 }
 
@@ -81,30 +95,39 @@ var getCmd = &cobra.Command{
 	Short: "View parameter values",
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		result, err := makeAPICall[any]("GET", "/api/console/state", nil)
+		err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+			path := ""
+			if len(args) > 0 {
+				path = args[0]
+			}
+
+			resp, err := client.GetParameters(ctx, &v1.GetParametersRequest{
+				CanvasId: canvasID,
+				Path:     path,
+			})
+			if err != nil {
+				return err
+			}
+
+			if len(resp.Parameters) == 0 {
+				if path == "" {
+					fmt.Println("No parameters set")
+				} else {
+					fmt.Printf("Parameter '%s' not found\n", path)
+				}
+				return nil
+			}
+
+			// Display parameters
+			for key, value := range resp.Parameters {
+				fmt.Printf("%s = %s\n", key, value)
+			}
+
+			return nil
+		})
+
 		if err != nil {
-			return
-		}
-
-		state := result.(map[string]any)["state"].(map[string]any)
-		params := state["systemParameters"].(map[string]any)
-
-		if len(args) == 0 {
-			// Show all parameters
-			if len(params) == 0 {
-				fmt.Println("No parameters set")
-				return
-			}
-			for key, value := range params {
-				fmt.Printf("%s = %v\n", key, value)
-			}
-		} else {
-			// Show specific parameter
-			if value, exists := params[args[0]]; exists {
-				fmt.Printf("%s = %v\n", args[0], value)
-			} else {
-				fmt.Printf("Parameter '%s' not found\n", args[0])
-			}
+			fmt.Printf("❌ Failed to get parameters: %v\n", err)
 		}
 	},
 }
@@ -146,7 +169,7 @@ var infoCmd = &cobra.Command{
 			canvas := resp.Canvas
 			fmt.Printf("SDL Canvas State:\n")
 			fmt.Printf("🆔 Canvas ID: %s\n", canvas.Id)
-			
+
 			if canvas.ActiveSystem != "" {
 				fmt.Printf("🎯 Active System: %s\n", canvas.ActiveSystem)
 			}
@@ -158,10 +181,10 @@ var infoCmd = &cobra.Command{
 			// if len(canvas.Metrics) > 0 {
 			//     fmt.Printf("📊 Metrics: %d\n", len(canvas.Metrics))
 			// }
-			
+
 			return nil
 		})
-		
+
 		if err != nil {
 			fmt.Printf("❌ Failed to get canvas info: %v\n", err)
 		}
