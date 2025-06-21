@@ -171,14 +171,33 @@ func displayTraceOutput(trace *v1.TraceData) {
 	exitMap := make(map[int64]*v1.TraceEvent)
 	childrenMap := make(map[int64][]*v1.TraceEvent)
 	
+	// First pass: collect all enter events and build parent-child relationships
 	for _, event := range trace.Events {
 		if event.Kind == "enter" {
 			eventMap[event.Id] = event
 			if event.ParentId > 0 {
 				childrenMap[event.ParentId] = append(childrenMap[event.ParentId], event)
 			}
+		}
+	}
+	
+	// Second pass: match exit events to their corresponding enter events
+	// We do this by looking for the most recent enter event with matching component/method
+	enterStack := []*v1.TraceEvent{}
+	for _, event := range trace.Events {
+		if event.Kind == "enter" {
+			enterStack = append(enterStack, event)
 		} else if event.Kind == "exit" {
-			exitMap[event.Id] = event
+			// Find matching enter event from the stack
+			for i := len(enterStack) - 1; i >= 0; i-- {
+				enter := enterStack[i]
+				if enter.Component == event.Component && enter.Method == event.Method {
+					exitMap[enter.Id] = event
+					// Remove from stack
+					enterStack = append(enterStack[:i], enterStack[i+1:]...)
+					break
+				}
+			}
 		}
 	}
 
