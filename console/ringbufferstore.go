@@ -311,9 +311,9 @@ func (rb *ringBuffer) query(startTime, endTime time.Time, tagFilters map[string]
 		}
 	}
 
-	// Sort by timestamp
+	// Sort by timestamp in descending order (most recent first)
 	sort.Slice(results, func(i, j int) bool {
-		return results[i].Timestamp.Before(results[j].Timestamp)
+		return results[j].Timestamp.Before(results[i].Timestamp)
 	})
 
 	return results
