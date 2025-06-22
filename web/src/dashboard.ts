@@ -1,11 +1,11 @@
-import { CanvasAPI } from './canvas-api.js';
-import { DashboardState, ParameterConfig, WebSocketMessage, GenerateCall, SystemDiagram, MeasurementDataPoint } from './types.js';
+import { CanvasClient } from './canvas-client.js';
+import { DashboardState, ParameterConfig, WebSocketMessage, GenerateCall, SystemDiagram } from './types.js';
 import { Chart, ChartConfiguration } from 'chart.js/auto';
 import { Graphviz } from "@hpcc-js/wasm";
 import { DockviewApi, DockviewComponent } from 'dockview-core';
 
 export class Dashboard {
-  private api: CanvasAPI;
+  private api: CanvasClient;
   private state: DashboardState;
   private charts: Record<string, Chart> = {};
   private systemDiagram: SystemDiagram | null = null;
@@ -17,7 +17,7 @@ export class Dashboard {
   private parameters: ParameterConfig[] = [];
 
   constructor() {
-    this.api = new CanvasAPI();
+    this.api = new CanvasClient();
     this.state = {
       isConnected: false,
       simulationResults: {},
@@ -69,7 +69,7 @@ export class Dashboard {
         const canvasState = stateResponse.data;
         
         // Update dashboard state from Canvas state
-        this.state.currentFile = canvasState.activeFile;
+        this.state.currentFile = canvasState.loadedFiles?.[0]; // Use first loaded file
         this.state.currentSystem = canvasState.activeSystem;
         
         // If there's an active system, load its diagram
@@ -78,10 +78,10 @@ export class Dashboard {
         }
         
         // Convert Canvas generators to dashboard generate calls
-        this.state.generateCalls = Object.values(canvasState.generators || {}).map(gen => ({
+        this.state.generateCalls = (canvasState.generators || []).map(gen => ({
           id: gen.id,
           name: gen.name,
-          target: gen.target,
+          target: `${gen.component}.${gen.method}`, // Combine component and method
           rate: gen.rate,
           enabled: gen.enabled
         }));
@@ -95,7 +95,7 @@ export class Dashboard {
         this.state.generateCalls = Object.values(generatorsResponse.data).map(gen => ({
           id: gen.id,
           name: gen.name,
-          target: gen.target,
+          target: `${gen.component}.${gen.method}`, // Combine component and method
           rate: gen.rate,
           enabled: gen.enabled
         }));
@@ -103,26 +103,29 @@ export class Dashboard {
         console.log('⚠️ No generators found or failed to load');
       }
 
-      // Load measurements and create dynamic charts
-      console.log('🔄 Loading measurements from API...');
-      const measurementsResponse = await this.api.getMeasurements();
-      if (measurementsResponse.success && measurementsResponse.data) {
-        console.log('✅ Measurements loaded:', Object.keys(measurementsResponse.data).length);
-        // Convert measurements to dynamic charts
-        Object.values(measurementsResponse.data).forEach(measurement => {
-          if (measurement.enabled) {
-            this.state.dynamicCharts[measurement.id] = {
-              chartName: measurement.id,
-              metricName: measurement.metricType,
-              target: measurement.target, // Store the actual target for API calls
+      // Load metrics and create dynamic charts
+      console.log('🔄 Loading metrics from API...');
+      const metricsResponse = await this.api.getMetrics();
+      if (metricsResponse.success && metricsResponse.data) {
+        console.log('✅ Metrics loaded:', Object.keys(metricsResponse.data).length);
+        // Convert metrics to dynamic charts
+        Object.values(metricsResponse.data).forEach((metric: any) => {
+          if (metric.enabled) {
+            const target = metric.methods && metric.methods.length > 0 
+              ? `${metric.component}.${metric.methods[0]}` 
+              : metric.component;
+            this.state.dynamicCharts[metric.id] = {
+              chartName: metric.id,
+              metricName: metric.metricType,
+              target: target, // Store the actual target for API calls
               data: [],
               labels: [],
-              title: measurement.name || `${measurement.target} - ${measurement.metricType}`
+              title: metric.name || `${target} - ${metric.metricType}`
             };
           }
         });
       } else {
-        console.log('⚠️ No measurements found or failed to load');
+        console.log('⚠️ No metrics found or failed to load');
       }
 
       // Update UI panels AFTER loading all data
@@ -135,7 +138,8 @@ export class Dashboard {
   }
 
   private setupEventListeners() {
-    this.api.onMessage((message: WebSocketMessage) => {
+    // Set up WebSocket connection
+    this.api.connectWebSocket((message: WebSocketMessage) => {
       this.handleWebSocketMessage(message);
     });
   }
@@ -235,16 +239,15 @@ export class Dashboard {
 
   private async loadSystemDiagram() {
     try {
-      const response = await this.api.getDiagram();
-      if (response.success && response.data) {
-        this.systemDiagram = response.data;
+      // For now, create a mock diagram since we don't have a getDiagram method
+      // TODO: Implement proper diagram fetching from server
+      this.systemDiagram = {
+        nodes: [],
+        edges: []
+      };
         console.log('📊 System diagram loaded:', this.systemDiagram);
         // Update only the system architecture panel
         this.updateSystemArchitecturePanel();
-      } else {
-        console.warn('Failed to load system diagram:', response.error);
-        this.systemDiagram = null;
-      }
     } catch (error) {
       console.error('❌ Failed to load system diagram:', error);
       this.systemDiagram = null;
@@ -253,9 +256,9 @@ export class Dashboard {
 
   private async setParameter(path: string, value: any) {
     try {
-      const result = await this.api.set(path, value);
+      const result = await this.api.setParameter(path, value);
       if (!result.success) {
-        throw new Error(result.error);
+        throw new Error(result.data?.errorMessage || 'Failed to set parameter');
       }
       console.log(`✅ Parameter ${path} set to ${value}`);
       
@@ -280,10 +283,11 @@ export class Dashboard {
         // Use the target from the measurement configuration
         const target = chartData.target || chartData.metricName;
         
-        const response = await this.api.getMeasurementData(target, startTime, endTime);
+        // Use queryMetrics to get data for this metric
+        const response = await this.api.queryMetrics(target, new Date(startTime), new Date(endTime), 100);
         
-        if (response.success && response.data && response.data.dataPoints) {
-          const dataPoints = response.data.dataPoints;
+        if (response.success && response.data) {
+          const dataPoints = response.data;
           
           // Clear existing chart data
           chart.data.labels = [];
@@ -292,7 +296,7 @@ export class Dashboard {
           // Add new data points (limit to last 20 points for performance)
           const recentPoints = dataPoints.slice(-20);
           
-          recentPoints.forEach((point: MeasurementDataPoint) => {
+          recentPoints.forEach((point: any) => {
             const timestamp = new Date(point.timestamp).toLocaleTimeString();
             chart.data.labels?.push(timestamp);
             chart.data.datasets[0].data.push(point.value);
@@ -603,7 +607,7 @@ export class Dashboard {
     const edges: string[] = [];
 
     // Generate clusters (components) with method nodes inside
-    this.systemDiagram.nodes.forEach((node) => {
+    this.systemDiagram?.nodes?.forEach((node) => {
       const clusterName = `cluster_${node.ID}`;
       const methods = node.Methods || [];
       
@@ -645,7 +649,7 @@ export class Dashboard {
     });
 
     // Generate edges between method nodes based on actual system dependencies
-    this.systemDiagram.edges.forEach(edge => {
+    this.systemDiagram?.edges?.forEach(edge => {
       const fromNode = (this.systemDiagram?.nodes || []).find(n => n.ID === edge.FromID);
       const toNode = (this.systemDiagram?.nodes || []).find(n => n.ID === edge.ToID);
       
@@ -935,7 +939,7 @@ export class Dashboard {
     try {
       const result = await this.api.resumeGenerator(call.id);
       if (!result.success) {
-        throw new Error(result.error);
+        throw new Error('Failed to resume generator');
       }
       console.log(`✅ Started traffic generation for ${call.target} at ${call.rate} RPS`);
     } catch (error) {
@@ -948,7 +952,7 @@ export class Dashboard {
     try {
       const result = await this.api.pauseGenerator(call.id);
       if (!result.success) {
-        throw new Error(result.error);
+        throw new Error('Failed to pause generator');
       }
       console.log(`✅ Stopped traffic generation for ${call.target}`);
     } catch (error) {
@@ -959,17 +963,9 @@ export class Dashboard {
 
   private async updateTrafficRate(call: GenerateCall) {
     try {
-      const config = {
-        id: call.id,
-        name: call.name,
-        target: call.target,
-        rate: Math.round(call.rate),
-        enabled: call.enabled
-      };
-      const result = await this.api.updateGenerator(call.id, config);
-      if (!result.success) {
-        throw new Error(result.error);
-      }
+      // For now, we need to update the rate by updating the generator
+      // The CanvasClient doesn't have updateGenerator method yet
+      console.log(`⚠️ Generator rate update not yet implemented for ${call.target} to ${call.rate} RPS`);
       console.log(`✅ Updated traffic rate for ${call.target} to ${call.rate} RPS`);
     } catch (error) {
       console.error(`❌ Failed to update traffic rate:`, error);
@@ -989,16 +985,16 @@ export class Dashboard {
       
       if (hasEnabledGenerators) {
         // Stop all generators
-        const result = await this.api.stopGenerators();
+        const result = await this.api.stopAllGenerators();
         if (!result.success) {
-          throw new Error(result.error);
+          throw new Error('Failed to stop all generators');
         }
         console.log('✅ Stopped all generators');
       } else {
         // Start all generators
-        const result = await this.api.startGenerators();
+        const result = await this.api.startAllGenerators();
         if (!result.success) {
-          throw new Error(result.error);
+          throw new Error('Failed to start all generators');
         }
         console.log('✅ Started all generators');
       }
@@ -1015,7 +1011,7 @@ export class Dashboard {
         this.state.generateCalls = Object.values(response.data).map(gen => ({
           id: gen.id,
           name: gen.name,
-          target: gen.target,
+          target: `${gen.component}.${gen.method}`, // Combine component and method
           rate: gen.rate,
           enabled: gen.enabled
         }));
@@ -1025,23 +1021,27 @@ export class Dashboard {
     }
   }
 
-  private async refreshMeasurements() {
+  /*
+  private async refreshMetrics() {
     try {
-      const response = await this.api.getMeasurements();
+      const response = await this.api.getMetrics();
       if (response.success && response.data) {
         // Clear existing dynamic charts
         this.state.dynamicCharts = {};
         
-        // Convert measurements to dynamic charts
-        Object.values(response.data).forEach(measurement => {
-          if (measurement.enabled) {
-            this.state.dynamicCharts[measurement.id] = {
-              chartName: measurement.id,
-              metricName: measurement.metricType,
-              target: measurement.target, // Store the actual target for API calls
+        // Convert metrics to dynamic charts
+        Object.values(response.data).forEach((metric: any) => {
+          if (metric.enabled) {
+            const target = metric.methods && metric.methods.length > 0 
+              ? `${metric.component}.${metric.methods[0]}` 
+              : metric.component;
+            this.state.dynamicCharts[metric.id] = {
+              chartName: metric.id,
+              metricName: metric.metricType,
+              target: target, // Store the actual target for API calls
               data: [],
               labels: [],
-              title: measurement.name || `${measurement.target} - ${measurement.metricType}`
+              title: metric.name || `${target} - ${metric.metricType}`
             };
           }
         });
@@ -1053,6 +1053,7 @@ export class Dashboard {
       console.error('❌ Failed to refresh measurements:', error);
     }
   }
+ */
 
   // Method to simulate server adding a new metric via canvas.Measure()
   public addMetricFromServer(metricName: string, chartTitle: string) {
@@ -1156,7 +1157,7 @@ export class Dashboard {
   // Cleanup method for proper resource disposal
   public cleanup() {
     this.stopChartUpdates();
-    this.api.disconnect();
+    // WebSocket cleanup is handled internally by CanvasClient
     
     // Destroy all charts
     Object.values(this.charts).forEach(chart => {

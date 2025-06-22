@@ -26,6 +26,8 @@ cd sdl
 # Install prerequisites
 
 #Install Buf if not already done.  This will make buf generally available
+npm config set @buf:registry https://buf.build/gen/npm/v1/
+npm install @connectrpc/connect @connectrpc/connect-web
 npm install --save-dev -g @bufbuild/buf
 
 # Install the es/connect generator plugins for proto and buf.  Needed for `buf generate`
