@@ -1172,10 +1172,8 @@ export class Dashboard {
     // Stop any existing polling
     this.stopChartUpdates();
     
-    // Get all metric IDs from current charts
-    const metricIds = Object.values(this.state.dynamicCharts).map(chartData => 
-      chartData.target || chartData.metricName
-    );
+    // Get all metric IDs from current charts - use the keys which are the actual metric IDs
+    const metricIds = Object.keys(this.state.dynamicCharts);
     
     if (metricIds.length === 0) {
       console.log('📊 No metrics to stream');
@@ -1197,6 +1195,7 @@ export class Dashboard {
         if (response.success && response.data) {
           // Process each metric update
           for (const update of response.data) {
+            console.log('📊 Metric update:', update.metricId, update.point);
             this.updateChartWithStreamData(update.metricId, update.point);
           }
         }
@@ -1213,10 +1212,8 @@ export class Dashboard {
   }
   
   private updateChartWithStreamData(metricId: string, point: any) {
-    // Find the chart for this metric
-    const chartData = Object.values(this.state.dynamicCharts).find(
-      cd => (cd.target || cd.metricName) === metricId
-    );
+    // Find the chart for this metric - directly access by metric ID
+    const chartData = this.state.dynamicCharts[metricId];
     
     if (!chartData) return;
     
@@ -1224,7 +1221,8 @@ export class Dashboard {
     if (!chart) return;
     
     // Add the new point to the chart
-    const timestamp = new Date(point.timestamp).toLocaleTimeString();
+    // Convert Unix timestamp (seconds) to milliseconds for JavaScript Date
+    const timestamp = new Date(point.timestamp * 1000).toLocaleTimeString();
     
     // Keep only last 20 points for performance
     if (chart.data.labels!.length >= 20) {
