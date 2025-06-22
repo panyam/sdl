@@ -6,13 +6,15 @@ import (
 	"math/rand"
 	"strconv"
 	"time"
+
+	protos "github.com/panyam/sdl/gen/go/sdl/v1"
 )
 
 // --- Excalidraw Generator ---
 
 type ExcalidrawGenerator struct{}
 
-func (g *ExcalidrawGenerator) Generate(systemName string, nodes []Node, edges []Edge) (string, error) {
+func (g *ExcalidrawGenerator) Generate(diagram *protos.SystemDiagram) (string, error) {
 	scene := newExcalidrawScene()
 	layoutState := struct {
 		currentX, currentY, startX, startY, elementWidth, elementHeight, gapX, gapY float64
@@ -25,13 +27,13 @@ func (g *ExcalidrawGenerator) Generate(systemName string, nodes []Node, edges []
 	}
 	sdlNodeToExcalidrawRectID := make(map[string]string)
 
-	for _, node := range nodes {
+	for _, node := range diagram.Nodes {
 		labelText := fmt.Sprintf("%s\n(%s)", node.Name, node.Type)
 		rect, _, err := scene.addRectangle(layoutState.currentX, layoutState.currentY, layoutState.elementWidth, layoutState.elementHeight, labelText, nil, nil)
 		if err != nil {
-			return "", fmt.Errorf("error adding SDL node %s to Excalidraw scene: %w", node.ID, err)
+			return "", fmt.Errorf("error adding SDL node %s to Excalidraw scene: %w", node.Id, err)
 		}
-		sdlNodeToExcalidrawRectID[node.ID] = rect.ID
+		sdlNodeToExcalidrawRectID[node.Id] = rect.ID
 
 		layoutState.countInRow++
 		if layoutState.countInRow >= layoutState.elementsPerRow {
@@ -43,15 +45,15 @@ func (g *ExcalidrawGenerator) Generate(systemName string, nodes []Node, edges []
 		}
 	}
 
-	for _, edge := range edges {
-		fromRectID, fromOk := sdlNodeToExcalidrawRectID[edge.FromID]
-		toRectID, toOk := sdlNodeToExcalidrawRectID[edge.ToID]
+	for _, edge := range diagram.Edges {
+		fromRectID, fromOk := sdlNodeToExcalidrawRectID[edge.FromId]
+		toRectID, toOk := sdlNodeToExcalidrawRectID[edge.ToId]
 		if !fromOk || !toOk {
-			return "", fmt.Errorf("could not find Excalidraw ID for SDL node %s or %s for edge", edge.FromID, edge.ToID)
+			return "", fmt.Errorf("could not find Excalidraw ID for SDL node %s or %s for edge", edge.FromId, edge.ToId)
 		}
 		_, _, err := scene.addArrow(fromRectID, toRectID, edge.Label, nil, nil)
 		if err != nil {
-			return "", fmt.Errorf("error adding SDL edge from %s to %s (label: %s) to Excalidraw scene: %w", edge.FromID, edge.ToID, edge.Label, err)
+			return "", fmt.Errorf("error adding SDL edge from %s to %s (label: %s) to Excalidraw scene: %w", edge.FromId, edge.ToId, edge.Label, err)
 		}
 	}
 	return scene.toJSON()

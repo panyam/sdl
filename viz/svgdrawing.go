@@ -5,13 +5,15 @@ import (
 	"fmt"
 	"html"
 	"math"
+
+	protos "github.com/panyam/sdl/gen/go/sdl/v1"
 )
 
 // --- SVG Generator ---
 
 type SvgGenerator struct{}
 
-func (g *SvgGenerator) Generate(systemName string, nodes []Node, edges []Edge) (string, error) {
+func (g *SvgGenerator) Generate(diagram *protos.SystemDiagram) (string, error) {
 	var svg bytes.Buffer
 	// ... (SVG generation code remains the same as before)
 	canvasWidth := 1024
@@ -47,14 +49,14 @@ func (g *SvgGenerator) Generate(systemName string, nodes []Node, edges []Edge) (
 	titleX := float64(canvasWidth) / 2.0
 	titleY := padding + fontSize
 	svg.WriteString(fmt.Sprintf("  <text x=\"%.1f\" y=\"%.1f\" class=\"diagram-title\">Static Diagram for System: %s</text>\n",
-		titleX, titleY, html.EscapeString(systemName)))
+		titleX, titleY, html.EscapeString(diagram.SystemName)))
 
-	for i, node := range nodes {
+	for i, node := range diagram.Nodes {
 		nodeX := currentX
 		nodeY := currentY
 		centerX := nodeX + rectWidth/2
 		centerY := nodeY + rectHeight/2
-		nodePositions[node.ID] = struct{ X, Y, CX, CY float64 }{nodeX, nodeY, centerX, centerY}
+		nodePositions[node.Id] = struct{ X, Y, CX, CY float64 }{nodeX, nodeY, centerX, centerY}
 
 		svg.WriteString(fmt.Sprintf("  <rect x=\"%.1f\" y=\"%.1f\" width=\"%.1f\" height=\"%.1f\" rx=\"5\" ry=\"5\" class=\"node-rect\" />\n",
 			nodeX, nodeY, rectWidth, rectHeight))
@@ -74,9 +76,9 @@ func (g *SvgGenerator) Generate(systemName string, nodes []Node, edges []Edge) (
 			currentY += rectHeight + gapY
 		}
 	}
-	for _, edge := range edges {
-		fromPos, fromOk := nodePositions[edge.FromID]
-		toPos, toOk := nodePositions[edge.ToID]
+	for _, edge := range diagram.Edges {
+		fromPos, fromOk := nodePositions[edge.FromId]
+		toPos, toOk := nodePositions[edge.ToId]
 
 		if fromOk && toOk {
 			dx := toPos.CX - fromPos.CX

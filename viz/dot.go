@@ -3,25 +3,27 @@ package viz
 import (
 	"bytes"
 	"fmt"
+
+	protos "github.com/panyam/sdl/gen/go/sdl/v1"
 )
 
 // --- DOT Generator ---
 
 type DotGenerator struct{}
 
-func (g *DotGenerator) Generate(systemName string, nodes []Node, edges []Edge) (string, error) {
+func (g *DotGenerator) Generate(diagram *protos.SystemDiagram) (string, error) {
 	var b bytes.Buffer
-	b.WriteString(fmt.Sprintf("digraph \"%s\" {\n", systemName))
+	b.WriteString(fmt.Sprintf("digraph \"%s\" {\n", diagram.SystemName))
 	b.WriteString("  rankdir=LR;\n")
-	b.WriteString(fmt.Sprintf("  label=\"Static Diagram for System: %s\";\n", systemName))
+	b.WriteString(fmt.Sprintf("  label=\"Static Diagram for System: %s\";\n", diagram.SystemName))
 	b.WriteString("  node [shape=record];\n")
 
-	for _, node := range nodes {
-		b.WriteString(fmt.Sprintf("  \"%s\" [label=\"%s\\n(%s)\"];\n", node.ID, node.Name, node.Type))
+	for _, node := range diagram.Nodes {
+		b.WriteString(fmt.Sprintf("  \"%s\" [label=\"%s\\n(%s)\"];\n", node.Id, node.Name, node.Type))
 	}
 
-	for _, edge := range edges {
-		b.WriteString(fmt.Sprintf("  \"%s\" -> \"%s\" [label=\"%s\"];\n", edge.FromID, edge.ToID, edge.Label))
+	for _, edge := range diagram.Edges {
+		b.WriteString(fmt.Sprintf("  \"%s\" -> \"%s\" [label=\"%s\"];\n", edge.FromId, edge.ToId, edge.Label))
 	}
 	b.WriteString("}\n")
 	return b.String(), nil
