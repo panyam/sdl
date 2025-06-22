@@ -92,6 +92,25 @@ func (s *CanvasService) DeleteCanvas(ctx context.Context, req *protos.DeleteCanv
 	return
 }
 
+func (s *CanvasService) ResetCanvas(ctx context.Context, req *protos.ResetCanvasRequest) (resp *protos.ResetCanvasResponse, err error) {
+	slog.Info("ResetCanvas Request", "req", req)
+	resp = &protos.ResetCanvasResponse{}
+	
+	err = s.withCanvas(req.CanvasId, func(canvas *Canvas) {
+		resetErr := canvas.Reset()
+		if resetErr != nil {
+			resp.Success = false
+			resp.Message = fmt.Sprintf("Failed to reset canvas: %v", resetErr)
+			err = resetErr
+		} else {
+			resp.Success = true
+			resp.Message = "Canvas reset successfully - all generators stopped, metrics cleared, and state reset"
+		}
+	})
+	
+	return
+}
+
 func (s *CanvasService) withCanvas(canvasId string, callback func(*Canvas)) (err error) {
 	s.storeMutex.Lock()
 	defer s.storeMutex.Unlock()

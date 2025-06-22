@@ -593,6 +593,44 @@ func (c *Canvas) Close() error {
 	return nil
 }
 
+// Reset clears the canvas completely - stops all generators, removes metrics, and resets state
+func (c *Canvas) Reset() error {
+	// Stop all generators
+	c.generatorsLock.Lock()
+	for _, gen := range c.generators {
+		gen.Stop()
+	}
+	c.generators = make(map[string]*GeneratorInfo)
+	c.generatorsLock.Unlock()
+
+	// Clear metrics
+	if c.metricTracer != nil {
+		c.metricTracer.Clear()
+	}
+
+	// Reset system state
+	c.activeSystem = nil
+	c.loadedSystems = make(map[string]*runtime.SystemInstance)
+
+	// Reset flow state
+	c.currentFlowScope = nil
+	c.proposedFlowScope = nil
+	c.currentFlowRates = nil
+	c.proposedFlowRates = nil
+	c.currentFlowStrategy = runtime.GetDefaultFlowStrategy()
+	c.manualRateOverrides = make(map[string]float64)
+
+	// Reset simulation time
+	c.simulationStarted = false
+
+	// Also reset the loader and runtime as we want a clean slate.
+	// Perhaps later we can see hwo to reuse them or only clear based on req flags.
+	loader := loader.NewLoader(nil, nil, 10)
+	c.runtime = runtime.NewRuntime(loader)
+
+	return nil
+}
+
 // ExecuteTrace runs a single method call and returns detailed trace data
 func (c *Canvas) ExecuteTrace(componentName, methodName string) (*runtime.TraceData, error) {
 	if c.activeSystem == nil {

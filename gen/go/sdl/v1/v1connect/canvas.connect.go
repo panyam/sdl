@@ -50,6 +50,9 @@ const (
 	// CanvasServiceDeleteCanvasProcedure is the fully-qualified name of the CanvasService's
 	// DeleteCanvas RPC.
 	CanvasServiceDeleteCanvasProcedure = "/sdl.v1.CanvasService/DeleteCanvas"
+	// CanvasServiceResetCanvasProcedure is the fully-qualified name of the CanvasService's ResetCanvas
+	// RPC.
+	CanvasServiceResetCanvasProcedure = "/sdl.v1.CanvasService/ResetCanvas"
 	// CanvasServiceAddGeneratorProcedure is the fully-qualified name of the CanvasService's
 	// AddGenerator RPC.
 	CanvasServiceAddGeneratorProcedure = "/sdl.v1.CanvasService/AddGenerator"
@@ -124,6 +127,9 @@ type CanvasServiceClient interface {
 	// *
 	// Delete a particular canvas.  Frees up resources used by it and all the connections
 	DeleteCanvas(context.Context, *connect.Request[v1.DeleteCanvasRequest]) (*connect.Response[v1.DeleteCanvasResponse], error)
+	// *
+	// Reset a canvas - clears all state, generators, and metrics
+	ResetCanvas(context.Context, *connect.Request[v1.ResetCanvasRequest]) (*connect.Response[v1.ResetCanvasResponse], error)
 	//	----- Generator Operations -----
 	//
 	// Adds a generator to a canvas's generator_ids list and creates the generator resource.
@@ -210,6 +216,12 @@ func NewCanvasServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			httpClient,
 			baseURL+CanvasServiceDeleteCanvasProcedure,
 			connect.WithSchema(canvasServiceMethods.ByName("DeleteCanvas")),
+			connect.WithClientOptions(opts...),
+		),
+		resetCanvas: connect.NewClient[v1.ResetCanvasRequest, v1.ResetCanvasResponse](
+			httpClient,
+			baseURL+CanvasServiceResetCanvasProcedure,
+			connect.WithSchema(canvasServiceMethods.ByName("ResetCanvas")),
 			connect.WithClientOptions(opts...),
 		),
 		addGenerator: connect.NewClient[v1.AddGeneratorRequest, v1.AddGeneratorResponse](
@@ -337,6 +349,7 @@ type canvasServiceClient struct {
 	loadFile           *connect.Client[v1.LoadFileRequest, v1.LoadFileResponse]
 	useSystem          *connect.Client[v1.UseSystemRequest, v1.UseSystemResponse]
 	deleteCanvas       *connect.Client[v1.DeleteCanvasRequest, v1.DeleteCanvasResponse]
+	resetCanvas        *connect.Client[v1.ResetCanvasRequest, v1.ResetCanvasResponse]
 	addGenerator       *connect.Client[v1.AddGeneratorRequest, v1.AddGeneratorResponse]
 	startAllGenerators *connect.Client[v1.StartAllGeneratorsRequest, v1.StartAllGeneratorsResponse]
 	stopAllGenerators  *connect.Client[v1.StopAllGeneratorsRequest, v1.StopAllGeneratorsResponse]
@@ -386,6 +399,11 @@ func (c *canvasServiceClient) UseSystem(ctx context.Context, req *connect.Reques
 // DeleteCanvas calls sdl.v1.CanvasService.DeleteCanvas.
 func (c *canvasServiceClient) DeleteCanvas(ctx context.Context, req *connect.Request[v1.DeleteCanvasRequest]) (*connect.Response[v1.DeleteCanvasResponse], error) {
 	return c.deleteCanvas.CallUnary(ctx, req)
+}
+
+// ResetCanvas calls sdl.v1.CanvasService.ResetCanvas.
+func (c *canvasServiceClient) ResetCanvas(ctx context.Context, req *connect.Request[v1.ResetCanvasRequest]) (*connect.Response[v1.ResetCanvasResponse], error) {
+	return c.resetCanvas.CallUnary(ctx, req)
 }
 
 // AddGenerator calls sdl.v1.CanvasService.AddGenerator.
@@ -499,6 +517,9 @@ type CanvasServiceHandler interface {
 	// *
 	// Delete a particular canvas.  Frees up resources used by it and all the connections
 	DeleteCanvas(context.Context, *connect.Request[v1.DeleteCanvasRequest]) (*connect.Response[v1.DeleteCanvasResponse], error)
+	// *
+	// Reset a canvas - clears all state, generators, and metrics
+	ResetCanvas(context.Context, *connect.Request[v1.ResetCanvasRequest]) (*connect.Response[v1.ResetCanvasResponse], error)
 	//	----- Generator Operations -----
 	//
 	// Adds a generator to a canvas's generator_ids list and creates the generator resource.
@@ -581,6 +602,12 @@ func NewCanvasServiceHandler(svc CanvasServiceHandler, opts ...connect.HandlerOp
 		CanvasServiceDeleteCanvasProcedure,
 		svc.DeleteCanvas,
 		connect.WithSchema(canvasServiceMethods.ByName("DeleteCanvas")),
+		connect.WithHandlerOptions(opts...),
+	)
+	canvasServiceResetCanvasHandler := connect.NewUnaryHandler(
+		CanvasServiceResetCanvasProcedure,
+		svc.ResetCanvas,
+		connect.WithSchema(canvasServiceMethods.ByName("ResetCanvas")),
 		connect.WithHandlerOptions(opts...),
 	)
 	canvasServiceAddGeneratorHandler := connect.NewUnaryHandler(
@@ -711,6 +738,8 @@ func NewCanvasServiceHandler(svc CanvasServiceHandler, opts ...connect.HandlerOp
 			canvasServiceUseSystemHandler.ServeHTTP(w, r)
 		case CanvasServiceDeleteCanvasProcedure:
 			canvasServiceDeleteCanvasHandler.ServeHTTP(w, r)
+		case CanvasServiceResetCanvasProcedure:
+			canvasServiceResetCanvasHandler.ServeHTTP(w, r)
 		case CanvasServiceAddGeneratorProcedure:
 			canvasServiceAddGeneratorHandler.ServeHTTP(w, r)
 		case CanvasServiceStartAllGeneratorsProcedure:
@@ -780,6 +809,10 @@ func (UnimplementedCanvasServiceHandler) UseSystem(context.Context, *connect.Req
 
 func (UnimplementedCanvasServiceHandler) DeleteCanvas(context.Context, *connect.Request[v1.DeleteCanvasRequest]) (*connect.Response[v1.DeleteCanvasResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.DeleteCanvas is not implemented"))
+}
+
+func (UnimplementedCanvasServiceHandler) ResetCanvas(context.Context, *connect.Request[v1.ResetCanvasRequest]) (*connect.Response[v1.ResetCanvasResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.ResetCanvas is not implemented"))
 }
 
 func (UnimplementedCanvasServiceHandler) AddGenerator(context.Context, *connect.Request[v1.AddGeneratorRequest]) (*connect.Response[v1.AddGeneratorResponse], error) {

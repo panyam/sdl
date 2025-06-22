@@ -3573,6 +3573,104 @@ func (x *DiagramEdge) GetColor() string {
 	return ""
 }
 
+// Request to reset a canvas
+type ResetCanvasRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResetCanvasRequest) Reset() {
+	*x = ResetCanvasRequest{}
+	mi := &file_sdl_v1_canvas_proto_msgTypes[65]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResetCanvasRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResetCanvasRequest) ProtoMessage() {}
+
+func (x *ResetCanvasRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_sdl_v1_canvas_proto_msgTypes[65]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResetCanvasRequest.ProtoReflect.Descriptor instead.
+func (*ResetCanvasRequest) Descriptor() ([]byte, []int) {
+	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{65}
+}
+
+func (x *ResetCanvasRequest) GetCanvasId() string {
+	if x != nil {
+		return x.CanvasId
+	}
+	return ""
+}
+
+// Response from resetting a canvas
+type ResetCanvasResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"` // Optional message about what was reset
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResetCanvasResponse) Reset() {
+	*x = ResetCanvasResponse{}
+	mi := &file_sdl_v1_canvas_proto_msgTypes[66]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResetCanvasResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResetCanvasResponse) ProtoMessage() {}
+
+func (x *ResetCanvasResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_sdl_v1_canvas_proto_msgTypes[66]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResetCanvasResponse.ProtoReflect.Descriptor instead.
+func (*ResetCanvasResponse) Descriptor() ([]byte, []int) {
+	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{66}
+}
+
+func (x *ResetCanvasResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *ResetCanvasResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 var File_sdl_v1_canvas_proto protoreflect.FileDescriptor
 
 const file_sdl_v1_canvas_proto_rawDesc = "" +
@@ -3819,14 +3917,20 @@ const file_sdl_v1_canvas_proto_rawDesc = "" +
 	"\vprobability\x18\b \x01(\x01R\vprobability\x12!\n" +
 	"\fgenerator_id\x18\t \x01(\tR\vgeneratorId\x12\x14\n" +
 	"\x05color\x18\n" +
-	" \x01(\tR\x05color2\x8b\x19\n" +
+	" \x01(\tR\x05color\"1\n" +
+	"\x12ResetCanvasRequest\x12\x1b\n" +
+	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\"I\n" +
+	"\x13ResetCanvasResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage2\x86\x1a\n" +
 	"\rCanvasService\x12b\n" +
 	"\fCreateCanvas\x12\x1b.sdl.v1.CreateCanvasRequest\x1a\x1c.sdl.v1.CreateCanvasResponse\"\x17\x82\xd3\xe4\x93\x02\x11:\x01*\"\f/v1/canvases\x12_\n" +
 	"\fListCanvases\x12\x1b.sdl.v1.ListCanvasesRequest\x1a\x1c.sdl.v1.ListCanvasesResponse\"\x14\x82\xd3\xe4\x93\x02\x0e\x12\f/v1/canvases\x12]\n" +
 	"\tGetCanvas\x12\x18.sdl.v1.GetCanvasRequest\x1a\x19.sdl.v1.GetCanvasResponse\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/v1/canvases/{id=*}\x12q\n" +
 	"\bLoadFile\x12\x17.sdl.v1.LoadFileRequest\x1a\x18.sdl.v1.LoadFileResponse\"2\x82\xd3\xe4\x93\x02,:\x01*\"'/v1/canvases/{canvas_id=*}/actions:load\x12s\n" +
 	"\tUseSystem\x12\x18.sdl.v1.UseSystemRequest\x1a\x19.sdl.v1.UseSystemResponse\"1\x82\xd3\xe4\x93\x02+:\x01*\"&/v1/canvases/{canvas_id=*}/actions:use\x12f\n" +
-	"\fDeleteCanvas\x12\x1b.sdl.v1.DeleteCanvasRequest\x1a\x1c.sdl.v1.DeleteCanvasResponse\"\x1b\x82\xd3\xe4\x93\x02\x15*\x13/v1/canvases/{id=*}\x12\x83\x01\n" +
+	"\fDeleteCanvas\x12\x1b.sdl.v1.DeleteCanvasRequest\x1a\x1c.sdl.v1.DeleteCanvasResponse\"\x1b\x82\xd3\xe4\x93\x02\x15*\x13/v1/canvases/{id=*}\x12y\n" +
+	"\vResetCanvas\x12\x1a.sdl.v1.ResetCanvasRequest\x1a\x1b.sdl.v1.ResetCanvasResponse\"1\x82\xd3\xe4\x93\x02+:\x01*\"&/v1/canvases/{canvas_id}/actions:reset\x12\x83\x01\n" +
 	"\fAddGenerator\x12\x1b.sdl.v1.AddGeneratorRequest\x1a\x1c.sdl.v1.AddGeneratorResponse\"8\x82\xd3\xe4\x93\x022:\x01*\"-/v1/canvases/{generator.canvas_id}/generators\x12\x9c\x01\n" +
 	"\x12StartAllGenerators\x12!.sdl.v1.StartAllGeneratorsRequest\x1a\".sdl.v1.StartAllGeneratorsResponse\"?\x82\xd3\xe4\x93\x029:\x01*\x1a4/v1/canvases/{canvas_id}/generators/actions:startall\x12\x98\x01\n" +
 	"\x11StopAllGenerators\x12 .sdl.v1.StopAllGeneratorsRequest\x1a!.sdl.v1.StopAllGeneratorsResponse\">\x82\xd3\xe4\x93\x028:\x01*\x1a3/v1/canvases/{canvas_id}/generators/actions:stopall\x12|\n" +
@@ -3861,7 +3965,7 @@ func file_sdl_v1_canvas_proto_rawDescGZIP() []byte {
 	return file_sdl_v1_canvas_proto_rawDescData
 }
 
-var file_sdl_v1_canvas_proto_msgTypes = make([]protoimpl.MessageInfo, 67)
+var file_sdl_v1_canvas_proto_msgTypes = make([]protoimpl.MessageInfo, 69)
 var file_sdl_v1_canvas_proto_goTypes = []any{
 	(*CreateCanvasRequest)(nil),        // 0: sdl.v1.CreateCanvasRequest
 	(*CreateCanvasResponse)(nil),       // 1: sdl.v1.CreateCanvasResponse
@@ -3928,35 +4032,37 @@ var file_sdl_v1_canvas_proto_goTypes = []any{
 	(*DiagramNode)(nil),                // 62: sdl.v1.DiagramNode
 	(*MethodInfo)(nil),                 // 63: sdl.v1.MethodInfo
 	(*DiagramEdge)(nil),                // 64: sdl.v1.DiagramEdge
-	nil,                                // 65: sdl.v1.CreateCanvasResponse.FieldErrorsEntry
-	nil,                                // 66: sdl.v1.GetParametersResponse.ParametersEntry
-	(*Canvas)(nil),                     // 67: sdl.v1.Canvas
-	(*Pagination)(nil),                 // 68: sdl.v1.Pagination
-	(*PaginationResponse)(nil),         // 69: sdl.v1.PaginationResponse
-	(*Generator)(nil),                  // 70: sdl.v1.Generator
-	(*fieldmaskpb.FieldMask)(nil),      // 71: google.protobuf.FieldMask
-	(*Metric)(nil),                     // 72: sdl.v1.Metric
+	(*ResetCanvasRequest)(nil),         // 65: sdl.v1.ResetCanvasRequest
+	(*ResetCanvasResponse)(nil),        // 66: sdl.v1.ResetCanvasResponse
+	nil,                                // 67: sdl.v1.CreateCanvasResponse.FieldErrorsEntry
+	nil,                                // 68: sdl.v1.GetParametersResponse.ParametersEntry
+	(*Canvas)(nil),                     // 69: sdl.v1.Canvas
+	(*Pagination)(nil),                 // 70: sdl.v1.Pagination
+	(*PaginationResponse)(nil),         // 71: sdl.v1.PaginationResponse
+	(*Generator)(nil),                  // 72: sdl.v1.Generator
+	(*fieldmaskpb.FieldMask)(nil),      // 73: google.protobuf.FieldMask
+	(*Metric)(nil),                     // 74: sdl.v1.Metric
 }
 var file_sdl_v1_canvas_proto_depIdxs = []int32{
-	67, // 0: sdl.v1.CreateCanvasRequest.canvas:type_name -> sdl.v1.Canvas
-	67, // 1: sdl.v1.CreateCanvasResponse.canvas:type_name -> sdl.v1.Canvas
-	65, // 2: sdl.v1.CreateCanvasResponse.field_errors:type_name -> sdl.v1.CreateCanvasResponse.FieldErrorsEntry
-	68, // 3: sdl.v1.ListCanvasesRequest.pagination:type_name -> sdl.v1.Pagination
-	67, // 4: sdl.v1.ListCanvasesResponse.canvases:type_name -> sdl.v1.Canvas
-	69, // 5: sdl.v1.ListCanvasesResponse.pagination:type_name -> sdl.v1.PaginationResponse
-	67, // 6: sdl.v1.GetCanvasResponse.canvas:type_name -> sdl.v1.Canvas
-	70, // 7: sdl.v1.AddGeneratorRequest.generator:type_name -> sdl.v1.Generator
-	70, // 8: sdl.v1.AddGeneratorResponse.generator:type_name -> sdl.v1.Generator
-	70, // 9: sdl.v1.ListGeneratorsResponse.generators:type_name -> sdl.v1.Generator
-	70, // 10: sdl.v1.GetGeneratorResponse.generator:type_name -> sdl.v1.Generator
-	70, // 11: sdl.v1.UpdateGeneratorRequest.generator:type_name -> sdl.v1.Generator
-	71, // 12: sdl.v1.UpdateGeneratorRequest.update_mask:type_name -> google.protobuf.FieldMask
-	70, // 13: sdl.v1.UpdateGeneratorResponse.generator:type_name -> sdl.v1.Generator
-	72, // 14: sdl.v1.AddMetricRequest.metric:type_name -> sdl.v1.Metric
-	72, // 15: sdl.v1.AddMetricResponse.metric:type_name -> sdl.v1.Metric
+	69, // 0: sdl.v1.CreateCanvasRequest.canvas:type_name -> sdl.v1.Canvas
+	69, // 1: sdl.v1.CreateCanvasResponse.canvas:type_name -> sdl.v1.Canvas
+	67, // 2: sdl.v1.CreateCanvasResponse.field_errors:type_name -> sdl.v1.CreateCanvasResponse.FieldErrorsEntry
+	70, // 3: sdl.v1.ListCanvasesRequest.pagination:type_name -> sdl.v1.Pagination
+	69, // 4: sdl.v1.ListCanvasesResponse.canvases:type_name -> sdl.v1.Canvas
+	71, // 5: sdl.v1.ListCanvasesResponse.pagination:type_name -> sdl.v1.PaginationResponse
+	69, // 6: sdl.v1.GetCanvasResponse.canvas:type_name -> sdl.v1.Canvas
+	72, // 7: sdl.v1.AddGeneratorRequest.generator:type_name -> sdl.v1.Generator
+	72, // 8: sdl.v1.AddGeneratorResponse.generator:type_name -> sdl.v1.Generator
+	72, // 9: sdl.v1.ListGeneratorsResponse.generators:type_name -> sdl.v1.Generator
+	72, // 10: sdl.v1.GetGeneratorResponse.generator:type_name -> sdl.v1.Generator
+	72, // 11: sdl.v1.UpdateGeneratorRequest.generator:type_name -> sdl.v1.Generator
+	73, // 12: sdl.v1.UpdateGeneratorRequest.update_mask:type_name -> google.protobuf.FieldMask
+	72, // 13: sdl.v1.UpdateGeneratorResponse.generator:type_name -> sdl.v1.Generator
+	74, // 14: sdl.v1.AddMetricRequest.metric:type_name -> sdl.v1.Metric
+	74, // 15: sdl.v1.AddMetricResponse.metric:type_name -> sdl.v1.Metric
 	36, // 16: sdl.v1.QueryMetricsResponse.points:type_name -> sdl.v1.MetricPoint
 	39, // 17: sdl.v1.AggregateMetricsResponse.results:type_name -> sdl.v1.AggregateResult
-	72, // 18: sdl.v1.ListMetricsResponse.metrics:type_name -> sdl.v1.Metric
+	74, // 18: sdl.v1.ListMetricsResponse.metrics:type_name -> sdl.v1.Metric
 	44, // 19: sdl.v1.StreamMetricsResponse.updates:type_name -> sdl.v1.MetricUpdate
 	36, // 20: sdl.v1.MetricUpdate.point:type_name -> sdl.v1.MetricPoint
 	53, // 21: sdl.v1.ExecuteTraceResponse.trace_data:type_name -> sdl.v1.TraceData
@@ -3966,7 +4072,7 @@ var file_sdl_v1_canvas_proto_depIdxs = []int32{
 	52, // 25: sdl.v1.TraceNode.groups:type_name -> sdl.v1.GroupInfo
 	50, // 26: sdl.v1.Edge.next_node:type_name -> sdl.v1.TraceNode
 	54, // 27: sdl.v1.TraceData.events:type_name -> sdl.v1.TraceEvent
-	66, // 28: sdl.v1.GetParametersResponse.parameters:type_name -> sdl.v1.GetParametersResponse.ParametersEntry
+	68, // 28: sdl.v1.GetParametersResponse.parameters:type_name -> sdl.v1.GetParametersResponse.ParametersEntry
 	61, // 29: sdl.v1.GetSystemDiagramResponse.diagram:type_name -> sdl.v1.SystemDiagram
 	62, // 30: sdl.v1.SystemDiagram.nodes:type_name -> sdl.v1.DiagramNode
 	64, // 31: sdl.v1.SystemDiagram.edges:type_name -> sdl.v1.DiagramEdge
@@ -3977,52 +4083,54 @@ var file_sdl_v1_canvas_proto_depIdxs = []int32{
 	26, // 36: sdl.v1.CanvasService.LoadFile:input_type -> sdl.v1.LoadFileRequest
 	28, // 37: sdl.v1.CanvasService.UseSystem:input_type -> sdl.v1.UseSystemRequest
 	6,  // 38: sdl.v1.CanvasService.DeleteCanvas:input_type -> sdl.v1.DeleteCanvasRequest
-	8,  // 39: sdl.v1.CanvasService.AddGenerator:input_type -> sdl.v1.AddGeneratorRequest
-	12, // 40: sdl.v1.CanvasService.StartAllGenerators:input_type -> sdl.v1.StartAllGeneratorsRequest
-	14, // 41: sdl.v1.CanvasService.StopAllGenerators:input_type -> sdl.v1.StopAllGeneratorsRequest
-	10, // 42: sdl.v1.CanvasService.ListGenerators:input_type -> sdl.v1.ListGeneratorsRequest
-	16, // 43: sdl.v1.CanvasService.GetGenerator:input_type -> sdl.v1.GetGeneratorRequest
-	18, // 44: sdl.v1.CanvasService.UpdateGenerator:input_type -> sdl.v1.UpdateGeneratorRequest
-	22, // 45: sdl.v1.CanvasService.StopGenerator:input_type -> sdl.v1.StopGeneratorRequest
-	20, // 46: sdl.v1.CanvasService.StartGenerator:input_type -> sdl.v1.StartGeneratorRequest
-	24, // 47: sdl.v1.CanvasService.DeleteGenerator:input_type -> sdl.v1.DeleteGeneratorRequest
-	45, // 48: sdl.v1.CanvasService.ExecuteTrace:input_type -> sdl.v1.ExecuteTraceRequest
-	47, // 49: sdl.v1.CanvasService.TraceAllPaths:input_type -> sdl.v1.TraceAllPathsRequest
-	55, // 50: sdl.v1.CanvasService.SetParameter:input_type -> sdl.v1.SetParameterRequest
-	57, // 51: sdl.v1.CanvasService.GetParameters:input_type -> sdl.v1.GetParametersRequest
-	30, // 52: sdl.v1.CanvasService.AddMetric:input_type -> sdl.v1.AddMetricRequest
-	32, // 53: sdl.v1.CanvasService.DeleteMetric:input_type -> sdl.v1.DeleteMetricRequest
-	40, // 54: sdl.v1.CanvasService.ListMetrics:input_type -> sdl.v1.ListMetricsRequest
-	34, // 55: sdl.v1.CanvasService.QueryMetrics:input_type -> sdl.v1.QueryMetricsRequest
-	42, // 56: sdl.v1.CanvasService.StreamMetrics:input_type -> sdl.v1.StreamMetricsRequest
-	59, // 57: sdl.v1.CanvasService.GetSystemDiagram:input_type -> sdl.v1.GetSystemDiagramRequest
-	1,  // 58: sdl.v1.CanvasService.CreateCanvas:output_type -> sdl.v1.CreateCanvasResponse
-	3,  // 59: sdl.v1.CanvasService.ListCanvases:output_type -> sdl.v1.ListCanvasesResponse
-	5,  // 60: sdl.v1.CanvasService.GetCanvas:output_type -> sdl.v1.GetCanvasResponse
-	27, // 61: sdl.v1.CanvasService.LoadFile:output_type -> sdl.v1.LoadFileResponse
-	29, // 62: sdl.v1.CanvasService.UseSystem:output_type -> sdl.v1.UseSystemResponse
-	7,  // 63: sdl.v1.CanvasService.DeleteCanvas:output_type -> sdl.v1.DeleteCanvasResponse
-	9,  // 64: sdl.v1.CanvasService.AddGenerator:output_type -> sdl.v1.AddGeneratorResponse
-	13, // 65: sdl.v1.CanvasService.StartAllGenerators:output_type -> sdl.v1.StartAllGeneratorsResponse
-	15, // 66: sdl.v1.CanvasService.StopAllGenerators:output_type -> sdl.v1.StopAllGeneratorsResponse
-	11, // 67: sdl.v1.CanvasService.ListGenerators:output_type -> sdl.v1.ListGeneratorsResponse
-	17, // 68: sdl.v1.CanvasService.GetGenerator:output_type -> sdl.v1.GetGeneratorResponse
-	19, // 69: sdl.v1.CanvasService.UpdateGenerator:output_type -> sdl.v1.UpdateGeneratorResponse
-	23, // 70: sdl.v1.CanvasService.StopGenerator:output_type -> sdl.v1.StopGeneratorResponse
-	21, // 71: sdl.v1.CanvasService.StartGenerator:output_type -> sdl.v1.StartGeneratorResponse
-	25, // 72: sdl.v1.CanvasService.DeleteGenerator:output_type -> sdl.v1.DeleteGeneratorResponse
-	46, // 73: sdl.v1.CanvasService.ExecuteTrace:output_type -> sdl.v1.ExecuteTraceResponse
-	48, // 74: sdl.v1.CanvasService.TraceAllPaths:output_type -> sdl.v1.TraceAllPathsResponse
-	56, // 75: sdl.v1.CanvasService.SetParameter:output_type -> sdl.v1.SetParameterResponse
-	58, // 76: sdl.v1.CanvasService.GetParameters:output_type -> sdl.v1.GetParametersResponse
-	31, // 77: sdl.v1.CanvasService.AddMetric:output_type -> sdl.v1.AddMetricResponse
-	33, // 78: sdl.v1.CanvasService.DeleteMetric:output_type -> sdl.v1.DeleteMetricResponse
-	41, // 79: sdl.v1.CanvasService.ListMetrics:output_type -> sdl.v1.ListMetricsResponse
-	35, // 80: sdl.v1.CanvasService.QueryMetrics:output_type -> sdl.v1.QueryMetricsResponse
-	43, // 81: sdl.v1.CanvasService.StreamMetrics:output_type -> sdl.v1.StreamMetricsResponse
-	60, // 82: sdl.v1.CanvasService.GetSystemDiagram:output_type -> sdl.v1.GetSystemDiagramResponse
-	58, // [58:83] is the sub-list for method output_type
-	33, // [33:58] is the sub-list for method input_type
+	65, // 39: sdl.v1.CanvasService.ResetCanvas:input_type -> sdl.v1.ResetCanvasRequest
+	8,  // 40: sdl.v1.CanvasService.AddGenerator:input_type -> sdl.v1.AddGeneratorRequest
+	12, // 41: sdl.v1.CanvasService.StartAllGenerators:input_type -> sdl.v1.StartAllGeneratorsRequest
+	14, // 42: sdl.v1.CanvasService.StopAllGenerators:input_type -> sdl.v1.StopAllGeneratorsRequest
+	10, // 43: sdl.v1.CanvasService.ListGenerators:input_type -> sdl.v1.ListGeneratorsRequest
+	16, // 44: sdl.v1.CanvasService.GetGenerator:input_type -> sdl.v1.GetGeneratorRequest
+	18, // 45: sdl.v1.CanvasService.UpdateGenerator:input_type -> sdl.v1.UpdateGeneratorRequest
+	22, // 46: sdl.v1.CanvasService.StopGenerator:input_type -> sdl.v1.StopGeneratorRequest
+	20, // 47: sdl.v1.CanvasService.StartGenerator:input_type -> sdl.v1.StartGeneratorRequest
+	24, // 48: sdl.v1.CanvasService.DeleteGenerator:input_type -> sdl.v1.DeleteGeneratorRequest
+	45, // 49: sdl.v1.CanvasService.ExecuteTrace:input_type -> sdl.v1.ExecuteTraceRequest
+	47, // 50: sdl.v1.CanvasService.TraceAllPaths:input_type -> sdl.v1.TraceAllPathsRequest
+	55, // 51: sdl.v1.CanvasService.SetParameter:input_type -> sdl.v1.SetParameterRequest
+	57, // 52: sdl.v1.CanvasService.GetParameters:input_type -> sdl.v1.GetParametersRequest
+	30, // 53: sdl.v1.CanvasService.AddMetric:input_type -> sdl.v1.AddMetricRequest
+	32, // 54: sdl.v1.CanvasService.DeleteMetric:input_type -> sdl.v1.DeleteMetricRequest
+	40, // 55: sdl.v1.CanvasService.ListMetrics:input_type -> sdl.v1.ListMetricsRequest
+	34, // 56: sdl.v1.CanvasService.QueryMetrics:input_type -> sdl.v1.QueryMetricsRequest
+	42, // 57: sdl.v1.CanvasService.StreamMetrics:input_type -> sdl.v1.StreamMetricsRequest
+	59, // 58: sdl.v1.CanvasService.GetSystemDiagram:input_type -> sdl.v1.GetSystemDiagramRequest
+	1,  // 59: sdl.v1.CanvasService.CreateCanvas:output_type -> sdl.v1.CreateCanvasResponse
+	3,  // 60: sdl.v1.CanvasService.ListCanvases:output_type -> sdl.v1.ListCanvasesResponse
+	5,  // 61: sdl.v1.CanvasService.GetCanvas:output_type -> sdl.v1.GetCanvasResponse
+	27, // 62: sdl.v1.CanvasService.LoadFile:output_type -> sdl.v1.LoadFileResponse
+	29, // 63: sdl.v1.CanvasService.UseSystem:output_type -> sdl.v1.UseSystemResponse
+	7,  // 64: sdl.v1.CanvasService.DeleteCanvas:output_type -> sdl.v1.DeleteCanvasResponse
+	66, // 65: sdl.v1.CanvasService.ResetCanvas:output_type -> sdl.v1.ResetCanvasResponse
+	9,  // 66: sdl.v1.CanvasService.AddGenerator:output_type -> sdl.v1.AddGeneratorResponse
+	13, // 67: sdl.v1.CanvasService.StartAllGenerators:output_type -> sdl.v1.StartAllGeneratorsResponse
+	15, // 68: sdl.v1.CanvasService.StopAllGenerators:output_type -> sdl.v1.StopAllGeneratorsResponse
+	11, // 69: sdl.v1.CanvasService.ListGenerators:output_type -> sdl.v1.ListGeneratorsResponse
+	17, // 70: sdl.v1.CanvasService.GetGenerator:output_type -> sdl.v1.GetGeneratorResponse
+	19, // 71: sdl.v1.CanvasService.UpdateGenerator:output_type -> sdl.v1.UpdateGeneratorResponse
+	23, // 72: sdl.v1.CanvasService.StopGenerator:output_type -> sdl.v1.StopGeneratorResponse
+	21, // 73: sdl.v1.CanvasService.StartGenerator:output_type -> sdl.v1.StartGeneratorResponse
+	25, // 74: sdl.v1.CanvasService.DeleteGenerator:output_type -> sdl.v1.DeleteGeneratorResponse
+	46, // 75: sdl.v1.CanvasService.ExecuteTrace:output_type -> sdl.v1.ExecuteTraceResponse
+	48, // 76: sdl.v1.CanvasService.TraceAllPaths:output_type -> sdl.v1.TraceAllPathsResponse
+	56, // 77: sdl.v1.CanvasService.SetParameter:output_type -> sdl.v1.SetParameterResponse
+	58, // 78: sdl.v1.CanvasService.GetParameters:output_type -> sdl.v1.GetParametersResponse
+	31, // 79: sdl.v1.CanvasService.AddMetric:output_type -> sdl.v1.AddMetricResponse
+	33, // 80: sdl.v1.CanvasService.DeleteMetric:output_type -> sdl.v1.DeleteMetricResponse
+	41, // 81: sdl.v1.CanvasService.ListMetrics:output_type -> sdl.v1.ListMetricsResponse
+	35, // 82: sdl.v1.CanvasService.QueryMetrics:output_type -> sdl.v1.QueryMetricsResponse
+	43, // 83: sdl.v1.CanvasService.StreamMetrics:output_type -> sdl.v1.StreamMetricsResponse
+	60, // 84: sdl.v1.CanvasService.GetSystemDiagram:output_type -> sdl.v1.GetSystemDiagramResponse
+	59, // [59:85] is the sub-list for method output_type
+	33, // [33:59] is the sub-list for method input_type
 	33, // [33:33] is the sub-list for extension type_name
 	33, // [33:33] is the sub-list for extension extendee
 	0,  // [0:33] is the sub-list for field type_name
@@ -4040,7 +4148,7 @@ func file_sdl_v1_canvas_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_sdl_v1_canvas_proto_rawDesc), len(file_sdl_v1_canvas_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   67,
+			NumMessages:   69,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

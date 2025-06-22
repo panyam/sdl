@@ -27,6 +27,7 @@ const (
 	CanvasService_LoadFile_FullMethodName           = "/sdl.v1.CanvasService/LoadFile"
 	CanvasService_UseSystem_FullMethodName          = "/sdl.v1.CanvasService/UseSystem"
 	CanvasService_DeleteCanvas_FullMethodName       = "/sdl.v1.CanvasService/DeleteCanvas"
+	CanvasService_ResetCanvas_FullMethodName        = "/sdl.v1.CanvasService/ResetCanvas"
 	CanvasService_AddGenerator_FullMethodName       = "/sdl.v1.CanvasService/AddGenerator"
 	CanvasService_StartAllGenerators_FullMethodName = "/sdl.v1.CanvasService/StartAllGenerators"
 	CanvasService_StopAllGenerators_FullMethodName  = "/sdl.v1.CanvasService/StopAllGenerators"
@@ -69,6 +70,9 @@ type CanvasServiceClient interface {
 	// *
 	// Delete a particular canvas.  Frees up resources used by it and all the connections
 	DeleteCanvas(ctx context.Context, in *DeleteCanvasRequest, opts ...grpc.CallOption) (*DeleteCanvasResponse, error)
+	// *
+	// Reset a canvas - clears all state, generators, and metrics
+	ResetCanvas(ctx context.Context, in *ResetCanvasRequest, opts ...grpc.CallOption) (*ResetCanvasResponse, error)
 	//	----- Generator Operations -----
 	//
 	// Adds a generator to a canvas's generator_ids list and creates the generator resource.
@@ -172,6 +176,16 @@ func (c *canvasServiceClient) DeleteCanvas(ctx context.Context, in *DeleteCanvas
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeleteCanvasResponse)
 	err := c.cc.Invoke(ctx, CanvasService_DeleteCanvas_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *canvasServiceClient) ResetCanvas(ctx context.Context, in *ResetCanvasRequest, opts ...grpc.CallOption) (*ResetCanvasResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResetCanvasResponse)
+	err := c.cc.Invoke(ctx, CanvasService_ResetCanvas_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -398,6 +412,9 @@ type CanvasServiceServer interface {
 	// *
 	// Delete a particular canvas.  Frees up resources used by it and all the connections
 	DeleteCanvas(context.Context, *DeleteCanvasRequest) (*DeleteCanvasResponse, error)
+	// *
+	// Reset a canvas - clears all state, generators, and metrics
+	ResetCanvas(context.Context, *ResetCanvasRequest) (*ResetCanvasResponse, error)
 	//	----- Generator Operations -----
 	//
 	// Adds a generator to a canvas's generator_ids list and creates the generator resource.
@@ -463,6 +480,9 @@ func (UnimplementedCanvasServiceServer) UseSystem(context.Context, *UseSystemReq
 }
 func (UnimplementedCanvasServiceServer) DeleteCanvas(context.Context, *DeleteCanvasRequest) (*DeleteCanvasResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteCanvas not implemented")
+}
+func (UnimplementedCanvasServiceServer) ResetCanvas(context.Context, *ResetCanvasRequest) (*ResetCanvasResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ResetCanvas not implemented")
 }
 func (UnimplementedCanvasServiceServer) AddGenerator(context.Context, *AddGeneratorRequest) (*AddGeneratorResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddGenerator not implemented")
@@ -645,6 +665,24 @@ func _CanvasService_DeleteCanvas_Handler(srv interface{}, ctx context.Context, d
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CanvasServiceServer).DeleteCanvas(ctx, req.(*DeleteCanvasRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CanvasService_ResetCanvas_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResetCanvasRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CanvasServiceServer).ResetCanvas(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CanvasService_ResetCanvas_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CanvasServiceServer).ResetCanvas(ctx, req.(*ResetCanvasRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1014,6 +1052,10 @@ var CanvasService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteCanvas",
 			Handler:    _CanvasService_DeleteCanvas_Handler,
+		},
+		{
+			MethodName: "ResetCanvas",
+			Handler:    _CanvasService_ResetCanvas_Handler,
 		},
 		{
 			MethodName: "AddGenerator",

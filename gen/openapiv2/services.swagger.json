@@ -139,6 +139,46 @@
         ]
       }
     },
+    "/v1/canvases/{canvasId}/actions:reset": {
+      "post": {
+        "summary": "*\nReset a canvas - clears all state, generators, and metrics",
+        "operationId": "CanvasService_ResetCanvas",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ResetCanvasResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "canvasId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "title": "Request to reset a canvas"
+            }
+          }
+        ],
+        "tags": [
+          "CanvasService"
+        ]
+      }
+    },
     "/v1/canvases/{canvasId}/actions:use": {
       "post": {
         "operationId": "CanvasService_UseSystem",
@@ -1738,6 +1778,19 @@
           }
         }
       }
+    },
+    "v1ResetCanvasResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean"
+        },
+        "message": {
+          "type": "string",
+          "title": "Optional message about what was reset"
+        }
+      },
+      "title": "Response from resetting a canvas"
     },
     "v1SetParameterResponse": {
       "type": "object",

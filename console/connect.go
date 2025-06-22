@@ -34,6 +34,14 @@ func (a *ConnectCanvasServiceAdapter) ListCanvases(ctx context.Context, req *con
 	return connect.NewResponse(resp), nil
 }
 
+func (a *ConnectCanvasServiceAdapter) ResetCanvas(ctx context.Context, req *connect.Request[v1.ResetCanvasRequest]) (*connect.Response[v1.ResetCanvasResponse], error) {
+	resp, err := a.svc.ResetCanvas(ctx, req.Msg)
+	if err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(resp), nil
+}
+
 func (a *ConnectCanvasServiceAdapter) GetCanvas(ctx context.Context, req *connect.Request[v1.GetCanvasRequest]) (*connect.Response[v1.GetCanvasResponse], error) {
 	resp, err := a.svc.GetCanvas(ctx, req.Msg)
 	if err != nil {

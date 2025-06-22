@@ -46,6 +46,11 @@ class CanvasServiceStub(object):
                 request_serializer=sdl_dot_v1_dot_canvas__pb2.DeleteCanvasRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_canvas__pb2.DeleteCanvasResponse.FromString,
                 _registered_method=True)
+        self.ResetCanvas = channel.unary_unary(
+                '/sdl.v1.CanvasService/ResetCanvas',
+                request_serializer=sdl_dot_v1_dot_canvas__pb2.ResetCanvasRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_canvas__pb2.ResetCanvasResponse.FromString,
+                _registered_method=True)
         self.AddGenerator = channel.unary_unary(
                 '/sdl.v1.CanvasService/AddGenerator',
                 request_serializer=sdl_dot_v1_dot_canvas__pb2.AddGeneratorRequest.SerializeToString,
@@ -187,6 +192,14 @@ class CanvasServiceServicer(object):
     def DeleteCanvas(self, request, context):
         """*
         Delete a particular canvas.  Frees up resources used by it and all the connections
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ResetCanvas(self, request, context):
+        """*
+        Reset a canvas - clears all state, generators, and metrics
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -362,6 +375,11 @@ def add_CanvasServiceServicer_to_server(servicer, server):
                     servicer.DeleteCanvas,
                     request_deserializer=sdl_dot_v1_dot_canvas__pb2.DeleteCanvasRequest.FromString,
                     response_serializer=sdl_dot_v1_dot_canvas__pb2.DeleteCanvasResponse.SerializeToString,
+            ),
+            'ResetCanvas': grpc.unary_unary_rpc_method_handler(
+                    servicer.ResetCanvas,
+                    request_deserializer=sdl_dot_v1_dot_canvas__pb2.ResetCanvasRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_canvas__pb2.ResetCanvasResponse.SerializeToString,
             ),
             'AddGenerator': grpc.unary_unary_rpc_method_handler(
                     servicer.AddGenerator,
@@ -623,6 +641,33 @@ class CanvasService(object):
             '/sdl.v1.CanvasService/DeleteCanvas',
             sdl_dot_v1_dot_canvas__pb2.DeleteCanvasRequest.SerializeToString,
             sdl_dot_v1_dot_canvas__pb2.DeleteCanvasResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ResetCanvas(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.CanvasService/ResetCanvas',
+            sdl_dot_v1_dot_canvas__pb2.ResetCanvasRequest.SerializeToString,
+            sdl_dot_v1_dot_canvas__pb2.ResetCanvasResponse.FromString,
             options,
             channel_credentials,
             insecure,

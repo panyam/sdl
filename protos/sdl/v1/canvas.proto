@@ -64,6 +64,16 @@ service CanvasService {
     };
   }
 
+  /**
+   * Reset a canvas - clears all state, generators, and metrics
+   */
+  rpc ResetCanvas(ResetCanvasRequest) returns (ResetCanvasResponse) {
+    option (google.api.http) = {
+      post: "/v1/canvases/{canvas_id}/actions:reset"
+      body: "*"
+    };
+  }
+
   //  ----- Generator Operations -----
   // Adds a generator to a canvas's generator_ids list and creates the generator resource.
   rpc AddGenerator (AddGeneratorRequest) returns (AddGeneratorResponse) {
@@ -650,4 +660,17 @@ message DiagramEdge {
   double probability = 8;  // Probability of this path being taken
   string generator_id = 9; // ID of the generator that originated this flow
   string color = 10;       // Color for visualization (based on generator)
+}
+
+// ----- Reset Canvas Messages -----
+
+// Request to reset a canvas
+message ResetCanvasRequest {
+  string canvas_id = 1;
+}
+
+// Response from resetting a canvas
+message ResetCanvasResponse {
+  bool success = 1;
+  string message = 2;  // Optional message about what was reset
 }
