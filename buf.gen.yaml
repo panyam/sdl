@@ -1,28 +1,24 @@
-version: v1
+version: v2
 managed:
   enabled: true
 plugins:
-  - plugin: go
+  - local: protoc-gen-go
     out: gen/go
     opt: paths=source_relative
-  - plugin: go-grpc
+  - local: protoc-gen-go-grpc
     out: gen/go
     opt: paths=source_relative,require_unimplemented_servers=false
-  - plugin: grpc-gateway
+  - local: protoc-gen-grpc-gateway
     out: gen/go
     opt: paths=source_relative
-  # Python
-  - plugin: buf.build/protocolbuffers/python
+  - remote: buf.build/protocolbuffers/python
     out: gen/python
-  - plugin: buf.build/grpc/python
+  - remote: buf.build/grpc/python
     out: gen/python
-  # Plain JS
-  - plugin: buf.build/bufbuild/es
+  - remote: buf.build/bufbuild/es
     out: gen/js
-  - plugin: buf.build/bufbuild/connect-web
+  - remote: buf.build/bufbuild/connect-web
     out: gen/js
-  # generate openapi documentation for api
-  - plugin: buf.build/grpc-ecosystem/openapiv2:v2.16.0
+  - remote: buf.build/grpc-ecosystem/openapiv2:v2.16.0
     out: gen/openapiv2
     opt: allow_merge=true,merge_file_name=services
-
