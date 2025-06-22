@@ -150,9 +150,10 @@ export interface MetricSnapshot {
 
 // System diagram types (matching viz package)
 export interface SystemDiagram {
-  systemName: string;
-  nodes: SystemNode[];
-  edges: SystemEdge[];
+  systemName?: string;
+  nodes?: SystemNode[];
+  edges?: SystemEdge[];
+  dotSource?: string; // For Graphviz rendering
 }
 
 export interface SystemNode {
