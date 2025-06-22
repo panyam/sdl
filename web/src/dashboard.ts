@@ -1,5 +1,5 @@
 import { CanvasClient } from './canvas-client.js';
-import { DashboardState, ParameterConfig, WebSocketMessage, GenerateCall } from './types.js';
+import { DashboardState, ParameterConfig, GenerateCall } from './types.js';
 import type { SystemDiagram } from './gen/sdl/v1/canvas_pb.ts';
 import { Chart, ChartConfiguration } from 'chart.js/auto';
 import { Graphviz } from "@hpcc-js/wasm";
@@ -173,12 +173,12 @@ export class Dashboard {
   }
 
   private setupEventListeners() {
-    // Set up WebSocket connection
-    this.api.connectWebSocket((message: WebSocketMessage) => {
-      this.handleWebSocketMessage(message);
-    });
+    // We use Connect streaming for real-time metrics, not WebSockets
+    // No WebSocket setup needed
   }
 
+  // Removed WebSocket handler - we use Connect streaming instead
+  /*
   private handleWebSocketMessage(message: WebSocketMessage) {
     console.log('📡 WebSocket message:', message);
     
@@ -271,6 +271,7 @@ export class Dashboard {
     if (load <= maxCapacity) return 99.5;
     return Math.max(50, 99.5 - (load - maxCapacity) * 5);
   }
+  */
 
   private async loadSystemDiagram() {
     try {
@@ -1040,6 +1041,7 @@ export class Dashboard {
     }
   }
 
+  /*
   private async refreshGenerators() {
     try {
       const response = await this.api.getGenerators();
@@ -1111,6 +1113,12 @@ export class Dashboard {
     Object.values(this.state.dynamicCharts).forEach(chartData => {
       const canvas = document.getElementById(`chart-${chartData.chartName}`) as HTMLCanvasElement;
       if (!canvas) return;
+
+      // Destroy existing chart if it exists
+      if (this.charts[chartData.chartName]) {
+        this.charts[chartData.chartName].destroy();
+        delete this.charts[chartData.chartName];
+      }
 
       // Determine chart color based on metric type
       let borderColor = 'rgb(59, 130, 246)'; // Default blue
