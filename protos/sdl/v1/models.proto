@@ -134,5 +134,10 @@ message Metric {
   // This will be parsed into a type declaration so we know how to treat
   // the match_result value provided
   string match_result_type = 13;
+
+
+  double oldest_timestamp = 14;
+  double newest_timestamp = 15;
+  int64 num_data_points = 16;  // Number of data points stored
 }
 

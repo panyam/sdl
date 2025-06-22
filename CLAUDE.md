@@ -90,6 +90,7 @@ Do not rebuild the server - it will be continuosly be rebuilt and run by the air
 Find the root cause of an issue before figuring out a solution.  Fix problems.
 Do not create workarounds for issues without asking.  Always find the root cause of an issue and fix it.
 The web module automatically builds when files are changed - DO NOT run npm build or npm run build commands.
+Proto files are automatically regenerated when changed - DO NOT run buf generate commands.
 
 ## Available commands
 

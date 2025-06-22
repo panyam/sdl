@@ -298,40 +298,14 @@ func (s *CanvasService) ListMetrics(ctx context.Context, req *protos.ListMetrics
 	resp = &protos.ListMetricsResponse{}
 
 	err = s.withCanvas(req.CanvasId, func(canvas *Canvas) {
-		if canvas.metricTracer == nil || canvas.metricTracer.store == nil {
-			resp.Metrics = []*protos.MetricInfo{}
+		if canvas.metricTracer == nil {
+			resp.Metrics = []*protos.Metric{}
 			return
 		}
 
 		// Get all metrics from the metric tracer
 		metrics := canvas.metricTracer.ListMetrics()
-		resp.Metrics = make([]*protos.MetricInfo, 0, len(metrics))
-
-		for _, metric := range metrics {
-			// Query the store to get stats about this metric
-			queryOpts := QueryOptions{
-				StartTime: time.Unix(0, 0),
-				EndTime:   time.Now(),
-				Limit:     1, // Just to get count
-			}
-
-			result, _ := canvas.metricTracer.store.Query(ctx, metric, queryOpts)
-
-			info := &protos.MetricInfo{
-				Id:         metric.Id,
-				Component:  metric.Component,
-				Method:     strings.Join(metric.Methods, ","),
-				MetricType: metric.MetricType,
-			}
-
-			info.DataPoints = int64(len(result.Points))
-			if len(result.Points) > 0 {
-				info.OldestTimestamp = float64(result.Points[0].Timestamp.Unix())
-				info.NewestTimestamp = float64(result.Points[len(result.Points)-1].Timestamp.Unix())
-			}
-
-			resp.Metrics = append(resp.Metrics, info)
-		}
+		resp.Metrics = metrics
 	})
 
 	return

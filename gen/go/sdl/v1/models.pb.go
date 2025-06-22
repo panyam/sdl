@@ -417,7 +417,10 @@ type Metric struct {
 	// The result "type" if a matching result is provided
 	// This will be parsed into a type declaration so we know how to treat
 	// the match_result value provided
-	MatchResultType string `protobuf:"bytes,13,opt,name=match_result_type,json=matchResultType,proto3" json:"match_result_type,omitempty"`
+	MatchResultType string  `protobuf:"bytes,13,opt,name=match_result_type,json=matchResultType,proto3" json:"match_result_type,omitempty"`
+	OldestTimestamp float64 `protobuf:"fixed64,14,opt,name=oldest_timestamp,json=oldestTimestamp,proto3" json:"oldest_timestamp,omitempty"`
+	NewestTimestamp float64 `protobuf:"fixed64,15,opt,name=newest_timestamp,json=newestTimestamp,proto3" json:"newest_timestamp,omitempty"`
+	NumDataPoints   int64   `protobuf:"varint,16,opt,name=num_data_points,json=numDataPoints,proto3" json:"num_data_points,omitempty"` // Number of data points stored
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -543,6 +546,27 @@ func (x *Metric) GetMatchResultType() string {
 	return ""
 }
 
+func (x *Metric) GetOldestTimestamp() float64 {
+	if x != nil {
+		return x.OldestTimestamp
+	}
+	return 0
+}
+
+func (x *Metric) GetNewestTimestamp() float64 {
+	if x != nil {
+		return x.NewestTimestamp
+	}
+	return 0
+}
+
+func (x *Metric) GetNumDataPoints() int64 {
+	if x != nil {
+		return x.NumDataPoints
+	}
+	return 0
+}
+
 var File_sdl_v1_models_proto protoreflect.FileDescriptor
 
 const file_sdl_v1_models_proto_rawDesc = "" +
@@ -584,7 +608,7 @@ const file_sdl_v1_models_proto_rawDesc = "" +
 	"\x04rate\x18\b \x01(\x01R\x04rate\x12\x1a\n" +
 	"\bduration\x18\t \x01(\x01R\bduration\x12\x18\n" +
 	"\aenabled\x18\n" +
-	" \x01(\bR\aenabled\"\xd2\x03\n" +
+	" \x01(\bR\aenabled\"\xd0\x04\n" +
 	"\x06Metric\x129\n" +
 	"\n" +
 	"created_at\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
@@ -602,7 +626,10 @@ const file_sdl_v1_models_proto_rawDesc = "" +
 	" \x01(\tR\vaggregation\x12-\n" +
 	"\x12aggregation_window\x18\v \x01(\x01R\x11aggregationWindow\x12!\n" +
 	"\fmatch_result\x18\f \x01(\tR\vmatchResult\x12*\n" +
-	"\x11match_result_type\x18\r \x01(\tR\x0fmatchResultTypeBw\n" +
+	"\x11match_result_type\x18\r \x01(\tR\x0fmatchResultType\x12)\n" +
+	"\x10oldest_timestamp\x18\x0e \x01(\x01R\x0foldestTimestamp\x12)\n" +
+	"\x10newest_timestamp\x18\x0f \x01(\x01R\x0fnewestTimestamp\x12&\n" +
+	"\x0fnum_data_points\x18\x10 \x01(\x03R\rnumDataPointsBw\n" +
 	"\n" +
 	"com.sdl.v1B\vModelsProtoP\x01Z#github.com/panyam/sdl/gen/go/sdl/v1\xa2\x02\x03SXX\xaa\x02\x06Sdl.V1\xca\x02\x06Sdl\\V1\xe2\x02\x12Sdl\\V1\\GPBMetadata\xea\x02\aSdl::V1b\x06proto3"
 

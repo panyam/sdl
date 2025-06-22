@@ -113,9 +113,9 @@ export class Dashboard {
         // Convert metrics to dynamic charts - assume all metrics are enabled
         Object.values(metricsResponse.data).forEach((metric: any) => {
           console.log('🔍 Processing metric:', metric.id, 'full metric:', metric);
-          // For MetricInfo, we need to handle methods as a string, not array
-          const target = metric.method 
-            ? `${metric.component}.${metric.method}` 
+          // Handle methods as array from Metric proto
+          const target = metric.methods && metric.methods.length > 0 
+            ? `${metric.component}.${metric.methods[0]}` 
             : metric.component;
           
           // Build informative title with ID, metric type, and aggregation
@@ -125,7 +125,7 @@ export class Dashboard {
             if (metric.aggregation) {
               title += ` - ${metric.aggregation}`;
             }
-            if (metric.aggregationWindow) {
+            if (metric.aggregationWindow && metric.aggregationWindow > 0) {
               title += ` @ ${metric.aggregationWindow}s`;
             }
             title += ')';

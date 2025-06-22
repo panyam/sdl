@@ -444,17 +444,7 @@ message ListMetricsRequest {
 }
 
 message ListMetricsResponse {
-  repeated MetricInfo metrics = 1;
-}
-
-message MetricInfo {
-  string id = 1;  // component.method.type
-  string component = 2;
-  string method = 3;
-  string metric_type = 4;
-  int64 data_points = 5;  // Number of data points stored
-  double oldest_timestamp = 6;
-  double newest_timestamp = 7;
+  repeated Metric metrics = 1;
 }
 
 message ExecuteTraceRequest {

@@ -29,13 +29,11 @@ Examples:
   
   # Track count for multiple methods
   sdl metrics add db_calls database Query Update Insert --type count`,
-	Args: cobra.MinimumNArgs(2),
+	Args: cobra.MinimumNArgs(3),
 	Run: func(cmd *cobra.Command, args []string) {
 		id := args[0]
-		component, method, ok := splitTarget(args[1])
-		if !ok {
-			return
-		}
+		component := args[1]
+		methods := strings.Split(args[2], ",")
 
 		metricType, _ := cmd.Flags().GetString("type")
 		aggregation, _ := cmd.Flags().GetString("aggregation")
@@ -52,9 +50,9 @@ Examples:
 				Metric: &v1.Metric{
 					Id:                id,
 					CanvasId:          canvasID,
-					Name:              fmt.Sprintf("%s.%s", component, method),
+					Name:              fmt.Sprintf("%s.(%s)", component, strings.Join(methods, ",")),
 					Component:         component,
-					Methods:           []string{method},
+					Methods:           methods,
 					MetricType:        metricType,
 					Aggregation:       aggregation,
 					AggregationWindow: window,
@@ -71,7 +69,7 @@ Examples:
 			os.Exit(1)
 		}
 
-		fmt.Printf("✅ Added metric '%s' for %s.%s (%s)\n", id, component, method, metricType)
+		fmt.Printf("✅ Added metric '%s' for %s.(%s) (%s)\n", id, component, strings.Join(methods, ","), metricType)
 	},
 }
 
@@ -131,12 +129,12 @@ var listMetricsCmd = &cobra.Command{
 			for _, m := range resp.Metrics {
 				oldestTime := "-"
 				newestTime := "-"
-				if m.DataPoints > 0 {
+				if m.NumDataPoints > 0 {
 					oldestTime = time.Unix(int64(m.OldestTimestamp), 0).Format("15:04:05")
 					newestTime = time.Unix(int64(m.NewestTimestamp), 0).Format("15:04:05")
 				}
 				fmt.Printf("%-40s %-20s %-15s %10d %15s %15s\n",
-					m.Id, m.Component+"."+m.Method, m.MetricType, m.DataPoints, oldestTime, newestTime)
+					m.Id, m.Component+".("+strings.Join(m.Methods, ",")+")", m.MetricType, m.NumDataPoints, oldestTime, newestTime)
 			}
 
 			return nil

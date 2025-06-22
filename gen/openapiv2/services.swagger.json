@@ -1076,6 +1076,19 @@
                     "matchResultType": {
                       "type": "string",
                       "title": "The result \"type\" if a matching result is provided\nThis will be parsed into a type declaration so we know how to treat\nthe match_result value provided"
+                    },
+                    "oldestTimestamp": {
+                      "type": "number",
+                      "format": "double"
+                    },
+                    "newestTimestamp": {
+                      "type": "number",
+                      "format": "double"
+                    },
+                    "numDataPoints": {
+                      "type": "string",
+                      "format": "int64",
+                      "title": "Number of data points stored"
                     }
                   }
                 }
@@ -1421,7 +1434,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/v1MetricInfo"
+            "$ref": "#/definitions/v1Metric"
           }
         }
       }
@@ -1504,29 +1517,6 @@
         "matchResultType": {
           "type": "string",
           "title": "The result \"type\" if a matching result is provided\nThis will be parsed into a type declaration so we know how to treat\nthe match_result value provided"
-        }
-      }
-    },
-    "v1MetricInfo": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "title": "component.method.type"
-        },
-        "component": {
-          "type": "string"
-        },
-        "method": {
-          "type": "string"
-        },
-        "metricType": {
-          "type": "string"
-        },
-        "dataPoints": {
-          "type": "string",
-          "format": "int64",
-          "title": "Number of data points stored"
         },
         "oldestTimestamp": {
           "type": "number",
@@ -1535,6 +1525,11 @@
         "newestTimestamp": {
           "type": "number",
           "format": "double"
+        },
+        "numDataPoints": {
+          "type": "string",
+          "format": "int64",
+          "title": "Number of data points stored"
         }
       }
     },
