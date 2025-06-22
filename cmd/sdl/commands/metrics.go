@@ -19,57 +19,59 @@ var metricsCmd = &cobra.Command{
 }
 
 var addMetricCmd = &cobra.Command{
-	Use:   "add <id> <component> <methods...>",
+	Use:   "add <id> <component>.<method>",
 	Short: "Add a new metric",
 	Long: `Add a new metric to collect data for specific component methods.
 	
 Examples:
   # Track latency for server.Lookup
-  sdl metrics add server_latency server Lookup --type latency
+  sdl metrics add server_latency server.Lookup --type latency
   
   # Track count for multiple methods
   sdl metrics add db_calls database Query Update Insert --type count`,
-	Args: cobra.MinimumNArgs(3),
+	Args: cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		id := args[0]
-		component := args[1]
-		methods := args[2:]
-		
+		component, method, ok := splitTarget(args[1])
+		if !ok {
+			return
+		}
+
 		metricType, _ := cmd.Flags().GetString("type")
 		aggregation, _ := cmd.Flags().GetString("aggregation")
 		window, _ := cmd.Flags().GetFloat64("window")
-		
+
 		// Validate metric type
 		if metricType != "count" && metricType != "latency" {
 			fmt.Fprintf(os.Stderr, "Error: Invalid metric type '%s'. Must be 'count' or 'latency'\n", metricType)
 			os.Exit(1)
 		}
-		
+
 		err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
 			req := &v1.AddMetricRequest{
 				Metric: &v1.Metric{
 					Id:                id,
 					CanvasId:          canvasID,
-					Name:              fmt.Sprintf("%s %s", component, strings.Join(methods, ",")),
+					Name:              fmt.Sprintf("%s.%s", component, method),
 					Component:         component,
-					Methods:           methods,
+					Methods:           []string{method},
 					MetricType:        metricType,
 					Aggregation:       aggregation,
 					AggregationWindow: window,
 					Enabled:           true,
 				},
 			}
-			
+
 			_, err := client.AddMetric(ctx, req)
 			return err
 		})
-		
+
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
-		
-		fmt.Printf("✅ Added metric '%s' for %s.%s (%s)\n", id, component, strings.Join(methods, ","), metricType)
+
+		fmt.Printf("✅ Added metric '%s' for %s.%s (%s)\n", id, component, method, metricType)
 	},
 }
 
@@ -79,22 +81,22 @@ var removeMetricCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		metricID := args[0]
-		
+
 		err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
 			req := &v1.DeleteMetricRequest{
 				CanvasId: canvasID,
 				MetricId: metricID,
 			}
-			
+
 			_, err := client.DeleteMetric(ctx, req)
 			return err
 		})
-		
+
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
-		
+
 		fmt.Printf("✅ Removed metric '%s'\n", metricID)
 	},
 }
@@ -122,7 +124,7 @@ var listMetricsCmd = &cobra.Command{
 			}
 
 			// Display metrics in a table
-			fmt.Printf("%-40s %-20s %-15s %10s %15s %15s\n", 
+			fmt.Printf("%-40s %-20s %-15s %10s %15s %15s\n",
 				"ID", "Component", "Type", "Points", "Oldest", "Newest")
 			fmt.Println(strings.Repeat("-", 115))
 
@@ -154,7 +156,7 @@ var queryMetricsCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		metricID := args[0]
-		
+
 		// Get time range flags
 		duration, _ := cmd.Flags().GetDuration("duration")
 		limit, _ := cmd.Flags().GetInt32("limit")
@@ -189,10 +191,11 @@ var queryMetricsCmd = &cobra.Command{
 				fmt.Printf("Metric: %s\n", metricID)
 				fmt.Printf("Time Range: %s to %s\n", startTime.Format(time.RFC3339), endTime.Format(time.RFC3339))
 				fmt.Printf("Data Points: %d\n", len(resp.Points))
-				
+
 				// Note about pre-aggregated data
 				fmt.Println("\nNote: Values are pre-aggregated according to the metric's configuration")
-				fmt.Println("(e.g., if metric is configured for p95 with 10s windows, each point is a p95 value)\n")
+				fmt.Println("(e.g., if metric is configured for p95 with 10s windows, each point is a p95 value)")
+				fmt.Println("")
 
 				if len(resp.Points) > 0 {
 					fmt.Printf("%-30s %15s\n", "Timestamp", "Value")
@@ -213,7 +216,6 @@ var queryMetricsCmd = &cobra.Command{
 		}
 	},
 }
-
 
 func init() {
 	// Add subcommands

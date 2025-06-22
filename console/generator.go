@@ -98,7 +98,7 @@ func (g *GeneratorInfo) runSimple() {
 
 	for i := 0; ; i++ {
 		// Log every 10 or 20 iterations since this is low qps
-		if i%20 == 0 { // Log every 100 batches (1 second at 10ms intervals)
+		if i%100 == 0 { // Log every 100 batches (1 second at 10ms intervals)
 			log.Printf("Low RPS Generator %s: Processed %d iterations, Stopped: ", g.Id, i, g.stopped.Load())
 		}
 		select {

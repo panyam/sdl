@@ -33,7 +33,7 @@ func NewMetricTracer(system *runtime.SystemInstance) *MetricTracer {
 			ConfigRingBufferDuration: 5 * time.Minute,
 		},
 	})
-	
+
 	return &MetricTracer{
 		seriesMap: map[string]*MetricSpec{},
 		system:    system,
@@ -45,7 +45,7 @@ func NewMetricTracer(system *runtime.SystemInstance) *MetricTracer {
 func (mt *MetricTracer) SetMetricStore(store MetricStore) {
 	mt.seriesLock.Lock()
 	defer mt.seriesLock.Unlock()
-	
+
 	// Close old store if it exists
 	if mt.store != nil {
 		mt.store.Close()
@@ -93,17 +93,12 @@ func (mt *MetricTracer) AddMetricSpec(spec *MetricSpec) error {
 	spec.System = mt.system
 
 	// Resolve the component instance from the system
-	var resolvedComponent *runtime.ComponentInstance
-	if mt.system != nil && mt.system.Env != nil {
-		if val, ok := mt.system.Env.Get(spec.Component); ok {
-			if comp, ok := val.Value.(*runtime.ComponentInstance); ok {
-				resolvedComponent = comp
-			} else {
-				return status.Error(codes.InvalidArgument, fmt.Sprintf("'%s' is not a component instance", spec.Component))
-			}
-		} else {
-			return status.Error(codes.InvalidArgument, fmt.Sprintf("component '%s' not found in system", spec.Component))
-		}
+	if mt.system == nil || mt.system.Env == nil {
+		return status.Error(codes.FailedPrecondition, "system or its env not defined")
+	}
+	resolvedComponent := mt.system.FindComponent(spec.Component)
+	if resolvedComponent == nil {
+		return status.Error(codes.InvalidArgument, fmt.Sprintf("component '%s' not found in system", spec.Component))
 	}
 
 	if spec.Metric.AggregationWindow < 0 {
@@ -140,7 +135,7 @@ func (mt *MetricTracer) RemoveMetricSpec(specId string) {
 func (mt *MetricTracer) ListMetrics() []*protos.Metric {
 	mt.seriesLock.RLock()
 	defer mt.seriesLock.RUnlock()
-	
+
 	metrics := make([]*protos.Metric, 0, len(mt.seriesMap))
 	for _, spec := range mt.seriesMap {
 		if spec.Metric != nil {
@@ -154,7 +149,7 @@ func (mt *MetricTracer) ListMetrics() []*protos.Metric {
 func (mt *MetricTracer) GetMetricByID(id string) *protos.Metric {
 	mt.seriesLock.RLock()
 	defer mt.seriesLock.RUnlock()
-	
+
 	if spec, ok := mt.seriesMap[id]; ok && spec.Metric != nil {
 		return spec.Metric
 	}
@@ -197,15 +192,15 @@ func (mt *MetricTracer) QueryMetrics(ctx context.Context, specId string, opts Qu
 	spec := mt.seriesMap[specId]
 	store := mt.store
 	mt.seriesLock.RUnlock()
-	
+
 	if spec == nil {
 		return QueryResult{}, fmt.Errorf("metric spec %s not found", specId)
 	}
-	
+
 	if store == nil {
 		return QueryResult{}, fmt.Errorf("no metric store configured")
 	}
-	
+
 	return store.Query(ctx, spec.Metric, opts)
 }
 
@@ -215,15 +210,15 @@ func (mt *MetricTracer) AggregateMetrics(ctx context.Context, specId string, opt
 	spec := mt.seriesMap[specId]
 	store := mt.store
 	mt.seriesLock.RUnlock()
-	
+
 	if spec == nil {
 		return AggregateResult{}, fmt.Errorf("metric spec %s not found", specId)
 	}
-	
+
 	if store == nil {
 		return AggregateResult{}, fmt.Errorf("no metric store configured")
 	}
-	
+
 	return store.Aggregate(ctx, spec.Metric, opts)
 }
 

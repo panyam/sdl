@@ -235,14 +235,9 @@ func (c *Canvas) AddGenerator(gen *GeneratorInfo) error {
 
 	// Resolve the component instance from the system
 	system := c.activeSystem
-	if val, ok := system.Env.Get(gen.Component); ok {
-		if comp, ok := val.Value.(*runtime.ComponentInstance); ok {
-			gen.resolvedComponentInstance = comp
-		} else {
-			return status.Error(codes.InvalidArgument, fmt.Sprintf("'%s' is not a component instance", gen.Component))
-		}
-	} else {
-		return status.Error(codes.InvalidArgument, fmt.Sprintf("component '%s' not found in system", gen.Component))
+	gen.resolvedComponentInstance = system.FindComponent(gen.Component)
+	if gen.resolvedComponentInstance == nil {
+		return status.Error(codes.InvalidArgument, fmt.Sprintf("component '%s' not found in system when adding generator", gen.Component))
 	}
 
 	// Check method match
@@ -592,7 +587,7 @@ func (c *Canvas) ExecuteTrace(componentName, methodName string) (*runtime.TraceD
 	// Find the component instance
 	compInst := c.activeSystem.FindComponent(componentName)
 	if compInst == nil {
-		return nil, status.Error(codes.NotFound, fmt.Sprintf("component '%s' not found in system", componentName))
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("component '%s' not found in system when executing trace", componentName))
 	}
 
 	// Check method exists

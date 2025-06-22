@@ -13,7 +13,7 @@ sdl gen start
 
 # sdl gen add load2 server.Insert 1
 # sdl gen start load2
-sdl metrics add m1 server Lookup count
-sdl metrics add m1 server Lookup latency
-sdl metrics add m1 server Insert latency
-sdl metrics add m1 server Insert count
+sdl metrics add m1 server.Lookup count
+sdl metrics add m2 server.Lookup latency
+sdl metrics add m3 server.Insert latency
+sdl metrics add m4 server.Insert count

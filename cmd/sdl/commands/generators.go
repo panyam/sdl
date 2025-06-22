@@ -12,6 +12,18 @@ import (
 
 // Generator management commands
 
+func splitTarget(target string) (component string, method string, ok bool) {
+	parts := strings.Split(target, ".")
+	if len(parts) < 2 {
+		fmt.Printf("❌ Error: Target must be of the form comp1.comp2.comp3...compN.MethodName")
+		return
+	}
+	component = strings.Join(parts[:len(parts)-1], ".")
+	method = parts[len(parts)-1]
+	ok = true
+	return
+}
+
 var genCmd = &cobra.Command{
 	Use:   "gen",
 	Short: "Manage traffic generators",
@@ -24,17 +36,15 @@ var genAddCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(3),
 	Run: func(cmd *cobra.Command, args []string) {
 		id := args[0]
-		target := args[1]
+		component, method, ok := splitTarget(args[1])
+		if !ok {
+			return
+		}
 		rateStr := args[2]
 
 		rate, err := strconv.Atoi(rateStr)
 		if err != nil {
 			fmt.Printf("❌ Invalid rate '%s': must be a number\n", rateStr)
-			return
-		}
-		parts := strings.Split(target, ".")
-		if len(parts) < 2 {
-			fmt.Printf("❌ Error: Target must be of the form comp1.comp2.comp3...compN.MethodName")
 			return
 		}
 		err = withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
@@ -43,8 +53,8 @@ var genAddCmd = &cobra.Command{
 					Id:        id,
 					Name:      fmt.Sprintf("Generator-%s", id),
 					CanvasId:  canvasID,
-					Component: strings.Join(parts[:len(parts)-1], "."),
-					Method:    parts[len(parts)-1],
+					Component: component,
+					Method:    method,
 					Rate:      float64(rate),
 					Enabled:   false,
 				},
@@ -58,7 +68,7 @@ var genAddCmd = &cobra.Command{
 		}
 
 		fmt.Printf("✅ Generator '%s' created\n", id)
-		fmt.Printf("🎯 Target: %s\n", target)
+		fmt.Printf("🎯 Component: %s, Method: %s\n", component, method)
 		fmt.Printf("⚡ Rate: %d calls/second\n", rate)
 		fmt.Printf("🔄 Status: Stopped\n")
 	},
