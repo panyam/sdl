@@ -97,6 +97,30 @@ When generating protos run the command `buf generate`
 
 To build the SDL binary use `make`.  The binary is now already in path and can be run with `sdl`
 
+## Key Architecture Decisions (June 2025)
+
+### Metrics System
+- Only supports `latency` and `count` metric types (no `utilization` or `throughput`)
+- Metrics are pre-aggregated at collection time using specified aggregation function
+- Connect-Web streaming used for real-time metric updates (no WebSocket)
+
+### Canvas Management
+- Multi-canvas support with unique IDs (e.g., ubermvp, uberv2, uberv3)
+- Canvas reset requires explicit ID: `sdl canvas reset <canvasId>`
+- Dashboard URL pattern: `/canvases/{canvasId}/`
+- CLI defaults to SDL_CANVAS_ID env var, then "default"
+
+### Dashboard Updates
+- Generators polled every 5 seconds (no WebSocket needed)
+- System diagram auto-updates when generators change
+- Manual refresh button (🔄) for immediate updates
+- Charts properly destroyed before recreation to prevent errors
+
+### Demo Recipes
+- Uber demos show MVP → Intermediate → Modern evolution
+- Manual arrival rate updates required for proper queueing simulation
+- All demos constrained to latency/count metrics only
+
 # Summary instructions
 
 When you are using compact, please focus on test output and code changes

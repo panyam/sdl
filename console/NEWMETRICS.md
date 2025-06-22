@@ -116,10 +116,16 @@ Generators now resolve their target component when added:
 - Each MetricSpec runs in its own goroutine
 - Event channels provide natural synchronization
 
+## Current Limitations
+
+1. **Metric Types**: Only `latency` and `count` types are implemented. No support for `utilization`, `throughput`, or resource usage metrics.
+2. **Manual Arrival Rates**: ResourcePool queueing simulation requires manual setting of arrival rates - generators don't automatically update them.
+3. **Aggregation at Collection**: Metrics are pre-aggregated when collected, not at query time.
+
 ## Future Considerations
 
 1. **Metric Persistence**: Currently in-memory only
-2. **Aggregation Windows**: Time-based windowing for aggregations
-3. **Live Streaming**: WebSocket support for real-time metrics
+2. **Additional Metric Types**: Utilization, throughput, resource usage
+3. **Automatic Arrival Rate Updates**: Generators could update component arrival rates
 4. **Composite Tracers**: Ability to chain multiple tracers
 5. **Performance Profiling**: Dedicated tracer for performance analysis

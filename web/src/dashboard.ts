@@ -14,6 +14,7 @@ export class Dashboard {
   private graphviz: any = null; // Will be initialized asynchronously
   private dockview: DockviewApi | null = null;
   private metricStreamController: AbortController | null = null;
+  private generatorPollInterval: number | null = null;
   private canvasId: string;
 
   // Parameter configurations - populated when a system is loaded
@@ -174,7 +175,30 @@ export class Dashboard {
 
   private setupEventListeners() {
     // We use Connect streaming for real-time metrics, not WebSockets
-    // No WebSocket setup needed
+    // Start periodic generator polling (every 5 seconds)
+    this.startGeneratorPolling();
+  }
+  
+  private startGeneratorPolling() {
+    // Clear any existing interval
+    if (this.generatorPollInterval) {
+      clearInterval(this.generatorPollInterval);
+    }
+    
+    // Poll generators every 5 seconds
+    this.generatorPollInterval = window.setInterval(() => {
+      this.refreshGenerators();
+    }, 5000);
+    
+    // Also do an immediate refresh
+    this.refreshGenerators();
+  }
+  
+  private stopGeneratorPolling() {
+    if (this.generatorPollInterval) {
+      clearInterval(this.generatorPollInterval);
+      this.generatorPollInterval = null;
+    }
   }
 
   // Removed WebSocket handler - we use Connect streaming instead
@@ -813,11 +837,16 @@ export class Dashboard {
       <div class="space-y-2">
         <div class="flex items-center justify-between mb-2">
           <div class="text-xs text-gray-400">Traffic Generation</div>
-          ${hasGenerators ? `
-            <button id="toggle-all-generators" class="btn btn-outline text-xs px-2 py-1">
-              ${hasEnabledGenerators ? '⏸️ Stop All' : '▶️ Start All'}
+          <div class="flex items-center gap-2">
+            <button id="refresh-generators" class="btn btn-outline text-xs px-2 py-1" title="Refresh generators">
+              🔄
             </button>
-          ` : ''}
+            ${hasGenerators ? `
+              <button id="toggle-all-generators" class="btn btn-outline text-xs px-2 py-1">
+                ${hasEnabledGenerators ? '⏸️ Stop All' : '▶️ Start All'}
+              </button>
+            ` : ''}
+          </div>
         </div>
         
         ${hasGenerators ? this.state.generateCalls.map(call => `
@@ -897,6 +926,13 @@ export class Dashboard {
     // Toggle all generators button
     const toggleAllBtn = document.getElementById('toggle-all-generators');
     toggleAllBtn?.addEventListener('click', () => this.toggleAllGenerators());
+    
+    // Refresh generators button
+    const refreshBtn = document.getElementById('refresh-generators');
+    refreshBtn?.addEventListener('click', () => {
+      console.log('🔄 Manual generator refresh triggered');
+      this.refreshGenerators();
+    });
 
     // Parameter sliders
     this.parameters.forEach(param => {
@@ -1287,7 +1323,7 @@ export class Dashboard {
   // Cleanup method for proper resource disposal
   public cleanup() {
     this.stopChartUpdates();
-    // WebSocket cleanup is handled internally by CanvasClient
+    this.stopGeneratorPolling();
     
     // Destroy all charts
     Object.values(this.charts).forEach(chart => {

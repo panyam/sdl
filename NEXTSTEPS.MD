@@ -227,6 +227,29 @@ This document outlines the workshop-focused development status and next steps fo
 *   **`[COMPLETED]` CLI Command**: `sdl paths <component.method>` with tree visualization and JSON output
 *   **Known Limitation**: Control flow dependencies not fully represented (siblings vs sequential paths)
 
+### ✅ COMPLETED: Canvas Management & Reset Safety (June 22, 2025)
+*   **`[COMPLETED]` Canvas Parent Command**: Added `canvas` command grouping all canvas-related operations
+*   **`[COMPLETED]` Canvas Create Command**: `sdl canvas create <canvasId>` creates new canvases or reports existing
+*   **`[COMPLETED]` Canvas List Command**: `sdl canvas list` (alias: ls) shows all available canvases  
+*   **`[COMPLETED]` Canvas Reset Safety**: Moved `reset` to `canvas reset <canvasId>` requiring explicit canvas ID
+*   **`[COMPLETED]` Multi-Canvas URL Routing**: Dashboard supports /canvases/{canvasId}/ URLs with auto-creation
+*   **`[COMPLETED]` Environment Variable Support**: CLI uses SDL_CANVAS_ID env var with "default" fallback
+
+### ✅ COMPLETED: Dashboard Improvements (June 22, 2025)
+*   **`[COMPLETED]` Chart.js Fix**: Properly destroy existing charts before creating new ones to prevent "Canvas in use" errors
+*   **`[COMPLETED]` WebSocket Removal**: Removed WebSocket code in favor of Connect streaming for metrics
+*   **`[COMPLETED]` Generator Auto-Refresh**: Dashboard polls generators every 5 seconds with change detection
+*   **`[COMPLETED]` Manual Refresh Button**: Added 🔄 button in Traffic Generation panel for immediate updates
+*   **`[COMPLETED]` System Diagram Updates**: Automatically reloads when generators change to show latest arrival rates
+
+### ✅ COMPLETED: Uber Demo Suite (June 22, 2025)
+*   **`[COMPLETED]` Three Architecture Versions**: MVP, Intermediate, and Modern showing realistic evolution
+*   **`[COMPLETED]` Interactive Demo Scripts**: Step-by-step recipes with narrative and metrics
+*   **`[COMPLETED]` Proper Queueing Simulation**: Manual arrival rate updates for realistic latency degradation
+*   **`[COMPLETED]` Metric Type Constraints**: All demos use only `latency` and `count` metrics (no utilization)
+*   **`[COMPLETED]` Side-by-Side Support**: Can run all three versions simultaneously with different canvas IDs
+*   **`[COMPLETED]` Comprehensive Documentation**: README with architecture comparisons and learning points
+
 ### ✅ COMPLETED: Conference Talk Documentation (June 22, 2025)
 *   **`[COMPLETED]` DEMO_SCRIPT.md**: Complete minute-by-minute demo script with exact commands, timing, and contingency plans
 *   **`[COMPLETED]` SPEAKER_NOTES.md**: Comprehensive speaker guide with key phrases, energy management, and audience engagement tips
