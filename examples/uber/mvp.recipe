@@ -22,8 +22,10 @@ function execWithConfirm() {
 
 echo "=== Uber MVP Demo - 'Two friends with an app' ==="
 echo "We'll start with how Uber might have looked in the early days - a simple monolithic application."
-execWithConfirm "Loading the MVP system" sdl load examples/uber/mvp.sdl
-execWithConfirm "Activate the UberMVP system" sdl use UberMVP
+# execWithConfirm "Loading the MVP system" sdl load examples/uber/mvp.sdl
+# execWithConfirm "Activate the UberMVP system" sdl use UberMVP
+sdl load examples/uber/mvp.sdl
+sdl use UberMVP
 
 # Load the MVP system
 
@@ -36,11 +38,22 @@ echo "Press enter to add metrics..."
 read
 
 # Add all metrics
-execWithConfirm "Adding request latency metric" sdl metrics add request_latency webserver RequestRide latency
-execWithConfirm "Adding database query time metric" sdl metrics add db_query database FindNearestDriver latency
-execWithConfirm "Adding Maps API latency metric" sdl metrics add maps_latency mapsService CalculateRoute latency
-execWithConfirm "Adding database pool utilization metric" sdl metrics add db_pool database pool utilization
-execWithConfirm "Adding server pool utilization metric" sdl metrics add server_pool webserver pool utilization
+execWithConfirm "Adding request latency metric" sdl metrics add request_latency webserver RequestRide --type latency --window=1 --aggregation=p90
+execWithConfirm "Adding database query time metric" sdl metrics add db_query database FindNearestDriver  --type latency --window=1 --aggregation=p90
+execWithConfirm "Adding Maps API latency metric" sdl metrics add maps_latency mapsService CalculateRoute  --type latency --window=1 --aggregation=p90
+# Note: Pool utilization metrics not supported yet - only latency and count
+# execWithConfirm "Adding database pool utilization metric" sdl metrics add db_pool database pool utilization
+# execWithConfirm "Adding server pool utilization metric" sdl metrics add server_pool webserver pool utilization
+
+echo ""
+echo "=== Setting Pool Parameters ==="
+echo "First, let's configure the resource pools with realistic hold times..."
+# Webserver holds connection for entire request duration (~370ms)
+execWithConfirm "Setting webserver pool hold time" sdl set webserver.pool.AvgHoldTime 0.37
+# Database connections held for different durations
+execWithConfirm "Setting database pool hold time" sdl set database.pool.AvgHoldTime 0.15
+# Maps API calls take 100ms
+execWithConfirm "Setting maps API hold time" sdl set mapsService.pool.AvgHoldTime 0.1
 
 echo ""
 echo "=== Baseline Traffic (5 RPS) ==="
@@ -53,6 +66,11 @@ read
 # Start baseline traffic
 execWithConfirm "Creating baseline generator (5 RPS)" sdl gen add baseline webserver.RequestRide 5
 execWithConfirm "Starting baseline traffic" sdl gen start baseline
+
+# Update arrival rates to match traffic (webserver gets 5 RPS)
+execWithConfirm "Setting webserver arrival rate" sdl set webserver.pool.ArrivalRate 5
+# Database gets hit on every request for FindNearestDriver
+execWithConfirm "Setting database arrival rate" sdl set database.pool.ArrivalRate 5
 
 echo ""
 echo "=== Observing Baseline Performance ==="
@@ -69,6 +87,11 @@ read
 execWithConfirm "Creating driver location update generator (10 RPS)..." sdl gen add drivers webserver.UpdateLocation 10
 execWithConfirm "Starting driver updates..." sdl gen start drivers
 
+# Update arrival rates - now 15 RPS total (5 rides + 10 updates)
+execWithConfirm "Updating webserver arrival rate" sdl set webserver.pool.ArrivalRate 15
+# Database now gets 15 RPS (5 FindNearestDriver + 10 UpdateLocation)
+execWithConfirm "Updating database arrival rate" sdl set database.pool.ArrivalRate 15
+
 echo ""
 echo "=== Morning Rush Hour (20 RPS) ==="
 echo "Now let's simulate morning rush hour with 20 requests per second."
@@ -81,10 +104,17 @@ read
 execWithConfirm "Creating morning rush generator (15 RPS additional)..." sdl gen add morning_rush webserver.RequestRide 15
 execWithConfirm "Starting morning rush traffic..." sdl gen start morning_rush
 
+# Update arrival rates - now 30 RPS for webserver (20 rides + 10 updates)
+execWithConfirm "Updating webserver arrival rate for rush" sdl set webserver.pool.ArrivalRate 30
+# Database gets 30 RPS (20 FindNearestDriver + 10 UpdateLocation)
+execWithConfirm "Updating database arrival rate for rush" sdl set database.pool.ArrivalRate 30
+# Maps API gets 20 RPS (only for ride requests)
+execWithConfirm "Setting maps API arrival rate" sdl set mapsService.pool.ArrivalRate 20
+
 echo ""
 echo "=== System Under Stress ==="
 echo "Observe:"
-echo "- Database connection pool hitting limits"
+echo "- Database queries taking longer (connection pool contention)"
 echo "- Latency spikes to 500-600ms"
 echo "- Some requests start failing"
 echo "- We're finding the same drivers repeatedly (no cache!)"
@@ -97,12 +127,19 @@ execWithConfirm "Stopping morning rush traffic..." sdl gen stop morning_rush
 execWithConfirm "Creating surge event generator (45 RPS)..." sdl gen add surge webserver.RequestRide 45
 execWithConfirm "Starting surge traffic - brace for impact!" sdl gen start surge
 
+# Update arrival rates for surge - 55 RPS total (45 rides + 10 updates)
+execWithConfirm "Updating webserver arrival rate for surge" sdl set webserver.pool.ArrivalRate 55
+# Database gets 55 RPS (45 FindNearestDriver + 10 UpdateLocation)
+execWithConfirm "Updating database arrival rate for surge" sdl set database.pool.ArrivalRate 55
+# Maps API gets 45 RPS (surge ride requests)
+execWithConfirm "Updating maps API arrival rate for surge" sdl set mapsService.pool.ArrivalRate 45
+
 echo ""
 echo "=== System Breakdown - New Year's Eve! ==="
 echo "The system is now completely overwhelmed!"
 echo "Notice:"
 echo "- Massive failure rate (>50%)"
-echo "- Database connection pool exhausted"
+echo "- Database completely overwhelmed (3 connections!)"
 echo "- Every failed request still took 200ms+ of DB time"
 echo "- This is when your VP of Engineering gets paged!"
 echo ""

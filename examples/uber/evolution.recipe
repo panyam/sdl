@@ -29,24 +29,24 @@ while true; do
   case $choice in
     1)
       echo "Starting MVP demo..."
-      ./examples/uber/mvp.recipe
+      sh ./mvp.recipe
       ;;
     2)
       echo "Starting Intermediate demo..."
-      ./examples/uber/intermediate.recipe
+      sh ./intermediate.recipe
       ;;
     3)
       echo "Starting Modern demo..."
-      ./examples/uber/modern.recipe
+      sh ./modern.recipe
       ;;
     4)
       echo ""
       echo "=== Side-by-Side Comparison ==="
       echo "Open three terminal windows and run:"
       echo ""
-      echo "Terminal 1: SDL_CANVAS_ID=ubermvp ./examples/uber/mvp.recipe"
-      echo "Terminal 2: SDL_CANVAS_ID=uberv2 ./examples/uber/intermediate.recipe"
-      echo "Terminal 3: SDL_CANVAS_ID=uberv3 ./examples/uber/modern.recipe"
+      echo "Terminal 1: SDL_CANVAS_ID=ubermvp sh ./mvp.recipe"
+      echo "Terminal 2: SDL_CANVAS_ID=uberv2 sh ./intermediate.recipe"
+      echo "Terminal 3: SDL_CANVAS_ID=uberv3 sh ./modern.recipe"
       echo ""
       echo "Then open three browser tabs:"
       echo "- http://localhost:8080/canvases/ubermvp/"

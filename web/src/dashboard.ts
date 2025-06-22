@@ -1041,18 +1041,27 @@ export class Dashboard {
     }
   }
 
-  /*
   private async refreshGenerators() {
     try {
       const response = await this.api.getGenerators();
       if (response.success && response.data) {
-        this.state.generateCalls = Object.values(response.data).map(gen => ({
+        const newGenerators = Object.values(response.data).map(gen => ({
           id: gen.id,
           name: gen.name,
           target: `${gen.component}.${gen.method}`, // Combine component and method
           rate: gen.rate,
           enabled: gen.enabled
         }));
+        
+        // Check if generators have changed
+        const hasChanged = JSON.stringify(newGenerators) !== JSON.stringify(this.state.generateCalls);
+        
+        if (hasChanged) {
+          this.state.generateCalls = newGenerators;
+          this.updateTrafficGenerationPanel();
+          // Also reload system diagram to show updated arrival rates
+          this.loadSystemDiagram();
+        }
       }
     } catch (error) {
       console.error('❌ Failed to refresh generators:', error);

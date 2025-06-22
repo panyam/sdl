@@ -39,11 +39,12 @@ read
 
 # Add metrics
 execWithConfirm "Adding request latency metric" sdl metrics add request_latency gateway.RequestRide latency
-execWithConfirm "Adding user cache hit rate" sdl metrics add user_cache_hits gateway.userService.redis utilization
-execWithConfirm "Adding driver cache hit rate" sdl metrics add driver_cache_hits gateway.driverService.locationCache utilization
+# Cache metrics - we'll track latency instead of hit rate
+execWithConfirm "Adding user lookup latency (with cache)" sdl metrics add user_lookup gateway.userService.GetUser latency
+execWithConfirm "Adding driver lookup latency (with cache)" sdl metrics add driver_lookup gateway.driverService.GetDriver latency
 execWithConfirm "Adding driver query latency" sdl metrics add driver_query gateway.driverService.FindNearbyDrivers latency
-execWithConfirm "Adding notification queue size" sdl metrics add notification_queue gateway.notificationService.queue utilization
-execWithConfirm "Adding API gateway pool utilization" sdl metrics add gateway_pool gateway.pool utilization
+execWithConfirm "Adding notification send latency" sdl metrics add notification_latency gateway.notificationService.NotifyDriver latency
+# Note: Pool/queue utilization metrics not supported - only latency and count
 
 echo ""
 echo "=== Baseline Traffic (20 RPS) ==="
@@ -62,7 +63,7 @@ echo "=== Observing Improved Performance ==="
 echo "Notice the improvements:"
 echo "- Request latency down to ~150ms (was 350-400ms)"
 echo "- Driver searches take 30ms (was 200ms)"
-echo "- Cache is handling 70% of user lookups"
+echo "- User/driver lookups very fast due to caching"
 echo "- Notifications are async (don't block requests)"
 echo ""
 echo "Press enter to add driver location updates..."

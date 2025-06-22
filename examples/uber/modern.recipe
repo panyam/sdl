@@ -42,10 +42,11 @@ read
 # Core metrics
 execWithConfirm "Adding request latency" sdl metrics add request_latency gateway.RequestRide latency
 execWithConfirm "Adding match quality (ML score)" sdl metrics add match_quality gateway.matchingService.FindOptimalMatch latency
-execWithConfirm "Adding location cache performance" sdl metrics add location_cache gateway.locationService.geoCache utilization
-execWithConfirm "Adding event bus throughput" sdl metrics add event_throughput gateway.eventBus throughput
-execWithConfirm "Adding notification queue depth" sdl metrics add notification_queue gateway.notificationService.priorityQueue utilization
-execWithConfirm "Adding gateway rate limiter" sdl metrics add rate_limit_drops gateway.rateLimiter throughput
+# Using latency metrics instead of utilization/throughput
+execWithConfirm "Adding location lookup latency" sdl metrics add location_lookup gateway.locationService.FindNearbyDrivers latency
+execWithConfirm "Adding event publish latency" sdl metrics add event_publish gateway.eventBus.Publish latency
+execWithConfirm "Adding notification send latency" sdl metrics add notification_send gateway.notificationService.SendNotification latency
+# Note: Rate limiter drops would need count metric on failures
 
 echo ""
 echo "=== Normal Operations (100 RPS) ==="
@@ -99,7 +100,7 @@ echo "- Still maintaining <60ms latency"
 echo "- ML model cached and scoring drivers efficiently"
 echo "- Event bus handling thousands of events/second"
 echo "- Notification priority queue managing load"
-echo "- No component over 50% utilization"
+echo "- All components handling load efficiently"
 echo ""
 echo "Press enter to simulate a regional surge..."
 read
