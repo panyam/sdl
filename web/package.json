@@ -28,8 +28,9 @@
     "vite": "^5.0.0"
   },
   "dependencies": {
-    "@bufbuild/connect-web": "^0.13.0",
-    "@bufbuild/protobuf": "^1.10.1",
+    "@bufbuild/protobuf": "^2.5.2",
+    "@connectrpc/connect": "^2.0.2",
+    "@connectrpc/connect-web": "^2.0.2",
     "@hpcc-js/wasm": "^2.23.0",
     "chart.js": "^4.4.0",
     "dockview": "^1.0.0",
