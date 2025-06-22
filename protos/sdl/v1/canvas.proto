@@ -199,6 +199,15 @@ service CanvasService {
       get: "/v1/canvases/{canvas_id}/metrics/{metric_id}/aggregate"
     };
   }
+
+  // ----- System Diagram Operations -----
+  
+  // Get the system diagram for visualization
+  rpc GetSystemDiagram(GetSystemDiagramRequest) returns (GetSystemDiagramResponse) {
+    option (google.api.http) = {
+      get: "/v1/canvases/{canvas_id}/diagram"
+    };
+  }
 }
 
 /**
@@ -529,4 +538,53 @@ message GetParametersRequest {
 // Response containing parameter values
 message GetParametersResponse {
   map<string, string> parameters = 1;  // Values as SDL expression strings
+}
+
+// ----- System Diagram Messages -----
+
+// Request to get the system diagram
+message GetSystemDiagramRequest {
+  string canvas_id = 1;
+}
+
+// Response containing the system diagram
+message GetSystemDiagramResponse {
+  SystemDiagram diagram = 1;
+}
+
+// SystemDiagram represents the topology of a system
+message SystemDiagram {
+  string system_name = 1;
+  repeated DiagramNode nodes = 2;
+  repeated DiagramEdge edges = 3;
+}
+
+// DiagramNode represents a component or instance in the system
+message DiagramNode {
+  string id = 1;          // Unique identifier for the node
+  string name = 2;        // Display name
+  string type = 3;        // Component type for display
+  repeated MethodInfo methods = 4;  // Methods provided by this component
+  string traffic = 5;     // Current traffic flow (e.g., "0 rps")
+}
+
+// MethodInfo represents information about a component method
+message MethodInfo {
+  string name = 1;        // Method name
+  string return_type = 2; // Return type (e.g., "Bool", "Int", etc.)
+  double traffic = 3;     // Current traffic rate in RPS
+}
+
+// DiagramEdge represents a connection between nodes
+message DiagramEdge {
+  string from_id = 1;
+  string to_id = 2;
+  string from_method = 3;  // Source method name (for flow edges)
+  string to_method = 4;    // Target method name (for flow edges)
+  string label = 5;
+  double order = 6;        // Execution order (supports decimals for conditional paths)
+  string condition = 7;    // Condition expression if this is a conditional path
+  double probability = 8;  // Probability of this path being taken
+  string generator_id = 9; // ID of the generator that originated this flow
+  string color = 10;       // Color for visualization (based on generator)
 }

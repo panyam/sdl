@@ -183,6 +183,37 @@
         ]
       }
     },
+    "/v1/canvases/{canvasId}/diagram": {
+      "get": {
+        "summary": "Get the system diagram for visualization",
+        "operationId": "CanvasService_GetSystemDiagram",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetSystemDiagramResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "canvasId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "CanvasService"
+        ]
+      }
+    },
     "/v1/canvases/{canvasId}/generators": {
       "get": {
         "operationId": "CanvasService_ListGenerators",
@@ -1316,6 +1347,81 @@
     "v1DeleteMetricResponse": {
       "type": "object"
     },
+    "v1DiagramEdge": {
+      "type": "object",
+      "properties": {
+        "fromId": {
+          "type": "string"
+        },
+        "toId": {
+          "type": "string"
+        },
+        "fromMethod": {
+          "type": "string",
+          "title": "Source method name (for flow edges)"
+        },
+        "toMethod": {
+          "type": "string",
+          "title": "Target method name (for flow edges)"
+        },
+        "label": {
+          "type": "string"
+        },
+        "order": {
+          "type": "number",
+          "format": "double",
+          "title": "Execution order (supports decimals for conditional paths)"
+        },
+        "condition": {
+          "type": "string",
+          "title": "Condition expression if this is a conditional path"
+        },
+        "probability": {
+          "type": "number",
+          "format": "double",
+          "title": "Probability of this path being taken"
+        },
+        "generatorId": {
+          "type": "string",
+          "title": "ID of the generator that originated this flow"
+        },
+        "color": {
+          "type": "string",
+          "title": "Color for visualization (based on generator)"
+        }
+      },
+      "title": "DiagramEdge represents a connection between nodes"
+    },
+    "v1DiagramNode": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "Unique identifier for the node"
+        },
+        "name": {
+          "type": "string",
+          "title": "Display name"
+        },
+        "type": {
+          "type": "string",
+          "title": "Component type for display"
+        },
+        "methods": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1MethodInfo"
+          },
+          "title": "Methods provided by this component"
+        },
+        "traffic": {
+          "type": "string",
+          "title": "Current traffic flow (e.g., \"0 rps\")"
+        }
+      },
+      "title": "DiagramNode represents a component or instance in the system"
+    },
     "v1ExecuteTraceResponse": {
       "type": "object",
       "properties": {
@@ -1402,6 +1508,15 @@
       },
       "title": "Response containing parameter values"
     },
+    "v1GetSystemDiagramResponse": {
+      "type": "object",
+      "properties": {
+        "diagram": {
+          "$ref": "#/definitions/v1SystemDiagram"
+        }
+      },
+      "title": "Response containing the system diagram"
+    },
     "v1ListCanvasesResponse": {
       "type": "object",
       "properties": {
@@ -1448,6 +1563,25 @@
     },
     "v1LoadFileResponse": {
       "type": "object"
+    },
+    "v1MethodInfo": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "title": "Method name"
+        },
+        "returnType": {
+          "type": "string",
+          "title": "Return type (e.g., \"Bool\", \"Int\", etc.)"
+        },
+        "traffic": {
+          "type": "number",
+          "format": "double",
+          "title": "Current traffic rate in RPS"
+        }
+      },
+      "title": "MethodInfo represents information about a component method"
     },
     "v1Metric": {
       "type": "object",
@@ -1696,6 +1830,29 @@
           "title": "IDs of generators that failed"
         }
       }
+    },
+    "v1SystemDiagram": {
+      "type": "object",
+      "properties": {
+        "systemName": {
+          "type": "string"
+        },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1DiagramNode"
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1DiagramEdge"
+          }
+        }
+      },
+      "title": "SystemDiagram represents the topology of a system"
     },
     "v1TraceData": {
       "type": "object",

@@ -136,6 +136,11 @@ class CanvasServiceStub(object):
                 request_serializer=sdl_dot_v1_dot_canvas__pb2.AggregateMetricsRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_canvas__pb2.AggregateMetricsResponse.FromString,
                 _registered_method=True)
+        self.GetSystemDiagram = channel.unary_unary(
+                '/sdl.v1.CanvasService/GetSystemDiagram',
+                request_serializer=sdl_dot_v1_dot_canvas__pb2.GetSystemDiagramRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_canvas__pb2.GetSystemDiagramResponse.FromString,
+                _registered_method=True)
 
 
 class CanvasServiceServicer(object):
@@ -313,6 +318,15 @@ class CanvasServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetSystemDiagram(self, request, context):
+        """----- System Diagram Operations -----
+
+        Get the system diagram for visualization
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_CanvasServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -435,6 +449,11 @@ def add_CanvasServiceServicer_to_server(servicer, server):
                     servicer.AggregateMetrics,
                     request_deserializer=sdl_dot_v1_dot_canvas__pb2.AggregateMetricsRequest.FromString,
                     response_serializer=sdl_dot_v1_dot_canvas__pb2.AggregateMetricsResponse.SerializeToString,
+            ),
+            'GetSystemDiagram': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetSystemDiagram,
+                    request_deserializer=sdl_dot_v1_dot_canvas__pb2.GetSystemDiagramRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_canvas__pb2.GetSystemDiagramResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -1087,6 +1106,33 @@ class CanvasService(object):
             '/sdl.v1.CanvasService/AggregateMetrics',
             sdl_dot_v1_dot_canvas__pb2.AggregateMetricsRequest.SerializeToString,
             sdl_dot_v1_dot_canvas__pb2.AggregateMetricsResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetSystemDiagram(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.CanvasService/GetSystemDiagram',
+            sdl_dot_v1_dot_canvas__pb2.GetSystemDiagramRequest.SerializeToString,
+            sdl_dot_v1_dot_canvas__pb2.GetSystemDiagramResponse.FromString,
             options,
             channel_credentials,
             insecure,

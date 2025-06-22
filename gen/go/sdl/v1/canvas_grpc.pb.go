@@ -45,6 +45,7 @@ const (
 	CanvasService_ListMetrics_FullMethodName        = "/sdl.v1.CanvasService/ListMetrics"
 	CanvasService_QueryMetrics_FullMethodName       = "/sdl.v1.CanvasService/QueryMetrics"
 	CanvasService_AggregateMetrics_FullMethodName   = "/sdl.v1.CanvasService/AggregateMetrics"
+	CanvasService_GetSystemDiagram_FullMethodName   = "/sdl.v1.CanvasService/GetSystemDiagram"
 )
 
 // CanvasServiceClient is the client API for CanvasService service.
@@ -104,6 +105,8 @@ type CanvasServiceClient interface {
 	QueryMetrics(ctx context.Context, in *QueryMetricsRequest, opts ...grpc.CallOption) (*QueryMetricsResponse, error)
 	// Get aggregated metric data
 	AggregateMetrics(ctx context.Context, in *AggregateMetricsRequest, opts ...grpc.CallOption) (*AggregateMetricsResponse, error)
+	// Get the system diagram for visualization
+	GetSystemDiagram(ctx context.Context, in *GetSystemDiagramRequest, opts ...grpc.CallOption) (*GetSystemDiagramResponse, error)
 }
 
 type canvasServiceClient struct {
@@ -363,6 +366,16 @@ func (c *canvasServiceClient) AggregateMetrics(ctx context.Context, in *Aggregat
 	return out, nil
 }
 
+func (c *canvasServiceClient) GetSystemDiagram(ctx context.Context, in *GetSystemDiagramRequest, opts ...grpc.CallOption) (*GetSystemDiagramResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetSystemDiagramResponse)
+	err := c.cc.Invoke(ctx, CanvasService_GetSystemDiagram_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CanvasServiceServer is the server API for CanvasService service.
 // All implementations should embed UnimplementedCanvasServiceServer
 // for forward compatibility.
@@ -420,6 +433,8 @@ type CanvasServiceServer interface {
 	QueryMetrics(context.Context, *QueryMetricsRequest) (*QueryMetricsResponse, error)
 	// Get aggregated metric data
 	AggregateMetrics(context.Context, *AggregateMetricsRequest) (*AggregateMetricsResponse, error)
+	// Get the system diagram for visualization
+	GetSystemDiagram(context.Context, *GetSystemDiagramRequest) (*GetSystemDiagramResponse, error)
 }
 
 // UnimplementedCanvasServiceServer should be embedded to have
@@ -500,6 +515,9 @@ func (UnimplementedCanvasServiceServer) QueryMetrics(context.Context, *QueryMetr
 }
 func (UnimplementedCanvasServiceServer) AggregateMetrics(context.Context, *AggregateMetricsRequest) (*AggregateMetricsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AggregateMetrics not implemented")
+}
+func (UnimplementedCanvasServiceServer) GetSystemDiagram(context.Context, *GetSystemDiagramRequest) (*GetSystemDiagramResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSystemDiagram not implemented")
 }
 func (UnimplementedCanvasServiceServer) testEmbeddedByValue() {}
 
@@ -946,6 +964,24 @@ func _CanvasService_AggregateMetrics_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CanvasService_GetSystemDiagram_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSystemDiagramRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CanvasServiceServer).GetSystemDiagram(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CanvasService_GetSystemDiagram_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CanvasServiceServer).GetSystemDiagram(ctx, req.(*GetSystemDiagramRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CanvasService_ServiceDesc is the grpc.ServiceDesc for CanvasService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1044,6 +1080,10 @@ var CanvasService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AggregateMetrics",
 			Handler:    _CanvasService_AggregateMetrics_Handler,
+		},
+		{
+			MethodName: "GetSystemDiagram",
+			Handler:    _CanvasService_GetSystemDiagram_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
