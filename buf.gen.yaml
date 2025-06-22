@@ -17,8 +17,16 @@ plugins:
     out: gen/python
   - remote: buf.build/bufbuild/es
     out: gen/js
-  - remote: buf.build/bufbuild/connect-web
+  - remote: buf.build/connectrpc/es:v1.6.1
     out: gen/js
+    opt: target=ts
   - remote: buf.build/grpc-ecosystem/openapiv2:v2.16.0
     out: gen/openapiv2
     opt: allow_merge=true,merge_file_name=services
+  # This will invoke protoc-gen-es and write output to src/gen
+  - local: protoc-gen-es
+    out: gen/ts
+    # Also generate any imported dependencies
+    include_imports: true
+    # Add more plugin options here
+    opt: target=ts
