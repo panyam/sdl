@@ -7,7 +7,7 @@ import type { Generator, Metric } from "./gen/sdl/v1/models_pb.ts";
 
 // Create transport with the gRPC-gateway endpoint
 const transport = createConnectTransport({
-  baseUrl: window.location.origin,
+  baseUrl: `${window.location.origin}/api/v1`,
   useBinaryFormat: false, // Use JSON for browser compatibility
 });
 
