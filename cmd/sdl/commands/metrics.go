@@ -122,7 +122,7 @@ var listMetricsCmd = &cobra.Command{
 			}
 
 			// Display metrics in a table
-			fmt.Printf("%-25s %-20s %-8s %-10s %-8s %8s %12s %12s\n",
+			fmt.Printf("%-25s %-50s %-8s %-10s %-8s %8s %12s %12s\n",
 				"ID", "Target", "Type", "Aggregation", "Window", "Points", "Oldest", "Newest")
 			fmt.Println(strings.Repeat("-", 105))
 
@@ -133,23 +133,23 @@ var listMetricsCmd = &cobra.Command{
 					oldestTime = time.Unix(int64(m.OldestTimestamp), 0).Format("15:04:05")
 					newestTime = time.Unix(int64(m.NewestTimestamp), 0).Format("15:04:05")
 				}
-				
-				// Format aggregation window 
+
+				// Format aggregation window
 				windowStr := fmt.Sprintf("%.0fs", m.AggregationWindow)
-				
-				target := m.Component+".("+strings.Join(m.Methods, ",")+")"
-				if len(target) > 20 {
-					target = target[:17] + "..."
+
+				target := m.Component + ".(" + strings.Join(m.Methods, ",") + ")"
+				if len(target) > 50 {
+					target = target[:47] + "..."
 				}
-				
-				fmt.Printf("%-25s %-20s %-8s %-10s %-8s %8d %12s %12s\n",
-					m.Id, 
-					target, 
-					m.MetricType, 
-					m.Aggregation, 
+
+				fmt.Printf("%-25s %-50s %-8s %-10s %-8s %8d %12s %12s\n",
+					m.Id,
+					target,
+					m.MetricType,
+					m.Aggregation,
 					windowStr,
-					m.NumDataPoints, 
-					oldestTime, 
+					m.NumDataPoints,
+					oldestTime,
 					newestTime)
 			}
 
