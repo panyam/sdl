@@ -1,0 +1,198 @@
+#!/usr/bin/env bash
+# Uber Intermediate Architecture Demo Script
+# Shows the improvements made to scale the system
+
+# Setup canvas for intermediate demo
+export SDL_CANVAS_ID=uberv2
+
+sdl canvas create $SDL_CANVAS_ID
+sdl canvas reset $SDL_CANVAS_ID
+
+function execWithConfirm() {
+  msg=$1; shift
+  cmd=$1; shift
+  args=$*
+  echo ""
+  echo "    >    $cmd $args"
+  echo ""
+  echo "$msg ... Press enter to continue"
+  read
+  $cmd $args
+}
+
+echo "=== Uber Intermediate Architecture Demo ==="
+echo "After the MVP started breaking under load, the team made strategic improvements"
+echo "without a complete rewrite. Let's see what changed..."
+execWithConfirm "Loading the intermediate system" sdl load examples/uber/intermediate.sdl
+execWithConfirm "Activate the UberIntermediate system" sdl use UberIntermediate
+
+echo ""
+echo "=== Key Improvements Made ==="
+echo "1. Added Redis caching layer (70% hit rate for users, 90% for driver locations)"
+echo "2. Split into services: UserService, DriverService, MatchingService, NotificationService"
+echo "3. Geo-indexed database queries (30ms vs 200ms for driver searches)"
+echo "4. Async notifications via queue"
+echo "5. Better connection pooling (20 connections vs 3)"
+echo ""
+echo "Press enter to set up metrics..."
+read
+
+# Add metrics
+execWithConfirm "Adding request latency metric" sdl metrics add request_latency gateway.RequestRide latency
+execWithConfirm "Adding user cache hit rate" sdl metrics add user_cache_hits gateway.userService.redis utilization
+execWithConfirm "Adding driver cache hit rate" sdl metrics add driver_cache_hits gateway.driverService.locationCache utilization
+execWithConfirm "Adding driver query latency" sdl metrics add driver_query gateway.driverService.FindNearbyDrivers latency
+execWithConfirm "Adding notification queue size" sdl metrics add notification_queue gateway.notificationService.queue utilization
+execWithConfirm "Adding API gateway pool utilization" sdl metrics add gateway_pool gateway.pool utilization
+
+echo ""
+echo "=== Baseline Traffic (20 RPS) ==="
+echo "Let's start with the same load that stressed our MVP (20 RPS)"
+echo "Notice how much better the system handles it now..."
+echo ""
+echo "Press enter to start baseline traffic..."
+read
+
+# Start baseline traffic - what used to stress the MVP
+execWithConfirm "Creating baseline generator (20 RPS)" sdl gen add baseline gateway.RequestRide 20
+execWithConfirm "Starting baseline traffic" sdl gen start baseline
+
+echo ""
+echo "=== Observing Improved Performance ==="
+echo "Notice the improvements:"
+echo "- Request latency down to ~150ms (was 350-400ms)"
+echo "- Driver searches take 30ms (was 200ms)"
+echo "- Cache is handling 70% of user lookups"
+echo "- Notifications are async (don't block requests)"
+echo ""
+echo "Press enter to add driver location updates..."
+read
+
+# Add driver updates
+execWithConfirm "Creating driver location update generator (50 RPS)" sdl gen add drivers gateway.UpdateDriverLocation 50
+execWithConfirm "Starting driver updates" sdl gen start drivers
+
+echo ""
+echo "=== Handling Driver Updates ==="
+echo "Notice:"
+echo "- Location updates are mostly cached (90% hit rate)"
+echo "- Database writes are async"
+echo "- Main request flow unaffected"
+echo ""
+echo "Press enter to simulate morning rush hour..."
+read
+
+# Morning rush - 100 RPS
+execWithConfirm "Creating morning rush generator (80 RPS additional)" sdl gen add morning_rush gateway.RequestRide 80
+execWithConfirm "Starting morning rush traffic" sdl gen start morning_rush
+
+echo ""
+echo "=== Morning Rush Hour (100 RPS Total) ==="
+echo "The system is handling 100 RPS!"
+echo "Observe:"
+echo "- Still maintaining <200ms latency"
+echo "- Caches are warm and effective"
+echo "- Some queuing in notification service (expected)"
+echo "- No failures yet!"
+echo ""
+echo "This is 5x the load that broke our MVP"
+echo ""
+echo "Press enter to push it further..."
+read
+
+# Surge event - 200 RPS
+execWithConfirm "Creating surge generator (100 RPS additional)" sdl gen add surge gateway.RequestRide 100
+execWithConfirm "Starting surge traffic" sdl gen start surge
+
+echo ""
+echo "=== Surge Event (200 RPS Total) ==="
+echo "Now we're at 200 RPS - 10x the MVP breaking point!"
+echo "Notice:"
+echo "- Latency increasing but still under 300ms"
+echo "- Gateway pool starting to saturate"
+echo "- Notification queue backing up"
+echo "- But still processing requests!"
+echo ""
+echo "Press enter to see the breaking point..."
+read
+
+# Stop surge and add extreme load
+execWithConfirm "Stopping surge traffic" sdl gen stop surge
+execWithConfirm "Creating extreme surge (300 RPS)" sdl gen add extreme gateway.RequestRide 300
+execWithConfirm "Starting extreme surge" sdl gen start extreme
+
+echo ""
+echo "=== Finding the New Limits ==="
+echo "At 300+ RPS we finally see failures"
+echo "But notice:"
+echo "- It took 15x the MVP load to break"
+echo "- Failures are cleaner (pool exhaustion, not timeouts)"
+echo "- System degrades more gracefully"
+echo ""
+echo "Press enter to demonstrate cache importance..."
+read
+
+# Stop all traffic
+execWithConfirm "Stopping all generators" sdl gen stop --all
+
+echo ""
+echo "=== Cache Impact Demonstration ==="
+echo "Let's see what happens without caching..."
+echo ""
+echo "Press enter to reduce cache effectiveness..."
+read
+
+# Reduce cache hit rates
+execWithConfirm "Reducing user cache hit rate to 10%" sdl set gateway.userService.redis.HitRate 0.1
+execWithConfirm "Reducing driver cache hit rate to 10%" sdl set gateway.driverService.locationCache.HitRate 0.1
+execWithConfirm "Restarting baseline traffic (20 RPS)" sdl gen start baseline
+
+echo ""
+echo "=== System Without Effective Caching ==="
+echo "With cold caches, performance degrades significantly!"
+echo "- Latency back up to 300ms+"
+echo "- Database under heavy load"
+echo "- This shows why warming caches is critical"
+echo ""
+echo "Press enter to restore caches..."
+read
+
+# Restore caches
+execWithConfirm "Restoring user cache hit rate" sdl set gateway.userService.redis.HitRate 0.7
+execWithConfirm "Restoring driver cache hit rate" sdl set gateway.driverService.locationCache.HitRate 0.9
+
+echo ""
+echo "=== Cost Analysis ==="
+echo "This intermediate architecture would cost approximately:"
+echo "- 4x t2.medium EC2 instances (services): $120/month"
+echo "- 2x RDS t2.small (20 connections each): $60/month"
+echo "- 1x ElastiCache t2.small (Redis): $25/month"
+echo "- Total: ~$205/month"
+echo ""
+echo "4x the cost but handles 15x the load - good ROI!"
+echo ""
+echo "Press enter to clean up..."
+read
+
+# Clean up
+execWithConfirm "Stopping all generators" sdl gen stop --all
+
+echo ""
+echo "=== Key Takeaways ==="
+echo "The intermediate architecture achieved:"
+echo "- 15x capacity improvement"
+echo "- 60% latency reduction"
+echo "- Service isolation (partial failures possible)"
+echo "- Async processing for non-critical paths"
+echo "- Effective caching strategy"
+echo ""
+echo "But we still have issues:"
+echo "- Monolithic databases"
+echo "- No regional distribution"
+echo "- Limited horizontal scaling"
+echo "- No event sourcing"
+echo ""
+echo "Next: The modern microservices architecture..."
+echo ""
+echo "Demo complete. Press enter to exit..."
+read

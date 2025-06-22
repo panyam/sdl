@@ -5,7 +5,8 @@
 # Reset SDL before loading the demo
 export SDL_CANVAS_ID=ubermvp
 
-sdl canvas reset ubermvp
+sdl canvas create $SDL_CANVAS_ID
+sdl canvas reset $SDL_CANVAS_ID
 
 function execWithConfirm() {
   msg=$1; shift

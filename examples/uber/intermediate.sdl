@@ -1,0 +1,336 @@
+// Uber Intermediate Architecture (v2)
+// This shows the evolution from MVP to a more scalable system
+// Key improvements:
+// - Redis cache for hot data
+// - Service boundaries (User, Driver, Matching services)
+// - Basic geo-indexing for efficient driver searches
+// - Improved connection pooling
+// - Asynchronous notifications
+
+component UserService {
+  pool: ResourcePool = ResourcePool {
+    maxCapacity: 50
+    acquireLatency: 1ms
+  }
+
+  redis: Cache = Cache {
+    hitRate: 0.7  // 70% cache hit for user data
+    readLatency: 5ms
+    writeLatency: 10ms
+  }
+
+  userDB: Database = Database {
+    pool: ResourcePool {
+      maxCapacity: 20  // Better connection pooling
+      acquireLatency: 5ms
+    }
+    readLatency: 50ms  // Indexed queries
+    writeLatency: 100ms
+  }
+
+  method GetUser(userId: String) -> User {
+    acquire pool
+    
+    // Try cache first
+    let cached = redis.Read(key: userId)
+    if cached {
+      return cached
+    }
+    
+    // Cache miss - hit database
+    let user = userDB.ReadUser(userId: userId)
+    
+    // Write to cache for next time
+    redis.Write(key: userId, value: user)
+    
+    return user
+  }
+
+  method AuthenticateUser(token: String) -> User {
+    acquire pool
+    
+    // Auth tokens cached for 5 minutes
+    let cached = redis.Read(key: "auth:" + token)
+    if cached {
+      return cached
+    }
+    
+    let user = userDB.ValidateToken(token: token)
+    redis.Write(key: "auth:" + token, value: user)
+    
+    return user
+  }
+}
+
+component DriverService {
+  pool: ResourcePool = ResourcePool {
+    maxCapacity: 50
+    acquireLatency: 1ms
+  }
+
+  locationCache: Cache = Cache {
+    hitRate: 0.9  // Driver locations heavily cached
+    readLatency: 2ms
+    writeLatency: 5ms
+  }
+
+  driverDB: Database = Database {
+    pool: ResourcePool {
+      maxCapacity: 20
+      acquireLatency: 5ms
+    }
+    readLatency: 30ms  // Geo-indexed queries
+    writeLatency: 50ms
+  }
+
+  method UpdateLocation(driverId: String, lat: Float, lng: Float) -> Bool {
+    acquire pool
+    
+    // Update in cache first (write-through)
+    locationCache.Write(key: "loc:" + driverId, value: {lat: lat, lng: lng})
+    
+    // Async write to database (fire and forget)
+    // In real system, this would be queued
+    driverDB.UpdateLocation(driverId: driverId, lat: lat, lng: lng)
+    
+    return true
+  }
+
+  method FindNearbyDrivers(lat: Float, lng: Float, radius: Int) -> List<Driver> {
+    acquire pool
+    
+    // Check if we have this grid cell cached
+    let gridKey = "grid:" + floor(lat) + ":" + floor(lng)
+    let cached = locationCache.Read(key: gridKey)
+    if cached {
+      return cached
+    }
+    
+    // Use geo-indexed query (much faster than full scan)
+    let drivers = driverDB.GeoQuery(lat: lat, lng: lng, radius: radius)
+    
+    // Cache the grid cell for 30 seconds
+    locationCache.Write(key: gridKey, value: drivers)
+    
+    return drivers
+  }
+
+  method GetDriver(driverId: String) -> Driver {
+    acquire pool
+    
+    let cached = locationCache.Read(key: "driver:" + driverId)
+    if cached {
+      return cached
+    }
+    
+    let driver = driverDB.ReadDriver(driverId: driverId)
+    locationCache.Write(key: "driver:" + driverId, value: driver)
+    
+    return driver
+  }
+}
+
+component MatchingService {
+  pool: ResourcePool = ResourcePool {
+    maxCapacity: 100  // Handles the heavy lifting
+    acquireLatency: 1ms
+  }
+
+  routeCache: Cache = Cache {
+    hitRate: 0.6  // Route caching helps
+    readLatency: 5ms
+    writeLatency: 10ms
+  }
+
+  mapsAPI: ExternalService = ExternalService {
+    pool: ResourcePool {
+      maxCapacity: 30  // Rate limited by provider
+      acquireLatency: 10ms
+    }
+    latency: 100ms
+    errorRate: 0.01
+  }
+
+  method MatchRider(riderId: String, pickup: Location, dropoff: Location) -> Match {
+    acquire pool
+    
+    // Find nearby drivers (delegated to DriverService)
+    let drivers = driverService.FindNearbyDrivers(
+      lat: pickup.lat, 
+      lng: pickup.lng, 
+      radius: 5000
+    )
+    
+    if !drivers || drivers.length == 0 {
+      return null  // No drivers available
+    }
+    
+    // Calculate best match (simplified - just take first available)
+    let selectedDriver = drivers[0]
+    
+    // Check cached route
+    let routeKey = "route:" + selectedDriver.location + ":" + pickup
+    let route = routeCache.Read(key: routeKey)
+    
+    if !route {
+      // Calculate route
+      route = mapsAPI.CalculateRoute(
+        from: selectedDriver.location,
+        to: pickup
+      )
+      routeCache.Write(key: routeKey, value: route)
+    }
+    
+    return {
+      driver: selectedDriver,
+      rider: riderId,
+      eta: route.duration,
+      fare: calculateFare(route.distance)
+    }
+  }
+
+  method calculateFare(distance: Float) -> Float {
+    // Simple fare calculation
+    return 5.0 + (distance * 2.5)  // $5 base + $2.50/mile
+  }
+}
+
+component NotificationService {
+  pool: ResourcePool = ResourcePool {
+    maxCapacity: 200  // Async, can handle more
+    acquireLatency: 1ms
+  }
+
+  queue: Queue = Queue {
+    maxSize: 10000
+    enqueueLatency: 2ms
+    dequeueLatency: 2ms
+  }
+
+  method NotifyDriver(driverId: String, message: String) -> Bool {
+    acquire pool
+    
+    // Just enqueue - don't block
+    queue.Enqueue(item: {
+      type: "driver",
+      id: driverId,
+      message: message
+    })
+    
+    return true
+  }
+
+  method NotifyRider(riderId: String, message: String) -> Bool {
+    acquire pool
+    
+    queue.Enqueue(item: {
+      type: "rider", 
+      id: riderId,
+      message: message
+    })
+    
+    return true
+  }
+
+  // Background worker processes queue
+  method ProcessNotifications() -> Void {
+    while true {
+      let notification = queue.Dequeue()
+      if notification {
+        // Send via push notification service
+        delay(50ms)  // Simulate sending
+      } else {
+        delay(100ms)  // No items, wait a bit
+      }
+    }
+  }
+}
+
+component APIGateway {
+  pool: ResourcePool = ResourcePool {
+    maxCapacity: 100
+    acquireLatency: 1ms
+  }
+
+  userService: UserService
+  driverService: DriverService  
+  matchingService: MatchingService
+  notificationService: NotificationService
+
+  method RequestRide(authToken: String, pickup: Location, dropoff: Location) -> RideResponse {
+    acquire pool
+    
+    // Authenticate user
+    let user = userService.AuthenticateUser(token: authToken)
+    if !user {
+      return {error: "Invalid auth token"}
+    }
+    
+    // Find a match
+    let match = matchingService.MatchRider(
+      riderId: user.id,
+      pickup: pickup,
+      dropoff: dropoff
+    )
+    
+    if !match {
+      return {error: "No drivers available"}
+    }
+    
+    // Notify driver (async - don't wait)
+    notificationService.NotifyDriver(
+      driverId: match.driver.id,
+      message: "New ride request!"
+    )
+    
+    // Notify rider with ETA
+    notificationService.NotifyRider(
+      riderId: user.id,
+      message: "Driver found! ETA: " + match.eta + " minutes"
+    )
+    
+    return {
+      success: true,
+      rideId: generateId(),
+      driver: match.driver,
+      eta: match.eta,
+      fare: match.fare
+    }
+  }
+
+  method UpdateDriverLocation(authToken: String, lat: Float, lng: Float) -> Bool {
+    acquire pool
+    
+    // Simple auth check (in reality would be different)
+    let driver = userService.AuthenticateUser(token: authToken)
+    if !driver {
+      return false
+    }
+    
+    return driverService.UpdateLocation(
+      driverId: driver.id,
+      lat: lat,
+      lng: lng
+    )
+  }
+
+  method generateId() -> String {
+    return "ride_" + timestamp()
+  }
+}
+
+system UberIntermediate {
+  gateway: APIGateway = APIGateway {
+    userService: UserService {},
+    driverService: DriverService {},
+    matchingService: MatchingService {
+      driverService: DriverService {}  // Share the same instance
+    },
+    notificationService: NotificationService {}
+  }
+  
+  // Start notification processor in background
+  init {
+    gateway.notificationService.ProcessNotifications()
+  }
+}

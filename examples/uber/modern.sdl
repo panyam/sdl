@@ -1,0 +1,646 @@
+// Uber Modern Microservices Architecture (v3)
+// This represents a modern, globally distributed architecture
+// Key features:
+// - Event-driven architecture with Kafka
+// - Microservices with dedicated databases
+// - Global distribution with regional clusters
+// - Advanced caching with write-through/write-back strategies
+// - Circuit breakers and resilience patterns
+// - Real-time analytics and ML-based matching
+
+// Event Bus for async communication
+component EventBus {
+  pool: ResourcePool = ResourcePool {
+    maxCapacity: 1000
+    acquireLatency: 1ms
+  }
+
+  // Kafka-like characteristics
+  publishLatency: Duration = 5ms
+  subscribeLatency: Duration = 2ms
+
+  method Publish(topic: String, event: Event) -> Bool {
+    acquire pool
+    delay(publishLatency)
+    return true
+  }
+
+  method Subscribe(topic: String) -> Event {
+    acquire pool
+    delay(subscribeLatency)
+    return Event {}
+  }
+}
+
+// User Service with CQRS pattern
+component UserServiceV3 {
+  pool: ResourcePool = ResourcePool {
+    maxCapacity: 200
+    acquireLatency: 1ms
+  }
+
+  // Dedicated cache with write-through
+  cache: Cache = Cache {
+    hitRate: 0.85
+    readLatency: 2ms
+    writeLatency: 5ms
+  }
+
+  // Sharded user database
+  writeDB: Database = Database {
+    pool: ResourcePool {
+      maxCapacity: 50
+      acquireLatency: 2ms
+    }
+    readLatency: 20ms  // SSD + optimized schema
+    writeLatency: 30ms
+  }
+
+  // Read replicas for queries
+  readDB: Database = Database {
+    pool: ResourcePool {
+      maxCapacity: 100
+      acquireLatency: 1ms
+    }
+    readLatency: 10ms  // Read-optimized replicas
+    writeLatency: 1000ms  // Not used for writes
+  }
+
+  eventBus: EventBus
+  circuitBreaker: CircuitBreaker = CircuitBreaker {
+    errorThreshold: 0.5
+    timeout: 30s
+    halfOpenRequests: 5
+  }
+
+  method GetUser(userId: String) -> User {
+    acquire pool
+    
+    // Check circuit breaker
+    if !circuitBreaker.IsOpen() {
+      let cached = cache.Read(key: userId)
+      if cached {
+        return cached
+      }
+    }
+    
+    // Use read replica
+    let user = circuitBreaker.Call(() => {
+      return readDB.ReadUser(userId: userId)
+    })
+    
+    if user {
+      cache.Write(key: userId, value: user)
+    }
+    
+    return user
+  }
+
+  method UpdateUser(userId: String, updates: UserUpdate) -> Bool {
+    acquire pool
+    
+    // Write to master
+    let success = writeDB.UpdateUser(userId: userId, updates: updates)
+    
+    if success {
+      // Invalidate cache
+      cache.Delete(key: userId)
+      
+      // Publish event
+      eventBus.Publish(topic: "user.updated", event: {
+        userId: userId,
+        updates: updates,
+        timestamp: now()
+      })
+    }
+    
+    return success
+  }
+}
+
+// Location Service with geo-distributed storage
+component LocationServiceV3 {
+  pool: ResourcePool = ResourcePool {
+    maxCapacity: 500  // High throughput service
+    acquireLatency: 0.5ms
+  }
+
+  // In-memory geo cache (Redis with geo commands)
+  geoCache: GeoCache = GeoCache {
+    hitRate: 0.95  // Very high hit rate
+    readLatency: 1ms
+    writeLatency: 2ms
+    ttl: 30s  // Short TTL for real-time data
+  }
+
+  // Time-series database for historical data
+  timeSeriesDB: Database = Database {
+    pool: ResourcePool {
+      maxCapacity: 100
+      acquireLatency: 1ms
+    }
+    readLatency: 15ms
+    writeLatency: 10ms  // Optimized for writes
+  }
+
+  eventBus: EventBus
+
+  method UpdateLocation(driverId: String, lat: Float, lng: Float) -> Bool {
+    acquire pool
+    
+    // Update geo cache immediately
+    geoCache.SetLocation(driverId: driverId, lat: lat, lng: lng)
+    
+    // Async write to time-series DB
+    eventBus.Publish(topic: "location.updated", event: {
+      driverId: driverId,
+      lat: lat,
+      lng: lng,
+      timestamp: now()
+    })
+    
+    return true
+  }
+
+  method FindNearbyDrivers(lat: Float, lng: Float, radius: Int) -> List<Driver> {
+    acquire pool
+    
+    // Use geo cache for real-time lookups
+    return geoCache.RadiusSearch(lat: lat, lng: lng, radius: radius)
+  }
+
+  method GetDriverPath(driverId: String, duration: Duration) -> List<Location> {
+    acquire pool
+    
+    // Historical data from time-series DB
+    return timeSeriesDB.QueryTimeSeries(
+      series: "driver.location." + driverId,
+      start: now() - duration,
+      end: now()
+    )
+  }
+}
+
+// ML-powered Matching Service
+component MatchingServiceV3 {
+  pool: ResourcePool = ResourcePool {
+    maxCapacity: 300
+    acquireLatency: 1ms
+  }
+
+  // ML model cache
+  modelCache: Cache = Cache {
+    hitRate: 0.99  // Models rarely change
+    readLatency: 5ms
+    writeLatency: 50ms
+  }
+
+  // Feature store for ML
+  featureStore: Database = Database {
+    pool: ResourcePool {
+      maxCapacity: 50
+      acquireLatency: 2ms
+    }
+    readLatency: 20ms
+    writeLatency: 100ms
+  }
+
+  locationService: LocationServiceV3
+  pricingService: PricingServiceV3
+  eventBus: EventBus
+
+  method FindOptimalMatch(request: RideRequest) -> Match {
+    acquire pool
+    
+    // Get nearby drivers
+    let drivers = locationService.FindNearbyDrivers(
+      lat: request.pickup.lat,
+      lng: request.pickup.lng,
+      radius: 5000
+    )
+    
+    if !drivers || drivers.length == 0 {
+      return null
+    }
+    
+    // Load ML model
+    let model = modelCache.Read(key: "matching.model.v2")
+    if !model {
+      model = featureStore.LoadModel(name: "matching.model.v2")
+      modelCache.Write(key: "matching.model.v2", value: model)
+    }
+    
+    // Score each driver
+    let scores = []
+    for driver in drivers {
+      let features = buildFeatures(request, driver)
+      let score = model.Predict(features)
+      scores.push({driver: driver, score: score})
+    }
+    
+    // Select best match
+    let bestMatch = scores.maxBy(s => s.score)
+    
+    // Get pricing
+    let fare = pricingService.CalculateFare(
+      pickup: request.pickup,
+      dropoff: request.dropoff,
+      time: now(),
+      demandLevel: getCurrentDemand()
+    )
+    
+    // Publish match event
+    eventBus.Publish(topic: "ride.matched", event: {
+      rideId: request.rideId,
+      driverId: bestMatch.driver.id,
+      riderId: request.riderId,
+      fare: fare
+    })
+    
+    return {
+      driver: bestMatch.driver,
+      fare: fare,
+      eta: calculateETA(bestMatch.driver.location, request.pickup)
+    }
+  }
+
+  method buildFeatures(request: RideRequest, driver: Driver) -> Features {
+    // Build ML features
+    return {
+      distance: calculateDistance(driver.location, request.pickup),
+      driverRating: driver.rating,
+      driverCompletionRate: driver.completionRate,
+      timeOfDay: now().hour,
+      dayOfWeek: now().dayOfWeek,
+      surgeLevel: getCurrentDemand()
+    }
+  }
+
+  method calculateETA(from: Location, to: Location) -> Duration {
+    let distance = calculateDistance(from, to)
+    return distance * 2  // Simplified: 2 minutes per km
+  }
+
+  method calculateDistance(from: Location, to: Location) -> Float {
+    // Haversine formula (simplified)
+    return sqrt((to.lat - from.lat)^2 + (to.lng - from.lng)^2) * 111  // km
+  }
+
+  method getCurrentDemand() -> Float {
+    // In reality, this would query a demand prediction service
+    return 1.2  // 20% surge
+  }
+}
+
+// Dynamic Pricing Service
+component PricingServiceV3 {
+  pool: ResourcePool = ResourcePool {
+    maxCapacity: 200
+    acquireLatency: 1ms
+  }
+
+  // Pricing rules cache
+  rulesCache: Cache = Cache {
+    hitRate: 0.95
+    readLatency: 2ms
+    writeLatency: 10ms
+  }
+
+  // Historical pricing data
+  pricingDB: Database = Database {
+    pool: ResourcePool {
+      maxCapacity: 30
+      acquireLatency: 2ms
+    }
+    readLatency: 25ms
+    writeLatency: 50ms
+  }
+
+  method CalculateFare(pickup: Location, dropoff: Location, time: Time, demandLevel: Float) -> Fare {
+    acquire pool
+    
+    // Get base rates
+    let rules = rulesCache.Read(key: "pricing.rules")
+    if !rules {
+      rules = pricingDB.LoadPricingRules()
+      rulesCache.Write(key: "pricing.rules", value: rules)
+    }
+    
+    // Calculate base fare
+    let distance = calculateDistance(pickup, dropoff)
+    let baseFare = rules.baseFare + (distance * rules.perKmRate)
+    
+    // Apply surge pricing
+    let surgeFare = baseFare * demandLevel
+    
+    // Apply time-based adjustments
+    if time.hour >= 22 || time.hour <= 6 {
+      surgeFare = surgeFare * 1.2  // Night surcharge
+    }
+    
+    return {
+      baseFare: baseFare,
+      surgeFare: surgeFare,
+      surgeLevel: demandLevel,
+      breakdown: {
+        base: rules.baseFare,
+        distance: distance * rules.perKmRate,
+        surge: surgeFare - baseFare,
+        night: (time.hour >= 22 || time.hour <= 6) ? baseFare * 0.2 : 0
+      }
+    }
+  }
+
+  method calculateDistance(from: Location, to: Location) -> Float {
+    return sqrt((to.lat - from.lat)^2 + (to.lng - from.lng)^2) * 111
+  }
+}
+
+// Notification Service with multiple channels
+component NotificationServiceV3 {
+  pool: ResourcePool = ResourcePool {
+    maxCapacity: 1000  // Very high throughput
+    acquireLatency: 0.5ms
+  }
+
+  // Priority queue for notifications
+  priorityQueue: PriorityQueue = PriorityQueue {
+    maxSize: 100000
+    enqueueLatency: 1ms
+    dequeueLatency: 1ms
+  }
+
+  // Channel-specific services
+  pushService: ExternalService = ExternalService {
+    pool: ResourcePool {
+      maxCapacity: 200
+      acquireLatency: 5ms
+    }
+    latency: 50ms
+    errorRate: 0.02
+  }
+
+  smsService: ExternalService = ExternalService {
+    pool: ResourcePool {
+      maxCapacity: 100
+      acquireLatency: 10ms
+    }
+    latency: 200ms
+    errorRate: 0.01
+  }
+
+  eventBus: EventBus
+
+  method SendNotification(userId: String, message: String, priority: Priority) -> Bool {
+    acquire pool
+    
+    // Enqueue with priority
+    priorityQueue.Enqueue(item: {
+      userId: userId,
+      message: message,
+      priority: priority,
+      timestamp: now()
+    }, priority: priority)
+    
+    return true
+  }
+
+  // Background processor
+  method ProcessNotifications() -> Void {
+    while true {
+      let notification = priorityQueue.Dequeue()
+      if notification {
+        // Determine channel based on user preferences
+        let userPrefs = getUserPreferences(notification.userId)
+        
+        if userPrefs.pushEnabled {
+          pushService.Send(userId: notification.userId, message: notification.message)
+        }
+        
+        if userPrefs.smsEnabled && notification.priority == HIGH {
+          smsService.Send(userId: notification.userId, message: notification.message)
+        }
+        
+        // Publish delivery event
+        eventBus.Publish(topic: "notification.sent", event: {
+          userId: notification.userId,
+          channels: userPrefs.enabledChannels,
+          timestamp: now()
+        })
+      } else {
+        delay(10ms)
+      }
+    }
+  }
+
+  method getUserPreferences(userId: String) -> UserPreferences {
+    // Simplified - would query user preference service
+    return {
+      pushEnabled: true,
+      smsEnabled: false,
+      emailEnabled: false,
+      enabledChannels: ["push"]
+    }
+  }
+}
+
+// API Gateway with GraphQL and rate limiting
+component APIGatewayV3 {
+  pool: ResourcePool = ResourcePool {
+    maxCapacity: 500
+    acquireLatency: 0.5ms
+  }
+
+  // Rate limiter
+  rateLimiter: RateLimiter = RateLimiter {
+    requestsPerSecond: 100  // Per user
+    burstSize: 200
+  }
+
+  // Services
+  userService: UserServiceV3
+  locationService: LocationServiceV3
+  matchingService: MatchingServiceV3
+  pricingService: PricingServiceV3
+  notificationService: NotificationServiceV3
+  eventBus: EventBus
+
+  method RequestRide(authToken: String, pickup: Location, dropoff: Location) -> RideResponse {
+    acquire pool
+    
+    // Rate limiting
+    let user = userService.GetUser(userId: extractUserId(authToken))
+    if !rateLimiter.Allow(userId: user.id) {
+      return {error: "Rate limit exceeded", retryAfter: 60}
+    }
+    
+    // Create ride request
+    let rideId = generateId()
+    let request = {
+      rideId: rideId,
+      riderId: user.id,
+      pickup: pickup,
+      dropoff: dropoff,
+      timestamp: now()
+    }
+    
+    // Find match asynchronously
+    let match = matchingService.FindOptimalMatch(request)
+    
+    if !match {
+      // Publish failed match event
+      eventBus.Publish(topic: "ride.no_match", event: request)
+      return {error: "No drivers available"}
+    }
+    
+    // Send notifications
+    notificationService.SendNotification(
+      userId: match.driver.id,
+      message: "New ride request! Tap to accept",
+      priority: HIGH
+    )
+    
+    notificationService.SendNotification(
+      userId: user.id,
+      message: "Driver found! " + match.driver.name + " arriving in " + match.eta,
+      priority: NORMAL
+    )
+    
+    return {
+      success: true,
+      rideId: rideId,
+      driver: match.driver,
+      eta: match.eta,
+      fare: match.fare
+    }
+  }
+
+  method UpdateDriverLocation(authToken: String, lat: Float, lng: Float) -> Bool {
+    acquire pool
+    
+    let driverId = extractUserId(authToken)
+    
+    // Update location
+    return locationService.UpdateLocation(
+      driverId: driverId,
+      lat: lat,
+      lng: lng
+    )
+  }
+
+  method GetRideHistory(authToken: String, limit: Int) -> List<Ride> {
+    acquire pool
+    
+    let userId = extractUserId(authToken)
+    
+    // This would query a ride history service
+    // For demo, return empty list
+    return []
+  }
+
+  method extractUserId(authToken: String) -> String {
+    // Simplified - would validate JWT and extract claims
+    return "user_" + authToken.substring(0, 8)
+  }
+
+  method generateId() -> String {
+    return "ride_" + uuid()
+  }
+}
+
+// Analytics Service for real-time metrics
+component AnalyticsServiceV3 {
+  pool: ResourcePool = ResourcePool {
+    maxCapacity: 200
+    acquireLatency: 1ms
+  }
+
+  // Stream processing for real-time analytics
+  streamProcessor: StreamProcessor = StreamProcessor {
+    windowSize: 60s
+    slideInterval: 10s
+  }
+
+  // Analytics database (ClickHouse-like)
+  analyticsDB: Database = Database {
+    pool: ResourcePool {
+      maxCapacity: 50
+      acquireLatency: 5ms
+    }
+    readLatency: 100ms  // Complex queries
+    writeLatency: 20ms  // Batch writes
+  }
+
+  eventBus: EventBus
+
+  method ProcessEvents() -> Void {
+    while true {
+      let event = eventBus.Subscribe(topic: "*")
+      
+      // Update real-time metrics
+      streamProcessor.Process(event)
+      
+      // Batch write to analytics DB
+      if streamProcessor.ShouldFlush() {
+        let batch = streamProcessor.GetBatch()
+        analyticsDB.WriteBatch(data: batch)
+        streamProcessor.Clear()
+      }
+    }
+  }
+
+  method GetRealTimeMetrics() -> Metrics {
+    acquire pool
+    
+    return {
+      activeRides: streamProcessor.Count("ride.matched") - streamProcessor.Count("ride.completed"),
+      requestsPerMinute: streamProcessor.Rate("ride.requested"),
+      avgMatchTime: streamProcessor.Avg("match.duration"),
+      surgeAreas: streamProcessor.TopK("surge.areas", k: 10)
+    }
+  }
+
+  method GetHistoricalMetrics(start: Time, end: Time) -> Metrics {
+    acquire pool
+    
+    return analyticsDB.Query(
+      query: "SELECT * FROM metrics WHERE time >= ? AND time <= ?",
+      params: [start, end]
+    )
+  }
+}
+
+system UberModern {
+  // Core services
+  gateway: APIGatewayV3 = APIGatewayV3 {
+    userService: UserServiceV3 {
+      eventBus: EventBus {}
+    },
+    locationService: LocationServiceV3 {
+      eventBus: EventBus {}
+    },
+    matchingService: MatchingServiceV3 {
+      locationService: LocationServiceV3 {
+        eventBus: EventBus {}
+      },
+      pricingService: PricingServiceV3 {},
+      eventBus: EventBus {}
+    },
+    pricingService: PricingServiceV3 {},
+    notificationService: NotificationServiceV3 {
+      eventBus: EventBus {}
+    },
+    eventBus: EventBus {}
+  }
+  
+  // Analytics running in background
+  analytics: AnalyticsServiceV3 = AnalyticsServiceV3 {
+    eventBus: EventBus {}
+  }
+  
+  // Start background processors
+  init {
+    gateway.notificationService.ProcessNotifications()
+    analytics.ProcessEvents()
+  }
+}

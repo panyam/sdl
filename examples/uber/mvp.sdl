@@ -1,0 +1,133 @@
+// Uber MVP - "Two friends with an app"
+// A monolithic system with a single database and direct external API calls
+// Demonstrates: No caching, synchronous operations, database bottlenecks
+
+import ResourcePool, delay from "../common.sdl"
+
+// External Maps API Service (simulated)
+component MapsAPI {
+    uses pool ResourcePool(Size = 10)  // API rate limit simulation
+    
+    method CalculateRoute() Bool {
+        let acquired = self.pool.Acquire()
+        if not acquired {
+            return false  // Rate limited
+        }
+        
+        // Simulate variable API latency
+        delay(100ms)  // External API calls are slow
+        
+        // 95% success rate
+        return true
+    }
+}
+
+// Single PostgreSQL Database - stores everything
+component PostgresDatabase {
+    uses pool ResourcePool(Size = 3)  // Very limited connections (MVP budget!)
+    
+    method FindNearestDriver() Bool {
+        let acquired = self.pool.Acquire()
+        if not acquired {
+            return false  // Connection pool exhausted
+        }
+        
+        // Full table scan - no geo indexes yet!
+        delay(200ms)  // This is painful
+        
+        // 90% chance of finding available driver
+        return true
+    }
+    
+    method CreateRide() Bool {
+        let acquired = self.pool.Acquire()
+        if not acquired {
+            return false  // Connection pool exhausted
+        }
+        
+        // Insert into rides table
+        delay(50ms)
+        return true
+    }
+    
+    method UpdateDriverLocation() Bool {
+        let acquired = self.pool.Acquire()
+        if not acquired {
+            return false  // Connection pool exhausted
+        }
+        
+        // Update driver record
+        delay(30ms)
+        return true
+    }
+}
+
+// Monolithic Web Server - handles everything
+component UberWebServer {
+    uses db PostgresDatabase
+    uses maps MapsAPI
+    uses pool ResourcePool(Size = 20)  // Can handle 20 concurrent requests
+    
+    method RequestRide() Bool {
+        // Acquire request handler
+        let acquired = self.pool.Acquire()
+        if not acquired {
+            return false  // Server overloaded
+        }
+        
+        // Step 1: Find nearest available driver (expensive DB query)
+        let driverFound = self.db.FindNearestDriver()
+        if not driverFound {
+            return false  // No drivers available or DB error
+        }
+        
+        // Step 2: Calculate route and ETA (external API call)
+        let routeCalculated = self.maps.CalculateRoute()
+        if not routeCalculated {
+            return false  // Maps API failed
+        }
+        
+        // Step 3: Create ride record in database
+        let rideCreated = self.db.CreateRide()
+        if not rideCreated {
+            return false  // Failed to save ride
+        }
+        
+        // Step 4: Send notifications (inline, no queue)
+        delay(20ms)  // Synchronous notification
+        
+        return true
+    }
+    
+    method UpdateLocation() Bool {
+        // Driver location update endpoint
+        let acquired = self.pool.Acquire()
+        if not acquired {
+            return false
+        }
+        
+        // Direct database update
+        return self.db.UpdateDriverLocation()
+    }
+}
+
+// MVP System - Everything in one place
+system UberMVP {
+    use webserver UberWebServer(db = database, maps = mapsService)
+    use database PostgresDatabase
+    use mapsService MapsAPI
+}
+
+// Demo Narrative:
+// 1. Start with 5 RPS - system handles it but latency is high (300-400ms)
+// 2. Increase to 20 RPS - connection pool exhaustion starts
+// 3. Spike to 50 RPS - massive failures, database overwhelmed
+// 
+// Problems to highlight:
+// - Every request does expensive FindNearestDriver (200ms full scan)
+// - Every request calls external Maps API (100ms)
+// - No caching means redundant work
+// - Small connection pool (budget constraints) 
+// - Synchronous operations block everything
+//
+// "This is actually how many startups begin - and it works! Until it doesn't..."

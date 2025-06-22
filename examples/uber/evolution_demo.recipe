@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# Uber Architecture Evolution Demo
+# Shows the complete journey from MVP to global scale
+
+echo "=== Uber Architecture Evolution Demo ==="
+echo ""
+echo "This demo shows how Uber evolved from a simple monolithic MVP"
+echo "to a globally distributed microservices architecture."
+echo ""
+echo "We'll explore three stages:"
+echo "1. MVP - 'Two friends with an app' (2009)"
+echo "2. Intermediate - Service-oriented architecture (2012)"
+echo "3. Modern - Event-driven microservices (2018+)"
+echo ""
+echo "You can run each demo independently or follow along with all three."
+echo ""
+echo "Available demos:"
+echo "  1) MVP Demo - See how it all started"
+echo "  2) Intermediate Demo - The first major refactor"
+echo "  3) Modern Demo - Current architecture"
+echo "  4) Side-by-side comparison"
+echo "  5) Exit"
+echo ""
+
+while true; do
+  echo -n "Select demo (1-5): "
+  read choice
+  
+  case $choice in
+    1)
+      echo "Starting MVP demo..."
+      ./examples/uber/mvp_demo.recipe
+      ;;
+    2)
+      echo "Starting Intermediate demo..."
+      ./examples/uber/intermediate_demo.recipe
+      ;;
+    3)
+      echo "Starting Modern demo..."
+      ./examples/uber/modern_demo.recipe
+      ;;
+    4)
+      echo ""
+      echo "=== Side-by-Side Comparison ==="
+      echo "Open three terminal windows and run:"
+      echo ""
+      echo "Terminal 1: SDL_CANVAS_ID=ubermvp ./examples/uber/mvp_demo.recipe"
+      echo "Terminal 2: SDL_CANVAS_ID=uberv2 ./examples/uber/intermediate_demo.recipe"
+      echo "Terminal 3: SDL_CANVAS_ID=uberv3 ./examples/uber/modern_demo.recipe"
+      echo ""
+      echo "Then open three browser tabs:"
+      echo "- http://localhost:8080/canvases/ubermvp/"
+      echo "- http://localhost:8080/canvases/uberv2/"
+      echo "- http://localhost:8080/canvases/uberv3/"
+      echo ""
+      echo "Press enter to continue..."
+      read
+      ;;
+    5)
+      echo "Exiting..."
+      exit 0
+      ;;
+    *)
+      echo "Invalid choice. Please select 1-5."
+      ;;
+  esac
+  
+  echo ""
+  echo "Demo completed. Press enter to return to menu..."
+  read
+  echo ""
+done
