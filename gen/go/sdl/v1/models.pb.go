@@ -11,7 +11,6 @@ package protos
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	_ "google.golang.org/protobuf/types/known/structpb"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
@@ -548,7 +547,7 @@ var File_sdl_v1_models_proto protoreflect.FileDescriptor
 
 const file_sdl_v1_models_proto_rawDesc = "" +
 	"\n" +
-	"\x13sdl/v1/models.proto\x12\x06sdl.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/protobuf/struct.proto\"e\n" +
+	"\x13sdl/v1/models.proto\x12\x06sdl.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"e\n" +
 	"\n" +
 	"Pagination\x12\x19\n" +
 	"\bpage_key\x18\x01 \x01(\tR\apageKey\x12\x1f\n" +

@@ -957,7 +957,7 @@ func local_request_CanvasService_DeleteMetric_0(ctx context.Context, marshaler r
 	return msg, metadata, err
 }
 
-func request_CanvasService_LiveMetric_0(ctx context.Context, marshaler runtime.Marshaler, client CanvasServiceClient, req *http.Request, pathParams map[string]string) (CanvasService_LiveMetricClient, runtime.ServerMetadata, error) {
+func request_CanvasService_LiveMetrics_0(ctx context.Context, marshaler runtime.Marshaler, client CanvasServiceClient, req *http.Request, pathParams map[string]string) (CanvasService_LiveMetricsClient, runtime.ServerMetadata, error) {
 	var (
 		protoReq LiveMetricsRequest
 		metadata runtime.ServerMetadata
@@ -971,7 +971,7 @@ func request_CanvasService_LiveMetric_0(ctx context.Context, marshaler runtime.M
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "canvas_id", err)
 	}
-	stream, err := client.LiveMetric(ctx, &protoReq)
+	stream, err := client.LiveMetrics(ctx, &protoReq)
 	if err != nil {
 		return nil, metadata, err
 	}
@@ -1594,7 +1594,7 @@ func RegisterCanvasServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		forward_CanvasService_DeleteMetric_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
 
-	mux.Handle(http.MethodGet, pattern_CanvasService_LiveMetric_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_CanvasService_LiveMetrics_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
 		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
@@ -2060,22 +2060,22 @@ func RegisterCanvasServiceHandlerClient(ctx context.Context, mux *runtime.ServeM
 		}
 		forward_CanvasService_DeleteMetric_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
-	mux.Handle(http.MethodGet, pattern_CanvasService_LiveMetric_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_CanvasService_LiveMetrics_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/sdl.v1.CanvasService/LiveMetric", runtime.WithHTTPPathPattern("/v1/canvases/{canvas_id}/metrics/subscribe"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/sdl.v1.CanvasService/LiveMetrics", runtime.WithHTTPPathPattern("/v1/canvases/{canvas_id}/metrics/subscribe"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_CanvasService_LiveMetric_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_CanvasService_LiveMetrics_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		forward_CanvasService_LiveMetric_0(annotatedContext, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
+		forward_CanvasService_LiveMetrics_0(annotatedContext, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
 	})
 	mux.Handle(http.MethodGet, pattern_CanvasService_ListMetrics_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
@@ -2169,7 +2169,7 @@ var (
 	pattern_CanvasService_GetParameters_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "canvases", "canvas_id", "parameters"}, ""))
 	pattern_CanvasService_AddMetric_0          = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "canvases", "metric.canvas_id", "metrics"}, ""))
 	pattern_CanvasService_DeleteMetric_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "canvases", "canvas_id", "metrics", "metric_id"}, ""))
-	pattern_CanvasService_LiveMetric_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 2, 4}, []string{"v1", "canvases", "canvas_id", "metrics", "subscribe"}, ""))
+	pattern_CanvasService_LiveMetrics_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 2, 4}, []string{"v1", "canvases", "canvas_id", "metrics", "subscribe"}, ""))
 	pattern_CanvasService_ListMetrics_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "canvases", "canvas_id", "metrics"}, ""))
 	pattern_CanvasService_QueryMetrics_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5}, []string{"v1", "canvases", "canvas_id", "metrics", "metric_id", "query"}, ""))
 	pattern_CanvasService_AggregateMetrics_0   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5}, []string{"v1", "canvases", "canvas_id", "metrics", "metric_id", "aggregate"}, ""))
@@ -2197,7 +2197,7 @@ var (
 	forward_CanvasService_GetParameters_0      = runtime.ForwardResponseMessage
 	forward_CanvasService_AddMetric_0          = runtime.ForwardResponseMessage
 	forward_CanvasService_DeleteMetric_0       = runtime.ForwardResponseMessage
-	forward_CanvasService_LiveMetric_0         = runtime.ForwardResponseStream
+	forward_CanvasService_LiveMetrics_0        = runtime.ForwardResponseStream
 	forward_CanvasService_ListMetrics_0        = runtime.ForwardResponseMessage
 	forward_CanvasService_QueryMetrics_0       = runtime.ForwardResponseMessage
 	forward_CanvasService_AggregateMetrics_0   = runtime.ForwardResponseMessage

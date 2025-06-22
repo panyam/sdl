@@ -9,7 +9,6 @@
 package protos
 
 import (
-	_ "github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2/options"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -3183,7 +3182,7 @@ var File_sdl_v1_canvas_proto protoreflect.FileDescriptor
 
 const file_sdl_v1_canvas_proto_rawDesc = "" +
 	"\n" +
-	"\x13sdl/v1/canvas.proto\x12\x06sdl.v1\x1a google/protobuf/field_mask.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\x1a\x13sdl/v1/models.proto\x1a\x1cgoogle/api/annotations.proto\"=\n" +
+	"\x13sdl/v1/canvas.proto\x12\x06sdl.v1\x1a google/protobuf/field_mask.proto\x1a\x13sdl/v1/models.proto\x1a\x1cgoogle/api/annotations.proto\"=\n" +
 	"\x13CreateCanvasRequest\x12&\n" +
 	"\x06canvas\x18\x01 \x01(\v2\x0e.sdl.v1.CanvasR\x06canvas\"\xd0\x01\n" +
 	"\x14CreateCanvasResponse\x12&\n" +
@@ -3397,7 +3396,7 @@ const file_sdl_v1_canvas_proto_rawDesc = "" +
 	"\vprobability\x18\b \x01(\x01R\vprobability\x12!\n" +
 	"\fgenerator_id\x18\t \x01(\tR\vgeneratorId\x12\x14\n" +
 	"\x05color\x18\n" +
-	" \x01(\tR\x05color2\xc8\x19\n" +
+	" \x01(\tR\x05color2\xc9\x19\n" +
 	"\rCanvasService\x12b\n" +
 	"\fCreateCanvas\x12\x1b.sdl.v1.CreateCanvasRequest\x1a\x1c.sdl.v1.CreateCanvasResponse\"\x17\x82\xd3\xe4\x93\x02\x11:\x01*\"\f/v1/canvases\x12_\n" +
 	"\fListCanvases\x12\x1b.sdl.v1.ListCanvasesRequest\x1a\x1c.sdl.v1.ListCanvasesResponse\"\x14\x82\xd3\xe4\x93\x02\x0e\x12\f/v1/canvases\x12]\n" +
@@ -3418,9 +3417,8 @@ const file_sdl_v1_canvas_proto_rawDesc = "" +
 	"\fSetParameter\x12\x1b.sdl.v1.SetParameterRequest\x1a\x1c.sdl.v1.SetParameterResponse\"5\x82\xd3\xe4\x93\x02/:\x01*\x1a*/v1/canvases/{canvas_id}/parameters/{path}\x12y\n" +
 	"\rGetParameters\x12\x1c.sdl.v1.GetParametersRequest\x1a\x1d.sdl.v1.GetParametersResponse\"+\x82\xd3\xe4\x93\x02%\x12#/v1/canvases/{canvas_id}/parameters\x12t\n" +
 	"\tAddMetric\x12\x18.sdl.v1.AddMetricRequest\x1a\x19.sdl.v1.AddMetricResponse\"2\x82\xd3\xe4\x93\x02,:\x01*\"'/v1/canvases/{metric.canvas_id}/metrics\x12\x7f\n" +
-	"\fDeleteMetric\x12\x1b.sdl.v1.DeleteMetricRequest\x1a\x1c.sdl.v1.DeleteMetricResponse\"4\x82\xd3\xe4\x93\x02.*,/v1/canvases/{canvas_id}/metrics/{metric_id}\x12{\n" +
-	"\n" +
-	"LiveMetric\x12\x1a.sdl.v1.LiveMetricsRequest\x1a\x1b.sdl.v1.LiveMetricsResponse\"2\x82\xd3\xe4\x93\x02,\x12*/v1/canvases/{canvas_id}/metrics/subscribe0\x01\x12p\n" +
+	"\fDeleteMetric\x12\x1b.sdl.v1.DeleteMetricRequest\x1a\x1c.sdl.v1.DeleteMetricResponse\"4\x82\xd3\xe4\x93\x02.*,/v1/canvases/{canvas_id}/metrics/{metric_id}\x12|\n" +
+	"\vLiveMetrics\x12\x1a.sdl.v1.LiveMetricsRequest\x1a\x1b.sdl.v1.LiveMetricsResponse\"2\x82\xd3\xe4\x93\x02,\x12*/v1/canvases/{canvas_id}/metrics/subscribe0\x01\x12p\n" +
 	"\vListMetrics\x12\x1a.sdl.v1.ListMetricsRequest\x1a\x1b.sdl.v1.ListMetricsResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /v1/canvases/{canvas_id}/metrics\x12\x85\x01\n" +
 	"\fQueryMetrics\x12\x1b.sdl.v1.QueryMetricsRequest\x1a\x1c.sdl.v1.QueryMetricsResponse\":\x82\xd3\xe4\x93\x024\x122/v1/canvases/{canvas_id}/metrics/{metric_id}/query\x12\x95\x01\n" +
 	"\x10AggregateMetrics\x12\x1f.sdl.v1.AggregateMetricsRequest\x1a .sdl.v1.AggregateMetricsResponse\">\x82\xd3\xe4\x93\x028\x126/v1/canvases/{canvas_id}/metrics/{metric_id}/aggregate\x12\x7f\n" +
@@ -3557,7 +3555,7 @@ var file_sdl_v1_canvas_proto_depIdxs = []int32{
 	51, // 43: sdl.v1.CanvasService.GetParameters:input_type -> sdl.v1.GetParametersRequest
 	30, // 44: sdl.v1.CanvasService.AddMetric:input_type -> sdl.v1.AddMetricRequest
 	32, // 45: sdl.v1.CanvasService.DeleteMetric:input_type -> sdl.v1.DeleteMetricRequest
-	34, // 46: sdl.v1.CanvasService.LiveMetric:input_type -> sdl.v1.LiveMetricsRequest
+	34, // 46: sdl.v1.CanvasService.LiveMetrics:input_type -> sdl.v1.LiveMetricsRequest
 	42, // 47: sdl.v1.CanvasService.ListMetrics:input_type -> sdl.v1.ListMetricsRequest
 	36, // 48: sdl.v1.CanvasService.QueryMetrics:input_type -> sdl.v1.QueryMetricsRequest
 	39, // 49: sdl.v1.CanvasService.AggregateMetrics:input_type -> sdl.v1.AggregateMetricsRequest
@@ -3582,7 +3580,7 @@ var file_sdl_v1_canvas_proto_depIdxs = []int32{
 	52, // 68: sdl.v1.CanvasService.GetParameters:output_type -> sdl.v1.GetParametersResponse
 	31, // 69: sdl.v1.CanvasService.AddMetric:output_type -> sdl.v1.AddMetricResponse
 	33, // 70: sdl.v1.CanvasService.DeleteMetric:output_type -> sdl.v1.DeleteMetricResponse
-	35, // 71: sdl.v1.CanvasService.LiveMetric:output_type -> sdl.v1.LiveMetricsResponse
+	35, // 71: sdl.v1.CanvasService.LiveMetrics:output_type -> sdl.v1.LiveMetricsResponse
 	43, // 72: sdl.v1.CanvasService.ListMetrics:output_type -> sdl.v1.ListMetricsResponse
 	37, // 73: sdl.v1.CanvasService.QueryMetrics:output_type -> sdl.v1.QueryMetricsResponse
 	40, // 74: sdl.v1.CanvasService.AggregateMetrics:output_type -> sdl.v1.AggregateMetricsResponse

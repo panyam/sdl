@@ -116,8 +116,8 @@ class CanvasServiceStub(object):
                 request_serializer=sdl_dot_v1_dot_canvas__pb2.DeleteMetricRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_canvas__pb2.DeleteMetricResponse.FromString,
                 _registered_method=True)
-        self.LiveMetric = channel.unary_stream(
-                '/sdl.v1.CanvasService/LiveMetric',
+        self.LiveMetrics = channel.unary_stream(
+                '/sdl.v1.CanvasService/LiveMetrics',
                 request_serializer=sdl_dot_v1_dot_canvas__pb2.LiveMetricsRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_canvas__pb2.LiveMetricsResponse.FromString,
                 _registered_method=True)
@@ -289,7 +289,7 @@ class CanvasServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def LiveMetric(self, request, context):
+    def LiveMetrics(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -430,8 +430,8 @@ def add_CanvasServiceServicer_to_server(servicer, server):
                     request_deserializer=sdl_dot_v1_dot_canvas__pb2.DeleteMetricRequest.FromString,
                     response_serializer=sdl_dot_v1_dot_canvas__pb2.DeleteMetricResponse.SerializeToString,
             ),
-            'LiveMetric': grpc.unary_stream_rpc_method_handler(
-                    servicer.LiveMetric,
+            'LiveMetrics': grpc.unary_stream_rpc_method_handler(
+                    servicer.LiveMetrics,
                     request_deserializer=sdl_dot_v1_dot_canvas__pb2.LiveMetricsRequest.FromString,
                     response_serializer=sdl_dot_v1_dot_canvas__pb2.LiveMetricsResponse.SerializeToString,
             ),
@@ -1009,7 +1009,7 @@ class CanvasService(object):
             _registered_method=True)
 
     @staticmethod
-    def LiveMetric(request,
+    def LiveMetrics(request,
             target,
             options=(),
             channel_credentials=None,
@@ -1022,7 +1022,7 @@ class CanvasService(object):
         return grpc.experimental.unary_stream(
             request,
             target,
-            '/sdl.v1.CanvasService/LiveMetric',
+            '/sdl.v1.CanvasService/LiveMetrics',
             sdl_dot_v1_dot_canvas__pb2.LiveMetricsRequest.SerializeToString,
             sdl_dot_v1_dot_canvas__pb2.LiveMetricsResponse.FromString,
             options,
