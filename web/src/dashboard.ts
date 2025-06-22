@@ -109,22 +109,39 @@ export class Dashboard {
       const metricsResponse = await this.api.getMetrics();
       if (metricsResponse.success && metricsResponse.data) {
         console.log('✅ Metrics loaded:', Object.keys(metricsResponse.data).length);
-        // Convert metrics to dynamic charts
+        console.log('📊 Metrics data:', metricsResponse.data);
+        // Convert metrics to dynamic charts - assume all metrics are enabled
         Object.values(metricsResponse.data).forEach((metric: any) => {
-          if (metric.enabled) {
-            const target = metric.methods && metric.methods.length > 0 
-              ? `${metric.component}.${metric.methods[0]}` 
-              : metric.component;
-            this.state.dynamicCharts[metric.id] = {
-              chartName: metric.id,
-              metricName: metric.metricType,
-              target: target, // Store the actual target for API calls
-              data: [],
-              labels: [],
-              title: metric.name || `${target} - ${metric.metricType}`
-            };
+          console.log('🔍 Processing metric:', metric.id, 'full metric:', metric);
+          // For MetricInfo, we need to handle methods as a string, not array
+          const target = metric.method 
+            ? `${metric.component}.${metric.method}` 
+            : metric.component;
+          
+          // Build informative title with ID, metric type, and aggregation
+          let title = `${metric.id}`;
+          if (metric.metricType) {
+            title += ` (${metric.metricType}`;
+            if (metric.aggregation) {
+              title += ` - ${metric.aggregation}`;
+            }
+            if (metric.aggregationWindow) {
+              title += ` @ ${metric.aggregationWindow}s`;
+            }
+            title += ')';
           }
+          
+          this.state.dynamicCharts[metric.id] = {
+            chartName: metric.id,
+            metricName: metric.metricType || 'latency',
+            target: target, // Store the actual target for API calls
+            data: [],
+            labels: [],
+            title: title
+          };
+          console.log('📈 Added chart:', metric.id, 'to dynamicCharts');
         });
+        console.log('📊 Final dynamicCharts state:', this.state.dynamicCharts);
       } else {
         console.log('⚠️ No metrics found or failed to load');
       }
