@@ -13,12 +13,16 @@ import (
 )
 
 type Server struct {
-	Address string
+	Address       string
+	CanvasService *CanvasService
 }
 
 func (s *Server) Start(ctx context.Context, srvErr chan error, srvChan chan bool) error {
-	// Instantiate services
-	canvasSvc := NewCanvasService() // Provide base path if needed, empty uses default
+	// Use provided CanvasService or create a new one
+	canvasSvc := s.CanvasService
+	if canvasSvc == nil {
+		canvasSvc = NewCanvasService() // Provide base path if needed, empty uses default
+	}
 
 	server := grpc.NewServer(
 	// grpc.UnaryInterceptor(EnsureAccessToken), // Add interceptors if needed

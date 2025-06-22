@@ -25,6 +25,12 @@ cd sdl
 
 # Install prerequisites
 
+# Install Go Tools
+go install github.com/bufbuild/buf/cmd/buf@latest
+go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest
+go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+go install connectrpc.com/connect/cmd/protoc-gen-connect-go@latest
+
 #Install Buf if not already done.  This will make buf generally available
 npm config set @buf:registry https://buf.build/gen/npm/v1/
 npm install @connectrpc/connect @connectrpc/connect-web

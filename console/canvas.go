@@ -275,7 +275,7 @@ func (c *Canvas) RemoveGenerator(genId string) error {
 	return c.recomputeSystemFlows()
 }
 
-func (c *Canvas) PauseGenerator(genId string) error {
+func (c *Canvas) StopGenerator(genId string) error {
 	c.generatorsLock.Lock()
 	defer c.generatorsLock.Unlock()
 
@@ -286,7 +286,7 @@ func (c *Canvas) PauseGenerator(genId string) error {
 	return c.recomputeSystemFlows()
 }
 
-func (c *Canvas) ResumeGenerator(genId string) error {
+func (c *Canvas) StartGenerator(genId string) error {
 	c.generatorsLock.Lock()
 	defer c.generatorsLock.Unlock()
 

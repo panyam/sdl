@@ -939,7 +939,7 @@ export class Dashboard {
 
   private async startTrafficGeneration(call: GenerateCall) {
     try {
-      const result = await this.api.resumeGenerator(call.id);
+      const result = await this.api.startGenerator(call.id);
       if (!result.success) {
         throw new Error('Failed to resume generator');
       }
@@ -952,7 +952,7 @@ export class Dashboard {
 
   private async stopTrafficGeneration(call: GenerateCall) {
     try {
-      const result = await this.api.pauseGenerator(call.id);
+      const result = await this.api.stopGenerator(call.id);
       if (!result.success) {
         throw new Error('Failed to pause generator');
       }

@@ -6,7 +6,7 @@
 // 	protoc        (unknown)
 // source: sdl/v1/canvas.proto
 
-package protos
+package v1
 
 import (
 	_ "google.golang.org/genproto/googleapis/api/annotations"
@@ -1026,7 +1026,7 @@ func (x *UpdateGeneratorResponse) GetGenerator() *Generator {
 	return nil
 }
 
-type ResumeGeneratorRequest struct {
+type StartGeneratorRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
 	GeneratorId   string                 `protobuf:"bytes,2,opt,name=generator_id,json=generatorId,proto3" json:"generator_id,omitempty"` // The generator being moved
@@ -1034,20 +1034,20 @@ type ResumeGeneratorRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ResumeGeneratorRequest) Reset() {
-	*x = ResumeGeneratorRequest{}
+func (x *StartGeneratorRequest) Reset() {
+	*x = StartGeneratorRequest{}
 	mi := &file_sdl_v1_canvas_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ResumeGeneratorRequest) String() string {
+func (x *StartGeneratorRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ResumeGeneratorRequest) ProtoMessage() {}
+func (*StartGeneratorRequest) ProtoMessage() {}
 
-func (x *ResumeGeneratorRequest) ProtoReflect() protoreflect.Message {
+func (x *StartGeneratorRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_sdl_v1_canvas_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1059,45 +1059,45 @@ func (x *ResumeGeneratorRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ResumeGeneratorRequest.ProtoReflect.Descriptor instead.
-func (*ResumeGeneratorRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use StartGeneratorRequest.ProtoReflect.Descriptor instead.
+func (*StartGeneratorRequest) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{20}
 }
 
-func (x *ResumeGeneratorRequest) GetCanvasId() string {
+func (x *StartGeneratorRequest) GetCanvasId() string {
 	if x != nil {
 		return x.CanvasId
 	}
 	return ""
 }
 
-func (x *ResumeGeneratorRequest) GetGeneratorId() string {
+func (x *StartGeneratorRequest) GetGeneratorId() string {
 	if x != nil {
 		return x.GeneratorId
 	}
 	return ""
 }
 
-type ResumeGeneratorResponse struct {
+type StartGeneratorResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ResumeGeneratorResponse) Reset() {
-	*x = ResumeGeneratorResponse{}
+func (x *StartGeneratorResponse) Reset() {
+	*x = StartGeneratorResponse{}
 	mi := &file_sdl_v1_canvas_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ResumeGeneratorResponse) String() string {
+func (x *StartGeneratorResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ResumeGeneratorResponse) ProtoMessage() {}
+func (*StartGeneratorResponse) ProtoMessage() {}
 
-func (x *ResumeGeneratorResponse) ProtoReflect() protoreflect.Message {
+func (x *StartGeneratorResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_sdl_v1_canvas_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1109,12 +1109,12 @@ func (x *ResumeGeneratorResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ResumeGeneratorResponse.ProtoReflect.Descriptor instead.
-func (*ResumeGeneratorResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use StartGeneratorResponse.ProtoReflect.Descriptor instead.
+func (*StartGeneratorResponse) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{21}
 }
 
-type PauseGeneratorRequest struct {
+type StopGeneratorRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
 	GeneratorId   string                 `protobuf:"bytes,2,opt,name=generator_id,json=generatorId,proto3" json:"generator_id,omitempty"` // The generator being moved
@@ -1122,20 +1122,20 @@ type PauseGeneratorRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *PauseGeneratorRequest) Reset() {
-	*x = PauseGeneratorRequest{}
+func (x *StopGeneratorRequest) Reset() {
+	*x = StopGeneratorRequest{}
 	mi := &file_sdl_v1_canvas_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *PauseGeneratorRequest) String() string {
+func (x *StopGeneratorRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PauseGeneratorRequest) ProtoMessage() {}
+func (*StopGeneratorRequest) ProtoMessage() {}
 
-func (x *PauseGeneratorRequest) ProtoReflect() protoreflect.Message {
+func (x *StopGeneratorRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_sdl_v1_canvas_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1147,45 +1147,45 @@ func (x *PauseGeneratorRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PauseGeneratorRequest.ProtoReflect.Descriptor instead.
-func (*PauseGeneratorRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use StopGeneratorRequest.ProtoReflect.Descriptor instead.
+func (*StopGeneratorRequest) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{22}
 }
 
-func (x *PauseGeneratorRequest) GetCanvasId() string {
+func (x *StopGeneratorRequest) GetCanvasId() string {
 	if x != nil {
 		return x.CanvasId
 	}
 	return ""
 }
 
-func (x *PauseGeneratorRequest) GetGeneratorId() string {
+func (x *StopGeneratorRequest) GetGeneratorId() string {
 	if x != nil {
 		return x.GeneratorId
 	}
 	return ""
 }
 
-type PauseGeneratorResponse struct {
+type StopGeneratorResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *PauseGeneratorResponse) Reset() {
-	*x = PauseGeneratorResponse{}
+func (x *StopGeneratorResponse) Reset() {
+	*x = StopGeneratorResponse{}
 	mi := &file_sdl_v1_canvas_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *PauseGeneratorResponse) String() string {
+func (x *StopGeneratorResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PauseGeneratorResponse) ProtoMessage() {}
+func (*StopGeneratorResponse) ProtoMessage() {}
 
-func (x *PauseGeneratorResponse) ProtoReflect() protoreflect.Message {
+func (x *StopGeneratorResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_sdl_v1_canvas_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1197,8 +1197,8 @@ func (x *PauseGeneratorResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PauseGeneratorResponse.ProtoReflect.Descriptor instead.
-func (*PauseGeneratorResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use StopGeneratorResponse.ProtoReflect.Descriptor instead.
+func (*StopGeneratorResponse) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{23}
 }
 
@@ -1642,86 +1642,6 @@ func (*DeleteMetricResponse) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{33}
 }
 
-type LiveMetricsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *LiveMetricsRequest) Reset() {
-	*x = LiveMetricsRequest{}
-	mi := &file_sdl_v1_canvas_proto_msgTypes[34]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *LiveMetricsRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*LiveMetricsRequest) ProtoMessage() {}
-
-func (x *LiveMetricsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_canvas_proto_msgTypes[34]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use LiveMetricsRequest.ProtoReflect.Descriptor instead.
-func (*LiveMetricsRequest) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{34}
-}
-
-func (x *LiveMetricsRequest) GetCanvasId() string {
-	if x != nil {
-		return x.CanvasId
-	}
-	return ""
-}
-
-type LiveMetricsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *LiveMetricsResponse) Reset() {
-	*x = LiveMetricsResponse{}
-	mi := &file_sdl_v1_canvas_proto_msgTypes[35]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *LiveMetricsResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*LiveMetricsResponse) ProtoMessage() {}
-
-func (x *LiveMetricsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_canvas_proto_msgTypes[35]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use LiveMetricsResponse.ProtoReflect.Descriptor instead.
-func (*LiveMetricsResponse) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{35}
-}
-
 type QueryMetricsRequest struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	CanvasId string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
@@ -1738,7 +1658,7 @@ type QueryMetricsRequest struct {
 
 func (x *QueryMetricsRequest) Reset() {
 	*x = QueryMetricsRequest{}
-	mi := &file_sdl_v1_canvas_proto_msgTypes[36]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1750,7 +1670,7 @@ func (x *QueryMetricsRequest) String() string {
 func (*QueryMetricsRequest) ProtoMessage() {}
 
 func (x *QueryMetricsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_canvas_proto_msgTypes[36]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1763,7 +1683,7 @@ func (x *QueryMetricsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryMetricsRequest.ProtoReflect.Descriptor instead.
 func (*QueryMetricsRequest) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{36}
+	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *QueryMetricsRequest) GetCanvasId() string {
@@ -1810,7 +1730,7 @@ type QueryMetricsResponse struct {
 
 func (x *QueryMetricsResponse) Reset() {
 	*x = QueryMetricsResponse{}
-	mi := &file_sdl_v1_canvas_proto_msgTypes[37]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1822,7 +1742,7 @@ func (x *QueryMetricsResponse) String() string {
 func (*QueryMetricsResponse) ProtoMessage() {}
 
 func (x *QueryMetricsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_canvas_proto_msgTypes[37]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1835,7 +1755,7 @@ func (x *QueryMetricsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryMetricsResponse.ProtoReflect.Descriptor instead.
 func (*QueryMetricsResponse) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{37}
+	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *QueryMetricsResponse) GetPoints() []*MetricPoint {
@@ -1855,7 +1775,7 @@ type MetricPoint struct {
 
 func (x *MetricPoint) Reset() {
 	*x = MetricPoint{}
-	mi := &file_sdl_v1_canvas_proto_msgTypes[38]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1867,7 +1787,7 @@ func (x *MetricPoint) String() string {
 func (*MetricPoint) ProtoMessage() {}
 
 func (x *MetricPoint) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_canvas_proto_msgTypes[38]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1880,7 +1800,7 @@ func (x *MetricPoint) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MetricPoint.ProtoReflect.Descriptor instead.
 func (*MetricPoint) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{38}
+	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *MetricPoint) GetTimestamp() float64 {
@@ -1913,7 +1833,7 @@ type AggregateMetricsRequest struct {
 
 func (x *AggregateMetricsRequest) Reset() {
 	*x = AggregateMetricsRequest{}
-	mi := &file_sdl_v1_canvas_proto_msgTypes[39]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1925,7 +1845,7 @@ func (x *AggregateMetricsRequest) String() string {
 func (*AggregateMetricsRequest) ProtoMessage() {}
 
 func (x *AggregateMetricsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_canvas_proto_msgTypes[39]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1938,7 +1858,7 @@ func (x *AggregateMetricsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AggregateMetricsRequest.ProtoReflect.Descriptor instead.
 func (*AggregateMetricsRequest) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{39}
+	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *AggregateMetricsRequest) GetCanvasId() string {
@@ -1993,7 +1913,7 @@ type AggregateMetricsResponse struct {
 
 func (x *AggregateMetricsResponse) Reset() {
 	*x = AggregateMetricsResponse{}
-	mi := &file_sdl_v1_canvas_proto_msgTypes[40]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2005,7 +1925,7 @@ func (x *AggregateMetricsResponse) String() string {
 func (*AggregateMetricsResponse) ProtoMessage() {}
 
 func (x *AggregateMetricsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_canvas_proto_msgTypes[40]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2018,7 +1938,7 @@ func (x *AggregateMetricsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AggregateMetricsResponse.ProtoReflect.Descriptor instead.
 func (*AggregateMetricsResponse) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{40}
+	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *AggregateMetricsResponse) GetResults() []*AggregateResult {
@@ -2038,7 +1958,7 @@ type AggregateResult struct {
 
 func (x *AggregateResult) Reset() {
 	*x = AggregateResult{}
-	mi := &file_sdl_v1_canvas_proto_msgTypes[41]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2050,7 +1970,7 @@ func (x *AggregateResult) String() string {
 func (*AggregateResult) ProtoMessage() {}
 
 func (x *AggregateResult) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_canvas_proto_msgTypes[41]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2063,7 +1983,7 @@ func (x *AggregateResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AggregateResult.ProtoReflect.Descriptor instead.
 func (*AggregateResult) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{41}
+	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *AggregateResult) GetTimestamp() float64 {
@@ -2090,7 +2010,7 @@ type ListMetricsRequest struct {
 
 func (x *ListMetricsRequest) Reset() {
 	*x = ListMetricsRequest{}
-	mi := &file_sdl_v1_canvas_proto_msgTypes[42]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2102,7 +2022,7 @@ func (x *ListMetricsRequest) String() string {
 func (*ListMetricsRequest) ProtoMessage() {}
 
 func (x *ListMetricsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_canvas_proto_msgTypes[42]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2115,7 +2035,7 @@ func (x *ListMetricsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListMetricsRequest.ProtoReflect.Descriptor instead.
 func (*ListMetricsRequest) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{42}
+	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *ListMetricsRequest) GetCanvasId() string {
@@ -2134,7 +2054,7 @@ type ListMetricsResponse struct {
 
 func (x *ListMetricsResponse) Reset() {
 	*x = ListMetricsResponse{}
-	mi := &file_sdl_v1_canvas_proto_msgTypes[43]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2146,7 +2066,7 @@ func (x *ListMetricsResponse) String() string {
 func (*ListMetricsResponse) ProtoMessage() {}
 
 func (x *ListMetricsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_canvas_proto_msgTypes[43]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2159,7 +2079,7 @@ func (x *ListMetricsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListMetricsResponse.ProtoReflect.Descriptor instead.
 func (*ListMetricsResponse) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{43}
+	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *ListMetricsResponse) GetMetrics() []*MetricInfo {
@@ -2184,7 +2104,7 @@ type MetricInfo struct {
 
 func (x *MetricInfo) Reset() {
 	*x = MetricInfo{}
-	mi := &file_sdl_v1_canvas_proto_msgTypes[44]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2196,7 +2116,7 @@ func (x *MetricInfo) String() string {
 func (*MetricInfo) ProtoMessage() {}
 
 func (x *MetricInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_canvas_proto_msgTypes[44]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2209,7 +2129,7 @@ func (x *MetricInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MetricInfo.ProtoReflect.Descriptor instead.
 func (*MetricInfo) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{44}
+	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *MetricInfo) GetId() string {
@@ -2272,7 +2192,7 @@ type ExecuteTraceRequest struct {
 
 func (x *ExecuteTraceRequest) Reset() {
 	*x = ExecuteTraceRequest{}
-	mi := &file_sdl_v1_canvas_proto_msgTypes[45]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2284,7 +2204,7 @@ func (x *ExecuteTraceRequest) String() string {
 func (*ExecuteTraceRequest) ProtoMessage() {}
 
 func (x *ExecuteTraceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_canvas_proto_msgTypes[45]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2297,7 +2217,7 @@ func (x *ExecuteTraceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecuteTraceRequest.ProtoReflect.Descriptor instead.
 func (*ExecuteTraceRequest) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{45}
+	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *ExecuteTraceRequest) GetCanvasId() string {
@@ -2331,7 +2251,7 @@ type ExecuteTraceResponse struct {
 
 func (x *ExecuteTraceResponse) Reset() {
 	*x = ExecuteTraceResponse{}
-	mi := &file_sdl_v1_canvas_proto_msgTypes[46]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2343,7 +2263,7 @@ func (x *ExecuteTraceResponse) String() string {
 func (*ExecuteTraceResponse) ProtoMessage() {}
 
 func (x *ExecuteTraceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_canvas_proto_msgTypes[46]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2356,7 +2276,7 @@ func (x *ExecuteTraceResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecuteTraceResponse.ProtoReflect.Descriptor instead.
 func (*ExecuteTraceResponse) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{46}
+	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *ExecuteTraceResponse) GetTraceData() *TraceData {
@@ -2378,7 +2298,7 @@ type TraceData struct {
 
 func (x *TraceData) Reset() {
 	*x = TraceData{}
-	mi := &file_sdl_v1_canvas_proto_msgTypes[47]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2390,7 +2310,7 @@ func (x *TraceData) String() string {
 func (*TraceData) ProtoMessage() {}
 
 func (x *TraceData) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_canvas_proto_msgTypes[47]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2403,7 +2323,7 @@ func (x *TraceData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TraceData.ProtoReflect.Descriptor instead.
 func (*TraceData) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{47}
+	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *TraceData) GetSystem() string {
@@ -2446,7 +2366,7 @@ type TraceEvent struct {
 
 func (x *TraceEvent) Reset() {
 	*x = TraceEvent{}
-	mi := &file_sdl_v1_canvas_proto_msgTypes[48]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2458,7 +2378,7 @@ func (x *TraceEvent) String() string {
 func (*TraceEvent) ProtoMessage() {}
 
 func (x *TraceEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_canvas_proto_msgTypes[48]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2471,7 +2391,7 @@ func (x *TraceEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TraceEvent.ProtoReflect.Descriptor instead.
 func (*TraceEvent) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{48}
+	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *TraceEvent) GetKind() string {
@@ -2556,7 +2476,7 @@ type SetParameterRequest struct {
 
 func (x *SetParameterRequest) Reset() {
 	*x = SetParameterRequest{}
-	mi := &file_sdl_v1_canvas_proto_msgTypes[49]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2568,7 +2488,7 @@ func (x *SetParameterRequest) String() string {
 func (*SetParameterRequest) ProtoMessage() {}
 
 func (x *SetParameterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_canvas_proto_msgTypes[49]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2581,7 +2501,7 @@ func (x *SetParameterRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetParameterRequest.ProtoReflect.Descriptor instead.
 func (*SetParameterRequest) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{49}
+	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *SetParameterRequest) GetCanvasId() string {
@@ -2618,7 +2538,7 @@ type SetParameterResponse struct {
 
 func (x *SetParameterResponse) Reset() {
 	*x = SetParameterResponse{}
-	mi := &file_sdl_v1_canvas_proto_msgTypes[50]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2630,7 +2550,7 @@ func (x *SetParameterResponse) String() string {
 func (*SetParameterResponse) ProtoMessage() {}
 
 func (x *SetParameterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_canvas_proto_msgTypes[50]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2643,7 +2563,7 @@ func (x *SetParameterResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetParameterResponse.ProtoReflect.Descriptor instead.
 func (*SetParameterResponse) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{50}
+	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *SetParameterResponse) GetSuccess() bool {
@@ -2685,7 +2605,7 @@ type GetParametersRequest struct {
 
 func (x *GetParametersRequest) Reset() {
 	*x = GetParametersRequest{}
-	mi := &file_sdl_v1_canvas_proto_msgTypes[51]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2697,7 +2617,7 @@ func (x *GetParametersRequest) String() string {
 func (*GetParametersRequest) ProtoMessage() {}
 
 func (x *GetParametersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_canvas_proto_msgTypes[51]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2710,7 +2630,7 @@ func (x *GetParametersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetParametersRequest.ProtoReflect.Descriptor instead.
 func (*GetParametersRequest) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{51}
+	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *GetParametersRequest) GetCanvasId() string {
@@ -2737,7 +2657,7 @@ type GetParametersResponse struct {
 
 func (x *GetParametersResponse) Reset() {
 	*x = GetParametersResponse{}
-	mi := &file_sdl_v1_canvas_proto_msgTypes[52]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2749,7 +2669,7 @@ func (x *GetParametersResponse) String() string {
 func (*GetParametersResponse) ProtoMessage() {}
 
 func (x *GetParametersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_canvas_proto_msgTypes[52]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2762,7 +2682,7 @@ func (x *GetParametersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetParametersResponse.ProtoReflect.Descriptor instead.
 func (*GetParametersResponse) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{52}
+	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *GetParametersResponse) GetParameters() map[string]string {
@@ -2782,7 +2702,7 @@ type GetSystemDiagramRequest struct {
 
 func (x *GetSystemDiagramRequest) Reset() {
 	*x = GetSystemDiagramRequest{}
-	mi := &file_sdl_v1_canvas_proto_msgTypes[53]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2794,7 +2714,7 @@ func (x *GetSystemDiagramRequest) String() string {
 func (*GetSystemDiagramRequest) ProtoMessage() {}
 
 func (x *GetSystemDiagramRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_canvas_proto_msgTypes[53]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2807,7 +2727,7 @@ func (x *GetSystemDiagramRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSystemDiagramRequest.ProtoReflect.Descriptor instead.
 func (*GetSystemDiagramRequest) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{53}
+	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{51}
 }
 
 func (x *GetSystemDiagramRequest) GetCanvasId() string {
@@ -2827,7 +2747,7 @@ type GetSystemDiagramResponse struct {
 
 func (x *GetSystemDiagramResponse) Reset() {
 	*x = GetSystemDiagramResponse{}
-	mi := &file_sdl_v1_canvas_proto_msgTypes[54]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2839,7 +2759,7 @@ func (x *GetSystemDiagramResponse) String() string {
 func (*GetSystemDiagramResponse) ProtoMessage() {}
 
 func (x *GetSystemDiagramResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_canvas_proto_msgTypes[54]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2852,7 +2772,7 @@ func (x *GetSystemDiagramResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSystemDiagramResponse.ProtoReflect.Descriptor instead.
 func (*GetSystemDiagramResponse) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{54}
+	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *GetSystemDiagramResponse) GetDiagram() *SystemDiagram {
@@ -2874,7 +2794,7 @@ type SystemDiagram struct {
 
 func (x *SystemDiagram) Reset() {
 	*x = SystemDiagram{}
-	mi := &file_sdl_v1_canvas_proto_msgTypes[55]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2886,7 +2806,7 @@ func (x *SystemDiagram) String() string {
 func (*SystemDiagram) ProtoMessage() {}
 
 func (x *SystemDiagram) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_canvas_proto_msgTypes[55]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2899,7 +2819,7 @@ func (x *SystemDiagram) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SystemDiagram.ProtoReflect.Descriptor instead.
 func (*SystemDiagram) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{55}
+	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *SystemDiagram) GetSystemName() string {
@@ -2937,7 +2857,7 @@ type DiagramNode struct {
 
 func (x *DiagramNode) Reset() {
 	*x = DiagramNode{}
-	mi := &file_sdl_v1_canvas_proto_msgTypes[56]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2949,7 +2869,7 @@ func (x *DiagramNode) String() string {
 func (*DiagramNode) ProtoMessage() {}
 
 func (x *DiagramNode) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_canvas_proto_msgTypes[56]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2962,7 +2882,7 @@ func (x *DiagramNode) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DiagramNode.ProtoReflect.Descriptor instead.
 func (*DiagramNode) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{56}
+	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{54}
 }
 
 func (x *DiagramNode) GetId() string {
@@ -3012,7 +2932,7 @@ type MethodInfo struct {
 
 func (x *MethodInfo) Reset() {
 	*x = MethodInfo{}
-	mi := &file_sdl_v1_canvas_proto_msgTypes[57]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[55]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3024,7 +2944,7 @@ func (x *MethodInfo) String() string {
 func (*MethodInfo) ProtoMessage() {}
 
 func (x *MethodInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_canvas_proto_msgTypes[57]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[55]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3037,7 +2957,7 @@ func (x *MethodInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MethodInfo.ProtoReflect.Descriptor instead.
 func (*MethodInfo) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{57}
+	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{55}
 }
 
 func (x *MethodInfo) GetName() string {
@@ -3080,7 +3000,7 @@ type DiagramEdge struct {
 
 func (x *DiagramEdge) Reset() {
 	*x = DiagramEdge{}
-	mi := &file_sdl_v1_canvas_proto_msgTypes[58]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[56]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3092,7 +3012,7 @@ func (x *DiagramEdge) String() string {
 func (*DiagramEdge) ProtoMessage() {}
 
 func (x *DiagramEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_canvas_proto_msgTypes[58]
+	mi := &file_sdl_v1_canvas_proto_msgTypes[56]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3105,7 +3025,7 @@ func (x *DiagramEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DiagramEdge.ProtoReflect.Descriptor instead.
 func (*DiagramEdge) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{58}
+	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{56}
 }
 
 func (x *DiagramEdge) GetFromId() string {
@@ -3245,15 +3165,15 @@ const file_sdl_v1_canvas_proto_rawDesc = "" +
 	"\vupdate_mask\x18\x02 \x01(\v2\x1a.google.protobuf.FieldMaskR\n" +
 	"updateMask\"J\n" +
 	"\x17UpdateGeneratorResponse\x12/\n" +
-	"\tgenerator\x18\x01 \x01(\v2\x11.sdl.v1.GeneratorR\tgenerator\"X\n" +
-	"\x16ResumeGeneratorRequest\x12\x1b\n" +
-	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\x12!\n" +
-	"\fgenerator_id\x18\x02 \x01(\tR\vgeneratorId\"\x19\n" +
-	"\x17ResumeGeneratorResponse\"W\n" +
-	"\x15PauseGeneratorRequest\x12\x1b\n" +
+	"\tgenerator\x18\x01 \x01(\v2\x11.sdl.v1.GeneratorR\tgenerator\"W\n" +
+	"\x15StartGeneratorRequest\x12\x1b\n" +
 	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\x12!\n" +
 	"\fgenerator_id\x18\x02 \x01(\tR\vgeneratorId\"\x18\n" +
-	"\x16PauseGeneratorResponse\"X\n" +
+	"\x16StartGeneratorResponse\"V\n" +
+	"\x14StopGeneratorRequest\x12\x1b\n" +
+	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\x12!\n" +
+	"\fgenerator_id\x18\x02 \x01(\tR\vgeneratorId\"\x17\n" +
+	"\x15StopGeneratorResponse\"X\n" +
 	"\x16DeleteGeneratorRequest\x12\x1b\n" +
 	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\x12!\n" +
 	"\fgenerator_id\x18\x02 \x01(\tR\vgeneratorId\"\x19\n" +
@@ -3274,10 +3194,7 @@ const file_sdl_v1_canvas_proto_rawDesc = "" +
 	"\x13DeleteMetricRequest\x12\x1b\n" +
 	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\x12\x1b\n" +
 	"\tmetric_id\x18\x02 \x01(\tR\bmetricId\"\x16\n" +
-	"\x14DeleteMetricResponse\"1\n" +
-	"\x12LiveMetricsRequest\x12\x1b\n" +
-	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\"\x15\n" +
-	"\x13LiveMetricsResponse\"\x9f\x01\n" +
+	"\x14DeleteMetricResponse\"\x9f\x01\n" +
 	"\x13QueryMetricsRequest\x12\x1b\n" +
 	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\x12\x1b\n" +
 	"\tmetric_id\x18\x02 \x01(\tR\bmetricId\x12\x1d\n" +
@@ -3396,7 +3313,7 @@ const file_sdl_v1_canvas_proto_rawDesc = "" +
 	"\vprobability\x18\b \x01(\x01R\vprobability\x12!\n" +
 	"\fgenerator_id\x18\t \x01(\tR\vgeneratorId\x12\x14\n" +
 	"\x05color\x18\n" +
-	" \x01(\tR\x05color2\xc9\x19\n" +
+	" \x01(\tR\x05color2\xad\x17\n" +
 	"\rCanvasService\x12b\n" +
 	"\fCreateCanvas\x12\x1b.sdl.v1.CreateCanvasRequest\x1a\x1c.sdl.v1.CreateCanvasResponse\"\x17\x82\xd3\xe4\x93\x02\x11:\x01*\"\f/v1/canvases\x12_\n" +
 	"\fListCanvases\x12\x1b.sdl.v1.ListCanvasesRequest\x1a\x1c.sdl.v1.ListCanvasesResponse\"\x14\x82\xd3\xe4\x93\x02\x0e\x12\f/v1/canvases\x12]\n" +
@@ -3409,22 +3326,20 @@ const file_sdl_v1_canvas_proto_rawDesc = "" +
 	"\x11StopAllGenerators\x12 .sdl.v1.StopAllGeneratorsRequest\x1a!.sdl.v1.StopAllGeneratorsResponse\">\x82\xd3\xe4\x93\x028:\x01*\x1a3/v1/canvases/{canvas_id}/generators/actions:stopall\x12|\n" +
 	"\x0eListGenerators\x12\x1d.sdl.v1.ListGeneratorsRequest\x1a\x1e.sdl.v1.ListGeneratorsResponse\"+\x82\xd3\xe4\x93\x02%\x12#/v1/canvases/{canvas_id}/generators\x12\x85\x01\n" +
 	"\fGetGenerator\x12\x1b.sdl.v1.GetGeneratorRequest\x1a\x1c.sdl.v1.GetGeneratorResponse\":\x82\xd3\xe4\x93\x024\x122/v1/canvases/{canvas_id}/generators/{generator_id}\x12\x9b\x01\n" +
-	"\x0fUpdateGenerator\x12\x1e.sdl.v1.UpdateGeneratorRequest\x1a\x1f.sdl.v1.UpdateGeneratorResponse\"G\x82\xd3\xe4\x93\x02A:\x01*2</v1/canvases/{generator.canvas_id}/generators/{generator.id}\x12\x9c\x01\n" +
-	"\x0ePauseGenerator\x12\x1d.sdl.v1.PauseGeneratorRequest\x1a\x1e.sdl.v1.PauseGeneratorResponse\"K\x82\xd3\xe4\x93\x02E:\x01*\"@/v1/canvases/{canvas_id}/generators/{generator_id}/actions:pause\x12\xa0\x01\n" +
-	"\x0fResumeGenerator\x12\x1e.sdl.v1.ResumeGeneratorRequest\x1a\x1f.sdl.v1.ResumeGeneratorResponse\"L\x82\xd3\xe4\x93\x02F:\x01*\"A/v1/canvases/{canvas_id}/generators/{generator_id}/actions:resume\x12\x8e\x01\n" +
+	"\x0fUpdateGenerator\x12\x1e.sdl.v1.UpdateGeneratorRequest\x1a\x1f.sdl.v1.UpdateGeneratorResponse\"G\x82\xd3\xe4\x93\x02A:\x01*2</v1/canvases/{generator.canvas_id}/generators/{generator.id}\x12\x99\x01\n" +
+	"\rStopGenerator\x12\x1c.sdl.v1.StopGeneratorRequest\x1a\x1d.sdl.v1.StopGeneratorResponse\"K\x82\xd3\xe4\x93\x02E:\x01*\"@/v1/canvases/{canvas_id}/generators/{generator_id}/actions:pause\x12\x9d\x01\n" +
+	"\x0eStartGenerator\x12\x1d.sdl.v1.StartGeneratorRequest\x1a\x1e.sdl.v1.StartGeneratorResponse\"L\x82\xd3\xe4\x93\x02F:\x01*\"A/v1/canvases/{canvas_id}/generators/{generator_id}/actions:resume\x12\x8e\x01\n" +
 	"\x0fDeleteGenerator\x12\x1e.sdl.v1.DeleteGeneratorRequest\x1a\x1f.sdl.v1.DeleteGeneratorResponse\":\x82\xd3\xe4\x93\x024*2/v1/canvases/{canvas_id}/generators/{generator_id}\x12\x86\x01\n" +
 	"\fExecuteTrace\x12\x1b.sdl.v1.ExecuteTraceRequest\x1a\x1c.sdl.v1.ExecuteTraceResponse\";\x82\xd3\xe4\x93\x025\x123/v1/canvases/{canvas_id}/trace/{component}/{method}\x12\x80\x01\n" +
 	"\fSetParameter\x12\x1b.sdl.v1.SetParameterRequest\x1a\x1c.sdl.v1.SetParameterResponse\"5\x82\xd3\xe4\x93\x02/:\x01*\x1a*/v1/canvases/{canvas_id}/parameters/{path}\x12y\n" +
 	"\rGetParameters\x12\x1c.sdl.v1.GetParametersRequest\x1a\x1d.sdl.v1.GetParametersResponse\"+\x82\xd3\xe4\x93\x02%\x12#/v1/canvases/{canvas_id}/parameters\x12t\n" +
 	"\tAddMetric\x12\x18.sdl.v1.AddMetricRequest\x1a\x19.sdl.v1.AddMetricResponse\"2\x82\xd3\xe4\x93\x02,:\x01*\"'/v1/canvases/{metric.canvas_id}/metrics\x12\x7f\n" +
-	"\fDeleteMetric\x12\x1b.sdl.v1.DeleteMetricRequest\x1a\x1c.sdl.v1.DeleteMetricResponse\"4\x82\xd3\xe4\x93\x02.*,/v1/canvases/{canvas_id}/metrics/{metric_id}\x12|\n" +
-	"\vLiveMetrics\x12\x1a.sdl.v1.LiveMetricsRequest\x1a\x1b.sdl.v1.LiveMetricsResponse\"2\x82\xd3\xe4\x93\x02,\x12*/v1/canvases/{canvas_id}/metrics/subscribe0\x01\x12p\n" +
+	"\fDeleteMetric\x12\x1b.sdl.v1.DeleteMetricRequest\x1a\x1c.sdl.v1.DeleteMetricResponse\"4\x82\xd3\xe4\x93\x02.*,/v1/canvases/{canvas_id}/metrics/{metric_id}\x12p\n" +
 	"\vListMetrics\x12\x1a.sdl.v1.ListMetricsRequest\x1a\x1b.sdl.v1.ListMetricsResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /v1/canvases/{canvas_id}/metrics\x12\x85\x01\n" +
-	"\fQueryMetrics\x12\x1b.sdl.v1.QueryMetricsRequest\x1a\x1c.sdl.v1.QueryMetricsResponse\":\x82\xd3\xe4\x93\x024\x122/v1/canvases/{canvas_id}/metrics/{metric_id}/query\x12\x95\x01\n" +
-	"\x10AggregateMetrics\x12\x1f.sdl.v1.AggregateMetricsRequest\x1a .sdl.v1.AggregateMetricsResponse\">\x82\xd3\xe4\x93\x028\x126/v1/canvases/{canvas_id}/metrics/{metric_id}/aggregate\x12\x7f\n" +
-	"\x10GetSystemDiagram\x12\x1f.sdl.v1.GetSystemDiagramRequest\x1a .sdl.v1.GetSystemDiagramResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /v1/canvases/{canvas_id}/diagramBi\n" +
+	"\fQueryMetrics\x12\x1b.sdl.v1.QueryMetricsRequest\x1a\x1c.sdl.v1.QueryMetricsResponse\":\x82\xd3\xe4\x93\x024\x122/v1/canvases/{canvas_id}/metrics/{metric_id}/query\x12\x7f\n" +
+	"\x10GetSystemDiagram\x12\x1f.sdl.v1.GetSystemDiagramRequest\x1a .sdl.v1.GetSystemDiagramResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /v1/canvases/{canvas_id}/diagramBw\n" +
 	"\n" +
-	"com.sdl.v1B\vCanvasProtoP\x01Z\x15github.com/sdl/protos\xa2\x02\x03SXX\xaa\x02\x06Sdl.V1\xca\x02\x06Sdl\\V1\xe2\x02\x12Sdl\\V1\\GPBMetadata\xea\x02\aSdl::V1b\x06proto3"
+	"com.sdl.v1B\vCanvasProtoP\x01Z#github.com/panyam/sdl/gen/go/sdl/v1\xa2\x02\x03SXX\xaa\x02\x06Sdl.V1\xca\x02\x06Sdl\\V1\xe2\x02\x12Sdl\\V1\\GPBMetadata\xea\x02\aSdl::V1b\x06proto3"
 
 var (
 	file_sdl_v1_canvas_proto_rawDescOnce sync.Once
@@ -3438,7 +3353,7 @@ func file_sdl_v1_canvas_proto_rawDescGZIP() []byte {
 	return file_sdl_v1_canvas_proto_rawDescData
 }
 
-var file_sdl_v1_canvas_proto_msgTypes = make([]protoimpl.MessageInfo, 61)
+var file_sdl_v1_canvas_proto_msgTypes = make([]protoimpl.MessageInfo, 59)
 var file_sdl_v1_canvas_proto_goTypes = []any{
 	(*CreateCanvasRequest)(nil),        // 0: sdl.v1.CreateCanvasRequest
 	(*CreateCanvasResponse)(nil),       // 1: sdl.v1.CreateCanvasResponse
@@ -3460,10 +3375,10 @@ var file_sdl_v1_canvas_proto_goTypes = []any{
 	(*GetGeneratorResponse)(nil),       // 17: sdl.v1.GetGeneratorResponse
 	(*UpdateGeneratorRequest)(nil),     // 18: sdl.v1.UpdateGeneratorRequest
 	(*UpdateGeneratorResponse)(nil),    // 19: sdl.v1.UpdateGeneratorResponse
-	(*ResumeGeneratorRequest)(nil),     // 20: sdl.v1.ResumeGeneratorRequest
-	(*ResumeGeneratorResponse)(nil),    // 21: sdl.v1.ResumeGeneratorResponse
-	(*PauseGeneratorRequest)(nil),      // 22: sdl.v1.PauseGeneratorRequest
-	(*PauseGeneratorResponse)(nil),     // 23: sdl.v1.PauseGeneratorResponse
+	(*StartGeneratorRequest)(nil),      // 20: sdl.v1.StartGeneratorRequest
+	(*StartGeneratorResponse)(nil),     // 21: sdl.v1.StartGeneratorResponse
+	(*StopGeneratorRequest)(nil),       // 22: sdl.v1.StopGeneratorRequest
+	(*StopGeneratorResponse)(nil),      // 23: sdl.v1.StopGeneratorResponse
 	(*DeleteGeneratorRequest)(nil),     // 24: sdl.v1.DeleteGeneratorRequest
 	(*DeleteGeneratorResponse)(nil),    // 25: sdl.v1.DeleteGeneratorResponse
 	(*LoadFileRequest)(nil),            // 26: sdl.v1.LoadFileRequest
@@ -3474,67 +3389,65 @@ var file_sdl_v1_canvas_proto_goTypes = []any{
 	(*AddMetricResponse)(nil),          // 31: sdl.v1.AddMetricResponse
 	(*DeleteMetricRequest)(nil),        // 32: sdl.v1.DeleteMetricRequest
 	(*DeleteMetricResponse)(nil),       // 33: sdl.v1.DeleteMetricResponse
-	(*LiveMetricsRequest)(nil),         // 34: sdl.v1.LiveMetricsRequest
-	(*LiveMetricsResponse)(nil),        // 35: sdl.v1.LiveMetricsResponse
-	(*QueryMetricsRequest)(nil),        // 36: sdl.v1.QueryMetricsRequest
-	(*QueryMetricsResponse)(nil),       // 37: sdl.v1.QueryMetricsResponse
-	(*MetricPoint)(nil),                // 38: sdl.v1.MetricPoint
-	(*AggregateMetricsRequest)(nil),    // 39: sdl.v1.AggregateMetricsRequest
-	(*AggregateMetricsResponse)(nil),   // 40: sdl.v1.AggregateMetricsResponse
-	(*AggregateResult)(nil),            // 41: sdl.v1.AggregateResult
-	(*ListMetricsRequest)(nil),         // 42: sdl.v1.ListMetricsRequest
-	(*ListMetricsResponse)(nil),        // 43: sdl.v1.ListMetricsResponse
-	(*MetricInfo)(nil),                 // 44: sdl.v1.MetricInfo
-	(*ExecuteTraceRequest)(nil),        // 45: sdl.v1.ExecuteTraceRequest
-	(*ExecuteTraceResponse)(nil),       // 46: sdl.v1.ExecuteTraceResponse
-	(*TraceData)(nil),                  // 47: sdl.v1.TraceData
-	(*TraceEvent)(nil),                 // 48: sdl.v1.TraceEvent
-	(*SetParameterRequest)(nil),        // 49: sdl.v1.SetParameterRequest
-	(*SetParameterResponse)(nil),       // 50: sdl.v1.SetParameterResponse
-	(*GetParametersRequest)(nil),       // 51: sdl.v1.GetParametersRequest
-	(*GetParametersResponse)(nil),      // 52: sdl.v1.GetParametersResponse
-	(*GetSystemDiagramRequest)(nil),    // 53: sdl.v1.GetSystemDiagramRequest
-	(*GetSystemDiagramResponse)(nil),   // 54: sdl.v1.GetSystemDiagramResponse
-	(*SystemDiagram)(nil),              // 55: sdl.v1.SystemDiagram
-	(*DiagramNode)(nil),                // 56: sdl.v1.DiagramNode
-	(*MethodInfo)(nil),                 // 57: sdl.v1.MethodInfo
-	(*DiagramEdge)(nil),                // 58: sdl.v1.DiagramEdge
-	nil,                                // 59: sdl.v1.CreateCanvasResponse.FieldErrorsEntry
-	nil,                                // 60: sdl.v1.GetParametersResponse.ParametersEntry
-	(*Canvas)(nil),                     // 61: sdl.v1.Canvas
-	(*Pagination)(nil),                 // 62: sdl.v1.Pagination
-	(*PaginationResponse)(nil),         // 63: sdl.v1.PaginationResponse
-	(*Generator)(nil),                  // 64: sdl.v1.Generator
-	(*fieldmaskpb.FieldMask)(nil),      // 65: google.protobuf.FieldMask
-	(*Metric)(nil),                     // 66: sdl.v1.Metric
+	(*QueryMetricsRequest)(nil),        // 34: sdl.v1.QueryMetricsRequest
+	(*QueryMetricsResponse)(nil),       // 35: sdl.v1.QueryMetricsResponse
+	(*MetricPoint)(nil),                // 36: sdl.v1.MetricPoint
+	(*AggregateMetricsRequest)(nil),    // 37: sdl.v1.AggregateMetricsRequest
+	(*AggregateMetricsResponse)(nil),   // 38: sdl.v1.AggregateMetricsResponse
+	(*AggregateResult)(nil),            // 39: sdl.v1.AggregateResult
+	(*ListMetricsRequest)(nil),         // 40: sdl.v1.ListMetricsRequest
+	(*ListMetricsResponse)(nil),        // 41: sdl.v1.ListMetricsResponse
+	(*MetricInfo)(nil),                 // 42: sdl.v1.MetricInfo
+	(*ExecuteTraceRequest)(nil),        // 43: sdl.v1.ExecuteTraceRequest
+	(*ExecuteTraceResponse)(nil),       // 44: sdl.v1.ExecuteTraceResponse
+	(*TraceData)(nil),                  // 45: sdl.v1.TraceData
+	(*TraceEvent)(nil),                 // 46: sdl.v1.TraceEvent
+	(*SetParameterRequest)(nil),        // 47: sdl.v1.SetParameterRequest
+	(*SetParameterResponse)(nil),       // 48: sdl.v1.SetParameterResponse
+	(*GetParametersRequest)(nil),       // 49: sdl.v1.GetParametersRequest
+	(*GetParametersResponse)(nil),      // 50: sdl.v1.GetParametersResponse
+	(*GetSystemDiagramRequest)(nil),    // 51: sdl.v1.GetSystemDiagramRequest
+	(*GetSystemDiagramResponse)(nil),   // 52: sdl.v1.GetSystemDiagramResponse
+	(*SystemDiagram)(nil),              // 53: sdl.v1.SystemDiagram
+	(*DiagramNode)(nil),                // 54: sdl.v1.DiagramNode
+	(*MethodInfo)(nil),                 // 55: sdl.v1.MethodInfo
+	(*DiagramEdge)(nil),                // 56: sdl.v1.DiagramEdge
+	nil,                                // 57: sdl.v1.CreateCanvasResponse.FieldErrorsEntry
+	nil,                                // 58: sdl.v1.GetParametersResponse.ParametersEntry
+	(*Canvas)(nil),                     // 59: sdl.v1.Canvas
+	(*Pagination)(nil),                 // 60: sdl.v1.Pagination
+	(*PaginationResponse)(nil),         // 61: sdl.v1.PaginationResponse
+	(*Generator)(nil),                  // 62: sdl.v1.Generator
+	(*fieldmaskpb.FieldMask)(nil),      // 63: google.protobuf.FieldMask
+	(*Metric)(nil),                     // 64: sdl.v1.Metric
 }
 var file_sdl_v1_canvas_proto_depIdxs = []int32{
-	61, // 0: sdl.v1.CreateCanvasRequest.canvas:type_name -> sdl.v1.Canvas
-	61, // 1: sdl.v1.CreateCanvasResponse.canvas:type_name -> sdl.v1.Canvas
-	59, // 2: sdl.v1.CreateCanvasResponse.field_errors:type_name -> sdl.v1.CreateCanvasResponse.FieldErrorsEntry
-	62, // 3: sdl.v1.ListCanvasesRequest.pagination:type_name -> sdl.v1.Pagination
-	61, // 4: sdl.v1.ListCanvasesResponse.canvases:type_name -> sdl.v1.Canvas
-	63, // 5: sdl.v1.ListCanvasesResponse.pagination:type_name -> sdl.v1.PaginationResponse
-	61, // 6: sdl.v1.GetCanvasResponse.canvas:type_name -> sdl.v1.Canvas
-	64, // 7: sdl.v1.AddGeneratorRequest.generator:type_name -> sdl.v1.Generator
-	64, // 8: sdl.v1.AddGeneratorResponse.generator:type_name -> sdl.v1.Generator
-	64, // 9: sdl.v1.ListGeneratorsResponse.generators:type_name -> sdl.v1.Generator
-	64, // 10: sdl.v1.GetGeneratorResponse.generator:type_name -> sdl.v1.Generator
-	64, // 11: sdl.v1.UpdateGeneratorRequest.generator:type_name -> sdl.v1.Generator
-	65, // 12: sdl.v1.UpdateGeneratorRequest.update_mask:type_name -> google.protobuf.FieldMask
-	64, // 13: sdl.v1.UpdateGeneratorResponse.generator:type_name -> sdl.v1.Generator
-	66, // 14: sdl.v1.AddMetricRequest.metric:type_name -> sdl.v1.Metric
-	66, // 15: sdl.v1.AddMetricResponse.metric:type_name -> sdl.v1.Metric
-	38, // 16: sdl.v1.QueryMetricsResponse.points:type_name -> sdl.v1.MetricPoint
-	41, // 17: sdl.v1.AggregateMetricsResponse.results:type_name -> sdl.v1.AggregateResult
-	44, // 18: sdl.v1.ListMetricsResponse.metrics:type_name -> sdl.v1.MetricInfo
-	47, // 19: sdl.v1.ExecuteTraceResponse.trace_data:type_name -> sdl.v1.TraceData
-	48, // 20: sdl.v1.TraceData.events:type_name -> sdl.v1.TraceEvent
-	60, // 21: sdl.v1.GetParametersResponse.parameters:type_name -> sdl.v1.GetParametersResponse.ParametersEntry
-	55, // 22: sdl.v1.GetSystemDiagramResponse.diagram:type_name -> sdl.v1.SystemDiagram
-	56, // 23: sdl.v1.SystemDiagram.nodes:type_name -> sdl.v1.DiagramNode
-	58, // 24: sdl.v1.SystemDiagram.edges:type_name -> sdl.v1.DiagramEdge
-	57, // 25: sdl.v1.DiagramNode.methods:type_name -> sdl.v1.MethodInfo
+	59, // 0: sdl.v1.CreateCanvasRequest.canvas:type_name -> sdl.v1.Canvas
+	59, // 1: sdl.v1.CreateCanvasResponse.canvas:type_name -> sdl.v1.Canvas
+	57, // 2: sdl.v1.CreateCanvasResponse.field_errors:type_name -> sdl.v1.CreateCanvasResponse.FieldErrorsEntry
+	60, // 3: sdl.v1.ListCanvasesRequest.pagination:type_name -> sdl.v1.Pagination
+	59, // 4: sdl.v1.ListCanvasesResponse.canvases:type_name -> sdl.v1.Canvas
+	61, // 5: sdl.v1.ListCanvasesResponse.pagination:type_name -> sdl.v1.PaginationResponse
+	59, // 6: sdl.v1.GetCanvasResponse.canvas:type_name -> sdl.v1.Canvas
+	62, // 7: sdl.v1.AddGeneratorRequest.generator:type_name -> sdl.v1.Generator
+	62, // 8: sdl.v1.AddGeneratorResponse.generator:type_name -> sdl.v1.Generator
+	62, // 9: sdl.v1.ListGeneratorsResponse.generators:type_name -> sdl.v1.Generator
+	62, // 10: sdl.v1.GetGeneratorResponse.generator:type_name -> sdl.v1.Generator
+	62, // 11: sdl.v1.UpdateGeneratorRequest.generator:type_name -> sdl.v1.Generator
+	63, // 12: sdl.v1.UpdateGeneratorRequest.update_mask:type_name -> google.protobuf.FieldMask
+	62, // 13: sdl.v1.UpdateGeneratorResponse.generator:type_name -> sdl.v1.Generator
+	64, // 14: sdl.v1.AddMetricRequest.metric:type_name -> sdl.v1.Metric
+	64, // 15: sdl.v1.AddMetricResponse.metric:type_name -> sdl.v1.Metric
+	36, // 16: sdl.v1.QueryMetricsResponse.points:type_name -> sdl.v1.MetricPoint
+	39, // 17: sdl.v1.AggregateMetricsResponse.results:type_name -> sdl.v1.AggregateResult
+	42, // 18: sdl.v1.ListMetricsResponse.metrics:type_name -> sdl.v1.MetricInfo
+	45, // 19: sdl.v1.ExecuteTraceResponse.trace_data:type_name -> sdl.v1.TraceData
+	46, // 20: sdl.v1.TraceData.events:type_name -> sdl.v1.TraceEvent
+	58, // 21: sdl.v1.GetParametersResponse.parameters:type_name -> sdl.v1.GetParametersResponse.ParametersEntry
+	53, // 22: sdl.v1.GetSystemDiagramResponse.diagram:type_name -> sdl.v1.SystemDiagram
+	54, // 23: sdl.v1.SystemDiagram.nodes:type_name -> sdl.v1.DiagramNode
+	56, // 24: sdl.v1.SystemDiagram.edges:type_name -> sdl.v1.DiagramEdge
+	55, // 25: sdl.v1.DiagramNode.methods:type_name -> sdl.v1.MethodInfo
 	0,  // 26: sdl.v1.CanvasService.CreateCanvas:input_type -> sdl.v1.CreateCanvasRequest
 	2,  // 27: sdl.v1.CanvasService.ListCanvases:input_type -> sdl.v1.ListCanvasesRequest
 	4,  // 28: sdl.v1.CanvasService.GetCanvas:input_type -> sdl.v1.GetCanvasRequest
@@ -3547,46 +3460,42 @@ var file_sdl_v1_canvas_proto_depIdxs = []int32{
 	10, // 35: sdl.v1.CanvasService.ListGenerators:input_type -> sdl.v1.ListGeneratorsRequest
 	16, // 36: sdl.v1.CanvasService.GetGenerator:input_type -> sdl.v1.GetGeneratorRequest
 	18, // 37: sdl.v1.CanvasService.UpdateGenerator:input_type -> sdl.v1.UpdateGeneratorRequest
-	22, // 38: sdl.v1.CanvasService.PauseGenerator:input_type -> sdl.v1.PauseGeneratorRequest
-	20, // 39: sdl.v1.CanvasService.ResumeGenerator:input_type -> sdl.v1.ResumeGeneratorRequest
+	22, // 38: sdl.v1.CanvasService.StopGenerator:input_type -> sdl.v1.StopGeneratorRequest
+	20, // 39: sdl.v1.CanvasService.StartGenerator:input_type -> sdl.v1.StartGeneratorRequest
 	24, // 40: sdl.v1.CanvasService.DeleteGenerator:input_type -> sdl.v1.DeleteGeneratorRequest
-	45, // 41: sdl.v1.CanvasService.ExecuteTrace:input_type -> sdl.v1.ExecuteTraceRequest
-	49, // 42: sdl.v1.CanvasService.SetParameter:input_type -> sdl.v1.SetParameterRequest
-	51, // 43: sdl.v1.CanvasService.GetParameters:input_type -> sdl.v1.GetParametersRequest
+	43, // 41: sdl.v1.CanvasService.ExecuteTrace:input_type -> sdl.v1.ExecuteTraceRequest
+	47, // 42: sdl.v1.CanvasService.SetParameter:input_type -> sdl.v1.SetParameterRequest
+	49, // 43: sdl.v1.CanvasService.GetParameters:input_type -> sdl.v1.GetParametersRequest
 	30, // 44: sdl.v1.CanvasService.AddMetric:input_type -> sdl.v1.AddMetricRequest
 	32, // 45: sdl.v1.CanvasService.DeleteMetric:input_type -> sdl.v1.DeleteMetricRequest
-	34, // 46: sdl.v1.CanvasService.LiveMetrics:input_type -> sdl.v1.LiveMetricsRequest
-	42, // 47: sdl.v1.CanvasService.ListMetrics:input_type -> sdl.v1.ListMetricsRequest
-	36, // 48: sdl.v1.CanvasService.QueryMetrics:input_type -> sdl.v1.QueryMetricsRequest
-	39, // 49: sdl.v1.CanvasService.AggregateMetrics:input_type -> sdl.v1.AggregateMetricsRequest
-	53, // 50: sdl.v1.CanvasService.GetSystemDiagram:input_type -> sdl.v1.GetSystemDiagramRequest
-	1,  // 51: sdl.v1.CanvasService.CreateCanvas:output_type -> sdl.v1.CreateCanvasResponse
-	3,  // 52: sdl.v1.CanvasService.ListCanvases:output_type -> sdl.v1.ListCanvasesResponse
-	5,  // 53: sdl.v1.CanvasService.GetCanvas:output_type -> sdl.v1.GetCanvasResponse
-	27, // 54: sdl.v1.CanvasService.LoadFile:output_type -> sdl.v1.LoadFileResponse
-	29, // 55: sdl.v1.CanvasService.UseSystem:output_type -> sdl.v1.UseSystemResponse
-	7,  // 56: sdl.v1.CanvasService.DeleteCanvas:output_type -> sdl.v1.DeleteCanvasResponse
-	9,  // 57: sdl.v1.CanvasService.AddGenerator:output_type -> sdl.v1.AddGeneratorResponse
-	13, // 58: sdl.v1.CanvasService.StartAllGenerators:output_type -> sdl.v1.StartAllGeneratorsResponse
-	15, // 59: sdl.v1.CanvasService.StopAllGenerators:output_type -> sdl.v1.StopAllGeneratorsResponse
-	11, // 60: sdl.v1.CanvasService.ListGenerators:output_type -> sdl.v1.ListGeneratorsResponse
-	17, // 61: sdl.v1.CanvasService.GetGenerator:output_type -> sdl.v1.GetGeneratorResponse
-	19, // 62: sdl.v1.CanvasService.UpdateGenerator:output_type -> sdl.v1.UpdateGeneratorResponse
-	23, // 63: sdl.v1.CanvasService.PauseGenerator:output_type -> sdl.v1.PauseGeneratorResponse
-	21, // 64: sdl.v1.CanvasService.ResumeGenerator:output_type -> sdl.v1.ResumeGeneratorResponse
-	25, // 65: sdl.v1.CanvasService.DeleteGenerator:output_type -> sdl.v1.DeleteGeneratorResponse
-	46, // 66: sdl.v1.CanvasService.ExecuteTrace:output_type -> sdl.v1.ExecuteTraceResponse
-	50, // 67: sdl.v1.CanvasService.SetParameter:output_type -> sdl.v1.SetParameterResponse
-	52, // 68: sdl.v1.CanvasService.GetParameters:output_type -> sdl.v1.GetParametersResponse
-	31, // 69: sdl.v1.CanvasService.AddMetric:output_type -> sdl.v1.AddMetricResponse
-	33, // 70: sdl.v1.CanvasService.DeleteMetric:output_type -> sdl.v1.DeleteMetricResponse
-	35, // 71: sdl.v1.CanvasService.LiveMetrics:output_type -> sdl.v1.LiveMetricsResponse
-	43, // 72: sdl.v1.CanvasService.ListMetrics:output_type -> sdl.v1.ListMetricsResponse
-	37, // 73: sdl.v1.CanvasService.QueryMetrics:output_type -> sdl.v1.QueryMetricsResponse
-	40, // 74: sdl.v1.CanvasService.AggregateMetrics:output_type -> sdl.v1.AggregateMetricsResponse
-	54, // 75: sdl.v1.CanvasService.GetSystemDiagram:output_type -> sdl.v1.GetSystemDiagramResponse
-	51, // [51:76] is the sub-list for method output_type
-	26, // [26:51] is the sub-list for method input_type
+	40, // 46: sdl.v1.CanvasService.ListMetrics:input_type -> sdl.v1.ListMetricsRequest
+	34, // 47: sdl.v1.CanvasService.QueryMetrics:input_type -> sdl.v1.QueryMetricsRequest
+	51, // 48: sdl.v1.CanvasService.GetSystemDiagram:input_type -> sdl.v1.GetSystemDiagramRequest
+	1,  // 49: sdl.v1.CanvasService.CreateCanvas:output_type -> sdl.v1.CreateCanvasResponse
+	3,  // 50: sdl.v1.CanvasService.ListCanvases:output_type -> sdl.v1.ListCanvasesResponse
+	5,  // 51: sdl.v1.CanvasService.GetCanvas:output_type -> sdl.v1.GetCanvasResponse
+	27, // 52: sdl.v1.CanvasService.LoadFile:output_type -> sdl.v1.LoadFileResponse
+	29, // 53: sdl.v1.CanvasService.UseSystem:output_type -> sdl.v1.UseSystemResponse
+	7,  // 54: sdl.v1.CanvasService.DeleteCanvas:output_type -> sdl.v1.DeleteCanvasResponse
+	9,  // 55: sdl.v1.CanvasService.AddGenerator:output_type -> sdl.v1.AddGeneratorResponse
+	13, // 56: sdl.v1.CanvasService.StartAllGenerators:output_type -> sdl.v1.StartAllGeneratorsResponse
+	15, // 57: sdl.v1.CanvasService.StopAllGenerators:output_type -> sdl.v1.StopAllGeneratorsResponse
+	11, // 58: sdl.v1.CanvasService.ListGenerators:output_type -> sdl.v1.ListGeneratorsResponse
+	17, // 59: sdl.v1.CanvasService.GetGenerator:output_type -> sdl.v1.GetGeneratorResponse
+	19, // 60: sdl.v1.CanvasService.UpdateGenerator:output_type -> sdl.v1.UpdateGeneratorResponse
+	23, // 61: sdl.v1.CanvasService.StopGenerator:output_type -> sdl.v1.StopGeneratorResponse
+	21, // 62: sdl.v1.CanvasService.StartGenerator:output_type -> sdl.v1.StartGeneratorResponse
+	25, // 63: sdl.v1.CanvasService.DeleteGenerator:output_type -> sdl.v1.DeleteGeneratorResponse
+	44, // 64: sdl.v1.CanvasService.ExecuteTrace:output_type -> sdl.v1.ExecuteTraceResponse
+	48, // 65: sdl.v1.CanvasService.SetParameter:output_type -> sdl.v1.SetParameterResponse
+	50, // 66: sdl.v1.CanvasService.GetParameters:output_type -> sdl.v1.GetParametersResponse
+	31, // 67: sdl.v1.CanvasService.AddMetric:output_type -> sdl.v1.AddMetricResponse
+	33, // 68: sdl.v1.CanvasService.DeleteMetric:output_type -> sdl.v1.DeleteMetricResponse
+	41, // 69: sdl.v1.CanvasService.ListMetrics:output_type -> sdl.v1.ListMetricsResponse
+	35, // 70: sdl.v1.CanvasService.QueryMetrics:output_type -> sdl.v1.QueryMetricsResponse
+	52, // 71: sdl.v1.CanvasService.GetSystemDiagram:output_type -> sdl.v1.GetSystemDiagramResponse
+	49, // [49:72] is the sub-list for method output_type
+	26, // [26:49] is the sub-list for method input_type
 	26, // [26:26] is the sub-list for extension type_name
 	26, // [26:26] is the sub-list for extension extendee
 	0,  // [0:26] is the sub-list for field type_name
@@ -3604,7 +3513,7 @@ func file_sdl_v1_canvas_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_sdl_v1_canvas_proto_rawDesc), len(file_sdl_v1_canvas_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   61,
+			NumMessages:   59,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

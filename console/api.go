@@ -8,6 +8,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	gfn "github.com/panyam/goutils/fn"
 	v1 "github.com/panyam/sdl/gen/go/sdl/v1"
+	"github.com/panyam/sdl/gen/go/sdl/v1/v1connect"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
@@ -24,7 +25,7 @@ func (n *SDLApi) Handler() http.Handler {
 	return n.mux
 }
 
-func NewSDLApi(grpcAddr string) *SDLApi {
+func NewSDLApi(grpcAddr string, canvasService *CanvasService) *SDLApi {
 	out := SDLApi{
 		mux: http.NewServeMux(),
 	}
@@ -34,6 +35,19 @@ func NewSDLApi(grpcAddr string) *SDLApi {
 		panic(err)
 	}
 	out.mux.Handle("/v1/", gwmux)
+	log.Println("Registered gRPC-gateway at /v1/")
+
+	// Add Connect handler
+	if canvasService != nil {
+		log.Println("Adding Connect handler...")
+		adapter := NewConnectCanvasServiceAdapter(canvasService)
+		connectPath, connectHandler := v1connect.NewCanvasServiceHandler(adapter)
+		out.mux.Handle(connectPath, connectHandler)
+		log.Printf("Registered Connect handler at: %s", connectPath)
+	} else {
+		log.Println("No CanvasService provided, skipping Connect handler")
+	}
+
 	return &out
 }
 

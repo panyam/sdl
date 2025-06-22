@@ -6,7 +6,7 @@
 // 	protoc        (unknown)
 // source: sdl/v1/models.proto
 
-package protos
+package v1
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -602,9 +602,9 @@ const file_sdl_v1_models_proto_rawDesc = "" +
 	" \x01(\tR\vaggregation\x12-\n" +
 	"\x12aggregation_window\x18\v \x01(\x01R\x11aggregationWindow\x12!\n" +
 	"\fmatch_result\x18\f \x01(\tR\vmatchResult\x12*\n" +
-	"\x11match_result_type\x18\r \x01(\tR\x0fmatchResultTypeBi\n" +
+	"\x11match_result_type\x18\r \x01(\tR\x0fmatchResultTypeBw\n" +
 	"\n" +
-	"com.sdl.v1B\vModelsProtoP\x01Z\x15github.com/sdl/protos\xa2\x02\x03SXX\xaa\x02\x06Sdl.V1\xca\x02\x06Sdl\\V1\xe2\x02\x12Sdl\\V1\\GPBMetadata\xea\x02\aSdl::V1b\x06proto3"
+	"com.sdl.v1B\vModelsProtoP\x01Z#github.com/panyam/sdl/gen/go/sdl/v1\xa2\x02\x03SXX\xaa\x02\x06Sdl.V1\xca\x02\x06Sdl\\V1\xe2\x02\x12Sdl\\V1\\GPBMetadata\xea\x02\aSdl::V1b\x06proto3"
 
 var (
 	file_sdl_v1_models_proto_rawDescOnce sync.Once

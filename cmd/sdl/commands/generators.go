@@ -117,13 +117,13 @@ var genStartCmd = &cobra.Command{
 				fmt.Printf("❌ Error: %v\n", err)
 				return
 			}
-			
+
 			// Display detailed results
 			if resp.TotalGenerators == 0 {
 				fmt.Println("⚠️  No generators configured")
 				return
 			}
-			
+
 			fmt.Printf("✅ Generator batch operation completed:\n")
 			fmt.Printf("   📊 Total generators: %d\n", resp.TotalGenerators)
 			if resp.StartedCount > 0 {
@@ -142,7 +142,7 @@ var genStartCmd = &cobra.Command{
 			// Start specific generators
 			for _, id := range args {
 				err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
-					_, err := client.ResumeGenerator(ctx, &v1.ResumeGeneratorRequest{
+					_, err := client.StartGenerator(ctx, &v1.StartGeneratorRequest{
 						CanvasId:    canvasID,
 						GeneratorId: id,
 					})
@@ -177,13 +177,13 @@ var genStopCmd = &cobra.Command{
 				fmt.Printf("❌ Error: %v\n", err)
 				return
 			}
-			
+
 			// Display detailed results
 			if resp.TotalGenerators == 0 {
 				fmt.Println("⚠️  No generators configured")
 				return
 			}
-			
+
 			fmt.Printf("✅ Generator batch operation completed:\n")
 			fmt.Printf("   📊 Total generators: %d\n", resp.TotalGenerators)
 			if resp.StoppedCount > 0 {
@@ -202,7 +202,7 @@ var genStopCmd = &cobra.Command{
 			// Stop specific generators
 			for _, id := range args {
 				err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
-					_, err := client.PauseGenerator(ctx, &v1.PauseGeneratorRequest{
+					_, err := client.StopGenerator(ctx, &v1.StopGeneratorRequest{
 						CanvasId:    canvasID,
 						GeneratorId: id,
 					})

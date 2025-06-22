@@ -394,12 +394,12 @@
     },
     "/v1/canvases/{canvasId}/generators/{generatorId}/actions:pause": {
       "post": {
-        "operationId": "CanvasService_PauseGenerator",
+        "operationId": "CanvasService_StopGenerator",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1PauseGeneratorResponse"
+              "$ref": "#/definitions/v1StopGeneratorResponse"
             }
           },
           "default": {
@@ -439,12 +439,12 @@
     },
     "/v1/canvases/{canvasId}/generators/{generatorId}/actions:resume": {
       "post": {
-        "operationId": "CanvasService_ResumeGenerator",
+        "operationId": "CanvasService_StartGenerator",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1ResumeGeneratorResponse"
+              "$ref": "#/definitions/v1StartGeneratorResponse"
             }
           },
           "default": {
@@ -513,45 +513,6 @@
         ]
       }
     },
-    "/v1/canvases/{canvasId}/metrics/subscribe": {
-      "get": {
-        "operationId": "CanvasService_LiveMetrics",
-        "responses": {
-          "200": {
-            "description": "A successful response.(streaming responses)",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "result": {
-                  "$ref": "#/definitions/v1LiveMetricsResponse"
-                },
-                "error": {
-                  "$ref": "#/definitions/rpcStatus"
-                }
-              },
-              "title": "Stream result of v1LiveMetricsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "canvasId",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "CanvasService"
-        ]
-      }
-    },
     "/v1/canvases/{canvasId}/metrics/{metricId}": {
       "delete": {
         "summary": "*\nDelete a particular metriccanvas.  Frees up resources used by it and all the connections",
@@ -582,72 +543,6 @@
             "in": "path",
             "required": true,
             "type": "string"
-          }
-        ],
-        "tags": [
-          "CanvasService"
-        ]
-      }
-    },
-    "/v1/canvases/{canvasId}/metrics/{metricId}/aggregate": {
-      "get": {
-        "summary": "Get aggregated metric data",
-        "operationId": "CanvasService_AggregateMetrics",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1AggregateMetricsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "canvasId",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "metricId",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "startTime",
-            "in": "query",
-            "required": false,
-            "type": "number",
-            "format": "double"
-          },
-          {
-            "name": "endTime",
-            "in": "query",
-            "required": false,
-            "type": "number",
-            "format": "double"
-          },
-          {
-            "name": "function",
-            "description": "Aggregation function: \"count\", \"sum\", \"avg\", \"min\", \"max\", \"p50\", \"p90\", \"p95\", \"p99\"",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "windowSize",
-            "description": "Optional: window size for time-based aggregation (in seconds)",
-            "in": "query",
-            "required": false,
-            "type": "number",
-            "format": "double"
           }
         ],
         "tags": [
@@ -1239,33 +1134,6 @@
         }
       }
     },
-    "v1AggregateMetricsResponse": {
-      "type": "object",
-      "properties": {
-        "results": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/v1AggregateResult"
-          },
-          "title": "Single value if no windowing, multiple if windowed"
-        }
-      }
-    },
-    "v1AggregateResult": {
-      "type": "object",
-      "properties": {
-        "timestamp": {
-          "type": "number",
-          "format": "double",
-          "title": "Start of window (if windowed)"
-        },
-        "value": {
-          "type": "number",
-          "format": "double"
-        }
-      }
-    },
     "v1Canvas": {
       "type": "object",
       "properties": {
@@ -1558,9 +1426,6 @@
         }
       }
     },
-    "v1LiveMetricsResponse": {
-      "type": "object"
-    },
     "v1LoadFileResponse": {
       "type": "object"
     },
@@ -1729,9 +1594,6 @@
         }
       }
     },
-    "v1PauseGeneratorResponse": {
-      "type": "object"
-    },
     "v1QueryMetricsResponse": {
       "type": "object",
       "properties": {
@@ -1743,9 +1605,6 @@
           }
         }
       }
-    },
-    "v1ResumeGeneratorResponse": {
-      "type": "object"
     },
     "v1SetParameterResponse": {
       "type": "object",
@@ -1799,6 +1658,9 @@
         }
       }
     },
+    "v1StartGeneratorResponse": {
+      "type": "object"
+    },
     "v1StopAllGeneratorsResponse": {
       "type": "object",
       "properties": {
@@ -1830,6 +1692,9 @@
           "title": "IDs of generators that failed"
         }
       }
+    },
+    "v1StopGeneratorResponse": {
+      "type": "object"
     },
     "v1SystemDiagram": {
       "type": "object",

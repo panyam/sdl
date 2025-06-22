@@ -17,7 +17,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file sdl/v1/canvas.proto.
  */
 export const file_sdl_v1_canvas: GenFile = /*@__PURE__*/
-  fileDesc("ChNzZGwvdjEvY2FudmFzLnByb3RvEgZzZGwudjEiNQoTQ3JlYXRlQ2FudmFzUmVxdWVzdBIeCgZjYW52YXMYASABKAsyDi5zZGwudjEuQ2FudmFzIq8BChRDcmVhdGVDYW52YXNSZXNwb25zZRIeCgZjYW52YXMYASABKAsyDi5zZGwudjEuQ2FudmFzEkMKDGZpZWxkX2Vycm9ycxgCIAMoCzItLnNkbC52MS5DcmVhdGVDYW52YXNSZXNwb25zZS5GaWVsZEVycm9yc0VudHJ5GjIKEEZpZWxkRXJyb3JzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASI9ChNMaXN0Q2FudmFzZXNSZXF1ZXN0EiYKCnBhZ2luYXRpb24YASABKAsyEi5zZGwudjEuUGFnaW5hdGlvbiJoChRMaXN0Q2FudmFzZXNSZXNwb25zZRIgCghjYW52YXNlcxgBIAMoCzIOLnNkbC52MS5DYW52YXMSLgoKcGFnaW5hdGlvbhgCIAEoCzIaLnNkbC52MS5QYWdpbmF0aW9uUmVzcG9uc2UiHgoQR2V0Q2FudmFzUmVxdWVzdBIKCgJpZBgBIAEoCSIzChFHZXRDYW52YXNSZXNwb25zZRIeCgZjYW52YXMYASABKAsyDi5zZGwudjEuQ2FudmFzIiEKE0RlbGV0ZUNhbnZhc1JlcXVlc3QSCgoCaWQYASABKAkiFgoURGVsZXRlQ2FudmFzUmVzcG9uc2UiOwoTQWRkR2VuZXJhdG9yUmVxdWVzdBIkCglnZW5lcmF0b3IYASABKAsyES5zZGwudjEuR2VuZXJhdG9yIjwKFEFkZEdlbmVyYXRvclJlc3BvbnNlEiQKCWdlbmVyYXRvchgBIAEoCzIRLnNkbC52MS5HZW5lcmF0b3IiKgoVTGlzdEdlbmVyYXRvcnNSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCSI/ChZMaXN0R2VuZXJhdG9yc1Jlc3BvbnNlEiUKCmdlbmVyYXRvcnMYASADKAsyES5zZGwudjEuR2VuZXJhdG9yIi4KGVN0YXJ0QWxsR2VuZXJhdG9yc1JlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJIpYBChpTdGFydEFsbEdlbmVyYXRvcnNSZXNwb25zZRIYChB0b3RhbF9nZW5lcmF0b3JzGAEgASgFEhUKDXN0YXJ0ZWRfY291bnQYAiABKAUSHQoVYWxyZWFkeV9ydW5uaW5nX2NvdW50GAMgASgFEhQKDGZhaWxlZF9jb3VudBgEIAEoBRISCgpmYWlsZWRfaWRzGAUgAygJIi0KGFN0b3BBbGxHZW5lcmF0b3JzUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkilQEKGVN0b3BBbGxHZW5lcmF0b3JzUmVzcG9uc2USGAoQdG90YWxfZ2VuZXJhdG9ycxgBIAEoBRIVCg1zdG9wcGVkX2NvdW50GAIgASgFEh0KFWFscmVhZHlfc3RvcHBlZF9jb3VudBgDIAEoBRIUCgxmYWlsZWRfY291bnQYBCABKAUSEgoKZmFpbGVkX2lkcxgFIAMoCSI+ChNHZXRHZW5lcmF0b3JSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRIUCgxnZW5lcmF0b3JfaWQYAiABKAkiPAoUR2V0R2VuZXJhdG9yUmVzcG9uc2USJAoJZ2VuZXJhdG9yGAEgASgLMhEuc2RsLnYxLkdlbmVyYXRvciJvChZVcGRhdGVHZW5lcmF0b3JSZXF1ZXN0EiQKCWdlbmVyYXRvchgBIAEoCzIRLnNkbC52MS5HZW5lcmF0b3ISLwoLdXBkYXRlX21hc2sYAiABKAsyGi5nb29nbGUucHJvdG9idWYuRmllbGRNYXNrIj8KF1VwZGF0ZUdlbmVyYXRvclJlc3BvbnNlEiQKCWdlbmVyYXRvchgBIAEoCzIRLnNkbC52MS5HZW5lcmF0b3IiQQoWUmVzdW1lR2VuZXJhdG9yUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSFAoMZ2VuZXJhdG9yX2lkGAIgASgJIhkKF1Jlc3VtZUdlbmVyYXRvclJlc3BvbnNlIkAKFVBhdXNlR2VuZXJhdG9yUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSFAoMZ2VuZXJhdG9yX2lkGAIgASgJIhgKFlBhdXNlR2VuZXJhdG9yUmVzcG9uc2UiQQoWRGVsZXRlR2VuZXJhdG9yUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSFAoMZ2VuZXJhdG9yX2lkGAIgASgJIhkKF0RlbGV0ZUdlbmVyYXRvclJlc3BvbnNlIjsKD0xvYWRGaWxlUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSFQoNc2RsX2ZpbGVfcGF0aBgCIAEoCSISChBMb2FkRmlsZVJlc3BvbnNlIjoKEFVzZVN5c3RlbVJlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJEhMKC3N5c3RlbV9uYW1lGAIgASgJIhMKEVVzZVN5c3RlbVJlc3BvbnNlIjIKEEFkZE1ldHJpY1JlcXVlc3QSHgoGbWV0cmljGAEgASgLMg4uc2RsLnYxLk1ldHJpYyIzChFBZGRNZXRyaWNSZXNwb25zZRIeCgZtZXRyaWMYASABKAsyDi5zZGwudjEuTWV0cmljIjsKE0RlbGV0ZU1ldHJpY1JlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJEhEKCW1ldHJpY19pZBgCIAEoCSIWChREZWxldGVNZXRyaWNSZXNwb25zZSInChJMaXZlTWV0cmljc1JlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJIhUKE0xpdmVNZXRyaWNzUmVzcG9uc2UicAoTUXVlcnlNZXRyaWNzUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSEQoJbWV0cmljX2lkGAIgASgJEhIKCnN0YXJ0X3RpbWUYAyABKAESEAoIZW5kX3RpbWUYBCABKAESDQoFbGltaXQYBSABKAUiOwoUUXVlcnlNZXRyaWNzUmVzcG9uc2USIwoGcG9pbnRzGAEgAygLMhMuc2RsLnYxLk1ldHJpY1BvaW50Ii8KC01ldHJpY1BvaW50EhEKCXRpbWVzdGFtcBgBIAEoARINCgV2YWx1ZRgCIAEoASKMAQoXQWdncmVnYXRlTWV0cmljc1JlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJEhEKCW1ldHJpY19pZBgCIAEoCRISCgpzdGFydF90aW1lGAMgASgBEhAKCGVuZF90aW1lGAQgASgBEhAKCGZ1bmN0aW9uGAUgASgJEhMKC3dpbmRvd19zaXplGAYgASgBIkQKGEFnZ3JlZ2F0ZU1ldHJpY3NSZXNwb25zZRIoCgdyZXN1bHRzGAEgAygLMhcuc2RsLnYxLkFnZ3JlZ2F0ZVJlc3VsdCIzCg9BZ2dyZWdhdGVSZXN1bHQSEQoJdGltZXN0YW1wGAEgASgBEg0KBXZhbHVlGAIgASgBIicKEkxpc3RNZXRyaWNzUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkiOgoTTGlzdE1ldHJpY3NSZXNwb25zZRIjCgdtZXRyaWNzGAEgAygLMhIuc2RsLnYxLk1ldHJpY0luZm8imQEKCk1ldHJpY0luZm8SCgoCaWQYASABKAkSEQoJY29tcG9uZW50GAIgASgJEg4KBm1ldGhvZBgDIAEoCRITCgttZXRyaWNfdHlwZRgEIAEoCRITCgtkYXRhX3BvaW50cxgFIAEoAxIYChBvbGRlc3RfdGltZXN0YW1wGAYgASgBEhgKEG5ld2VzdF90aW1lc3RhbXAYByABKAEiSwoTRXhlY3V0ZVRyYWNlUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSEQoJY29tcG9uZW50GAIgASgJEg4KBm1ldGhvZBgDIAEoCSI9ChRFeGVjdXRlVHJhY2VSZXNwb25zZRIlCgp0cmFjZV9kYXRhGAEgASgLMhEuc2RsLnYxLlRyYWNlRGF0YSJUCglUcmFjZURhdGESDgoGc3lzdGVtGAEgASgJEhMKC2VudHJ5X3BvaW50GAIgASgJEiIKBmV2ZW50cxgDIAMoCzISLnNkbC52MS5UcmFjZUV2ZW50IrwBCgpUcmFjZUV2ZW50EgwKBGtpbmQYASABKAkSCgoCaWQYAiABKAMSEQoJcGFyZW50X2lkGAMgASgDEhEKCXRpbWVzdGFtcBgEIAEoARIQCghkdXJhdGlvbhgFIAEoARIRCgljb21wb25lbnQYBiABKAkSDgoGbWV0aG9kGAcgASgJEgwKBGFyZ3MYCCADKAkSFAoMcmV0dXJuX3ZhbHVlGAkgASgJEhUKDWVycm9yX21lc3NhZ2UYCiABKAkiSQoTU2V0UGFyYW1ldGVyUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSDAoEcGF0aBgCIAEoCRIRCgluZXdfdmFsdWUYAyABKAkiZAoUU2V0UGFyYW1ldGVyUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIVCg1lcnJvcl9tZXNzYWdlGAIgASgJEhEKCW5ld192YWx1ZRgDIAEoCRIRCglvbGRfdmFsdWUYBCABKAkiNwoUR2V0UGFyYW1ldGVyc1JlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJEgwKBHBhdGgYAiABKAkijQEKFUdldFBhcmFtZXRlcnNSZXNwb25zZRJBCgpwYXJhbWV0ZXJzGAEgAygLMi0uc2RsLnYxLkdldFBhcmFtZXRlcnNSZXNwb25zZS5QYXJhbWV0ZXJzRW50cnkaMQoPUGFyYW1ldGVyc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiLAoXR2V0U3lzdGVtRGlhZ3JhbVJlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJIkIKGEdldFN5c3RlbURpYWdyYW1SZXNwb25zZRImCgdkaWFncmFtGAEgASgLMhUuc2RsLnYxLlN5c3RlbURpYWdyYW0ibAoNU3lzdGVtRGlhZ3JhbRITCgtzeXN0ZW1fbmFtZRgBIAEoCRIiCgVub2RlcxgCIAMoCzITLnNkbC52MS5EaWFncmFtTm9kZRIiCgVlZGdlcxgDIAMoCzITLnNkbC52MS5EaWFncmFtRWRnZSJrCgtEaWFncmFtTm9kZRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHR5cGUYAyABKAkSIwoHbWV0aG9kcxgEIAMoCzISLnNkbC52MS5NZXRob2RJbmZvEg8KB3RyYWZmaWMYBSABKAkiQAoKTWV0aG9kSW5mbxIMCgRuYW1lGAEgASgJEhMKC3JldHVybl90eXBlGAIgASgJEg8KB3RyYWZmaWMYAyABKAEiwAEKC0RpYWdyYW1FZGdlEg8KB2Zyb21faWQYASABKAkSDQoFdG9faWQYAiABKAkSEwoLZnJvbV9tZXRob2QYAyABKAkSEQoJdG9fbWV0aG9kGAQgASgJEg0KBWxhYmVsGAUgASgJEg0KBW9yZGVyGAYgASgBEhEKCWNvbmRpdGlvbhgHIAEoCRITCgtwcm9iYWJpbGl0eRgIIAEoARIUCgxnZW5lcmF0b3JfaWQYCSABKAkSDQoFY29sb3IYCiABKAkyyRkKDUNhbnZhc1NlcnZpY2USYgoMQ3JlYXRlQ2FudmFzEhsuc2RsLnYxLkNyZWF0ZUNhbnZhc1JlcXVlc3QaHC5zZGwudjEuQ3JlYXRlQ2FudmFzUmVzcG9uc2UiF4LT5JMCEToBKiIML3YxL2NhbnZhc2VzEl8KDExpc3RDYW52YXNlcxIbLnNkbC52MS5MaXN0Q2FudmFzZXNSZXF1ZXN0Ghwuc2RsLnYxLkxpc3RDYW52YXNlc1Jlc3BvbnNlIhSC0+STAg4SDC92MS9jYW52YXNlcxJdCglHZXRDYW52YXMSGC5zZGwudjEuR2V0Q2FudmFzUmVxdWVzdBoZLnNkbC52MS5HZXRDYW52YXNSZXNwb25zZSIbgtPkkwIVEhMvdjEvY2FudmFzZXMve2lkPSp9EnEKCExvYWRGaWxlEhcuc2RsLnYxLkxvYWRGaWxlUmVxdWVzdBoYLnNkbC52MS5Mb2FkRmlsZVJlc3BvbnNlIjKC0+STAiw6ASoiJy92MS9jYW52YXNlcy97Y2FudmFzX2lkPSp9L2FjdGlvbnM6bG9hZBJzCglVc2VTeXN0ZW0SGC5zZGwudjEuVXNlU3lzdGVtUmVxdWVzdBoZLnNkbC52MS5Vc2VTeXN0ZW1SZXNwb25zZSIxgtPkkwIrOgEqIiYvdjEvY2FudmFzZXMve2NhbnZhc19pZD0qfS9hY3Rpb25zOnVzZRJmCgxEZWxldGVDYW52YXMSGy5zZGwudjEuRGVsZXRlQ2FudmFzUmVxdWVzdBocLnNkbC52MS5EZWxldGVDYW52YXNSZXNwb25zZSIbgtPkkwIVKhMvdjEvY2FudmFzZXMve2lkPSp9EoMBCgxBZGRHZW5lcmF0b3ISGy5zZGwudjEuQWRkR2VuZXJhdG9yUmVxdWVzdBocLnNkbC52MS5BZGRHZW5lcmF0b3JSZXNwb25zZSI4gtPkkwIyOgEqIi0vdjEvY2FudmFzZXMve2dlbmVyYXRvci5jYW52YXNfaWR9L2dlbmVyYXRvcnMSnAEKElN0YXJ0QWxsR2VuZXJhdG9ycxIhLnNkbC52MS5TdGFydEFsbEdlbmVyYXRvcnNSZXF1ZXN0GiIuc2RsLnYxLlN0YXJ0QWxsR2VuZXJhdG9yc1Jlc3BvbnNlIj+C0+STAjk6ASoaNC92MS9jYW52YXNlcy97Y2FudmFzX2lkfS9nZW5lcmF0b3JzL2FjdGlvbnM6c3RhcnRhbGwSmAEKEVN0b3BBbGxHZW5lcmF0b3JzEiAuc2RsLnYxLlN0b3BBbGxHZW5lcmF0b3JzUmVxdWVzdBohLnNkbC52MS5TdG9wQWxsR2VuZXJhdG9yc1Jlc3BvbnNlIj6C0+STAjg6ASoaMy92MS9jYW52YXNlcy97Y2FudmFzX2lkfS9nZW5lcmF0b3JzL2FjdGlvbnM6c3RvcGFsbBJ8Cg5MaXN0R2VuZXJhdG9ycxIdLnNkbC52MS5MaXN0R2VuZXJhdG9yc1JlcXVlc3QaHi5zZGwudjEuTGlzdEdlbmVyYXRvcnNSZXNwb25zZSIrgtPkkwIlEiMvdjEvY2FudmFzZXMve2NhbnZhc19pZH0vZ2VuZXJhdG9ycxKFAQoMR2V0R2VuZXJhdG9yEhsuc2RsLnYxLkdldEdlbmVyYXRvclJlcXVlc3QaHC5zZGwudjEuR2V0R2VuZXJhdG9yUmVzcG9uc2UiOoLT5JMCNBIyL3YxL2NhbnZhc2VzL3tjYW52YXNfaWR9L2dlbmVyYXRvcnMve2dlbmVyYXRvcl9pZH0SmwEKD1VwZGF0ZUdlbmVyYXRvchIeLnNkbC52MS5VcGRhdGVHZW5lcmF0b3JSZXF1ZXN0Gh8uc2RsLnYxLlVwZGF0ZUdlbmVyYXRvclJlc3BvbnNlIkeC0+STAkE6ASoyPC92MS9jYW52YXNlcy97Z2VuZXJhdG9yLmNhbnZhc19pZH0vZ2VuZXJhdG9ycy97Z2VuZXJhdG9yLmlkfRKcAQoOUGF1c2VHZW5lcmF0b3ISHS5zZGwudjEuUGF1c2VHZW5lcmF0b3JSZXF1ZXN0Gh4uc2RsLnYxLlBhdXNlR2VuZXJhdG9yUmVzcG9uc2UiS4LT5JMCRToBKiJAL3YxL2NhbnZhc2VzL3tjYW52YXNfaWR9L2dlbmVyYXRvcnMve2dlbmVyYXRvcl9pZH0vYWN0aW9uczpwYXVzZRKgAQoPUmVzdW1lR2VuZXJhdG9yEh4uc2RsLnYxLlJlc3VtZUdlbmVyYXRvclJlcXVlc3QaHy5zZGwudjEuUmVzdW1lR2VuZXJhdG9yUmVzcG9uc2UiTILT5JMCRjoBKiJBL3YxL2NhbnZhc2VzL3tjYW52YXNfaWR9L2dlbmVyYXRvcnMve2dlbmVyYXRvcl9pZH0vYWN0aW9uczpyZXN1bWUSjgEKD0RlbGV0ZUdlbmVyYXRvchIeLnNkbC52MS5EZWxldGVHZW5lcmF0b3JSZXF1ZXN0Gh8uc2RsLnYxLkRlbGV0ZUdlbmVyYXRvclJlc3BvbnNlIjqC0+STAjQqMi92MS9jYW52YXNlcy97Y2FudmFzX2lkfS9nZW5lcmF0b3JzL3tnZW5lcmF0b3JfaWR9EoYBCgxFeGVjdXRlVHJhY2USGy5zZGwudjEuRXhlY3V0ZVRyYWNlUmVxdWVzdBocLnNkbC52MS5FeGVjdXRlVHJhY2VSZXNwb25zZSI7gtPkkwI1EjMvdjEvY2FudmFzZXMve2NhbnZhc19pZH0vdHJhY2Uve2NvbXBvbmVudH0ve21ldGhvZH0SgAEKDFNldFBhcmFtZXRlchIbLnNkbC52MS5TZXRQYXJhbWV0ZXJSZXF1ZXN0Ghwuc2RsLnYxLlNldFBhcmFtZXRlclJlc3BvbnNlIjWC0+STAi86ASoaKi92MS9jYW52YXNlcy97Y2FudmFzX2lkfS9wYXJhbWV0ZXJzL3twYXRofRJ5Cg1HZXRQYXJhbWV0ZXJzEhwuc2RsLnYxLkdldFBhcmFtZXRlcnNSZXF1ZXN0Gh0uc2RsLnYxLkdldFBhcmFtZXRlcnNSZXNwb25zZSIrgtPkkwIlEiMvdjEvY2FudmFzZXMve2NhbnZhc19pZH0vcGFyYW1ldGVycxJ0CglBZGRNZXRyaWMSGC5zZGwudjEuQWRkTWV0cmljUmVxdWVzdBoZLnNkbC52MS5BZGRNZXRyaWNSZXNwb25zZSIygtPkkwIsOgEqIicvdjEvY2FudmFzZXMve21ldHJpYy5jYW52YXNfaWR9L21ldHJpY3MSfwoMRGVsZXRlTWV0cmljEhsuc2RsLnYxLkRlbGV0ZU1ldHJpY1JlcXVlc3QaHC5zZGwudjEuRGVsZXRlTWV0cmljUmVzcG9uc2UiNILT5JMCLiosL3YxL2NhbnZhc2VzL3tjYW52YXNfaWR9L21ldHJpY3Mve21ldHJpY19pZH0SfAoLTGl2ZU1ldHJpY3MSGi5zZGwudjEuTGl2ZU1ldHJpY3NSZXF1ZXN0Ghsuc2RsLnYxLkxpdmVNZXRyaWNzUmVzcG9uc2UiMoLT5JMCLBIqL3YxL2NhbnZhc2VzL3tjYW52YXNfaWR9L21ldHJpY3Mvc3Vic2NyaWJlMAEScAoLTGlzdE1ldHJpY3MSGi5zZGwudjEuTGlzdE1ldHJpY3NSZXF1ZXN0Ghsuc2RsLnYxLkxpc3RNZXRyaWNzUmVzcG9uc2UiKILT5JMCIhIgL3YxL2NhbnZhc2VzL3tjYW52YXNfaWR9L21ldHJpY3MShQEKDFF1ZXJ5TWV0cmljcxIbLnNkbC52MS5RdWVyeU1ldHJpY3NSZXF1ZXN0Ghwuc2RsLnYxLlF1ZXJ5TWV0cmljc1Jlc3BvbnNlIjqC0+STAjQSMi92MS9jYW52YXNlcy97Y2FudmFzX2lkfS9tZXRyaWNzL3ttZXRyaWNfaWR9L3F1ZXJ5EpUBChBBZ2dyZWdhdGVNZXRyaWNzEh8uc2RsLnYxLkFnZ3JlZ2F0ZU1ldHJpY3NSZXF1ZXN0GiAuc2RsLnYxLkFnZ3JlZ2F0ZU1ldHJpY3NSZXNwb25zZSI+gtPkkwI4EjYvdjEvY2FudmFzZXMve2NhbnZhc19pZH0vbWV0cmljcy97bWV0cmljX2lkfS9hZ2dyZWdhdGUSfwoQR2V0U3lzdGVtRGlhZ3JhbRIfLnNkbC52MS5HZXRTeXN0ZW1EaWFncmFtUmVxdWVzdBogLnNkbC52MS5HZXRTeXN0ZW1EaWFncmFtUmVzcG9uc2UiKILT5JMCIhIgL3YxL2NhbnZhc2VzL3tjYW52YXNfaWR9L2RpYWdyYW1CaQoKY29tLnNkbC52MUILQ2FudmFzUHJvdG9QAVoVZ2l0aHViLmNvbS9zZGwvcHJvdG9zogIDU1hYqgIGU2RsLlYxygIGU2RsXFYx4gISU2RsXFYxXEdQQk1ldGFkYXRh6gIHU2RsOjpWMWIGcHJvdG8z", [file_google_protobuf_field_mask, file_sdl_v1_models, file_google_api_annotations]);
+  fileDesc("ChNzZGwvdjEvY2FudmFzLnByb3RvEgZzZGwudjEiNQoTQ3JlYXRlQ2FudmFzUmVxdWVzdBIeCgZjYW52YXMYASABKAsyDi5zZGwudjEuQ2FudmFzIq8BChRDcmVhdGVDYW52YXNSZXNwb25zZRIeCgZjYW52YXMYASABKAsyDi5zZGwudjEuQ2FudmFzEkMKDGZpZWxkX2Vycm9ycxgCIAMoCzItLnNkbC52MS5DcmVhdGVDYW52YXNSZXNwb25zZS5GaWVsZEVycm9yc0VudHJ5GjIKEEZpZWxkRXJyb3JzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASI9ChNMaXN0Q2FudmFzZXNSZXF1ZXN0EiYKCnBhZ2luYXRpb24YASABKAsyEi5zZGwudjEuUGFnaW5hdGlvbiJoChRMaXN0Q2FudmFzZXNSZXNwb25zZRIgCghjYW52YXNlcxgBIAMoCzIOLnNkbC52MS5DYW52YXMSLgoKcGFnaW5hdGlvbhgCIAEoCzIaLnNkbC52MS5QYWdpbmF0aW9uUmVzcG9uc2UiHgoQR2V0Q2FudmFzUmVxdWVzdBIKCgJpZBgBIAEoCSIzChFHZXRDYW52YXNSZXNwb25zZRIeCgZjYW52YXMYASABKAsyDi5zZGwudjEuQ2FudmFzIiEKE0RlbGV0ZUNhbnZhc1JlcXVlc3QSCgoCaWQYASABKAkiFgoURGVsZXRlQ2FudmFzUmVzcG9uc2UiOwoTQWRkR2VuZXJhdG9yUmVxdWVzdBIkCglnZW5lcmF0b3IYASABKAsyES5zZGwudjEuR2VuZXJhdG9yIjwKFEFkZEdlbmVyYXRvclJlc3BvbnNlEiQKCWdlbmVyYXRvchgBIAEoCzIRLnNkbC52MS5HZW5lcmF0b3IiKgoVTGlzdEdlbmVyYXRvcnNSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCSI/ChZMaXN0R2VuZXJhdG9yc1Jlc3BvbnNlEiUKCmdlbmVyYXRvcnMYASADKAsyES5zZGwudjEuR2VuZXJhdG9yIi4KGVN0YXJ0QWxsR2VuZXJhdG9yc1JlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJIpYBChpTdGFydEFsbEdlbmVyYXRvcnNSZXNwb25zZRIYChB0b3RhbF9nZW5lcmF0b3JzGAEgASgFEhUKDXN0YXJ0ZWRfY291bnQYAiABKAUSHQoVYWxyZWFkeV9ydW5uaW5nX2NvdW50GAMgASgFEhQKDGZhaWxlZF9jb3VudBgEIAEoBRISCgpmYWlsZWRfaWRzGAUgAygJIi0KGFN0b3BBbGxHZW5lcmF0b3JzUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkilQEKGVN0b3BBbGxHZW5lcmF0b3JzUmVzcG9uc2USGAoQdG90YWxfZ2VuZXJhdG9ycxgBIAEoBRIVCg1zdG9wcGVkX2NvdW50GAIgASgFEh0KFWFscmVhZHlfc3RvcHBlZF9jb3VudBgDIAEoBRIUCgxmYWlsZWRfY291bnQYBCABKAUSEgoKZmFpbGVkX2lkcxgFIAMoCSI+ChNHZXRHZW5lcmF0b3JSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRIUCgxnZW5lcmF0b3JfaWQYAiABKAkiPAoUR2V0R2VuZXJhdG9yUmVzcG9uc2USJAoJZ2VuZXJhdG9yGAEgASgLMhEuc2RsLnYxLkdlbmVyYXRvciJvChZVcGRhdGVHZW5lcmF0b3JSZXF1ZXN0EiQKCWdlbmVyYXRvchgBIAEoCzIRLnNkbC52MS5HZW5lcmF0b3ISLwoLdXBkYXRlX21hc2sYAiABKAsyGi5nb29nbGUucHJvdG9idWYuRmllbGRNYXNrIj8KF1VwZGF0ZUdlbmVyYXRvclJlc3BvbnNlEiQKCWdlbmVyYXRvchgBIAEoCzIRLnNkbC52MS5HZW5lcmF0b3IiQAoVU3RhcnRHZW5lcmF0b3JSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRIUCgxnZW5lcmF0b3JfaWQYAiABKAkiGAoWU3RhcnRHZW5lcmF0b3JSZXNwb25zZSI/ChRTdG9wR2VuZXJhdG9yUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSFAoMZ2VuZXJhdG9yX2lkGAIgASgJIhcKFVN0b3BHZW5lcmF0b3JSZXNwb25zZSJBChZEZWxldGVHZW5lcmF0b3JSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRIUCgxnZW5lcmF0b3JfaWQYAiABKAkiGQoXRGVsZXRlR2VuZXJhdG9yUmVzcG9uc2UiOwoPTG9hZEZpbGVSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRIVCg1zZGxfZmlsZV9wYXRoGAIgASgJIhIKEExvYWRGaWxlUmVzcG9uc2UiOgoQVXNlU3lzdGVtUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSEwoLc3lzdGVtX25hbWUYAiABKAkiEwoRVXNlU3lzdGVtUmVzcG9uc2UiMgoQQWRkTWV0cmljUmVxdWVzdBIeCgZtZXRyaWMYASABKAsyDi5zZGwudjEuTWV0cmljIjMKEUFkZE1ldHJpY1Jlc3BvbnNlEh4KBm1ldHJpYxgBIAEoCzIOLnNkbC52MS5NZXRyaWMiOwoTRGVsZXRlTWV0cmljUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSEQoJbWV0cmljX2lkGAIgASgJIhYKFERlbGV0ZU1ldHJpY1Jlc3BvbnNlInAKE1F1ZXJ5TWV0cmljc1JlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJEhEKCW1ldHJpY19pZBgCIAEoCRISCgpzdGFydF90aW1lGAMgASgBEhAKCGVuZF90aW1lGAQgASgBEg0KBWxpbWl0GAUgASgFIjsKFFF1ZXJ5TWV0cmljc1Jlc3BvbnNlEiMKBnBvaW50cxgBIAMoCzITLnNkbC52MS5NZXRyaWNQb2ludCIvCgtNZXRyaWNQb2ludBIRCgl0aW1lc3RhbXAYASABKAESDQoFdmFsdWUYAiABKAEijAEKF0FnZ3JlZ2F0ZU1ldHJpY3NSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRIRCgltZXRyaWNfaWQYAiABKAkSEgoKc3RhcnRfdGltZRgDIAEoARIQCghlbmRfdGltZRgEIAEoARIQCghmdW5jdGlvbhgFIAEoCRITCgt3aW5kb3dfc2l6ZRgGIAEoASJEChhBZ2dyZWdhdGVNZXRyaWNzUmVzcG9uc2USKAoHcmVzdWx0cxgBIAMoCzIXLnNkbC52MS5BZ2dyZWdhdGVSZXN1bHQiMwoPQWdncmVnYXRlUmVzdWx0EhEKCXRpbWVzdGFtcBgBIAEoARINCgV2YWx1ZRgCIAEoASInChJMaXN0TWV0cmljc1JlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJIjoKE0xpc3RNZXRyaWNzUmVzcG9uc2USIwoHbWV0cmljcxgBIAMoCzISLnNkbC52MS5NZXRyaWNJbmZvIpkBCgpNZXRyaWNJbmZvEgoKAmlkGAEgASgJEhEKCWNvbXBvbmVudBgCIAEoCRIOCgZtZXRob2QYAyABKAkSEwoLbWV0cmljX3R5cGUYBCABKAkSEwoLZGF0YV9wb2ludHMYBSABKAMSGAoQb2xkZXN0X3RpbWVzdGFtcBgGIAEoARIYChBuZXdlc3RfdGltZXN0YW1wGAcgASgBIksKE0V4ZWN1dGVUcmFjZVJlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJEhEKCWNvbXBvbmVudBgCIAEoCRIOCgZtZXRob2QYAyABKAkiPQoURXhlY3V0ZVRyYWNlUmVzcG9uc2USJQoKdHJhY2VfZGF0YRgBIAEoCzIRLnNkbC52MS5UcmFjZURhdGEiVAoJVHJhY2VEYXRhEg4KBnN5c3RlbRgBIAEoCRITCgtlbnRyeV9wb2ludBgCIAEoCRIiCgZldmVudHMYAyADKAsyEi5zZGwudjEuVHJhY2VFdmVudCK8AQoKVHJhY2VFdmVudBIMCgRraW5kGAEgASgJEgoKAmlkGAIgASgDEhEKCXBhcmVudF9pZBgDIAEoAxIRCgl0aW1lc3RhbXAYBCABKAESEAoIZHVyYXRpb24YBSABKAESEQoJY29tcG9uZW50GAYgASgJEg4KBm1ldGhvZBgHIAEoCRIMCgRhcmdzGAggAygJEhQKDHJldHVybl92YWx1ZRgJIAEoCRIVCg1lcnJvcl9tZXNzYWdlGAogASgJIkkKE1NldFBhcmFtZXRlclJlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJEgwKBHBhdGgYAiABKAkSEQoJbmV3X3ZhbHVlGAMgASgJImQKFFNldFBhcmFtZXRlclJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSFQoNZXJyb3JfbWVzc2FnZRgCIAEoCRIRCgluZXdfdmFsdWUYAyABKAkSEQoJb2xkX3ZhbHVlGAQgASgJIjcKFEdldFBhcmFtZXRlcnNSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRIMCgRwYXRoGAIgASgJIo0BChVHZXRQYXJhbWV0ZXJzUmVzcG9uc2USQQoKcGFyYW1ldGVycxgBIAMoCzItLnNkbC52MS5HZXRQYXJhbWV0ZXJzUmVzcG9uc2UuUGFyYW1ldGVyc0VudHJ5GjEKD1BhcmFtZXRlcnNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIiwKF0dldFN5c3RlbURpYWdyYW1SZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCSJCChhHZXRTeXN0ZW1EaWFncmFtUmVzcG9uc2USJgoHZGlhZ3JhbRgBIAEoCzIVLnNkbC52MS5TeXN0ZW1EaWFncmFtImwKDVN5c3RlbURpYWdyYW0SEwoLc3lzdGVtX25hbWUYASABKAkSIgoFbm9kZXMYAiADKAsyEy5zZGwudjEuRGlhZ3JhbU5vZGUSIgoFZWRnZXMYAyADKAsyEy5zZGwudjEuRGlhZ3JhbUVkZ2UiawoLRGlhZ3JhbU5vZGUSCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIMCgR0eXBlGAMgASgJEiMKB21ldGhvZHMYBCADKAsyEi5zZGwudjEuTWV0aG9kSW5mbxIPCgd0cmFmZmljGAUgASgJIkAKCk1ldGhvZEluZm8SDAoEbmFtZRgBIAEoCRITCgtyZXR1cm5fdHlwZRgCIAEoCRIPCgd0cmFmZmljGAMgASgBIsABCgtEaWFncmFtRWRnZRIPCgdmcm9tX2lkGAEgASgJEg0KBXRvX2lkGAIgASgJEhMKC2Zyb21fbWV0aG9kGAMgASgJEhEKCXRvX21ldGhvZBgEIAEoCRINCgVsYWJlbBgFIAEoCRINCgVvcmRlchgGIAEoARIRCgljb25kaXRpb24YByABKAkSEwoLcHJvYmFiaWxpdHkYCCABKAESFAoMZ2VuZXJhdG9yX2lkGAkgASgJEg0KBWNvbG9yGAogASgJMq0XCg1DYW52YXNTZXJ2aWNlEmIKDENyZWF0ZUNhbnZhcxIbLnNkbC52MS5DcmVhdGVDYW52YXNSZXF1ZXN0Ghwuc2RsLnYxLkNyZWF0ZUNhbnZhc1Jlc3BvbnNlIheC0+STAhE6ASoiDC92MS9jYW52YXNlcxJfCgxMaXN0Q2FudmFzZXMSGy5zZGwudjEuTGlzdENhbnZhc2VzUmVxdWVzdBocLnNkbC52MS5MaXN0Q2FudmFzZXNSZXNwb25zZSIUgtPkkwIOEgwvdjEvY2FudmFzZXMSXQoJR2V0Q2FudmFzEhguc2RsLnYxLkdldENhbnZhc1JlcXVlc3QaGS5zZGwudjEuR2V0Q2FudmFzUmVzcG9uc2UiG4LT5JMCFRITL3YxL2NhbnZhc2VzL3tpZD0qfRJxCghMb2FkRmlsZRIXLnNkbC52MS5Mb2FkRmlsZVJlcXVlc3QaGC5zZGwudjEuTG9hZEZpbGVSZXNwb25zZSIygtPkkwIsOgEqIicvdjEvY2FudmFzZXMve2NhbnZhc19pZD0qfS9hY3Rpb25zOmxvYWQScwoJVXNlU3lzdGVtEhguc2RsLnYxLlVzZVN5c3RlbVJlcXVlc3QaGS5zZGwudjEuVXNlU3lzdGVtUmVzcG9uc2UiMYLT5JMCKzoBKiImL3YxL2NhbnZhc2VzL3tjYW52YXNfaWQ9Kn0vYWN0aW9uczp1c2USZgoMRGVsZXRlQ2FudmFzEhsuc2RsLnYxLkRlbGV0ZUNhbnZhc1JlcXVlc3QaHC5zZGwudjEuRGVsZXRlQ2FudmFzUmVzcG9uc2UiG4LT5JMCFSoTL3YxL2NhbnZhc2VzL3tpZD0qfRKDAQoMQWRkR2VuZXJhdG9yEhsuc2RsLnYxLkFkZEdlbmVyYXRvclJlcXVlc3QaHC5zZGwudjEuQWRkR2VuZXJhdG9yUmVzcG9uc2UiOILT5JMCMjoBKiItL3YxL2NhbnZhc2VzL3tnZW5lcmF0b3IuY2FudmFzX2lkfS9nZW5lcmF0b3JzEpwBChJTdGFydEFsbEdlbmVyYXRvcnMSIS5zZGwudjEuU3RhcnRBbGxHZW5lcmF0b3JzUmVxdWVzdBoiLnNkbC52MS5TdGFydEFsbEdlbmVyYXRvcnNSZXNwb25zZSI/gtPkkwI5OgEqGjQvdjEvY2FudmFzZXMve2NhbnZhc19pZH0vZ2VuZXJhdG9ycy9hY3Rpb25zOnN0YXJ0YWxsEpgBChFTdG9wQWxsR2VuZXJhdG9ycxIgLnNkbC52MS5TdG9wQWxsR2VuZXJhdG9yc1JlcXVlc3QaIS5zZGwudjEuU3RvcEFsbEdlbmVyYXRvcnNSZXNwb25zZSI+gtPkkwI4OgEqGjMvdjEvY2FudmFzZXMve2NhbnZhc19pZH0vZ2VuZXJhdG9ycy9hY3Rpb25zOnN0b3BhbGwSfAoOTGlzdEdlbmVyYXRvcnMSHS5zZGwudjEuTGlzdEdlbmVyYXRvcnNSZXF1ZXN0Gh4uc2RsLnYxLkxpc3RHZW5lcmF0b3JzUmVzcG9uc2UiK4LT5JMCJRIjL3YxL2NhbnZhc2VzL3tjYW52YXNfaWR9L2dlbmVyYXRvcnMShQEKDEdldEdlbmVyYXRvchIbLnNkbC52MS5HZXRHZW5lcmF0b3JSZXF1ZXN0Ghwuc2RsLnYxLkdldEdlbmVyYXRvclJlc3BvbnNlIjqC0+STAjQSMi92MS9jYW52YXNlcy97Y2FudmFzX2lkfS9nZW5lcmF0b3JzL3tnZW5lcmF0b3JfaWR9EpsBCg9VcGRhdGVHZW5lcmF0b3ISHi5zZGwudjEuVXBkYXRlR2VuZXJhdG9yUmVxdWVzdBofLnNkbC52MS5VcGRhdGVHZW5lcmF0b3JSZXNwb25zZSJHgtPkkwJBOgEqMjwvdjEvY2FudmFzZXMve2dlbmVyYXRvci5jYW52YXNfaWR9L2dlbmVyYXRvcnMve2dlbmVyYXRvci5pZH0SmQEKDVN0b3BHZW5lcmF0b3ISHC5zZGwudjEuU3RvcEdlbmVyYXRvclJlcXVlc3QaHS5zZGwudjEuU3RvcEdlbmVyYXRvclJlc3BvbnNlIkuC0+STAkU6ASoiQC92MS9jYW52YXNlcy97Y2FudmFzX2lkfS9nZW5lcmF0b3JzL3tnZW5lcmF0b3JfaWR9L2FjdGlvbnM6cGF1c2USnQEKDlN0YXJ0R2VuZXJhdG9yEh0uc2RsLnYxLlN0YXJ0R2VuZXJhdG9yUmVxdWVzdBoeLnNkbC52MS5TdGFydEdlbmVyYXRvclJlc3BvbnNlIkyC0+STAkY6ASoiQS92MS9jYW52YXNlcy97Y2FudmFzX2lkfS9nZW5lcmF0b3JzL3tnZW5lcmF0b3JfaWR9L2FjdGlvbnM6cmVzdW1lEo4BCg9EZWxldGVHZW5lcmF0b3ISHi5zZGwudjEuRGVsZXRlR2VuZXJhdG9yUmVxdWVzdBofLnNkbC52MS5EZWxldGVHZW5lcmF0b3JSZXNwb25zZSI6gtPkkwI0KjIvdjEvY2FudmFzZXMve2NhbnZhc19pZH0vZ2VuZXJhdG9ycy97Z2VuZXJhdG9yX2lkfRKGAQoMRXhlY3V0ZVRyYWNlEhsuc2RsLnYxLkV4ZWN1dGVUcmFjZVJlcXVlc3QaHC5zZGwudjEuRXhlY3V0ZVRyYWNlUmVzcG9uc2UiO4LT5JMCNRIzL3YxL2NhbnZhc2VzL3tjYW52YXNfaWR9L3RyYWNlL3tjb21wb25lbnR9L3ttZXRob2R9EoABCgxTZXRQYXJhbWV0ZXISGy5zZGwudjEuU2V0UGFyYW1ldGVyUmVxdWVzdBocLnNkbC52MS5TZXRQYXJhbWV0ZXJSZXNwb25zZSI1gtPkkwIvOgEqGiovdjEvY2FudmFzZXMve2NhbnZhc19pZH0vcGFyYW1ldGVycy97cGF0aH0SeQoNR2V0UGFyYW1ldGVycxIcLnNkbC52MS5HZXRQYXJhbWV0ZXJzUmVxdWVzdBodLnNkbC52MS5HZXRQYXJhbWV0ZXJzUmVzcG9uc2UiK4LT5JMCJRIjL3YxL2NhbnZhc2VzL3tjYW52YXNfaWR9L3BhcmFtZXRlcnMSdAoJQWRkTWV0cmljEhguc2RsLnYxLkFkZE1ldHJpY1JlcXVlc3QaGS5zZGwudjEuQWRkTWV0cmljUmVzcG9uc2UiMoLT5JMCLDoBKiInL3YxL2NhbnZhc2VzL3ttZXRyaWMuY2FudmFzX2lkfS9tZXRyaWNzEn8KDERlbGV0ZU1ldHJpYxIbLnNkbC52MS5EZWxldGVNZXRyaWNSZXF1ZXN0Ghwuc2RsLnYxLkRlbGV0ZU1ldHJpY1Jlc3BvbnNlIjSC0+STAi4qLC92MS9jYW52YXNlcy97Y2FudmFzX2lkfS9tZXRyaWNzL3ttZXRyaWNfaWR9EnAKC0xpc3RNZXRyaWNzEhouc2RsLnYxLkxpc3RNZXRyaWNzUmVxdWVzdBobLnNkbC52MS5MaXN0TWV0cmljc1Jlc3BvbnNlIiiC0+STAiISIC92MS9jYW52YXNlcy97Y2FudmFzX2lkfS9tZXRyaWNzEoUBCgxRdWVyeU1ldHJpY3MSGy5zZGwudjEuUXVlcnlNZXRyaWNzUmVxdWVzdBocLnNkbC52MS5RdWVyeU1ldHJpY3NSZXNwb25zZSI6gtPkkwI0EjIvdjEvY2FudmFzZXMve2NhbnZhc19pZH0vbWV0cmljcy97bWV0cmljX2lkfS9xdWVyeRJ/ChBHZXRTeXN0ZW1EaWFncmFtEh8uc2RsLnYxLkdldFN5c3RlbURpYWdyYW1SZXF1ZXN0GiAuc2RsLnYxLkdldFN5c3RlbURpYWdyYW1SZXNwb25zZSIogtPkkwIiEiAvdjEvY2FudmFzZXMve2NhbnZhc19pZH0vZGlhZ3JhbUJ3Cgpjb20uc2RsLnYxQgtDYW52YXNQcm90b1ABWiNnaXRodWIuY29tL3BhbnlhbS9zZGwvZ2VuL2dvL3NkbC92MaICA1NYWKoCBlNkbC5WMcoCBlNkbFxWMeICElNkbFxWMVxHUEJNZXRhZGF0YeoCB1NkbDo6VjFiBnByb3RvMw", [file_google_protobuf_field_mask, file_sdl_v1_models, file_google_api_annotations]);
 
 /**
  * *
@@ -488,9 +488,9 @@ export const UpdateGeneratorResponseSchema: GenMessage<UpdateGeneratorResponse> 
   messageDesc(file_sdl_v1_canvas, 19);
 
 /**
- * @generated from message sdl.v1.ResumeGeneratorRequest
+ * @generated from message sdl.v1.StartGeneratorRequest
  */
-export type ResumeGeneratorRequest = Message<"sdl.v1.ResumeGeneratorRequest"> & {
+export type StartGeneratorRequest = Message<"sdl.v1.StartGeneratorRequest"> & {
   /**
    * @generated from field: string canvas_id = 1;
    */
@@ -505,29 +505,29 @@ export type ResumeGeneratorRequest = Message<"sdl.v1.ResumeGeneratorRequest"> & 
 };
 
 /**
- * Describes the message sdl.v1.ResumeGeneratorRequest.
- * Use `create(ResumeGeneratorRequestSchema)` to create a new message.
+ * Describes the message sdl.v1.StartGeneratorRequest.
+ * Use `create(StartGeneratorRequestSchema)` to create a new message.
  */
-export const ResumeGeneratorRequestSchema: GenMessage<ResumeGeneratorRequest> = /*@__PURE__*/
+export const StartGeneratorRequestSchema: GenMessage<StartGeneratorRequest> = /*@__PURE__*/
   messageDesc(file_sdl_v1_canvas, 20);
 
 /**
- * @generated from message sdl.v1.ResumeGeneratorResponse
+ * @generated from message sdl.v1.StartGeneratorResponse
  */
-export type ResumeGeneratorResponse = Message<"sdl.v1.ResumeGeneratorResponse"> & {
+export type StartGeneratorResponse = Message<"sdl.v1.StartGeneratorResponse"> & {
 };
 
 /**
- * Describes the message sdl.v1.ResumeGeneratorResponse.
- * Use `create(ResumeGeneratorResponseSchema)` to create a new message.
+ * Describes the message sdl.v1.StartGeneratorResponse.
+ * Use `create(StartGeneratorResponseSchema)` to create a new message.
  */
-export const ResumeGeneratorResponseSchema: GenMessage<ResumeGeneratorResponse> = /*@__PURE__*/
+export const StartGeneratorResponseSchema: GenMessage<StartGeneratorResponse> = /*@__PURE__*/
   messageDesc(file_sdl_v1_canvas, 21);
 
 /**
- * @generated from message sdl.v1.PauseGeneratorRequest
+ * @generated from message sdl.v1.StopGeneratorRequest
  */
-export type PauseGeneratorRequest = Message<"sdl.v1.PauseGeneratorRequest"> & {
+export type StopGeneratorRequest = Message<"sdl.v1.StopGeneratorRequest"> & {
   /**
    * @generated from field: string canvas_id = 1;
    */
@@ -542,23 +542,23 @@ export type PauseGeneratorRequest = Message<"sdl.v1.PauseGeneratorRequest"> & {
 };
 
 /**
- * Describes the message sdl.v1.PauseGeneratorRequest.
- * Use `create(PauseGeneratorRequestSchema)` to create a new message.
+ * Describes the message sdl.v1.StopGeneratorRequest.
+ * Use `create(StopGeneratorRequestSchema)` to create a new message.
  */
-export const PauseGeneratorRequestSchema: GenMessage<PauseGeneratorRequest> = /*@__PURE__*/
+export const StopGeneratorRequestSchema: GenMessage<StopGeneratorRequest> = /*@__PURE__*/
   messageDesc(file_sdl_v1_canvas, 22);
 
 /**
- * @generated from message sdl.v1.PauseGeneratorResponse
+ * @generated from message sdl.v1.StopGeneratorResponse
  */
-export type PauseGeneratorResponse = Message<"sdl.v1.PauseGeneratorResponse"> & {
+export type StopGeneratorResponse = Message<"sdl.v1.StopGeneratorResponse"> & {
 };
 
 /**
- * Describes the message sdl.v1.PauseGeneratorResponse.
- * Use `create(PauseGeneratorResponseSchema)` to create a new message.
+ * Describes the message sdl.v1.StopGeneratorResponse.
+ * Use `create(StopGeneratorResponseSchema)` to create a new message.
  */
-export const PauseGeneratorResponseSchema: GenMessage<PauseGeneratorResponse> = /*@__PURE__*/
+export const StopGeneratorResponseSchema: GenMessage<StopGeneratorResponse> = /*@__PURE__*/
   messageDesc(file_sdl_v1_canvas, 23);
 
 /**
@@ -736,36 +736,6 @@ export const DeleteMetricResponseSchema: GenMessage<DeleteMetricResponse> = /*@_
   messageDesc(file_sdl_v1_canvas, 33);
 
 /**
- * @generated from message sdl.v1.LiveMetricsRequest
- */
-export type LiveMetricsRequest = Message<"sdl.v1.LiveMetricsRequest"> & {
-  /**
-   * @generated from field: string canvas_id = 1;
-   */
-  canvasId: string;
-};
-
-/**
- * Describes the message sdl.v1.LiveMetricsRequest.
- * Use `create(LiveMetricsRequestSchema)` to create a new message.
- */
-export const LiveMetricsRequestSchema: GenMessage<LiveMetricsRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 34);
-
-/**
- * @generated from message sdl.v1.LiveMetricsResponse
- */
-export type LiveMetricsResponse = Message<"sdl.v1.LiveMetricsResponse"> & {
-};
-
-/**
- * Describes the message sdl.v1.LiveMetricsResponse.
- * Use `create(LiveMetricsResponseSchema)` to create a new message.
- */
-export const LiveMetricsResponseSchema: GenMessage<LiveMetricsResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 35);
-
-/**
  * @generated from message sdl.v1.QueryMetricsRequest
  */
 export type QueryMetricsRequest = Message<"sdl.v1.QueryMetricsRequest"> & {
@@ -810,7 +780,7 @@ export type QueryMetricsRequest = Message<"sdl.v1.QueryMetricsRequest"> & {
  * Use `create(QueryMetricsRequestSchema)` to create a new message.
  */
 export const QueryMetricsRequestSchema: GenMessage<QueryMetricsRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 36);
+  messageDesc(file_sdl_v1_canvas, 34);
 
 /**
  * @generated from message sdl.v1.QueryMetricsResponse
@@ -827,7 +797,7 @@ export type QueryMetricsResponse = Message<"sdl.v1.QueryMetricsResponse"> & {
  * Use `create(QueryMetricsResponseSchema)` to create a new message.
  */
 export const QueryMetricsResponseSchema: GenMessage<QueryMetricsResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 37);
+  messageDesc(file_sdl_v1_canvas, 35);
 
 /**
  * @generated from message sdl.v1.MetricPoint
@@ -851,7 +821,7 @@ export type MetricPoint = Message<"sdl.v1.MetricPoint"> & {
  * Use `create(MetricPointSchema)` to create a new message.
  */
 export const MetricPointSchema: GenMessage<MetricPoint> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 38);
+  messageDesc(file_sdl_v1_canvas, 36);
 
 /**
  * @generated from message sdl.v1.AggregateMetricsRequest
@@ -897,7 +867,7 @@ export type AggregateMetricsRequest = Message<"sdl.v1.AggregateMetricsRequest"> 
  * Use `create(AggregateMetricsRequestSchema)` to create a new message.
  */
 export const AggregateMetricsRequestSchema: GenMessage<AggregateMetricsRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 39);
+  messageDesc(file_sdl_v1_canvas, 37);
 
 /**
  * @generated from message sdl.v1.AggregateMetricsResponse
@@ -916,7 +886,7 @@ export type AggregateMetricsResponse = Message<"sdl.v1.AggregateMetricsResponse"
  * Use `create(AggregateMetricsResponseSchema)` to create a new message.
  */
 export const AggregateMetricsResponseSchema: GenMessage<AggregateMetricsResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 40);
+  messageDesc(file_sdl_v1_canvas, 38);
 
 /**
  * @generated from message sdl.v1.AggregateResult
@@ -940,7 +910,7 @@ export type AggregateResult = Message<"sdl.v1.AggregateResult"> & {
  * Use `create(AggregateResultSchema)` to create a new message.
  */
 export const AggregateResultSchema: GenMessage<AggregateResult> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 41);
+  messageDesc(file_sdl_v1_canvas, 39);
 
 /**
  * List all available metrics
@@ -959,7 +929,7 @@ export type ListMetricsRequest = Message<"sdl.v1.ListMetricsRequest"> & {
  * Use `create(ListMetricsRequestSchema)` to create a new message.
  */
 export const ListMetricsRequestSchema: GenMessage<ListMetricsRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 42);
+  messageDesc(file_sdl_v1_canvas, 40);
 
 /**
  * @generated from message sdl.v1.ListMetricsResponse
@@ -976,7 +946,7 @@ export type ListMetricsResponse = Message<"sdl.v1.ListMetricsResponse"> & {
  * Use `create(ListMetricsResponseSchema)` to create a new message.
  */
 export const ListMetricsResponseSchema: GenMessage<ListMetricsResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 43);
+  messageDesc(file_sdl_v1_canvas, 41);
 
 /**
  * @generated from message sdl.v1.MetricInfo
@@ -1027,7 +997,7 @@ export type MetricInfo = Message<"sdl.v1.MetricInfo"> & {
  * Use `create(MetricInfoSchema)` to create a new message.
  */
 export const MetricInfoSchema: GenMessage<MetricInfo> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 44);
+  messageDesc(file_sdl_v1_canvas, 42);
 
 /**
  * @generated from message sdl.v1.ExecuteTraceRequest
@@ -1057,7 +1027,7 @@ export type ExecuteTraceRequest = Message<"sdl.v1.ExecuteTraceRequest"> & {
  * Use `create(ExecuteTraceRequestSchema)` to create a new message.
  */
 export const ExecuteTraceRequestSchema: GenMessage<ExecuteTraceRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 45);
+  messageDesc(file_sdl_v1_canvas, 43);
 
 /**
  * @generated from message sdl.v1.ExecuteTraceResponse
@@ -1076,7 +1046,7 @@ export type ExecuteTraceResponse = Message<"sdl.v1.ExecuteTraceResponse"> & {
  * Use `create(ExecuteTraceResponseSchema)` to create a new message.
  */
 export const ExecuteTraceResponseSchema: GenMessage<ExecuteTraceResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 46);
+  messageDesc(file_sdl_v1_canvas, 44);
 
 /**
  * TraceData matches the runtime.TraceData structure
@@ -1105,7 +1075,7 @@ export type TraceData = Message<"sdl.v1.TraceData"> & {
  * Use `create(TraceDataSchema)` to create a new message.
  */
 export const TraceDataSchema: GenMessage<TraceData> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 47);
+  messageDesc(file_sdl_v1_canvas, 45);
 
 /**
  * TraceEvent matches the runtime.TraceEvent structure
@@ -1175,7 +1145,7 @@ export type TraceEvent = Message<"sdl.v1.TraceEvent"> & {
  * Use `create(TraceEventSchema)` to create a new message.
  */
 export const TraceEventSchema: GenMessage<TraceEvent> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 48);
+  messageDesc(file_sdl_v1_canvas, 46);
 
 /**
  * Request to set a parameter value
@@ -1208,7 +1178,7 @@ export type SetParameterRequest = Message<"sdl.v1.SetParameterRequest"> & {
  * Use `create(SetParameterRequestSchema)` to create a new message.
  */
 export const SetParameterRequestSchema: GenMessage<SetParameterRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 49);
+  messageDesc(file_sdl_v1_canvas, 47);
 
 /**
  * Response from setting a parameter
@@ -1246,7 +1216,7 @@ export type SetParameterResponse = Message<"sdl.v1.SetParameterResponse"> & {
  * Use `create(SetParameterResponseSchema)` to create a new message.
  */
 export const SetParameterResponseSchema: GenMessage<SetParameterResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 50);
+  messageDesc(file_sdl_v1_canvas, 48);
 
 /**
  * Request to get parameter values
@@ -1272,7 +1242,7 @@ export type GetParametersRequest = Message<"sdl.v1.GetParametersRequest"> & {
  * Use `create(GetParametersRequestSchema)` to create a new message.
  */
 export const GetParametersRequestSchema: GenMessage<GetParametersRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 51);
+  messageDesc(file_sdl_v1_canvas, 49);
 
 /**
  * Response containing parameter values
@@ -1293,7 +1263,7 @@ export type GetParametersResponse = Message<"sdl.v1.GetParametersResponse"> & {
  * Use `create(GetParametersResponseSchema)` to create a new message.
  */
 export const GetParametersResponseSchema: GenMessage<GetParametersResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 52);
+  messageDesc(file_sdl_v1_canvas, 50);
 
 /**
  * Request to get the system diagram
@@ -1312,7 +1282,7 @@ export type GetSystemDiagramRequest = Message<"sdl.v1.GetSystemDiagramRequest"> 
  * Use `create(GetSystemDiagramRequestSchema)` to create a new message.
  */
 export const GetSystemDiagramRequestSchema: GenMessage<GetSystemDiagramRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 53);
+  messageDesc(file_sdl_v1_canvas, 51);
 
 /**
  * Response containing the system diagram
@@ -1331,7 +1301,7 @@ export type GetSystemDiagramResponse = Message<"sdl.v1.GetSystemDiagramResponse"
  * Use `create(GetSystemDiagramResponseSchema)` to create a new message.
  */
 export const GetSystemDiagramResponseSchema: GenMessage<GetSystemDiagramResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 54);
+  messageDesc(file_sdl_v1_canvas, 52);
 
 /**
  * SystemDiagram represents the topology of a system
@@ -1360,7 +1330,7 @@ export type SystemDiagram = Message<"sdl.v1.SystemDiagram"> & {
  * Use `create(SystemDiagramSchema)` to create a new message.
  */
 export const SystemDiagramSchema: GenMessage<SystemDiagram> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 55);
+  messageDesc(file_sdl_v1_canvas, 53);
 
 /**
  * DiagramNode represents a component or instance in the system
@@ -1409,7 +1379,7 @@ export type DiagramNode = Message<"sdl.v1.DiagramNode"> & {
  * Use `create(DiagramNodeSchema)` to create a new message.
  */
 export const DiagramNodeSchema: GenMessage<DiagramNode> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 56);
+  messageDesc(file_sdl_v1_canvas, 54);
 
 /**
  * MethodInfo represents information about a component method
@@ -1444,7 +1414,7 @@ export type MethodInfo = Message<"sdl.v1.MethodInfo"> & {
  * Use `create(MethodInfoSchema)` to create a new message.
  */
 export const MethodInfoSchema: GenMessage<MethodInfo> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 57);
+  messageDesc(file_sdl_v1_canvas, 55);
 
 /**
  * DiagramEdge represents a connection between nodes
@@ -1522,7 +1492,7 @@ export type DiagramEdge = Message<"sdl.v1.DiagramEdge"> & {
  * Use `create(DiagramEdgeSchema)` to create a new message.
  */
 export const DiagramEdgeSchema: GenMessage<DiagramEdge> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 58);
+  messageDesc(file_sdl_v1_canvas, 56);
 
 /**
  * *
@@ -1649,20 +1619,20 @@ export const CanvasService: GenService<{
     output: typeof UpdateGeneratorResponseSchema;
   },
   /**
-   * @generated from rpc sdl.v1.CanvasService.PauseGenerator
+   * @generated from rpc sdl.v1.CanvasService.StopGenerator
    */
-  pauseGenerator: {
+  stopGenerator: {
     methodKind: "unary";
-    input: typeof PauseGeneratorRequestSchema;
-    output: typeof PauseGeneratorResponseSchema;
+    input: typeof StopGeneratorRequestSchema;
+    output: typeof StopGeneratorResponseSchema;
   },
   /**
-   * @generated from rpc sdl.v1.CanvasService.ResumeGenerator
+   * @generated from rpc sdl.v1.CanvasService.StartGenerator
    */
-  resumeGenerator: {
+  startGenerator: {
     methodKind: "unary";
-    input: typeof ResumeGeneratorRequestSchema;
-    output: typeof ResumeGeneratorResponseSchema;
+    input: typeof StartGeneratorRequestSchema;
+    output: typeof StartGeneratorResponseSchema;
   },
   /**
    * @generated from rpc sdl.v1.CanvasService.DeleteGenerator
@@ -1726,14 +1696,6 @@ export const CanvasService: GenService<{
     output: typeof DeleteMetricResponseSchema;
   },
   /**
-   * @generated from rpc sdl.v1.CanvasService.LiveMetrics
-   */
-  liveMetrics: {
-    methodKind: "server_streaming";
-    input: typeof LiveMetricsRequestSchema;
-    output: typeof LiveMetricsResponseSchema;
-  },
-  /**
    * List all available metrics
    *
    * @generated from rpc sdl.v1.CanvasService.ListMetrics
@@ -1752,16 +1714,6 @@ export const CanvasService: GenService<{
     methodKind: "unary";
     input: typeof QueryMetricsRequestSchema;
     output: typeof QueryMetricsResponseSchema;
-  },
-  /**
-   * Get aggregated metric data
-   *
-   * @generated from rpc sdl.v1.CanvasService.AggregateMetrics
-   */
-  aggregateMetrics: {
-    methodKind: "unary";
-    input: typeof AggregateMetricsRequestSchema;
-    output: typeof AggregateMetricsResponseSchema;
   },
   /**
    * Get the system diagram for visualization

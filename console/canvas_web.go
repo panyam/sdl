@@ -37,9 +37,9 @@ type WebServer struct {
 }
 
 // NewWebServer creates a new web server instance
-func NewWebServer(grpcAddress string) *WebServer {
+func NewWebServer(grpcAddress string, canvasService *CanvasService) *WebServer {
 	ws := &WebServer{
-		api: NewSDLApi(grpcAddress),
+		api: NewSDLApi(grpcAddress, canvasService),
 	}
 
 	// Initialize WebSocket handler

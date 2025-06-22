@@ -202,20 +202,20 @@ func (s *CanvasService) StopAllGenerators(ctx context.Context, req *protos.StopA
 	return
 }
 
-func (s *CanvasService) ResumeGenerator(ctx context.Context, req *protos.ResumeGeneratorRequest) (resp *protos.ResumeGeneratorResponse, err error) {
-	slog.Info("ResumeGenerator Request", "req", req)
-	resp = &protos.ResumeGeneratorResponse{}
+func (s *CanvasService) StartGenerator(ctx context.Context, req *protos.StartGeneratorRequest) (resp *protos.StartGeneratorResponse, err error) {
+	slog.Info("StartGenerator Request", "req", req)
+	resp = &protos.StartGeneratorResponse{}
 	s.withCanvas(req.CanvasId, func(canvas *Canvas) {
-		err = canvas.ResumeGenerator(req.GeneratorId)
+		err = canvas.StartGenerator(req.GeneratorId)
 	})
 	return
 }
 
-func (s *CanvasService) PauseGenerator(ctx context.Context, req *protos.PauseGeneratorRequest) (resp *protos.PauseGeneratorResponse, err error) {
-	slog.Info("PauseGenerator Request", "req", req)
-	resp = &protos.PauseGeneratorResponse{}
+func (s *CanvasService) StopGenerator(ctx context.Context, req *protos.StopGeneratorRequest) (resp *protos.StopGeneratorResponse, err error) {
+	slog.Info("StopGenerator Request", "req", req)
+	resp = &protos.StopGeneratorResponse{}
 	s.withCanvas(req.CanvasId, func(canvas *Canvas) {
-		err = canvas.PauseGenerator(req.GeneratorId)
+		err = canvas.StopGenerator(req.GeneratorId)
 	})
 	return
 }

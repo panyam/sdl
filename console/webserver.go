@@ -13,11 +13,12 @@ type WebAppServer struct {
 	Address       string
 	GrpcAddress   string
 	AllowLocalDev bool
+	CanvasService *CanvasService
 }
 
 // func (s *WebAppServer) Start(ctx context.Context, mux http.Handler, gw_addr string, srvErr chan error, stopChan chan bool) {
 func (s *WebAppServer) Start(ctx context.Context, srvErr chan error, stopChan chan bool) error {
-	app := NewWebServer(s.GrpcAddress)
+	app := NewWebServer(s.GrpcAddress, s.CanvasService)
 	return s.StartWithHandler(ctx, app.Handler(), srvErr, stopChan)
 }
 

@@ -6,7 +6,7 @@
 // - protoc             (unknown)
 // source: sdl/v1/canvas.proto
 
-package protos
+package v1
 
 import (
 	context "context"
@@ -33,18 +33,16 @@ const (
 	CanvasService_ListGenerators_FullMethodName     = "/sdl.v1.CanvasService/ListGenerators"
 	CanvasService_GetGenerator_FullMethodName       = "/sdl.v1.CanvasService/GetGenerator"
 	CanvasService_UpdateGenerator_FullMethodName    = "/sdl.v1.CanvasService/UpdateGenerator"
-	CanvasService_PauseGenerator_FullMethodName     = "/sdl.v1.CanvasService/PauseGenerator"
-	CanvasService_ResumeGenerator_FullMethodName    = "/sdl.v1.CanvasService/ResumeGenerator"
+	CanvasService_StopGenerator_FullMethodName      = "/sdl.v1.CanvasService/StopGenerator"
+	CanvasService_StartGenerator_FullMethodName     = "/sdl.v1.CanvasService/StartGenerator"
 	CanvasService_DeleteGenerator_FullMethodName    = "/sdl.v1.CanvasService/DeleteGenerator"
 	CanvasService_ExecuteTrace_FullMethodName       = "/sdl.v1.CanvasService/ExecuteTrace"
 	CanvasService_SetParameter_FullMethodName       = "/sdl.v1.CanvasService/SetParameter"
 	CanvasService_GetParameters_FullMethodName      = "/sdl.v1.CanvasService/GetParameters"
 	CanvasService_AddMetric_FullMethodName          = "/sdl.v1.CanvasService/AddMetric"
 	CanvasService_DeleteMetric_FullMethodName       = "/sdl.v1.CanvasService/DeleteMetric"
-	CanvasService_LiveMetrics_FullMethodName        = "/sdl.v1.CanvasService/LiveMetrics"
 	CanvasService_ListMetrics_FullMethodName        = "/sdl.v1.CanvasService/ListMetrics"
 	CanvasService_QueryMetrics_FullMethodName       = "/sdl.v1.CanvasService/QueryMetrics"
-	CanvasService_AggregateMetrics_FullMethodName   = "/sdl.v1.CanvasService/AggregateMetrics"
 	CanvasService_GetSystemDiagram_FullMethodName   = "/sdl.v1.CanvasService/GetSystemDiagram"
 )
 
@@ -81,8 +79,8 @@ type CanvasServiceClient interface {
 	GetGenerator(ctx context.Context, in *GetGeneratorRequest, opts ...grpc.CallOption) (*GetGeneratorResponse, error)
 	// Use PATCH for partial updates to a generator (title, content)
 	UpdateGenerator(ctx context.Context, in *UpdateGeneratorRequest, opts ...grpc.CallOption) (*UpdateGeneratorResponse, error)
-	PauseGenerator(ctx context.Context, in *PauseGeneratorRequest, opts ...grpc.CallOption) (*PauseGeneratorResponse, error)
-	ResumeGenerator(ctx context.Context, in *ResumeGeneratorRequest, opts ...grpc.CallOption) (*ResumeGeneratorResponse, error)
+	StopGenerator(ctx context.Context, in *StopGeneratorRequest, opts ...grpc.CallOption) (*StopGeneratorResponse, error)
+	StartGenerator(ctx context.Context, in *StartGeneratorRequest, opts ...grpc.CallOption) (*StartGeneratorResponse, error)
 	DeleteGenerator(ctx context.Context, in *DeleteGeneratorRequest, opts ...grpc.CallOption) (*DeleteGeneratorResponse, error)
 	// Execute a single trace for debugging/analysis
 	ExecuteTrace(ctx context.Context, in *ExecuteTraceRequest, opts ...grpc.CallOption) (*ExecuteTraceResponse, error)
@@ -98,13 +96,10 @@ type CanvasServiceClient interface {
 	// *
 	// Delete a particular metriccanvas.  Frees up resources used by it and all the connections
 	DeleteMetric(ctx context.Context, in *DeleteMetricRequest, opts ...grpc.CallOption) (*DeleteMetricResponse, error)
-	LiveMetrics(ctx context.Context, in *LiveMetricsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LiveMetricsResponse], error)
 	// List all available metrics
 	ListMetrics(ctx context.Context, in *ListMetricsRequest, opts ...grpc.CallOption) (*ListMetricsResponse, error)
 	// Query raw metric data points
 	QueryMetrics(ctx context.Context, in *QueryMetricsRequest, opts ...grpc.CallOption) (*QueryMetricsResponse, error)
-	// Get aggregated metric data
-	AggregateMetrics(ctx context.Context, in *AggregateMetricsRequest, opts ...grpc.CallOption) (*AggregateMetricsResponse, error)
 	// Get the system diagram for visualization
 	GetSystemDiagram(ctx context.Context, in *GetSystemDiagramRequest, opts ...grpc.CallOption) (*GetSystemDiagramResponse, error)
 }
@@ -237,20 +232,20 @@ func (c *canvasServiceClient) UpdateGenerator(ctx context.Context, in *UpdateGen
 	return out, nil
 }
 
-func (c *canvasServiceClient) PauseGenerator(ctx context.Context, in *PauseGeneratorRequest, opts ...grpc.CallOption) (*PauseGeneratorResponse, error) {
+func (c *canvasServiceClient) StopGenerator(ctx context.Context, in *StopGeneratorRequest, opts ...grpc.CallOption) (*StopGeneratorResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(PauseGeneratorResponse)
-	err := c.cc.Invoke(ctx, CanvasService_PauseGenerator_FullMethodName, in, out, cOpts...)
+	out := new(StopGeneratorResponse)
+	err := c.cc.Invoke(ctx, CanvasService_StopGenerator_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *canvasServiceClient) ResumeGenerator(ctx context.Context, in *ResumeGeneratorRequest, opts ...grpc.CallOption) (*ResumeGeneratorResponse, error) {
+func (c *canvasServiceClient) StartGenerator(ctx context.Context, in *StartGeneratorRequest, opts ...grpc.CallOption) (*StartGeneratorResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ResumeGeneratorResponse)
-	err := c.cc.Invoke(ctx, CanvasService_ResumeGenerator_FullMethodName, in, out, cOpts...)
+	out := new(StartGeneratorResponse)
+	err := c.cc.Invoke(ctx, CanvasService_StartGenerator_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -317,25 +312,6 @@ func (c *canvasServiceClient) DeleteMetric(ctx context.Context, in *DeleteMetric
 	return out, nil
 }
 
-func (c *canvasServiceClient) LiveMetrics(ctx context.Context, in *LiveMetricsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LiveMetricsResponse], error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &CanvasService_ServiceDesc.Streams[0], CanvasService_LiveMetrics_FullMethodName, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &grpc.GenericClientStream[LiveMetricsRequest, LiveMetricsResponse]{ClientStream: stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type CanvasService_LiveMetricsClient = grpc.ServerStreamingClient[LiveMetricsResponse]
-
 func (c *canvasServiceClient) ListMetrics(ctx context.Context, in *ListMetricsRequest, opts ...grpc.CallOption) (*ListMetricsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListMetricsResponse)
@@ -350,16 +326,6 @@ func (c *canvasServiceClient) QueryMetrics(ctx context.Context, in *QueryMetrics
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(QueryMetricsResponse)
 	err := c.cc.Invoke(ctx, CanvasService_QueryMetrics_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *canvasServiceClient) AggregateMetrics(ctx context.Context, in *AggregateMetricsRequest, opts ...grpc.CallOption) (*AggregateMetricsResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(AggregateMetricsResponse)
-	err := c.cc.Invoke(ctx, CanvasService_AggregateMetrics_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -409,8 +375,8 @@ type CanvasServiceServer interface {
 	GetGenerator(context.Context, *GetGeneratorRequest) (*GetGeneratorResponse, error)
 	// Use PATCH for partial updates to a generator (title, content)
 	UpdateGenerator(context.Context, *UpdateGeneratorRequest) (*UpdateGeneratorResponse, error)
-	PauseGenerator(context.Context, *PauseGeneratorRequest) (*PauseGeneratorResponse, error)
-	ResumeGenerator(context.Context, *ResumeGeneratorRequest) (*ResumeGeneratorResponse, error)
+	StopGenerator(context.Context, *StopGeneratorRequest) (*StopGeneratorResponse, error)
+	StartGenerator(context.Context, *StartGeneratorRequest) (*StartGeneratorResponse, error)
 	DeleteGenerator(context.Context, *DeleteGeneratorRequest) (*DeleteGeneratorResponse, error)
 	// Execute a single trace for debugging/analysis
 	ExecuteTrace(context.Context, *ExecuteTraceRequest) (*ExecuteTraceResponse, error)
@@ -426,13 +392,10 @@ type CanvasServiceServer interface {
 	// *
 	// Delete a particular metriccanvas.  Frees up resources used by it and all the connections
 	DeleteMetric(context.Context, *DeleteMetricRequest) (*DeleteMetricResponse, error)
-	LiveMetrics(*LiveMetricsRequest, grpc.ServerStreamingServer[LiveMetricsResponse]) error
 	// List all available metrics
 	ListMetrics(context.Context, *ListMetricsRequest) (*ListMetricsResponse, error)
 	// Query raw metric data points
 	QueryMetrics(context.Context, *QueryMetricsRequest) (*QueryMetricsResponse, error)
-	// Get aggregated metric data
-	AggregateMetrics(context.Context, *AggregateMetricsRequest) (*AggregateMetricsResponse, error)
 	// Get the system diagram for visualization
 	GetSystemDiagram(context.Context, *GetSystemDiagramRequest) (*GetSystemDiagramResponse, error)
 }
@@ -480,11 +443,11 @@ func (UnimplementedCanvasServiceServer) GetGenerator(context.Context, *GetGenera
 func (UnimplementedCanvasServiceServer) UpdateGenerator(context.Context, *UpdateGeneratorRequest) (*UpdateGeneratorResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateGenerator not implemented")
 }
-func (UnimplementedCanvasServiceServer) PauseGenerator(context.Context, *PauseGeneratorRequest) (*PauseGeneratorResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PauseGenerator not implemented")
+func (UnimplementedCanvasServiceServer) StopGenerator(context.Context, *StopGeneratorRequest) (*StopGeneratorResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StopGenerator not implemented")
 }
-func (UnimplementedCanvasServiceServer) ResumeGenerator(context.Context, *ResumeGeneratorRequest) (*ResumeGeneratorResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ResumeGenerator not implemented")
+func (UnimplementedCanvasServiceServer) StartGenerator(context.Context, *StartGeneratorRequest) (*StartGeneratorResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StartGenerator not implemented")
 }
 func (UnimplementedCanvasServiceServer) DeleteGenerator(context.Context, *DeleteGeneratorRequest) (*DeleteGeneratorResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteGenerator not implemented")
@@ -504,17 +467,11 @@ func (UnimplementedCanvasServiceServer) AddMetric(context.Context, *AddMetricReq
 func (UnimplementedCanvasServiceServer) DeleteMetric(context.Context, *DeleteMetricRequest) (*DeleteMetricResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteMetric not implemented")
 }
-func (UnimplementedCanvasServiceServer) LiveMetrics(*LiveMetricsRequest, grpc.ServerStreamingServer[LiveMetricsResponse]) error {
-	return status.Errorf(codes.Unimplemented, "method LiveMetrics not implemented")
-}
 func (UnimplementedCanvasServiceServer) ListMetrics(context.Context, *ListMetricsRequest) (*ListMetricsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListMetrics not implemented")
 }
 func (UnimplementedCanvasServiceServer) QueryMetrics(context.Context, *QueryMetricsRequest) (*QueryMetricsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryMetrics not implemented")
-}
-func (UnimplementedCanvasServiceServer) AggregateMetrics(context.Context, *AggregateMetricsRequest) (*AggregateMetricsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AggregateMetrics not implemented")
 }
 func (UnimplementedCanvasServiceServer) GetSystemDiagram(context.Context, *GetSystemDiagramRequest) (*GetSystemDiagramResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSystemDiagram not implemented")
@@ -755,38 +712,38 @@ func _CanvasService_UpdateGenerator_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CanvasService_PauseGenerator_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PauseGeneratorRequest)
+func _CanvasService_StopGenerator_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StopGeneratorRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CanvasServiceServer).PauseGenerator(ctx, in)
+		return srv.(CanvasServiceServer).StopGenerator(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CanvasService_PauseGenerator_FullMethodName,
+		FullMethod: CanvasService_StopGenerator_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CanvasServiceServer).PauseGenerator(ctx, req.(*PauseGeneratorRequest))
+		return srv.(CanvasServiceServer).StopGenerator(ctx, req.(*StopGeneratorRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CanvasService_ResumeGenerator_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ResumeGeneratorRequest)
+func _CanvasService_StartGenerator_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StartGeneratorRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CanvasServiceServer).ResumeGenerator(ctx, in)
+		return srv.(CanvasServiceServer).StartGenerator(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CanvasService_ResumeGenerator_FullMethodName,
+		FullMethod: CanvasService_StartGenerator_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CanvasServiceServer).ResumeGenerator(ctx, req.(*ResumeGeneratorRequest))
+		return srv.(CanvasServiceServer).StartGenerator(ctx, req.(*StartGeneratorRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -899,17 +856,6 @@ func _CanvasService_DeleteMetric_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CanvasService_LiveMetrics_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(LiveMetricsRequest)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(CanvasServiceServer).LiveMetrics(m, &grpc.GenericServerStream[LiveMetricsRequest, LiveMetricsResponse]{ServerStream: stream})
-}
-
-// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type CanvasService_LiveMetricsServer = grpc.ServerStreamingServer[LiveMetricsResponse]
-
 func _CanvasService_ListMetrics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListMetricsRequest)
 	if err := dec(in); err != nil {
@@ -942,24 +888,6 @@ func _CanvasService_QueryMetrics_Handler(srv interface{}, ctx context.Context, d
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CanvasServiceServer).QueryMetrics(ctx, req.(*QueryMetricsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CanvasService_AggregateMetrics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AggregateMetricsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CanvasServiceServer).AggregateMetrics(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CanvasService_AggregateMetrics_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CanvasServiceServer).AggregateMetrics(ctx, req.(*AggregateMetricsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1038,12 +966,12 @@ var CanvasService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CanvasService_UpdateGenerator_Handler,
 		},
 		{
-			MethodName: "PauseGenerator",
-			Handler:    _CanvasService_PauseGenerator_Handler,
+			MethodName: "StopGenerator",
+			Handler:    _CanvasService_StopGenerator_Handler,
 		},
 		{
-			MethodName: "ResumeGenerator",
-			Handler:    _CanvasService_ResumeGenerator_Handler,
+			MethodName: "StartGenerator",
+			Handler:    _CanvasService_StartGenerator_Handler,
 		},
 		{
 			MethodName: "DeleteGenerator",
@@ -1078,20 +1006,10 @@ var CanvasService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CanvasService_QueryMetrics_Handler,
 		},
 		{
-			MethodName: "AggregateMetrics",
-			Handler:    _CanvasService_AggregateMetrics_Handler,
-		},
-		{
 			MethodName: "GetSystemDiagram",
 			Handler:    _CanvasService_GetSystemDiagram_Handler,
 		},
 	},
-	Streams: []grpc.StreamDesc{
-		{
-			StreamName:    "LiveMetrics",
-			Handler:       _CanvasService_LiveMetrics_Handler,
-			ServerStreams: true,
-		},
-	},
+	Streams:  []grpc.StreamDesc{},
 	Metadata: "sdl/v1/canvas.proto",
 }

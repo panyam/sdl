@@ -4,13 +4,13 @@
 //
 // Source: sdl/v1/canvas.proto
 
-package protosconnect
+package v1connect
 
 import (
 	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	protos "github.com/sdl/protos"
+	v1 "github.com/panyam/sdl/gen/go/sdl/v1"
 	http "net/http"
 	strings "strings"
 )
@@ -68,12 +68,12 @@ const (
 	// CanvasServiceUpdateGeneratorProcedure is the fully-qualified name of the CanvasService's
 	// UpdateGenerator RPC.
 	CanvasServiceUpdateGeneratorProcedure = "/sdl.v1.CanvasService/UpdateGenerator"
-	// CanvasServicePauseGeneratorProcedure is the fully-qualified name of the CanvasService's
-	// PauseGenerator RPC.
-	CanvasServicePauseGeneratorProcedure = "/sdl.v1.CanvasService/PauseGenerator"
-	// CanvasServiceResumeGeneratorProcedure is the fully-qualified name of the CanvasService's
-	// ResumeGenerator RPC.
-	CanvasServiceResumeGeneratorProcedure = "/sdl.v1.CanvasService/ResumeGenerator"
+	// CanvasServiceStopGeneratorProcedure is the fully-qualified name of the CanvasService's
+	// StopGenerator RPC.
+	CanvasServiceStopGeneratorProcedure = "/sdl.v1.CanvasService/StopGenerator"
+	// CanvasServiceStartGeneratorProcedure is the fully-qualified name of the CanvasService's
+	// StartGenerator RPC.
+	CanvasServiceStartGeneratorProcedure = "/sdl.v1.CanvasService/StartGenerator"
 	// CanvasServiceDeleteGeneratorProcedure is the fully-qualified name of the CanvasService's
 	// DeleteGenerator RPC.
 	CanvasServiceDeleteGeneratorProcedure = "/sdl.v1.CanvasService/DeleteGenerator"
@@ -91,18 +91,12 @@ const (
 	// CanvasServiceDeleteMetricProcedure is the fully-qualified name of the CanvasService's
 	// DeleteMetric RPC.
 	CanvasServiceDeleteMetricProcedure = "/sdl.v1.CanvasService/DeleteMetric"
-	// CanvasServiceLiveMetricsProcedure is the fully-qualified name of the CanvasService's LiveMetrics
-	// RPC.
-	CanvasServiceLiveMetricsProcedure = "/sdl.v1.CanvasService/LiveMetrics"
 	// CanvasServiceListMetricsProcedure is the fully-qualified name of the CanvasService's ListMetrics
 	// RPC.
 	CanvasServiceListMetricsProcedure = "/sdl.v1.CanvasService/ListMetrics"
 	// CanvasServiceQueryMetricsProcedure is the fully-qualified name of the CanvasService's
 	// QueryMetrics RPC.
 	CanvasServiceQueryMetricsProcedure = "/sdl.v1.CanvasService/QueryMetrics"
-	// CanvasServiceAggregateMetricsProcedure is the fully-qualified name of the CanvasService's
-	// AggregateMetrics RPC.
-	CanvasServiceAggregateMetricsProcedure = "/sdl.v1.CanvasService/AggregateMetrics"
 	// CanvasServiceGetSystemDiagramProcedure is the fully-qualified name of the CanvasService's
 	// GetSystemDiagram RPC.
 	CanvasServiceGetSystemDiagramProcedure = "/sdl.v1.CanvasService/GetSystemDiagram"
@@ -112,56 +106,53 @@ const (
 type CanvasServiceClient interface {
 	// *
 	// Create a new canvas sesssion.
-	CreateCanvas(context.Context, *connect.Request[protos.CreateCanvasRequest]) (*connect.Response[protos.CreateCanvasResponse], error)
+	CreateCanvas(context.Context, *connect.Request[v1.CreateCanvasRequest]) (*connect.Response[v1.CreateCanvasResponse], error)
 	// *
 	// List all canvases from a user.
-	ListCanvases(context.Context, *connect.Request[protos.ListCanvasesRequest]) (*connect.Response[protos.ListCanvasesResponse], error)
+	ListCanvases(context.Context, *connect.Request[v1.ListCanvasesRequest]) (*connect.Response[v1.ListCanvasesResponse], error)
 	// *
 	// Get details/stats for a particular canvas
-	GetCanvas(context.Context, *connect.Request[protos.GetCanvasRequest]) (*connect.Response[protos.GetCanvasResponse], error)
-	LoadFile(context.Context, *connect.Request[protos.LoadFileRequest]) (*connect.Response[protos.LoadFileResponse], error)
-	UseSystem(context.Context, *connect.Request[protos.UseSystemRequest]) (*connect.Response[protos.UseSystemResponse], error)
+	GetCanvas(context.Context, *connect.Request[v1.GetCanvasRequest]) (*connect.Response[v1.GetCanvasResponse], error)
+	LoadFile(context.Context, *connect.Request[v1.LoadFileRequest]) (*connect.Response[v1.LoadFileResponse], error)
+	UseSystem(context.Context, *connect.Request[v1.UseSystemRequest]) (*connect.Response[v1.UseSystemResponse], error)
 	// *
 	// Delete a particular canvas.  Frees up resources used by it and all the connections
-	DeleteCanvas(context.Context, *connect.Request[protos.DeleteCanvasRequest]) (*connect.Response[protos.DeleteCanvasResponse], error)
+	DeleteCanvas(context.Context, *connect.Request[v1.DeleteCanvasRequest]) (*connect.Response[v1.DeleteCanvasResponse], error)
 	//	----- Generator Operations -----
 	//
 	// Adds a generator to a canvas's generator_ids list and creates the generator resource.
-	AddGenerator(context.Context, *connect.Request[protos.AddGeneratorRequest]) (*connect.Response[protos.AddGeneratorResponse], error)
+	AddGenerator(context.Context, *connect.Request[v1.AddGeneratorRequest]) (*connect.Response[v1.AddGeneratorResponse], error)
 	// Request to start all generators
-	StartAllGenerators(context.Context, *connect.Request[protos.StartAllGeneratorsRequest]) (*connect.Response[protos.StartAllGeneratorsResponse], error)
+	StartAllGenerators(context.Context, *connect.Request[v1.StartAllGeneratorsRequest]) (*connect.Response[v1.StartAllGeneratorsResponse], error)
 	// Request to start all generators
-	StopAllGenerators(context.Context, *connect.Request[protos.StopAllGeneratorsRequest]) (*connect.Response[protos.StopAllGeneratorsResponse], error)
-	ListGenerators(context.Context, *connect.Request[protos.ListGeneratorsRequest]) (*connect.Response[protos.ListGeneratorsResponse], error)
-	GetGenerator(context.Context, *connect.Request[protos.GetGeneratorRequest]) (*connect.Response[protos.GetGeneratorResponse], error)
+	StopAllGenerators(context.Context, *connect.Request[v1.StopAllGeneratorsRequest]) (*connect.Response[v1.StopAllGeneratorsResponse], error)
+	ListGenerators(context.Context, *connect.Request[v1.ListGeneratorsRequest]) (*connect.Response[v1.ListGeneratorsResponse], error)
+	GetGenerator(context.Context, *connect.Request[v1.GetGeneratorRequest]) (*connect.Response[v1.GetGeneratorResponse], error)
 	// Use PATCH for partial updates to a generator (title, content)
-	UpdateGenerator(context.Context, *connect.Request[protos.UpdateGeneratorRequest]) (*connect.Response[protos.UpdateGeneratorResponse], error)
-	PauseGenerator(context.Context, *connect.Request[protos.PauseGeneratorRequest]) (*connect.Response[protos.PauseGeneratorResponse], error)
-	ResumeGenerator(context.Context, *connect.Request[protos.ResumeGeneratorRequest]) (*connect.Response[protos.ResumeGeneratorResponse], error)
-	DeleteGenerator(context.Context, *connect.Request[protos.DeleteGeneratorRequest]) (*connect.Response[protos.DeleteGeneratorResponse], error)
+	UpdateGenerator(context.Context, *connect.Request[v1.UpdateGeneratorRequest]) (*connect.Response[v1.UpdateGeneratorResponse], error)
+	StopGenerator(context.Context, *connect.Request[v1.StopGeneratorRequest]) (*connect.Response[v1.StopGeneratorResponse], error)
+	StartGenerator(context.Context, *connect.Request[v1.StartGeneratorRequest]) (*connect.Response[v1.StartGeneratorResponse], error)
+	DeleteGenerator(context.Context, *connect.Request[v1.DeleteGeneratorRequest]) (*connect.Response[v1.DeleteGeneratorResponse], error)
 	// Execute a single trace for debugging/analysis
-	ExecuteTrace(context.Context, *connect.Request[protos.ExecuteTraceRequest]) (*connect.Response[protos.ExecuteTraceResponse], error)
+	ExecuteTrace(context.Context, *connect.Request[v1.ExecuteTraceRequest]) (*connect.Response[v1.ExecuteTraceResponse], error)
 	// ----- Parameter Operations -----
 	// Set a component parameter value
-	SetParameter(context.Context, *connect.Request[protos.SetParameterRequest]) (*connect.Response[protos.SetParameterResponse], error)
+	SetParameter(context.Context, *connect.Request[v1.SetParameterRequest]) (*connect.Response[v1.SetParameterResponse], error)
 	// Get parameter values
-	GetParameters(context.Context, *connect.Request[protos.GetParametersRequest]) (*connect.Response[protos.GetParametersResponse], error)
+	GetParameters(context.Context, *connect.Request[v1.GetParametersRequest]) (*connect.Response[v1.GetParametersResponse], error)
 	//	----- Generator Operations -----
 	//
 	// Adds a metric to live plot
-	AddMetric(context.Context, *connect.Request[protos.AddMetricRequest]) (*connect.Response[protos.AddMetricResponse], error)
+	AddMetric(context.Context, *connect.Request[v1.AddMetricRequest]) (*connect.Response[v1.AddMetricResponse], error)
 	// *
 	// Delete a particular metriccanvas.  Frees up resources used by it and all the connections
-	DeleteMetric(context.Context, *connect.Request[protos.DeleteMetricRequest]) (*connect.Response[protos.DeleteMetricResponse], error)
-	LiveMetrics(context.Context, *connect.Request[protos.LiveMetricsRequest]) (*connect.ServerStreamForClient[protos.LiveMetricsResponse], error)
+	DeleteMetric(context.Context, *connect.Request[v1.DeleteMetricRequest]) (*connect.Response[v1.DeleteMetricResponse], error)
 	// List all available metrics
-	ListMetrics(context.Context, *connect.Request[protos.ListMetricsRequest]) (*connect.Response[protos.ListMetricsResponse], error)
+	ListMetrics(context.Context, *connect.Request[v1.ListMetricsRequest]) (*connect.Response[v1.ListMetricsResponse], error)
 	// Query raw metric data points
-	QueryMetrics(context.Context, *connect.Request[protos.QueryMetricsRequest]) (*connect.Response[protos.QueryMetricsResponse], error)
-	// Get aggregated metric data
-	AggregateMetrics(context.Context, *connect.Request[protos.AggregateMetricsRequest]) (*connect.Response[protos.AggregateMetricsResponse], error)
+	QueryMetrics(context.Context, *connect.Request[v1.QueryMetricsRequest]) (*connect.Response[v1.QueryMetricsResponse], error)
 	// Get the system diagram for visualization
-	GetSystemDiagram(context.Context, *connect.Request[protos.GetSystemDiagramRequest]) (*connect.Response[protos.GetSystemDiagramResponse], error)
+	GetSystemDiagram(context.Context, *connect.Request[v1.GetSystemDiagramRequest]) (*connect.Response[v1.GetSystemDiagramResponse], error)
 }
 
 // NewCanvasServiceClient constructs a client for the sdl.v1.CanvasService service. By default, it
@@ -173,153 +164,141 @@ type CanvasServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewCanvasServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) CanvasServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
-	canvasServiceMethods := protos.File_sdl_v1_canvas_proto.Services().ByName("CanvasService").Methods()
+	canvasServiceMethods := v1.File_sdl_v1_canvas_proto.Services().ByName("CanvasService").Methods()
 	return &canvasServiceClient{
-		createCanvas: connect.NewClient[protos.CreateCanvasRequest, protos.CreateCanvasResponse](
+		createCanvas: connect.NewClient[v1.CreateCanvasRequest, v1.CreateCanvasResponse](
 			httpClient,
 			baseURL+CanvasServiceCreateCanvasProcedure,
 			connect.WithSchema(canvasServiceMethods.ByName("CreateCanvas")),
 			connect.WithClientOptions(opts...),
 		),
-		listCanvases: connect.NewClient[protos.ListCanvasesRequest, protos.ListCanvasesResponse](
+		listCanvases: connect.NewClient[v1.ListCanvasesRequest, v1.ListCanvasesResponse](
 			httpClient,
 			baseURL+CanvasServiceListCanvasesProcedure,
 			connect.WithSchema(canvasServiceMethods.ByName("ListCanvases")),
 			connect.WithClientOptions(opts...),
 		),
-		getCanvas: connect.NewClient[protos.GetCanvasRequest, protos.GetCanvasResponse](
+		getCanvas: connect.NewClient[v1.GetCanvasRequest, v1.GetCanvasResponse](
 			httpClient,
 			baseURL+CanvasServiceGetCanvasProcedure,
 			connect.WithSchema(canvasServiceMethods.ByName("GetCanvas")),
 			connect.WithClientOptions(opts...),
 		),
-		loadFile: connect.NewClient[protos.LoadFileRequest, protos.LoadFileResponse](
+		loadFile: connect.NewClient[v1.LoadFileRequest, v1.LoadFileResponse](
 			httpClient,
 			baseURL+CanvasServiceLoadFileProcedure,
 			connect.WithSchema(canvasServiceMethods.ByName("LoadFile")),
 			connect.WithClientOptions(opts...),
 		),
-		useSystem: connect.NewClient[protos.UseSystemRequest, protos.UseSystemResponse](
+		useSystem: connect.NewClient[v1.UseSystemRequest, v1.UseSystemResponse](
 			httpClient,
 			baseURL+CanvasServiceUseSystemProcedure,
 			connect.WithSchema(canvasServiceMethods.ByName("UseSystem")),
 			connect.WithClientOptions(opts...),
 		),
-		deleteCanvas: connect.NewClient[protos.DeleteCanvasRequest, protos.DeleteCanvasResponse](
+		deleteCanvas: connect.NewClient[v1.DeleteCanvasRequest, v1.DeleteCanvasResponse](
 			httpClient,
 			baseURL+CanvasServiceDeleteCanvasProcedure,
 			connect.WithSchema(canvasServiceMethods.ByName("DeleteCanvas")),
 			connect.WithClientOptions(opts...),
 		),
-		addGenerator: connect.NewClient[protos.AddGeneratorRequest, protos.AddGeneratorResponse](
+		addGenerator: connect.NewClient[v1.AddGeneratorRequest, v1.AddGeneratorResponse](
 			httpClient,
 			baseURL+CanvasServiceAddGeneratorProcedure,
 			connect.WithSchema(canvasServiceMethods.ByName("AddGenerator")),
 			connect.WithClientOptions(opts...),
 		),
-		startAllGenerators: connect.NewClient[protos.StartAllGeneratorsRequest, protos.StartAllGeneratorsResponse](
+		startAllGenerators: connect.NewClient[v1.StartAllGeneratorsRequest, v1.StartAllGeneratorsResponse](
 			httpClient,
 			baseURL+CanvasServiceStartAllGeneratorsProcedure,
 			connect.WithSchema(canvasServiceMethods.ByName("StartAllGenerators")),
 			connect.WithClientOptions(opts...),
 		),
-		stopAllGenerators: connect.NewClient[protos.StopAllGeneratorsRequest, protos.StopAllGeneratorsResponse](
+		stopAllGenerators: connect.NewClient[v1.StopAllGeneratorsRequest, v1.StopAllGeneratorsResponse](
 			httpClient,
 			baseURL+CanvasServiceStopAllGeneratorsProcedure,
 			connect.WithSchema(canvasServiceMethods.ByName("StopAllGenerators")),
 			connect.WithClientOptions(opts...),
 		),
-		listGenerators: connect.NewClient[protos.ListGeneratorsRequest, protos.ListGeneratorsResponse](
+		listGenerators: connect.NewClient[v1.ListGeneratorsRequest, v1.ListGeneratorsResponse](
 			httpClient,
 			baseURL+CanvasServiceListGeneratorsProcedure,
 			connect.WithSchema(canvasServiceMethods.ByName("ListGenerators")),
 			connect.WithClientOptions(opts...),
 		),
-		getGenerator: connect.NewClient[protos.GetGeneratorRequest, protos.GetGeneratorResponse](
+		getGenerator: connect.NewClient[v1.GetGeneratorRequest, v1.GetGeneratorResponse](
 			httpClient,
 			baseURL+CanvasServiceGetGeneratorProcedure,
 			connect.WithSchema(canvasServiceMethods.ByName("GetGenerator")),
 			connect.WithClientOptions(opts...),
 		),
-		updateGenerator: connect.NewClient[protos.UpdateGeneratorRequest, protos.UpdateGeneratorResponse](
+		updateGenerator: connect.NewClient[v1.UpdateGeneratorRequest, v1.UpdateGeneratorResponse](
 			httpClient,
 			baseURL+CanvasServiceUpdateGeneratorProcedure,
 			connect.WithSchema(canvasServiceMethods.ByName("UpdateGenerator")),
 			connect.WithClientOptions(opts...),
 		),
-		pauseGenerator: connect.NewClient[protos.PauseGeneratorRequest, protos.PauseGeneratorResponse](
+		stopGenerator: connect.NewClient[v1.StopGeneratorRequest, v1.StopGeneratorResponse](
 			httpClient,
-			baseURL+CanvasServicePauseGeneratorProcedure,
-			connect.WithSchema(canvasServiceMethods.ByName("PauseGenerator")),
+			baseURL+CanvasServiceStopGeneratorProcedure,
+			connect.WithSchema(canvasServiceMethods.ByName("StopGenerator")),
 			connect.WithClientOptions(opts...),
 		),
-		resumeGenerator: connect.NewClient[protos.ResumeGeneratorRequest, protos.ResumeGeneratorResponse](
+		startGenerator: connect.NewClient[v1.StartGeneratorRequest, v1.StartGeneratorResponse](
 			httpClient,
-			baseURL+CanvasServiceResumeGeneratorProcedure,
-			connect.WithSchema(canvasServiceMethods.ByName("ResumeGenerator")),
+			baseURL+CanvasServiceStartGeneratorProcedure,
+			connect.WithSchema(canvasServiceMethods.ByName("StartGenerator")),
 			connect.WithClientOptions(opts...),
 		),
-		deleteGenerator: connect.NewClient[protos.DeleteGeneratorRequest, protos.DeleteGeneratorResponse](
+		deleteGenerator: connect.NewClient[v1.DeleteGeneratorRequest, v1.DeleteGeneratorResponse](
 			httpClient,
 			baseURL+CanvasServiceDeleteGeneratorProcedure,
 			connect.WithSchema(canvasServiceMethods.ByName("DeleteGenerator")),
 			connect.WithClientOptions(opts...),
 		),
-		executeTrace: connect.NewClient[protos.ExecuteTraceRequest, protos.ExecuteTraceResponse](
+		executeTrace: connect.NewClient[v1.ExecuteTraceRequest, v1.ExecuteTraceResponse](
 			httpClient,
 			baseURL+CanvasServiceExecuteTraceProcedure,
 			connect.WithSchema(canvasServiceMethods.ByName("ExecuteTrace")),
 			connect.WithClientOptions(opts...),
 		),
-		setParameter: connect.NewClient[protos.SetParameterRequest, protos.SetParameterResponse](
+		setParameter: connect.NewClient[v1.SetParameterRequest, v1.SetParameterResponse](
 			httpClient,
 			baseURL+CanvasServiceSetParameterProcedure,
 			connect.WithSchema(canvasServiceMethods.ByName("SetParameter")),
 			connect.WithClientOptions(opts...),
 		),
-		getParameters: connect.NewClient[protos.GetParametersRequest, protos.GetParametersResponse](
+		getParameters: connect.NewClient[v1.GetParametersRequest, v1.GetParametersResponse](
 			httpClient,
 			baseURL+CanvasServiceGetParametersProcedure,
 			connect.WithSchema(canvasServiceMethods.ByName("GetParameters")),
 			connect.WithClientOptions(opts...),
 		),
-		addMetric: connect.NewClient[protos.AddMetricRequest, protos.AddMetricResponse](
+		addMetric: connect.NewClient[v1.AddMetricRequest, v1.AddMetricResponse](
 			httpClient,
 			baseURL+CanvasServiceAddMetricProcedure,
 			connect.WithSchema(canvasServiceMethods.ByName("AddMetric")),
 			connect.WithClientOptions(opts...),
 		),
-		deleteMetric: connect.NewClient[protos.DeleteMetricRequest, protos.DeleteMetricResponse](
+		deleteMetric: connect.NewClient[v1.DeleteMetricRequest, v1.DeleteMetricResponse](
 			httpClient,
 			baseURL+CanvasServiceDeleteMetricProcedure,
 			connect.WithSchema(canvasServiceMethods.ByName("DeleteMetric")),
 			connect.WithClientOptions(opts...),
 		),
-		liveMetrics: connect.NewClient[protos.LiveMetricsRequest, protos.LiveMetricsResponse](
-			httpClient,
-			baseURL+CanvasServiceLiveMetricsProcedure,
-			connect.WithSchema(canvasServiceMethods.ByName("LiveMetrics")),
-			connect.WithClientOptions(opts...),
-		),
-		listMetrics: connect.NewClient[protos.ListMetricsRequest, protos.ListMetricsResponse](
+		listMetrics: connect.NewClient[v1.ListMetricsRequest, v1.ListMetricsResponse](
 			httpClient,
 			baseURL+CanvasServiceListMetricsProcedure,
 			connect.WithSchema(canvasServiceMethods.ByName("ListMetrics")),
 			connect.WithClientOptions(opts...),
 		),
-		queryMetrics: connect.NewClient[protos.QueryMetricsRequest, protos.QueryMetricsResponse](
+		queryMetrics: connect.NewClient[v1.QueryMetricsRequest, v1.QueryMetricsResponse](
 			httpClient,
 			baseURL+CanvasServiceQueryMetricsProcedure,
 			connect.WithSchema(canvasServiceMethods.ByName("QueryMetrics")),
 			connect.WithClientOptions(opts...),
 		),
-		aggregateMetrics: connect.NewClient[protos.AggregateMetricsRequest, protos.AggregateMetricsResponse](
-			httpClient,
-			baseURL+CanvasServiceAggregateMetricsProcedure,
-			connect.WithSchema(canvasServiceMethods.ByName("AggregateMetrics")),
-			connect.WithClientOptions(opts...),
-		),
-		getSystemDiagram: connect.NewClient[protos.GetSystemDiagramRequest, protos.GetSystemDiagramResponse](
+		getSystemDiagram: connect.NewClient[v1.GetSystemDiagramRequest, v1.GetSystemDiagramResponse](
 			httpClient,
 			baseURL+CanvasServiceGetSystemDiagramProcedure,
 			connect.WithSchema(canvasServiceMethods.ByName("GetSystemDiagram")),
@@ -330,155 +309,143 @@ func NewCanvasServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 
 // canvasServiceClient implements CanvasServiceClient.
 type canvasServiceClient struct {
-	createCanvas       *connect.Client[protos.CreateCanvasRequest, protos.CreateCanvasResponse]
-	listCanvases       *connect.Client[protos.ListCanvasesRequest, protos.ListCanvasesResponse]
-	getCanvas          *connect.Client[protos.GetCanvasRequest, protos.GetCanvasResponse]
-	loadFile           *connect.Client[protos.LoadFileRequest, protos.LoadFileResponse]
-	useSystem          *connect.Client[protos.UseSystemRequest, protos.UseSystemResponse]
-	deleteCanvas       *connect.Client[protos.DeleteCanvasRequest, protos.DeleteCanvasResponse]
-	addGenerator       *connect.Client[protos.AddGeneratorRequest, protos.AddGeneratorResponse]
-	startAllGenerators *connect.Client[protos.StartAllGeneratorsRequest, protos.StartAllGeneratorsResponse]
-	stopAllGenerators  *connect.Client[protos.StopAllGeneratorsRequest, protos.StopAllGeneratorsResponse]
-	listGenerators     *connect.Client[protos.ListGeneratorsRequest, protos.ListGeneratorsResponse]
-	getGenerator       *connect.Client[protos.GetGeneratorRequest, protos.GetGeneratorResponse]
-	updateGenerator    *connect.Client[protos.UpdateGeneratorRequest, protos.UpdateGeneratorResponse]
-	pauseGenerator     *connect.Client[protos.PauseGeneratorRequest, protos.PauseGeneratorResponse]
-	resumeGenerator    *connect.Client[protos.ResumeGeneratorRequest, protos.ResumeGeneratorResponse]
-	deleteGenerator    *connect.Client[protos.DeleteGeneratorRequest, protos.DeleteGeneratorResponse]
-	executeTrace       *connect.Client[protos.ExecuteTraceRequest, protos.ExecuteTraceResponse]
-	setParameter       *connect.Client[protos.SetParameterRequest, protos.SetParameterResponse]
-	getParameters      *connect.Client[protos.GetParametersRequest, protos.GetParametersResponse]
-	addMetric          *connect.Client[protos.AddMetricRequest, protos.AddMetricResponse]
-	deleteMetric       *connect.Client[protos.DeleteMetricRequest, protos.DeleteMetricResponse]
-	liveMetrics        *connect.Client[protos.LiveMetricsRequest, protos.LiveMetricsResponse]
-	listMetrics        *connect.Client[protos.ListMetricsRequest, protos.ListMetricsResponse]
-	queryMetrics       *connect.Client[protos.QueryMetricsRequest, protos.QueryMetricsResponse]
-	aggregateMetrics   *connect.Client[protos.AggregateMetricsRequest, protos.AggregateMetricsResponse]
-	getSystemDiagram   *connect.Client[protos.GetSystemDiagramRequest, protos.GetSystemDiagramResponse]
+	createCanvas       *connect.Client[v1.CreateCanvasRequest, v1.CreateCanvasResponse]
+	listCanvases       *connect.Client[v1.ListCanvasesRequest, v1.ListCanvasesResponse]
+	getCanvas          *connect.Client[v1.GetCanvasRequest, v1.GetCanvasResponse]
+	loadFile           *connect.Client[v1.LoadFileRequest, v1.LoadFileResponse]
+	useSystem          *connect.Client[v1.UseSystemRequest, v1.UseSystemResponse]
+	deleteCanvas       *connect.Client[v1.DeleteCanvasRequest, v1.DeleteCanvasResponse]
+	addGenerator       *connect.Client[v1.AddGeneratorRequest, v1.AddGeneratorResponse]
+	startAllGenerators *connect.Client[v1.StartAllGeneratorsRequest, v1.StartAllGeneratorsResponse]
+	stopAllGenerators  *connect.Client[v1.StopAllGeneratorsRequest, v1.StopAllGeneratorsResponse]
+	listGenerators     *connect.Client[v1.ListGeneratorsRequest, v1.ListGeneratorsResponse]
+	getGenerator       *connect.Client[v1.GetGeneratorRequest, v1.GetGeneratorResponse]
+	updateGenerator    *connect.Client[v1.UpdateGeneratorRequest, v1.UpdateGeneratorResponse]
+	stopGenerator      *connect.Client[v1.StopGeneratorRequest, v1.StopGeneratorResponse]
+	startGenerator     *connect.Client[v1.StartGeneratorRequest, v1.StartGeneratorResponse]
+	deleteGenerator    *connect.Client[v1.DeleteGeneratorRequest, v1.DeleteGeneratorResponse]
+	executeTrace       *connect.Client[v1.ExecuteTraceRequest, v1.ExecuteTraceResponse]
+	setParameter       *connect.Client[v1.SetParameterRequest, v1.SetParameterResponse]
+	getParameters      *connect.Client[v1.GetParametersRequest, v1.GetParametersResponse]
+	addMetric          *connect.Client[v1.AddMetricRequest, v1.AddMetricResponse]
+	deleteMetric       *connect.Client[v1.DeleteMetricRequest, v1.DeleteMetricResponse]
+	listMetrics        *connect.Client[v1.ListMetricsRequest, v1.ListMetricsResponse]
+	queryMetrics       *connect.Client[v1.QueryMetricsRequest, v1.QueryMetricsResponse]
+	getSystemDiagram   *connect.Client[v1.GetSystemDiagramRequest, v1.GetSystemDiagramResponse]
 }
 
 // CreateCanvas calls sdl.v1.CanvasService.CreateCanvas.
-func (c *canvasServiceClient) CreateCanvas(ctx context.Context, req *connect.Request[protos.CreateCanvasRequest]) (*connect.Response[protos.CreateCanvasResponse], error) {
+func (c *canvasServiceClient) CreateCanvas(ctx context.Context, req *connect.Request[v1.CreateCanvasRequest]) (*connect.Response[v1.CreateCanvasResponse], error) {
 	return c.createCanvas.CallUnary(ctx, req)
 }
 
 // ListCanvases calls sdl.v1.CanvasService.ListCanvases.
-func (c *canvasServiceClient) ListCanvases(ctx context.Context, req *connect.Request[protos.ListCanvasesRequest]) (*connect.Response[protos.ListCanvasesResponse], error) {
+func (c *canvasServiceClient) ListCanvases(ctx context.Context, req *connect.Request[v1.ListCanvasesRequest]) (*connect.Response[v1.ListCanvasesResponse], error) {
 	return c.listCanvases.CallUnary(ctx, req)
 }
 
 // GetCanvas calls sdl.v1.CanvasService.GetCanvas.
-func (c *canvasServiceClient) GetCanvas(ctx context.Context, req *connect.Request[protos.GetCanvasRequest]) (*connect.Response[protos.GetCanvasResponse], error) {
+func (c *canvasServiceClient) GetCanvas(ctx context.Context, req *connect.Request[v1.GetCanvasRequest]) (*connect.Response[v1.GetCanvasResponse], error) {
 	return c.getCanvas.CallUnary(ctx, req)
 }
 
 // LoadFile calls sdl.v1.CanvasService.LoadFile.
-func (c *canvasServiceClient) LoadFile(ctx context.Context, req *connect.Request[protos.LoadFileRequest]) (*connect.Response[protos.LoadFileResponse], error) {
+func (c *canvasServiceClient) LoadFile(ctx context.Context, req *connect.Request[v1.LoadFileRequest]) (*connect.Response[v1.LoadFileResponse], error) {
 	return c.loadFile.CallUnary(ctx, req)
 }
 
 // UseSystem calls sdl.v1.CanvasService.UseSystem.
-func (c *canvasServiceClient) UseSystem(ctx context.Context, req *connect.Request[protos.UseSystemRequest]) (*connect.Response[protos.UseSystemResponse], error) {
+func (c *canvasServiceClient) UseSystem(ctx context.Context, req *connect.Request[v1.UseSystemRequest]) (*connect.Response[v1.UseSystemResponse], error) {
 	return c.useSystem.CallUnary(ctx, req)
 }
 
 // DeleteCanvas calls sdl.v1.CanvasService.DeleteCanvas.
-func (c *canvasServiceClient) DeleteCanvas(ctx context.Context, req *connect.Request[protos.DeleteCanvasRequest]) (*connect.Response[protos.DeleteCanvasResponse], error) {
+func (c *canvasServiceClient) DeleteCanvas(ctx context.Context, req *connect.Request[v1.DeleteCanvasRequest]) (*connect.Response[v1.DeleteCanvasResponse], error) {
 	return c.deleteCanvas.CallUnary(ctx, req)
 }
 
 // AddGenerator calls sdl.v1.CanvasService.AddGenerator.
-func (c *canvasServiceClient) AddGenerator(ctx context.Context, req *connect.Request[protos.AddGeneratorRequest]) (*connect.Response[protos.AddGeneratorResponse], error) {
+func (c *canvasServiceClient) AddGenerator(ctx context.Context, req *connect.Request[v1.AddGeneratorRequest]) (*connect.Response[v1.AddGeneratorResponse], error) {
 	return c.addGenerator.CallUnary(ctx, req)
 }
 
 // StartAllGenerators calls sdl.v1.CanvasService.StartAllGenerators.
-func (c *canvasServiceClient) StartAllGenerators(ctx context.Context, req *connect.Request[protos.StartAllGeneratorsRequest]) (*connect.Response[protos.StartAllGeneratorsResponse], error) {
+func (c *canvasServiceClient) StartAllGenerators(ctx context.Context, req *connect.Request[v1.StartAllGeneratorsRequest]) (*connect.Response[v1.StartAllGeneratorsResponse], error) {
 	return c.startAllGenerators.CallUnary(ctx, req)
 }
 
 // StopAllGenerators calls sdl.v1.CanvasService.StopAllGenerators.
-func (c *canvasServiceClient) StopAllGenerators(ctx context.Context, req *connect.Request[protos.StopAllGeneratorsRequest]) (*connect.Response[protos.StopAllGeneratorsResponse], error) {
+func (c *canvasServiceClient) StopAllGenerators(ctx context.Context, req *connect.Request[v1.StopAllGeneratorsRequest]) (*connect.Response[v1.StopAllGeneratorsResponse], error) {
 	return c.stopAllGenerators.CallUnary(ctx, req)
 }
 
 // ListGenerators calls sdl.v1.CanvasService.ListGenerators.
-func (c *canvasServiceClient) ListGenerators(ctx context.Context, req *connect.Request[protos.ListGeneratorsRequest]) (*connect.Response[protos.ListGeneratorsResponse], error) {
+func (c *canvasServiceClient) ListGenerators(ctx context.Context, req *connect.Request[v1.ListGeneratorsRequest]) (*connect.Response[v1.ListGeneratorsResponse], error) {
 	return c.listGenerators.CallUnary(ctx, req)
 }
 
 // GetGenerator calls sdl.v1.CanvasService.GetGenerator.
-func (c *canvasServiceClient) GetGenerator(ctx context.Context, req *connect.Request[protos.GetGeneratorRequest]) (*connect.Response[protos.GetGeneratorResponse], error) {
+func (c *canvasServiceClient) GetGenerator(ctx context.Context, req *connect.Request[v1.GetGeneratorRequest]) (*connect.Response[v1.GetGeneratorResponse], error) {
 	return c.getGenerator.CallUnary(ctx, req)
 }
 
 // UpdateGenerator calls sdl.v1.CanvasService.UpdateGenerator.
-func (c *canvasServiceClient) UpdateGenerator(ctx context.Context, req *connect.Request[protos.UpdateGeneratorRequest]) (*connect.Response[protos.UpdateGeneratorResponse], error) {
+func (c *canvasServiceClient) UpdateGenerator(ctx context.Context, req *connect.Request[v1.UpdateGeneratorRequest]) (*connect.Response[v1.UpdateGeneratorResponse], error) {
 	return c.updateGenerator.CallUnary(ctx, req)
 }
 
-// PauseGenerator calls sdl.v1.CanvasService.PauseGenerator.
-func (c *canvasServiceClient) PauseGenerator(ctx context.Context, req *connect.Request[protos.PauseGeneratorRequest]) (*connect.Response[protos.PauseGeneratorResponse], error) {
-	return c.pauseGenerator.CallUnary(ctx, req)
+// StopGenerator calls sdl.v1.CanvasService.StopGenerator.
+func (c *canvasServiceClient) StopGenerator(ctx context.Context, req *connect.Request[v1.StopGeneratorRequest]) (*connect.Response[v1.StopGeneratorResponse], error) {
+	return c.stopGenerator.CallUnary(ctx, req)
 }
 
-// ResumeGenerator calls sdl.v1.CanvasService.ResumeGenerator.
-func (c *canvasServiceClient) ResumeGenerator(ctx context.Context, req *connect.Request[protos.ResumeGeneratorRequest]) (*connect.Response[protos.ResumeGeneratorResponse], error) {
-	return c.resumeGenerator.CallUnary(ctx, req)
+// StartGenerator calls sdl.v1.CanvasService.StartGenerator.
+func (c *canvasServiceClient) StartGenerator(ctx context.Context, req *connect.Request[v1.StartGeneratorRequest]) (*connect.Response[v1.StartGeneratorResponse], error) {
+	return c.startGenerator.CallUnary(ctx, req)
 }
 
 // DeleteGenerator calls sdl.v1.CanvasService.DeleteGenerator.
-func (c *canvasServiceClient) DeleteGenerator(ctx context.Context, req *connect.Request[protos.DeleteGeneratorRequest]) (*connect.Response[protos.DeleteGeneratorResponse], error) {
+func (c *canvasServiceClient) DeleteGenerator(ctx context.Context, req *connect.Request[v1.DeleteGeneratorRequest]) (*connect.Response[v1.DeleteGeneratorResponse], error) {
 	return c.deleteGenerator.CallUnary(ctx, req)
 }
 
 // ExecuteTrace calls sdl.v1.CanvasService.ExecuteTrace.
-func (c *canvasServiceClient) ExecuteTrace(ctx context.Context, req *connect.Request[protos.ExecuteTraceRequest]) (*connect.Response[protos.ExecuteTraceResponse], error) {
+func (c *canvasServiceClient) ExecuteTrace(ctx context.Context, req *connect.Request[v1.ExecuteTraceRequest]) (*connect.Response[v1.ExecuteTraceResponse], error) {
 	return c.executeTrace.CallUnary(ctx, req)
 }
 
 // SetParameter calls sdl.v1.CanvasService.SetParameter.
-func (c *canvasServiceClient) SetParameter(ctx context.Context, req *connect.Request[protos.SetParameterRequest]) (*connect.Response[protos.SetParameterResponse], error) {
+func (c *canvasServiceClient) SetParameter(ctx context.Context, req *connect.Request[v1.SetParameterRequest]) (*connect.Response[v1.SetParameterResponse], error) {
 	return c.setParameter.CallUnary(ctx, req)
 }
 
 // GetParameters calls sdl.v1.CanvasService.GetParameters.
-func (c *canvasServiceClient) GetParameters(ctx context.Context, req *connect.Request[protos.GetParametersRequest]) (*connect.Response[protos.GetParametersResponse], error) {
+func (c *canvasServiceClient) GetParameters(ctx context.Context, req *connect.Request[v1.GetParametersRequest]) (*connect.Response[v1.GetParametersResponse], error) {
 	return c.getParameters.CallUnary(ctx, req)
 }
 
 // AddMetric calls sdl.v1.CanvasService.AddMetric.
-func (c *canvasServiceClient) AddMetric(ctx context.Context, req *connect.Request[protos.AddMetricRequest]) (*connect.Response[protos.AddMetricResponse], error) {
+func (c *canvasServiceClient) AddMetric(ctx context.Context, req *connect.Request[v1.AddMetricRequest]) (*connect.Response[v1.AddMetricResponse], error) {
 	return c.addMetric.CallUnary(ctx, req)
 }
 
 // DeleteMetric calls sdl.v1.CanvasService.DeleteMetric.
-func (c *canvasServiceClient) DeleteMetric(ctx context.Context, req *connect.Request[protos.DeleteMetricRequest]) (*connect.Response[protos.DeleteMetricResponse], error) {
+func (c *canvasServiceClient) DeleteMetric(ctx context.Context, req *connect.Request[v1.DeleteMetricRequest]) (*connect.Response[v1.DeleteMetricResponse], error) {
 	return c.deleteMetric.CallUnary(ctx, req)
 }
 
-// LiveMetrics calls sdl.v1.CanvasService.LiveMetrics.
-func (c *canvasServiceClient) LiveMetrics(ctx context.Context, req *connect.Request[protos.LiveMetricsRequest]) (*connect.ServerStreamForClient[protos.LiveMetricsResponse], error) {
-	return c.liveMetrics.CallServerStream(ctx, req)
-}
-
 // ListMetrics calls sdl.v1.CanvasService.ListMetrics.
-func (c *canvasServiceClient) ListMetrics(ctx context.Context, req *connect.Request[protos.ListMetricsRequest]) (*connect.Response[protos.ListMetricsResponse], error) {
+func (c *canvasServiceClient) ListMetrics(ctx context.Context, req *connect.Request[v1.ListMetricsRequest]) (*connect.Response[v1.ListMetricsResponse], error) {
 	return c.listMetrics.CallUnary(ctx, req)
 }
 
 // QueryMetrics calls sdl.v1.CanvasService.QueryMetrics.
-func (c *canvasServiceClient) QueryMetrics(ctx context.Context, req *connect.Request[protos.QueryMetricsRequest]) (*connect.Response[protos.QueryMetricsResponse], error) {
+func (c *canvasServiceClient) QueryMetrics(ctx context.Context, req *connect.Request[v1.QueryMetricsRequest]) (*connect.Response[v1.QueryMetricsResponse], error) {
 	return c.queryMetrics.CallUnary(ctx, req)
 }
 
-// AggregateMetrics calls sdl.v1.CanvasService.AggregateMetrics.
-func (c *canvasServiceClient) AggregateMetrics(ctx context.Context, req *connect.Request[protos.AggregateMetricsRequest]) (*connect.Response[protos.AggregateMetricsResponse], error) {
-	return c.aggregateMetrics.CallUnary(ctx, req)
-}
-
 // GetSystemDiagram calls sdl.v1.CanvasService.GetSystemDiagram.
-func (c *canvasServiceClient) GetSystemDiagram(ctx context.Context, req *connect.Request[protos.GetSystemDiagramRequest]) (*connect.Response[protos.GetSystemDiagramResponse], error) {
+func (c *canvasServiceClient) GetSystemDiagram(ctx context.Context, req *connect.Request[v1.GetSystemDiagramRequest]) (*connect.Response[v1.GetSystemDiagramResponse], error) {
 	return c.getSystemDiagram.CallUnary(ctx, req)
 }
 
@@ -486,56 +453,53 @@ func (c *canvasServiceClient) GetSystemDiagram(ctx context.Context, req *connect
 type CanvasServiceHandler interface {
 	// *
 	// Create a new canvas sesssion.
-	CreateCanvas(context.Context, *connect.Request[protos.CreateCanvasRequest]) (*connect.Response[protos.CreateCanvasResponse], error)
+	CreateCanvas(context.Context, *connect.Request[v1.CreateCanvasRequest]) (*connect.Response[v1.CreateCanvasResponse], error)
 	// *
 	// List all canvases from a user.
-	ListCanvases(context.Context, *connect.Request[protos.ListCanvasesRequest]) (*connect.Response[protos.ListCanvasesResponse], error)
+	ListCanvases(context.Context, *connect.Request[v1.ListCanvasesRequest]) (*connect.Response[v1.ListCanvasesResponse], error)
 	// *
 	// Get details/stats for a particular canvas
-	GetCanvas(context.Context, *connect.Request[protos.GetCanvasRequest]) (*connect.Response[protos.GetCanvasResponse], error)
-	LoadFile(context.Context, *connect.Request[protos.LoadFileRequest]) (*connect.Response[protos.LoadFileResponse], error)
-	UseSystem(context.Context, *connect.Request[protos.UseSystemRequest]) (*connect.Response[protos.UseSystemResponse], error)
+	GetCanvas(context.Context, *connect.Request[v1.GetCanvasRequest]) (*connect.Response[v1.GetCanvasResponse], error)
+	LoadFile(context.Context, *connect.Request[v1.LoadFileRequest]) (*connect.Response[v1.LoadFileResponse], error)
+	UseSystem(context.Context, *connect.Request[v1.UseSystemRequest]) (*connect.Response[v1.UseSystemResponse], error)
 	// *
 	// Delete a particular canvas.  Frees up resources used by it and all the connections
-	DeleteCanvas(context.Context, *connect.Request[protos.DeleteCanvasRequest]) (*connect.Response[protos.DeleteCanvasResponse], error)
+	DeleteCanvas(context.Context, *connect.Request[v1.DeleteCanvasRequest]) (*connect.Response[v1.DeleteCanvasResponse], error)
 	//	----- Generator Operations -----
 	//
 	// Adds a generator to a canvas's generator_ids list and creates the generator resource.
-	AddGenerator(context.Context, *connect.Request[protos.AddGeneratorRequest]) (*connect.Response[protos.AddGeneratorResponse], error)
+	AddGenerator(context.Context, *connect.Request[v1.AddGeneratorRequest]) (*connect.Response[v1.AddGeneratorResponse], error)
 	// Request to start all generators
-	StartAllGenerators(context.Context, *connect.Request[protos.StartAllGeneratorsRequest]) (*connect.Response[protos.StartAllGeneratorsResponse], error)
+	StartAllGenerators(context.Context, *connect.Request[v1.StartAllGeneratorsRequest]) (*connect.Response[v1.StartAllGeneratorsResponse], error)
 	// Request to start all generators
-	StopAllGenerators(context.Context, *connect.Request[protos.StopAllGeneratorsRequest]) (*connect.Response[protos.StopAllGeneratorsResponse], error)
-	ListGenerators(context.Context, *connect.Request[protos.ListGeneratorsRequest]) (*connect.Response[protos.ListGeneratorsResponse], error)
-	GetGenerator(context.Context, *connect.Request[protos.GetGeneratorRequest]) (*connect.Response[protos.GetGeneratorResponse], error)
+	StopAllGenerators(context.Context, *connect.Request[v1.StopAllGeneratorsRequest]) (*connect.Response[v1.StopAllGeneratorsResponse], error)
+	ListGenerators(context.Context, *connect.Request[v1.ListGeneratorsRequest]) (*connect.Response[v1.ListGeneratorsResponse], error)
+	GetGenerator(context.Context, *connect.Request[v1.GetGeneratorRequest]) (*connect.Response[v1.GetGeneratorResponse], error)
 	// Use PATCH for partial updates to a generator (title, content)
-	UpdateGenerator(context.Context, *connect.Request[protos.UpdateGeneratorRequest]) (*connect.Response[protos.UpdateGeneratorResponse], error)
-	PauseGenerator(context.Context, *connect.Request[protos.PauseGeneratorRequest]) (*connect.Response[protos.PauseGeneratorResponse], error)
-	ResumeGenerator(context.Context, *connect.Request[protos.ResumeGeneratorRequest]) (*connect.Response[protos.ResumeGeneratorResponse], error)
-	DeleteGenerator(context.Context, *connect.Request[protos.DeleteGeneratorRequest]) (*connect.Response[protos.DeleteGeneratorResponse], error)
+	UpdateGenerator(context.Context, *connect.Request[v1.UpdateGeneratorRequest]) (*connect.Response[v1.UpdateGeneratorResponse], error)
+	StopGenerator(context.Context, *connect.Request[v1.StopGeneratorRequest]) (*connect.Response[v1.StopGeneratorResponse], error)
+	StartGenerator(context.Context, *connect.Request[v1.StartGeneratorRequest]) (*connect.Response[v1.StartGeneratorResponse], error)
+	DeleteGenerator(context.Context, *connect.Request[v1.DeleteGeneratorRequest]) (*connect.Response[v1.DeleteGeneratorResponse], error)
 	// Execute a single trace for debugging/analysis
-	ExecuteTrace(context.Context, *connect.Request[protos.ExecuteTraceRequest]) (*connect.Response[protos.ExecuteTraceResponse], error)
+	ExecuteTrace(context.Context, *connect.Request[v1.ExecuteTraceRequest]) (*connect.Response[v1.ExecuteTraceResponse], error)
 	// ----- Parameter Operations -----
 	// Set a component parameter value
-	SetParameter(context.Context, *connect.Request[protos.SetParameterRequest]) (*connect.Response[protos.SetParameterResponse], error)
+	SetParameter(context.Context, *connect.Request[v1.SetParameterRequest]) (*connect.Response[v1.SetParameterResponse], error)
 	// Get parameter values
-	GetParameters(context.Context, *connect.Request[protos.GetParametersRequest]) (*connect.Response[protos.GetParametersResponse], error)
+	GetParameters(context.Context, *connect.Request[v1.GetParametersRequest]) (*connect.Response[v1.GetParametersResponse], error)
 	//	----- Generator Operations -----
 	//
 	// Adds a metric to live plot
-	AddMetric(context.Context, *connect.Request[protos.AddMetricRequest]) (*connect.Response[protos.AddMetricResponse], error)
+	AddMetric(context.Context, *connect.Request[v1.AddMetricRequest]) (*connect.Response[v1.AddMetricResponse], error)
 	// *
 	// Delete a particular metriccanvas.  Frees up resources used by it and all the connections
-	DeleteMetric(context.Context, *connect.Request[protos.DeleteMetricRequest]) (*connect.Response[protos.DeleteMetricResponse], error)
-	LiveMetrics(context.Context, *connect.Request[protos.LiveMetricsRequest], *connect.ServerStream[protos.LiveMetricsResponse]) error
+	DeleteMetric(context.Context, *connect.Request[v1.DeleteMetricRequest]) (*connect.Response[v1.DeleteMetricResponse], error)
 	// List all available metrics
-	ListMetrics(context.Context, *connect.Request[protos.ListMetricsRequest]) (*connect.Response[protos.ListMetricsResponse], error)
+	ListMetrics(context.Context, *connect.Request[v1.ListMetricsRequest]) (*connect.Response[v1.ListMetricsResponse], error)
 	// Query raw metric data points
-	QueryMetrics(context.Context, *connect.Request[protos.QueryMetricsRequest]) (*connect.Response[protos.QueryMetricsResponse], error)
-	// Get aggregated metric data
-	AggregateMetrics(context.Context, *connect.Request[protos.AggregateMetricsRequest]) (*connect.Response[protos.AggregateMetricsResponse], error)
+	QueryMetrics(context.Context, *connect.Request[v1.QueryMetricsRequest]) (*connect.Response[v1.QueryMetricsResponse], error)
 	// Get the system diagram for visualization
-	GetSystemDiagram(context.Context, *connect.Request[protos.GetSystemDiagramRequest]) (*connect.Response[protos.GetSystemDiagramResponse], error)
+	GetSystemDiagram(context.Context, *connect.Request[v1.GetSystemDiagramRequest]) (*connect.Response[v1.GetSystemDiagramResponse], error)
 }
 
 // NewCanvasServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -544,7 +508,7 @@ type CanvasServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewCanvasServiceHandler(svc CanvasServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	canvasServiceMethods := protos.File_sdl_v1_canvas_proto.Services().ByName("CanvasService").Methods()
+	canvasServiceMethods := v1.File_sdl_v1_canvas_proto.Services().ByName("CanvasService").Methods()
 	canvasServiceCreateCanvasHandler := connect.NewUnaryHandler(
 		CanvasServiceCreateCanvasProcedure,
 		svc.CreateCanvas,
@@ -617,16 +581,16 @@ func NewCanvasServiceHandler(svc CanvasServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(canvasServiceMethods.ByName("UpdateGenerator")),
 		connect.WithHandlerOptions(opts...),
 	)
-	canvasServicePauseGeneratorHandler := connect.NewUnaryHandler(
-		CanvasServicePauseGeneratorProcedure,
-		svc.PauseGenerator,
-		connect.WithSchema(canvasServiceMethods.ByName("PauseGenerator")),
+	canvasServiceStopGeneratorHandler := connect.NewUnaryHandler(
+		CanvasServiceStopGeneratorProcedure,
+		svc.StopGenerator,
+		connect.WithSchema(canvasServiceMethods.ByName("StopGenerator")),
 		connect.WithHandlerOptions(opts...),
 	)
-	canvasServiceResumeGeneratorHandler := connect.NewUnaryHandler(
-		CanvasServiceResumeGeneratorProcedure,
-		svc.ResumeGenerator,
-		connect.WithSchema(canvasServiceMethods.ByName("ResumeGenerator")),
+	canvasServiceStartGeneratorHandler := connect.NewUnaryHandler(
+		CanvasServiceStartGeneratorProcedure,
+		svc.StartGenerator,
+		connect.WithSchema(canvasServiceMethods.ByName("StartGenerator")),
 		connect.WithHandlerOptions(opts...),
 	)
 	canvasServiceDeleteGeneratorHandler := connect.NewUnaryHandler(
@@ -665,12 +629,6 @@ func NewCanvasServiceHandler(svc CanvasServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(canvasServiceMethods.ByName("DeleteMetric")),
 		connect.WithHandlerOptions(opts...),
 	)
-	canvasServiceLiveMetricsHandler := connect.NewServerStreamHandler(
-		CanvasServiceLiveMetricsProcedure,
-		svc.LiveMetrics,
-		connect.WithSchema(canvasServiceMethods.ByName("LiveMetrics")),
-		connect.WithHandlerOptions(opts...),
-	)
 	canvasServiceListMetricsHandler := connect.NewUnaryHandler(
 		CanvasServiceListMetricsProcedure,
 		svc.ListMetrics,
@@ -681,12 +639,6 @@ func NewCanvasServiceHandler(svc CanvasServiceHandler, opts ...connect.HandlerOp
 		CanvasServiceQueryMetricsProcedure,
 		svc.QueryMetrics,
 		connect.WithSchema(canvasServiceMethods.ByName("QueryMetrics")),
-		connect.WithHandlerOptions(opts...),
-	)
-	canvasServiceAggregateMetricsHandler := connect.NewUnaryHandler(
-		CanvasServiceAggregateMetricsProcedure,
-		svc.AggregateMetrics,
-		connect.WithSchema(canvasServiceMethods.ByName("AggregateMetrics")),
 		connect.WithHandlerOptions(opts...),
 	)
 	canvasServiceGetSystemDiagramHandler := connect.NewUnaryHandler(
@@ -721,10 +673,10 @@ func NewCanvasServiceHandler(svc CanvasServiceHandler, opts ...connect.HandlerOp
 			canvasServiceGetGeneratorHandler.ServeHTTP(w, r)
 		case CanvasServiceUpdateGeneratorProcedure:
 			canvasServiceUpdateGeneratorHandler.ServeHTTP(w, r)
-		case CanvasServicePauseGeneratorProcedure:
-			canvasServicePauseGeneratorHandler.ServeHTTP(w, r)
-		case CanvasServiceResumeGeneratorProcedure:
-			canvasServiceResumeGeneratorHandler.ServeHTTP(w, r)
+		case CanvasServiceStopGeneratorProcedure:
+			canvasServiceStopGeneratorHandler.ServeHTTP(w, r)
+		case CanvasServiceStartGeneratorProcedure:
+			canvasServiceStartGeneratorHandler.ServeHTTP(w, r)
 		case CanvasServiceDeleteGeneratorProcedure:
 			canvasServiceDeleteGeneratorHandler.ServeHTTP(w, r)
 		case CanvasServiceExecuteTraceProcedure:
@@ -737,14 +689,10 @@ func NewCanvasServiceHandler(svc CanvasServiceHandler, opts ...connect.HandlerOp
 			canvasServiceAddMetricHandler.ServeHTTP(w, r)
 		case CanvasServiceDeleteMetricProcedure:
 			canvasServiceDeleteMetricHandler.ServeHTTP(w, r)
-		case CanvasServiceLiveMetricsProcedure:
-			canvasServiceLiveMetricsHandler.ServeHTTP(w, r)
 		case CanvasServiceListMetricsProcedure:
 			canvasServiceListMetricsHandler.ServeHTTP(w, r)
 		case CanvasServiceQueryMetricsProcedure:
 			canvasServiceQueryMetricsHandler.ServeHTTP(w, r)
-		case CanvasServiceAggregateMetricsProcedure:
-			canvasServiceAggregateMetricsHandler.ServeHTTP(w, r)
 		case CanvasServiceGetSystemDiagramProcedure:
 			canvasServiceGetSystemDiagramHandler.ServeHTTP(w, r)
 		default:
@@ -756,102 +704,94 @@ func NewCanvasServiceHandler(svc CanvasServiceHandler, opts ...connect.HandlerOp
 // UnimplementedCanvasServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedCanvasServiceHandler struct{}
 
-func (UnimplementedCanvasServiceHandler) CreateCanvas(context.Context, *connect.Request[protos.CreateCanvasRequest]) (*connect.Response[protos.CreateCanvasResponse], error) {
+func (UnimplementedCanvasServiceHandler) CreateCanvas(context.Context, *connect.Request[v1.CreateCanvasRequest]) (*connect.Response[v1.CreateCanvasResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.CreateCanvas is not implemented"))
 }
 
-func (UnimplementedCanvasServiceHandler) ListCanvases(context.Context, *connect.Request[protos.ListCanvasesRequest]) (*connect.Response[protos.ListCanvasesResponse], error) {
+func (UnimplementedCanvasServiceHandler) ListCanvases(context.Context, *connect.Request[v1.ListCanvasesRequest]) (*connect.Response[v1.ListCanvasesResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.ListCanvases is not implemented"))
 }
 
-func (UnimplementedCanvasServiceHandler) GetCanvas(context.Context, *connect.Request[protos.GetCanvasRequest]) (*connect.Response[protos.GetCanvasResponse], error) {
+func (UnimplementedCanvasServiceHandler) GetCanvas(context.Context, *connect.Request[v1.GetCanvasRequest]) (*connect.Response[v1.GetCanvasResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.GetCanvas is not implemented"))
 }
 
-func (UnimplementedCanvasServiceHandler) LoadFile(context.Context, *connect.Request[protos.LoadFileRequest]) (*connect.Response[protos.LoadFileResponse], error) {
+func (UnimplementedCanvasServiceHandler) LoadFile(context.Context, *connect.Request[v1.LoadFileRequest]) (*connect.Response[v1.LoadFileResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.LoadFile is not implemented"))
 }
 
-func (UnimplementedCanvasServiceHandler) UseSystem(context.Context, *connect.Request[protos.UseSystemRequest]) (*connect.Response[protos.UseSystemResponse], error) {
+func (UnimplementedCanvasServiceHandler) UseSystem(context.Context, *connect.Request[v1.UseSystemRequest]) (*connect.Response[v1.UseSystemResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.UseSystem is not implemented"))
 }
 
-func (UnimplementedCanvasServiceHandler) DeleteCanvas(context.Context, *connect.Request[protos.DeleteCanvasRequest]) (*connect.Response[protos.DeleteCanvasResponse], error) {
+func (UnimplementedCanvasServiceHandler) DeleteCanvas(context.Context, *connect.Request[v1.DeleteCanvasRequest]) (*connect.Response[v1.DeleteCanvasResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.DeleteCanvas is not implemented"))
 }
 
-func (UnimplementedCanvasServiceHandler) AddGenerator(context.Context, *connect.Request[protos.AddGeneratorRequest]) (*connect.Response[protos.AddGeneratorResponse], error) {
+func (UnimplementedCanvasServiceHandler) AddGenerator(context.Context, *connect.Request[v1.AddGeneratorRequest]) (*connect.Response[v1.AddGeneratorResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.AddGenerator is not implemented"))
 }
 
-func (UnimplementedCanvasServiceHandler) StartAllGenerators(context.Context, *connect.Request[protos.StartAllGeneratorsRequest]) (*connect.Response[protos.StartAllGeneratorsResponse], error) {
+func (UnimplementedCanvasServiceHandler) StartAllGenerators(context.Context, *connect.Request[v1.StartAllGeneratorsRequest]) (*connect.Response[v1.StartAllGeneratorsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.StartAllGenerators is not implemented"))
 }
 
-func (UnimplementedCanvasServiceHandler) StopAllGenerators(context.Context, *connect.Request[protos.StopAllGeneratorsRequest]) (*connect.Response[protos.StopAllGeneratorsResponse], error) {
+func (UnimplementedCanvasServiceHandler) StopAllGenerators(context.Context, *connect.Request[v1.StopAllGeneratorsRequest]) (*connect.Response[v1.StopAllGeneratorsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.StopAllGenerators is not implemented"))
 }
 
-func (UnimplementedCanvasServiceHandler) ListGenerators(context.Context, *connect.Request[protos.ListGeneratorsRequest]) (*connect.Response[protos.ListGeneratorsResponse], error) {
+func (UnimplementedCanvasServiceHandler) ListGenerators(context.Context, *connect.Request[v1.ListGeneratorsRequest]) (*connect.Response[v1.ListGeneratorsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.ListGenerators is not implemented"))
 }
 
-func (UnimplementedCanvasServiceHandler) GetGenerator(context.Context, *connect.Request[protos.GetGeneratorRequest]) (*connect.Response[protos.GetGeneratorResponse], error) {
+func (UnimplementedCanvasServiceHandler) GetGenerator(context.Context, *connect.Request[v1.GetGeneratorRequest]) (*connect.Response[v1.GetGeneratorResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.GetGenerator is not implemented"))
 }
 
-func (UnimplementedCanvasServiceHandler) UpdateGenerator(context.Context, *connect.Request[protos.UpdateGeneratorRequest]) (*connect.Response[protos.UpdateGeneratorResponse], error) {
+func (UnimplementedCanvasServiceHandler) UpdateGenerator(context.Context, *connect.Request[v1.UpdateGeneratorRequest]) (*connect.Response[v1.UpdateGeneratorResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.UpdateGenerator is not implemented"))
 }
 
-func (UnimplementedCanvasServiceHandler) PauseGenerator(context.Context, *connect.Request[protos.PauseGeneratorRequest]) (*connect.Response[protos.PauseGeneratorResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.PauseGenerator is not implemented"))
+func (UnimplementedCanvasServiceHandler) StopGenerator(context.Context, *connect.Request[v1.StopGeneratorRequest]) (*connect.Response[v1.StopGeneratorResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.StopGenerator is not implemented"))
 }
 
-func (UnimplementedCanvasServiceHandler) ResumeGenerator(context.Context, *connect.Request[protos.ResumeGeneratorRequest]) (*connect.Response[protos.ResumeGeneratorResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.ResumeGenerator is not implemented"))
+func (UnimplementedCanvasServiceHandler) StartGenerator(context.Context, *connect.Request[v1.StartGeneratorRequest]) (*connect.Response[v1.StartGeneratorResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.StartGenerator is not implemented"))
 }
 
-func (UnimplementedCanvasServiceHandler) DeleteGenerator(context.Context, *connect.Request[protos.DeleteGeneratorRequest]) (*connect.Response[protos.DeleteGeneratorResponse], error) {
+func (UnimplementedCanvasServiceHandler) DeleteGenerator(context.Context, *connect.Request[v1.DeleteGeneratorRequest]) (*connect.Response[v1.DeleteGeneratorResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.DeleteGenerator is not implemented"))
 }
 
-func (UnimplementedCanvasServiceHandler) ExecuteTrace(context.Context, *connect.Request[protos.ExecuteTraceRequest]) (*connect.Response[protos.ExecuteTraceResponse], error) {
+func (UnimplementedCanvasServiceHandler) ExecuteTrace(context.Context, *connect.Request[v1.ExecuteTraceRequest]) (*connect.Response[v1.ExecuteTraceResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.ExecuteTrace is not implemented"))
 }
 
-func (UnimplementedCanvasServiceHandler) SetParameter(context.Context, *connect.Request[protos.SetParameterRequest]) (*connect.Response[protos.SetParameterResponse], error) {
+func (UnimplementedCanvasServiceHandler) SetParameter(context.Context, *connect.Request[v1.SetParameterRequest]) (*connect.Response[v1.SetParameterResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.SetParameter is not implemented"))
 }
 
-func (UnimplementedCanvasServiceHandler) GetParameters(context.Context, *connect.Request[protos.GetParametersRequest]) (*connect.Response[protos.GetParametersResponse], error) {
+func (UnimplementedCanvasServiceHandler) GetParameters(context.Context, *connect.Request[v1.GetParametersRequest]) (*connect.Response[v1.GetParametersResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.GetParameters is not implemented"))
 }
 
-func (UnimplementedCanvasServiceHandler) AddMetric(context.Context, *connect.Request[protos.AddMetricRequest]) (*connect.Response[protos.AddMetricResponse], error) {
+func (UnimplementedCanvasServiceHandler) AddMetric(context.Context, *connect.Request[v1.AddMetricRequest]) (*connect.Response[v1.AddMetricResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.AddMetric is not implemented"))
 }
 
-func (UnimplementedCanvasServiceHandler) DeleteMetric(context.Context, *connect.Request[protos.DeleteMetricRequest]) (*connect.Response[protos.DeleteMetricResponse], error) {
+func (UnimplementedCanvasServiceHandler) DeleteMetric(context.Context, *connect.Request[v1.DeleteMetricRequest]) (*connect.Response[v1.DeleteMetricResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.DeleteMetric is not implemented"))
 }
 
-func (UnimplementedCanvasServiceHandler) LiveMetrics(context.Context, *connect.Request[protos.LiveMetricsRequest], *connect.ServerStream[protos.LiveMetricsResponse]) error {
-	return connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.LiveMetrics is not implemented"))
-}
-
-func (UnimplementedCanvasServiceHandler) ListMetrics(context.Context, *connect.Request[protos.ListMetricsRequest]) (*connect.Response[protos.ListMetricsResponse], error) {
+func (UnimplementedCanvasServiceHandler) ListMetrics(context.Context, *connect.Request[v1.ListMetricsRequest]) (*connect.Response[v1.ListMetricsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.ListMetrics is not implemented"))
 }
 
-func (UnimplementedCanvasServiceHandler) QueryMetrics(context.Context, *connect.Request[protos.QueryMetricsRequest]) (*connect.Response[protos.QueryMetricsResponse], error) {
+func (UnimplementedCanvasServiceHandler) QueryMetrics(context.Context, *connect.Request[v1.QueryMetricsRequest]) (*connect.Response[v1.QueryMetricsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.QueryMetrics is not implemented"))
 }
 
-func (UnimplementedCanvasServiceHandler) AggregateMetrics(context.Context, *connect.Request[protos.AggregateMetricsRequest]) (*connect.Response[protos.AggregateMetricsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.AggregateMetrics is not implemented"))
-}
-
-func (UnimplementedCanvasServiceHandler) GetSystemDiagram(context.Context, *connect.Request[protos.GetSystemDiagramRequest]) (*connect.Response[protos.GetSystemDiagramResponse], error) {
+func (UnimplementedCanvasServiceHandler) GetSystemDiagram(context.Context, *connect.Request[v1.GetSystemDiagramRequest]) (*connect.Response[v1.GetSystemDiagramResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.GetSystemDiagram is not implemented"))
 }

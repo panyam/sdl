@@ -5,9 +5,9 @@ import { create } from "@bufbuild/protobuf";
 import { GeneratorSchema, MetricSchema } from "./gen/sdl/v1/models_pb.ts";
 import type { Generator, Metric } from "./gen/sdl/v1/models_pb.ts";
 
-// Create transport with the gRPC-gateway endpoint
+// Create transport with the Connect endpoint mounted at /api
 const transport = createConnectTransport({
-  baseUrl: `${window.location.origin}/api/v1`,
+  baseUrl: `${window.location.origin}/api`,
   useBinaryFormat: false, // Use JSON for browser compatibility
 });
 
@@ -152,16 +152,16 @@ export class CanvasClient {
     return { success: true };
   }
 
-  async pauseGenerator(id: string) {
-    await client.pauseGenerator({
+  async stopGenerator(id: string) {
+    await client.stopGenerator({
       canvasId: this.canvasId,
       generatorId: id
     });
     return { success: true };
   }
 
-  async resumeGenerator(id: string) {
-    await client.resumeGenerator({
+  async startGenerator(id: string) {
+    await client.startGenerator({
       canvasId: this.canvasId,
       generatorId: id
     });

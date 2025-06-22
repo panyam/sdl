@@ -3,7 +3,7 @@
 syntax = "proto3";
 import "google/protobuf/field_mask.proto";
 
-option go_package = "github.com/sdl/protos";
+option go_package = "github.com/panyam/sdl/gen/go/sdl/v1";
 package sdl.v1;
 
 import "sdl/v1/models.proto";
@@ -109,14 +109,14 @@ service CanvasService {
      };
   }
 
-  rpc PauseGenerator (PauseGeneratorRequest) returns (PauseGeneratorResponse) {
+  rpc StopGenerator (StopGeneratorRequest) returns (StopGeneratorResponse) {
      option (google.api.http) = {
        post: "/v1/canvases/{canvas_id}/generators/{generator_id}/actions:pause"
        body: "*" // Only the 'generator' field goes in the body
      };
   }
 
-  rpc ResumeGenerator (ResumeGeneratorRequest) returns (ResumeGeneratorResponse) {
+  rpc StartGenerator (StartGeneratorRequest) returns (StartGeneratorResponse) {
      option (google.api.http) = {
        post: "/v1/canvases/{canvas_id}/generators/{generator_id}/actions:resume"
        body: "*" // Only the 'generator' field goes in the body
@@ -170,12 +170,6 @@ service CanvasService {
     };
   }
 
-  rpc LiveMetrics(LiveMetricsRequest) returns (stream LiveMetricsResponse) {
-    option (google.api.http) = {
-      get: "/v1/canvases/{canvas_id}/metrics/subscribe"
-    };
-  }
-
   // --- Metric Query Operations ---
   
   // List all available metrics
@@ -189,13 +183,6 @@ service CanvasService {
   rpc QueryMetrics(QueryMetricsRequest) returns (QueryMetricsResponse) {
     option (google.api.http) = {
       get: "/v1/canvases/{canvas_id}/metrics/{metric_id}/query"
-    };
-  }
-
-  // Get aggregated metric data
-  rpc AggregateMetrics(AggregateMetricsRequest) returns (AggregateMetricsResponse) {
-    option (google.api.http) = {
-      get: "/v1/canvases/{canvas_id}/metrics/{metric_id}/aggregate"
     };
   }
 
@@ -351,20 +338,20 @@ message UpdateGeneratorResponse {
   Generator generator = 1;
 }
 
-message ResumeGeneratorRequest {
+message StartGeneratorRequest {
   string canvas_id = 1;
   string generator_id = 2; // The generator being moved
 }
 
-message ResumeGeneratorResponse {
+message StartGeneratorResponse {
 }
 
-message PauseGeneratorRequest {
+message StopGeneratorRequest {
   string canvas_id = 1;
   string generator_id = 2; // The generator being moved
 }
 
-message PauseGeneratorResponse {
+message StopGeneratorResponse {
 }
 
 message DeleteGeneratorRequest {
@@ -406,13 +393,6 @@ message DeleteMetricRequest {
 }
 
 message DeleteMetricResponse {
-}
-
-message LiveMetricsRequest {
-  string canvas_id = 1;
-}
-
-message LiveMetricsResponse {
 }
 
 // --- Metric Query Messages ---

@@ -2,7 +2,7 @@
 
 syntax = "proto3";
 import "google/protobuf/timestamp.proto";
-option go_package = "github.com/sdl/protos";
+option go_package = "github.com/panyam/sdl/gen/go/sdl/v1";
 package sdl.v1;
 
 message Pagination {
