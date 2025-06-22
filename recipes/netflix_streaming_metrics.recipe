@@ -1,0 +1,121 @@
+# Netflix Streaming Metrics Demo
+# Comprehensive demonstration of real-time streaming metrics with a complex system
+
+# Load the Netflix system
+load ./examples/netflix/netflix.sdl
+use NetflixSystem
+
+# Add comprehensive metrics for all key components
+metrics add m1 videoService count sum 1
+metrics add m2 videoService latency p95 1
+metrics add m3 loadBalancer count sum 1
+metrics add m4 loadBalancer latency avg 1
+metrics add m5 cdn count sum 1
+metrics add m6 cdn latency p90 1
+metrics add m7 database count sum 1
+metrics add m8 database latency avg 1
+metrics add m9 encoder count sum 1
+metrics add m10 encoder latency p99 1
+
+# Set up baseline traffic generation
+gen add baseline_streaming videoService StreamVideo 50
+gen add baseline_uploads videoService UploadVideo 2
+
+# Start baseline scenario
+gen start baseline_streaming
+gen start baseline_uploads
+
+# Wait for metrics to establish baseline
+sleep 10
+
+# === TRAFFIC SPIKE SIMULATION ===
+echo "🚀 Simulating Netflix 'Stranger Things' premiere traffic spike..."
+
+# Increase streaming traffic to 4x (simulating viral content)
+gen add spike_streaming videoService StreamVideo 200
+gen start spike_streaming
+
+# Increase upload traffic (more user-generated content)
+gen add spike_uploads videoService UploadVideo 8  
+gen start spike_uploads
+
+# Let spike run and observe metrics
+sleep 15
+
+# Show current metrics
+metrics list
+echo "📊 Observe the latency spikes in m2 (VideoService p95) and m6 (CDN p90)"
+
+# === CACHE OPTIMIZATION ===
+echo "🔧 Optimizing CDN cache hit rate to handle the load..."
+
+# Improve cache hit rate from 85% to 95%
+set videoService.cdn.CacheHitRate 0.95
+
+# Wait for optimization to take effect
+sleep 10
+
+echo "📈 Notice how CDN latency (m6) and VideoService latency (m2) improve"
+
+# === CAPACITY SCALING ===
+echo "⚡ Scaling CDN capacity to handle increased load..."
+
+# Double CDN capacity
+set videoService.cdn.pool.Size 200
+
+# Scale database capacity as well
+set videoService.database.pool.Size 100
+
+sleep 10
+
+echo "🎯 Observe how scaling improves all downstream metrics"
+
+# === DATABASE BOTTLENECK SIMULATION ===
+echo "🔥 Creating database bottleneck scenario..."
+
+# Stop spike generators first
+gen stop spike_streaming
+gen stop spike_uploads
+
+# Create database-heavy load pattern
+gen add db_heavy videoService StreamVideo 100
+gen start db_heavy
+
+# Constrain database capacity to create bottleneck
+set videoService.database.pool.Size 20
+
+sleep 10
+
+echo "⚠️  Notice database latency (m8) spike and cascade to overall latency (m2)"
+
+# === ENCODER STRESS TEST ===
+echo "🎥 Testing video encoding under heavy load..."
+
+# Stop previous load
+gen stop db_heavy
+
+# Generate encoding-heavy workload
+gen add heavy_encoding videoService UploadVideo 15
+gen start heavy_encoding
+
+sleep 15
+
+echo "🕐 Observe encoder latency (m10) showing ~30 second processing times"
+
+# === FINAL METRICS OVERVIEW ===
+echo "📋 Final metrics overview:"
+metrics list
+
+echo "🎬 Netflix streaming metrics demo complete!"
+echo "Key observations:"
+echo "- m1/m3/m5/m7/m9: Request rates (count/sum metrics)"
+echo "- m2: Overall VideoService latency (p95)"
+echo "- m4: LoadBalancer efficiency (avg latency)"  
+echo "- m6: CDN performance (p90 latency)"
+echo "- m8: Database response time (avg latency)"
+echo "- m10: Encoding processing time (p99 latency)"
+
+# Clean up
+gen stop baseline_streaming
+gen stop baseline_uploads  
+gen stop heavy_encoding
