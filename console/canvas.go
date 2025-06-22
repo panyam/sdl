@@ -643,6 +643,30 @@ func (c *Canvas) ExecuteTrace(componentName, methodName string) (*runtime.TraceD
 	return traceData, nil
 }
 
+// TraceAllPaths performs breadth-first traversal to discover all possible execution paths
+func (c *Canvas) TraceAllPaths(componentName, methodName string, maxDepth int32) (*runtime.AllPathsTraceData, error) {
+	if c.activeSystem == nil {
+		return nil, status.Error(codes.FailedPrecondition, "no active system. Call Use() before tracing paths")
+	}
+
+	// Find the component instance to get its type
+	compInst := c.activeSystem.FindComponent(componentName)
+	if compInst == nil {
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("component '%s' not found in system", componentName))
+	}
+
+	// Create path traversal engine with the loader
+	pathTraversal := runtime.NewPathTraversal(c.runtime.Loader)
+
+	// Perform the traversal using the component type
+	traceData, err := pathTraversal.TraceAllPaths(componentName, compInst.ComponentDecl, methodName, maxDepth)
+	if err != nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to trace all paths: %v", err))
+	}
+
+	return traceData, nil
+}
+
 // rateMapToStringMap converts a runtime RateMap to string-based map for API compatibility
 func (c *Canvas) rateMapToStringMap(rateMap runtime.RateMap) map[string]float64 {
 	result := make(map[string]float64)

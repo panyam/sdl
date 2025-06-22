@@ -74,7 +74,10 @@ When continuing work on FlowEval, note that we're in the middle of migrating fro
 ## Important Implementation Notes
 - **Metrics**: Pre-aggregated at collection time, not query time
 - **Bug Fix**: When removing metrics, use `delete(map, key)` not `map[key] = nil` to avoid panics
-- **Testing**: Run `./test_metrics_e2e.sh` for comprehensive end-to-end validation   
+- **Testing**: Run `./test_metrics_e2e.sh` for comprehensive end-to-end validation
+- **TraceAllPaths**: Static analysis tool that enumerates all possible execution paths without runtime execution
+- **Path Analysis Limitation**: Control flow dependencies not fully represented - conditional branches shown as siblings
+- **Self References**: Use pattern `self.component.method` for accessing component dependencies in SDL   
 
 Also be conservative on how many comments are you are adding or modifying unless it is absolutely necessary (for example a comment could be contradicting what is going on - in which case it is prudent to modify it).  
 When modifying files just focus on areas where the change is required instead of diving into a full fledged refactor.

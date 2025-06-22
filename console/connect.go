@@ -194,6 +194,14 @@ func (a *ConnectCanvasServiceAdapter) ExecuteTrace(ctx context.Context, req *con
 	return connect.NewResponse(resp), nil
 }
 
+func (a *ConnectCanvasServiceAdapter) TraceAllPaths(ctx context.Context, req *connect.Request[v1.TraceAllPathsRequest]) (*connect.Response[v1.TraceAllPathsResponse], error) {
+	resp, err := a.svc.TraceAllPaths(ctx, req.Msg)
+	if err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(resp), nil
+}
+
 func (a *ConnectCanvasServiceAdapter) GetSystemDiagram(ctx context.Context, req *connect.Request[v1.GetSystemDiagramRequest]) (*connect.Response[v1.GetSystemDiagramResponse], error) {
 	resp, err := a.svc.GetSystemDiagram(ctx, req.Msg)
 	if err != nil {

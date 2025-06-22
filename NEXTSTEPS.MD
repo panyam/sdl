@@ -218,6 +218,15 @@ This document outlines the workshop-focused development status and next steps fo
 *   **`[COMPLETED]` Import Path Fixes**: Generated TypeScript in web/src/gen/ to avoid relative import issues
 *   **`[COMPLETED]` Dashboard Integration**: System diagram now loads and displays from actual Canvas state
 
+### ✅ COMPLETED: TraceAllPaths Command (June 22, 2025)
+*   **`[COMPLETED]` TraceAllPaths RPC**: Added breadth-first traversal to enumerate all possible execution paths
+*   **`[COMPLETED]` Enhanced Proto Structure**: AllPathsTraceData with TraceNode tree, Edge transitions, and GroupInfo
+*   **`[COMPLETED]` Static Analysis Engine**: Pure static analysis using ComponentDecl without runtime execution
+*   **`[COMPLETED]` Self-Reference Support**: Properly handles self.component.method patterns in SDL
+*   **`[COMPLETED]` Non-Component Filtering**: Excludes built-in functions (delay, log) to focus on component interactions
+*   **`[COMPLETED]` CLI Command**: `sdl paths <component.method>` with tree visualization and JSON output
+*   **Known Limitation**: Control flow dependencies not fully represented (siblings vs sequential paths)
+
 ### 2. Flow-Based Rate Suggestions (Next Priority)
 *   **Flow Analysis**: Analyze system topology and current flows
 *   **Rate Optimization**: Suggest optimal generator rates for balanced load

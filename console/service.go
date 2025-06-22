@@ -263,6 +263,24 @@ func (s *CanvasService) ExecuteTrace(ctx context.Context, req *protos.ExecuteTra
 	return
 }
 
+func (s *CanvasService) TraceAllPaths(ctx context.Context, req *protos.TraceAllPathsRequest) (resp *protos.TraceAllPathsResponse, err error) {
+	slog.Info("TraceAllPaths Request", "req", req)
+	resp = &protos.TraceAllPathsResponse{}
+
+	err = s.withCanvas(req.CanvasId, func(canvas *Canvas) {
+		// Execute path traversal on the canvas
+		allPathsData, traceErr := canvas.TraceAllPaths(req.Component, req.Method, req.MaxDepth)
+		if traceErr != nil {
+			err = traceErr
+			return
+		}
+
+		// Convert runtime.AllPathsTraceData to proto.AllPathsTraceData
+		resp.TraceData = convertAllPathsTraceDataToProto(allPathsData)
+	})
+	return
+}
+
 // Helper to convert runtime.TraceData to proto.TraceData
 func convertTraceDataToProto(td *runtime.TraceData) *protos.TraceData {
 	if td == nil {
@@ -289,6 +307,64 @@ func convertTraceDataToProto(td *runtime.TraceData) *protos.TraceData {
 		System:     td.System,
 		EntryPoint: td.EntryPoint,
 		Events:     protoEvents,
+	}
+}
+
+// Helper to convert runtime.AllPathsTraceData to proto.AllPathsTraceData
+func convertAllPathsTraceDataToProto(aptd *runtime.AllPathsTraceData) *protos.AllPathsTraceData {
+	if aptd == nil {
+		return nil
+	}
+
+	return &protos.AllPathsTraceData{
+		TraceId: aptd.TraceID,
+		Root:    convertTraceNodeToProto(&aptd.Root),
+	}
+}
+
+// Helper to convert runtime.TraceNode to proto.TraceNode
+func convertTraceNodeToProto(tn *runtime.TraceNode) *protos.TraceNode {
+	if tn == nil {
+		return nil
+	}
+
+	protoEdges := make([]*protos.Edge, len(tn.Edges))
+	for i, edge := range tn.Edges {
+		protoEdges[i] = convertEdgeToProto(&edge)
+	}
+
+	protoGroups := make([]*protos.GroupInfo, len(tn.Groups))
+	for i, group := range tn.Groups {
+		protoGroups[i] = &protos.GroupInfo{
+			GroupStart: group.GroupStart,
+			GroupEnd:   group.GroupEnd,
+			GroupLabel: group.GroupLabel,
+			GroupType:  group.GroupType,
+		}
+	}
+
+	return &protos.TraceNode{
+		StartingTarget: tn.StartingTarget,
+		Edges:          protoEdges,
+		Groups:         protoGroups,
+	}
+}
+
+// Helper to convert runtime.Edge to proto.Edge
+func convertEdgeToProto(e *runtime.Edge) *protos.Edge {
+	if e == nil {
+		return nil
+	}
+
+	return &protos.Edge{
+		Id:            e.ID,
+		NextNode:      convertTraceNodeToProto(&e.NextNode),
+		Label:         e.Label,
+		IsAsync:       e.IsAsync,
+		IsReverse:     e.IsReverse,
+		Probability:   e.Probability,
+		Condition:     e.Condition,
+		IsConditional: e.IsConditional,
 	}
 }
 
