@@ -3,6 +3,7 @@ package console
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/gorilla/websocket"
@@ -129,11 +130,61 @@ func (h *CanvasWSHandler) Validate(w http.ResponseWriter, r *http.Request) (out 
 // GetRouter returns a configured HTTP router with all Canvas API routes
 func (ws *WebServer) Handler() http.Handler {
 	r := http.NewServeMux()
+	
+	// API routes
 	r.Handle("/api/", http.StripPrefix("/api", ws.api.Handler()))
-	r.Handle("/", http.FileServer(http.Dir("./web/dist/")))
+	
+	// Canvas-specific routes
+	r.HandleFunc("/canvases/", ws.handleCanvasRoute)
+	
+	// Root redirect to default canvas
+	r.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+		if req.URL.Path == "/" {
+			http.Redirect(w, req, "/canvases/default/", http.StatusFound)
+			return
+		}
+		// Serve static files for other root-level paths
+		http.FileServer(http.Dir("./web/dist/")).ServeHTTP(w, req)
+	})
 
-	// Static file serving (will serve the built frontend)
 	return r
+}
+
+// handleCanvasRoute serves the dashboard for a specific canvas
+func (ws *WebServer) handleCanvasRoute(w http.ResponseWriter, r *http.Request) {
+	// Extract canvas ID from URL path
+	path := r.URL.Path
+	prefix := "/canvases/"
+	
+	if !strings.HasPrefix(path, prefix) {
+		http.NotFound(w, r)
+		return
+	}
+	
+	// Remove prefix and find canvas ID
+	remaining := strings.TrimPrefix(path, prefix)
+	parts := strings.Split(remaining, "/")
+	
+	if len(parts) == 0 || parts[0] == "" {
+		// Redirect /canvases/ to /canvases/default/
+		http.Redirect(w, r, "/canvases/default/", http.StatusFound)
+		return
+	}
+	
+	// canvasID := parts[0] // Available if we need to use it later
+	
+	// For any path under /canvases/{canvasId}/, serve the index.html
+	// This allows the frontend router to handle sub-paths
+	if strings.HasSuffix(path, "/") || len(parts) == 1 {
+		// Serve index.html for canvas root
+		http.ServeFile(w, r, "./web/dist/index.html")
+	} else if len(parts) > 1 {
+		// For assets and other files, strip the canvas prefix and serve from dist
+		// e.g., /canvases/mycanvas/assets/index.js -> /assets/index.js
+		assetPath := "/" + strings.Join(parts[1:], "/")
+		r.URL.Path = assetPath
+		http.FileServer(http.Dir("./web/dist/")).ServeHTTP(w, r)
+	}
 }
 
 /*

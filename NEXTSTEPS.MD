@@ -227,7 +227,70 @@ This document outlines the workshop-focused development status and next steps fo
 *   **`[COMPLETED]` CLI Command**: `sdl paths <component.method>` with tree visualization and JSON output
 *   **Known Limitation**: Control flow dependencies not fully represented (siblings vs sequential paths)
 
-### 2. Flow-Based Rate Suggestions (Next Priority)
+### ✅ COMPLETED: Conference Talk Documentation (June 22, 2025)
+*   **`[COMPLETED]` DEMO_SCRIPT.md**: Complete minute-by-minute demo script with exact commands, timing, and contingency plans
+*   **`[COMPLETED]` SPEAKER_NOTES.md**: Comprehensive speaker guide with key phrases, energy management, and audience engagement tips
+*   **`[COMPLETED]` FAILURE_RECOVERY.md**: Detailed failure recovery playbook for graceful handling of technical difficulties
+*   **`[COMPLETED]` Talks Folder Organization**: All conference materials organized in dedicated talks/ directory
+*   **Key Content**: 15-minute demo flow, memorable phrases, recovery strategies, and post-talk follow-up plans
+
+### 🎯 CRITICAL: Open Source Summit Talk Requirements (URGENT)
+
+#### Week 1: Demo Essentials (Must Have by Talk)
+1. **Circuit Breaker Component** 🚨
+   - Visual state changes (closed → open → half-open)
+   - Immediate impact on system behavior
+   - Key "aha!" moment in the talk demo
+
+2. **Rate Limiter Component** 🚨
+   - Token bucket or sliding window implementation
+   - Visual representation of rate limiting in action
+   - Common interview topic
+
+3. **Retry Logic with Backoff** 🚨
+   - Exponential backoff visualization
+   - Jitter implementation
+   - Show cascading retry storms
+
+4. **Consistency/Latency Trade-off Controls**
+   - Live adjustable consistency settings
+   - Slider UI for consistency levels
+   - Immediate latency impact visualization
+
+5. **Dashboard Polish for Conference**
+   - Smooth animations when metrics change
+   - Large, readable fonts for conference rooms
+   - Professional color scheme
+   - "Conference Mode" with optimized UI
+
+#### Week 2: Visual Impact
+6. **Thundering Herd Visualization**
+   - Clear visual when cache dies
+   - Request queuing animation
+   - Database overwhelm indicators
+
+7. **Better Failure Modes**
+   - Partial failures (not just binary)
+   - Slow responses vs complete failures
+   - Timeout visualization
+
+8. **Demo Mode**
+   - One-click scenario loading
+   - Pre-configured "Netflix spike" scenario
+   - Quick reset between demos
+
+#### Week 3: Future Vision Teasers
+9. **Cost Preview Indicator**
+   - Simple "$X/month at current load"
+   - Even if estimates, shows the vision
+   - Hooks into future cloud cost analysis
+
+10. **AI Component Generation**
+    - Pre-recorded example if needed
+    - Shows SDL + AI partnership
+    - Quick component generation demo
+
+### 2. Flow-Based Rate Suggestions (Post-Conference)
 *   **Flow Analysis**: Analyze system topology and current flows
 *   **Rate Optimization**: Suggest optimal generator rates for balanced load
 *   **Bottleneck Detection**: Identify overloaded and underutilized components

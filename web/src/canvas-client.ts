@@ -2,8 +2,8 @@ import { createClient } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
 import { CanvasService } from "./gen/sdl/v1/canvas_pb.ts";
 import { create } from "@bufbuild/protobuf";
-import { GeneratorSchema, MetricSchema } from "./gen/sdl/v1/models_pb.ts";
-import type { Generator, Metric } from "./gen/sdl/v1/models_pb.ts";
+import { GeneratorSchema, MetricSchema, CanvasSchema } from "./gen/sdl/v1/models_pb.ts";
+import type { Generator, Metric, Canvas } from "./gen/sdl/v1/models_pb.ts";
 
 // Create transport with the Connect endpoint mounted at /api
 const transport = createConnectTransport({
@@ -22,6 +22,33 @@ export class CanvasClient {
 
   constructor(canvasId: string = DEFAULT_CANVAS_ID) {
     this.canvasId = canvasId;
+  }
+
+  // Create a new canvas
+  async createCanvas(): Promise<Canvas> {
+    const canvas = create(CanvasSchema, {
+      id: this.canvasId
+    });
+    
+    const response = await client.createCanvas({
+      canvas: canvas
+    });
+    
+    if (!response.canvas) {
+      throw new Error('Failed to create canvas');
+    }
+    
+    return response.canvas;
+  }
+
+  // Ensure canvas exists (create if needed)
+  async ensureCanvas(): Promise<Canvas> {
+    let canvas = await this.getCanvas();
+    if (!canvas) {
+      console.log(`📦 Creating new canvas: ${this.canvasId}`);
+      canvas = await this.createCanvas();
+    }
+    return canvas;
   }
 
   // Load a file into the canvas
@@ -48,15 +75,19 @@ export class CanvasClient {
     };
   }
 
-  // Get canvas information
-  async getCanvas() {
-    const response = await client.getCanvas({
-      id: this.canvasId
-    });
-    return {
-      success: true,
-      data: response.canvas
-    };
+  // Get canvas info
+  async getCanvas(): Promise<Canvas | null> {
+    try {
+      const response = await client.getCanvas({
+        id: this.canvasId
+      });
+      return response.canvas || null;
+    } catch (error: any) {
+      if (error.code === 'NOT_FOUND') {
+        return null;
+      }
+      throw error;
+    }
   }
 
   // Get current state (canvas info)

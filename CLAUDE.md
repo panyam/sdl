@@ -102,3 +102,6 @@ To build the SDL binary use `make`.  The binary is now already in path and can b
 When you are using compact, please focus on test output and code changes
 
 - For the NEXTSTEPS.md always use the top-level ./NEXTSTEPS.md so we have a global view of the roadmap instead of being fragemented in various folders.
+
+## SDL Demo Guidelines
+- Make sure when you create SDL demos they are not as markdown but as .recipe files that are executable with pause points that print out what is going to be come next before the SDL command is executed.

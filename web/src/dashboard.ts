@@ -14,12 +14,14 @@ export class Dashboard {
   private graphviz: any = null; // Will be initialized asynchronously
   private dockview: DockviewApi | null = null;
   private metricStreamController: AbortController | null = null;
+  private canvasId: string;
 
   // Parameter configurations - populated when a system is loaded
   private parameters: ParameterConfig[] = [];
 
-  constructor() {
-    this.api = new CanvasClient();
+  constructor(canvasId: string = 'default') {
+    this.canvasId = canvasId;
+    this.api = new CanvasClient(canvasId);
     this.state = {
       isConnected: false,
       simulationResults: {},
@@ -47,6 +49,12 @@ export class Dashboard {
 
   private async initialize() {
     try {
+      // Ensure the canvas exists (create if needed)
+      await this.api.ensureCanvas();
+      
+      // Update document title
+      document.title = `SDL Canvas - ${this.canvasId}`;
+      
       // First render the layout structure
       this.render();
       
@@ -67,8 +75,8 @@ export class Dashboard {
     console.log('🔄 loadCanvasState() called - loading initial data');
     try {
       const stateResponse = await this.api.getState();
-      if (stateResponse.success && stateResponse.data) {
-        const canvasState = stateResponse.data;
+      if (stateResponse != null) {
+        const canvasState = stateResponse;
         
         // Update dashboard state from Canvas state
         this.state.currentFile = canvasState.loadedFiles?.[0]; // Use first loaded file
@@ -392,7 +400,7 @@ export class Dashboard {
       <div class="h-screen flex flex-col">
         <!-- Header -->
         <div class="p-4 flex-shrink-0 bg-gray-900 border-b border-gray-700">
-          <h1 class="text-xl font-bold text-blue-300 mb-2">SDL Canvas Dashboard</h1>
+          <h1 class="text-xl font-bold text-blue-300 mb-2">SDL Canvas Dashboard - ${this.canvasId}</h1>
           <div class="flex items-center gap-4">
             <div class="flex items-center gap-2">
               <div class="w-2 h-2 rounded-full ${this.state.isConnected ? 'bg-green-400' : 'bg-red-400'}"></div>
