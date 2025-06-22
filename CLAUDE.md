@@ -71,12 +71,8 @@ When continuing work on FlowEval, note that we're in the middle of migrating fro
 - **Status**: Steps 1-7 complete, need to finish migration (steps 8-9) and update Canvas integration
 - **Test with**: `go test -v ./runtime -run "TestFlowEvalRuntime|TestSolveSystemFlowsRuntime"`
 
-## Metrics Architecture (June 2025)
-Important: Metrics are pre-aggregated at collection time, not query time:
-- **MetricSpec**: Defines aggregation type (p95, avg, sum) and window size at metric creation
-- **MetricTracer**: Processes events and calculates aggregations based on spec during collection
-- **MetricStore**: Stores pre-aggregated values, not raw events
-- **Query API**: Returns pre-aggregated data points directly (no query-time aggregation)
+## Important Implementation Notes
+- **Metrics**: Pre-aggregated at collection time, not query time
 - **Bug Fix**: When removing metrics, use `delete(map, key)` not `map[key] = nil` to avoid panics
 - **Testing**: Run `./test_metrics_e2e.sh` for comprehensive end-to-end validation   
 
@@ -101,3 +97,5 @@ To build the SDL binary use `make`.  The binary is now already in path and can b
 # Summary instructions
 
 When you are using compact, please focus on test output and code changes
+
+- For the NEXTSTEPS.md always use the top-level ./NEXTSTEPS.md so we have a global view of the roadmap instead of being fragemented in various folders.

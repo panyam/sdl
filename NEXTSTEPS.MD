@@ -182,11 +182,16 @@ This document outlines the workshop-focused development status and next steps fo
 *   **`[COMPLETED]` Component Interaction**: Tree branches show parent-child relationships
 *   **`[COMPLETED]` Performance Insights**: Duration column and performance summary included
 
-### ✅ COMPLETED: Metric Query Implementation  
-*   **`[COMPLETED]` gRPC Metric Query Endpoints**: ListMetrics, QueryMetrics, AddMetric, DeleteMetric
-*   **`[COMPLETED]` CLI Metrics Command**: add, remove, list, query subcommands with pre-aggregated data
-*   **`[COMPLETED]` Bug Fix**: Fixed nil pointer dereference in RemoveMetricSpec
-*   **`[COMPLETED]` End-to-End Testing**: Created test_metrics_e2e.sh for comprehensive testing
+### ✅ COMPLETED: Streaming Metrics Implementation (June 22, 2025)  
+*   **`[COMPLETED]` gRPC Streaming Metrics**: StreamMetrics RPC with server-side streaming for real-time updates
+*   **`[COMPLETED]` Multi-Metric Streaming**: Single connection handles multiple metric IDs to avoid N connections
+*   **`[COMPLETED]` Pre-Aggregated Metrics**: Time-window aggregation at collection time, not query time
+*   **`[COMPLETED]` Simulation Time Tracking**: Uses Canvas simulation time for consistent timestamps in high-frequency scenarios
+*   **`[COMPLETED]` Enhanced CLI Metrics**: Rich display showing aggregation types, data points, oldest/newest timestamps, and rates
+*   **`[COMPLETED]` Dashboard Integration**: Web dashboard consumes streaming metrics via Connect-Web with real-time chart updates
+*   **`[COMPLETED]` Query Order Fix**: Metric query returns data in descending order (most recent first)
+*   **`[COMPLETED]` Aggregation Functions**: Complete support for sum, avg, min, max, count, p50, p90, p95, p99
+*   **`[COMPLETED]` End-to-End Testing**: Comprehensive validation with test_metrics_e2e.sh
 
 ### ✅ COMPLETED: Generator Management Enhancement (June 21, 2025)
 *   **`[COMPLETED]` Batch Operations**: StartAllGenerators, StopAllGenerators RPCs with detailed feedback
