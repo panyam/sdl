@@ -1,0 +1,183 @@
+#!/usr/bin/env bash
+# Uber MVP Demo Script
+# Shows the evolution from a simple monolithic system to a distributed architecture
+
+# Reset SDL before loading the demo
+export SDL_CANVAS_ID=ubermvp
+
+sdl canvas reset ubermvp
+
+function execWithConfirm() {
+  msg=$1; shift
+  cmd=$1; shift
+  args=$*
+  echo ""
+  echo "    >    $cmd $args"
+  echo ""
+  echo "$msg ... Press enter to continue"
+  read
+  $cmd $args
+}
+
+echo "=== Uber MVP Demo - 'Two friends with an app' ==="
+echo "We'll start with how Uber might have looked in the early days - a simple monolithic application."
+execWithConfirm "Loading the MVP system" sdl load examples/uber/mvp.sdl
+execWithConfirm "Activate the UberMVP system" sdl use UberMVP
+
+# Load the MVP system
+
+echo ""
+echo "=== Setting up metrics ==="
+echo "Let's set up metrics to monitor our system performance."
+echo "We'll track request latency, database query time, Maps API calls, and resource utilization."
+echo ""
+echo "Press enter to add metrics..."
+read
+
+# Add all metrics
+execWithConfirm "Adding request latency metric" sdl metrics add request_latency webserver RequestRide latency
+execWithConfirm "Adding database query time metric" sdl metrics add db_query database FindNearestDriver latency
+execWithConfirm "Adding Maps API latency metric" sdl metrics add maps_latency mapsService CalculateRoute latency
+execWithConfirm "Adding database pool utilization metric" sdl metrics add db_pool database pool utilization
+execWithConfirm "Adding server pool utilization metric" sdl metrics add server_pool webserver pool utilization
+
+echo ""
+echo "=== Baseline Traffic (5 RPS) ==="
+echo "Let's start with normal traffic - 5 requests per second."
+echo "The system should handle this, but notice the latency..."
+echo ""
+echo "Press enter to start baseline traffic..."
+read
+
+# Start baseline traffic
+execWithConfirm "Creating baseline generator (5 RPS)" sdl gen add baseline webserver.RequestRide 5
+execWithConfirm "Starting baseline traffic" sdl gen start baseline
+
+echo ""
+echo "=== Observing Baseline Performance ==="
+echo "Notice:"
+echo "- Latency is 350-400ms per request (quite high!)"
+echo "- Database query takes 200ms (full table scan)"
+echo "- Every request hits the Maps API (100ms)"
+echo "- But it works! All requests succeed"
+echo ""
+echo "Press enter to add driver location updates..."
+read
+
+# Add background driver updates
+execWithConfirm "Creating driver location update generator (10 RPS)..." sdl gen add drivers webserver.UpdateLocation 10
+execWithConfirm "Starting driver updates..." sdl gen start drivers
+
+echo ""
+echo "=== Morning Rush Hour (20 RPS) ==="
+echo "Now let's simulate morning rush hour with 20 requests per second."
+echo "Watch what happens to our tiny connection pool..."
+echo ""
+echo "Press enter to simulate morning rush..."
+read
+
+# Increase load
+execWithConfirm "Creating morning rush generator (15 RPS additional)..." sdl gen add morning_rush webserver.RequestRide 15
+execWithConfirm "Starting morning rush traffic..." sdl gen start morning_rush
+
+echo ""
+echo "=== System Under Stress ==="
+echo "Observe:"
+echo "- Database connection pool hitting limits"
+echo "- Latency spikes to 500-600ms"
+echo "- Some requests start failing"
+echo "- We're finding the same drivers repeatedly (no cache!)"
+echo ""
+echo "Press enter to simulate a surge event..."
+read
+
+# Stop morning rush and add surge
+execWithConfirm "Stopping morning rush traffic..." sdl gen stop morning_rush
+execWithConfirm "Creating surge event generator (45 RPS)..." sdl gen add surge webserver.RequestRide 45
+execWithConfirm "Starting surge traffic - brace for impact!" sdl gen start surge
+
+echo ""
+echo "=== System Breakdown - New Year's Eve! ==="
+echo "The system is now completely overwhelmed!"
+echo "Notice:"
+echo "- Massive failure rate (>50%)"
+echo "- Database connection pool exhausted"
+echo "- Every failed request still took 200ms+ of DB time"
+echo "- This is when your VP of Engineering gets paged!"
+echo ""
+echo "Press enter to stop the chaos..."
+read
+
+# Stop surge to discuss
+execWithConfirm "Stopping surge traffic..." sdl gen stop surge
+execWithConfirm "Stopping driver updates..." sdl gen stop drivers
+
+echo ""
+echo "=== Key Problems Identified ==="
+echo "1. No Caching - Same queries repeated constantly"
+echo "2. No Indexes - 200ms full table scan for every driver search"
+echo "3. Tiny Connection Pool - Only 3 connections!"
+echo "4. Synchronous Everything - Maps API blocks requests"
+echo "5. No Fault Isolation - One slow query affects everyone"
+echo ""
+echo "Press enter to see what happens if Maps API fails..."
+read
+
+echo ""
+echo "=== Disaster Scenario: Maps API Outage ==="
+echo "Let's simulate the Maps API being slow or down..."
+echo ""
+echo "Press enter to modify Maps API latency..."
+read
+
+# Make Maps API very slow
+execWithConfirm "Making Maps API very slow (2 second latency)..." sdl set mapsService.pool.AcquireLatency 2000ms
+
+# Restart baseline traffic
+execWithConfirm "Restarting baseline traffic to see the impact..." sdl gen start baseline
+
+echo ""
+echo "=== Complete System Failure ==="
+echo "With Maps API slow, the entire system grinds to a halt!"
+echo "This is why we need:"
+echo "- Circuit breakers"
+echo "- Timeouts"
+echo "- Asynchronous operations"
+echo "- Service isolation"
+echo ""
+echo "Press enter to restore normal operations..."
+read
+
+# Restore Maps API
+execWithConfirm "Restoring Maps API to normal latency..." sdl set mapsService.pool.AcquireLatency 10ms
+execWithConfirm "Stopping baseline traffic..." sdl gen stop baseline
+
+echo ""
+echo "=== Cost Analysis ==="
+echo "Fun fact: This MVP setup would cost approximately:"
+echo "- 1x t2.small EC2 instance: $20/month"
+echo "- 1x RDS t2.small (3 connections): $30/month"
+echo "- Total: ~$50/month"
+echo ""
+echo "It actually works for hundreds of users!"
+echo "But not for millions..."
+echo ""
+echo "Press enter to clean up..."
+read
+
+# Clean up
+execWithConfirm "Stopping all generators..." sdl gen stop --all
+
+echo ""
+echo "=== Next Steps ==="
+echo "In the intermediate version, we'll add:"
+echo "- Redis cache for hot data"
+echo "- Service boundaries (User, Driver, Matching services)"
+echo "- Basic geo-indexing"
+echo "- Connection pooling"
+echo "- Asynchronous notifications"
+echo ""
+echo "The journey from MVP to scale is about evolution, not revolution!"
+echo ""
+echo "Demo complete. Press enter to exit..."
+read

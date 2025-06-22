@@ -39,7 +39,13 @@ func init() {
 	// Global persistent flags
 	rootCmd.PersistentFlags().StringVarP(&dslFilePath, "file", "f", "", "Path to the DSL file (required by many commands)")
 	rootCmd.PersistentFlags().StringVar(&serverURL, "server", "", "SDL server URL (default: CANVAS_SERVER_URL env var or http://localhost:8080)")
-	rootCmd.PersistentFlags().StringVar(&canvasID, "canvas", "default", "Canvas ID to use for operations")
+	
+	// Canvas ID defaults to SDL_CANVAS_ID env var, then "default"
+	defaultCanvasID := os.Getenv("SDL_CANVAS_ID")
+	if defaultCanvasID == "" {
+		defaultCanvasID = "default"
+	}
+	rootCmd.PersistentFlags().StringVar(&canvasID, "canvas", defaultCanvasID, "Canvas ID to use for operations (default: SDL_CANVAS_ID env var or 'default')")
 
 	// Serve command flags
 	rootCmd.PersistentFlags().StringVar(&gatewayAddress, "gwaddr", DefaultGatewayAddress(), "Host/Port of the Gateway Server (default: CANVAS_GATEWAY_SERVER_ADDRESS env var or localhost)")
