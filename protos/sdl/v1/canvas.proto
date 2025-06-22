@@ -2,7 +2,6 @@
 
 syntax = "proto3";
 import "google/protobuf/field_mask.proto";
-import "protoc-gen-openapiv2/options/annotations.proto";
 
 option go_package = "github.com/sdl/protos";
 package sdl.v1;
@@ -171,7 +170,7 @@ service CanvasService {
     };
   }
 
-  rpc LiveMetric(LiveMetricsRequest) returns (stream LiveMetricsResponse) {
+  rpc LiveMetrics(LiveMetricsRequest) returns (stream LiveMetricsResponse) {
     option (google.api.http) = {
       get: "/v1/canvases/{canvas_id}/metrics/subscribe"
     };
