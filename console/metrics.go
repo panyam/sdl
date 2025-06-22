@@ -22,7 +22,6 @@ const (
 	MetricLatency MetricType = "latency"
 )
 
-
 // MetricSpec defines what to measure and how
 // The tracer will use this to collect and process events and create metric points out of them
 // This will corresponding to each "LiveMetric" that can be plotted and will result in a series
@@ -39,6 +38,7 @@ type MetricSpec struct {
 	eventChan                 chan *runtime.TraceEvent
 	idCounter                 atomic.Int64
 	store                     MetricStore // Reference to metric store
+	canvas                    *Canvas     // Reference to canvas for simulation time
 }
 
 // Handles the next trace event.  Returns true if event accepted, false otherwise
@@ -139,8 +139,18 @@ func (ms *MetricSpec) run() {
 					value = 1.0 // Count metric
 				}
 
+				// Convert simulation time to real time
+				var timestamp time.Time
+				if ms.canvas != nil && ms.canvas.simulationStarted {
+					// evt.Timestamp is simulation time in seconds
+					// Add it to the real start time
+					timestamp = ms.canvas.simulationStartTime.Add(time.Duration(evt.Timestamp * float64(time.Second)))
+				} else {
+					// Fallback to current time if simulation hasn't started
+					timestamp = time.Now()
+				}
 				point := &MetricPoint{
-					Timestamp: time.Now(), // Use real time for now
+					Timestamp: timestamp,
 					Value:     value,
 					Tags:      make(map[string]string),
 				}
@@ -163,4 +173,3 @@ func (ms *MetricSpec) run() {
 		}
 	}
 }
-

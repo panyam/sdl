@@ -7,6 +7,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/panyam/sdl/core"
 	"github.com/panyam/sdl/decl"
@@ -33,6 +34,10 @@ type Canvas struct {
 	proposedFlowRates   runtime.RateMap    // Proposed flow rates (runtime-based)
 	currentFlowStrategy string             // Strategy used for current flow rates
 	manualRateOverrides map[string]float64 // Manual arrival rate overrides
+
+	// Simulation time tracking
+	simulationStartTime time.Time
+	simulationStarted   bool
 }
 
 // NewCanvas creates a new interactive canvas session.
@@ -85,7 +90,10 @@ func (c *Canvas) Use(systemName string) error {
 	if c.metricTracer != nil {
 		c.metricTracer.Clear()
 	}
-	c.metricTracer = NewMetricTracer(c.activeSystem)
+	c.metricTracer = NewMetricTracer(c.activeSystem, c)
+
+	// Reset simulation time tracking
+	c.simulationStarted = false
 
 	// Initialize flow contexts for the new system
 	c.initializeFlowContexts()
@@ -288,6 +296,13 @@ func (c *Canvas) StartGenerator(genId string) error {
 	if c.generators[genId] == nil {
 		return status.Error(codes.NotFound, "Generator not found")
 	}
+
+	// Track simulation start time when first generator starts
+	if !c.simulationStarted {
+		c.simulationStartTime = time.Now()
+		c.simulationStarted = true
+	}
+
 	c.generators[genId].Start()
 	return c.recomputeSystemFlows()
 }

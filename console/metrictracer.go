@@ -22,9 +22,10 @@ type MetricTracer struct {
 	seriesMap  map[string]*MetricSpec
 	system     *runtime.SystemInstance
 	store      MetricStore
+	canvas     *Canvas // Reference to parent canvas for simulation time
 }
 
-func NewMetricTracer(system *runtime.SystemInstance) *MetricTracer {
+func NewMetricTracer(system *runtime.SystemInstance, canvas *Canvas) *MetricTracer {
 	// Create default ring buffer store
 	store, _ := NewRingBufferStore(MetricStoreConfig{
 		Type: "ringbuffer",
@@ -38,6 +39,7 @@ func NewMetricTracer(system *runtime.SystemInstance) *MetricTracer {
 		seriesMap: map[string]*MetricSpec{},
 		system:    system,
 		store:     store,
+		canvas:    canvas,
 	}
 }
 
@@ -108,6 +110,7 @@ func (mt *MetricTracer) AddMetricSpec(spec *MetricSpec) error {
 	// Create the measurement
 	spec.resolvedComponentInstance = resolvedComponent
 	spec.store = mt.store
+	spec.canvas = mt.canvas
 	mt.seriesMap[spec.Id] = spec
 	spec.Start()
 	return nil
