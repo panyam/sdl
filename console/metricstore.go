@@ -39,6 +39,9 @@ type MetricStore interface {
 	// Subscribe creates a subscription for real-time metric updates
 	Subscribe(ctx context.Context, metricIDs []string) (<-chan *MetricUpdateBatch, error)
 
+	// GetMetricStats returns statistics for a metric
+	GetMetricStats(metric *protos.Metric) MetricStats
+
 	// Close cleanly shuts down the store
 	Close() error
 }
@@ -52,6 +55,13 @@ type MetricUpdateBatch struct {
 type MetricUpdateItem struct {
 	MetricID string
 	Point    *MetricPoint
+}
+
+// MetricStats contains summary statistics for a metric
+type MetricStats struct {
+	TotalPoints      int64
+	OldestTimestamp  float64
+	NewestTimestamp  float64
 }
 
 // QueryOptions specifies parameters for metric queries

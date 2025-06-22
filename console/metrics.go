@@ -115,61 +115,147 @@ func (ms *MetricSpec) run() {
 	}()
 
 	ctx := context.Background()
-	batchSize := 100
-	batch := make([]*MetricPoint, 0, batchSize)
-	batchTicker := time.NewTicker(100 * time.Millisecond) // Flush every 100ms
-	defer batchTicker.Stop()
+	
+	// Time window aggregation
+	window := time.Duration(ms.AggregationWindow) * time.Second
+	aggregationTicker := time.NewTicker(window)
+	defer aggregationTicker.Stop()
+	
+	// Collect events within time windows for pre-aggregation
+	currentWindow := make([]float64, 0)
+	var currentWindowStart time.Time
 
 	for {
 		select {
 		case <-ms.stopChan:
-			// Flush remaining batch
-			if len(batch) > 0 && ms.store != nil {
-				ms.store.WriteBatch(ctx, ms.Metric, batch)
+			// Flush current window if it has data
+			if len(currentWindow) > 0 && ms.store != nil {
+				ms.flushAggregatedWindow(ctx, currentWindow, currentWindowStart)
 			}
 			return
 		case evt := <-ms.eventChan:
 			// Process the event
 			if evt != nil && ms.store != nil {
-				// Create metric point based on metric type
+				// Extract value based on metric type
 				var value float64
 				if ms.MetricType == MetricLatency {
 					value = float64(evt.Duration)
 				} else {
-					value = 1.0 // Count metric
+					value = 1.0 // Count metric - each event counts as 1
 				}
 
-				// Convert simulation time to real time
-				var timestamp time.Time
-				if ms.canvas != nil && ms.canvas.simulationStarted {
-					// evt.Timestamp is simulation time in seconds
-					// Add it to the real start time
-					timestamp = ms.canvas.simulationStartTime.Add(time.Duration(evt.Timestamp * float64(time.Second)))
-				} else {
-					// Fallback to current time if simulation hasn't started
-					timestamp = time.Now()
-				}
-				point := &MetricPoint{
-					Timestamp: timestamp,
-					Value:     value,
-					Tags:      make(map[string]string),
+				// Set window start time if this is the first event
+				if len(currentWindow) == 0 {
+					if ms.canvas != nil && ms.canvas.simulationStarted {
+						currentWindowStart = ms.canvas.simulationStartTime.Add(time.Duration(evt.Timestamp * float64(time.Second)))
+					} else {
+						currentWindowStart = time.Now()
+					}
 				}
 
-				// Add to batch
-				batch = append(batch, point)
-
-				// Flush if batch is full
-				if len(batch) >= batchSize {
-					ms.store.WriteBatch(ctx, ms.Metric, batch)
-					batch = batch[:0] // Reset batch
-				}
+				// Add value to current window
+				currentWindow = append(currentWindow, value)
 			}
-		case <-batchTicker.C:
-			// Periodic flush
-			if len(batch) > 0 && ms.store != nil {
-				ms.store.WriteBatch(ctx, ms.Metric, batch)
-				batch = batch[:0] // Reset batch
+		case <-aggregationTicker.C:
+			// Time to aggregate and flush current window
+			if len(currentWindow) > 0 && ms.store != nil {
+				ms.flushAggregatedWindow(ctx, currentWindow, currentWindowStart)
+				currentWindow = currentWindow[:0] // Reset window
 			}
 		}
+	}
+}
+
+// flushAggregatedWindow computes aggregation over collected values and writes to store
+func (ms *MetricSpec) flushAggregatedWindow(ctx context.Context, values []float64, windowStart time.Time) {
+	if len(values) == 0 {
+		return
+	}
+
+	// Compute aggregated value based on aggregation function
+	aggregatedValue := ms.computeAggregation(values)
+	
+	// Create aggregated metric point
+	point := &MetricPoint{
+		Timestamp: windowStart,
+		Value:     aggregatedValue,
+		Tags:      make(map[string]string),
+	}
+
+	// Write single aggregated point
+	ms.store.WritePoint(ctx, ms.Metric, point)
+}
+
+// computeAggregation applies the configured aggregation function to values
+func (ms *MetricSpec) computeAggregation(values []float64) float64 {
+	if len(values) == 0 {
+		return 0
+	}
+
+	switch ms.Aggregation {
+	case "sum":
+		sum := 0.0
+		for _, v := range values {
+			sum += v
+		}
+		return sum
+	case "avg":
+		sum := 0.0
+		for _, v := range values {
+			sum += v
+		}
+		return sum / float64(len(values))
+	case "min":
+		min := values[0]
+		for _, v := range values[1:] {
+			if v < min {
+				min = v
+			}
+		}
+		return min
+	case "max":
+		max := values[0]
+		for _, v := range values[1:] {
+			if v > max {
+				max = v
+			}
+		}
+		return max
+	case "count":
+		return float64(len(values))
+	case "p50", "p90", "p95", "p99":
+		// Sort values for percentile calculation
+		sorted := make([]float64, len(values))
+		copy(sorted, values)
+		// Simple bubble sort for small arrays
+		for i := 0; i < len(sorted); i++ {
+			for j := 0; j < len(sorted)-1-i; j++ {
+				if sorted[j] > sorted[j+1] {
+					sorted[j], sorted[j+1] = sorted[j+1], sorted[j]
+				}
+			}
+		}
+		
+		var percentile float64
+		switch ms.Aggregation {
+		case "p50":
+			percentile = 0.50
+		case "p90":
+			percentile = 0.90
+		case "p95":
+			percentile = 0.95
+		case "p99":
+			percentile = 0.99
+		}
+		
+		idx := int(float64(len(sorted)-1) * percentile)
+		return sorted[idx]
+	default:
+		// Default to sum if aggregation type is unknown
+		sum := 0.0
+		for _, v := range values {
+			sum += v
+		}
+		return sum
 	}
 }

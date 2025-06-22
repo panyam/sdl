@@ -253,6 +253,53 @@ func (s *RingBufferStore) Subscribe(ctx context.Context, metricIDs []string) (<-
 	return updateChan, nil
 }
 
+// GetMetricStats returns statistics for a specific metric
+func (s *RingBufferStore) GetMetricStats(metric *protos.Metric) MetricStats {
+	s.mu.RLock()
+	rb, ok := s.buffers[metric.Id]
+	s.mu.RUnlock()
+
+	if !ok || rb == nil {
+		return MetricStats{}
+	}
+
+	rb.mu.RLock()
+	defer rb.mu.RUnlock()
+
+	if rb.count == 0 {
+		return MetricStats{}
+	}
+
+	// Find oldest and newest timestamps
+	var oldest, newest time.Time
+	first := true
+
+	for i := 0; i < rb.count; i++ {
+		idx := (rb.readStart + i) % rb.size
+		point := rb.points[idx]
+		if point != nil {
+			if first {
+				oldest = point.Timestamp
+				newest = point.Timestamp
+				first = false
+			} else {
+				if point.Timestamp.Before(oldest) {
+					oldest = point.Timestamp
+				}
+				if point.Timestamp.After(newest) {
+					newest = point.Timestamp
+				}
+			}
+		}
+	}
+
+	return MetricStats{
+		TotalPoints:     int64(rb.count),
+		OldestTimestamp: float64(oldest.Unix()),
+		NewestTimestamp: float64(newest.Unix()),
+	}
+}
+
 func (s *RingBufferStore) Close() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()

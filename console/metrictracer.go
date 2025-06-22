@@ -134,7 +134,7 @@ func (mt *MetricTracer) RemoveMetricSpec(specId string) {
 	}
 }
 
-// ListMetrics returns all configured metrics
+// ListMetrics returns all configured metrics with statistics
 func (mt *MetricTracer) ListMetrics() []*protos.Metric {
 	mt.seriesLock.RLock()
 	defer mt.seriesLock.RUnlock()
@@ -142,7 +142,30 @@ func (mt *MetricTracer) ListMetrics() []*protos.Metric {
 	metrics := make([]*protos.Metric, 0, len(mt.seriesMap))
 	for _, spec := range mt.seriesMap {
 		if spec.Metric != nil {
-			metrics = append(metrics, spec.Metric)
+			// Create a copy of the metric with updated statistics
+			metricCopy := &protos.Metric{
+				Id:                spec.Metric.Id,
+				CanvasId:          spec.Metric.CanvasId,
+				Name:              spec.Metric.Name,
+				Component:         spec.Metric.Component,
+				Methods:           spec.Metric.Methods,
+				Enabled:           spec.Metric.Enabled,
+				MetricType:        spec.Metric.MetricType,
+				Aggregation:       spec.Metric.Aggregation,
+				AggregationWindow: spec.Metric.AggregationWindow,
+				MatchResult:       spec.Metric.MatchResult,
+				MatchResultType:   spec.Metric.MatchResultType,
+			}
+
+			// Get statistics from the store
+			if mt.store != nil {
+				stats := mt.store.GetMetricStats(spec.Metric)
+				metricCopy.NumDataPoints = stats.TotalPoints
+				metricCopy.OldestTimestamp = stats.OldestTimestamp
+				metricCopy.NewestTimestamp = stats.NewestTimestamp
+			}
+
+			metrics = append(metrics, metricCopy)
 		}
 	}
 	return metrics

@@ -13,7 +13,7 @@ sdl gen start
 
 # sdl gen add load2 server.Insert 1
 # sdl gen start load2
-sdl metrics add m1 server Lookup --type count
-sdl metrics add m2 server Lookup --type latency
-sdl metrics add m3 server Insert --type count
-sdl metrics add m4 server Insert --type latency
+sdl metrics add m1 server Lookup --type count --aggregation sum --window 1
+sdl metrics add m2 server Lookup --type latency --window 1 --aggregation p90
+sdl metrics add m3 server Insert --type count --aggregation sum --window 1
+sdl metrics add m4 server Insert --type latency --window 1  --aggregation p90
