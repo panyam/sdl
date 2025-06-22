@@ -203,11 +203,27 @@ This document outlines the workshop-focused development status and next steps fo
 *   **`[COMPLETED]` Type Safety**: ComponentInstance.Set/Get methods ensure proper type checking
 *   **`[COMPLETED]` Test Recipe**: Created test_parameters.recipe validating all functionality
 
+### ✅ COMPLETED: Connect-Web Integration (June 22, 2025)
+*   **`[COMPLETED]` GetSystemDiagram RPC**: Added proto definitions with SystemDiagram, DiagramNode, DiagramEdge message types
+*   **`[COMPLETED]` Proto-First Refactoring**: Canvas.GetSystemDiagram returns proto types directly, eliminating conversion overhead
+*   **`[COMPLETED]` Viz Package Migration**: Updated all diagram generators to accept proto.SystemDiagram instead of custom types
+*   **`[COMPLETED]` Connect-Web v2 Frontend**: Migrated from manual API to generated TypeScript client using @connectrpc/connect-web
+*   **`[COMPLETED]` Connect-Go Backend**: Added Connect protocol support alongside gRPC using adapter pattern
+*   **`[COMPLETED]` Shared Service Instance**: Both gRPC and Connect servers use same CanvasService for consistency
+*   **`[COMPLETED]` Import Path Fixes**: Generated TypeScript in web/src/gen/ to avoid relative import issues
+*   **`[COMPLETED]` Dashboard Integration**: System diagram now loads and displays from actual Canvas state
+
 ### 2. Flow-Based Rate Suggestions (Next Priority)
 *   **Flow Analysis**: Analyze system topology and current flows
 *   **Rate Optimization**: Suggest optimal generator rates for balanced load
 *   **Bottleneck Detection**: Identify overloaded and underutilized components
 *   **Auto-Apply**: Option to automatically set suggested rates
+
+### 3. Enhanced Connect Integration (Future)
+*   **Server Streaming**: Implement server-streaming for real-time metrics using Connect protocol
+*   **Bidirectional Streaming**: Replace WebSocket with Connect streaming for unified communication
+*   **Auto-Generated Adapters**: Investigate code generation for Connect/gRPC adapter layer
+*   **Type Safety**: Leverage Connect's full type safety for all frontend-backend communication
 
 ### 3. Dashboard Integration
 *   **gRPC Gateway**: Update all API calls to use new endpoints
