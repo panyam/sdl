@@ -23,6 +23,14 @@ SDL enables rapid analysis of system designs through:
 git clone <repository-url>
 cd sdl
 
+# Install prerequisites
+
+#Install Buf if not already done.  This will make buf generally available
+npm install --save-dev -g @bufbuild/buf
+
+# Install the es/connect generator plugins for proto and buf.  Needed for `buf generate`
+npm install --save-dev -g @bufbuild/protoc-gen-es
+
 # Build the CLI tool
 make build
 
