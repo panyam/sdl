@@ -37,6 +37,7 @@ const (
 	CanvasService_StartGenerator_FullMethodName     = "/sdl.v1.CanvasService/StartGenerator"
 	CanvasService_DeleteGenerator_FullMethodName    = "/sdl.v1.CanvasService/DeleteGenerator"
 	CanvasService_ExecuteTrace_FullMethodName       = "/sdl.v1.CanvasService/ExecuteTrace"
+	CanvasService_TraceAllPaths_FullMethodName      = "/sdl.v1.CanvasService/TraceAllPaths"
 	CanvasService_SetParameter_FullMethodName       = "/sdl.v1.CanvasService/SetParameter"
 	CanvasService_GetParameters_FullMethodName      = "/sdl.v1.CanvasService/GetParameters"
 	CanvasService_AddMetric_FullMethodName          = "/sdl.v1.CanvasService/AddMetric"
@@ -85,6 +86,8 @@ type CanvasServiceClient interface {
 	DeleteGenerator(ctx context.Context, in *DeleteGeneratorRequest, opts ...grpc.CallOption) (*DeleteGeneratorResponse, error)
 	// Execute a single trace for debugging/analysis
 	ExecuteTrace(ctx context.Context, in *ExecuteTraceRequest, opts ...grpc.CallOption) (*ExecuteTraceResponse, error)
+	// Execute breadth-first traversal to find all possible execution paths
+	TraceAllPaths(ctx context.Context, in *TraceAllPathsRequest, opts ...grpc.CallOption) (*TraceAllPathsResponse, error)
 	// ----- Parameter Operations -----
 	// Set a component parameter value
 	SetParameter(ctx context.Context, in *SetParameterRequest, opts ...grpc.CallOption) (*SetParameterResponse, error)
@@ -275,6 +278,16 @@ func (c *canvasServiceClient) ExecuteTrace(ctx context.Context, in *ExecuteTrace
 	return out, nil
 }
 
+func (c *canvasServiceClient) TraceAllPaths(ctx context.Context, in *TraceAllPathsRequest, opts ...grpc.CallOption) (*TraceAllPathsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TraceAllPathsResponse)
+	err := c.cc.Invoke(ctx, CanvasService_TraceAllPaths_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *canvasServiceClient) SetParameter(ctx context.Context, in *SetParameterRequest, opts ...grpc.CallOption) (*SetParameterResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SetParameterResponse)
@@ -402,6 +415,8 @@ type CanvasServiceServer interface {
 	DeleteGenerator(context.Context, *DeleteGeneratorRequest) (*DeleteGeneratorResponse, error)
 	// Execute a single trace for debugging/analysis
 	ExecuteTrace(context.Context, *ExecuteTraceRequest) (*ExecuteTraceResponse, error)
+	// Execute breadth-first traversal to find all possible execution paths
+	TraceAllPaths(context.Context, *TraceAllPathsRequest) (*TraceAllPathsResponse, error)
 	// ----- Parameter Operations -----
 	// Set a component parameter value
 	SetParameter(context.Context, *SetParameterRequest) (*SetParameterResponse, error)
@@ -478,6 +493,9 @@ func (UnimplementedCanvasServiceServer) DeleteGenerator(context.Context, *Delete
 }
 func (UnimplementedCanvasServiceServer) ExecuteTrace(context.Context, *ExecuteTraceRequest) (*ExecuteTraceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExecuteTrace not implemented")
+}
+func (UnimplementedCanvasServiceServer) TraceAllPaths(context.Context, *TraceAllPathsRequest) (*TraceAllPathsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TraceAllPaths not implemented")
 }
 func (UnimplementedCanvasServiceServer) SetParameter(context.Context, *SetParameterRequest) (*SetParameterResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetParameter not implemented")
@@ -811,6 +829,24 @@ func _CanvasService_ExecuteTrace_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CanvasService_TraceAllPaths_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TraceAllPathsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CanvasServiceServer).TraceAllPaths(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CanvasService_TraceAllPaths_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CanvasServiceServer).TraceAllPaths(ctx, req.(*TraceAllPathsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CanvasService_SetParameter_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SetParameterRequest)
 	if err := dec(in); err != nil {
@@ -1018,6 +1054,10 @@ var CanvasService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ExecuteTrace",
 			Handler:    _CanvasService_ExecuteTrace_Handler,
+		},
+		{
+			MethodName: "TraceAllPaths",
+			Handler:    _CanvasService_TraceAllPaths_Handler,
 		},
 		{
 			MethodName: "SetParameter",

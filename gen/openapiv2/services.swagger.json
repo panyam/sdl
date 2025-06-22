@@ -703,6 +703,57 @@
         ]
       }
     },
+    "/v1/canvases/{canvasId}/paths/{component}/{method}": {
+      "get": {
+        "summary": "Execute breadth-first traversal to find all possible execution paths",
+        "operationId": "CanvasService_TraceAllPaths",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1TraceAllPathsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "canvasId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "component",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "method",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "maxDepth",
+            "description": "Optional: maximum depth to traverse (default unlimited)",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "CanvasService"
+        ]
+      }
+    },
     "/v1/canvases/{canvasId}/trace/{component}/{method}": {
       "get": {
         "summary": "Execute a single trace for debugging/analysis",
@@ -1147,6 +1198,19 @@
         }
       }
     },
+    "v1AllPathsTraceData": {
+      "type": "object",
+      "properties": {
+        "traceId": {
+          "type": "string"
+        },
+        "root": {
+          "$ref": "#/definitions/v1TraceNode",
+          "title": "The root TraceNode always starts from the \u003cComponent\u003e.\u003cMethod\u003e where we are kicking off the trace from"
+        }
+      },
+      "title": "Enhanced TraceData for all-paths traversal - represents the complete execution tree"
+    },
     "v1Canvas": {
       "type": "object",
       "properties": {
@@ -1303,6 +1367,44 @@
       },
       "title": "DiagramNode represents a component or instance in the system"
     },
+    "v1Edge": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "Unique Edge ID across the entire Trace"
+        },
+        "nextNode": {
+          "$ref": "#/definitions/v1TraceNode",
+          "title": "The next node this edge leads to"
+        },
+        "label": {
+          "type": "string",
+          "title": "Label on the edge (if any)"
+        },
+        "isAsync": {
+          "type": "boolean",
+          "title": "Async edges denote Futures being sent without a return"
+        },
+        "isReverse": {
+          "type": "boolean",
+          "title": "\"Reverse\" edges show a \"wait\" on a future"
+        },
+        "probability": {
+          "type": "string",
+          "description": "This is optional but leaving it here just in case."
+        },
+        "condition": {
+          "type": "string",
+          "title": "Condition information for branching"
+        },
+        "isConditional": {
+          "type": "boolean",
+          "title": "true if this edge represents a conditional branch"
+        }
+      },
+      "title": "Edge represents a transition from one node to another in the execution tree"
+    },
     "v1ExecuteTraceResponse": {
       "type": "object",
       "properties": {
@@ -1397,6 +1499,30 @@
         }
       },
       "title": "Response containing the system diagram"
+    },
+    "v1GroupInfo": {
+      "type": "object",
+      "properties": {
+        "groupStart": {
+          "type": "integer",
+          "format": "int32",
+          "title": "Starting edge index"
+        },
+        "groupEnd": {
+          "type": "integer",
+          "format": "int32",
+          "title": "Ending edge index (inclusive)"
+        },
+        "groupLabel": {
+          "type": "string",
+          "title": "Generic label: \"loop: 3x\", \"if cached\", \"switch: status\""
+        },
+        "groupType": {
+          "type": "string",
+          "title": "Optional hint: \"loop\", \"conditional\", \"switch\" (for tooling)"
+        }
+      },
+      "title": "GroupInfo allows flexible grouping of edges with labels"
     },
     "v1ListCanvasesResponse": {
       "type": "object",
@@ -1740,6 +1866,15 @@
       },
       "title": "SystemDiagram represents the topology of a system"
     },
+    "v1TraceAllPathsResponse": {
+      "type": "object",
+      "properties": {
+        "traceData": {
+          "$ref": "#/definitions/v1AllPathsTraceData",
+          "title": "All discovered execution paths in tree format"
+        }
+      }
+    },
     "v1TraceData": {
       "type": "object",
       "properties": {
@@ -1804,6 +1939,32 @@
         }
       },
       "title": "TraceEvent matches the runtime.TraceEvent structure"
+    },
+    "v1TraceNode": {
+      "type": "object",
+      "properties": {
+        "startingTarget": {
+          "type": "string",
+          "title": "Name of the component and method in the form \u003cComponent\u003e.\u003cMethod\u003e we are starting the trace from"
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Edge"
+          },
+          "title": "All edges in an ordered fashion"
+        },
+        "groups": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1GroupInfo"
+          },
+          "title": "Multiple groups for flexible labeling of sub-trees (loops, conditionals, etc.)"
+        }
+      },
+      "title": "TraceNode represents a single node in the execution tree"
     },
     "v1UpdateGeneratorResponse": {
       "type": "object",

@@ -96,6 +96,11 @@ class CanvasServiceStub(object):
                 request_serializer=sdl_dot_v1_dot_canvas__pb2.ExecuteTraceRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_canvas__pb2.ExecuteTraceResponse.FromString,
                 _registered_method=True)
+        self.TraceAllPaths = channel.unary_unary(
+                '/sdl.v1.CanvasService/TraceAllPaths',
+                request_serializer=sdl_dot_v1_dot_canvas__pb2.TraceAllPathsRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_canvas__pb2.TraceAllPathsResponse.FromString,
+                _registered_method=True)
         self.SetParameter = channel.unary_unary(
                 '/sdl.v1.CanvasService/SetParameter',
                 request_serializer=sdl_dot_v1_dot_canvas__pb2.SetParameterRequest.SerializeToString,
@@ -253,6 +258,13 @@ class CanvasServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def TraceAllPaths(self, request, context):
+        """Execute breadth-first traversal to find all possible execution paths
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def SetParameter(self, request, context):
         """----- Parameter Operations -----
         Set a component parameter value
@@ -400,6 +412,11 @@ def add_CanvasServiceServicer_to_server(servicer, server):
                     servicer.ExecuteTrace,
                     request_deserializer=sdl_dot_v1_dot_canvas__pb2.ExecuteTraceRequest.FromString,
                     response_serializer=sdl_dot_v1_dot_canvas__pb2.ExecuteTraceResponse.SerializeToString,
+            ),
+            'TraceAllPaths': grpc.unary_unary_rpc_method_handler(
+                    servicer.TraceAllPaths,
+                    request_deserializer=sdl_dot_v1_dot_canvas__pb2.TraceAllPathsRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_canvas__pb2.TraceAllPathsResponse.SerializeToString,
             ),
             'SetParameter': grpc.unary_unary_rpc_method_handler(
                     servicer.SetParameter,
@@ -876,6 +893,33 @@ class CanvasService(object):
             '/sdl.v1.CanvasService/ExecuteTrace',
             sdl_dot_v1_dot_canvas__pb2.ExecuteTraceRequest.SerializeToString,
             sdl_dot_v1_dot_canvas__pb2.ExecuteTraceResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def TraceAllPaths(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.CanvasService/TraceAllPaths',
+            sdl_dot_v1_dot_canvas__pb2.TraceAllPathsRequest.SerializeToString,
+            sdl_dot_v1_dot_canvas__pb2.TraceAllPathsResponse.FromString,
             options,
             channel_credentials,
             insecure,

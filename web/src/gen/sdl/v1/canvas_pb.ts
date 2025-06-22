@@ -17,7 +17,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file sdl/v1/canvas.proto.
  */
 export const file_sdl_v1_canvas: GenFile = /*@__PURE__*/
-  fileDesc("ChNzZGwvdjEvY2FudmFzLnByb3RvEgZzZGwudjEiNQoTQ3JlYXRlQ2FudmFzUmVxdWVzdBIeCgZjYW52YXMYASABKAsyDi5zZGwudjEuQ2FudmFzIq8BChRDcmVhdGVDYW52YXNSZXNwb25zZRIeCgZjYW52YXMYASABKAsyDi5zZGwudjEuQ2FudmFzEkMKDGZpZWxkX2Vycm9ycxgCIAMoCzItLnNkbC52MS5DcmVhdGVDYW52YXNSZXNwb25zZS5GaWVsZEVycm9yc0VudHJ5GjIKEEZpZWxkRXJyb3JzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASI9ChNMaXN0Q2FudmFzZXNSZXF1ZXN0EiYKCnBhZ2luYXRpb24YASABKAsyEi5zZGwudjEuUGFnaW5hdGlvbiJoChRMaXN0Q2FudmFzZXNSZXNwb25zZRIgCghjYW52YXNlcxgBIAMoCzIOLnNkbC52MS5DYW52YXMSLgoKcGFnaW5hdGlvbhgCIAEoCzIaLnNkbC52MS5QYWdpbmF0aW9uUmVzcG9uc2UiHgoQR2V0Q2FudmFzUmVxdWVzdBIKCgJpZBgBIAEoCSIzChFHZXRDYW52YXNSZXNwb25zZRIeCgZjYW52YXMYASABKAsyDi5zZGwudjEuQ2FudmFzIiEKE0RlbGV0ZUNhbnZhc1JlcXVlc3QSCgoCaWQYASABKAkiFgoURGVsZXRlQ2FudmFzUmVzcG9uc2UiOwoTQWRkR2VuZXJhdG9yUmVxdWVzdBIkCglnZW5lcmF0b3IYASABKAsyES5zZGwudjEuR2VuZXJhdG9yIjwKFEFkZEdlbmVyYXRvclJlc3BvbnNlEiQKCWdlbmVyYXRvchgBIAEoCzIRLnNkbC52MS5HZW5lcmF0b3IiKgoVTGlzdEdlbmVyYXRvcnNSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCSI/ChZMaXN0R2VuZXJhdG9yc1Jlc3BvbnNlEiUKCmdlbmVyYXRvcnMYASADKAsyES5zZGwudjEuR2VuZXJhdG9yIi4KGVN0YXJ0QWxsR2VuZXJhdG9yc1JlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJIpYBChpTdGFydEFsbEdlbmVyYXRvcnNSZXNwb25zZRIYChB0b3RhbF9nZW5lcmF0b3JzGAEgASgFEhUKDXN0YXJ0ZWRfY291bnQYAiABKAUSHQoVYWxyZWFkeV9ydW5uaW5nX2NvdW50GAMgASgFEhQKDGZhaWxlZF9jb3VudBgEIAEoBRISCgpmYWlsZWRfaWRzGAUgAygJIi0KGFN0b3BBbGxHZW5lcmF0b3JzUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkilQEKGVN0b3BBbGxHZW5lcmF0b3JzUmVzcG9uc2USGAoQdG90YWxfZ2VuZXJhdG9ycxgBIAEoBRIVCg1zdG9wcGVkX2NvdW50GAIgASgFEh0KFWFscmVhZHlfc3RvcHBlZF9jb3VudBgDIAEoBRIUCgxmYWlsZWRfY291bnQYBCABKAUSEgoKZmFpbGVkX2lkcxgFIAMoCSI+ChNHZXRHZW5lcmF0b3JSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRIUCgxnZW5lcmF0b3JfaWQYAiABKAkiPAoUR2V0R2VuZXJhdG9yUmVzcG9uc2USJAoJZ2VuZXJhdG9yGAEgASgLMhEuc2RsLnYxLkdlbmVyYXRvciJvChZVcGRhdGVHZW5lcmF0b3JSZXF1ZXN0EiQKCWdlbmVyYXRvchgBIAEoCzIRLnNkbC52MS5HZW5lcmF0b3ISLwoLdXBkYXRlX21hc2sYAiABKAsyGi5nb29nbGUucHJvdG9idWYuRmllbGRNYXNrIj8KF1VwZGF0ZUdlbmVyYXRvclJlc3BvbnNlEiQKCWdlbmVyYXRvchgBIAEoCzIRLnNkbC52MS5HZW5lcmF0b3IiQAoVU3RhcnRHZW5lcmF0b3JSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRIUCgxnZW5lcmF0b3JfaWQYAiABKAkiGAoWU3RhcnRHZW5lcmF0b3JSZXNwb25zZSI/ChRTdG9wR2VuZXJhdG9yUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSFAoMZ2VuZXJhdG9yX2lkGAIgASgJIhcKFVN0b3BHZW5lcmF0b3JSZXNwb25zZSJBChZEZWxldGVHZW5lcmF0b3JSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRIUCgxnZW5lcmF0b3JfaWQYAiABKAkiGQoXRGVsZXRlR2VuZXJhdG9yUmVzcG9uc2UiOwoPTG9hZEZpbGVSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRIVCg1zZGxfZmlsZV9wYXRoGAIgASgJIhIKEExvYWRGaWxlUmVzcG9uc2UiOgoQVXNlU3lzdGVtUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSEwoLc3lzdGVtX25hbWUYAiABKAkiEwoRVXNlU3lzdGVtUmVzcG9uc2UiMgoQQWRkTWV0cmljUmVxdWVzdBIeCgZtZXRyaWMYASABKAsyDi5zZGwudjEuTWV0cmljIjMKEUFkZE1ldHJpY1Jlc3BvbnNlEh4KBm1ldHJpYxgBIAEoCzIOLnNkbC52MS5NZXRyaWMiOwoTRGVsZXRlTWV0cmljUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSEQoJbWV0cmljX2lkGAIgASgJIhYKFERlbGV0ZU1ldHJpY1Jlc3BvbnNlInAKE1F1ZXJ5TWV0cmljc1JlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJEhEKCW1ldHJpY19pZBgCIAEoCRISCgpzdGFydF90aW1lGAMgASgBEhAKCGVuZF90aW1lGAQgASgBEg0KBWxpbWl0GAUgASgFIjsKFFF1ZXJ5TWV0cmljc1Jlc3BvbnNlEiMKBnBvaW50cxgBIAMoCzITLnNkbC52MS5NZXRyaWNQb2ludCIvCgtNZXRyaWNQb2ludBIRCgl0aW1lc3RhbXAYASABKAESDQoFdmFsdWUYAiABKAEijAEKF0FnZ3JlZ2F0ZU1ldHJpY3NSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRIRCgltZXRyaWNfaWQYAiABKAkSEgoKc3RhcnRfdGltZRgDIAEoARIQCghlbmRfdGltZRgEIAEoARIQCghmdW5jdGlvbhgFIAEoCRITCgt3aW5kb3dfc2l6ZRgGIAEoASJEChhBZ2dyZWdhdGVNZXRyaWNzUmVzcG9uc2USKAoHcmVzdWx0cxgBIAMoCzIXLnNkbC52MS5BZ2dyZWdhdGVSZXN1bHQiMwoPQWdncmVnYXRlUmVzdWx0EhEKCXRpbWVzdGFtcBgBIAEoARINCgV2YWx1ZRgCIAEoASInChJMaXN0TWV0cmljc1JlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJIjYKE0xpc3RNZXRyaWNzUmVzcG9uc2USHwoHbWV0cmljcxgBIAMoCzIOLnNkbC52MS5NZXRyaWMiPQoUU3RyZWFtTWV0cmljc1JlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJEhIKCm1ldHJpY19pZHMYAiADKAkiPgoVU3RyZWFtTWV0cmljc1Jlc3BvbnNlEiUKB3VwZGF0ZXMYASADKAsyFC5zZGwudjEuTWV0cmljVXBkYXRlIkUKDE1ldHJpY1VwZGF0ZRIRCgltZXRyaWNfaWQYASABKAkSIgoFcG9pbnQYAiABKAsyEy5zZGwudjEuTWV0cmljUG9pbnQiSwoTRXhlY3V0ZVRyYWNlUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSEQoJY29tcG9uZW50GAIgASgJEg4KBm1ldGhvZBgDIAEoCSI9ChRFeGVjdXRlVHJhY2VSZXNwb25zZRIlCgp0cmFjZV9kYXRhGAEgASgLMhEuc2RsLnYxLlRyYWNlRGF0YSJUCglUcmFjZURhdGESDgoGc3lzdGVtGAEgASgJEhMKC2VudHJ5X3BvaW50GAIgASgJEiIKBmV2ZW50cxgDIAMoCzISLnNkbC52MS5UcmFjZUV2ZW50IrwBCgpUcmFjZUV2ZW50EgwKBGtpbmQYASABKAkSCgoCaWQYAiABKAMSEQoJcGFyZW50X2lkGAMgASgDEhEKCXRpbWVzdGFtcBgEIAEoARIQCghkdXJhdGlvbhgFIAEoARIRCgljb21wb25lbnQYBiABKAkSDgoGbWV0aG9kGAcgASgJEgwKBGFyZ3MYCCADKAkSFAoMcmV0dXJuX3ZhbHVlGAkgASgJEhUKDWVycm9yX21lc3NhZ2UYCiABKAkiSQoTU2V0UGFyYW1ldGVyUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSDAoEcGF0aBgCIAEoCRIRCgluZXdfdmFsdWUYAyABKAkiZAoUU2V0UGFyYW1ldGVyUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIVCg1lcnJvcl9tZXNzYWdlGAIgASgJEhEKCW5ld192YWx1ZRgDIAEoCRIRCglvbGRfdmFsdWUYBCABKAkiNwoUR2V0UGFyYW1ldGVyc1JlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJEgwKBHBhdGgYAiABKAkijQEKFUdldFBhcmFtZXRlcnNSZXNwb25zZRJBCgpwYXJhbWV0ZXJzGAEgAygLMi0uc2RsLnYxLkdldFBhcmFtZXRlcnNSZXNwb25zZS5QYXJhbWV0ZXJzRW50cnkaMQoPUGFyYW1ldGVyc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiLAoXR2V0U3lzdGVtRGlhZ3JhbVJlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJIkIKGEdldFN5c3RlbURpYWdyYW1SZXNwb25zZRImCgdkaWFncmFtGAEgASgLMhUuc2RsLnYxLlN5c3RlbURpYWdyYW0ibAoNU3lzdGVtRGlhZ3JhbRITCgtzeXN0ZW1fbmFtZRgBIAEoCRIiCgVub2RlcxgCIAMoCzITLnNkbC52MS5EaWFncmFtTm9kZRIiCgVlZGdlcxgDIAMoCzITLnNkbC52MS5EaWFncmFtRWRnZSJrCgtEaWFncmFtTm9kZRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHR5cGUYAyABKAkSIwoHbWV0aG9kcxgEIAMoCzISLnNkbC52MS5NZXRob2RJbmZvEg8KB3RyYWZmaWMYBSABKAkiQAoKTWV0aG9kSW5mbxIMCgRuYW1lGAEgASgJEhMKC3JldHVybl90eXBlGAIgASgJEg8KB3RyYWZmaWMYAyABKAEiwAEKC0RpYWdyYW1FZGdlEg8KB2Zyb21faWQYASABKAkSDQoFdG9faWQYAiABKAkSEwoLZnJvbV9tZXRob2QYAyABKAkSEQoJdG9fbWV0aG9kGAQgASgJEg0KBWxhYmVsGAUgASgJEg0KBW9yZGVyGAYgASgBEhEKCWNvbmRpdGlvbhgHIAEoCRITCgtwcm9iYWJpbGl0eRgIIAEoARIUCgxnZW5lcmF0b3JfaWQYCSABKAkSDQoFY29sb3IYCiABKAky/xcKDUNhbnZhc1NlcnZpY2USYgoMQ3JlYXRlQ2FudmFzEhsuc2RsLnYxLkNyZWF0ZUNhbnZhc1JlcXVlc3QaHC5zZGwudjEuQ3JlYXRlQ2FudmFzUmVzcG9uc2UiF4LT5JMCEToBKiIML3YxL2NhbnZhc2VzEl8KDExpc3RDYW52YXNlcxIbLnNkbC52MS5MaXN0Q2FudmFzZXNSZXF1ZXN0Ghwuc2RsLnYxLkxpc3RDYW52YXNlc1Jlc3BvbnNlIhSC0+STAg4SDC92MS9jYW52YXNlcxJdCglHZXRDYW52YXMSGC5zZGwudjEuR2V0Q2FudmFzUmVxdWVzdBoZLnNkbC52MS5HZXRDYW52YXNSZXNwb25zZSIbgtPkkwIVEhMvdjEvY2FudmFzZXMve2lkPSp9EnEKCExvYWRGaWxlEhcuc2RsLnYxLkxvYWRGaWxlUmVxdWVzdBoYLnNkbC52MS5Mb2FkRmlsZVJlc3BvbnNlIjKC0+STAiw6ASoiJy92MS9jYW52YXNlcy97Y2FudmFzX2lkPSp9L2FjdGlvbnM6bG9hZBJzCglVc2VTeXN0ZW0SGC5zZGwudjEuVXNlU3lzdGVtUmVxdWVzdBoZLnNkbC52MS5Vc2VTeXN0ZW1SZXNwb25zZSIxgtPkkwIrOgEqIiYvdjEvY2FudmFzZXMve2NhbnZhc19pZD0qfS9hY3Rpb25zOnVzZRJmCgxEZWxldGVDYW52YXMSGy5zZGwudjEuRGVsZXRlQ2FudmFzUmVxdWVzdBocLnNkbC52MS5EZWxldGVDYW52YXNSZXNwb25zZSIbgtPkkwIVKhMvdjEvY2FudmFzZXMve2lkPSp9EoMBCgxBZGRHZW5lcmF0b3ISGy5zZGwudjEuQWRkR2VuZXJhdG9yUmVxdWVzdBocLnNkbC52MS5BZGRHZW5lcmF0b3JSZXNwb25zZSI4gtPkkwIyOgEqIi0vdjEvY2FudmFzZXMve2dlbmVyYXRvci5jYW52YXNfaWR9L2dlbmVyYXRvcnMSnAEKElN0YXJ0QWxsR2VuZXJhdG9ycxIhLnNkbC52MS5TdGFydEFsbEdlbmVyYXRvcnNSZXF1ZXN0GiIuc2RsLnYxLlN0YXJ0QWxsR2VuZXJhdG9yc1Jlc3BvbnNlIj+C0+STAjk6ASoaNC92MS9jYW52YXNlcy97Y2FudmFzX2lkfS9nZW5lcmF0b3JzL2FjdGlvbnM6c3RhcnRhbGwSmAEKEVN0b3BBbGxHZW5lcmF0b3JzEiAuc2RsLnYxLlN0b3BBbGxHZW5lcmF0b3JzUmVxdWVzdBohLnNkbC52MS5TdG9wQWxsR2VuZXJhdG9yc1Jlc3BvbnNlIj6C0+STAjg6ASoaMy92MS9jYW52YXNlcy97Y2FudmFzX2lkfS9nZW5lcmF0b3JzL2FjdGlvbnM6c3RvcGFsbBJ8Cg5MaXN0R2VuZXJhdG9ycxIdLnNkbC52MS5MaXN0R2VuZXJhdG9yc1JlcXVlc3QaHi5zZGwudjEuTGlzdEdlbmVyYXRvcnNSZXNwb25zZSIrgtPkkwIlEiMvdjEvY2FudmFzZXMve2NhbnZhc19pZH0vZ2VuZXJhdG9ycxKFAQoMR2V0R2VuZXJhdG9yEhsuc2RsLnYxLkdldEdlbmVyYXRvclJlcXVlc3QaHC5zZGwudjEuR2V0R2VuZXJhdG9yUmVzcG9uc2UiOoLT5JMCNBIyL3YxL2NhbnZhc2VzL3tjYW52YXNfaWR9L2dlbmVyYXRvcnMve2dlbmVyYXRvcl9pZH0SmwEKD1VwZGF0ZUdlbmVyYXRvchIeLnNkbC52MS5VcGRhdGVHZW5lcmF0b3JSZXF1ZXN0Gh8uc2RsLnYxLlVwZGF0ZUdlbmVyYXRvclJlc3BvbnNlIkeC0+STAkE6ASoyPC92MS9jYW52YXNlcy97Z2VuZXJhdG9yLmNhbnZhc19pZH0vZ2VuZXJhdG9ycy97Z2VuZXJhdG9yLmlkfRKZAQoNU3RvcEdlbmVyYXRvchIcLnNkbC52MS5TdG9wR2VuZXJhdG9yUmVxdWVzdBodLnNkbC52MS5TdG9wR2VuZXJhdG9yUmVzcG9uc2UiS4LT5JMCRToBKiJAL3YxL2NhbnZhc2VzL3tjYW52YXNfaWR9L2dlbmVyYXRvcnMve2dlbmVyYXRvcl9pZH0vYWN0aW9uczpwYXVzZRKdAQoOU3RhcnRHZW5lcmF0b3ISHS5zZGwudjEuU3RhcnRHZW5lcmF0b3JSZXF1ZXN0Gh4uc2RsLnYxLlN0YXJ0R2VuZXJhdG9yUmVzcG9uc2UiTILT5JMCRjoBKiJBL3YxL2NhbnZhc2VzL3tjYW52YXNfaWR9L2dlbmVyYXRvcnMve2dlbmVyYXRvcl9pZH0vYWN0aW9uczpyZXN1bWUSjgEKD0RlbGV0ZUdlbmVyYXRvchIeLnNkbC52MS5EZWxldGVHZW5lcmF0b3JSZXF1ZXN0Gh8uc2RsLnYxLkRlbGV0ZUdlbmVyYXRvclJlc3BvbnNlIjqC0+STAjQqMi92MS9jYW52YXNlcy97Y2FudmFzX2lkfS9nZW5lcmF0b3JzL3tnZW5lcmF0b3JfaWR9EoYBCgxFeGVjdXRlVHJhY2USGy5zZGwudjEuRXhlY3V0ZVRyYWNlUmVxdWVzdBocLnNkbC52MS5FeGVjdXRlVHJhY2VSZXNwb25zZSI7gtPkkwI1EjMvdjEvY2FudmFzZXMve2NhbnZhc19pZH0vdHJhY2Uve2NvbXBvbmVudH0ve21ldGhvZH0SgAEKDFNldFBhcmFtZXRlchIbLnNkbC52MS5TZXRQYXJhbWV0ZXJSZXF1ZXN0Ghwuc2RsLnYxLlNldFBhcmFtZXRlclJlc3BvbnNlIjWC0+STAi86ASoaKi92MS9jYW52YXNlcy97Y2FudmFzX2lkfS9wYXJhbWV0ZXJzL3twYXRofRJ5Cg1HZXRQYXJhbWV0ZXJzEhwuc2RsLnYxLkdldFBhcmFtZXRlcnNSZXF1ZXN0Gh0uc2RsLnYxLkdldFBhcmFtZXRlcnNSZXNwb25zZSIrgtPkkwIlEiMvdjEvY2FudmFzZXMve2NhbnZhc19pZH0vcGFyYW1ldGVycxJ0CglBZGRNZXRyaWMSGC5zZGwudjEuQWRkTWV0cmljUmVxdWVzdBoZLnNkbC52MS5BZGRNZXRyaWNSZXNwb25zZSIygtPkkwIsOgEqIicvdjEvY2FudmFzZXMve21ldHJpYy5jYW52YXNfaWR9L21ldHJpY3MSfwoMRGVsZXRlTWV0cmljEhsuc2RsLnYxLkRlbGV0ZU1ldHJpY1JlcXVlc3QaHC5zZGwudjEuRGVsZXRlTWV0cmljUmVzcG9uc2UiNILT5JMCLiosL3YxL2NhbnZhc2VzL3tjYW52YXNfaWR9L21ldHJpY3Mve21ldHJpY19pZH0ScAoLTGlzdE1ldHJpY3MSGi5zZGwudjEuTGlzdE1ldHJpY3NSZXF1ZXN0Ghsuc2RsLnYxLkxpc3RNZXRyaWNzUmVzcG9uc2UiKILT5JMCIhIgL3YxL2NhbnZhc2VzL3tjYW52YXNfaWR9L21ldHJpY3MShQEKDFF1ZXJ5TWV0cmljcxIbLnNkbC52MS5RdWVyeU1ldHJpY3NSZXF1ZXN0Ghwuc2RsLnYxLlF1ZXJ5TWV0cmljc1Jlc3BvbnNlIjqC0+STAjQSMi92MS9jYW52YXNlcy97Y2FudmFzX2lkfS9tZXRyaWNzL3ttZXRyaWNfaWR9L3F1ZXJ5ElAKDVN0cmVhbU1ldHJpY3MSHC5zZGwudjEuU3RyZWFtTWV0cmljc1JlcXVlc3QaHS5zZGwudjEuU3RyZWFtTWV0cmljc1Jlc3BvbnNlIgAwARJ/ChBHZXRTeXN0ZW1EaWFncmFtEh8uc2RsLnYxLkdldFN5c3RlbURpYWdyYW1SZXF1ZXN0GiAuc2RsLnYxLkdldFN5c3RlbURpYWdyYW1SZXNwb25zZSIogtPkkwIiEiAvdjEvY2FudmFzZXMve2NhbnZhc19pZH0vZGlhZ3JhbUJ3Cgpjb20uc2RsLnYxQgtDYW52YXNQcm90b1ABWiNnaXRodWIuY29tL3BhbnlhbS9zZGwvZ2VuL2dvL3NkbC92MaICA1NYWKoCBlNkbC5WMcoCBlNkbFxWMeICElNkbFxWMVxHUEJNZXRhZGF0YeoCB1NkbDo6VjFiBnByb3RvMw", [file_google_protobuf_field_mask, file_sdl_v1_models, file_google_api_annotations]);
+  fileDesc("ChNzZGwvdjEvY2FudmFzLnByb3RvEgZzZGwudjEiNQoTQ3JlYXRlQ2FudmFzUmVxdWVzdBIeCgZjYW52YXMYASABKAsyDi5zZGwudjEuQ2FudmFzIq8BChRDcmVhdGVDYW52YXNSZXNwb25zZRIeCgZjYW52YXMYASABKAsyDi5zZGwudjEuQ2FudmFzEkMKDGZpZWxkX2Vycm9ycxgCIAMoCzItLnNkbC52MS5DcmVhdGVDYW52YXNSZXNwb25zZS5GaWVsZEVycm9yc0VudHJ5GjIKEEZpZWxkRXJyb3JzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASI9ChNMaXN0Q2FudmFzZXNSZXF1ZXN0EiYKCnBhZ2luYXRpb24YASABKAsyEi5zZGwudjEuUGFnaW5hdGlvbiJoChRMaXN0Q2FudmFzZXNSZXNwb25zZRIgCghjYW52YXNlcxgBIAMoCzIOLnNkbC52MS5DYW52YXMSLgoKcGFnaW5hdGlvbhgCIAEoCzIaLnNkbC52MS5QYWdpbmF0aW9uUmVzcG9uc2UiHgoQR2V0Q2FudmFzUmVxdWVzdBIKCgJpZBgBIAEoCSIzChFHZXRDYW52YXNSZXNwb25zZRIeCgZjYW52YXMYASABKAsyDi5zZGwudjEuQ2FudmFzIiEKE0RlbGV0ZUNhbnZhc1JlcXVlc3QSCgoCaWQYASABKAkiFgoURGVsZXRlQ2FudmFzUmVzcG9uc2UiOwoTQWRkR2VuZXJhdG9yUmVxdWVzdBIkCglnZW5lcmF0b3IYASABKAsyES5zZGwudjEuR2VuZXJhdG9yIjwKFEFkZEdlbmVyYXRvclJlc3BvbnNlEiQKCWdlbmVyYXRvchgBIAEoCzIRLnNkbC52MS5HZW5lcmF0b3IiKgoVTGlzdEdlbmVyYXRvcnNSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCSI/ChZMaXN0R2VuZXJhdG9yc1Jlc3BvbnNlEiUKCmdlbmVyYXRvcnMYASADKAsyES5zZGwudjEuR2VuZXJhdG9yIi4KGVN0YXJ0QWxsR2VuZXJhdG9yc1JlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJIpYBChpTdGFydEFsbEdlbmVyYXRvcnNSZXNwb25zZRIYChB0b3RhbF9nZW5lcmF0b3JzGAEgASgFEhUKDXN0YXJ0ZWRfY291bnQYAiABKAUSHQoVYWxyZWFkeV9ydW5uaW5nX2NvdW50GAMgASgFEhQKDGZhaWxlZF9jb3VudBgEIAEoBRISCgpmYWlsZWRfaWRzGAUgAygJIi0KGFN0b3BBbGxHZW5lcmF0b3JzUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkilQEKGVN0b3BBbGxHZW5lcmF0b3JzUmVzcG9uc2USGAoQdG90YWxfZ2VuZXJhdG9ycxgBIAEoBRIVCg1zdG9wcGVkX2NvdW50GAIgASgFEh0KFWFscmVhZHlfc3RvcHBlZF9jb3VudBgDIAEoBRIUCgxmYWlsZWRfY291bnQYBCABKAUSEgoKZmFpbGVkX2lkcxgFIAMoCSI+ChNHZXRHZW5lcmF0b3JSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRIUCgxnZW5lcmF0b3JfaWQYAiABKAkiPAoUR2V0R2VuZXJhdG9yUmVzcG9uc2USJAoJZ2VuZXJhdG9yGAEgASgLMhEuc2RsLnYxLkdlbmVyYXRvciJvChZVcGRhdGVHZW5lcmF0b3JSZXF1ZXN0EiQKCWdlbmVyYXRvchgBIAEoCzIRLnNkbC52MS5HZW5lcmF0b3ISLwoLdXBkYXRlX21hc2sYAiABKAsyGi5nb29nbGUucHJvdG9idWYuRmllbGRNYXNrIj8KF1VwZGF0ZUdlbmVyYXRvclJlc3BvbnNlEiQKCWdlbmVyYXRvchgBIAEoCzIRLnNkbC52MS5HZW5lcmF0b3IiQAoVU3RhcnRHZW5lcmF0b3JSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRIUCgxnZW5lcmF0b3JfaWQYAiABKAkiGAoWU3RhcnRHZW5lcmF0b3JSZXNwb25zZSI/ChRTdG9wR2VuZXJhdG9yUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSFAoMZ2VuZXJhdG9yX2lkGAIgASgJIhcKFVN0b3BHZW5lcmF0b3JSZXNwb25zZSJBChZEZWxldGVHZW5lcmF0b3JSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRIUCgxnZW5lcmF0b3JfaWQYAiABKAkiGQoXRGVsZXRlR2VuZXJhdG9yUmVzcG9uc2UiOwoPTG9hZEZpbGVSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRIVCg1zZGxfZmlsZV9wYXRoGAIgASgJIhIKEExvYWRGaWxlUmVzcG9uc2UiOgoQVXNlU3lzdGVtUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSEwoLc3lzdGVtX25hbWUYAiABKAkiEwoRVXNlU3lzdGVtUmVzcG9uc2UiMgoQQWRkTWV0cmljUmVxdWVzdBIeCgZtZXRyaWMYASABKAsyDi5zZGwudjEuTWV0cmljIjMKEUFkZE1ldHJpY1Jlc3BvbnNlEh4KBm1ldHJpYxgBIAEoCzIOLnNkbC52MS5NZXRyaWMiOwoTRGVsZXRlTWV0cmljUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSEQoJbWV0cmljX2lkGAIgASgJIhYKFERlbGV0ZU1ldHJpY1Jlc3BvbnNlInAKE1F1ZXJ5TWV0cmljc1JlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJEhEKCW1ldHJpY19pZBgCIAEoCRISCgpzdGFydF90aW1lGAMgASgBEhAKCGVuZF90aW1lGAQgASgBEg0KBWxpbWl0GAUgASgFIjsKFFF1ZXJ5TWV0cmljc1Jlc3BvbnNlEiMKBnBvaW50cxgBIAMoCzITLnNkbC52MS5NZXRyaWNQb2ludCIvCgtNZXRyaWNQb2ludBIRCgl0aW1lc3RhbXAYASABKAESDQoFdmFsdWUYAiABKAEijAEKF0FnZ3JlZ2F0ZU1ldHJpY3NSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRIRCgltZXRyaWNfaWQYAiABKAkSEgoKc3RhcnRfdGltZRgDIAEoARIQCghlbmRfdGltZRgEIAEoARIQCghmdW5jdGlvbhgFIAEoCRITCgt3aW5kb3dfc2l6ZRgGIAEoASJEChhBZ2dyZWdhdGVNZXRyaWNzUmVzcG9uc2USKAoHcmVzdWx0cxgBIAMoCzIXLnNkbC52MS5BZ2dyZWdhdGVSZXN1bHQiMwoPQWdncmVnYXRlUmVzdWx0EhEKCXRpbWVzdGFtcBgBIAEoARINCgV2YWx1ZRgCIAEoASInChJMaXN0TWV0cmljc1JlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJIjYKE0xpc3RNZXRyaWNzUmVzcG9uc2USHwoHbWV0cmljcxgBIAMoCzIOLnNkbC52MS5NZXRyaWMiPQoUU3RyZWFtTWV0cmljc1JlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJEhIKCm1ldHJpY19pZHMYAiADKAkiPgoVU3RyZWFtTWV0cmljc1Jlc3BvbnNlEiUKB3VwZGF0ZXMYASADKAsyFC5zZGwudjEuTWV0cmljVXBkYXRlIkUKDE1ldHJpY1VwZGF0ZRIRCgltZXRyaWNfaWQYASABKAkSIgoFcG9pbnQYAiABKAsyEy5zZGwudjEuTWV0cmljUG9pbnQiSwoTRXhlY3V0ZVRyYWNlUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSEQoJY29tcG9uZW50GAIgASgJEg4KBm1ldGhvZBgDIAEoCSI9ChRFeGVjdXRlVHJhY2VSZXNwb25zZRIlCgp0cmFjZV9kYXRhGAEgASgLMhEuc2RsLnYxLlRyYWNlRGF0YSJfChRUcmFjZUFsbFBhdGhzUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSEQoJY29tcG9uZW50GAIgASgJEg4KBm1ldGhvZBgDIAEoCRIRCgltYXhfZGVwdGgYBCABKAUiRgoVVHJhY2VBbGxQYXRoc1Jlc3BvbnNlEi0KCnRyYWNlX2RhdGEYASABKAsyGS5zZGwudjEuQWxsUGF0aHNUcmFjZURhdGEiRgoRQWxsUGF0aHNUcmFjZURhdGESEAoIdHJhY2VfaWQYASABKAkSHwoEcm9vdBgCIAEoCzIRLnNkbC52MS5UcmFjZU5vZGUiZAoJVHJhY2VOb2RlEhcKD3N0YXJ0aW5nX3RhcmdldBgBIAEoCRIbCgVlZGdlcxgCIAMoCzIMLnNkbC52MS5FZGdlEiEKBmdyb3VwcxgDIAMoCzIRLnNkbC52MS5Hcm91cEluZm8irQEKBEVkZ2USCgoCaWQYASABKAkSJAoJbmV4dF9ub2RlGAIgASgLMhEuc2RsLnYxLlRyYWNlTm9kZRINCgVsYWJlbBgDIAEoCRIQCghpc19hc3luYxgEIAEoCBISCgppc19yZXZlcnNlGAUgASgIEhMKC3Byb2JhYmlsaXR5GAYgASgJEhEKCWNvbmRpdGlvbhgHIAEoCRIWCg5pc19jb25kaXRpb25hbBgIIAEoCCJcCglHcm91cEluZm8SEwoLZ3JvdXBfc3RhcnQYASABKAUSEQoJZ3JvdXBfZW5kGAIgASgFEhMKC2dyb3VwX2xhYmVsGAMgASgJEhIKCmdyb3VwX3R5cGUYBCABKAkiVAoJVHJhY2VEYXRhEg4KBnN5c3RlbRgBIAEoCRITCgtlbnRyeV9wb2ludBgCIAEoCRIiCgZldmVudHMYAyADKAsyEi5zZGwudjEuVHJhY2VFdmVudCK8AQoKVHJhY2VFdmVudBIMCgRraW5kGAEgASgJEgoKAmlkGAIgASgDEhEKCXBhcmVudF9pZBgDIAEoAxIRCgl0aW1lc3RhbXAYBCABKAESEAoIZHVyYXRpb24YBSABKAESEQoJY29tcG9uZW50GAYgASgJEg4KBm1ldGhvZBgHIAEoCRIMCgRhcmdzGAggAygJEhQKDHJldHVybl92YWx1ZRgJIAEoCRIVCg1lcnJvcl9tZXNzYWdlGAogASgJIkkKE1NldFBhcmFtZXRlclJlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJEgwKBHBhdGgYAiABKAkSEQoJbmV3X3ZhbHVlGAMgASgJImQKFFNldFBhcmFtZXRlclJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSFQoNZXJyb3JfbWVzc2FnZRgCIAEoCRIRCgluZXdfdmFsdWUYAyABKAkSEQoJb2xkX3ZhbHVlGAQgASgJIjcKFEdldFBhcmFtZXRlcnNSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRIMCgRwYXRoGAIgASgJIo0BChVHZXRQYXJhbWV0ZXJzUmVzcG9uc2USQQoKcGFyYW1ldGVycxgBIAMoCzItLnNkbC52MS5HZXRQYXJhbWV0ZXJzUmVzcG9uc2UuUGFyYW1ldGVyc0VudHJ5GjEKD1BhcmFtZXRlcnNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIiwKF0dldFN5c3RlbURpYWdyYW1SZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCSJCChhHZXRTeXN0ZW1EaWFncmFtUmVzcG9uc2USJgoHZGlhZ3JhbRgBIAEoCzIVLnNkbC52MS5TeXN0ZW1EaWFncmFtImwKDVN5c3RlbURpYWdyYW0SEwoLc3lzdGVtX25hbWUYASABKAkSIgoFbm9kZXMYAiADKAsyEy5zZGwudjEuRGlhZ3JhbU5vZGUSIgoFZWRnZXMYAyADKAsyEy5zZGwudjEuRGlhZ3JhbUVkZ2UiawoLRGlhZ3JhbU5vZGUSCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIMCgR0eXBlGAMgASgJEiMKB21ldGhvZHMYBCADKAsyEi5zZGwudjEuTWV0aG9kSW5mbxIPCgd0cmFmZmljGAUgASgJIkAKCk1ldGhvZEluZm8SDAoEbmFtZRgBIAEoCRITCgtyZXR1cm5fdHlwZRgCIAEoCRIPCgd0cmFmZmljGAMgASgBIsABCgtEaWFncmFtRWRnZRIPCgdmcm9tX2lkGAEgASgJEg0KBXRvX2lkGAIgASgJEhMKC2Zyb21fbWV0aG9kGAMgASgJEhEKCXRvX21ldGhvZBgEIAEoCRINCgVsYWJlbBgFIAEoCRINCgVvcmRlchgGIAEoARIRCgljb25kaXRpb24YByABKAkSEwoLcHJvYmFiaWxpdHkYCCABKAESFAoMZ2VuZXJhdG9yX2lkGAkgASgJEg0KBWNvbG9yGAogASgJMosZCg1DYW52YXNTZXJ2aWNlEmIKDENyZWF0ZUNhbnZhcxIbLnNkbC52MS5DcmVhdGVDYW52YXNSZXF1ZXN0Ghwuc2RsLnYxLkNyZWF0ZUNhbnZhc1Jlc3BvbnNlIheC0+STAhE6ASoiDC92MS9jYW52YXNlcxJfCgxMaXN0Q2FudmFzZXMSGy5zZGwudjEuTGlzdENhbnZhc2VzUmVxdWVzdBocLnNkbC52MS5MaXN0Q2FudmFzZXNSZXNwb25zZSIUgtPkkwIOEgwvdjEvY2FudmFzZXMSXQoJR2V0Q2FudmFzEhguc2RsLnYxLkdldENhbnZhc1JlcXVlc3QaGS5zZGwudjEuR2V0Q2FudmFzUmVzcG9uc2UiG4LT5JMCFRITL3YxL2NhbnZhc2VzL3tpZD0qfRJxCghMb2FkRmlsZRIXLnNkbC52MS5Mb2FkRmlsZVJlcXVlc3QaGC5zZGwudjEuTG9hZEZpbGVSZXNwb25zZSIygtPkkwIsOgEqIicvdjEvY2FudmFzZXMve2NhbnZhc19pZD0qfS9hY3Rpb25zOmxvYWQScwoJVXNlU3lzdGVtEhguc2RsLnYxLlVzZVN5c3RlbVJlcXVlc3QaGS5zZGwudjEuVXNlU3lzdGVtUmVzcG9uc2UiMYLT5JMCKzoBKiImL3YxL2NhbnZhc2VzL3tjYW52YXNfaWQ9Kn0vYWN0aW9uczp1c2USZgoMRGVsZXRlQ2FudmFzEhsuc2RsLnYxLkRlbGV0ZUNhbnZhc1JlcXVlc3QaHC5zZGwudjEuRGVsZXRlQ2FudmFzUmVzcG9uc2UiG4LT5JMCFSoTL3YxL2NhbnZhc2VzL3tpZD0qfRKDAQoMQWRkR2VuZXJhdG9yEhsuc2RsLnYxLkFkZEdlbmVyYXRvclJlcXVlc3QaHC5zZGwudjEuQWRkR2VuZXJhdG9yUmVzcG9uc2UiOILT5JMCMjoBKiItL3YxL2NhbnZhc2VzL3tnZW5lcmF0b3IuY2FudmFzX2lkfS9nZW5lcmF0b3JzEpwBChJTdGFydEFsbEdlbmVyYXRvcnMSIS5zZGwudjEuU3RhcnRBbGxHZW5lcmF0b3JzUmVxdWVzdBoiLnNkbC52MS5TdGFydEFsbEdlbmVyYXRvcnNSZXNwb25zZSI/gtPkkwI5OgEqGjQvdjEvY2FudmFzZXMve2NhbnZhc19pZH0vZ2VuZXJhdG9ycy9hY3Rpb25zOnN0YXJ0YWxsEpgBChFTdG9wQWxsR2VuZXJhdG9ycxIgLnNkbC52MS5TdG9wQWxsR2VuZXJhdG9yc1JlcXVlc3QaIS5zZGwudjEuU3RvcEFsbEdlbmVyYXRvcnNSZXNwb25zZSI+gtPkkwI4OgEqGjMvdjEvY2FudmFzZXMve2NhbnZhc19pZH0vZ2VuZXJhdG9ycy9hY3Rpb25zOnN0b3BhbGwSfAoOTGlzdEdlbmVyYXRvcnMSHS5zZGwudjEuTGlzdEdlbmVyYXRvcnNSZXF1ZXN0Gh4uc2RsLnYxLkxpc3RHZW5lcmF0b3JzUmVzcG9uc2UiK4LT5JMCJRIjL3YxL2NhbnZhc2VzL3tjYW52YXNfaWR9L2dlbmVyYXRvcnMShQEKDEdldEdlbmVyYXRvchIbLnNkbC52MS5HZXRHZW5lcmF0b3JSZXF1ZXN0Ghwuc2RsLnYxLkdldEdlbmVyYXRvclJlc3BvbnNlIjqC0+STAjQSMi92MS9jYW52YXNlcy97Y2FudmFzX2lkfS9nZW5lcmF0b3JzL3tnZW5lcmF0b3JfaWR9EpsBCg9VcGRhdGVHZW5lcmF0b3ISHi5zZGwudjEuVXBkYXRlR2VuZXJhdG9yUmVxdWVzdBofLnNkbC52MS5VcGRhdGVHZW5lcmF0b3JSZXNwb25zZSJHgtPkkwJBOgEqMjwvdjEvY2FudmFzZXMve2dlbmVyYXRvci5jYW52YXNfaWR9L2dlbmVyYXRvcnMve2dlbmVyYXRvci5pZH0SmQEKDVN0b3BHZW5lcmF0b3ISHC5zZGwudjEuU3RvcEdlbmVyYXRvclJlcXVlc3QaHS5zZGwudjEuU3RvcEdlbmVyYXRvclJlc3BvbnNlIkuC0+STAkU6ASoiQC92MS9jYW52YXNlcy97Y2FudmFzX2lkfS9nZW5lcmF0b3JzL3tnZW5lcmF0b3JfaWR9L2FjdGlvbnM6cGF1c2USnQEKDlN0YXJ0R2VuZXJhdG9yEh0uc2RsLnYxLlN0YXJ0R2VuZXJhdG9yUmVxdWVzdBoeLnNkbC52MS5TdGFydEdlbmVyYXRvclJlc3BvbnNlIkyC0+STAkY6ASoiQS92MS9jYW52YXNlcy97Y2FudmFzX2lkfS9nZW5lcmF0b3JzL3tnZW5lcmF0b3JfaWR9L2FjdGlvbnM6cmVzdW1lEo4BCg9EZWxldGVHZW5lcmF0b3ISHi5zZGwudjEuRGVsZXRlR2VuZXJhdG9yUmVxdWVzdBofLnNkbC52MS5EZWxldGVHZW5lcmF0b3JSZXNwb25zZSI6gtPkkwI0KjIvdjEvY2FudmFzZXMve2NhbnZhc19pZH0vZ2VuZXJhdG9ycy97Z2VuZXJhdG9yX2lkfRKGAQoMRXhlY3V0ZVRyYWNlEhsuc2RsLnYxLkV4ZWN1dGVUcmFjZVJlcXVlc3QaHC5zZGwudjEuRXhlY3V0ZVRyYWNlUmVzcG9uc2UiO4LT5JMCNRIzL3YxL2NhbnZhc2VzL3tjYW52YXNfaWR9L3RyYWNlL3tjb21wb25lbnR9L3ttZXRob2R9EokBCg1UcmFjZUFsbFBhdGhzEhwuc2RsLnYxLlRyYWNlQWxsUGF0aHNSZXF1ZXN0Gh0uc2RsLnYxLlRyYWNlQWxsUGF0aHNSZXNwb25zZSI7gtPkkwI1EjMvdjEvY2FudmFzZXMve2NhbnZhc19pZH0vcGF0aHMve2NvbXBvbmVudH0ve21ldGhvZH0SgAEKDFNldFBhcmFtZXRlchIbLnNkbC52MS5TZXRQYXJhbWV0ZXJSZXF1ZXN0Ghwuc2RsLnYxLlNldFBhcmFtZXRlclJlc3BvbnNlIjWC0+STAi86ASoaKi92MS9jYW52YXNlcy97Y2FudmFzX2lkfS9wYXJhbWV0ZXJzL3twYXRofRJ5Cg1HZXRQYXJhbWV0ZXJzEhwuc2RsLnYxLkdldFBhcmFtZXRlcnNSZXF1ZXN0Gh0uc2RsLnYxLkdldFBhcmFtZXRlcnNSZXNwb25zZSIrgtPkkwIlEiMvdjEvY2FudmFzZXMve2NhbnZhc19pZH0vcGFyYW1ldGVycxJ0CglBZGRNZXRyaWMSGC5zZGwudjEuQWRkTWV0cmljUmVxdWVzdBoZLnNkbC52MS5BZGRNZXRyaWNSZXNwb25zZSIygtPkkwIsOgEqIicvdjEvY2FudmFzZXMve21ldHJpYy5jYW52YXNfaWR9L21ldHJpY3MSfwoMRGVsZXRlTWV0cmljEhsuc2RsLnYxLkRlbGV0ZU1ldHJpY1JlcXVlc3QaHC5zZGwudjEuRGVsZXRlTWV0cmljUmVzcG9uc2UiNILT5JMCLiosL3YxL2NhbnZhc2VzL3tjYW52YXNfaWR9L21ldHJpY3Mve21ldHJpY19pZH0ScAoLTGlzdE1ldHJpY3MSGi5zZGwudjEuTGlzdE1ldHJpY3NSZXF1ZXN0Ghsuc2RsLnYxLkxpc3RNZXRyaWNzUmVzcG9uc2UiKILT5JMCIhIgL3YxL2NhbnZhc2VzL3tjYW52YXNfaWR9L21ldHJpY3MShQEKDFF1ZXJ5TWV0cmljcxIbLnNkbC52MS5RdWVyeU1ldHJpY3NSZXF1ZXN0Ghwuc2RsLnYxLlF1ZXJ5TWV0cmljc1Jlc3BvbnNlIjqC0+STAjQSMi92MS9jYW52YXNlcy97Y2FudmFzX2lkfS9tZXRyaWNzL3ttZXRyaWNfaWR9L3F1ZXJ5ElAKDVN0cmVhbU1ldHJpY3MSHC5zZGwudjEuU3RyZWFtTWV0cmljc1JlcXVlc3QaHS5zZGwudjEuU3RyZWFtTWV0cmljc1Jlc3BvbnNlIgAwARJ/ChBHZXRTeXN0ZW1EaWFncmFtEh8uc2RsLnYxLkdldFN5c3RlbURpYWdyYW1SZXF1ZXN0GiAuc2RsLnYxLkdldFN5c3RlbURpYWdyYW1SZXNwb25zZSIogtPkkwIiEiAvdjEvY2FudmFzZXMve2NhbnZhc19pZH0vZGlhZ3JhbUJ3Cgpjb20uc2RsLnYxQgtDYW52YXNQcm90b1ABWiNnaXRodWIuY29tL3BhbnlhbS9zZGwvZ2VuL2dvL3NkbC92MaICA1NYWKoCBlNkbC5WMcoCBlNkbFxWMeICElNkbFxWMVxHUEJNZXRhZGF0YeoCB1NkbDo6VjFiBnByb3RvMw", [file_google_protobuf_field_mask, file_sdl_v1_models, file_google_api_annotations]);
 
 /**
  * *
@@ -1069,6 +1069,232 @@ export const ExecuteTraceResponseSchema: GenMessage<ExecuteTraceResponse> = /*@_
   messageDesc(file_sdl_v1_canvas, 46);
 
 /**
+ * @generated from message sdl.v1.TraceAllPathsRequest
+ */
+export type TraceAllPathsRequest = Message<"sdl.v1.TraceAllPathsRequest"> & {
+  /**
+   * @generated from field: string canvas_id = 1;
+   */
+  canvasId: string;
+
+  /**
+   * @generated from field: string component = 2;
+   */
+  component: string;
+
+  /**
+   * @generated from field: string method = 3;
+   */
+  method: string;
+
+  /**
+   * Optional: maximum depth to traverse (default unlimited)
+   *
+   * @generated from field: int32 max_depth = 4;
+   */
+  maxDepth: number;
+};
+
+/**
+ * Describes the message sdl.v1.TraceAllPathsRequest.
+ * Use `create(TraceAllPathsRequestSchema)` to create a new message.
+ */
+export const TraceAllPathsRequestSchema: GenMessage<TraceAllPathsRequest> = /*@__PURE__*/
+  messageDesc(file_sdl_v1_canvas, 47);
+
+/**
+ * @generated from message sdl.v1.TraceAllPathsResponse
+ */
+export type TraceAllPathsResponse = Message<"sdl.v1.TraceAllPathsResponse"> & {
+  /**
+   * All discovered execution paths in tree format
+   *
+   * @generated from field: sdl.v1.AllPathsTraceData trace_data = 1;
+   */
+  traceData?: AllPathsTraceData;
+};
+
+/**
+ * Describes the message sdl.v1.TraceAllPathsResponse.
+ * Use `create(TraceAllPathsResponseSchema)` to create a new message.
+ */
+export const TraceAllPathsResponseSchema: GenMessage<TraceAllPathsResponse> = /*@__PURE__*/
+  messageDesc(file_sdl_v1_canvas, 48);
+
+/**
+ * Enhanced TraceData for all-paths traversal - represents the complete execution tree
+ *
+ * @generated from message sdl.v1.AllPathsTraceData
+ */
+export type AllPathsTraceData = Message<"sdl.v1.AllPathsTraceData"> & {
+  /**
+   * @generated from field: string trace_id = 1;
+   */
+  traceId: string;
+
+  /**
+   * The root TraceNode always starts from the <Component>.<Method> where we are kicking off the trace from
+   *
+   * @generated from field: sdl.v1.TraceNode root = 2;
+   */
+  root?: TraceNode;
+};
+
+/**
+ * Describes the message sdl.v1.AllPathsTraceData.
+ * Use `create(AllPathsTraceDataSchema)` to create a new message.
+ */
+export const AllPathsTraceDataSchema: GenMessage<AllPathsTraceData> = /*@__PURE__*/
+  messageDesc(file_sdl_v1_canvas, 49);
+
+/**
+ * TraceNode represents a single node in the execution tree
+ *
+ * @generated from message sdl.v1.TraceNode
+ */
+export type TraceNode = Message<"sdl.v1.TraceNode"> & {
+  /**
+   * Name of the component and method in the form <Component>.<Method> we are starting the trace from
+   *
+   * @generated from field: string starting_target = 1;
+   */
+  startingTarget: string;
+
+  /**
+   * All edges in an ordered fashion
+   *
+   * @generated from field: repeated sdl.v1.Edge edges = 2;
+   */
+  edges: Edge[];
+
+  /**
+   * Multiple groups for flexible labeling of sub-trees (loops, conditionals, etc.)
+   *
+   * @generated from field: repeated sdl.v1.GroupInfo groups = 3;
+   */
+  groups: GroupInfo[];
+};
+
+/**
+ * Describes the message sdl.v1.TraceNode.
+ * Use `create(TraceNodeSchema)` to create a new message.
+ */
+export const TraceNodeSchema: GenMessage<TraceNode> = /*@__PURE__*/
+  messageDesc(file_sdl_v1_canvas, 50);
+
+/**
+ * Edge represents a transition from one node to another in the execution tree
+ *
+ * @generated from message sdl.v1.Edge
+ */
+export type Edge = Message<"sdl.v1.Edge"> & {
+  /**
+   * Unique Edge ID across the entire Trace
+   *
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * The next node this edge leads to
+   *
+   * @generated from field: sdl.v1.TraceNode next_node = 2;
+   */
+  nextNode?: TraceNode;
+
+  /**
+   * Label on the edge (if any)
+   *
+   * @generated from field: string label = 3;
+   */
+  label: string;
+
+  /**
+   * Async edges denote Futures being sent without a return
+   *
+   * @generated from field: bool is_async = 4;
+   */
+  isAsync: boolean;
+
+  /**
+   * "Reverse" edges show a "wait" on a future
+   *
+   * @generated from field: bool is_reverse = 5;
+   */
+  isReverse: boolean;
+
+  /**
+   * This is optional but leaving it here just in case.
+   *
+   * @generated from field: string probability = 6;
+   */
+  probability: string;
+
+  /**
+   * Condition information for branching
+   *
+   * @generated from field: string condition = 7;
+   */
+  condition: string;
+
+  /**
+   * true if this edge represents a conditional branch
+   *
+   * @generated from field: bool is_conditional = 8;
+   */
+  isConditional: boolean;
+};
+
+/**
+ * Describes the message sdl.v1.Edge.
+ * Use `create(EdgeSchema)` to create a new message.
+ */
+export const EdgeSchema: GenMessage<Edge> = /*@__PURE__*/
+  messageDesc(file_sdl_v1_canvas, 51);
+
+/**
+ * GroupInfo allows flexible grouping of edges with labels
+ *
+ * @generated from message sdl.v1.GroupInfo
+ */
+export type GroupInfo = Message<"sdl.v1.GroupInfo"> & {
+  /**
+   * Starting edge index
+   *
+   * @generated from field: int32 group_start = 1;
+   */
+  groupStart: number;
+
+  /**
+   * Ending edge index (inclusive)
+   *
+   * @generated from field: int32 group_end = 2;
+   */
+  groupEnd: number;
+
+  /**
+   * Generic label: "loop: 3x", "if cached", "switch: status"
+   *
+   * @generated from field: string group_label = 3;
+   */
+  groupLabel: string;
+
+  /**
+   * Optional hint: "loop", "conditional", "switch" (for tooling)
+   *
+   * @generated from field: string group_type = 4;
+   */
+  groupType: string;
+};
+
+/**
+ * Describes the message sdl.v1.GroupInfo.
+ * Use `create(GroupInfoSchema)` to create a new message.
+ */
+export const GroupInfoSchema: GenMessage<GroupInfo> = /*@__PURE__*/
+  messageDesc(file_sdl_v1_canvas, 52);
+
+/**
  * TraceData matches the runtime.TraceData structure
  *
  * @generated from message sdl.v1.TraceData
@@ -1095,7 +1321,7 @@ export type TraceData = Message<"sdl.v1.TraceData"> & {
  * Use `create(TraceDataSchema)` to create a new message.
  */
 export const TraceDataSchema: GenMessage<TraceData> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 47);
+  messageDesc(file_sdl_v1_canvas, 53);
 
 /**
  * TraceEvent matches the runtime.TraceEvent structure
@@ -1165,7 +1391,7 @@ export type TraceEvent = Message<"sdl.v1.TraceEvent"> & {
  * Use `create(TraceEventSchema)` to create a new message.
  */
 export const TraceEventSchema: GenMessage<TraceEvent> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 48);
+  messageDesc(file_sdl_v1_canvas, 54);
 
 /**
  * Request to set a parameter value
@@ -1198,7 +1424,7 @@ export type SetParameterRequest = Message<"sdl.v1.SetParameterRequest"> & {
  * Use `create(SetParameterRequestSchema)` to create a new message.
  */
 export const SetParameterRequestSchema: GenMessage<SetParameterRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 49);
+  messageDesc(file_sdl_v1_canvas, 55);
 
 /**
  * Response from setting a parameter
@@ -1236,7 +1462,7 @@ export type SetParameterResponse = Message<"sdl.v1.SetParameterResponse"> & {
  * Use `create(SetParameterResponseSchema)` to create a new message.
  */
 export const SetParameterResponseSchema: GenMessage<SetParameterResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 50);
+  messageDesc(file_sdl_v1_canvas, 56);
 
 /**
  * Request to get parameter values
@@ -1262,7 +1488,7 @@ export type GetParametersRequest = Message<"sdl.v1.GetParametersRequest"> & {
  * Use `create(GetParametersRequestSchema)` to create a new message.
  */
 export const GetParametersRequestSchema: GenMessage<GetParametersRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 51);
+  messageDesc(file_sdl_v1_canvas, 57);
 
 /**
  * Response containing parameter values
@@ -1283,7 +1509,7 @@ export type GetParametersResponse = Message<"sdl.v1.GetParametersResponse"> & {
  * Use `create(GetParametersResponseSchema)` to create a new message.
  */
 export const GetParametersResponseSchema: GenMessage<GetParametersResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 52);
+  messageDesc(file_sdl_v1_canvas, 58);
 
 /**
  * Request to get the system diagram
@@ -1302,7 +1528,7 @@ export type GetSystemDiagramRequest = Message<"sdl.v1.GetSystemDiagramRequest"> 
  * Use `create(GetSystemDiagramRequestSchema)` to create a new message.
  */
 export const GetSystemDiagramRequestSchema: GenMessage<GetSystemDiagramRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 53);
+  messageDesc(file_sdl_v1_canvas, 59);
 
 /**
  * Response containing the system diagram
@@ -1321,7 +1547,7 @@ export type GetSystemDiagramResponse = Message<"sdl.v1.GetSystemDiagramResponse"
  * Use `create(GetSystemDiagramResponseSchema)` to create a new message.
  */
 export const GetSystemDiagramResponseSchema: GenMessage<GetSystemDiagramResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 54);
+  messageDesc(file_sdl_v1_canvas, 60);
 
 /**
  * SystemDiagram represents the topology of a system
@@ -1350,7 +1576,7 @@ export type SystemDiagram = Message<"sdl.v1.SystemDiagram"> & {
  * Use `create(SystemDiagramSchema)` to create a new message.
  */
 export const SystemDiagramSchema: GenMessage<SystemDiagram> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 55);
+  messageDesc(file_sdl_v1_canvas, 61);
 
 /**
  * DiagramNode represents a component or instance in the system
@@ -1399,7 +1625,7 @@ export type DiagramNode = Message<"sdl.v1.DiagramNode"> & {
  * Use `create(DiagramNodeSchema)` to create a new message.
  */
 export const DiagramNodeSchema: GenMessage<DiagramNode> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 56);
+  messageDesc(file_sdl_v1_canvas, 62);
 
 /**
  * MethodInfo represents information about a component method
@@ -1434,7 +1660,7 @@ export type MethodInfo = Message<"sdl.v1.MethodInfo"> & {
  * Use `create(MethodInfoSchema)` to create a new message.
  */
 export const MethodInfoSchema: GenMessage<MethodInfo> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 57);
+  messageDesc(file_sdl_v1_canvas, 63);
 
 /**
  * DiagramEdge represents a connection between nodes
@@ -1512,7 +1738,7 @@ export type DiagramEdge = Message<"sdl.v1.DiagramEdge"> & {
  * Use `create(DiagramEdgeSchema)` to create a new message.
  */
 export const DiagramEdgeSchema: GenMessage<DiagramEdge> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_canvas, 58);
+  messageDesc(file_sdl_v1_canvas, 64);
 
 /**
  * *
@@ -1671,6 +1897,16 @@ export const CanvasService: GenService<{
     methodKind: "unary";
     input: typeof ExecuteTraceRequestSchema;
     output: typeof ExecuteTraceResponseSchema;
+  },
+  /**
+   * Execute breadth-first traversal to find all possible execution paths
+   *
+   * @generated from rpc sdl.v1.CanvasService.TraceAllPaths
+   */
+  traceAllPaths: {
+    methodKind: "unary";
+    input: typeof TraceAllPathsRequestSchema;
+    output: typeof TraceAllPathsResponseSchema;
   },
   /**
    * ----- Parameter Operations -----

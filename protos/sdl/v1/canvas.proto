@@ -136,6 +136,13 @@ service CanvasService {
     };
   }
 
+  // Execute breadth-first traversal to find all possible execution paths
+  rpc TraceAllPaths(TraceAllPathsRequest) returns (TraceAllPathsResponse) {
+    option (google.api.http) = {
+      get: "/v1/canvases/{canvas_id}/paths/{component}/{method}"
+    };
+  }
+
   // ----- Parameter Operations -----
   // Set a component parameter value
   rpc SetParameter(SetParameterRequest) returns (SetParameterResponse) {
@@ -483,6 +490,68 @@ message ExecuteTraceRequest {
 message ExecuteTraceResponse {
   // The complete trace data
   TraceData trace_data = 1;
+}
+
+message TraceAllPathsRequest {
+  string canvas_id = 1;
+  string component = 2;
+  string method = 3;
+  // Optional: maximum depth to traverse (default unlimited)
+  int32 max_depth = 4;
+}
+
+message TraceAllPathsResponse {
+  // All discovered execution paths in tree format
+  AllPathsTraceData trace_data = 1;
+}
+
+// Enhanced TraceData for all-paths traversal - represents the complete execution tree
+message AllPathsTraceData {
+  string trace_id = 1;
+  // The root TraceNode always starts from the <Component>.<Method> where we are kicking off the trace from
+  TraceNode root = 2;
+}
+
+// TraceNode represents a single node in the execution tree
+message TraceNode {
+  // Name of the component and method in the form <Component>.<Method> we are starting the trace from
+  string starting_target = 1;
+  // All edges in an ordered fashion
+  repeated Edge edges = 2;
+  // Multiple groups for flexible labeling of sub-trees (loops, conditionals, etc.)
+  repeated GroupInfo groups = 3;
+}
+
+// Edge represents a transition from one node to another in the execution tree
+message Edge {
+  // Unique Edge ID across the entire Trace
+  string id = 1;
+  // The next node this edge leads to
+  TraceNode next_node = 2;
+  // Label on the edge (if any)
+  string label = 3;
+  // Async edges denote Futures being sent without a return
+  bool is_async = 4;
+  // "Reverse" edges show a "wait" on a future
+  bool is_reverse = 5;
+  // This is optional but leaving it here just in case.
+  string probability = 6;
+  // Condition information for branching
+  string condition = 7;
+  // true if this edge represents a conditional branch
+  bool is_conditional = 8;
+}
+
+// GroupInfo allows flexible grouping of edges with labels
+message GroupInfo {
+  // Starting edge index
+  int32 group_start = 1;
+  // Ending edge index (inclusive)
+  int32 group_end = 2;
+  // Generic label: "loop: 3x", "if cached", "switch: status"
+  string group_label = 3;
+  // Optional hint: "loop", "conditional", "switch" (for tooling)
+  string group_type = 4;
 }
 
 // TraceData matches the runtime.TraceData structure

@@ -80,6 +80,9 @@ const (
 	// CanvasServiceExecuteTraceProcedure is the fully-qualified name of the CanvasService's
 	// ExecuteTrace RPC.
 	CanvasServiceExecuteTraceProcedure = "/sdl.v1.CanvasService/ExecuteTrace"
+	// CanvasServiceTraceAllPathsProcedure is the fully-qualified name of the CanvasService's
+	// TraceAllPaths RPC.
+	CanvasServiceTraceAllPathsProcedure = "/sdl.v1.CanvasService/TraceAllPaths"
 	// CanvasServiceSetParameterProcedure is the fully-qualified name of the CanvasService's
 	// SetParameter RPC.
 	CanvasServiceSetParameterProcedure = "/sdl.v1.CanvasService/SetParameter"
@@ -138,6 +141,8 @@ type CanvasServiceClient interface {
 	DeleteGenerator(context.Context, *connect.Request[v1.DeleteGeneratorRequest]) (*connect.Response[v1.DeleteGeneratorResponse], error)
 	// Execute a single trace for debugging/analysis
 	ExecuteTrace(context.Context, *connect.Request[v1.ExecuteTraceRequest]) (*connect.Response[v1.ExecuteTraceResponse], error)
+	// Execute breadth-first traversal to find all possible execution paths
+	TraceAllPaths(context.Context, *connect.Request[v1.TraceAllPathsRequest]) (*connect.Response[v1.TraceAllPathsResponse], error)
 	// ----- Parameter Operations -----
 	// Set a component parameter value
 	SetParameter(context.Context, *connect.Request[v1.SetParameterRequest]) (*connect.Response[v1.SetParameterResponse], error)
@@ -267,6 +272,12 @@ func NewCanvasServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			connect.WithSchema(canvasServiceMethods.ByName("ExecuteTrace")),
 			connect.WithClientOptions(opts...),
 		),
+		traceAllPaths: connect.NewClient[v1.TraceAllPathsRequest, v1.TraceAllPathsResponse](
+			httpClient,
+			baseURL+CanvasServiceTraceAllPathsProcedure,
+			connect.WithSchema(canvasServiceMethods.ByName("TraceAllPaths")),
+			connect.WithClientOptions(opts...),
+		),
 		setParameter: connect.NewClient[v1.SetParameterRequest, v1.SetParameterResponse](
 			httpClient,
 			baseURL+CanvasServiceSetParameterProcedure,
@@ -336,6 +347,7 @@ type canvasServiceClient struct {
 	startGenerator     *connect.Client[v1.StartGeneratorRequest, v1.StartGeneratorResponse]
 	deleteGenerator    *connect.Client[v1.DeleteGeneratorRequest, v1.DeleteGeneratorResponse]
 	executeTrace       *connect.Client[v1.ExecuteTraceRequest, v1.ExecuteTraceResponse]
+	traceAllPaths      *connect.Client[v1.TraceAllPathsRequest, v1.TraceAllPathsResponse]
 	setParameter       *connect.Client[v1.SetParameterRequest, v1.SetParameterResponse]
 	getParameters      *connect.Client[v1.GetParametersRequest, v1.GetParametersResponse]
 	addMetric          *connect.Client[v1.AddMetricRequest, v1.AddMetricResponse]
@@ -426,6 +438,11 @@ func (c *canvasServiceClient) ExecuteTrace(ctx context.Context, req *connect.Req
 	return c.executeTrace.CallUnary(ctx, req)
 }
 
+// TraceAllPaths calls sdl.v1.CanvasService.TraceAllPaths.
+func (c *canvasServiceClient) TraceAllPaths(ctx context.Context, req *connect.Request[v1.TraceAllPathsRequest]) (*connect.Response[v1.TraceAllPathsResponse], error) {
+	return c.traceAllPaths.CallUnary(ctx, req)
+}
+
 // SetParameter calls sdl.v1.CanvasService.SetParameter.
 func (c *canvasServiceClient) SetParameter(ctx context.Context, req *connect.Request[v1.SetParameterRequest]) (*connect.Response[v1.SetParameterResponse], error) {
 	return c.setParameter.CallUnary(ctx, req)
@@ -499,6 +516,8 @@ type CanvasServiceHandler interface {
 	DeleteGenerator(context.Context, *connect.Request[v1.DeleteGeneratorRequest]) (*connect.Response[v1.DeleteGeneratorResponse], error)
 	// Execute a single trace for debugging/analysis
 	ExecuteTrace(context.Context, *connect.Request[v1.ExecuteTraceRequest]) (*connect.Response[v1.ExecuteTraceResponse], error)
+	// Execute breadth-first traversal to find all possible execution paths
+	TraceAllPaths(context.Context, *connect.Request[v1.TraceAllPathsRequest]) (*connect.Response[v1.TraceAllPathsResponse], error)
 	// ----- Parameter Operations -----
 	// Set a component parameter value
 	SetParameter(context.Context, *connect.Request[v1.SetParameterRequest]) (*connect.Response[v1.SetParameterResponse], error)
@@ -624,6 +643,12 @@ func NewCanvasServiceHandler(svc CanvasServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(canvasServiceMethods.ByName("ExecuteTrace")),
 		connect.WithHandlerOptions(opts...),
 	)
+	canvasServiceTraceAllPathsHandler := connect.NewUnaryHandler(
+		CanvasServiceTraceAllPathsProcedure,
+		svc.TraceAllPaths,
+		connect.WithSchema(canvasServiceMethods.ByName("TraceAllPaths")),
+		connect.WithHandlerOptions(opts...),
+	)
 	canvasServiceSetParameterHandler := connect.NewUnaryHandler(
 		CanvasServiceSetParameterProcedure,
 		svc.SetParameter,
@@ -706,6 +731,8 @@ func NewCanvasServiceHandler(svc CanvasServiceHandler, opts ...connect.HandlerOp
 			canvasServiceDeleteGeneratorHandler.ServeHTTP(w, r)
 		case CanvasServiceExecuteTraceProcedure:
 			canvasServiceExecuteTraceHandler.ServeHTTP(w, r)
+		case CanvasServiceTraceAllPathsProcedure:
+			canvasServiceTraceAllPathsHandler.ServeHTTP(w, r)
 		case CanvasServiceSetParameterProcedure:
 			canvasServiceSetParameterHandler.ServeHTTP(w, r)
 		case CanvasServiceGetParametersProcedure:
@@ -793,6 +820,10 @@ func (UnimplementedCanvasServiceHandler) DeleteGenerator(context.Context, *conne
 
 func (UnimplementedCanvasServiceHandler) ExecuteTrace(context.Context, *connect.Request[v1.ExecuteTraceRequest]) (*connect.Response[v1.ExecuteTraceResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.ExecuteTrace is not implemented"))
+}
+
+func (UnimplementedCanvasServiceHandler) TraceAllPaths(context.Context, *connect.Request[v1.TraceAllPathsRequest]) (*connect.Response[v1.TraceAllPathsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.TraceAllPaths is not implemented"))
 }
 
 func (UnimplementedCanvasServiceHandler) SetParameter(context.Context, *connect.Request[v1.SetParameterRequest]) (*connect.Response[v1.SetParameterResponse], error) {
