@@ -13,6 +13,7 @@ export class Dashboard {
   private chartUpdateInterval: number | null = null;
   private graphviz: any = null; // Will be initialized asynchronously
   private dockview: DockviewApi | null = null;
+  private metricStreamController: AbortController | null = null;
 
   // Parameter configurations - populated when a system is loaded
   private parameters: ParameterConfig[] = [];
@@ -52,7 +53,7 @@ export class Dashboard {
       // Then setup WebSocket after layout is ready
       setTimeout(() => {
         this.setupEventListeners();
-        this.startChartUpdates();
+        // Don't start chart updates here - they'll be started after metrics are loaded
       }, 100);
       
       // Load current Canvas state to see if there's an existing session
@@ -149,6 +150,14 @@ export class Dashboard {
       // Update UI panels AFTER loading all data
       console.log('🔄 Updating all panels with loaded data...');
       this.updateAllPanels();
+      
+      // Restart streaming with new metrics
+      if (Object.keys(this.state.dynamicCharts).length > 0) {
+        console.log('🚀 Restarting metric streaming after loading metrics');
+        setTimeout(async () => {
+          await this.startChartUpdates();
+        }, 100); // Small delay to ensure charts are initialized
+      }
 
     } catch (error) {
       console.error('❌ Failed to load Canvas state:', error);
@@ -1159,14 +1168,93 @@ export class Dashboard {
     });
   }
 
-  private startChartUpdates() {
-    // Update charts every 2 seconds
+  private async startChartUpdates() {
+    // Stop any existing polling
+    this.stopChartUpdates();
+    
+    // Get all metric IDs from current charts
+    const metricIds = Object.values(this.state.dynamicCharts).map(chartData => 
+      chartData.target || chartData.metricName
+    );
+    
+    if (metricIds.length === 0) {
+      console.log('📊 No metrics to stream');
+      return;
+    }
+    
+    // Create abort controller for clean shutdown
+    this.metricStreamController = new AbortController();
+    
+    try {
+      console.log('🔄 Starting metric stream for:', metricIds);
+      
+      // Start streaming metrics
+      for await (const response of this.api.streamMetrics(metricIds)) {
+        if (this.metricStreamController?.signal.aborted) {
+          break;
+        }
+        
+        if (response.success && response.data) {
+          // Process each metric update
+          for (const update of response.data) {
+            this.updateChartWithStreamData(update.metricId, update.point);
+          }
+        }
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('📊 Metric stream stopped');
+      } else {
+        console.error('❌ Metric stream error:', error);
+        // Fallback to polling on stream error
+        this.startPollingFallback();
+      }
+    }
+  }
+  
+  private updateChartWithStreamData(metricId: string, point: any) {
+    // Find the chart for this metric
+    const chartData = Object.values(this.state.dynamicCharts).find(
+      cd => (cd.target || cd.metricName) === metricId
+    );
+    
+    if (!chartData) return;
+    
+    const chart = this.charts[chartData.chartName];
+    if (!chart) return;
+    
+    // Add the new point to the chart
+    const timestamp = new Date(point.timestamp).toLocaleTimeString();
+    
+    // Keep only last 20 points for performance
+    if (chart.data.labels!.length >= 20) {
+      chart.data.labels!.shift();
+      chart.data.datasets[0].data.shift();
+    }
+    
+    chart.data.labels!.push(timestamp);
+    chart.data.datasets[0].data.push(point.value);
+    
+    // Update chart without animation for smooth real-time updates
+    chart.update('none');
+  }
+  
+  private startPollingFallback() {
+    console.log('⚠️ Falling back to polling mode');
+    // Update charts every 2 seconds using polling
     this.chartUpdateInterval = window.setInterval(() => {
       this.updateDynamicCharts();
     }, 2000);
   }
 
   private stopChartUpdates() {
+    // Stop streaming
+    if (this.metricStreamController) {
+      this.metricStreamController.abort();
+      this.metricStreamController = null;
+    }
+    
+    // Stop polling
     if (this.chartUpdateInterval) {
       clearInterval(this.chartUpdateInterval);
       this.chartUpdateInterval = null;

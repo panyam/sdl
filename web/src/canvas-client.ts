@@ -308,6 +308,21 @@ export class CanvasClient {
     
     return ws;
   }
+
+  // Stream real-time metric updates
+  async *streamMetrics(metricIds: string[]) {
+    const stream = client.streamMetrics({
+      canvasId: this.canvasId,
+      metricIds: metricIds
+    });
+
+    for await (const response of stream) {
+      yield {
+        success: true,
+        data: response.updates || []
+      };
+    }
+  }
 }
 
 // Export a default instance

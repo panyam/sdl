@@ -571,3 +571,62 @@ func (s *CanvasService) GetSystemDiagram(ctx context.Context, req *protos.GetSys
 
 	return
 }
+
+// StreamMetrics streams real-time metric updates
+func (s *CanvasService) StreamMetrics(req *protos.StreamMetricsRequest, stream protos.CanvasService_StreamMetricsServer) error {
+	slog.Info("StreamMetrics Request", "req", req)
+
+	// Get the canvas
+	s.storeMutex.RLock()
+	canvas := s.store[req.CanvasId]
+	s.storeMutex.RUnlock()
+
+	if canvas == nil {
+		return status.Error(codes.NotFound, "canvas not found")
+	}
+
+	// Get the metric store
+	if canvas.metricTracer == nil || canvas.metricTracer.store == nil {
+		return status.Error(codes.FailedPrecondition, "no metric store available")
+	}
+
+	// Subscribe to metric updates
+	ctx := stream.Context()
+	updateChan, err := canvas.metricTracer.store.Subscribe(ctx, req.MetricIds)
+	if err != nil {
+		return status.Errorf(codes.Internal, "failed to subscribe to metrics: %v", err)
+	}
+
+	// Stream updates until context is cancelled
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case batch := <-updateChan:
+			if batch == nil {
+				// Channel closed
+				return nil
+			}
+
+			// Convert to proto format
+			response := &protos.StreamMetricsResponse{
+				Updates: make([]*protos.MetricUpdate, len(batch.Updates)),
+			}
+
+			for i, update := range batch.Updates {
+				response.Updates[i] = &protos.MetricUpdate{
+					MetricId: update.MetricID,
+					Point: &protos.MetricPoint{
+						Timestamp: float64(update.Point.Timestamp.Unix()),
+						Value:     update.Point.Value,
+					},
+				}
+			}
+
+			// Send the update
+			if err := stream.Send(response); err != nil {
+				return err
+			}
+		}
+	}
+}

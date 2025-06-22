@@ -1547,6 +1547,18 @@
         }
       }
     },
+    "v1MetricUpdate": {
+      "type": "object",
+      "properties": {
+        "metricId": {
+          "type": "string"
+        },
+        "point": {
+          "$ref": "#/definitions/v1MetricPoint"
+        }
+      },
+      "title": "Individual metric update"
+    },
     "v1Pagination": {
       "type": "object",
       "properties": {
@@ -1690,6 +1702,20 @@
     },
     "v1StopGeneratorResponse": {
       "type": "object"
+    },
+    "v1StreamMetricsResponse": {
+      "type": "object",
+      "properties": {
+        "updates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1MetricUpdate"
+          },
+          "title": "Metric updates in this batch"
+        }
+      },
+      "title": "Stream metrics response - can contain updates for multiple metrics"
     },
     "v1SystemDiagram": {
       "type": "object",

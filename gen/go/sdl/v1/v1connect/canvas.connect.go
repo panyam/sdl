@@ -97,6 +97,9 @@ const (
 	// CanvasServiceQueryMetricsProcedure is the fully-qualified name of the CanvasService's
 	// QueryMetrics RPC.
 	CanvasServiceQueryMetricsProcedure = "/sdl.v1.CanvasService/QueryMetrics"
+	// CanvasServiceStreamMetricsProcedure is the fully-qualified name of the CanvasService's
+	// StreamMetrics RPC.
+	CanvasServiceStreamMetricsProcedure = "/sdl.v1.CanvasService/StreamMetrics"
 	// CanvasServiceGetSystemDiagramProcedure is the fully-qualified name of the CanvasService's
 	// GetSystemDiagram RPC.
 	CanvasServiceGetSystemDiagramProcedure = "/sdl.v1.CanvasService/GetSystemDiagram"
@@ -151,6 +154,8 @@ type CanvasServiceClient interface {
 	ListMetrics(context.Context, *connect.Request[v1.ListMetricsRequest]) (*connect.Response[v1.ListMetricsResponse], error)
 	// Query raw metric data points
 	QueryMetrics(context.Context, *connect.Request[v1.QueryMetricsRequest]) (*connect.Response[v1.QueryMetricsResponse], error)
+	// Stream real-time metric updates
+	StreamMetrics(context.Context, *connect.Request[v1.StreamMetricsRequest]) (*connect.ServerStreamForClient[v1.StreamMetricsResponse], error)
 	// Get the system diagram for visualization
 	GetSystemDiagram(context.Context, *connect.Request[v1.GetSystemDiagramRequest]) (*connect.Response[v1.GetSystemDiagramResponse], error)
 }
@@ -298,6 +303,12 @@ func NewCanvasServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			connect.WithSchema(canvasServiceMethods.ByName("QueryMetrics")),
 			connect.WithClientOptions(opts...),
 		),
+		streamMetrics: connect.NewClient[v1.StreamMetricsRequest, v1.StreamMetricsResponse](
+			httpClient,
+			baseURL+CanvasServiceStreamMetricsProcedure,
+			connect.WithSchema(canvasServiceMethods.ByName("StreamMetrics")),
+			connect.WithClientOptions(opts...),
+		),
 		getSystemDiagram: connect.NewClient[v1.GetSystemDiagramRequest, v1.GetSystemDiagramResponse](
 			httpClient,
 			baseURL+CanvasServiceGetSystemDiagramProcedure,
@@ -331,6 +342,7 @@ type canvasServiceClient struct {
 	deleteMetric       *connect.Client[v1.DeleteMetricRequest, v1.DeleteMetricResponse]
 	listMetrics        *connect.Client[v1.ListMetricsRequest, v1.ListMetricsResponse]
 	queryMetrics       *connect.Client[v1.QueryMetricsRequest, v1.QueryMetricsResponse]
+	streamMetrics      *connect.Client[v1.StreamMetricsRequest, v1.StreamMetricsResponse]
 	getSystemDiagram   *connect.Client[v1.GetSystemDiagramRequest, v1.GetSystemDiagramResponse]
 }
 
@@ -444,6 +456,11 @@ func (c *canvasServiceClient) QueryMetrics(ctx context.Context, req *connect.Req
 	return c.queryMetrics.CallUnary(ctx, req)
 }
 
+// StreamMetrics calls sdl.v1.CanvasService.StreamMetrics.
+func (c *canvasServiceClient) StreamMetrics(ctx context.Context, req *connect.Request[v1.StreamMetricsRequest]) (*connect.ServerStreamForClient[v1.StreamMetricsResponse], error) {
+	return c.streamMetrics.CallServerStream(ctx, req)
+}
+
 // GetSystemDiagram calls sdl.v1.CanvasService.GetSystemDiagram.
 func (c *canvasServiceClient) GetSystemDiagram(ctx context.Context, req *connect.Request[v1.GetSystemDiagramRequest]) (*connect.Response[v1.GetSystemDiagramResponse], error) {
 	return c.getSystemDiagram.CallUnary(ctx, req)
@@ -498,6 +515,8 @@ type CanvasServiceHandler interface {
 	ListMetrics(context.Context, *connect.Request[v1.ListMetricsRequest]) (*connect.Response[v1.ListMetricsResponse], error)
 	// Query raw metric data points
 	QueryMetrics(context.Context, *connect.Request[v1.QueryMetricsRequest]) (*connect.Response[v1.QueryMetricsResponse], error)
+	// Stream real-time metric updates
+	StreamMetrics(context.Context, *connect.Request[v1.StreamMetricsRequest], *connect.ServerStream[v1.StreamMetricsResponse]) error
 	// Get the system diagram for visualization
 	GetSystemDiagram(context.Context, *connect.Request[v1.GetSystemDiagramRequest]) (*connect.Response[v1.GetSystemDiagramResponse], error)
 }
@@ -641,6 +660,12 @@ func NewCanvasServiceHandler(svc CanvasServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(canvasServiceMethods.ByName("QueryMetrics")),
 		connect.WithHandlerOptions(opts...),
 	)
+	canvasServiceStreamMetricsHandler := connect.NewServerStreamHandler(
+		CanvasServiceStreamMetricsProcedure,
+		svc.StreamMetrics,
+		connect.WithSchema(canvasServiceMethods.ByName("StreamMetrics")),
+		connect.WithHandlerOptions(opts...),
+	)
 	canvasServiceGetSystemDiagramHandler := connect.NewUnaryHandler(
 		CanvasServiceGetSystemDiagramProcedure,
 		svc.GetSystemDiagram,
@@ -693,6 +718,8 @@ func NewCanvasServiceHandler(svc CanvasServiceHandler, opts ...connect.HandlerOp
 			canvasServiceListMetricsHandler.ServeHTTP(w, r)
 		case CanvasServiceQueryMetricsProcedure:
 			canvasServiceQueryMetricsHandler.ServeHTTP(w, r)
+		case CanvasServiceStreamMetricsProcedure:
+			canvasServiceStreamMetricsHandler.ServeHTTP(w, r)
 		case CanvasServiceGetSystemDiagramProcedure:
 			canvasServiceGetSystemDiagramHandler.ServeHTTP(w, r)
 		default:
@@ -790,6 +817,10 @@ func (UnimplementedCanvasServiceHandler) ListMetrics(context.Context, *connect.R
 
 func (UnimplementedCanvasServiceHandler) QueryMetrics(context.Context, *connect.Request[v1.QueryMetricsRequest]) (*connect.Response[v1.QueryMetricsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.QueryMetrics is not implemented"))
+}
+
+func (UnimplementedCanvasServiceHandler) StreamMetrics(context.Context, *connect.Request[v1.StreamMetricsRequest], *connect.ServerStream[v1.StreamMetricsResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.StreamMetrics is not implemented"))
 }
 
 func (UnimplementedCanvasServiceHandler) GetSystemDiagram(context.Context, *connect.Request[v1.GetSystemDiagramRequest]) (*connect.Response[v1.GetSystemDiagramResponse], error) {

@@ -186,6 +186,12 @@ service CanvasService {
     };
   }
 
+  // Stream real-time metric updates
+  rpc StreamMetrics(StreamMetricsRequest) returns (stream StreamMetricsResponse) {
+    // Note: Server-streaming RPCs are not supported by grpc-gateway HTTP mapping
+    // This will only be available via gRPC or Connect protocol
+  }
+
   // ----- System Diagram Operations -----
   
   // Get the system diagram for visualization
@@ -445,6 +451,25 @@ message ListMetricsRequest {
 
 message ListMetricsResponse {
   repeated Metric metrics = 1;
+}
+
+// Stream metrics request
+message StreamMetricsRequest {
+  string canvas_id = 1;
+  // Optional: specific metric IDs to stream. If empty, stream all metrics.
+  repeated string metric_ids = 2;
+}
+
+// Stream metrics response - can contain updates for multiple metrics
+message StreamMetricsResponse {
+  // Metric updates in this batch
+  repeated MetricUpdate updates = 1;
+}
+
+// Individual metric update
+message MetricUpdate {
+  string metric_id = 1;
+  MetricPoint point = 2;
 }
 
 message ExecuteTraceRequest {

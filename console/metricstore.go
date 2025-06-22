@@ -36,8 +36,22 @@ type MetricStore interface {
 	// Aggregate computes aggregations for a specific metric
 	Aggregate(ctx context.Context, metric *protos.Metric, opts AggregateOptions) (AggregateResult, error)
 
+	// Subscribe creates a subscription for real-time metric updates
+	Subscribe(ctx context.Context, metricIDs []string) (<-chan *MetricUpdateBatch, error)
+
 	// Close cleanly shuts down the store
 	Close() error
+}
+
+// MetricUpdateBatch contains metric updates that can be sent to subscribers
+type MetricUpdateBatch struct {
+	Updates []*MetricUpdateItem
+}
+
+// MetricUpdateItem represents a single metric update
+type MetricUpdateItem struct {
+	MetricID string
+	Point    *MetricPoint
 }
 
 // QueryOptions specifies parameters for metric queries

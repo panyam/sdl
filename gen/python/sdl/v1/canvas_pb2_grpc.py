@@ -126,6 +126,11 @@ class CanvasServiceStub(object):
                 request_serializer=sdl_dot_v1_dot_canvas__pb2.QueryMetricsRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_canvas__pb2.QueryMetricsResponse.FromString,
                 _registered_method=True)
+        self.StreamMetrics = channel.unary_stream(
+                '/sdl.v1.CanvasService/StreamMetrics',
+                request_serializer=sdl_dot_v1_dot_canvas__pb2.StreamMetricsRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_canvas__pb2.StreamMetricsResponse.FromString,
+                _registered_method=True)
         self.GetSystemDiagram = channel.unary_unary(
                 '/sdl.v1.CanvasService/GetSystemDiagram',
                 request_serializer=sdl_dot_v1_dot_canvas__pb2.GetSystemDiagramRequest.SerializeToString,
@@ -295,6 +300,15 @@ class CanvasServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def StreamMetrics(self, request, context):
+        """Stream real-time metric updates
+        Note: Server-streaming RPCs are not supported by grpc-gateway HTTP mapping
+        This will only be available via gRPC or Connect protocol
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def GetSystemDiagram(self, request, context):
         """----- System Diagram Operations -----
 
@@ -416,6 +430,11 @@ def add_CanvasServiceServicer_to_server(servicer, server):
                     servicer.QueryMetrics,
                     request_deserializer=sdl_dot_v1_dot_canvas__pb2.QueryMetricsRequest.FromString,
                     response_serializer=sdl_dot_v1_dot_canvas__pb2.QueryMetricsResponse.SerializeToString,
+            ),
+            'StreamMetrics': grpc.unary_stream_rpc_method_handler(
+                    servicer.StreamMetrics,
+                    request_deserializer=sdl_dot_v1_dot_canvas__pb2.StreamMetricsRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_canvas__pb2.StreamMetricsResponse.SerializeToString,
             ),
             'GetSystemDiagram': grpc.unary_unary_rpc_method_handler(
                     servicer.GetSystemDiagram,
@@ -1019,6 +1038,33 @@ class CanvasService(object):
             '/sdl.v1.CanvasService/QueryMetrics',
             sdl_dot_v1_dot_canvas__pb2.QueryMetricsRequest.SerializeToString,
             sdl_dot_v1_dot_canvas__pb2.QueryMetricsResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def StreamMetrics(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(
+            request,
+            target,
+            '/sdl.v1.CanvasService/StreamMetrics',
+            sdl_dot_v1_dot_canvas__pb2.StreamMetricsRequest.SerializeToString,
+            sdl_dot_v1_dot_canvas__pb2.StreamMetricsResponse.FromString,
             options,
             channel_credentials,
             insecure,

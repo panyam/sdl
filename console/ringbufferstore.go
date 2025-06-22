@@ -170,6 +170,89 @@ func (s *RingBufferStore) Aggregate(ctx context.Context, metric *protos.Metric, 
 }
 
 // Close shuts down the store
+// Subscribe creates a subscription for real-time metric updates
+func (s *RingBufferStore) Subscribe(ctx context.Context, metricIDs []string) (<-chan *MetricUpdateBatch, error) {
+	if s.closed {
+		return nil, fmt.Errorf("store is closed")
+	}
+
+	// For now, we'll implement a simple polling mechanism
+	// In a production system, this would use a proper pub/sub pattern
+	updateChan := make(chan *MetricUpdateBatch, 10)
+
+	// Start a goroutine to poll for updates
+	go func() {
+		ticker := time.NewTicker(100 * time.Millisecond) // Poll every 100ms
+		defer ticker.Stop()
+		defer close(updateChan)
+
+		// Track last seen positions for each metric
+		lastPositions := make(map[string]int)
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				// Check for new data in each subscribed metric
+				batch := &MetricUpdateBatch{
+					Updates: make([]*MetricUpdateItem, 0),
+				}
+
+				s.mu.RLock()
+				for _, metricID := range metricIDs {
+					if rb, ok := s.buffers[metricID]; ok {
+						rb.mu.RLock()
+						currentCount := rb.count
+						lastPos := lastPositions[metricID]
+						
+						// If we have new data since last check
+						if currentCount > lastPos {
+							// Get the latest point
+							var latestPoint *MetricPoint
+							if rb.count > 0 {
+								// Get the most recent point
+								idx := (rb.writePos - 1 + rb.size) % rb.size
+								if rb.points[idx] != nil {
+									latestPoint = &MetricPoint{
+										Timestamp: rb.points[idx].Timestamp,
+										Value:     rb.points[idx].Value,
+										Tags:      rb.points[idx].Tags,
+									}
+								}
+							}
+							
+							if latestPoint != nil {
+								batch.Updates = append(batch.Updates, &MetricUpdateItem{
+									MetricID: metricID,
+									Point:    latestPoint,
+								})
+							}
+							
+							lastPositions[metricID] = currentCount
+						}
+						rb.mu.RUnlock()
+					}
+				}
+				s.mu.RUnlock()
+
+				// Send batch if we have updates
+				if len(batch.Updates) > 0 {
+					select {
+					case updateChan <- batch:
+					case <-ctx.Done():
+						return
+					default:
+						// Channel full, skip this update
+					}
+				}
+			}
+		}
+	}()
+
+	return updateChan, nil
+}
+
 func (s *RingBufferStore) Close() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()

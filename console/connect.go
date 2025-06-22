@@ -2,9 +2,11 @@ package console
 
 import (
 	"context"
+	"fmt"
 
 	"connectrpc.com/connect"
 	v1 "github.com/panyam/sdl/gen/go/sdl/v1"
+	"google.golang.org/grpc/metadata"
 )
 
 // ConnectCanvasServiceAdapter adapts the gRPC CanvasService to Connect's interface
@@ -198,4 +200,57 @@ func (a *ConnectCanvasServiceAdapter) GetSystemDiagram(ctx context.Context, req 
 		return nil, err
 	}
 	return connect.NewResponse(resp), nil
+}
+
+func (a *ConnectCanvasServiceAdapter) StreamMetrics(ctx context.Context, req *connect.Request[v1.StreamMetricsRequest], stream *connect.ServerStream[v1.StreamMetricsResponse]) error {
+	// Create a custom stream implementation that bridges to Connect
+	bridgeStream := &connectStreamBridge[v1.StreamMetricsResponse]{
+		connectStream: stream,
+		ctx:           ctx,
+	}
+
+	// Call your existing gRPC streaming method
+	return a.svc.StreamMetrics(req.Msg, bridgeStream)
+}
+
+// Bridge implementation that converts Connect stream to gRPC stream interface
+type connectStreamBridge[T any] struct {
+	connectStream *connect.ServerStream[T]
+	ctx           context.Context
+}
+
+// Implement the gRPC stream interface
+func (b *connectStreamBridge[T]) Send(msg *T) error {
+	return b.connectStream.Send(msg)
+}
+
+func (b *connectStreamBridge[T]) Context() context.Context {
+	return b.ctx
+}
+
+// Implement other required gRPC stream methods
+func (b *connectStreamBridge[T]) SendMsg(m interface{}) error {
+	if msg, ok := m.(*T); ok {
+		return b.connectStream.Send(msg)
+	}
+	return fmt.Errorf("invalid message type")
+}
+
+func (b *connectStreamBridge[T]) RecvMsg(m interface{}) error {
+	// Not used for server streaming
+	return fmt.Errorf("RecvMsg not supported for server streaming")
+}
+
+func (b *connectStreamBridge[T]) SetHeader(metadata.MD) error {
+	// Handle metadata if needed
+	return nil
+}
+
+func (b *connectStreamBridge[T]) SendHeader(metadata.MD) error {
+	// Handle metadata if needed
+	return nil
+}
+
+func (b *connectStreamBridge[T]) SetTrailer(metadata.MD) {
+	// Handle metadata if needed
 }

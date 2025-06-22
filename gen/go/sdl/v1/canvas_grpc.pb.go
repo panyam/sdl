@@ -43,6 +43,7 @@ const (
 	CanvasService_DeleteMetric_FullMethodName       = "/sdl.v1.CanvasService/DeleteMetric"
 	CanvasService_ListMetrics_FullMethodName        = "/sdl.v1.CanvasService/ListMetrics"
 	CanvasService_QueryMetrics_FullMethodName       = "/sdl.v1.CanvasService/QueryMetrics"
+	CanvasService_StreamMetrics_FullMethodName      = "/sdl.v1.CanvasService/StreamMetrics"
 	CanvasService_GetSystemDiagram_FullMethodName   = "/sdl.v1.CanvasService/GetSystemDiagram"
 )
 
@@ -100,6 +101,8 @@ type CanvasServiceClient interface {
 	ListMetrics(ctx context.Context, in *ListMetricsRequest, opts ...grpc.CallOption) (*ListMetricsResponse, error)
 	// Query raw metric data points
 	QueryMetrics(ctx context.Context, in *QueryMetricsRequest, opts ...grpc.CallOption) (*QueryMetricsResponse, error)
+	// Stream real-time metric updates
+	StreamMetrics(ctx context.Context, in *StreamMetricsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[StreamMetricsResponse], error)
 	// Get the system diagram for visualization
 	GetSystemDiagram(ctx context.Context, in *GetSystemDiagramRequest, opts ...grpc.CallOption) (*GetSystemDiagramResponse, error)
 }
@@ -332,6 +335,25 @@ func (c *canvasServiceClient) QueryMetrics(ctx context.Context, in *QueryMetrics
 	return out, nil
 }
 
+func (c *canvasServiceClient) StreamMetrics(ctx context.Context, in *StreamMetricsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[StreamMetricsResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &CanvasService_ServiceDesc.Streams[0], CanvasService_StreamMetrics_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[StreamMetricsRequest, StreamMetricsResponse]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type CanvasService_StreamMetricsClient = grpc.ServerStreamingClient[StreamMetricsResponse]
+
 func (c *canvasServiceClient) GetSystemDiagram(ctx context.Context, in *GetSystemDiagramRequest, opts ...grpc.CallOption) (*GetSystemDiagramResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetSystemDiagramResponse)
@@ -396,6 +418,8 @@ type CanvasServiceServer interface {
 	ListMetrics(context.Context, *ListMetricsRequest) (*ListMetricsResponse, error)
 	// Query raw metric data points
 	QueryMetrics(context.Context, *QueryMetricsRequest) (*QueryMetricsResponse, error)
+	// Stream real-time metric updates
+	StreamMetrics(*StreamMetricsRequest, grpc.ServerStreamingServer[StreamMetricsResponse]) error
 	// Get the system diagram for visualization
 	GetSystemDiagram(context.Context, *GetSystemDiagramRequest) (*GetSystemDiagramResponse, error)
 }
@@ -472,6 +496,9 @@ func (UnimplementedCanvasServiceServer) ListMetrics(context.Context, *ListMetric
 }
 func (UnimplementedCanvasServiceServer) QueryMetrics(context.Context, *QueryMetricsRequest) (*QueryMetricsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryMetrics not implemented")
+}
+func (UnimplementedCanvasServiceServer) StreamMetrics(*StreamMetricsRequest, grpc.ServerStreamingServer[StreamMetricsResponse]) error {
+	return status.Errorf(codes.Unimplemented, "method StreamMetrics not implemented")
 }
 func (UnimplementedCanvasServiceServer) GetSystemDiagram(context.Context, *GetSystemDiagramRequest) (*GetSystemDiagramResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSystemDiagram not implemented")
@@ -892,6 +919,17 @@ func _CanvasService_QueryMetrics_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CanvasService_StreamMetrics_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(StreamMetricsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(CanvasServiceServer).StreamMetrics(m, &grpc.GenericServerStream[StreamMetricsRequest, StreamMetricsResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type CanvasService_StreamMetricsServer = grpc.ServerStreamingServer[StreamMetricsResponse]
+
 func _CanvasService_GetSystemDiagram_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetSystemDiagramRequest)
 	if err := dec(in); err != nil {
@@ -1010,6 +1048,12 @@ var CanvasService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CanvasService_GetSystemDiagram_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "StreamMetrics",
+			Handler:       _CanvasService_StreamMetrics_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "sdl/v1/canvas.proto",
 }
