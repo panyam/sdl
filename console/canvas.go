@@ -10,19 +10,12 @@ import (
 
 	"github.com/panyam/sdl/core"
 	"github.com/panyam/sdl/decl"
+	protos "github.com/panyam/sdl/gen/go/sdl/v1"
 	"github.com/panyam/sdl/loader"
 	"github.com/panyam/sdl/runtime"
-	"github.com/panyam/sdl/viz"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
-
-// SystemDiagram represents the topology of a system using viz package types
-type SystemDiagram struct {
-	SystemName string     `json:"systemName"`
-	Nodes      []viz.Node `json:"nodes"`
-	Edges      []viz.Edge `json:"edges"`
-}
 
 type Canvas struct {
 	id             string
@@ -164,7 +157,7 @@ func (c *Canvas) StartAllGenerators() (*BatchGeneratorResult, error) {
 			result.AlreadyInStateCount++
 			continue
 		}
-		
+
 		err := gen.Start()
 		if err != nil {
 			result.FailedCount++
@@ -173,12 +166,12 @@ func (c *Canvas) StartAllGenerators() (*BatchGeneratorResult, error) {
 			result.ProcessedCount++
 		}
 	}
-	
+
 	// Recompute flows after starting generators
 	if err := c.recomputeSystemFlows(); err != nil {
 		return result, fmt.Errorf("failed to recompute flows: %w", err)
 	}
-	
+
 	return result, nil
 }
 
@@ -197,7 +190,7 @@ func (c *Canvas) StopAllGenerators() (*BatchGeneratorResult, error) {
 			result.AlreadyInStateCount++
 			continue
 		}
-		
+
 		err := gen.Stop()
 		if err != nil {
 			result.FailedCount++
@@ -206,12 +199,12 @@ func (c *Canvas) StopAllGenerators() (*BatchGeneratorResult, error) {
 			result.ProcessedCount++
 		}
 	}
-	
+
 	// Recompute flows after stopping generators
 	if err := c.recomputeSystemFlows(); err != nil {
 		return result, fmt.Errorf("failed to recompute flows: %w", err)
 	}
-	
+
 	return result, nil
 }
 
@@ -320,7 +313,7 @@ func (c *Canvas) ListGenerators() map[string]*GeneratorInfo {
 // --- Option types for Run/Plot ---
 
 // GetSystemDiagram returns the topology of the currently active system
-func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
+func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
 	if c.activeSystem == nil {
 		return nil, fmt.Errorf("no active system set. Use Load() and Use() commands first")
 	}
@@ -331,8 +324,8 @@ func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
 	currentFlowRates := c.GetCurrentFlowRates()
 
 	// Extract nodes and edges from the system declaration
-	var nodes []viz.Node
-	var edges []viz.Edge
+	var nodes []*protos.DiagramNode
+	var edges []*protos.DiagramEdge
 	instanceNameToID := make(map[string]string)
 
 	// Build nodes from instance declarations
@@ -343,7 +336,7 @@ func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
 			instanceNameToID[nodeID] = nodeID
 
 			// Get component methods using runtime system
-			var methods []viz.MethodInfo
+			var methods []*protos.MethodInfo
 			if c.runtime != nil {
 				// Use runtime system to resolve component - it has already resolved imports
 				component, err := fileInstance.GetComponentDecl(instDecl.ComponentName.Value)
@@ -361,7 +354,7 @@ func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
 
 						// Only include methods with non-zero traffic to reduce clutter
 						if methodTraffic > 0 {
-							methods = append(methods, viz.MethodInfo{
+							methods = append(methods, &protos.MethodInfo{
 								Name:       methodName,
 								ReturnType: returnType,
 								Traffic:    methodTraffic,
@@ -380,8 +373,8 @@ func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
 				trafficDisplay = "0 rps"
 			}
 
-			nodes = append(nodes, viz.Node{
-				ID:      nodeID,
+			nodes = append(nodes, &protos.DiagramNode{
+				Id:      nodeID,
 				Name:    instDecl.Name.Value,
 				Type:    instDecl.ComponentName.Value,
 				Methods: methods,
@@ -399,9 +392,9 @@ func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
 			for _, assignment := range instDecl.Overrides {
 				if targetIdent, okIdent := assignment.Value.(*decl.IdentifierExpr); okIdent {
 					if toNodeID, isInstance := instanceNameToID[targetIdent.Value]; isInstance {
-						edges = append(edges, viz.Edge{
-							FromID: fromNodeID,
-							ToID:   toNodeID,
+						edges = append(edges, &protos.DiagramEdge{
+							FromId: fromNodeID,
+							ToId:   toNodeID,
 							Label:  assignment.Var.Value,
 						})
 					}
@@ -423,7 +416,7 @@ func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
 	// Note: Flow path visualization needs to be reimplemented for runtime-based evaluation
 	// The runtime approach doesn't track individual flow paths like the string-based version
 
-	return &SystemDiagram{
+	return &protos.SystemDiagram{
 		SystemName: systemName,
 		Nodes:      nodes,
 		Edges:      edges,
@@ -440,143 +433,6 @@ func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
 // / ----
 // / ----
 // / ----
-
-// AddMeasurement adds a new measurement target to the tracer
-/*
-func (c *Canvas) AddCanvasMeasurement(id, name, target, metricType string, enabled bool) error {
-	tracer, err := c.GetMeasurementTracer("") // Use default location
-	if err != nil {
-		return err
-	}
-
-	measurement := &MeasurementConfig{
-		ID:         id,
-		Name:       name,
-		Target:     target,
-		MetricType: metricType,
-		Enabled:    enabled,
-	}
-
-	tracer.AddMeasurement(measurement)
-	return nil
-}
-
-// RemoveMeasurement removes a measurement target from the tracer
-func (c *Canvas) RemoveCanvasMeasurement(target string) error {
-	if c.metricTracer == nil {
-		return nil // No tracer, nothing to remove
-	}
-	c.metricTracer.RemoveMeasurement(target)
-	return nil
-}
-
-// GetCanvasMeasurements returns all registered measurements
-func (c *Canvas) GetCanvasMeasurements() map[string]*MeasurementConfig {
-	if c.metricTracer == nil {
-		return make(map[string]*MeasurementConfig)
-	}
-	return c.metricTracer.GetMeasurements()
-}
-
-// ClearMeasurements removes all measurement targets
-func (c *Canvas) ClearMeasurements() {
-	if c.metricTracer != nil {
-		c.metricTracer.ClearMeasurements()
-	}
-}
-
-// HasMeasurements returns true if any measurements are registered
-func (c *Canvas) HasMeasurements() bool {
-	// Check new metrics system first
-	if c.activeSystem != nil && c.activeSystem.File != nil {
-		rt := c.activeSystem.File.Runtime
-		if rt != nil && rt.GetMetricStore() != nil {
-			store := rt.GetMetricStore()
-			if len(store.ListMeasurements()) > 0 {
-				return true
-			}
-		}
-	}
-
-	// Fall back to old measurement tracer system
-	if c.metricTracer == nil {
-		return false
-	}
-	return c.metricTracer.HasMeasurements()
-}
-
-// SetMeasurementRunID updates the run ID for the current measurement session
-func (c *Canvas) SetMeasurementRunID(runID string) {
-	if c.metricTracer != nil {
-		c.metricTracer.SetRunID(runID)
-	}
-}
-
-// GetMeasurementMetrics retrieves recent metrics for a target
-func (c *Canvas) GetMeasurementMetrics(target string, since time.Time) ([]TracePoint, error) {
-	if c.metricTracer == nil {
-		return nil, fmt.Errorf("measurement tracer not initialized")
-	}
-	return c.metricTracer.GetMetrics(target, since)
-}
-
-// GetMeasurementPercentiles calculates percentiles for a target
-func (c *Canvas) GetMeasurementPercentiles(target string, since time.Time) (p50, p90, p95, p99 float64, err error) {
-	if c.metricTracer == nil {
-		return 0, 0, 0, 0, fmt.Errorf("measurement tracer not initialized")
-	}
-	return c.metricTracer.GetPercentiles(target, since)
-}
-
-// ExecuteMeasurementSQL runs a custom SQL query on measurement data
-func (c *Canvas) ExecuteMeasurementSQL(query string, args ...interface{}) ([]map[string]interface{}, error) {
-	if c.metricTracer == nil {
-		return nil, fmt.Errorf("measurement tracer not initialized")
-	}
-	return c.metricTracer.ExecuteSQL(query, args...)
-}
-
-// GetMeasurementStats returns statistics about stored measurements
-func (c *Canvas) GetMeasurementStats() (map[string]interface{}, error) {
-	if c.metricTracer == nil {
-		return nil, fmt.Errorf("measurement tracer not initialized")
-	}
-	return c.metricTracer.GetStats()
-}
-
-// GetStats returns current Canvas statistics
-func (c *Canvas) GetStats() CanvasStats {
-	stats := CanvasStats{
-		LoadedFiles:   len(c.loadedFiles),
-		ActiveSystems: 0,
-		TotalRuns:     len(c.sessionVars),
-	}
-
-	if c.activeSystem != nil {
-		stats.ActiveSystems = 1
-	}
-
-	if c.genManager != nil {
-		stats.ActiveGenerators = len(c.genManager.generators)
-	}
-
-	// Count measurements from the old measurement manager
-	if c.measManager != nil {
-		stats.ActiveMeasurements = len(c.measManager.measurements)
-	}
-
-	// Also count measurements from the new metrics API
-	if c.activeSystem != nil && c.activeSystem.File != nil {
-		rt := c.activeSystem.File.Runtime
-		if rt != nil && rt.GetMetricStore() != nil {
-			store := rt.GetMetricStore()
-			stats.ActiveMeasurements += len(store.ListMeasurements())
-		}
-	}
-
-	return stats
-}
-*/
 
 // evaluateProposedFlows calculates what the system flows would be with current generator settings
 func (c *Canvas) evaluateProposedFlows() error {

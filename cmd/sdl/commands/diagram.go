@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/panyam/sdl/decl"
+	protos "github.com/panyam/sdl/gen/go/sdl/v1"
 	"github.com/panyam/sdl/loader"
 	"github.com/panyam/sdl/runtime"
 	"github.com/panyam/sdl/viz"
@@ -107,17 +108,17 @@ func generateStaticDiagram(systemName, outputFile, format string) {
 		os.Exit(1)
 	}
 
-	// 2. Populate viz.Node and viz.Edge slices
-	var nodes []viz.Node
-	var edges []viz.Edge
+	// 2. Populate proto DiagramNode and DiagramEdge slices
+	var nodes []*protos.DiagramNode
+	var edges []*protos.DiagramEdge
 	instanceNameToID := make(map[string]string)
 
 	for _, item := range sysDecl.Body {
 		if instDecl, ok := item.(*decl.InstanceDecl); ok {
 			nodeID := instDecl.Name.Value
 			instanceNameToID[nodeID] = nodeID
-			nodes = append(nodes, viz.Node{
-				ID:   nodeID,
+			nodes = append(nodes, &protos.DiagramNode{
+				Id:   nodeID,
 				Name: instDecl.Name.Value,
 				Type: instDecl.ComponentName.Value,
 			})
@@ -130,9 +131,9 @@ func generateStaticDiagram(systemName, outputFile, format string) {
 			for _, assignment := range instDecl.Overrides {
 				if targetIdent, okIdent := assignment.Value.(*decl.IdentifierExpr); okIdent {
 					if toNodeID, isInstance := instanceNameToID[targetIdent.Value]; isInstance {
-						edges = append(edges, viz.Edge{
-							FromID: fromNodeID,
-							ToID:   toNodeID,
+						edges = append(edges, &protos.DiagramEdge{
+							FromId: fromNodeID,
+							ToId:   toNodeID,
 							Label:  assignment.Var.Value,
 						})
 					}
@@ -157,8 +158,14 @@ func generateStaticDiagram(systemName, outputFile, format string) {
 		os.Exit(1)
 	}
 
-	// 4. Generate and write output
-	diagramOutput, err := generator.Generate(systemName, nodes, edges)
+	// 4. Create proto SystemDiagram and generate output
+	diagram := &protos.SystemDiagram{
+		SystemName: systemName,
+		Nodes:      nodes,
+		Edges:      edges,
+	}
+	
+	diagramOutput, err := generator.Generate(diagram)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error generating %s diagram: %v\n", format, err)
 		os.Exit(1)

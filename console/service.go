@@ -577,3 +577,23 @@ func formatDeclValueAsSDL(value decl.Value) string {
 	}
 	return value.String()
 }
+
+// GetSystemDiagram returns the system topology for visualization
+func (s *CanvasService) GetSystemDiagram(ctx context.Context, req *protos.GetSystemDiagramRequest) (resp *protos.GetSystemDiagramResponse, err error) {
+	slog.Info("GetSystemDiagram Request", "req", req)
+	resp = &protos.GetSystemDiagramResponse{}
+
+	err = s.withCanvas(req.CanvasId, func(canvas *Canvas) {
+		// Get the system diagram from the canvas
+		diagram, diagErr := canvas.GetSystemDiagram()
+		if diagErr != nil {
+			err = status.Errorf(codes.Internal, "failed to get system diagram: %v", diagErr)
+			return
+		}
+
+		// Canvas.GetSystemDiagram now returns proto directly
+		resp.Diagram = diagram
+	})
+
+	return
+}

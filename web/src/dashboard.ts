@@ -1,5 +1,6 @@
 import { CanvasClient } from './canvas-client.js';
-import { DashboardState, ParameterConfig, WebSocketMessage, GenerateCall, SystemDiagram } from './types.js';
+import { DashboardState, ParameterConfig, WebSocketMessage, GenerateCall } from './types.js';
+import type { SystemDiagram } from './gen/sdl/v1/canvas_pb.ts';
 import { Chart, ChartConfiguration } from 'chart.js/auto';
 import { Graphviz } from "@hpcc-js/wasm";
 import { DockviewApi, DockviewComponent } from 'dockview-core';
@@ -239,15 +240,16 @@ export class Dashboard {
 
   private async loadSystemDiagram() {
     try {
-      // For now, create a mock diagram since we don't have a getDiagram method
-      // TODO: Implement proper diagram fetching from server
-      this.systemDiagram = {
-        nodes: [],
-        edges: []
-      };
+      // Fetch the system diagram from the server
+      const response = await this.api.getSystemDiagram();
+      if (response.success && response.data) {
+        this.systemDiagram = response.data;
         console.log('📊 System diagram loaded:', this.systemDiagram);
         // Update only the system architecture panel
         this.updateSystemArchitecturePanel();
+      } else {
+        throw new Error('Failed to get system diagram');
+      }
     } catch (error) {
       console.error('❌ Failed to load system diagram:', error);
       this.systemDiagram = null;
@@ -608,11 +610,11 @@ export class Dashboard {
 
     // Generate clusters (components) with method nodes inside
     this.systemDiagram?.nodes?.forEach((node) => {
-      const clusterName = `cluster_${node.ID}`;
-      const methods = node.Methods || [];
+      const clusterName = `cluster_${node.id}`;
+      const methods = node.methods || [];
       
       dotContent += `  subgraph ${clusterName} {\n`;
-      dotContent += `    label="${node.Name}\\n(${node.Type})";\n`;
+      dotContent += `    label="${node.name}\\n(${node.type})";\n`;
       dotContent += `    style="filled,rounded";\n`;
       dotContent += `    fillcolor="#1f2937";\n`;
       dotContent += `    fontcolor="#60a5fa";\n`;
@@ -625,12 +627,12 @@ export class Dashboard {
       if (methods.length > 0) {
         // Create method nodes inside the cluster
         methods.forEach((method) => {
-          const methodNodeId = `${node.ID}_${method.Name}`;
-          const traffic = method.Traffic || 0; // Use backend-calculated traffic directly
+          const methodNodeId = `${node.id}_${method.name}`;
+          const traffic = method.traffic || 0; // Use backend-calculated traffic directly
           
           // Disabling return type in label for now
-          // dotContent += `    ${methodNodeId} [label="${method.Name}() → ${method.ReturnType}\\n \\n ${traffic} rps"`;
-          dotContent += `    ${methodNodeId} [label="${method.Name}()\\n${traffic.toFixed(1)} rps"`;
+          // dotContent += `    ${methodNodeId} [label="${method.name}() → ${method.returnType}\\n \\n ${traffic} rps"`;
+          dotContent += `    ${methodNodeId} [label="${method.name}()\\n${traffic.toFixed(1)} rps"`;
           dotContent += ` shape=box style="filled,rounded" fillcolor="#2d3748" fontcolor="#a3e635"`;
           dotContent += ` fontsize=12 fontname="Monaco,Menlo,monospace" margin=0.15 penwidth=1];\n`;
           
@@ -638,7 +640,7 @@ export class Dashboard {
         });
       } else {
         // Component with no methods - create a simple node
-        const nodeId = `${node.ID}_component`;
+        const nodeId = `${node.id}_component`;
         dotContent += `    ${nodeId} [label="No Methods\\n🔄 0 rps"`;
         dotContent += ` shape=box style="filled,rounded" fillcolor="#374151" fontcolor="#9ca3af"`;
         dotContent += ` fontsize=11 fontname="Monaco,Menlo,monospace" margin=0.2];\n`;
@@ -650,59 +652,59 @@ export class Dashboard {
 
     // Generate edges between method nodes based on actual system dependencies
     this.systemDiagram?.edges?.forEach(edge => {
-      const fromNode = (this.systemDiagram?.nodes || []).find(n => n.ID === edge.FromID);
-      const toNode = (this.systemDiagram?.nodes || []).find(n => n.ID === edge.ToID);
+      const fromNode = (this.systemDiagram?.nodes || []).find(n => n.id === edge.fromId);
+      const toNode = (this.systemDiagram?.nodes || []).find(n => n.id === edge.toId);
       
       if (fromNode && toNode) {
         // For flow-based edges with order numbers, we need to be more specific
-        if (edge.Order && edge.Order > 0) {
+        if (edge.order && edge.order > 0) {
           // This is a flow-based edge - use the specific methods from the edge
           let fromMethod = '';
           let toMethod = '';
           
           // Use the FromMethod and ToMethod fields if available
-          if (edge.FromMethod) {
-            fromMethod = `${fromNode.ID}_${edge.FromMethod}`;
-          } else if (fromNode.Methods && fromNode.Methods.length > 0) {
-            fromMethod = `${fromNode.ID}_${fromNode.Methods[0].Name}`;
+          if (edge.fromMethod) {
+            fromMethod = `${fromNode.id}_${edge.fromMethod}`;
+          } else if (fromNode.methods && fromNode.methods.length > 0) {
+            fromMethod = `${fromNode.id}_${fromNode.methods[0].name}`;
           } else {
-            fromMethod = `${fromNode.ID}_component`;
+            fromMethod = `${fromNode.id}_component`;
           }
           
-          if (edge.ToMethod) {
-            toMethod = `${toNode.ID}_${edge.ToMethod}`;
-          } else if (toNode.Methods && toNode.Methods.length > 0) {
-            toMethod = `${toNode.ID}_${toNode.Methods[0].Name}`;
+          if (edge.toMethod) {
+            toMethod = `${toNode.id}_${edge.toMethod}`;
+          } else if (toNode.methods && toNode.methods.length > 0) {
+            toMethod = `${toNode.id}_${toNode.methods[0].name}`;
           } else {
-            toMethod = `${toNode.ID}_component`;
+            toMethod = `${toNode.id}_component`;
           }
           
           // Use generator-specific color if available, otherwise default amber
-          const edgeColor = edge.Color || "#fbbf24";
+          const edgeColor = edge.color || "#fbbf24";
           let edgeStyle = ` fontcolor="${edgeColor}" color="${edgeColor}" fontsize=11`;
           
-          edges.push(`  ${fromMethod} -> ${toMethod} [label="${edge.Label}"${edgeStyle}];`);
+          edges.push(`  ${fromMethod} -> ${toMethod} [label="${edge.label}"${edgeStyle}];`);
         } else {
           // Regular dependency edges
-          const fromMethods = fromNode.Methods || [];
-          const toMethods = toNode.Methods || [];
+          const fromMethods = fromNode.methods || [];
+          const toMethods = toNode.methods || [];
           
           if (fromMethods.length > 0 && toMethods.length > 0) {
-            const fromMethod = `${fromNode.ID}_${fromMethods[0].Name}`;
-            const toMethod = `${toNode.ID}_${toMethods[0].Name}`;
-            edges.push(`  ${fromMethod} -> ${toMethod} [label="${edge.Label}"];`);
+            const fromMethod = `${fromNode.id}_${fromMethods[0].name}`;
+            const toMethod = `${toNode.id}_${toMethods[0].name}`;
+            edges.push(`  ${fromMethod} -> ${toMethod} [label="${edge.label}"];`);
           } else if (fromMethods.length > 0) {
-            const fromMethod = `${fromNode.ID}_${fromMethods[0].Name}`;
-            const toComponent = `${toNode.ID}_component`;
-            edges.push(`  ${fromMethod} -> ${toComponent} [label="${edge.Label}"];`);
+            const fromMethod = `${fromNode.id}_${fromMethods[0].name}`;
+            const toComponent = `${toNode.id}_component`;
+            edges.push(`  ${fromMethod} -> ${toComponent} [label="${edge.label}"];`);
           } else if (toMethods.length > 0) {
-            const fromComponent = `${fromNode.ID}_component`;
-            const toMethod = `${toNode.ID}_${toMethods[0].Name}`;
-            edges.push(`  ${fromComponent} -> ${toMethod} [label="${edge.Label}"];`);
+            const fromComponent = `${fromNode.id}_component`;
+            const toMethod = `${toNode.id}_${toMethods[0].name}`;
+            edges.push(`  ${fromComponent} -> ${toMethod} [label="${edge.label}"];`);
           } else {
-            const fromComponent = `${fromNode.ID}_component`;
-            const toComponent = `${toNode.ID}_component`;
-            edges.push(`  ${fromComponent} -> ${toComponent} [label="${edge.Label}"];`);
+            const fromComponent = `${fromNode.id}_component`;
+            const toComponent = `${toNode.id}_component`;
+            edges.push(`  ${fromComponent} -> ${toComponent} [label="${edge.label}"];`);
           }
         }
       }

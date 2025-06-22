@@ -1,12 +1,9 @@
 import { createClient } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
-import { CanvasService } from "../../gen/ts/sdl/v1/canvas_pb.ts";
+import { CanvasService } from "./gen/sdl/v1/canvas_pb.ts";
 import { create } from "@bufbuild/protobuf";
-import {
-  GeneratorSchema,
-  MetricSchema
-} from "../../gen/ts/sdl/v1/models_pb.js";
-import type { Generator, Metric } from "../../gen/ts/sdl/v1/models_pb.js";
+import { GeneratorSchema, MetricSchema } from "./gen/sdl/v1/models_pb.ts";
+import type { Generator, Metric } from "./gen/sdl/v1/models_pb.ts";
 
 // Create transport with the gRPC-gateway endpoint
 const transport = createConnectTransport({
@@ -267,6 +264,17 @@ export class CanvasClient {
     return {
       success: true,
       data: response
+    };
+  }
+
+  // Get system diagram
+  async getSystemDiagram() {
+    const response = await client.getSystemDiagram({
+      canvasId: this.canvasId
+    });
+    return {
+      success: true,
+      data: response.diagram
     };
   }
 
