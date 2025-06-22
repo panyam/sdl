@@ -125,7 +125,7 @@ var listMetricsCmd = &cobra.Command{
 
 			// Display metrics in a table
 			fmt.Printf("%-40s %-20s %-15s %10s %15s %15s\n",
-				"ID", "Component", "Type", "Points", "Oldest", "Newest")
+				"ID", "Target", "Type", "Points", "Oldest", "Newest")
 			fmt.Println(strings.Repeat("-", 115))
 
 			for _, m := range resp.Metrics {
@@ -136,7 +136,7 @@ var listMetricsCmd = &cobra.Command{
 					newestTime = time.Unix(int64(m.NewestTimestamp), 0).Format("15:04:05")
 				}
 				fmt.Printf("%-40s %-20s %-15s %10d %15s %15s\n",
-					m.Id, m.Component, m.MetricType, m.DataPoints, oldestTime, newestTime)
+					m.Id, m.Component+"."+m.Method, m.MetricType, m.DataPoints, oldestTime, newestTime)
 			}
 
 			return nil
