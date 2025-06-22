@@ -20,7 +20,7 @@ plugins:
     opt: allow_merge=true,merge_file_name=services
   # This will invoke protoc-gen-es and write output to src/gen
   - local: protoc-gen-es
-    out: gen/ts
+    out: web/src/gen
     # Also generate any imported dependencies
     include_imports: true
     # Add more plugin options here
