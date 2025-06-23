@@ -1,17 +1,9 @@
 package components
 
 import (
-	"fmt"
-
 	sc "github.com/panyam/sdl/core"
 	// Assuming metrics helpers are available via import or same package
 	// "log" // If needed for warnings
-)
-
-// Define constants for profile names
-const (
-	ProfileSSD = "SSD"
-	ProfileHDD = "HDD"
 )
 
 // Predefined Outcome distributions for different profiles
@@ -57,9 +49,6 @@ func init() {
 
 // Disk represents a storage device component
 type Disk struct {
-	// ProfileName identifies the type of disk (e.g., "SSD", "HDD")
-	ProfileName string
-
 	// Attributes for a Disk component
 	// These will be pointers to the shared predefined outcomes
 	ReadOutcomes  *Outcomes[sc.AccessResult]
@@ -69,35 +58,14 @@ type Disk struct {
 // Init initializes a Disk based on the ProfileName.
 // Defaults to SSD if profileName is empty or unrecognized.
 func (d *Disk) Init() {
-	switch d.ProfileName {
-	case ProfileHDD:
-		d.ReadOutcomes = hddReadOutcomes
-		d.WriteOutcomes = hddWriteOutcomes
-		// log.Printf("Initialized HDD Disk Profile")
-	case ProfileSSD:
-		fallthrough // Explicit fallthrough for SSD as default
-	default:
-		// Default to SSD
-		if d.ProfileName != ProfileSSD && d.ProfileName != "" {
-			// log.Printf("Warning: Unrecognized disk profile '%s'. Defaulting to SSD.", profileName)
-		}
-		d.ProfileName = ProfileSSD // Ensure ProfileName is set correctly for default
-		d.ReadOutcomes = ssdReadOutcomes
-		d.WriteOutcomes = ssdWriteOutcomes
-		// log.Printf("Initialized SSD Disk Profile (or default)")
-	}
-
-	// Ensure outcomes are not nil, though init() should handle this. Defensive check.
-	if d.ReadOutcomes == nil || d.WriteOutcomes == nil {
-		// This should not happen if init() works correctly
-		panic(fmt.Sprintf("Disk profile '%s' failed to load outcomes.", d.ProfileName))
-	}
+	d.ReadOutcomes = ssdReadOutcomes
+	d.WriteOutcomes = ssdWriteOutcomes
 }
 
 // NewDisk creates and initializes a new Disk component with the specified profile.
 // Defaults to SSD if profileName is empty or unrecognized.
-func NewDisk(profileName string) *Disk {
-	d := &Disk{ProfileName: profileName}
+func NewDisk() *Disk {
+	d := &Disk{}
 	d.Init()
 	return d
 }

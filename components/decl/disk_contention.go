@@ -9,8 +9,8 @@ type DiskWithContention struct {
 	NWBase[*components.DiskWithContention]
 }
 
-func NewDiskWithContention(profileName string) *DiskWithContention {
-	return &DiskWithContention{NWBase: NewNWBase("DiskWithContention", components.NewDiskWithContention(profileName))}
+func NewDiskWithContention() *DiskWithContention {
+	return &DiskWithContention{NWBase: NewNWBase("DiskWithContention", components.NewDiskWithContention())}
 }
 
 // Read returns an expression representing a contention-aware disk read operation.

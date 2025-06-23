@@ -10,7 +10,7 @@ type Disk struct {
 }
 
 func NewDisk(name string) *Disk {
-	return &Disk{NWBase: NewNWBase(name, components.NewDisk(""))}
+	return &Disk{NWBase: NewNWBase(name, components.NewDisk())}
 }
 
 // Read returns an  expression representing a disk read operation.

@@ -16,7 +16,7 @@ type Index struct {
 	RecordProcessingTime Outcomes[Duration]
 
 	// The disk on which the heap file exists
-	Disk Disk
+	Disk *DiskWithContention
 
 	// Max size of our outcomes
 	MaxOutcomeLen int
