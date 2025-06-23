@@ -35,6 +35,7 @@ native component HashIndex {
 }
 
 native component SortedFile {
+  param ArrivalRate Float
   param NumRecords Int
   param RecordSize Int
   param PageSize Int

@@ -1,6 +1,8 @@
 package runtime
 
 import (
+	"log"
+
 	"github.com/panyam/sdl/components"
 	"github.com/panyam/sdl/decl"
 )
@@ -121,8 +123,14 @@ func (ci *ComponentInstance) SetArrivalRate(methodName string, rate float64) err
 	if ci.IsNative {
 		// For native components, check if they implement arrival rate setting
 		if setter, ok := ci.NativeInstance.(interface{ SetArrivalRate(string, float64) error }); ok {
-			return setter.SetArrivalRate(methodName, rate)
+
+			e := setter.SetArrivalRate(methodName, rate)
+			if e != nil {
+				panic(e)
+			}
+			return e
 		}
+		log.Printf("Component %T Does not support SetArrivalRate", ci.NativeInstance)
 		// No error if not supported - just means infinite bandwidth
 		return nil
 	}

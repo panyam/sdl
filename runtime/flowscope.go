@@ -131,3 +131,16 @@ func (fs *FlowScope) GetVariableOutcome(varName string) (float64, bool) {
 	rate, exists := fs.VariableOutcomes[varName]
 	return rate, exists
 }
+
+// ApplyToComponents applies the calculated arrival rates to the actual components
+// by calling SetArrivalRate on each component instance
+func (fs *FlowScope) ApplyToComponents() error {
+	for comp, methods := range fs.ArrivalRates {
+		for method, rate := range methods {
+			if err := comp.SetArrivalRate(method, rate); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}

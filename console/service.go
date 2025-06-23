@@ -257,7 +257,7 @@ func (s *CanvasService) StopGenerator(ctx context.Context, req *protos.StopGener
 func (s *CanvasService) UpdateGenerator(ctx context.Context, req *protos.UpdateGeneratorRequest) (resp *protos.UpdateGeneratorResponse, err error) {
 	slog.Info("UpdateGenerator Request", "req", req)
 	resp = &protos.UpdateGeneratorResponse{}
-	
+
 	err = s.withCanvas(req.Generator.CanvasId, func(canvas *Canvas) {
 		// Update the generator
 		err = canvas.UpdateGenerator(req.Generator)
@@ -266,7 +266,7 @@ func (s *CanvasService) UpdateGenerator(ctx context.Context, req *protos.UpdateG
 		}
 		resp.Generator = req.Generator
 	})
-	
+
 	return
 }
 
@@ -739,7 +739,6 @@ func (s *CanvasService) BatchSetParameters(ctx context.Context, req *protos.Batc
 			updates[update.Path] = value
 		}
 
-		log.Println("1111 Here....")
 		// Apply batch updates
 		results, batchErr := canvas.BatchSetParameters(updates)
 		if batchErr != nil && results == nil {

@@ -164,6 +164,26 @@ func (rp *ResourcePool) Acquire() *core.Outcomes[core.AccessResult] {
 	return outcomes
 }
 
+// SetArrivalRate sets the arrival rate for a specific method.
+// For ResourcePool, we aggregate all method rates since the pool is shared.
+func (rp *ResourcePool) SetArrivalRate(method string, rate float64) error {
+	// For simplicity, we'll just update the total arrival rate
+	// In a more sophisticated implementation, you might track per-method rates
+	rp.ArrivalRate = rate
+	return nil
+}
+
+// GetArrivalRate returns the arrival rate for a specific method.
+// For ResourcePool, we return the total rate since it's shared.
+func (rp *ResourcePool) GetArrivalRate(method string) float64 {
+	return rp.ArrivalRate
+}
+
+// GetTotalArrivalRate returns the total arrival rate across all methods.
+func (rp *ResourcePool) GetTotalArrivalRate() float64 {
+	return rp.ArrivalRate
+}
+
 // GetFlowPattern implements FlowAnalyzable interface for ResourcePool
 func (rp *ResourcePool) GetFlowPattern(methodName string, inputRate float64) FlowPattern {
 	switch methodName {

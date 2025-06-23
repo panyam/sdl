@@ -1,8 +1,6 @@
 package runtime
 
 import (
-	"log"
-	
 	"github.com/panyam/sdl/core"
 )
 
@@ -77,7 +75,7 @@ func analyzeNativeMethodCall(methodName string, callExpr *CallExpr, inputRate fl
 	if info.HasDelay && info.ExtractDelay != nil {
 		totalDelay = info.ExtractDelay(callExpr.ArgList)
 		if totalDelay > 0 {
-			log.Printf("analyzeNativeMethodCall: %s induces delay of %v", methodName, totalDelay)
+			// log.Printf("analyzeNativeMethodCall: %s induces delay of %v", methodName, totalDelay)
 		}
 	}
 

@@ -1,7 +1,7 @@
 package components
 
 import (
-	"fmt"
+	"log"
 
 	sc "github.com/panyam/sdl/core"
 )
@@ -26,18 +26,10 @@ func (d *DiskWithContention) Init() {
 	d.baseDisk = NewDisk()
 	d.arrivalRates = make(map[string]float64)
 
-	// Configure contention model based on disk type
-	// HDD uses MM1Queue for serialized access
-	d.queue = &MM1Queue{
-		Name:           fmt.Sprintf("disk-queue"),
-		ArrivalRate:    1e-9, // Will be updated via SetArrivalRate
-		AvgServiceTime: 0.01, // 10ms average (from HDD profile)
-	}
-	d.queue.Init()
-
-	// SSD uses ResourcePool for parallel I/O
+	// Configure contention model - for now always use ResourcePool
+	// In the future, this could be configurable
 	d.pool = &ResourcePool{
-		Name:        fmt.Sprintf("disk-pool"),
+		Name:        "disk-pool",
 		Size:        32,     // SSDs can handle multiple parallel I/Os
 		ArrivalRate: 1e-9,   // Will be updated via SetArrivalRate
 		AvgHoldTime: 0.0005, // 0.5ms average (from SSD profile)
@@ -59,6 +51,7 @@ func (d *DiskWithContention) SetArrivalRate(method string, rate float64) error {
 	// Update total arrival rate in the contention model
 	totalRate := d.GetTotalArrivalRate()
 
+	log.Println("Setting Arrival Rate: ", d.pool, d.queue, totalRate)
 	if d.pool != nil {
 		d.pool.ArrivalRate = totalRate
 	} else if d.queue != nil {

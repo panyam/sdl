@@ -24,6 +24,31 @@ func NewNWBase[W WrappedComponent](name string, wrapped W) NWBase[W] {
 	return NWBase[W]{Name: name, Modified: true, Wrapped: wrapped}
 }
 
+// SetArrivalRate sets the arrival rate for a specific method.
+// This forwards the rate to the underlying disk for contention modeling.
+func (s *NWBase[W]) SetArrivalRate(method string, rate float64) error {
+	if setter, ok := any(s.Wrapped).(interface{ SetArrivalRate(string, float64) error }); ok {
+		return setter.SetArrivalRate(method, rate)
+	}
+	return fmt.Errorf("WrappedComponent %T has no SetArrivalRate", s.Wrapped)
+}
+
+// GetArrivalRate returns the arrival rate for a specific method.
+func (s *NWBase[W]) GetArrivalRate(method string) float64 {
+	if getter, ok := any(s.Wrapped).(interface{ GetArrivalRate(string) float64 }); ok {
+		return getter.GetArrivalRate(method)
+	}
+	return -1
+}
+
+// GetTotalArrivalRate returns the sum of all method arrival rates.
+func (s *NWBase[W]) GetTotalArrivalRate() float64 {
+	if getter, ok := any(s.Wrapped).(interface{ TotalArrivalRate() float64 }); ok {
+		return getter.TotalArrivalRate()
+	}
+	return -1
+}
+
 // GetFlowPattern provides flow analysis, delegating to wrapped component if it supports it
 func (b *NWBase[W]) GetFlowPattern(method string, inputRate float64) components.FlowPattern {
 	// Check if the wrapped component implements FlowAnalyzable
@@ -31,7 +56,7 @@ func (b *NWBase[W]) GetFlowPattern(method string, inputRate float64) components.
 		// Delegate to the component's implementation
 		return flowAnalyzable.GetFlowPattern(method, inputRate)
 	}
-	
+
 	// Default behavior for non-flow-analyzable components:
 	// - No outflows (leaf component)
 	// - Perfect success rate (infinite capacity)

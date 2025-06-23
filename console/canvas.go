@@ -3,6 +3,7 @@ package console
 import (
 	"fmt"
 	"log"
+	"log/slog"
 	"maps"
 	"slices"
 	"strings"
@@ -519,6 +520,9 @@ func (c *Canvas) evaluateProposedFlowsWithStrategy(strategy string) error {
 	c.proposedFlowScope = runtime.NewFlowScope(c.activeSystem.Env)
 	c.proposedFlowRates = c.convertFlowResultToRateMap(result)
 
+	// Also populate the FlowScope's ArrivalRates so ApplyToComponents works
+	c.proposedFlowScope.ArrivalRates = c.proposedFlowRates
+
 	return nil
 }
 
@@ -559,12 +563,21 @@ func (c *Canvas) convertFlowResultToRateMap(result *runtime.FlowAnalysisResult) 
 }
 
 // applyProposedFlows moves the proposed flow state to current (accepting the new flow state)
+// and applies the arrival rates to the actual components
 func (c *Canvas) applyProposedFlows() {
 	if c.proposedFlowScope != nil {
 		c.currentFlowScope = c.proposedFlowScope
 		c.proposedFlowScope = nil
 		c.currentFlowRates = c.proposedFlowRates
 		c.proposedFlowRates = nil
+
+		// Apply the calculated arrival rates to the actual components
+		if c.currentFlowScope != nil {
+			if err := c.currentFlowScope.ApplyToComponents(); err != nil {
+				// Log the error but don't fail - some components might not support arrival rates
+				slog.Warn("Failed to apply some arrival rates", "error", err)
+			}
+		}
 	}
 }
 

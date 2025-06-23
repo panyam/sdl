@@ -52,7 +52,9 @@ func withLogger(handler http.Handler) http.Handler {
 		// pass the handler to httpsnoop to get http status and latency
 		m := httpsnoop.CaptureMetrics(handler, writer, request)
 		// printing exracted data
-		log.Printf("http[%d]-- %s -- %s, Query: %s\n", m.Code, m.Duration, request.URL.Path, request.URL.RawQuery)
+		if false && m.Code != 200 { // turn off frequent logs
+			log.Printf("http[%d]-- %s -- %s, Query: %s\n", m.Code, m.Duration, request.URL.Path, request.URL.RawQuery)
+		}
 	})
 }
 

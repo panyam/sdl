@@ -97,7 +97,6 @@ func (h *SortedFile) Find() (out *Outcomes[sc.AccessResult]) {
 }
 
 // Insert an entry into a sorted file.
-// Thsi
 func (h *SortedFile) Insert() (out *Outcomes[sc.AccessResult]) {
 	// Even though "finding" the right place can happen logarithmically
 	// after a find, all records after it have to be shifted
@@ -107,4 +106,20 @@ func (h *SortedFile) Insert() (out *Outcomes[sc.AccessResult]) {
 func (h *SortedFile) Delete() (out *Outcomes[sc.AccessResult]) {
 	// Same as Insert due to shifting records
 	return h.Insert()
+}
+
+// SetArrivalRate sets the arrival rate for a specific method.
+// This forwards the rate to the underlying disk for contention modeling.
+func (s *SortedFile) SetArrivalRate(method string, rate float64) error {
+	return s.Disk.SetArrivalRate(method, rate)
+}
+
+// GetArrivalRate returns the arrival rate for a specific method.
+func (s *SortedFile) GetArrivalRate(method string) float64 {
+	return s.Disk.GetArrivalRate(method)
+}
+
+// GetTotalArrivalRate returns the sum of all method arrival rates.
+func (s *SortedFile) GetTotalArrivalRate() float64 {
+	return s.Disk.GetTotalArrivalRate()
 }

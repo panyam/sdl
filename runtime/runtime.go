@@ -185,7 +185,7 @@ func (r *Runtime) CreateNativeComponent(compDecl *ComponentDecl) NativeObject {
 	case "Disk", "NativeDisk":
 		return cd.NewDisk(name)
 	case "DiskWithContention":
-		return cd.NewDiskWithContention("SSD") // Default to SSD
+		return cd.NewDiskWithContention() // Default to SSD
 	case "HashIndex":
 		return cd.NewHashIndex(name)
 	case "BTreeIndex":

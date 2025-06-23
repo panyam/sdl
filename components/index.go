@@ -27,6 +27,9 @@ func (i *Index) NumPages() uint {
 }
 
 func (i *Index) Init() {
+	if i.Disk == nil {
+		i.Disk = NewDiskWithContention()
+	}
 	i.Disk.Init()
 	i.PageSize = 1024 * 1024
 	// Number of entries = 1M in this heapfile as a default

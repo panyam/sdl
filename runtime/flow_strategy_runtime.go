@@ -36,6 +36,16 @@ func (s *RuntimeFlowStrategy) Evaluate(system *SystemInstance, generators []Gene
 
 	// Run flow evaluation
 	rateMap := SolveSystemFlowsRuntime(runtimeGenerators, scope)
+	
+	// Apply the calculated rates to components
+	for comp, methods := range rateMap {
+		for method, rate := range methods {
+			if err := comp.SetArrivalRate(method, rate); err != nil {
+				// Log but don't fail - some components might not support arrival rates
+				Warn("Failed to set arrival rate for %v.%s: %v", comp, method, err)
+			}
+		}
+	}
 
 	// Convert results to API format
 	result := &FlowAnalysisResult{
