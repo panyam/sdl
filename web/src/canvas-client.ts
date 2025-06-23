@@ -157,23 +157,25 @@ export class CanvasClient {
     };
   }
 
-  /*
-  async updateGenerator(id: string, updates: Partial<Generator>) {
+  async updateGeneratorRate(id: string, rate: number) {
+    // Only update the rate field using field mask
     const generator = create(GeneratorSchema, {
-      ...updates,
       id: id,
-      canvasId: this.canvasId
+      canvasId: this.canvasId,
+      rate: rate
     });
     
     const response = await client.updateGenerator({
-      generator: generator
+      generator: generator,
+      updateMask: {
+        paths: ["rate"]
+      }
     });
     return {
       success: true,
       data: response.generator
     };
   }
- */
 
   async deleteGenerator(id: string) {
     await client.deleteGenerator({
@@ -306,6 +308,18 @@ export class CanvasClient {
     return {
       success: true,
       data: response.diagram
+    };
+  }
+
+  // Evaluate flows - equivalent to --apply-flows
+  async evaluateFlows(strategy: string = "auto") {
+    const response = await client.evaluateFlows({
+      canvasId: this.canvasId,
+      strategy: strategy
+    });
+    return {
+      success: true,
+      data: response
     };
   }
 

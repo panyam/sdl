@@ -8,6 +8,9 @@ buf:
 
 reload: buf
 
+dash:
+	cd web && npm run build
+
 # Development workflow: build and test dashboard
 dev-test: binary
 	cd web && ./dev-test.sh

@@ -16,6 +16,8 @@ export class Dashboard {
   private metricStreamController: AbortController | null = null;
   private generatorPollInterval: number | null = null;
   private canvasId: string;
+  private isUpdatingGenerators: boolean = false; // Flag to prevent UI overwrites during updates
+  private generatorUpdateTimeout: number | null = null; // Debounce timer for generator updates
 
   // Parameter configurations - populated when a system is loaded
   private parameters: ParameterConfig[] = [];
@@ -175,8 +177,10 @@ export class Dashboard {
 
   private setupEventListeners() {
     // We use Connect streaming for real-time metrics, not WebSockets
-    // Start periodic generator polling (every 5 seconds)
-    this.startGeneratorPolling();
+    // Disabled periodic generator polling - we now have manual refresh button
+    if (false) {  // disabling generator polling for now but dont remove it
+      this.startGeneratorPolling();
+    }
   }
   
   private startGeneratorPolling() {
@@ -858,10 +862,10 @@ export class Dashboard {
                   <button class="bg-gray-700 hover:bg-gray-600 px-2 py-1 text-xs" 
                           data-rate-dec-id="${call.id}">−</button>
                   <input type="number" 
-                         min="0" max="20" step="1" 
-                         value="${Math.round(call.rate)}"
+                         min="0" max="20" step="0.1" 
+                         value="${call.rate.toFixed(1)}"
                          data-rate-input-id="${call.id}"
-                         class="w-12 px-1 py-1 text-xs text-center bg-gray-800 border-0 outline-none">
+                         class="w-12 px-1 py-1 text-xs text-center bg-gray-800 border-0 outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none">
                   <button class="bg-gray-700 hover:bg-gray-600 px-2 py-1 text-xs" 
                           data-rate-inc-id="${call.id}">+</button>
                 </div>
@@ -959,9 +963,9 @@ export class Dashboard {
       // Rate input field
       const rateInput = document.querySelector(`[data-rate-input-id="${call.id}"]`) as HTMLInputElement;
       rateInput?.addEventListener('input', (e) => {
-        const value = parseInt((e.target as HTMLInputElement).value);
+        const value = parseFloat((e.target as HTMLInputElement).value);
         if (!isNaN(value) && value >= 0 && value <= 20) {
-          call.rate = value; // Use integer values
+          call.rate = value; // Support float values for fine-grained control
           this.handleGenerateRateChange(call);
         }
       });
@@ -969,18 +973,18 @@ export class Dashboard {
       // Rate decrement button
       const rateDecBtn = document.querySelector(`[data-rate-dec-id="${call.id}"]`) as HTMLButtonElement;
       rateDecBtn?.addEventListener('click', () => {
-        const newRate = Math.max(0, Math.round(call.rate) - 1);
-        call.rate = newRate;
-        if (rateInput) rateInput.value = newRate.toString();
+        const newRate = Math.max(0, call.rate - 0.1);
+        call.rate = Math.round(newRate * 10) / 10; // Round to 1 decimal place
+        if (rateInput) rateInput.value = call.rate.toFixed(1);
         this.handleGenerateRateChange(call);
       });
 
       // Rate increment button
       const rateIncBtn = document.querySelector(`[data-rate-inc-id="${call.id}"]`) as HTMLButtonElement;
       rateIncBtn?.addEventListener('click', () => {
-        const newRate = Math.min(20, Math.round(call.rate) + 1);
-        call.rate = newRate;
-        if (rateInput) rateInput.value = newRate.toString();
+        const newRate = Math.min(20, call.rate + 0.1);
+        call.rate = Math.round(newRate * 10) / 10; // Round to 1 decimal place
+        if (rateInput) rateInput.value = call.rate.toFixed(1);
         this.handleGenerateRateChange(call);
       });
     });
@@ -1002,10 +1006,18 @@ export class Dashboard {
 
   private handleGenerateRateChange(call: GenerateCall) {
     console.log(`Changing rate for ${call.name} to ${call.rate} RPS`);
-    // TODO: Implement actual rate change
-    if (call.enabled) {
-      this.updateTrafficRate(call);
+    
+    // Clear any existing timeout
+    if (this.generatorUpdateTimeout) {
+      clearTimeout(this.generatorUpdateTimeout);
     }
+    
+    // Set a new timeout to debounce the API call
+    this.generatorUpdateTimeout = window.setTimeout(() => {
+      // Always update the rate, even if generator is not enabled
+      // This enables real-time parameter tuning like in the "incredible machine"
+      this.updateTrafficRate(call);
+    }, 300); // 300ms debounce delay
   }
 
   private async startTrafficGeneration(call: GenerateCall) {
@@ -1036,13 +1048,33 @@ export class Dashboard {
 
   private async updateTrafficRate(call: GenerateCall) {
     try {
-      // For now, we need to update the rate by updating the generator
-      // The CanvasClient doesn't have updateGenerator method yet
-      console.log(`⚠️ Generator rate update not yet implemented for ${call.target} to ${call.rate} RPS`);
-      console.log(`✅ Updated traffic rate for ${call.target} to ${call.rate} RPS`);
+      // Set flag to prevent UI overwrites during update
+      this.isUpdatingGenerators = true;
+      
+      // Update only the rate using the new updateGeneratorRate method
+      const result = await this.api.updateGeneratorRate(call.id, call.rate);
+      
+      if (!result.success) {
+        throw new Error('Failed to update generator rate');
+      }
+      
+      // Apply flows to propagate the rate change throughout the system
+      await this.api.evaluateFlows("auto");
+      
+      console.log(`✅ Updated traffic rate for ${call.target} to ${call.rate} RPS with flow evaluation`);
+      
+      // Refresh the system diagram to show updated flow rates
+      setTimeout(() => {
+        this.loadSystemDiagram();
+        // Allow UI updates again after a delay
+        this.isUpdatingGenerators = false;
+      }, 1000); // Give time for the update to propagate
+      
     } catch (error) {
       console.error(`❌ Failed to update traffic rate:`, error);
       this.showError(`Failed to update traffic rate: ${error}`);
+      // Reset flag on error
+      this.isUpdatingGenerators = false;
     }
   }
 
@@ -1078,6 +1110,11 @@ export class Dashboard {
   }
 
   private async refreshGenerators() {
+    // Skip refresh if we're updating generators to avoid UI overwrites
+    if (this.isUpdatingGenerators) {
+      return;
+    }
+    
     try {
       const response = await this.api.getGenerators();
       if (response.success && response.data) {

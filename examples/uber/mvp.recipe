@@ -37,9 +37,10 @@ echo "We'll track request latency, database query time, Maps API calls, and reso
 echo ""
 
 # Add all metrics
-IGNORE=true execWithConfirm "Adding request latency metric" sdl metrics add request_latency webserver RequestRide --type latency --window=1 --aggregation=p90
-IGNORE=true execWithConfirm "Adding database query time metric" sdl metrics add db_query database FindNearestDriver  --type latency --window=1 --aggregation=p90
-IGNORE=true execWithConfirm "Adding Maps API latency metric" sdl metrics add maps_latency mapsService CalculateRoute  --type latency --window=1 --aggregation=p90
+execWithConfirm "Adding request latency metric" sdl metrics add request_latency webserver RequestRide --type latency --window=1 --aggregation=p90
+execWithConfirm "Adding database query time metric" sdl metrics add db_query database FindNearestDriver  --type latency --window=1 --aggregation=p90
+execWithConfirm "Adding Maps API latency metric" sdl metrics add maps_latency mapsService CalculateRoute  --type latency --window=1 --aggregation=p90
+execWithConfirm "Adding utilization metric for db" sdl metrics add db_utilization database --type utilization --canvas ubermvp --window 1
 # Note: Pool utilization metrics not supported yet - only latency and count
 # execWithConfirm "Adding database pool utilization metric" sdl metrics add db_pool database pool utilization
 # execWithConfirm "Adding server pool utilization metric" sdl metrics add server_pool webserver pool utilization
@@ -55,9 +56,6 @@ execWithConfirm "Setting database pool hold time" sdl set database.pool.AvgHoldT
 execWithConfirm "Setting maps API hold time" sdl set mapsService.pool.AvgHoldTime 0.1
 
 
-# This marks when we will start prompting before running commands
-export START_PROMPTING=true
-
 echo ""
 echo "=== Baseline Traffic (5 RPS) ==="
 echo "Let's start with normal traffic - 5 requests per second."
@@ -65,8 +63,11 @@ echo "The system should handle this, but notice the latency..."
 echo ""
 
 # Start baseline traffic
-execWithConfirm "Creating baseline generator (5 RPS) with automatic flow calculation" sdl gen add baseline webserver.RequestRide 50 --apply-flows
+execWithConfirm "Creating baseline generator (5 RPS) with automatic flow calculation" sdl gen add baseline webserver.RequestRide 5 --apply-flows
 # execWithConfirm "Starting baseline traffic" sdl gen start baseline
+
+# This marks when we will start prompting before running commands
+export START_PROMPTING=true
 
 echo ""
 echo "=== Database Performance Demo ==="
