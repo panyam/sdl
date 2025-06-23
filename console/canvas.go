@@ -734,6 +734,14 @@ func (c *Canvas) ExecuteTrace(componentName, methodName string) (*runtime.TraceD
 	return traceData, nil
 }
 
+// GetSimulationTime returns the current simulation time in seconds
+// For now, we return 0 as we don't have virtual time tracking yet
+func (c *Canvas) GetSimulationTime() float64 {
+	// TODO: Implement proper virtual time tracking
+	// This would track the virtual time based on generator events
+	return 0
+}
+
 // TraceAllPaths performs breadth-first traversal to discover all possible execution paths
 func (c *Canvas) TraceAllPaths(componentName, methodName string, maxDepth int32) (*runtime.AllPathsTraceData, error) {
 	if c.activeSystem == nil {

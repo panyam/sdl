@@ -19,29 +19,47 @@ var metricsCmd = &cobra.Command{
 }
 
 var addMetricCmd = &cobra.Command{
-	Use:   "add <id> <component>.<method>",
+	Use:   "add <id> <component> [methods...]",
 	Short: "Add a new metric",
 	Long: `Add a new metric to collect data for specific component methods.
 	
 Examples:
   # Track latency for server.Lookup
-  sdl metrics add server_latency server.Lookup --type latency
+  sdl metrics add server_latency server Lookup --type latency
   
   # Track count for multiple methods
-  sdl metrics add db_calls database Query Update Insert --type count`,
-	Args: cobra.MinimumNArgs(3),
+  sdl metrics add db_calls database Query Update Insert --type count
+  
+  # Track utilization for a component (no methods needed)
+  sdl metrics add db_utilization database --type utilization`,
+	Args: cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		id := args[0]
 		component := args[1]
-		methods := strings.Split(args[2], ",")
-
+		var methods []string
+		
 		metricType, _ := cmd.Flags().GetString("type")
+		
+		// For utilization metrics, methods are optional
+		if metricType == "utilization" {
+			if len(args) > 2 {
+				methods = args[2:]
+			}
+		} else {
+			// For other metric types, methods are required
+			if len(args) < 3 {
+				fmt.Fprintf(os.Stderr, "Error: Methods are required for %s metrics\n", metricType)
+				os.Exit(1)
+			}
+			methods = args[2:]
+		}
+
 		aggregation, _ := cmd.Flags().GetString("aggregation")
 		window, _ := cmd.Flags().GetFloat64("window")
 
 		// Validate metric type
-		if metricType != "count" && metricType != "latency" {
-			fmt.Fprintf(os.Stderr, "Error: Invalid metric type '%s'. Must be 'count' or 'latency'\n", metricType)
+		if metricType != "count" && metricType != "latency" && metricType != "utilization" {
+			fmt.Fprintf(os.Stderr, "Error: Invalid metric type '%s'. Must be 'count', 'latency', or 'utilization'\n", metricType)
 			os.Exit(1)
 		}
 
@@ -239,7 +257,7 @@ func init() {
 	metricsCmd.AddCommand(queryMetricsCmd)
 
 	// Add metric command flags
-	addMetricCmd.Flags().String("type", "latency", "Metric type: 'count' or 'latency'")
+	addMetricCmd.Flags().String("type", "latency", "Metric type: 'count', 'latency', or 'utilization'")
 	addMetricCmd.Flags().String("aggregation", "avg", "Aggregation function (e.g., sum, avg, p95)")
 	addMetricCmd.Flags().Float64("window", 10.0, "Aggregation window in seconds")
 

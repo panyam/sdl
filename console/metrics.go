@@ -119,7 +119,13 @@ func (ms *MetricSpec) run() {
 
 	ctx := context.Background()
 	
-	// Time window aggregation
+	// For utilization metrics, use periodic sampling
+	if ms.MetricType == MetricUtilization {
+		ms.runUtilizationCollection(ctx)
+		return
+	}
+	
+	// Time window aggregation for event-based metrics
 	window := time.Duration(ms.AggregationWindow) * time.Second
 	aggregationTicker := time.NewTicker(window)
 	defer aggregationTicker.Stop()
@@ -260,5 +266,73 @@ func (ms *MetricSpec) computeAggregation(values []float64) float64 {
 			sum += v
 		}
 		return sum
+	}
+}
+
+// runUtilizationCollection periodically samples utilization from components
+func (ms *MetricSpec) runUtilizationCollection(ctx context.Context) {
+	// Use aggregation window for sampling interval, default to 10s
+	interval := time.Duration(ms.AggregationWindow) * time.Second
+	if interval <= 0 {
+		interval = 10 * time.Second
+	}
+	
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	
+	for {
+		select {
+		case <-ms.stopChan:
+			return
+		case <-ticker.C:
+			ms.collectUtilizationMetrics(ctx)
+		}
+	}
+}
+
+// collectUtilizationMetrics samples current utilization and writes to store
+func (ms *MetricSpec) collectUtilizationMetrics(ctx context.Context) {
+	if ms.resolvedComponentInstance == nil || ms.store == nil {
+		return
+	}
+	
+	// Get utilization info from component
+	infos := ms.resolvedComponentInstance.GetUtilizationInfo()
+	
+	// For now, collect the first/primary utilization value
+	// In future, we might want to support multiple utilization metrics per component
+	if len(infos) > 0 {
+		// Find the bottleneck or first utilization
+		var utilValue float64
+		found := false
+		
+		for _, info := range infos {
+			if info.IsBottleneck || !found {
+				utilValue = info.Utilization
+				found = true
+				if info.IsBottleneck {
+					break // Prefer bottleneck utilization
+				}
+			}
+		}
+		
+		// Create metric point
+		var timestamp time.Time
+		if ms.canvas != nil && ms.canvas.simulationStarted {
+			// Use simulation time if available
+			simTime := ms.canvas.GetSimulationTime()
+			timestamp = ms.canvas.simulationStartTime.Add(time.Duration(simTime * float64(time.Second)))
+		} else {
+			timestamp = time.Now()
+		}
+		
+		point := &MetricPoint{
+			Timestamp: timestamp,
+			Value:     utilValue,
+			Tags:      make(map[string]string),
+		}
+		
+		// Write to store
+		ms.store.WritePoint(ctx, ms.Metric, point)
 	}
 }

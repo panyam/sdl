@@ -83,12 +83,13 @@ func (mt *MetricTracer) AddMetricSpec(spec *MetricSpec) error {
 		return status.Error(codes.InvalidArgument, fmt.Sprintf("component cannot be empty"))
 	}
 
-	if len(spec.Methods) == 0 {
-		return status.Error(codes.InvalidArgument, fmt.Sprintf("at least one method must be specified"))
+	// For utilization metrics, methods are optional
+	if spec.MetricType != MetricUtilization && len(spec.Methods) == 0 {
+		return status.Error(codes.InvalidArgument, fmt.Sprintf("at least one method must be specified for %s metrics", spec.MetricType))
 	}
 
-	if spec.MetricType != MetricCount && spec.MetricType != MetricLatency {
-		return status.Error(codes.InvalidArgument, fmt.Sprintf("invalid metric type: %s", spec.Metric))
+	if spec.MetricType != MetricCount && spec.MetricType != MetricLatency && spec.MetricType != MetricUtilization {
+		return status.Error(codes.InvalidArgument, fmt.Sprintf("invalid metric type: %s", spec.MetricType))
 	}
 
 	// Set the system reference
