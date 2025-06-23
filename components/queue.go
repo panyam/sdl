@@ -97,6 +97,9 @@ type Queue struct {
 	AvgServiceTime float64 // Ts = 1/μ
 	Servers        uint    // c (Number of parallel servers)
 	Capacity       uint    // K (Max items IN SYSTEM: queue + servers), 0 for infinite
+
+	// --- Computed Metrics (for observability) ---
+	lastUtilization float64 // Last calculated utilization (ρ)
 }
 
 // Init initializes the M/M/c/K Queue component with default configuration.
@@ -139,6 +142,7 @@ func (q *Queue) calculateMMCKMetrics() (float64, float64) {
 	serviceRate := 1.0 / q.AvgServiceTime
 	offeredLoad := q.ArrivalRate / serviceRate
 	utilization := offeredLoad / float64(q.Servers)
+	q.lastUtilization = utilization // Store for observability
 	isStable := utilization < 1.0
 
 	calcK := float64(q.Capacity)
@@ -254,4 +258,32 @@ func (q *Queue) Dequeue() *Outcomes[Duration] {
 		outcomes.Add(bucketWeights[i]*totalProb, waitTime)
 	}
 	return outcomes
+}
+
+// SetArrivalRate sets the arrival rate for a specific method.
+// For Queue, we use a single rate since it has one queue.
+func (q *Queue) SetArrivalRate(method string, rate float64) error {
+	q.ArrivalRate = rate
+	return nil
+}
+
+// GetArrivalRate returns the arrival rate for a specific method.
+func (q *Queue) GetArrivalRate(method string) float64 {
+	return q.ArrivalRate
+}
+
+// GetTotalArrivalRate returns the total arrival rate.
+func (q *Queue) GetTotalArrivalRate() float64 {
+	return q.ArrivalRate
+}
+
+// GetUtilization returns the current utilization (ρ) of the queue.
+// Values close to 1.0 indicate the system is approaching instability.
+func (q *Queue) GetUtilization() float64 {
+	if q.AvgServiceTime < 1e-12 || q.Servers == 0 {
+		return 0
+	}
+	serviceRate := 1.0 / q.AvgServiceTime
+	offeredLoad := q.ArrivalRate / serviceRate
+	return offeredLoad / float64(q.Servers)
 }
