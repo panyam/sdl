@@ -17,7 +17,7 @@ type ObjectInstance struct {
 	NativeInstance NativeObject
 
 	// Initial env for this instance
-	InitialEnv *Env[Value]
+	Env *Env[Value]
 
 	// Values for this object's attributes
 	params map[string]Value
@@ -28,7 +28,7 @@ func NewObjectInstance(file *FileInstance, nativeValue NativeObject) ObjectInsta
 		File:           file,
 		IsNative:       nativeValue != nil,
 		NativeInstance: nativeValue,
-		InitialEnv:     decl.NewEnv[Value](nil),
+		Env:            decl.NewEnv[Value](nil),
 	}
 	// TODO:
 	// 1. SHould Env exists for native objects?
@@ -48,7 +48,7 @@ func (ci *ObjectInstance) Set(name string, value Value) error {
 		return ci.NativeInstance.Set(name, value)
 	} else {
 		ci.params[name] = value
-		ci.InitialEnv.Set(name, value)
+		ci.Env.Set(name, value)
 		return nil
 	}
 }

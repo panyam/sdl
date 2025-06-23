@@ -40,7 +40,7 @@ func NewComponentInstance(id string, file *FileInstance, compDecl *ComponentDecl
 		ObjectInstance: ObjectInstance{
 			File:           originFile,
 			IsNative:       compDecl.IsNative,
-			InitialEnv:     originFile.Env(), // should parent be File.Env?
+			Env:            originFile.Env(), // should parent be File.Env?
 			NativeInstance: nativeValue,
 		},
 		ComponentDecl: compDecl,
@@ -49,7 +49,7 @@ func NewComponentInstance(id string, file *FileInstance, compDecl *ComponentDecl
 	compType := decl.ComponentType(compDecl)
 	compValue, err := NewValue(compType, compInst)
 	ensureNoErr(err)
-	compInst.InitialEnv.Set("self", compValue)
+	compInst.Env.Set("self", compValue)
 
 	// Initialize the runtime based on whether it is native or user-defined
 	if !compInst.IsNative {
@@ -217,7 +217,7 @@ func (ci *ComponentInstance) GetUtilizationInfo() []components.UtilizationInfo {
 		deps, _ := ci.ComponentDecl.Dependencies()
 		for _, dep := range deps {
 			// Look up the component instance in the environment
-			if binding, ok := ci.InitialEnv.Get(dep.Name.Value); ok {
+			if binding, ok := ci.Env.Get(dep.Name.Value); ok {
 				// Check if the binding is a component instance
 				if childComp, ok := binding.Value.(*ComponentInstance); ok && childComp != nil {
 					// Get utilization info from child

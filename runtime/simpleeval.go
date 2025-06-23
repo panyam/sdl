@@ -308,7 +308,7 @@ func (s *SimpleEval) evalNewExpr(n *decl.NewExpr, _ *Env[Value], currTime *core.
 	if !compInst.IsNative {
 		stmts, err := compInst.Initializer()
 		ensureNoErr(err)
-		_, _, timeTaken := s.EvalStatements(stmts.Statements, compInst.InitialEnv)
+		_, _, timeTaken := s.EvalStatements(stmts.Statements, compInst.Env)
 		*currTime += timeTaken
 		result.Time += timeTaken
 	}
@@ -501,7 +501,7 @@ func (s *SimpleEval) evalMemberAccessExpr(m *MemberAccessExpr, env *Env[Value], 
 		methodType := decl.MethodType(methodDecl)
 		methodVal := &decl.MethodValue{
 			Method:        methodDecl,
-			SavedEnv:      compInst.InitialEnv.Push(),
+			SavedEnv:      compInst.Env.Push(),
 			IsNative:      compDecl.IsNative,
 			BoundInstance: compInst, // Always set to ComponentInstance
 		}

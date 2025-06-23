@@ -676,14 +676,18 @@ export class Dashboard {
       const clusterName = `cluster_${node.id}`;
       const methods = node.methods || [];
       
+      // Check if this is an internal component
+      const isInternal = node.type.includes('(internal)');
+      
       dotContent += `  subgraph ${clusterName} {\n`;
       dotContent += `    label="${node.name}\\n(${node.type})";\n`;
       dotContent += `    style="filled,rounded";\n`;
-      dotContent += `    fillcolor="#1f2937";\n`;
-      dotContent += `    fontcolor="#60a5fa";\n`;
-      dotContent += `    fontsize=16;\n`;
+      // Use different colors for internal components
+      dotContent += `    fillcolor="${isInternal ? '#312e81' : '#1f2937'}";\n`;
+      dotContent += `    fontcolor="${isInternal ? '#c7d2fe' : '#60a5fa'}";\n`;
+      dotContent += `    fontsize=${isInternal ? '14' : '16'};\n`;
       dotContent += `    fontname="Monaco,Menlo,monospace";\n`;
-      dotContent += `    color="#4b5563";\n`;
+      dotContent += `    color="${isInternal ? '#6366f1' : '#4b5563'}";\n`;
       dotContent += `    penwidth=2;\n`;
       dotContent += `    margin=12;\n\n`;
 

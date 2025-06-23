@@ -55,7 +55,7 @@ func (s *SystemInstance) FindComponent(fqn string) (out *ComponentInstance) {
 
 		// If this is not the last part, move to the component's environment
 		if i < len(parts)-1 {
-			currentEnv = comp.InitialEnv
+			currentEnv = comp.Env
 		}
 	}
 
@@ -287,9 +287,9 @@ func (si *SystemInstance) AllComponents() []*ComponentInstance {
 	if si.Env == nil {
 		return nil
 	}
-	
+
 	var components []*ComponentInstance
-	
+
 	// Iterate through the system environment to find all components
 	bindings := si.Env.All()
 	for _, binding := range bindings {
@@ -297,6 +297,6 @@ func (si *SystemInstance) AllComponents() []*ComponentInstance {
 			components = append(components, comp)
 		}
 	}
-	
+
 	return components
 }

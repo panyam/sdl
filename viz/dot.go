@@ -3,6 +3,7 @@ package viz
 import (
 	"bytes"
 	"fmt"
+	"strings"
 
 	protos "github.com/panyam/sdl/gen/go/sdl/v1"
 )
@@ -19,7 +20,15 @@ func (g *DotGenerator) Generate(diagram *protos.SystemDiagram) (string, error) {
 	b.WriteString("  node [shape=record];\n")
 
 	for _, node := range diagram.Nodes {
-		b.WriteString(fmt.Sprintf("  \"%s\" [label=\"%s\\n(%s)\"];\n", node.Id, node.Name, node.Type))
+		label := fmt.Sprintf("%s\\n(%s)", node.Name, node.Type)
+		if node.Traffic != "" && node.Traffic != "0 rps" {
+			// Add traffic info with proper escaping for newlines
+			trafficInfo := node.Traffic
+			// Replace newlines with \n for DOT format
+			trafficInfo = strings.ReplaceAll(trafficInfo, "\n", "\\n")
+			label += fmt.Sprintf("\\n%s", trafficInfo)
+		}
+		b.WriteString(fmt.Sprintf("  \"%s\" [label=\"%s\"];\n", node.Id, label))
 	}
 
 	for _, edge := range diagram.Edges {

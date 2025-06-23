@@ -364,6 +364,7 @@ func (c *Canvas) ListGenerators() map[string]*GeneratorInfo {
 // --- Option types for Run/Plot ---
 
 // GetSystemDiagram returns the topology of the currently active system
+// This implementation traverses runtime component instances to properly handle shared instances
 func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
 	if c.activeSystem == nil {
 		return nil, fmt.Errorf("no active system set. Use Load() and Use() commands first")
@@ -374,79 +375,270 @@ func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
 	// Get current flow rates (no need to recalculate - they are kept up to date)
 	currentFlowRates := c.GetCurrentFlowRates()
 
-	// Extract nodes and edges from the system declaration
+	// Extract nodes and edges from the runtime instances
 	var nodes []*protos.DiagramNode
 	var edges []*protos.DiagramEdge
-	instanceNameToID := make(map[string]string)
 
-	// Build nodes from instance declarations
-	fileInstance := c.activeSystem.File
-	for _, item := range c.activeSystem.System.Body {
-		if instDecl, ok := item.(*decl.InstanceDecl); ok {
-			nodeID := instDecl.Name.Value
-			instanceNameToID[nodeID] = nodeID
+	// Map to track visited component instances and their diagram nodes
+	instanceToNode := make(map[*runtime.ComponentInstance]*protos.DiagramNode)
+	// Map from path to component instance (for finding shared references)
+	pathToInstance := make(map[string]*runtime.ComponentInstance)
+	// Track all paths for a given instance (for shared instances)
+	instancePaths := make(map[*runtime.ComponentInstance][]string)
 
-			// Get component methods using runtime system
-			var methods []*protos.MethodInfo
-			if c.runtime != nil {
-				// Use runtime system to resolve component - it has already resolved imports
-				component, err := fileInstance.GetComponentDecl(instDecl.ComponentName.Value)
-				if err == nil && component != nil {
-					componentMethods, _ := component.Methods()
-					for methodName, methodDecl := range componentMethods {
-						returnType := "void"
-						if methodDecl.ReturnType != nil {
-							returnType = methodDecl.ReturnType.Name
-						}
+	// Queue for breadth-first traversal
+	type queueItem struct {
+		instance *runtime.ComponentInstance
+		path     string // Full path from system root
+		varName  string // Variable name in parent
+		parent   string // Parent path
+	}
+	queue := []queueItem{}
 
-						// Get traffic rate for this method from current flow rates
-						methodTarget := fmt.Sprintf("%s.%s", nodeID, methodName)
-						methodTraffic := currentFlowRates[methodTarget]
+	// Helper to get arrival rate for a component
+	getArrivalRate := func(inst *runtime.ComponentInstance) float64 {
+		if inst.Env == nil {
+			return 0
+		}
+		// Try to get ArrivalRate parameter
+		if arrivalRateVal, exists := inst.Env.Get("ArrivalRate"); exists {
+			if floatVal, ok := arrivalRateVal.Value.(float64); ok {
+				return floatVal
+			}
+		}
+		return 0
+	}
 
-						// Only include methods with non-zero traffic to reduce clutter
-						if methodTraffic > 0 {
-							methods = append(methods, &protos.MethodInfo{
-								Name:       methodName,
-								ReturnType: returnType,
-								Traffic:    methodTraffic,
-							})
-						}
+	// Helper to get public parameters
+	getPublicParams := func(inst *runtime.ComponentInstance) map[string]string {
+		params := make(map[string]string)
+
+		// Get all public parameters from the component declaration
+		for _, item := range inst.ComponentDecl.Body {
+			if paramDecl, ok := item.(*decl.ParamDecl); ok {
+				paramName := paramDecl.Name.Value
+				// Get value from instance environment
+				if inst.Env != nil {
+					if val, exists := inst.Env.Get(paramName); exists {
+						params[paramName] = val.String()
 					}
 				}
 			}
+		}
 
+		return params
+	}
+
+	// Helper to create a diagram node for a component instance
+	createNode := func(inst *runtime.ComponentInstance, path string) *protos.DiagramNode {
+		// Check if we already created a node for this instance
+		if node, exists := instanceToNode[inst]; exists {
+			// Update paths for shared instance
+			instancePaths[inst] = append(instancePaths[inst], path)
+			return node
+		}
+
+		// Get component type name
+		componentType := inst.ComponentDecl.Name.Value
+
+		// Get component methods with traffic
+		var methods []*protos.MethodInfo
+		componentMethods, _ := inst.ComponentDecl.Methods()
+		for methodName, methodDecl := range componentMethods {
+			returnType := "void"
+			if methodDecl.ReturnType != nil {
+				returnType = methodDecl.ReturnType.Name
+			}
+
+			// Get traffic rate for this method using any of the instance's paths
+			var methodTraffic float64
+			// Check all possible paths for this instance
+			for _, p := range append([]string{path}, instancePaths[inst]...) {
+				methodTarget := fmt.Sprintf("%s.%s", p, methodName)
+				if rate, exists := currentFlowRates[methodTarget]; exists && rate > 0 {
+					methodTraffic = rate
+					break
+				}
+			}
+
+			// Only include methods with non-zero traffic to reduce clutter
+			if methodTraffic > 0 {
+				methods = append(methods, &protos.MethodInfo{
+					Name:       methodName,
+					ReturnType: returnType,
+					Traffic:    methodTraffic,
+				})
+			}
+		}
+
+		// Get arrival rate and public parameters
+		arrivalRate := getArrivalRate(inst)
+		publicParams := getPublicParams(inst)
+
+		// Format traffic display including arrival rate
+		var trafficDisplay string
+		if arrivalRate > 0 {
+			trafficDisplay = fmt.Sprintf("Arrival: %.1f rps", arrivalRate)
+		} else {
 			// Calculate total traffic for this component
-			componentTotalRPS := c.GetComponentTotalRPS(nodeID)
-			var trafficDisplay string
+			componentTotalRPS := c.GetComponentTotalRPS(path)
 			if componentTotalRPS > 0 {
 				trafficDisplay = fmt.Sprintf("%.1f rps", componentTotalRPS)
 			} else {
 				trafficDisplay = "0 rps"
 			}
+		}
 
-			nodes = append(nodes, &protos.DiagramNode{
-				Id:      nodeID,
-				Name:    instDecl.Name.Value,
-				Type:    instDecl.ComponentName.Value,
-				Methods: methods,
-				Traffic: trafficDisplay,
+		// Add public parameters to traffic display
+		if len(publicParams) > 0 {
+			trafficDisplay += "\n"
+			for k, v := range publicParams {
+				if k != "ArrivalRate" { // Don't duplicate arrival rate
+					trafficDisplay += fmt.Sprintf("%s: %s\n", k, v)
+				}
+			}
+		}
+
+		// Use the first path as the primary identifier
+		node := &protos.DiagramNode{
+			Id:       path, // Use path as ID for readability
+			Name:     path, // Display the first path
+			Type:     componentType,
+			Methods:  methods,
+			Traffic:  strings.TrimSpace(trafficDisplay),
+			FullPath: path,
+		}
+
+		instanceToNode[inst] = node
+		pathToInstance[path] = inst
+		instancePaths[inst] = []string{path}
+		nodes = append(nodes, node)
+
+		return node
+	}
+
+	// Start with the system instance's environment
+	systemEnv := c.activeSystem.Env
+
+	// First pass: discover ALL instances and their relationships
+	discovered := make(map[*runtime.ComponentInstance][]string)                // All paths to each instance
+	parents := make(map[*runtime.ComponentInstance]*runtime.ComponentInstance) // Parent instance for each child
+	var discoveryQueue []queueItem
+
+	// Start with all top-level instances
+	for varName, value := range systemEnv.All() {
+		if varName == "self" {
+			continue
+		}
+		if compInst, ok := value.Value.(*runtime.ComponentInstance); ok {
+			discoveryQueue = append(discoveryQueue, queueItem{
+				instance: compInst,
+				path:     varName,
+				varName:  varName,
+				parent:   "",
 			})
+			discovered[compInst] = append(discovered[compInst], varName)
 		}
 	}
 
-	// Build edges from instance overrides/dependencies
-	for _, item := range c.activeSystem.System.Body {
-		if instDecl, ok := item.(*decl.InstanceDecl); ok {
-			fromNodeID := instanceNameToID[instDecl.Name.Value]
+	// Discovery pass - find all instances and their parents
+	for len(discoveryQueue) > 0 {
+		item := discoveryQueue[0]
+		discoveryQueue = discoveryQueue[1:]
 
-			// Add edges from instance overrides (system-level dependencies)
-			for _, assignment := range instDecl.Overrides {
-				if targetIdent, okIdent := assignment.Value.(*decl.IdentifierExpr); okIdent {
-					if toNodeID, isInstance := instanceNameToID[targetIdent.Value]; isInstance {
+		// Explore the instance's environment for sub-components
+		if item.instance.Env != nil {
+			for varName, value := range item.instance.Env.All() {
+				if varName == "self" {
+					continue
+				}
+				if subInst, ok := value.Value.(*runtime.ComponentInstance); ok {
+					subPath := fmt.Sprintf("%s.%s", item.path, varName)
+
+					// Record parent relationship
+					if _, hasParent := parents[subInst]; !hasParent {
+						parents[subInst] = item.instance
+					}
+
+					// Add to discovered paths
+					discovered[subInst] = append(discovered[subInst], subPath)
+
+					// Continue discovery
+					discoveryQueue = append(discoveryQueue, queueItem{
+						instance: subInst,
+						path:     subPath,
+						varName:  varName,
+						parent:   item.path,
+					})
+				}
+			}
+		}
+	}
+
+	// Second pass: create nodes only for instances that should be shown
+	// Start with true top-level instances (those without parents)
+	for varName, value := range systemEnv.All() {
+		if varName == "self" {
+			continue
+		}
+		if compInst, ok := value.Value.(*runtime.ComponentInstance); ok {
+			// Only process if this instance has no parent (is truly top-level)
+			if _, hasParent := parents[compInst]; !hasParent {
+				queue = append(queue, queueItem{
+					instance: compInst,
+					path:     varName,
+					varName:  varName,
+					parent:   "",
+				})
+			}
+		}
+
+	}
+
+	// Process the rendering queue
+	for len(queue) > 0 {
+		item := queue[0]
+		queue = queue[1:]
+
+		// Create node for this instance
+		createNode(item.instance, item.path)
+
+		// Add children to queue
+		if item.instance.Env != nil {
+			for varName, value := range item.instance.Env.All() {
+				if varName == "self" {
+					continue
+				}
+				if subInst, ok := value.Value.(*runtime.ComponentInstance); ok {
+					subPath := fmt.Sprintf("%s.%s", item.path, varName)
+
+					// Check if we've already created a node for this instance
+					if /*existingNode*/ _, exists := instanceToNode[subInst]; !exists {
+						// Add to queue for processing
+						queue = append(queue, queueItem{
+							instance: subInst,
+							path:     subPath,
+							varName:  varName,
+							parent:   item.path,
+						})
+					} else {
+						// This is a shared instance - update its paths
+						instancePaths[subInst] = append(instancePaths[subInst], subPath)
+						pathToInstance[subPath] = subInst
+					}
+
+					// Always create edge
+					if existingNode, exists := instanceToNode[subInst]; exists {
 						edges = append(edges, &protos.DiagramEdge{
-							FromId: fromNodeID,
-							ToId:   toNodeID,
-							Label:  assignment.Var.Value,
+							FromId: item.path,
+							ToId:   existingNode.Id,
+							Label:  "",
+						})
+					} else {
+						edges = append(edges, &protos.DiagramEdge{
+							FromId: item.path,
+							ToId:   subPath,
+							Label:  "",
 						})
 					}
 				}
@@ -454,18 +646,16 @@ func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
 		}
 	}
 
-	// TODO: Add flow-based edges from runtime flow analysis
-	// The runtime-based flow evaluation doesn't track flow paths in the same way
-	// as the string-based implementation. This will need to be reimplemented
-	// if flow visualization is needed.
-	/*
-		if c.currentFlowScope != nil && c.currentFlowRates != nil {
-			// Future implementation of flow path visualization
+	// Update node names to show all paths for shared instances
+	for inst, paths := range instancePaths {
+		if len(paths) > 1 {
+			if node, exists := instanceToNode[inst]; exists {
+				// Show all paths for shared instances
+				node.Name = strings.Join(paths, ", ")
+				node.FullPath = strings.Join(paths, "; ")
+			}
 		}
-	*/
-
-	// Note: Flow path visualization needs to be reimplemented for runtime-based evaluation
-	// The runtime approach doesn't track individual flow paths like the string-based version
+	}
 
 	return &protos.SystemDiagram{
 		SystemName: systemName,
@@ -473,17 +663,6 @@ func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
 		Edges:      edges,
 	}, nil
 }
-
-// / ----
-// / ----
-// / ----
-// / ----
-// / ----
-// / ----
-// / ----
-// / ----
-// / ----
-// / ----
 
 // evaluateProposedFlows calculates what the system flows would be with current generator settings
 func (c *Canvas) evaluateProposedFlows() error {

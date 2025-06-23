@@ -36,7 +36,7 @@ func (s *RuntimeFlowStrategy) Evaluate(system *SystemInstance, generators []Gene
 
 	// Run flow evaluation
 	rateMap := SolveSystemFlowsRuntime(runtimeGenerators, scope)
-	
+
 	// Apply the calculated rates to components
 	for comp, methods := range rateMap {
 		for method, rate := range methods {
@@ -154,7 +154,7 @@ func (s *RuntimeFlowStrategy) findComponentName(comp *ComponentInstance, system 
 	for name, value := range bindings {
 		if parentComp, ok := value.Value.(*ComponentInstance); ok && parentComp != nil {
 			// Check if this component is a child of the parent
-			for childName, childBinding := range parentComp.InitialEnv.All() {
+			for childName, childBinding := range parentComp.Env.All() {
 				if childComp, ok := childBinding.Value.(*ComponentInstance); ok && childComp == comp {
 					// Return parent.child format for nested components
 					return fmt.Sprintf("%s.%s", name, childName)

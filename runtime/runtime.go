@@ -128,7 +128,7 @@ func (r *Runtime) BatchSetParams(system *SystemInstance, paramPaths []string, ne
 
 		// Evaluate the SetStmt in the component's environment
 		eval := NewSimpleEval(system.File, nil)
-		eval.Eval(setStmt, componentInstance.InitialEnv, nil)
+		eval.Eval(setStmt, componentInstance.Env, nil)
 		if eval.HasErrors() {
 			err = eval.Errors[0]
 		}
