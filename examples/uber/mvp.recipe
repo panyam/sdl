@@ -66,6 +66,8 @@ echo ""
 execWithConfirm "Creating baseline generator (5 RPS) with automatic flow calculation" sdl gen add baseline webserver.RequestRide 5 --apply-flows
 # execWithConfirm "Starting baseline traffic" sdl gen start baseline
 
+# sdl canvas diagram --canvas ubermvp
+
 # This marks when we will start prompting before running commands
 export START_PROMPTING=true
 

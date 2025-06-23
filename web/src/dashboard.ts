@@ -662,124 +662,42 @@ export class Dashboard {
     let dotContent = `digraph "${systemName}" {\n`;
     dotContent += `  rankdir=LR;\n`;
     dotContent += `  bgcolor="#1a1a1a";\n`;
-    dotContent += `  compound=true;\n`;
     dotContent += `  node [fontname="Monaco,Menlo,monospace" fontcolor="white" style=filled];\n`;
     dotContent += `  edge [color="#9ca3af" arrowhead="normal" penwidth=2];\n`;
     dotContent += `  graph [ranksep=1.0 nodesep=0.8 pad=0.5];\n\n`;
 
-    // Create a map to track method nodes and their connections
-    const methodNodes: string[] = [];
-    const edges: string[] = [];
-
-    // Generate clusters (components) with method nodes inside
+    // Generate method-level nodes directly (nodes are already in "component:method" format)
     this.systemDiagram?.nodes?.forEach((node) => {
-      const clusterName = `cluster_${node.id}`;
-      const methods = node.methods || [];
+      // Each node represents a method with traffic rate
+      const nodeId = node.id.replace(':', '_'); // Replace colon for DOT syntax
+      const displayLabel = `${node.id}\\n${node.traffic}`;
       
-      // Check if this is an internal component
-      const isInternal = node.type.includes('(internal)');
+      // Check if this is an internal component method
+      const isInternal = node.type.includes('(internal)') || node.id.includes('.pool:') || node.id.includes('.driverTable:');
       
-      dotContent += `  subgraph ${clusterName} {\n`;
-      dotContent += `    label="${node.name}\\n(${node.type})";\n`;
-      dotContent += `    style="filled,rounded";\n`;
-      // Use different colors for internal components
-      dotContent += `    fillcolor="${isInternal ? '#312e81' : '#1f2937'}";\n`;
-      dotContent += `    fontcolor="${isInternal ? '#c7d2fe' : '#60a5fa'}";\n`;
-      dotContent += `    fontsize=${isInternal ? '14' : '16'};\n`;
-      dotContent += `    fontname="Monaco,Menlo,monospace";\n`;
-      dotContent += `    color="${isInternal ? '#6366f1' : '#4b5563'}";\n`;
-      dotContent += `    penwidth=2;\n`;
-      dotContent += `    margin=12;\n\n`;
-
-      if (methods.length > 0) {
-        // Create method nodes inside the cluster
-        methods.forEach((method) => {
-          const methodNodeId = `${node.id}_${method.name}`;
-          const traffic = method.traffic || 0; // Use backend-calculated traffic directly
-          
-          // Disabling return type in label for now
-          // dotContent += `    ${methodNodeId} [label="${method.name}() → ${method.returnType}\\n \\n ${traffic} rps"`;
-          dotContent += `    ${methodNodeId} [label="${method.name}()\\n${traffic.toFixed(1)} rps"`;
-          dotContent += ` shape=box style="filled,rounded" fillcolor="#2d3748" fontcolor="#a3e635"`;
-          dotContent += ` fontsize=12 fontname="Monaco,Menlo,monospace" margin=0.15 penwidth=1];\n`;
-          
-          methodNodes.push(methodNodeId);
-        });
-      } else {
-        // Component with no methods - create a simple node
-        const nodeId = `${node.id}_component`;
-        dotContent += `    ${nodeId} [label="No Methods\\n🔄 0 rps"`;
-        dotContent += ` shape=box style="filled,rounded" fillcolor="#374151" fontcolor="#9ca3af"`;
-        dotContent += ` fontsize=11 fontname="Monaco,Menlo,monospace" margin=0.2];\n`;
-        methodNodes.push(nodeId);
-      }
-      
-      dotContent += `  }\n\n`;
+      dotContent += `  "${nodeId}" [label="${displayLabel}"`;
+      dotContent += ` shape=box style="filled,rounded"`;
+      dotContent += ` fillcolor="${isInternal ? '#312e81' : '#1f2937'}"`;
+      dotContent += ` fontcolor="${isInternal ? '#c7d2fe' : '#a3e635'}"`;
+      dotContent += ` fontsize=${isInternal ? '11' : '12'}`;
+      dotContent += ` margin=0.15 penwidth=1];\n`;
     });
 
-    // Generate edges between method nodes based on actual system dependencies
+    dotContent += `\n`;
+
+    // Generate edges between method nodes
     this.systemDiagram?.edges?.forEach(edge => {
-      const fromNode = (this.systemDiagram?.nodes || []).find(n => n.id === edge.fromId);
-      const toNode = (this.systemDiagram?.nodes || []).find(n => n.id === edge.toId);
+      const fromNodeId = edge.fromId.replace(':', '_');
+      const toNodeId = edge.toId.replace(':', '_');
       
-      if (fromNode && toNode) {
-        // For flow-based edges with order numbers, we need to be more specific
-        if (edge.order && edge.order > 0) {
-          // This is a flow-based edge - use the specific methods from the edge
-          let fromMethod = '';
-          let toMethod = '';
-          
-          // Use the FromMethod and ToMethod fields if available
-          if (edge.fromMethod) {
-            fromMethod = `${fromNode.id}_${edge.fromMethod}`;
-          } else if (fromNode.methods && fromNode.methods.length > 0) {
-            fromMethod = `${fromNode.id}_${fromNode.methods[0].name}`;
-          } else {
-            fromMethod = `${fromNode.id}_component`;
-          }
-          
-          if (edge.toMethod) {
-            toMethod = `${toNode.id}_${edge.toMethod}`;
-          } else if (toNode.methods && toNode.methods.length > 0) {
-            toMethod = `${toNode.id}_${toNode.methods[0].name}`;
-          } else {
-            toMethod = `${toNode.id}_component`;
-          }
-          
-          // Use generator-specific color if available, otherwise default amber
-          const edgeColor = edge.color || "#fbbf24";
-          let edgeStyle = ` fontcolor="${edgeColor}" color="${edgeColor}" fontsize=11`;
-          
-          edges.push(`  ${fromMethod} -> ${toMethod} [label="${edge.label}"${edgeStyle}];`);
-        } else {
-          // Regular dependency edges
-          const fromMethods = fromNode.methods || [];
-          const toMethods = toNode.methods || [];
-          
-          if (fromMethods.length > 0 && toMethods.length > 0) {
-            const fromMethod = `${fromNode.id}_${fromMethods[0].name}`;
-            const toMethod = `${toNode.id}_${toMethods[0].name}`;
-            edges.push(`  ${fromMethod} -> ${toMethod} [label="${edge.label}"];`);
-          } else if (fromMethods.length > 0) {
-            const fromMethod = `${fromNode.id}_${fromMethods[0].name}`;
-            const toComponent = `${toNode.id}_component`;
-            edges.push(`  ${fromMethod} -> ${toComponent} [label="${edge.label}"];`);
-          } else if (toMethods.length > 0) {
-            const fromComponent = `${fromNode.id}_component`;
-            const toMethod = `${toNode.id}_${toMethods[0].name}`;
-            edges.push(`  ${fromComponent} -> ${toMethod} [label="${edge.label}"];`);
-          } else {
-            const fromComponent = `${fromNode.id}_component`;
-            const toComponent = `${toNode.id}_component`;
-            edges.push(`  ${fromComponent} -> ${toComponent} [label="${edge.label}"];`);
-          }
-        }
-      }
-    });
-
-    // Add all edges
-    edges.forEach(edge => {
-      dotContent += `${edge}\n`;
+      // Use generator-specific color if available, otherwise default
+      const edgeColor = edge.color || "#9ca3af";
+      let edgeStyle = ` color="${edgeColor}" fontcolor="${edgeColor}" fontsize=10`;
+      
+      // Add label if available
+      const label = edge.label ? ` label="${edge.label}"` : '';
+      
+      dotContent += `  "${fromNodeId}" -> "${toNodeId}"[${label}${edgeStyle}];\n`;
     });
 
     dotContent += `}\n`;
