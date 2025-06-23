@@ -1,9 +1,7 @@
 package components
 
 import (
-	"log"
 	"math"
-	"time"
 
 	sc "github.com/panyam/sdl/core"
 )
@@ -74,10 +72,7 @@ func (h *SortedFile) Scan() (out *Outcomes[sc.AccessResult]) {
 //		}
 //	}
 func (h *SortedFile) Find() (out *Outcomes[sc.AccessResult]) {
-	t := time.Now()
-	defer func() {
-		log.Println("Find Took: ", time.Now().Sub(t))
-	}()
+	// t := time.Now() defer func() { log.Println("Find Took: ", time.Now().Sub(t)) }()
 
 	out = h.Disk.Read()
 	pagesLeft := h.NumPages()
