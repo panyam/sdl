@@ -18,6 +18,9 @@ type MM1Queue struct {
 
 	// Assumed average service time (seconds per item). Used for calculations.
 	AvgServiceTime float64 // Ts = 1/μ
+
+	// --- Computed Metrics (for observability) ---
+	lastUtilization float64 // Last calculated utilization (ρ)
 }
 
 // Init initializes the Queue component with default parameters.
@@ -64,6 +67,7 @@ func (q *MM1Queue) Dequeue() *Outcomes[Duration] {
 	}
 	serviceRate := 1.0 / q.AvgServiceTime
 	utilization := q.ArrivalRate / serviceRate
+	q.lastUtilization = utilization // Store for observability
 	isStable := utilization < 1.0
 	// --- End Dynamic Calculation ---
 
@@ -109,6 +113,33 @@ func (q *MM1Queue) Dequeue() *Outcomes[Duration] {
 	}
 
 	return outcomes
+}
+
+// SetArrivalRate sets the arrival rate for a specific method.
+// For MM1Queue, we use a single rate since it has one queue.
+func (q *MM1Queue) SetArrivalRate(method string, rate float64) error {
+	q.ArrivalRate = rate
+	return nil
+}
+
+// GetArrivalRate returns the arrival rate for a specific method.
+func (q *MM1Queue) GetArrivalRate(method string) float64 {
+	return q.ArrivalRate
+}
+
+// GetTotalArrivalRate returns the total arrival rate.
+func (q *MM1Queue) GetTotalArrivalRate() float64 {
+	return q.ArrivalRate
+}
+
+// GetUtilization returns the current utilization (ρ) of the queue.
+// Values close to 1.0 indicate the system is approaching instability.
+func (q *MM1Queue) GetUtilization() float64 {
+	if q.AvgServiceTime < 1e-12 {
+		return 0
+	}
+	serviceRate := 1.0 / q.AvgServiceTime
+	return q.ArrivalRate / serviceRate
 }
 
 // GetFlowPattern implements FlowAnalyzable interface for MM1Queue

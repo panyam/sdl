@@ -20,6 +20,9 @@ const (
 
 	// MetricLatency tracks duration values
 	MetricLatency MetricType = "latency"
+
+	// MetricUtilization tracks resource utilization (0.0 to 1.0)
+	MetricUtilization MetricType = "utilization"
 )
 
 // MetricSpec defines what to measure and how

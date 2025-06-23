@@ -42,6 +42,9 @@ type ResourcePool struct {
 	// --- Configuration for Queuing Model ---
 	ArrivalRate float64 // λ: Average rate requests for this pool arrive (items/sec)
 	AvgHoldTime float64 // Ts: Average time resource is held once acquired (seconds/item)
+
+	// --- Computed Metrics (for observability) ---
+	lastUtilization float64 // Last calculated utilization (ρ)
 }
 
 // Init initializes the ResourcePool with default parameters.
@@ -79,6 +82,7 @@ func (rp *ResourcePool) calculateMMCMetrics() (bool, float64) {
 	serviceRate := 1.0 / rp.AvgHoldTime
 	offeredLoad := rp.ArrivalRate / serviceRate
 	utilization := offeredLoad / float64(rp.Size)
+	rp.lastUtilization = utilization // Store for observability
 	isStable := utilization < 1.0
 
 	var avgWaitTimeQ float64 = 0 // Wq
@@ -182,6 +186,17 @@ func (rp *ResourcePool) GetArrivalRate(method string) float64 {
 // GetTotalArrivalRate returns the total arrival rate across all methods.
 func (rp *ResourcePool) GetTotalArrivalRate() float64 {
 	return rp.ArrivalRate
+}
+
+// GetUtilization returns the current utilization (ρ) of the resource pool.
+// Values close to 1.0 indicate the system is approaching instability.
+func (rp *ResourcePool) GetUtilization() float64 {
+	if rp.AvgHoldTime < 1e-12 || rp.Size == 0 {
+		return 0
+	}
+	serviceRate := 1.0 / rp.AvgHoldTime
+	offeredLoad := rp.ArrivalRate / serviceRate
+	return offeredLoad / float64(rp.Size)
 }
 
 // GetFlowPattern implements FlowAnalyzable interface for ResourcePool
