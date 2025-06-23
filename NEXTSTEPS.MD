@@ -258,6 +258,16 @@ This document outlines the workshop-focused development status and next steps fo
 *   **`[COMPLETED]` Multi-Canvas URL Routing**: Dashboard supports /canvases/{canvasId}/ URLs with auto-creation
 *   **`[COMPLETED]` Environment Variable Support**: CLI uses SDL_CANVAS_ID env var with "default" fallback
 
+### ✅ COMPLETED: Method-Level System Diagrams (June 23, 2025)
+*   **`[COMPLETED]` Method-to-Method Visualization**: Enhanced system diagrams to show method-level nodes and edges instead of just component-level connections
+*   **`[COMPLETED]` NeighborsFromMethod Integration**: Replaced custom edge extraction with runtime ComponentInstance.NeighborsFromMethod for accurate AST-based call discovery
+*   **`[COMPLETED]` Colon Node Format**: Method nodes use "component:method" format (e.g., "database:FindNearestDriver") to distinguish from component paths
+*   **`[COMPLETED]` Runtime Instance Traversal**: Diagram generation uses actual ComponentInstance objects with proper shared instance handling
+*   **`[COMPLETED]` Traffic Rate Display**: Method nodes show arrival rates (e.g., "5.0 rps") based on flow analysis calculations
+*   **`[COMPLETED]` Internal Component Visibility**: Diagrams now include internal components like ResourcePool and SortedFile showing complete system topology
+*   **`[COMPLETED]` UI Improvements**: Dashboard generator controls cleaned up - removed redundant up/down spinner buttons, kept +/- buttons only
+*   **`[COMPLETED]` Polling Optimization**: Disabled periodic ListGenerators polling in favor of manual refresh with dedicated refresh button
+
 ### ✅ COMPLETED: Dashboard Improvements (June 22, 2025)
 *   **`[COMPLETED]` Chart.js Fix**: Properly destroy existing charts before creating new ones to prevent "Canvas in use" errors
 *   **`[COMPLETED]` WebSocket Removal**: Removed WebSocket code in favor of Connect streaming for metrics
