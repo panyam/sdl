@@ -1,7 +1,9 @@
 package components
 
 import (
+	"log"
 	"math"
+	"time"
 
 	sc "github.com/panyam/sdl/core"
 )
@@ -38,6 +40,11 @@ func (h *SortedFile) Scan() (out *Outcomes[sc.AccessResult]) {
 	// Get the disk read's outcomes and we can reuse them each time
 	out = h.Disk.Read()
 
+	t := time.Now()
+	defer func() {
+		log.Println("Scan Took: ", time.Now().Sub(t))
+	}()
+
 	// Read all pages
 	for range h.NumPages() {
 		// Do another read and append
@@ -45,6 +52,12 @@ func (h *SortedFile) Scan() (out *Outcomes[sc.AccessResult]) {
 		out = out.If(sc.AccessResult.IsSuccess,
 			sc.And(h.Disk.Read(), &h.RecordProcessingTime, sc.AccessResult.AddLatency), nil,
 			sc.AndAccessResults)
+
+		// Trim to prevent exponential growth
+		if out.Len() > h.MaxOutcomeLen {
+			out = sc.TrimToSize(100, h.MaxOutcomeLen)(out)
+		}
+		// log.Println("Scan Iter: ", i, out.Len())
 	}
 	return out
 }
@@ -64,6 +77,11 @@ func (h *SortedFile) Scan() (out *Outcomes[sc.AccessResult]) {
 //		}
 //	}
 func (h *SortedFile) Find() (out *Outcomes[sc.AccessResult]) {
+	t := time.Now()
+	defer func() {
+		log.Println("Find Took: ", time.Now().Sub(t))
+	}()
+
 	out = h.Disk.Read()
 	pagesLeft := h.NumPages()
 	log2R := math.Log2(float64(h.RecordsPerPage()))
