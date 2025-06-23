@@ -290,34 +290,41 @@ This document outlines the workshop-focused development status and next steps fo
 *   **`[COMPLETED]` Talks Folder Organization**: All conference materials organized in dedicated talks/ directory
 *   **Key Content**: 15-minute demo flow, memorable phrases, recovery strategies, and post-talk follow-up plans
 
-### 🎯 CRITICAL: Open Source Summit Talk Requirements (URGENT)
+### 🎯 CRITICAL: Open Source Summit Talk Requirements (UPDATED PRIORITIES)
 
-#### Week 1: Demo Essentials (Must Have by Talk)
-1. **Circuit Breaker Component** 🚨
-   - Visual state changes (closed → open → half-open)
-   - Immediate impact on system behavior
-   - Key "aha!" moment in the talk demo
-
-2. **Rate Limiter Component** 🚨
-   - Token bucket or sliding window implementation
-   - Visual representation of rate limiting in action
-   - Common interview topic
-
-3. **Retry Logic with Backoff** 🚨
-   - Exponential backoff visualization
-   - Jitter implementation
-   - Show cascading retry storms
-
-4. **Consistency/Latency Trade-off Controls**
-   - Live adjustable consistency settings
-   - Slider UI for consistency levels
-   - Immediate latency impact visualization
-
-5. **Dashboard Polish for Conference**
+#### Week 1: High-Impact Visual Demos (Achievable Before Talk)
+1. **Dashboard Polish for Conference** 🚨
    - Smooth animations when metrics change
    - Large, readable fonts for conference rooms
    - Professional color scheme
-   - "Conference Mode" with optimized UI
+   - "Conference Mode" with optimized UI for projectors
+
+2. **Demo Mode** 🚨
+   - One-click scenario loading
+   - Pre-configured scenarios (Uber surge, Netflix spike)
+   - Quick reset between demos
+   - Keyboard shortcuts for presenter control
+
+3. **Enhanced Failure Visualization** 🚨
+   - Partial failures (not just binary)
+   - Slow responses vs complete failures
+   - Timeout visualization with progress bars
+   - Queue depth indicators
+
+4. **Flow Visualization Enhancements**
+   - Execution order numbers on edges
+   - Conditional path highlighting
+   - Traffic rate animations
+   - Bottleneck heat maps
+
+5. **Parameter Control Polish**
+   - Live sliders with immediate visual feedback
+   - Grouped controls by component
+   - Reset to defaults button
+   - Save/load parameter sets
+
+#### Deferred: Complex State Management (Post-Conference)
+Note: Circuit breakers, rate limiters, and retry logic require stateful behavior that conflicts with SDL's steady-state philosophy. These will be implemented as part of the Temporal Orchestration Layer (see above) after the conference.
 
 #### Week 2: Visual Impact
 6. **Thundering Herd Visualization**
@@ -731,3 +738,73 @@ Successfully transformed from complex REPL to clean server/client separation:
 *   **✅ Modular Design:** Multiple tracer types supported (measurement, debug, time-series)
 *   **✅ Query Capabilities:** Full SQL analytics with DuckDB's time-series functions
 *   **✅ Integration Ready:** Dashboard feeds, plotting system, recipe automation all enabled
+
+---
+## 🏗️ Post-Conference Architecture: Temporal Orchestration Layer
+
+### **Architectural Vision: Two-Layer System**
+SDL will remain pure for steady-state modeling, with temporal behaviors implemented in a separate orchestration layer above SDL.
+
+#### **Layer 1: Pure SDL (Steady State)**
+- Models system behavior at any given instant
+- No state mutations, only probabilistic outcomes
+- Parameters define the current operating point
+- Can emit "events" as suggestions (not commands)
+- Example: `emit_event("service_failure")` to signal what happened
+
+#### **Layer 2: Temporal Orchestration (Discrete Event Simulation)**
+- Manages time progression and state transitions
+- Responds to SDL events by updating parameters
+- Implements control loops, circuit breakers, auto-scaling, rate limiting
+- Treats SDL method calls as coroutines with time-based scheduling
+- Maintains event queue ordered by virtual time
+
+### **Example: Circuit Breaker Pattern**
+```sdl
+// Layer 1: Pure SDL component
+component MapsServiceWithObservability {
+    property FailureProbability = 0.1
+    property IsCircuitOpen = false  // Set by Layer 2
+    
+    method CalculateRoute() Outcomes[Bool] {
+        if self.IsCircuitOpen {
+            emit_event("circuit_rejected")
+            return Outcomes[Bool](false, latency=1ms)
+        }
+        
+        let result = // service call simulation
+        if not result {
+            emit_event("service_failure")
+        } else {
+            emit_event("service_success")
+        }
+        return result
+    }
+}
+```
+
+Layer 2 orchestrator would:
+- Track failure/success counts
+- Manage circuit breaker state (CLOSED/OPEN/HALF_OPEN)
+- Update SDL component parameters based on state
+- Schedule timeouts for state transitions
+
+### **Benefits of This Architecture**
+1. **Clean Separation**: SDL remains pure and mathematical
+2. **Composability**: Different orchestration strategies without changing SDL
+3. **Testability**: Each layer can be tested independently
+4. **Extensibility**: New temporal behaviors just need new orchestrators
+5. **Deterministic Simulation**: Virtual time with reproducible event ordering
+
+### **Discrete Event Simulation VM Concept**
+- Each SDL method execution is a coroutine
+- Coroutines yield at `delay()` statements
+- VM maintains priority queue of events by timestamp
+- Time advances discretely, processing all events at each timestamp
+- Enables time-travel debugging and perfect reproducibility
+
+### **Implementation Notes**
+- This is a post-conference initiative
+- Preserves SDL's steady-state modeling philosophy
+- Enables complex temporal patterns without language changes
+- Opens path for advanced simulation capabilities
