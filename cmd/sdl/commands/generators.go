@@ -42,7 +42,7 @@ var genAddCmd = &cobra.Command{
 		}
 		rateStr := args[2]
 
-		rate, err := strconv.Atoi(rateStr)
+		rate, err := strconv.ParseFloat(rateStr, 64)
 		if err != nil {
 			fmt.Printf("❌ Invalid rate '%s': must be a number\n", rateStr)
 			return
@@ -55,7 +55,7 @@ var genAddCmd = &cobra.Command{
 					CanvasId:  canvasID,
 					Component: component,
 					Method:    method,
-					Rate:      float64(rate),
+					Rate:      rate,
 					Enabled:   false,
 				},
 			})
@@ -74,7 +74,7 @@ var genAddCmd = &cobra.Command{
 
 		fmt.Printf("✅ Generator '%s' created\n", id)
 		fmt.Printf("🎯 Component: %s, Method: %s\n", component, method)
-		fmt.Printf("⚡ Rate: %d calls/second\n", rate)
+		fmt.Printf("⚡ Rate: %.2f calls/second\n", rate)
 		fmt.Printf("🔄 Status: Stopped\n")
 	},
 }
@@ -287,7 +287,7 @@ var genUpdateCmd = &cobra.Command{
 		id := args[0]
 		rateStr := args[1]
 
-		rate, err := strconv.Atoi(rateStr)
+		rate, err := strconv.ParseFloat(rateStr, 64)
 		if err != nil {
 			fmt.Printf("❌ Invalid rate '%s': must be a number\n", rateStr)
 			return
@@ -305,7 +305,7 @@ var genUpdateCmd = &cobra.Command{
 
 			// Update only the rate
 			gen := resp.Generator
-			gen.Rate = float64(rate)
+			gen.Rate = rate
 
 			_, err = client.UpdateGenerator(ctx, &v1.UpdateGeneratorRequest{
 				Generator: gen,
@@ -323,7 +323,7 @@ var genUpdateCmd = &cobra.Command{
 			return
 		}
 
-		fmt.Printf("✅ Generator '%s' rate updated to %d RPS\n", id, rate)
+		fmt.Printf("✅ Generator '%s' rate updated to %.2f RPS\n", id, rate)
 		if applyFlows {
 			fmt.Println("✅ Flow rates automatically recalculated and applied")
 		}
