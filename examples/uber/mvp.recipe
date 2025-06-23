@@ -65,7 +65,7 @@ echo "The system should handle this, but notice the latency..."
 echo ""
 
 # Start baseline traffic
-execWithConfirm "Creating baseline generator (5 RPS) with automatic flow calculation" sdl gen add baseline webserver.RequestRide 5 --apply-flows
+execWithConfirm "Creating baseline generator (5 RPS) with automatic flow calculation" sdl gen add baseline webserver.RequestRide 50 --apply-flows
 # execWithConfirm "Starting baseline traffic" sdl gen start baseline
 
 echo ""

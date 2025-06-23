@@ -26,6 +26,7 @@ type GeneratorInfo struct {
 	// Virtual time management
 	nextVirtualTime core.Duration
 	timeMutex       sync.Mutex
+	stopNotifyChan  chan bool
 
 	// For fractional rate handling
 	eventAccumulator float64
@@ -39,19 +40,28 @@ func (g *GeneratorInfo) IsRunning() bool {
 }
 
 // Stop stops the generator
-func (g *GeneratorInfo) Stop() error {
+func (g *GeneratorInfo) Stop(wait bool) error {
 	if g.stopped.Load() || g.stopChan == nil {
 		return nil
+	}
+	if wait {
+		g.stopNotifyChan = make(chan bool, 1)
+		defer func() {
+			close(g.stopNotifyChan)
+			g.stopNotifyChan = nil
+		}()
 	}
 	log.Printf("Generator %s: Stopping...", g.Id)
 	g.stopped.Store(true)
 	close(g.stopChan)
 	g.Enabled = false
+	<-g.stopNotifyChan
 	return nil
 }
 
 // Start starts a generator
 func (g *GeneratorInfo) Start() error {
+	log.Printf("Is it enabled???: ", g.Enabled)
 	if g.Enabled {
 		return nil
 	}
@@ -69,6 +79,10 @@ func (g *GeneratorInfo) run() {
 		g.stopChan = nil
 		g.Enabled = false
 		log.Printf("Generator %s: Stopped", g.Id)
+		log.Println("notifying....", g.stopNotifyChan)
+		if g.stopNotifyChan != nil {
+			g.stopNotifyChan <- true
+		}
 	}()
 
 	// For high QPS, use batching
@@ -99,7 +113,7 @@ func (g *GeneratorInfo) runSimple() {
 	for i := 0; ; i++ {
 		// Log every 10 or 20 iterations since this is low qps
 		if i%100 == 0 { // Log every 100 batches (1 second at 10ms intervals)
-			log.Printf("Low RPS Generator %s: Processed %d iterations, Stopped: ", g.Id, i, g.stopped.Load())
+			log.Printf("Low RPS Generator %s: Processed %d iterations, Stopped: %t, Rate: %f, interval: %f", g.Id, i, g.stopped.Load(), g.Rate, interval)
 		}
 		select {
 		case <-g.stopChan:

@@ -199,7 +199,7 @@ func (c *Canvas) StopAllGenerators() (*BatchGeneratorResult, error) {
 			continue
 		}
 
-		err := gen.Stop()
+		err := gen.Stop(true)
 		if err != nil {
 			result.FailedCount++
 			result.FailedIDs = append(result.FailedIDs, id)
@@ -265,6 +265,40 @@ func (c *Canvas) AddGenerator(gen *GeneratorInfo) error {
 	return c.recomputeSystemFlows()
 }
 
+// UpdateGenerator updates an existing traffic generator configuration
+func (c *Canvas) UpdateGenerator(gen *protos.Generator) error {
+	c.generatorsLock.Lock()
+	defer c.generatorsLock.Unlock()
+
+	existing, exists := c.generators[gen.Id]
+	if !exists {
+		return status.Error(codes.NotFound, fmt.Sprintf("generator '%s' not found", gen.Id))
+	}
+
+	// Stop the existing generator if it's running
+	wasRunning := existing.IsRunning()
+	if wasRunning {
+		existing.Stop(true)
+	}
+
+	// Only update rate and name - component and method should not change
+	existing.Name = gen.Name
+	existing.Rate = gen.Rate
+	// existing.Enabled = gen.Enabled
+
+	// Update the proto representation with the new values
+	existing.Generator.Name = gen.Name
+	existing.Generator.Rate = gen.Rate
+	// existing.Generator.Enabled = gen.Enabled
+
+	// Restart the generator if it was running and is still enabled
+	if wasRunning /* && existing.Enabled */ {
+		existing.Start()
+	}
+
+	return c.recomputeSystemFlows()
+}
+
 func (c *Canvas) RemoveGenerator(genId string) error {
 	c.generatorsLock.Lock()
 	defer c.generatorsLock.Unlock()
@@ -274,7 +308,7 @@ func (c *Canvas) RemoveGenerator(genId string) error {
 		return status.Error(codes.NotFound, "Generator with name not found")
 	}
 	delete(c.generators, genId)
-	gen.Stop()
+	gen.Stop(true)
 	return c.recomputeSystemFlows()
 }
 
@@ -285,7 +319,7 @@ func (c *Canvas) StopGenerator(genId string) error {
 	if c.generators[genId] == nil {
 		return status.Error(codes.NotFound, "Generator not found")
 	}
-	c.generators[genId].Stop()
+	c.generators[genId].Stop(true)
 	return c.recomputeSystemFlows()
 }
 
@@ -305,6 +339,12 @@ func (c *Canvas) StartGenerator(genId string) error {
 
 	c.generators[genId].Start()
 	return c.recomputeSystemFlows()
+}
+
+func (c *Canvas) GetGenerator(id string) *GeneratorInfo {
+	c.generatorsLock.RLock()
+	defer c.generatorsLock.RUnlock()
+	return c.generators[id]
 }
 
 // ListGenerators returns all generator configurations
@@ -598,7 +638,7 @@ func (c *Canvas) Reset() error {
 	// Stop all generators
 	c.generatorsLock.Lock()
 	for _, gen := range c.generators {
-		gen.Stop()
+		gen.Stop(true)
 	}
 	c.generators = make(map[string]*GeneratorInfo)
 	c.generatorsLock.Unlock()

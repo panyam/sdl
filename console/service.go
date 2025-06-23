@@ -163,6 +163,20 @@ func (s *CanvasService) ListGenerators(ctx context.Context, req *protos.ListGene
 	return
 }
 
+// GetGenerator returns a specific generator
+func (s *CanvasService) GetGenerator(ctx context.Context, req *protos.GetGeneratorRequest) (resp *protos.GetGeneratorResponse, err error) {
+	slog.Info("GetGenerator Request", "req", req)
+	resp = &protos.GetGeneratorResponse{}
+
+	err = s.withCanvas(req.CanvasId, func(canvas *Canvas) {
+		generator := canvas.GetGenerator(req.GeneratorId)
+		// Convert to proto format
+		resp.Generator = generator.Generator
+	})
+
+	return
+}
+
 func (s *CanvasService) AddGenerator(ctx context.Context, req *protos.AddGeneratorRequest) (resp *protos.AddGeneratorResponse, err error) {
 	slog.Info("AddGenerator Request", "req", req)
 	resp = &protos.AddGeneratorResponse{}
@@ -243,6 +257,16 @@ func (s *CanvasService) StopGenerator(ctx context.Context, req *protos.StopGener
 func (s *CanvasService) UpdateGenerator(ctx context.Context, req *protos.UpdateGeneratorRequest) (resp *protos.UpdateGeneratorResponse, err error) {
 	slog.Info("UpdateGenerator Request", "req", req)
 	resp = &protos.UpdateGeneratorResponse{}
+	
+	err = s.withCanvas(req.Generator.CanvasId, func(canvas *Canvas) {
+		// Update the generator
+		err = canvas.UpdateGenerator(req.Generator)
+		if err != nil {
+			return
+		}
+		resp.Generator = req.Generator
+	})
+	
 	return
 }
 
