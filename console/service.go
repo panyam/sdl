@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/panyam/sdl/components"
 	"github.com/panyam/sdl/decl"
 	protos "github.com/panyam/sdl/gen/go/sdl/v1"
 	"github.com/panyam/sdl/loader"
@@ -883,4 +884,54 @@ func (s *CanvasService) StreamMetrics(req *protos.StreamMetricsRequest, stream p
 			}
 		}
 	}
+}
+
+// GetUtilization returns resource utilization information
+func (s *CanvasService) GetUtilization(ctx context.Context, req *protos.GetUtilizationRequest) (resp *protos.GetUtilizationResponse, err error) {
+	slog.Info("GetUtilization Request", "req", req)
+	resp = &protos.GetUtilizationResponse{}
+
+	err = s.withCanvas(req.CanvasId, func(canvas *Canvas) {
+		// Get the system instance
+		system := canvas.activeSystem
+		if system == nil {
+			return
+		}
+
+		// Collect utilization info from all components
+		var allInfos []components.UtilizationInfo
+
+		// If specific components are requested, only get those
+		if len(req.Components) > 0 {
+			for _, compName := range req.Components {
+				if comp := system.FindComponent(compName); comp != nil {
+					infos := comp.GetUtilizationInfo()
+					allInfos = append(allInfos, infos...)
+				}
+			}
+		} else {
+			// Get all components
+			for _, comp := range system.AllComponents() {
+				infos := comp.GetUtilizationInfo()
+				allInfos = append(allInfos, infos...)
+			}
+		}
+
+		// Convert to proto format
+		resp.Utilizations = make([]*protos.UtilizationInfo, len(allInfos))
+		for i, info := range allInfos {
+			resp.Utilizations[i] = &protos.UtilizationInfo{
+				ResourceName:      info.ResourceName,
+				ComponentPath:     info.ComponentPath,
+				Utilization:       info.Utilization,
+				Capacity:          info.Capacity,
+				CurrentLoad:       info.CurrentLoad,
+				IsBottleneck:      info.IsBottleneck,
+				WarningThreshold:  info.WarningThreshold,
+				CriticalThreshold: info.CriticalThreshold,
+			}
+		}
+	})
+
+	return
 }

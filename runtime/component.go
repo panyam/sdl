@@ -198,3 +198,44 @@ func (c *ComponentInstance) GetFlowPattern(method string, inputRate float64) com
 	result := c.NativeInstance.(analyzable)
 	return result.GetFlowPattern(method, inputRate)
 }
+
+// GetUtilizationInfo returns utilization information for this component and its children.
+// For SDL components, it aggregates info from all child components that support utilization tracking.
+func (ci *ComponentInstance) GetUtilizationInfo() []components.UtilizationInfo {
+	var allInfos []components.UtilizationInfo
+
+	if ci.IsNative {
+		// For native components, check if they implement UtilizationProvider
+		if provider, ok := ci.NativeInstance.(components.UtilizationProvider); ok {
+			return provider.GetUtilizationInfo()
+		}
+		return allInfos // Empty if not supported
+	}
+
+	// For SDL components, collect utilization from all dependent components
+	if ci.ComponentDecl != nil {
+		deps, _ := ci.ComponentDecl.Dependencies()
+		for _, dep := range deps {
+			// Look up the component instance in the environment
+			if binding, ok := ci.InitialEnv.Get(dep.Name.Value); ok {
+				// Check if the binding is a component instance
+				if childComp, ok := binding.Value.(*ComponentInstance); ok && childComp != nil {
+					// Get utilization info from child
+					childInfos := childComp.GetUtilizationInfo()
+					// Update paths to include this component's hierarchy
+					for i := range childInfos {
+						childInfos[i].ComponentPath = dep.Name.Value + "." + childInfos[i].ComponentPath
+					}
+					allInfos = append(allInfos, childInfos...)
+				}
+			}
+		}
+	}
+
+	// Find and mark the bottleneck resource
+	if bottleneck := components.GetBottleneckUtilization(allInfos); bottleneck != nil {
+		// The helper already marks the bottleneck
+	}
+
+	return allInfos
+}

@@ -281,3 +281,22 @@ func (si *SystemInstance) parseFlowTarget(target string) (component, method stri
 	}
 	return component, method
 }
+
+// AllComponents returns all component instances in the system
+func (si *SystemInstance) AllComponents() []*ComponentInstance {
+	if si.Env == nil {
+		return nil
+	}
+	
+	var components []*ComponentInstance
+	
+	// Iterate through the system environment to find all components
+	bindings := si.Env.All()
+	for _, binding := range bindings {
+		if comp, ok := binding.Value.(*ComponentInstance); ok && comp != nil {
+			components = append(components, comp)
+		}
+	}
+	
+	return components
+}

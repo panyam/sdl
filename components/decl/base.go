@@ -69,6 +69,25 @@ func (b *NWBase[W]) GetFlowPattern(method string, inputRate float64) components.
 	}
 }
 
+// GetUtilizationInfo provides utilization information, delegating to wrapped component if it supports it
+func (b *NWBase[W]) GetUtilizationInfo() []components.UtilizationInfo {
+	// Check if the wrapped component implements UtilizationProvider
+	if provider, ok := any(b.Wrapped).(components.UtilizationProvider); ok {
+		// Delegate to the component's implementation
+		infos := provider.GetUtilizationInfo()
+		// Update component paths to include this component's name
+		for i := range infos {
+			if b.Name != "" {
+				infos[i].ComponentPath = b.Name + "." + infos[i].ComponentPath
+			}
+		}
+		return infos
+	}
+
+	// Default: no utilization info for components that don't provide it
+	return []components.UtilizationInfo{}
+}
+
 func (n *NWBase[W]) Set(name string, value decl.Value) error {
 	n.Modified = true
 

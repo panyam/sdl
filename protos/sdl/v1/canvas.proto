@@ -240,6 +240,15 @@ service CanvasService {
       get: "/v1/canvases/{canvas_id}/diagram"
     };
   }
+  
+  // ----- Utilization Operations -----
+  
+  // Get resource utilization information
+  rpc GetUtilization(GetUtilizationRequest) returns (GetUtilizationResponse) {
+    option (google.api.http) = {
+      get: "/v1/canvases/{canvas_id}/utilization"
+    };
+  }
 }
 
 /**
@@ -773,4 +782,29 @@ message ResetCanvasRequest {
 message ResetCanvasResponse {
   bool success = 1;
   string message = 2;  // Optional message about what was reset
+}
+
+// ----- Utilization Messages -----
+
+// Request to get utilization information
+message GetUtilizationRequest {
+  string canvas_id = 1;
+  repeated string components = 2;  // Optional: filter by specific components
+}
+
+// Response with utilization information
+message GetUtilizationResponse {
+  repeated UtilizationInfo utilizations = 1;
+}
+
+// Resource utilization information
+message UtilizationInfo {
+  string resource_name = 1;      // e.g., "pool", "disk", "queue"
+  string component_path = 2;     // e.g., "database.pool", "database.driverTable.disk"
+  double utilization = 3;        // 0.0 to 1.0
+  double capacity = 4;           // Maximum capacity
+  double current_load = 5;       // Current arrival rate
+  bool is_bottleneck = 6;        // Whether this is the bottleneck resource
+  double warning_threshold = 7;  // Utilization level for warning (e.g., 0.8)
+  double critical_threshold = 8; // Utilization level for critical (e.g., 0.95)
 }

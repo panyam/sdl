@@ -4291,6 +4291,205 @@ func (x *ResetCanvasResponse) GetMessage() string {
 	return ""
 }
 
+// Request to get utilization information
+type GetUtilizationRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	Components    []string               `protobuf:"bytes,2,rep,name=components,proto3" json:"components,omitempty"` // Optional: filter by specific components
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUtilizationRequest) Reset() {
+	*x = GetUtilizationRequest{}
+	mi := &file_sdl_v1_canvas_proto_msgTypes[77]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUtilizationRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUtilizationRequest) ProtoMessage() {}
+
+func (x *GetUtilizationRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_sdl_v1_canvas_proto_msgTypes[77]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUtilizationRequest.ProtoReflect.Descriptor instead.
+func (*GetUtilizationRequest) Descriptor() ([]byte, []int) {
+	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{77}
+}
+
+func (x *GetUtilizationRequest) GetCanvasId() string {
+	if x != nil {
+		return x.CanvasId
+	}
+	return ""
+}
+
+func (x *GetUtilizationRequest) GetComponents() []string {
+	if x != nil {
+		return x.Components
+	}
+	return nil
+}
+
+// Response with utilization information
+type GetUtilizationResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Utilizations  []*UtilizationInfo     `protobuf:"bytes,1,rep,name=utilizations,proto3" json:"utilizations,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUtilizationResponse) Reset() {
+	*x = GetUtilizationResponse{}
+	mi := &file_sdl_v1_canvas_proto_msgTypes[78]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUtilizationResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUtilizationResponse) ProtoMessage() {}
+
+func (x *GetUtilizationResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_sdl_v1_canvas_proto_msgTypes[78]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUtilizationResponse.ProtoReflect.Descriptor instead.
+func (*GetUtilizationResponse) Descriptor() ([]byte, []int) {
+	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{78}
+}
+
+func (x *GetUtilizationResponse) GetUtilizations() []*UtilizationInfo {
+	if x != nil {
+		return x.Utilizations
+	}
+	return nil
+}
+
+// Resource utilization information
+type UtilizationInfo struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	ResourceName      string                 `protobuf:"bytes,1,opt,name=resource_name,json=resourceName,proto3" json:"resource_name,omitempty"`                  // e.g., "pool", "disk", "queue"
+	ComponentPath     string                 `protobuf:"bytes,2,opt,name=component_path,json=componentPath,proto3" json:"component_path,omitempty"`               // e.g., "database.pool", "database.driverTable.disk"
+	Utilization       float64                `protobuf:"fixed64,3,opt,name=utilization,proto3" json:"utilization,omitempty"`                                      // 0.0 to 1.0
+	Capacity          float64                `protobuf:"fixed64,4,opt,name=capacity,proto3" json:"capacity,omitempty"`                                            // Maximum capacity
+	CurrentLoad       float64                `protobuf:"fixed64,5,opt,name=current_load,json=currentLoad,proto3" json:"current_load,omitempty"`                   // Current arrival rate
+	IsBottleneck      bool                   `protobuf:"varint,6,opt,name=is_bottleneck,json=isBottleneck,proto3" json:"is_bottleneck,omitempty"`                 // Whether this is the bottleneck resource
+	WarningThreshold  float64                `protobuf:"fixed64,7,opt,name=warning_threshold,json=warningThreshold,proto3" json:"warning_threshold,omitempty"`    // Utilization level for warning (e.g., 0.8)
+	CriticalThreshold float64                `protobuf:"fixed64,8,opt,name=critical_threshold,json=criticalThreshold,proto3" json:"critical_threshold,omitempty"` // Utilization level for critical (e.g., 0.95)
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *UtilizationInfo) Reset() {
+	*x = UtilizationInfo{}
+	mi := &file_sdl_v1_canvas_proto_msgTypes[79]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UtilizationInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UtilizationInfo) ProtoMessage() {}
+
+func (x *UtilizationInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_sdl_v1_canvas_proto_msgTypes[79]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UtilizationInfo.ProtoReflect.Descriptor instead.
+func (*UtilizationInfo) Descriptor() ([]byte, []int) {
+	return file_sdl_v1_canvas_proto_rawDescGZIP(), []int{79}
+}
+
+func (x *UtilizationInfo) GetResourceName() string {
+	if x != nil {
+		return x.ResourceName
+	}
+	return ""
+}
+
+func (x *UtilizationInfo) GetComponentPath() string {
+	if x != nil {
+		return x.ComponentPath
+	}
+	return ""
+}
+
+func (x *UtilizationInfo) GetUtilization() float64 {
+	if x != nil {
+		return x.Utilization
+	}
+	return 0
+}
+
+func (x *UtilizationInfo) GetCapacity() float64 {
+	if x != nil {
+		return x.Capacity
+	}
+	return 0
+}
+
+func (x *UtilizationInfo) GetCurrentLoad() float64 {
+	if x != nil {
+		return x.CurrentLoad
+	}
+	return 0
+}
+
+func (x *UtilizationInfo) GetIsBottleneck() bool {
+	if x != nil {
+		return x.IsBottleneck
+	}
+	return false
+}
+
+func (x *UtilizationInfo) GetWarningThreshold() float64 {
+	if x != nil {
+		return x.WarningThreshold
+	}
+	return 0
+}
+
+func (x *UtilizationInfo) GetCriticalThreshold() float64 {
+	if x != nil {
+		return x.CriticalThreshold
+	}
+	return 0
+}
+
 var File_sdl_v1_canvas_proto protoreflect.FileDescriptor
 
 const file_sdl_v1_canvas_proto_rawDesc = "" +
@@ -4597,7 +4796,23 @@ const file_sdl_v1_canvas_proto_rawDesc = "" +
 	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\"I\n" +
 	"\x13ResetCanvasResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage2\x9c\x1d\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"T\n" +
+	"\x15GetUtilizationRequest\x12\x1b\n" +
+	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\x12\x1e\n" +
+	"\n" +
+	"components\x18\x02 \x03(\tR\n" +
+	"components\"U\n" +
+	"\x16GetUtilizationResponse\x12;\n" +
+	"\futilizations\x18\x01 \x03(\v2\x17.sdl.v1.UtilizationInfoR\futilizations\"\xbf\x02\n" +
+	"\x0fUtilizationInfo\x12#\n" +
+	"\rresource_name\x18\x01 \x01(\tR\fresourceName\x12%\n" +
+	"\x0ecomponent_path\x18\x02 \x01(\tR\rcomponentPath\x12 \n" +
+	"\vutilization\x18\x03 \x01(\x01R\vutilization\x12\x1a\n" +
+	"\bcapacity\x18\x04 \x01(\x01R\bcapacity\x12!\n" +
+	"\fcurrent_load\x18\x05 \x01(\x01R\vcurrentLoad\x12#\n" +
+	"\ris_bottleneck\x18\x06 \x01(\bR\fisBottleneck\x12+\n" +
+	"\x11warning_threshold\x18\a \x01(\x01R\x10warningThreshold\x12-\n" +
+	"\x12critical_threshold\x18\b \x01(\x01R\x11criticalThreshold2\x9b\x1e\n" +
 	"\rCanvasService\x12b\n" +
 	"\fCreateCanvas\x12\x1b.sdl.v1.CreateCanvasRequest\x1a\x1c.sdl.v1.CreateCanvasResponse\"\x17\x82\xd3\xe4\x93\x02\x11:\x01*\"\f/v1/canvases\x12_\n" +
 	"\fListCanvases\x12\x1b.sdl.v1.ListCanvasesRequest\x1a\x1c.sdl.v1.ListCanvasesResponse\"\x14\x82\xd3\xe4\x93\x02\x0e\x12\f/v1/canvases\x12]\n" +
@@ -4627,7 +4842,8 @@ const file_sdl_v1_canvas_proto_rawDesc = "" +
 	"\vListMetrics\x12\x1a.sdl.v1.ListMetricsRequest\x1a\x1b.sdl.v1.ListMetricsResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /v1/canvases/{canvas_id}/metrics\x12\x85\x01\n" +
 	"\fQueryMetrics\x12\x1b.sdl.v1.QueryMetricsRequest\x1a\x1c.sdl.v1.QueryMetricsResponse\":\x82\xd3\xe4\x93\x024\x122/v1/canvases/{canvas_id}/metrics/{metric_id}/query\x12P\n" +
 	"\rStreamMetrics\x12\x1c.sdl.v1.StreamMetricsRequest\x1a\x1d.sdl.v1.StreamMetricsResponse\"\x000\x01\x12\x7f\n" +
-	"\x10GetSystemDiagram\x12\x1f.sdl.v1.GetSystemDiagramRequest\x1a .sdl.v1.GetSystemDiagramResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /v1/canvases/{canvas_id}/diagramBw\n" +
+	"\x10GetSystemDiagram\x12\x1f.sdl.v1.GetSystemDiagramRequest\x1a .sdl.v1.GetSystemDiagramResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /v1/canvases/{canvas_id}/diagram\x12}\n" +
+	"\x0eGetUtilization\x12\x1d.sdl.v1.GetUtilizationRequest\x1a\x1e.sdl.v1.GetUtilizationResponse\",\x82\xd3\xe4\x93\x02&\x12$/v1/canvases/{canvas_id}/utilizationBw\n" +
 	"\n" +
 	"com.sdl.v1B\vCanvasProtoP\x01Z#github.com/panyam/sdl/gen/go/sdl/v1\xa2\x02\x03SXX\xaa\x02\x06Sdl.V1\xca\x02\x06Sdl\\V1\xe2\x02\x12Sdl\\V1\\GPBMetadata\xea\x02\aSdl::V1b\x06proto3"
 
@@ -4643,7 +4859,7 @@ func file_sdl_v1_canvas_proto_rawDescGZIP() []byte {
 	return file_sdl_v1_canvas_proto_rawDescData
 }
 
-var file_sdl_v1_canvas_proto_msgTypes = make([]protoimpl.MessageInfo, 82)
+var file_sdl_v1_canvas_proto_msgTypes = make([]protoimpl.MessageInfo, 85)
 var file_sdl_v1_canvas_proto_goTypes = []any{
 	(*CreateCanvasRequest)(nil),        // 0: sdl.v1.CreateCanvasRequest
 	(*CreateCanvasResponse)(nil),       // 1: sdl.v1.CreateCanvasResponse
@@ -4722,38 +4938,41 @@ var file_sdl_v1_canvas_proto_goTypes = []any{
 	(*DiagramEdge)(nil),                // 74: sdl.v1.DiagramEdge
 	(*ResetCanvasRequest)(nil),         // 75: sdl.v1.ResetCanvasRequest
 	(*ResetCanvasResponse)(nil),        // 76: sdl.v1.ResetCanvasResponse
-	nil,                                // 77: sdl.v1.CreateCanvasResponse.FieldErrorsEntry
-	nil,                                // 78: sdl.v1.GetParametersResponse.ParametersEntry
-	nil,                                // 79: sdl.v1.FlowState.RatesEntry
-	nil,                                // 80: sdl.v1.FlowState.ManualOverridesEntry
-	nil,                                // 81: sdl.v1.EvaluateFlowsResponse.ComponentRatesEntry
-	(*Canvas)(nil),                     // 82: sdl.v1.Canvas
-	(*Pagination)(nil),                 // 83: sdl.v1.Pagination
-	(*PaginationResponse)(nil),         // 84: sdl.v1.PaginationResponse
-	(*Generator)(nil),                  // 85: sdl.v1.Generator
-	(*fieldmaskpb.FieldMask)(nil),      // 86: google.protobuf.FieldMask
-	(*Metric)(nil),                     // 87: sdl.v1.Metric
+	(*GetUtilizationRequest)(nil),      // 77: sdl.v1.GetUtilizationRequest
+	(*GetUtilizationResponse)(nil),     // 78: sdl.v1.GetUtilizationResponse
+	(*UtilizationInfo)(nil),            // 79: sdl.v1.UtilizationInfo
+	nil,                                // 80: sdl.v1.CreateCanvasResponse.FieldErrorsEntry
+	nil,                                // 81: sdl.v1.GetParametersResponse.ParametersEntry
+	nil,                                // 82: sdl.v1.FlowState.RatesEntry
+	nil,                                // 83: sdl.v1.FlowState.ManualOverridesEntry
+	nil,                                // 84: sdl.v1.EvaluateFlowsResponse.ComponentRatesEntry
+	(*Canvas)(nil),                     // 85: sdl.v1.Canvas
+	(*Pagination)(nil),                 // 86: sdl.v1.Pagination
+	(*PaginationResponse)(nil),         // 87: sdl.v1.PaginationResponse
+	(*Generator)(nil),                  // 88: sdl.v1.Generator
+	(*fieldmaskpb.FieldMask)(nil),      // 89: google.protobuf.FieldMask
+	(*Metric)(nil),                     // 90: sdl.v1.Metric
 }
 var file_sdl_v1_canvas_proto_depIdxs = []int32{
-	82, // 0: sdl.v1.CreateCanvasRequest.canvas:type_name -> sdl.v1.Canvas
-	82, // 1: sdl.v1.CreateCanvasResponse.canvas:type_name -> sdl.v1.Canvas
-	77, // 2: sdl.v1.CreateCanvasResponse.field_errors:type_name -> sdl.v1.CreateCanvasResponse.FieldErrorsEntry
-	83, // 3: sdl.v1.ListCanvasesRequest.pagination:type_name -> sdl.v1.Pagination
-	82, // 4: sdl.v1.ListCanvasesResponse.canvases:type_name -> sdl.v1.Canvas
-	84, // 5: sdl.v1.ListCanvasesResponse.pagination:type_name -> sdl.v1.PaginationResponse
-	82, // 6: sdl.v1.GetCanvasResponse.canvas:type_name -> sdl.v1.Canvas
-	85, // 7: sdl.v1.AddGeneratorRequest.generator:type_name -> sdl.v1.Generator
-	85, // 8: sdl.v1.AddGeneratorResponse.generator:type_name -> sdl.v1.Generator
-	85, // 9: sdl.v1.ListGeneratorsResponse.generators:type_name -> sdl.v1.Generator
-	85, // 10: sdl.v1.GetGeneratorResponse.generator:type_name -> sdl.v1.Generator
-	85, // 11: sdl.v1.UpdateGeneratorRequest.generator:type_name -> sdl.v1.Generator
-	86, // 12: sdl.v1.UpdateGeneratorRequest.update_mask:type_name -> google.protobuf.FieldMask
-	85, // 13: sdl.v1.UpdateGeneratorResponse.generator:type_name -> sdl.v1.Generator
-	87, // 14: sdl.v1.AddMetricRequest.metric:type_name -> sdl.v1.Metric
-	87, // 15: sdl.v1.AddMetricResponse.metric:type_name -> sdl.v1.Metric
+	85, // 0: sdl.v1.CreateCanvasRequest.canvas:type_name -> sdl.v1.Canvas
+	85, // 1: sdl.v1.CreateCanvasResponse.canvas:type_name -> sdl.v1.Canvas
+	80, // 2: sdl.v1.CreateCanvasResponse.field_errors:type_name -> sdl.v1.CreateCanvasResponse.FieldErrorsEntry
+	86, // 3: sdl.v1.ListCanvasesRequest.pagination:type_name -> sdl.v1.Pagination
+	85, // 4: sdl.v1.ListCanvasesResponse.canvases:type_name -> sdl.v1.Canvas
+	87, // 5: sdl.v1.ListCanvasesResponse.pagination:type_name -> sdl.v1.PaginationResponse
+	85, // 6: sdl.v1.GetCanvasResponse.canvas:type_name -> sdl.v1.Canvas
+	88, // 7: sdl.v1.AddGeneratorRequest.generator:type_name -> sdl.v1.Generator
+	88, // 8: sdl.v1.AddGeneratorResponse.generator:type_name -> sdl.v1.Generator
+	88, // 9: sdl.v1.ListGeneratorsResponse.generators:type_name -> sdl.v1.Generator
+	88, // 10: sdl.v1.GetGeneratorResponse.generator:type_name -> sdl.v1.Generator
+	88, // 11: sdl.v1.UpdateGeneratorRequest.generator:type_name -> sdl.v1.Generator
+	89, // 12: sdl.v1.UpdateGeneratorRequest.update_mask:type_name -> google.protobuf.FieldMask
+	88, // 13: sdl.v1.UpdateGeneratorResponse.generator:type_name -> sdl.v1.Generator
+	90, // 14: sdl.v1.AddMetricRequest.metric:type_name -> sdl.v1.Metric
+	90, // 15: sdl.v1.AddMetricResponse.metric:type_name -> sdl.v1.Metric
 	36, // 16: sdl.v1.QueryMetricsResponse.points:type_name -> sdl.v1.MetricPoint
 	39, // 17: sdl.v1.AggregateMetricsResponse.results:type_name -> sdl.v1.AggregateResult
-	87, // 18: sdl.v1.ListMetricsResponse.metrics:type_name -> sdl.v1.Metric
+	90, // 18: sdl.v1.ListMetricsResponse.metrics:type_name -> sdl.v1.Metric
 	44, // 19: sdl.v1.StreamMetricsResponse.updates:type_name -> sdl.v1.MetricUpdate
 	36, // 20: sdl.v1.MetricUpdate.point:type_name -> sdl.v1.MetricPoint
 	53, // 21: sdl.v1.ExecuteTraceResponse.trace_data:type_name -> sdl.v1.TraceData
@@ -4763,81 +4982,84 @@ var file_sdl_v1_canvas_proto_depIdxs = []int32{
 	52, // 25: sdl.v1.TraceNode.groups:type_name -> sdl.v1.GroupInfo
 	50, // 26: sdl.v1.Edge.next_node:type_name -> sdl.v1.TraceNode
 	54, // 27: sdl.v1.TraceData.events:type_name -> sdl.v1.TraceEvent
-	78, // 28: sdl.v1.GetParametersResponse.parameters:type_name -> sdl.v1.GetParametersResponse.ParametersEntry
+	81, // 28: sdl.v1.GetParametersResponse.parameters:type_name -> sdl.v1.GetParametersResponse.ParametersEntry
 	60, // 29: sdl.v1.BatchSetParametersRequest.updates:type_name -> sdl.v1.ParameterUpdate
 	62, // 30: sdl.v1.BatchSetParametersResponse.results:type_name -> sdl.v1.ParameterUpdateResult
 	66, // 31: sdl.v1.GetFlowStateResponse.state:type_name -> sdl.v1.FlowState
-	79, // 32: sdl.v1.FlowState.rates:type_name -> sdl.v1.FlowState.RatesEntry
-	80, // 33: sdl.v1.FlowState.manual_overrides:type_name -> sdl.v1.FlowState.ManualOverridesEntry
-	81, // 34: sdl.v1.EvaluateFlowsResponse.component_rates:type_name -> sdl.v1.EvaluateFlowsResponse.ComponentRatesEntry
+	82, // 32: sdl.v1.FlowState.rates:type_name -> sdl.v1.FlowState.RatesEntry
+	83, // 33: sdl.v1.FlowState.manual_overrides:type_name -> sdl.v1.FlowState.ManualOverridesEntry
+	84, // 34: sdl.v1.EvaluateFlowsResponse.component_rates:type_name -> sdl.v1.EvaluateFlowsResponse.ComponentRatesEntry
 	68, // 35: sdl.v1.EvaluateFlowsResponse.flow_edges:type_name -> sdl.v1.FlowEdge
 	71, // 36: sdl.v1.GetSystemDiagramResponse.diagram:type_name -> sdl.v1.SystemDiagram
 	72, // 37: sdl.v1.SystemDiagram.nodes:type_name -> sdl.v1.DiagramNode
 	74, // 38: sdl.v1.SystemDiagram.edges:type_name -> sdl.v1.DiagramEdge
 	73, // 39: sdl.v1.DiagramNode.methods:type_name -> sdl.v1.MethodInfo
-	0,  // 40: sdl.v1.CanvasService.CreateCanvas:input_type -> sdl.v1.CreateCanvasRequest
-	2,  // 41: sdl.v1.CanvasService.ListCanvases:input_type -> sdl.v1.ListCanvasesRequest
-	4,  // 42: sdl.v1.CanvasService.GetCanvas:input_type -> sdl.v1.GetCanvasRequest
-	26, // 43: sdl.v1.CanvasService.LoadFile:input_type -> sdl.v1.LoadFileRequest
-	28, // 44: sdl.v1.CanvasService.UseSystem:input_type -> sdl.v1.UseSystemRequest
-	6,  // 45: sdl.v1.CanvasService.DeleteCanvas:input_type -> sdl.v1.DeleteCanvasRequest
-	75, // 46: sdl.v1.CanvasService.ResetCanvas:input_type -> sdl.v1.ResetCanvasRequest
-	8,  // 47: sdl.v1.CanvasService.AddGenerator:input_type -> sdl.v1.AddGeneratorRequest
-	12, // 48: sdl.v1.CanvasService.StartAllGenerators:input_type -> sdl.v1.StartAllGeneratorsRequest
-	14, // 49: sdl.v1.CanvasService.StopAllGenerators:input_type -> sdl.v1.StopAllGeneratorsRequest
-	10, // 50: sdl.v1.CanvasService.ListGenerators:input_type -> sdl.v1.ListGeneratorsRequest
-	16, // 51: sdl.v1.CanvasService.GetGenerator:input_type -> sdl.v1.GetGeneratorRequest
-	18, // 52: sdl.v1.CanvasService.UpdateGenerator:input_type -> sdl.v1.UpdateGeneratorRequest
-	22, // 53: sdl.v1.CanvasService.StopGenerator:input_type -> sdl.v1.StopGeneratorRequest
-	20, // 54: sdl.v1.CanvasService.StartGenerator:input_type -> sdl.v1.StartGeneratorRequest
-	24, // 55: sdl.v1.CanvasService.DeleteGenerator:input_type -> sdl.v1.DeleteGeneratorRequest
-	45, // 56: sdl.v1.CanvasService.ExecuteTrace:input_type -> sdl.v1.ExecuteTraceRequest
-	47, // 57: sdl.v1.CanvasService.TraceAllPaths:input_type -> sdl.v1.TraceAllPathsRequest
-	55, // 58: sdl.v1.CanvasService.SetParameter:input_type -> sdl.v1.SetParameterRequest
-	57, // 59: sdl.v1.CanvasService.GetParameters:input_type -> sdl.v1.GetParametersRequest
-	59, // 60: sdl.v1.CanvasService.BatchSetParameters:input_type -> sdl.v1.BatchSetParametersRequest
-	63, // 61: sdl.v1.CanvasService.EvaluateFlows:input_type -> sdl.v1.EvaluateFlowsRequest
-	64, // 62: sdl.v1.CanvasService.GetFlowState:input_type -> sdl.v1.GetFlowStateRequest
-	30, // 63: sdl.v1.CanvasService.AddMetric:input_type -> sdl.v1.AddMetricRequest
-	32, // 64: sdl.v1.CanvasService.DeleteMetric:input_type -> sdl.v1.DeleteMetricRequest
-	40, // 65: sdl.v1.CanvasService.ListMetrics:input_type -> sdl.v1.ListMetricsRequest
-	34, // 66: sdl.v1.CanvasService.QueryMetrics:input_type -> sdl.v1.QueryMetricsRequest
-	42, // 67: sdl.v1.CanvasService.StreamMetrics:input_type -> sdl.v1.StreamMetricsRequest
-	69, // 68: sdl.v1.CanvasService.GetSystemDiagram:input_type -> sdl.v1.GetSystemDiagramRequest
-	1,  // 69: sdl.v1.CanvasService.CreateCanvas:output_type -> sdl.v1.CreateCanvasResponse
-	3,  // 70: sdl.v1.CanvasService.ListCanvases:output_type -> sdl.v1.ListCanvasesResponse
-	5,  // 71: sdl.v1.CanvasService.GetCanvas:output_type -> sdl.v1.GetCanvasResponse
-	27, // 72: sdl.v1.CanvasService.LoadFile:output_type -> sdl.v1.LoadFileResponse
-	29, // 73: sdl.v1.CanvasService.UseSystem:output_type -> sdl.v1.UseSystemResponse
-	7,  // 74: sdl.v1.CanvasService.DeleteCanvas:output_type -> sdl.v1.DeleteCanvasResponse
-	76, // 75: sdl.v1.CanvasService.ResetCanvas:output_type -> sdl.v1.ResetCanvasResponse
-	9,  // 76: sdl.v1.CanvasService.AddGenerator:output_type -> sdl.v1.AddGeneratorResponse
-	13, // 77: sdl.v1.CanvasService.StartAllGenerators:output_type -> sdl.v1.StartAllGeneratorsResponse
-	15, // 78: sdl.v1.CanvasService.StopAllGenerators:output_type -> sdl.v1.StopAllGeneratorsResponse
-	11, // 79: sdl.v1.CanvasService.ListGenerators:output_type -> sdl.v1.ListGeneratorsResponse
-	17, // 80: sdl.v1.CanvasService.GetGenerator:output_type -> sdl.v1.GetGeneratorResponse
-	19, // 81: sdl.v1.CanvasService.UpdateGenerator:output_type -> sdl.v1.UpdateGeneratorResponse
-	23, // 82: sdl.v1.CanvasService.StopGenerator:output_type -> sdl.v1.StopGeneratorResponse
-	21, // 83: sdl.v1.CanvasService.StartGenerator:output_type -> sdl.v1.StartGeneratorResponse
-	25, // 84: sdl.v1.CanvasService.DeleteGenerator:output_type -> sdl.v1.DeleteGeneratorResponse
-	46, // 85: sdl.v1.CanvasService.ExecuteTrace:output_type -> sdl.v1.ExecuteTraceResponse
-	48, // 86: sdl.v1.CanvasService.TraceAllPaths:output_type -> sdl.v1.TraceAllPathsResponse
-	56, // 87: sdl.v1.CanvasService.SetParameter:output_type -> sdl.v1.SetParameterResponse
-	58, // 88: sdl.v1.CanvasService.GetParameters:output_type -> sdl.v1.GetParametersResponse
-	61, // 89: sdl.v1.CanvasService.BatchSetParameters:output_type -> sdl.v1.BatchSetParametersResponse
-	67, // 90: sdl.v1.CanvasService.EvaluateFlows:output_type -> sdl.v1.EvaluateFlowsResponse
-	65, // 91: sdl.v1.CanvasService.GetFlowState:output_type -> sdl.v1.GetFlowStateResponse
-	31, // 92: sdl.v1.CanvasService.AddMetric:output_type -> sdl.v1.AddMetricResponse
-	33, // 93: sdl.v1.CanvasService.DeleteMetric:output_type -> sdl.v1.DeleteMetricResponse
-	41, // 94: sdl.v1.CanvasService.ListMetrics:output_type -> sdl.v1.ListMetricsResponse
-	35, // 95: sdl.v1.CanvasService.QueryMetrics:output_type -> sdl.v1.QueryMetricsResponse
-	43, // 96: sdl.v1.CanvasService.StreamMetrics:output_type -> sdl.v1.StreamMetricsResponse
-	70, // 97: sdl.v1.CanvasService.GetSystemDiagram:output_type -> sdl.v1.GetSystemDiagramResponse
-	69, // [69:98] is the sub-list for method output_type
-	40, // [40:69] is the sub-list for method input_type
-	40, // [40:40] is the sub-list for extension type_name
-	40, // [40:40] is the sub-list for extension extendee
-	0,  // [0:40] is the sub-list for field type_name
+	79, // 40: sdl.v1.GetUtilizationResponse.utilizations:type_name -> sdl.v1.UtilizationInfo
+	0,  // 41: sdl.v1.CanvasService.CreateCanvas:input_type -> sdl.v1.CreateCanvasRequest
+	2,  // 42: sdl.v1.CanvasService.ListCanvases:input_type -> sdl.v1.ListCanvasesRequest
+	4,  // 43: sdl.v1.CanvasService.GetCanvas:input_type -> sdl.v1.GetCanvasRequest
+	26, // 44: sdl.v1.CanvasService.LoadFile:input_type -> sdl.v1.LoadFileRequest
+	28, // 45: sdl.v1.CanvasService.UseSystem:input_type -> sdl.v1.UseSystemRequest
+	6,  // 46: sdl.v1.CanvasService.DeleteCanvas:input_type -> sdl.v1.DeleteCanvasRequest
+	75, // 47: sdl.v1.CanvasService.ResetCanvas:input_type -> sdl.v1.ResetCanvasRequest
+	8,  // 48: sdl.v1.CanvasService.AddGenerator:input_type -> sdl.v1.AddGeneratorRequest
+	12, // 49: sdl.v1.CanvasService.StartAllGenerators:input_type -> sdl.v1.StartAllGeneratorsRequest
+	14, // 50: sdl.v1.CanvasService.StopAllGenerators:input_type -> sdl.v1.StopAllGeneratorsRequest
+	10, // 51: sdl.v1.CanvasService.ListGenerators:input_type -> sdl.v1.ListGeneratorsRequest
+	16, // 52: sdl.v1.CanvasService.GetGenerator:input_type -> sdl.v1.GetGeneratorRequest
+	18, // 53: sdl.v1.CanvasService.UpdateGenerator:input_type -> sdl.v1.UpdateGeneratorRequest
+	22, // 54: sdl.v1.CanvasService.StopGenerator:input_type -> sdl.v1.StopGeneratorRequest
+	20, // 55: sdl.v1.CanvasService.StartGenerator:input_type -> sdl.v1.StartGeneratorRequest
+	24, // 56: sdl.v1.CanvasService.DeleteGenerator:input_type -> sdl.v1.DeleteGeneratorRequest
+	45, // 57: sdl.v1.CanvasService.ExecuteTrace:input_type -> sdl.v1.ExecuteTraceRequest
+	47, // 58: sdl.v1.CanvasService.TraceAllPaths:input_type -> sdl.v1.TraceAllPathsRequest
+	55, // 59: sdl.v1.CanvasService.SetParameter:input_type -> sdl.v1.SetParameterRequest
+	57, // 60: sdl.v1.CanvasService.GetParameters:input_type -> sdl.v1.GetParametersRequest
+	59, // 61: sdl.v1.CanvasService.BatchSetParameters:input_type -> sdl.v1.BatchSetParametersRequest
+	63, // 62: sdl.v1.CanvasService.EvaluateFlows:input_type -> sdl.v1.EvaluateFlowsRequest
+	64, // 63: sdl.v1.CanvasService.GetFlowState:input_type -> sdl.v1.GetFlowStateRequest
+	30, // 64: sdl.v1.CanvasService.AddMetric:input_type -> sdl.v1.AddMetricRequest
+	32, // 65: sdl.v1.CanvasService.DeleteMetric:input_type -> sdl.v1.DeleteMetricRequest
+	40, // 66: sdl.v1.CanvasService.ListMetrics:input_type -> sdl.v1.ListMetricsRequest
+	34, // 67: sdl.v1.CanvasService.QueryMetrics:input_type -> sdl.v1.QueryMetricsRequest
+	42, // 68: sdl.v1.CanvasService.StreamMetrics:input_type -> sdl.v1.StreamMetricsRequest
+	69, // 69: sdl.v1.CanvasService.GetSystemDiagram:input_type -> sdl.v1.GetSystemDiagramRequest
+	77, // 70: sdl.v1.CanvasService.GetUtilization:input_type -> sdl.v1.GetUtilizationRequest
+	1,  // 71: sdl.v1.CanvasService.CreateCanvas:output_type -> sdl.v1.CreateCanvasResponse
+	3,  // 72: sdl.v1.CanvasService.ListCanvases:output_type -> sdl.v1.ListCanvasesResponse
+	5,  // 73: sdl.v1.CanvasService.GetCanvas:output_type -> sdl.v1.GetCanvasResponse
+	27, // 74: sdl.v1.CanvasService.LoadFile:output_type -> sdl.v1.LoadFileResponse
+	29, // 75: sdl.v1.CanvasService.UseSystem:output_type -> sdl.v1.UseSystemResponse
+	7,  // 76: sdl.v1.CanvasService.DeleteCanvas:output_type -> sdl.v1.DeleteCanvasResponse
+	76, // 77: sdl.v1.CanvasService.ResetCanvas:output_type -> sdl.v1.ResetCanvasResponse
+	9,  // 78: sdl.v1.CanvasService.AddGenerator:output_type -> sdl.v1.AddGeneratorResponse
+	13, // 79: sdl.v1.CanvasService.StartAllGenerators:output_type -> sdl.v1.StartAllGeneratorsResponse
+	15, // 80: sdl.v1.CanvasService.StopAllGenerators:output_type -> sdl.v1.StopAllGeneratorsResponse
+	11, // 81: sdl.v1.CanvasService.ListGenerators:output_type -> sdl.v1.ListGeneratorsResponse
+	17, // 82: sdl.v1.CanvasService.GetGenerator:output_type -> sdl.v1.GetGeneratorResponse
+	19, // 83: sdl.v1.CanvasService.UpdateGenerator:output_type -> sdl.v1.UpdateGeneratorResponse
+	23, // 84: sdl.v1.CanvasService.StopGenerator:output_type -> sdl.v1.StopGeneratorResponse
+	21, // 85: sdl.v1.CanvasService.StartGenerator:output_type -> sdl.v1.StartGeneratorResponse
+	25, // 86: sdl.v1.CanvasService.DeleteGenerator:output_type -> sdl.v1.DeleteGeneratorResponse
+	46, // 87: sdl.v1.CanvasService.ExecuteTrace:output_type -> sdl.v1.ExecuteTraceResponse
+	48, // 88: sdl.v1.CanvasService.TraceAllPaths:output_type -> sdl.v1.TraceAllPathsResponse
+	56, // 89: sdl.v1.CanvasService.SetParameter:output_type -> sdl.v1.SetParameterResponse
+	58, // 90: sdl.v1.CanvasService.GetParameters:output_type -> sdl.v1.GetParametersResponse
+	61, // 91: sdl.v1.CanvasService.BatchSetParameters:output_type -> sdl.v1.BatchSetParametersResponse
+	67, // 92: sdl.v1.CanvasService.EvaluateFlows:output_type -> sdl.v1.EvaluateFlowsResponse
+	65, // 93: sdl.v1.CanvasService.GetFlowState:output_type -> sdl.v1.GetFlowStateResponse
+	31, // 94: sdl.v1.CanvasService.AddMetric:output_type -> sdl.v1.AddMetricResponse
+	33, // 95: sdl.v1.CanvasService.DeleteMetric:output_type -> sdl.v1.DeleteMetricResponse
+	41, // 96: sdl.v1.CanvasService.ListMetrics:output_type -> sdl.v1.ListMetricsResponse
+	35, // 97: sdl.v1.CanvasService.QueryMetrics:output_type -> sdl.v1.QueryMetricsResponse
+	43, // 98: sdl.v1.CanvasService.StreamMetrics:output_type -> sdl.v1.StreamMetricsResponse
+	70, // 99: sdl.v1.CanvasService.GetSystemDiagram:output_type -> sdl.v1.GetSystemDiagramResponse
+	78, // 100: sdl.v1.CanvasService.GetUtilization:output_type -> sdl.v1.GetUtilizationResponse
+	71, // [71:101] is the sub-list for method output_type
+	41, // [41:71] is the sub-list for method input_type
+	41, // [41:41] is the sub-list for extension type_name
+	41, // [41:41] is the sub-list for extension extendee
+	0,  // [0:41] is the sub-list for field type_name
 }
 
 func init() { file_sdl_v1_canvas_proto_init() }
@@ -4852,7 +5074,7 @@ func file_sdl_v1_canvas_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_sdl_v1_canvas_proto_rawDesc), len(file_sdl_v1_canvas_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   82,
+			NumMessages:   85,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

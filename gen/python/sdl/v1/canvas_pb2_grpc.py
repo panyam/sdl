@@ -161,6 +161,11 @@ class CanvasServiceStub(object):
                 request_serializer=sdl_dot_v1_dot_canvas__pb2.GetSystemDiagramRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_canvas__pb2.GetSystemDiagramResponse.FromString,
                 _registered_method=True)
+        self.GetUtilization = channel.unary_unary(
+                '/sdl.v1.CanvasService/GetUtilization',
+                request_serializer=sdl_dot_v1_dot_canvas__pb2.GetUtilizationRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_canvas__pb2.GetUtilizationResponse.FromString,
+                _registered_method=True)
 
 
 class CanvasServiceServicer(object):
@@ -380,6 +385,15 @@ class CanvasServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetUtilization(self, request, context):
+        """----- Utilization Operations -----
+
+        Get resource utilization information
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_CanvasServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -527,6 +541,11 @@ def add_CanvasServiceServicer_to_server(servicer, server):
                     servicer.GetSystemDiagram,
                     request_deserializer=sdl_dot_v1_dot_canvas__pb2.GetSystemDiagramRequest.FromString,
                     response_serializer=sdl_dot_v1_dot_canvas__pb2.GetSystemDiagramResponse.SerializeToString,
+            ),
+            'GetUtilization': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetUtilization,
+                    request_deserializer=sdl_dot_v1_dot_canvas__pb2.GetUtilizationRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_canvas__pb2.GetUtilizationResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -1314,6 +1333,33 @@ class CanvasService(object):
             '/sdl.v1.CanvasService/GetSystemDiagram',
             sdl_dot_v1_dot_canvas__pb2.GetSystemDiagramRequest.SerializeToString,
             sdl_dot_v1_dot_canvas__pb2.GetSystemDiagramResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetUtilization(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.CanvasService/GetUtilization',
+            sdl_dot_v1_dot_canvas__pb2.GetUtilizationRequest.SerializeToString,
+            sdl_dot_v1_dot_canvas__pb2.GetUtilizationResponse.FromString,
             options,
             channel_credentials,
             insecure,

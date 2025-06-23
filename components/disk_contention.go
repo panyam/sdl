@@ -127,6 +127,33 @@ func (d *DiskWithContention) Read() *Outcomes[sc.AccessResult] {
 	}
 }
 
+// GetUtilizationInfo implements UtilizationProvider interface
+func (d *DiskWithContention) GetUtilizationInfo() []UtilizationInfo {
+	var infos []UtilizationInfo
+	
+	if d.pool != nil {
+		// Get utilization from ResourcePool
+		poolInfos := d.pool.GetUtilizationInfo()
+		for i := range poolInfos {
+			// Update the component path to include this disk
+			poolInfos[i].ComponentPath = "disk." + poolInfos[i].ComponentPath
+			poolInfos[i].ResourceName = "disk-pool"
+		}
+		infos = append(infos, poolInfos...)
+	} else if d.queue != nil {
+		// Get utilization from MM1Queue
+		queueInfos := d.queue.GetUtilizationInfo()
+		for i := range queueInfos {
+			// Update the component path to include this disk
+			queueInfos[i].ComponentPath = "disk." + queueInfos[i].ComponentPath
+			queueInfos[i].ResourceName = "disk-queue"
+		}
+		infos = append(infos, queueInfos...)
+	}
+	
+	return infos
+}
+
 // Write performs a write operation with contention modeling.
 func (d *DiskWithContention) Write() *Outcomes[sc.AccessResult] {
 	// Similar to Read, but using Write outcomes

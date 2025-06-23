@@ -956,6 +956,48 @@
         ]
       }
     },
+    "/v1/canvases/{canvasId}/utilization": {
+      "get": {
+        "summary": "Get resource utilization information",
+        "operationId": "CanvasService_GetUtilization",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetUtilizationResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "canvasId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "components",
+            "description": "Optional: filter by specific components",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "CanvasService"
+        ]
+      }
+    },
     "/v1/canvases/{generator.canvasId}/generators": {
       "post": {
         "summary": "----- Generator Operations -----\nAdds a generator to a canvas's generator_ids list and creates the generator resource.",
@@ -1779,6 +1821,19 @@
       },
       "title": "Response containing the system diagram"
     },
+    "v1GetUtilizationResponse": {
+      "type": "object",
+      "properties": {
+        "utilizations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1UtilizationInfo"
+          }
+        }
+      },
+      "title": "Response with utilization information"
+    },
     "v1GroupInfo": {
       "type": "object",
       "properties": {
@@ -2306,6 +2361,49 @@
     },
     "v1UseSystemResponse": {
       "type": "object"
+    },
+    "v1UtilizationInfo": {
+      "type": "object",
+      "properties": {
+        "resourceName": {
+          "type": "string",
+          "title": "e.g., \"pool\", \"disk\", \"queue\""
+        },
+        "componentPath": {
+          "type": "string",
+          "title": "e.g., \"database.pool\", \"database.driverTable.disk\""
+        },
+        "utilization": {
+          "type": "number",
+          "format": "double",
+          "title": "0.0 to 1.0"
+        },
+        "capacity": {
+          "type": "number",
+          "format": "double",
+          "title": "Maximum capacity"
+        },
+        "currentLoad": {
+          "type": "number",
+          "format": "double",
+          "title": "Current arrival rate"
+        },
+        "isBottleneck": {
+          "type": "boolean",
+          "title": "Whether this is the bottleneck resource"
+        },
+        "warningThreshold": {
+          "type": "number",
+          "format": "double",
+          "title": "Utilization level for warning (e.g., 0.8)"
+        },
+        "criticalThreshold": {
+          "type": "number",
+          "format": "double",
+          "title": "Utilization level for critical (e.g., 0.95)"
+        }
+      },
+      "title": "Resource utilization information"
     }
   }
 }

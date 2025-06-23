@@ -118,6 +118,9 @@ const (
 	// CanvasServiceGetSystemDiagramProcedure is the fully-qualified name of the CanvasService's
 	// GetSystemDiagram RPC.
 	CanvasServiceGetSystemDiagramProcedure = "/sdl.v1.CanvasService/GetSystemDiagram"
+	// CanvasServiceGetUtilizationProcedure is the fully-qualified name of the CanvasService's
+	// GetUtilization RPC.
+	CanvasServiceGetUtilizationProcedure = "/sdl.v1.CanvasService/GetUtilization"
 )
 
 // CanvasServiceClient is a client for the sdl.v1.CanvasService service.
@@ -185,6 +188,8 @@ type CanvasServiceClient interface {
 	StreamMetrics(context.Context, *connect.Request[v1.StreamMetricsRequest]) (*connect.ServerStreamForClient[v1.StreamMetricsResponse], error)
 	// Get the system diagram for visualization
 	GetSystemDiagram(context.Context, *connect.Request[v1.GetSystemDiagramRequest]) (*connect.Response[v1.GetSystemDiagramResponse], error)
+	// Get resource utilization information
+	GetUtilization(context.Context, *connect.Request[v1.GetUtilizationRequest]) (*connect.Response[v1.GetUtilizationResponse], error)
 }
 
 // NewCanvasServiceClient constructs a client for the sdl.v1.CanvasService service. By default, it
@@ -372,6 +377,12 @@ func NewCanvasServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			connect.WithSchema(canvasServiceMethods.ByName("GetSystemDiagram")),
 			connect.WithClientOptions(opts...),
 		),
+		getUtilization: connect.NewClient[v1.GetUtilizationRequest, v1.GetUtilizationResponse](
+			httpClient,
+			baseURL+CanvasServiceGetUtilizationProcedure,
+			connect.WithSchema(canvasServiceMethods.ByName("GetUtilization")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -406,6 +417,7 @@ type canvasServiceClient struct {
 	queryMetrics       *connect.Client[v1.QueryMetricsRequest, v1.QueryMetricsResponse]
 	streamMetrics      *connect.Client[v1.StreamMetricsRequest, v1.StreamMetricsResponse]
 	getSystemDiagram   *connect.Client[v1.GetSystemDiagramRequest, v1.GetSystemDiagramResponse]
+	getUtilization     *connect.Client[v1.GetUtilizationRequest, v1.GetUtilizationResponse]
 }
 
 // CreateCanvas calls sdl.v1.CanvasService.CreateCanvas.
@@ -553,6 +565,11 @@ func (c *canvasServiceClient) GetSystemDiagram(ctx context.Context, req *connect
 	return c.getSystemDiagram.CallUnary(ctx, req)
 }
 
+// GetUtilization calls sdl.v1.CanvasService.GetUtilization.
+func (c *canvasServiceClient) GetUtilization(ctx context.Context, req *connect.Request[v1.GetUtilizationRequest]) (*connect.Response[v1.GetUtilizationResponse], error) {
+	return c.getUtilization.CallUnary(ctx, req)
+}
+
 // CanvasServiceHandler is an implementation of the sdl.v1.CanvasService service.
 type CanvasServiceHandler interface {
 	// *
@@ -618,6 +635,8 @@ type CanvasServiceHandler interface {
 	StreamMetrics(context.Context, *connect.Request[v1.StreamMetricsRequest], *connect.ServerStream[v1.StreamMetricsResponse]) error
 	// Get the system diagram for visualization
 	GetSystemDiagram(context.Context, *connect.Request[v1.GetSystemDiagramRequest]) (*connect.Response[v1.GetSystemDiagramResponse], error)
+	// Get resource utilization information
+	GetUtilization(context.Context, *connect.Request[v1.GetUtilizationRequest]) (*connect.Response[v1.GetUtilizationResponse], error)
 }
 
 // NewCanvasServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -801,6 +820,12 @@ func NewCanvasServiceHandler(svc CanvasServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(canvasServiceMethods.ByName("GetSystemDiagram")),
 		connect.WithHandlerOptions(opts...),
 	)
+	canvasServiceGetUtilizationHandler := connect.NewUnaryHandler(
+		CanvasServiceGetUtilizationProcedure,
+		svc.GetUtilization,
+		connect.WithSchema(canvasServiceMethods.ByName("GetUtilization")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/sdl.v1.CanvasService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case CanvasServiceCreateCanvasProcedure:
@@ -861,6 +886,8 @@ func NewCanvasServiceHandler(svc CanvasServiceHandler, opts ...connect.HandlerOp
 			canvasServiceStreamMetricsHandler.ServeHTTP(w, r)
 		case CanvasServiceGetSystemDiagramProcedure:
 			canvasServiceGetSystemDiagramHandler.ServeHTTP(w, r)
+		case CanvasServiceGetUtilizationProcedure:
+			canvasServiceGetUtilizationHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -984,4 +1011,8 @@ func (UnimplementedCanvasServiceHandler) StreamMetrics(context.Context, *connect
 
 func (UnimplementedCanvasServiceHandler) GetSystemDiagram(context.Context, *connect.Request[v1.GetSystemDiagramRequest]) (*connect.Response[v1.GetSystemDiagramResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.GetSystemDiagram is not implemented"))
+}
+
+func (UnimplementedCanvasServiceHandler) GetUtilization(context.Context, *connect.Request[v1.GetUtilizationRequest]) (*connect.Response[v1.GetUtilizationResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.GetUtilization is not implemented"))
 }

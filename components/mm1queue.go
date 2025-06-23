@@ -142,6 +142,23 @@ func (q *MM1Queue) GetUtilization() float64 {
 	return q.ArrivalRate / serviceRate
 }
 
+// GetUtilizationInfo implements UtilizationProvider interface
+func (q *MM1Queue) GetUtilizationInfo() []UtilizationInfo {
+	utilization := q.GetUtilization()
+	return []UtilizationInfo{
+		{
+			ResourceName:      "queue",
+			ComponentPath:     q.Name,
+			Utilization:       utilization,
+			Capacity:          1.0, // Single server
+			CurrentLoad:       q.ArrivalRate,
+			IsBottleneck:      true, // Single resource, always the bottleneck
+			WarningThreshold:  0.8,
+			CriticalThreshold: 0.95,
+		},
+	}
+}
+
 // GetFlowPattern implements FlowAnalyzable interface for MM1Queue
 func (q *MM1Queue) GetFlowPattern(methodName string, inputRate float64) FlowPattern {
 	switch methodName {

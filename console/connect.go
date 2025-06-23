@@ -242,6 +242,14 @@ func (a *ConnectCanvasServiceAdapter) GetSystemDiagram(ctx context.Context, req 
 	return connect.NewResponse(resp), nil
 }
 
+func (a *ConnectCanvasServiceAdapter) GetUtilization(ctx context.Context, req *connect.Request[v1.GetUtilizationRequest]) (*connect.Response[v1.GetUtilizationResponse], error) {
+	resp, err := a.svc.GetUtilization(ctx, req.Msg)
+	if err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(resp), nil
+}
+
 func (a *ConnectCanvasServiceAdapter) StreamMetrics(ctx context.Context, req *connect.Request[v1.StreamMetricsRequest], stream *connect.ServerStream[v1.StreamMetricsResponse]) error {
 	// Create a custom stream implementation that bridges to Connect
 	bridgeStream := &connectStreamBridge[v1.StreamMetricsResponse]{

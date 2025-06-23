@@ -287,3 +287,26 @@ func (q *Queue) GetUtilization() float64 {
 	offeredLoad := q.ArrivalRate / serviceRate
 	return offeredLoad / float64(q.Servers)
 }
+
+// GetUtilizationInfo implements UtilizationProvider interface
+func (q *Queue) GetUtilizationInfo() []UtilizationInfo {
+	utilization := q.GetUtilization()
+	capacity := float64(q.Servers)
+	if q.Capacity > 0 {
+		// For bounded queues, effective capacity is the system capacity
+		capacity = float64(q.Capacity)
+	}
+	
+	return []UtilizationInfo{
+		{
+			ResourceName:      "queue",
+			ComponentPath:     q.Name,
+			Utilization:       utilization,
+			Capacity:          capacity,
+			CurrentLoad:       q.ArrivalRate,
+			IsBottleneck:      true, // Single resource, always the bottleneck
+			WarningThreshold:  0.8,
+			CriticalThreshold: 0.95,
+		},
+	}
+}

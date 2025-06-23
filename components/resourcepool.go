@@ -199,6 +199,23 @@ func (rp *ResourcePool) GetUtilization() float64 {
 	return offeredLoad / float64(rp.Size)
 }
 
+// GetUtilizationInfo implements UtilizationProvider interface
+func (rp *ResourcePool) GetUtilizationInfo() []UtilizationInfo {
+	utilization := rp.GetUtilization()
+	return []UtilizationInfo{
+		{
+			ResourceName:      "pool",
+			ComponentPath:     rp.Name,
+			Utilization:       utilization,
+			Capacity:          float64(rp.Size),
+			CurrentLoad:       rp.ArrivalRate,
+			IsBottleneck:      true, // Single resource, always the bottleneck
+			WarningThreshold:  0.8,
+			CriticalThreshold: 0.95,
+		},
+	}
+}
+
 // GetFlowPattern implements FlowAnalyzable interface for ResourcePool
 func (rp *ResourcePool) GetFlowPattern(methodName string, inputRate float64) FlowPattern {
 	switch methodName {
