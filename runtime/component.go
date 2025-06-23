@@ -1,7 +1,11 @@
 package runtime
 
 import (
+	"fmt"
 	"log"
+	"maps"
+	"reflect"
+	"slices"
 
 	"github.com/panyam/sdl/components"
 	"github.com/panyam/sdl/decl"
@@ -238,4 +242,134 @@ func (ci *ComponentInstance) GetUtilizationInfo() []components.UtilizationInfo {
 	}
 
 	return allInfos
+}
+
+type NeighborMethod struct {
+	Component  *ComponentInstance
+	MethodName string
+}
+
+// Returns all the neighbouring component+method from a given component method
+func (ci *ComponentInstance) NeighborsFromMethod(methodName string) []*NeighborMethod {
+	neighbors := map[string]*NeighborMethod{}
+
+	methodDecl, _ := ci.ComponentDecl.GetMethod(methodName)
+	// analyze the body to see what methods are being called from this method
+	
+	if methodDecl == nil || methodDecl.Body == nil {
+		return slices.Collect(maps.Values(neighbors))
+	}
+
+	nodes := []Node{methodDecl.Body}
+	appendNode := func(n Node) {
+		if n == nil {
+			panic("node cannot be nil")
+		}
+		nodes = append(nodes, n)
+	}
+	for i := 0; i < len(nodes); i++ {
+		node := nodes[i]
+		switch n := node.(type) {
+		case *decl.LetStmt:
+			appendNode(n.Value)
+			break
+		case *decl.IfStmt:
+			appendNode(n.Condition)
+			appendNode(n.Then)
+			if n.Else != nil {
+				appendNode(n.Else)
+			}
+		case *decl.ForStmt:
+			appendNode(n.Body)
+			break
+		case *decl.ReturnStmt:
+			if n.ReturnValue != nil {
+				appendNode(n.ReturnValue)
+			}
+		case *decl.UnaryExpr:
+			appendNode(n.Right)
+		case *decl.BinaryExpr:
+			appendNode(n.Left)
+			appendNode(n.Right)
+		case *decl.BlockStmt:
+			for _, s := range n.Statements {
+				appendNode(s)
+			}
+		case *decl.ExprStmt:
+			appendNode(n.Expression)
+		case *decl.CallExpr:
+			// See if args themselves call any functions
+			for _, arg := range n.ArgList {
+				appendNode(arg)
+			}
+			for _, arg := range n.ArgMap {
+				appendNode(arg)
+			}
+
+			// May be move this into a helper method in MemberAccessExpr as .FullPath() method
+			if mae, ok := n.Function.(*decl.MemberAccessExpr); ok {
+				methodName := mae.Member.Value
+				var fqn []string
+				// var rootComponent *ComponentInstance
+				for mae != nil {
+					receiver := mae.Receiver
+					switch recv := receiver.(type) {
+					case *decl.IdentifierExpr:
+						if fqn == nil {
+							fqn = []string{recv.Value}
+						} else {
+							fqn = append([]string{recv.Value}, fqn...)
+						}
+						mae = nil
+						break
+					case *decl.MemberAccessExpr:
+						if fqn == nil {
+							fqn = []string{recv.Member.Value}
+						} else {
+							fqn = append([]string{recv.Member.Value}, fqn...)
+						}
+						mae = recv
+						break
+					default:
+						panic(fmt.Sprintf("Invalid receiver type: %T", recv))
+					}
+				}
+
+				// TODO - Move this to a "FindNestedValue" method in ComponentInstance
+				targetComponent := ci
+				for _, part := range fqn {
+					if part == "self" {
+						continue
+					}
+					if next, ok := targetComponent.Get(part); ok && next.Type.Tag == decl.TypeTagComponent {
+						targetComponent = next.Value.(*ComponentInstance)
+					}
+				}
+
+				// TODO: Now handle the Function Expr - and only process if it is not a native method call
+				if targetComponent != nil {
+					// we can add this to our map if not alreay done so
+					neighKey := fmt.Sprintf("%p:%s", targetComponent, methodName)
+					if neighbors[neighKey] == nil {
+						neighbors[neighKey] = &NeighborMethod{Component: targetComponent, MethodName: methodName}
+					}
+				}
+			}
+			break
+		case *decl.IdentifierExpr:
+			// Resolve from the env
+			val, ok := ci.Env.Get(n.Value)
+			log.Println("Value: ", n.Value, val, reflect.TypeOf(val.Value))
+			if ok && !val.IsNil() {
+				log.Println("Value: ", val, reflect.TypeOf(val.Value))
+			}
+		case *decl.LiteralExpr:
+			// Ignore these
+			break
+		default:
+			panic(fmt.Sprintf("Invalid node type: %T", n))
+		}
+	}
+
+	return slices.Collect(maps.Values(neighbors))
 }
