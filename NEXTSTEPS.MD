@@ -199,6 +199,17 @@ This document outlines the workshop-focused development status and next steps fo
 *   **`[COMPLETED]` DeleteGenerator Fix**: Properly removes generators from Canvas using delete() instead of nil assignment
 *   **`[COMPLETED]` Test Recipes**: Created test_batch_generators.recipe for validation
 
+### ✅ COMPLETED: Automatic Flow Calculation (June 22, 2025)
+*   **`[COMPLETED]` EvaluateFlows RPC**: Added gRPC endpoint for flow evaluation with strategy selection
+*   **`[COMPLETED]` BatchSetParameters RPC**: Atomic batch updates for arrival rates
+*   **`[COMPLETED]` GetFlowState RPC**: Retrieve current flow rates for comparison
+*   **`[COMPLETED]` flows eval Enhancement**: Shows both current and calculated rates side-by-side
+*   **`[COMPLETED]` flows apply Command**: Apply calculated rates to component arrival rates
+*   **`[COMPLETED]` --apply-flows Flag**: Automatic flow calculation on all generator operations
+*   **`[COMPLETED]` sdl gen update**: Efficient generator rate updates without creating new goroutines
+*   **`[COMPLETED]` Component Name Resolution**: Fixed nested component names in flow visualization
+*   **`[COMPLETED]` Demo Script Updates**: Uber MVP recipe uses automatic flow calculation
+
 ### ✅ COMPLETED: Parameter Management System (June 21, 2025)
 *   **`[COMPLETED]` gRPC Parameter Endpoints**: SetParameter and GetParameters RPCs in canvas.proto
 *   **`[COMPLETED]` SDL Expression Values**: Parameters use SDL syntax ("42", "true", "'string'")
@@ -313,11 +324,11 @@ This document outlines the workshop-focused development status and next steps fo
     - Shows SDL + AI partnership
     - Quick component generation demo
 
-### 2. Flow-Based Rate Suggestions (Post-Conference)
-*   **Flow Analysis**: Analyze system topology and current flows
-*   **Rate Optimization**: Suggest optimal generator rates for balanced load
-*   **Bottleneck Detection**: Identify overloaded and underutilized components
-*   **Auto-Apply**: Option to automatically set suggested rates
+### 2. Dashboard Flow Integration (Post-Conference)
+*   **Flow Visualization**: Display flow edges with rates on system diagram
+*   **Real-time Updates**: Update flow calculations as generators change
+*   **Interactive Controls**: Manual override of calculated rates
+*   **Flow Strategy Selection**: Choose between different evaluation strategies
 
 ### 3. Enhanced Connect Integration (Future)
 *   **Server Streaming**: Implement server-streaming for real-time metrics using Connect protocol

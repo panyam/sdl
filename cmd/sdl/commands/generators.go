@@ -59,7 +59,12 @@ var genAddCmd = &cobra.Command{
 					Enabled:   false,
 				},
 			})
-			return err
+			if err != nil {
+				return err
+			}
+
+			// Apply flows if requested
+			return applyFlowsIfRequested(client, ctx)
 		})
 
 		if err != nil {
@@ -121,7 +126,12 @@ var genStartCmd = &cobra.Command{
 				resp, err = client.StartAllGenerators(ctx, &v1.StartAllGeneratorsRequest{
 					CanvasId: canvasID,
 				})
-				return err
+				if err != nil {
+					return err
+				}
+
+				// Apply flows if requested
+				return applyFlowsIfRequested(client, ctx)
 			})
 			if err != nil {
 				fmt.Printf("❌ Error: %v\n", err)
@@ -181,7 +191,12 @@ var genStopCmd = &cobra.Command{
 				resp, err = client.StopAllGenerators(ctx, &v1.StopAllGeneratorsRequest{
 					CanvasId: canvasID,
 				})
-				return err
+				if err != nil {
+					return err
+				}
+
+				// Apply flows if requested
+				return applyFlowsIfRequested(client, ctx)
 			})
 			if err != nil {
 				fmt.Printf("❌ Error: %v\n", err)
@@ -263,48 +278,44 @@ var genStatusCmd = &cobra.Command{
 	},
 }
 
-var genSetCmd = &cobra.Command{
-	Use:   "set [id] [property] [value]",
-	Short: "Modify generator properties",
-	Args:  cobra.ExactArgs(3),
+var genUpdateCmd = &cobra.Command{
+	Use:   "update [id] [rate]",
+	Short: "Update generator rate",
+	Long:  "Update the rate of an existing generator. This is more efficient than removing and re-adding generators.",
+	Args:  cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		id := args[0]
-		property := args[1]
-		value := args[2]
+		rateStr := args[1]
 
-		err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
-			// Create a generator with just the fields to update
-			gen := &v1.Generator{
-				Id:       id,
-				CanvasId: canvasID,
+		rate, err := strconv.Atoi(rateStr)
+		if err != nil {
+			fmt.Printf("❌ Invalid rate '%s': must be a number\n", rateStr)
+			return
+		}
+
+		err = withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+			// First get the generator to validate it exists
+			resp, err := client.GetGenerator(ctx, &v1.GetGeneratorRequest{
+				CanvasId:    canvasID,
+				GeneratorId: id,
+			})
+			if err != nil {
+				return fmt.Errorf("generator '%s' not found: %v", id, err)
 			}
 
-			// Set the appropriate field based on property
-			switch property {
-			case "rate":
-				rate, err := strconv.Atoi(value)
-				if err != nil {
-					return fmt.Errorf("invalid rate value: %v", err)
-				}
-				gen.Rate = float64(rate)
-			case "component":
-				gen.Component = value
-			case "method":
-				gen.Method = value
-			case "enabled":
-				enabled, err := strconv.ParseBool(value)
-				if err != nil {
-					return fmt.Errorf("invalid boolean value: %v", err)
-				}
-				gen.Enabled = enabled
-			default:
-				return fmt.Errorf("unknown property: %s", property)
-			}
+			// Update only the rate
+			gen := resp.Generator
+			gen.Rate = float64(rate)
 
-			_, err := client.UpdateGenerator(ctx, &v1.UpdateGeneratorRequest{
+			_, err = client.UpdateGenerator(ctx, &v1.UpdateGeneratorRequest{
 				Generator: gen,
 			})
-			return err
+			if err != nil {
+				return err
+			}
+
+			// Apply flows if requested
+			return applyFlowsIfRequested(client, ctx)
 		})
 
 		if err != nil {
@@ -312,7 +323,10 @@ var genSetCmd = &cobra.Command{
 			return
 		}
 
-		fmt.Printf("✅ Generator '%s' %s updated to %s\n", id, property, value)
+		fmt.Printf("✅ Generator '%s' rate updated to %d RPS\n", id, rate)
+		if applyFlows {
+			fmt.Println("✅ Flow rates automatically recalculated and applied")
+		}
 	},
 }
 
@@ -325,6 +339,7 @@ var genRemoveCmd = &cobra.Command{
 			return
 		}
 
+		removedCount := 0
 		for _, id := range args {
 			err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
 				_, err := client.DeleteGenerator(ctx, &v1.DeleteGeneratorRequest{
@@ -338,9 +353,22 @@ var genRemoveCmd = &cobra.Command{
 				continue
 			}
 			fmt.Printf("✅ Generator '%s' removed\n", id)
+			removedCount++
+		}
+
+		// Apply flows if requested and at least one generator was removed
+		if removedCount > 0 {
+			err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+				return applyFlowsIfRequested(client, ctx)
+			})
+			if err != nil {
+				fmt.Printf("❌ Error applying flows: %v\n", err)
+			}
 		}
 	},
 }
+
+var applyFlows bool
 
 func init() {
 	// Add subcommands to gen
@@ -349,9 +377,74 @@ func init() {
 	genCmd.AddCommand(genStartCmd)
 	genCmd.AddCommand(genStopCmd)
 	genCmd.AddCommand(genStatusCmd)
-	genCmd.AddCommand(genSetCmd)
+	genCmd.AddCommand(genUpdateCmd)
 	genCmd.AddCommand(genRemoveCmd)
+
+	// Add --apply-flows flag to commands that modify generators
+	genAddCmd.Flags().BoolVar(&applyFlows, "apply-flows", false, "Automatically evaluate and apply flow rates after adding generator")
+	genRemoveCmd.Flags().BoolVar(&applyFlows, "apply-flows", false, "Automatically evaluate and apply flow rates after removing generator")
+	genUpdateCmd.Flags().BoolVar(&applyFlows, "apply-flows", false, "Automatically evaluate and apply flow rates after updating generator")
+	genStartCmd.Flags().BoolVar(&applyFlows, "apply-flows", false, "Automatically evaluate and apply flow rates after starting generator")
+	genStopCmd.Flags().BoolVar(&applyFlows, "apply-flows", false, "Automatically evaluate and apply flow rates after stopping generator")
 
 	// Add to root command (server flag is now persistent on root command)
 	rootCmd.AddCommand(genCmd)
+}
+
+// applyFlowsIfRequested evaluates and applies flows if the --apply-flows flag is set
+func applyFlowsIfRequested(client v1.CanvasServiceClient, ctx context.Context) error {
+	if !applyFlows {
+		return nil
+	}
+
+	fmt.Println("🔄 Evaluating and applying flow rates...")
+
+	// Evaluate flows with default strategy
+	evalResp, err := client.EvaluateFlows(ctx, &v1.EvaluateFlowsRequest{
+		CanvasId: canvasID,
+		Strategy: "runtime",
+	})
+	if err != nil {
+		return fmt.Errorf("failed to evaluate flows: %w", err)
+	}
+
+	// Convert component rates to parameter updates
+	var updates []*v1.ParameterUpdate
+	for componentMethod, rate := range evalResp.ComponentRates {
+		// Skip zero rates
+		if rate == 0 {
+			continue
+		}
+
+		// Format as ArrivalRate parameter
+		parts := strings.Split(componentMethod, ".")
+		if len(parts) >= 2 {
+			paramPath := fmt.Sprintf("%s.ArrivalRate", parts[0])
+			updates = append(updates, &v1.ParameterUpdate{
+				Path:     paramPath,
+				NewValue: fmt.Sprintf("%g", rate),
+			})
+		}
+	}
+
+	if len(updates) == 0 {
+		fmt.Println("   ℹ️  No arrival rates to apply")
+		return nil
+	}
+
+	// Apply the rates using batch set
+	batchResp, err := client.BatchSetParameters(ctx, &v1.BatchSetParametersRequest{
+		CanvasId: canvasID,
+		Updates:  updates,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to apply flow rates: %w", err)
+	}
+
+	if !batchResp.Success {
+		return fmt.Errorf("failed to apply some parameters: %s", batchResp.ErrorMessage)
+	}
+
+	fmt.Printf("   ✅ Applied %d arrival rates\n", len(updates))
+	return nil
 }

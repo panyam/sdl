@@ -186,6 +186,14 @@ func (a *ConnectCanvasServiceAdapter) GetParameters(ctx context.Context, req *co
 	return connect.NewResponse(resp), nil
 }
 
+func (a *ConnectCanvasServiceAdapter) BatchSetParameters(ctx context.Context, req *connect.Request[v1.BatchSetParametersRequest]) (*connect.Response[v1.BatchSetParametersResponse], error) {
+	resp, err := a.svc.BatchSetParameters(ctx, req.Msg)
+	if err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(resp), nil
+}
+
 func (a *ConnectCanvasServiceAdapter) SetParameter(ctx context.Context, req *connect.Request[v1.SetParameterRequest]) (*connect.Response[v1.SetParameterResponse], error) {
 	resp, err := a.svc.SetParameter(ctx, req.Msg)
 	if err != nil {
@@ -196,6 +204,22 @@ func (a *ConnectCanvasServiceAdapter) SetParameter(ctx context.Context, req *con
 
 func (a *ConnectCanvasServiceAdapter) ExecuteTrace(ctx context.Context, req *connect.Request[v1.ExecuteTraceRequest]) (*connect.Response[v1.ExecuteTraceResponse], error) {
 	resp, err := a.svc.ExecuteTrace(ctx, req.Msg)
+	if err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (a *ConnectCanvasServiceAdapter) EvaluateFlows(ctx context.Context, req *connect.Request[v1.EvaluateFlowsRequest]) (*connect.Response[v1.EvaluateFlowsResponse], error) {
+	resp, err := a.svc.EvaluateFlows(ctx, req.Msg)
+	if err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (a *ConnectCanvasServiceAdapter) GetFlowState(ctx context.Context, req *connect.Request[v1.GetFlowStateRequest]) (*connect.Response[v1.GetFlowStateResponse], error) {
+	resp, err := a.svc.GetFlowState(ctx, req.Msg)
 	if err != nil {
 		return nil, err
 	}

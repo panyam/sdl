@@ -1,12 +1,14 @@
 package commands
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
 	"text/tabwriter"
 
+	protos "github.com/panyam/sdl/gen/go/sdl/v1"
 	"github.com/panyam/sdl/runtime"
 	"github.com/spf13/cobra"
 )
@@ -68,83 +70,100 @@ If no strategy is provided, uses the default (runtime) strategy.`,
 			strategy = args[0]
 		}
 
-		// Make API call to evaluate flows
-		resp, err := makeAPICall[map[string]any]("GET", fmt.Sprintf("/api/flows/%s/eval", strategy), nil)
-		if err != nil {
-			return fmt.Errorf("failed to evaluate flows: %w", err)
-		}
-
-		// Convert response to FlowAnalysisResult
-		var result runtime.FlowAnalysisResult
-		if data, ok := resp["result"]; ok {
-			// Marshal and unmarshal to convert map to struct
-			jsonData, _ := json.Marshal(data)
-			if err := json.Unmarshal(jsonData, &result); err != nil {
-				return fmt.Errorf("failed to parse result: %w", err)
-			}
-		}
-
-		if outputFormat == "json" {
-			data, err := json.MarshalIndent(result, "", "  ")
+		// Use gRPC client to evaluate flows
+		return withCanvasClient(func(client protos.CanvasServiceClient, ctx context.Context) error {
+			// First, get current flow state
+			currentState, err := client.GetFlowState(context.Background(), &protos.GetFlowStateRequest{
+				CanvasId: canvasID,
+			})
 			if err != nil {
-				return fmt.Errorf("failed to marshal result: %w", err)
+				return fmt.Errorf("failed to get current flow state: %w", err)
 			}
-			fmt.Println(string(data))
-			return nil
-		}
 
-		// Human-readable format
-		fmt.Printf("Flow Analysis Results\n")
-		fmt.Printf("====================\n")
-		fmt.Printf("Strategy: %s\n", result.Strategy)
-		fmt.Printf("Status: %s\n", result.Status)
-		if result.Iterations > 0 {
-			fmt.Printf("Iterations: %d\n", result.Iterations)
-		}
-		fmt.Printf("System: %s\n", result.System)
-
-		if len(result.Generators) > 0 {
-			fmt.Printf("\nGenerators:\n")
-			for _, gen := range result.Generators {
-				fmt.Printf("  - %s.%s @ %.2f RPS\n", gen.Component, gen.Method, gen.Rate)
+			// Evaluate flows with the specified strategy
+			resp, err := client.EvaluateFlows(context.Background(), &protos.EvaluateFlowsRequest{
+				CanvasId: canvasID,
+				Strategy: strategy,
+			})
+			if err != nil {
+				return fmt.Errorf("failed to evaluate flows: %w", err)
 			}
-		}
 
-		if len(result.Flows.ComponentRates) > 0 {
-			fmt.Printf("\nComponent Rates:\n")
-			w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-			fmt.Fprintln(w, "COMPONENT.METHOD\tRATE (RPS)")
-			fmt.Fprintln(w, "----------------\t----------")
-
-			// Sort for consistent output
-			var keys []string
-			for k := range result.Flows.ComponentRates {
-				keys = append(keys, k)
+			if outputFormat == "json" {
+				// Create combined output with current and calculated rates
+				output := map[string]interface{}{
+					"strategy":         resp.Strategy,
+					"status":           resp.Status,
+					"iterations":       resp.Iterations,
+					"warnings":         resp.Warnings,
+					"current_rates":    currentState.State.Rates,
+					"calculated_rates": resp.ComponentRates,
+				}
+				data, err := json.MarshalIndent(output, "", "  ")
+				if err != nil {
+					return fmt.Errorf("failed to marshal result: %w", err)
+				}
+				fmt.Println(string(data))
+				return nil
 			}
-			// Simple sort
-			for i := range keys {
-				for j := i + 1; j < len(keys); j++ {
-					if keys[i] > keys[j] {
-						keys[i], keys[j] = keys[j], keys[i]
+
+			// Human-readable format
+			fmt.Printf("Flow Analysis Results\n")
+			fmt.Printf("====================\n")
+			fmt.Printf("Strategy: %s\n", resp.Strategy)
+			fmt.Printf("Status: %s\n", resp.Status)
+			if resp.Iterations > 0 {
+				fmt.Printf("Iterations: %d\n", resp.Iterations)
+			}
+
+			if len(resp.ComponentRates) > 0 {
+				fmt.Printf("\nComponent Rates:\n")
+				w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+				fmt.Fprintln(w, "COMPONENT.METHOD\tCURRENT (RPS)\tCALCULATED (RPS)\tDIFF")
+				fmt.Fprintln(w, "----------------\t-------------\t----------------\t----")
+
+				// Sort for consistent output
+				var keys []string
+				for k := range resp.ComponentRates {
+					keys = append(keys, k)
+				}
+				// Simple sort
+				for i := range keys {
+					for j := i + 1; j < len(keys); j++ {
+						if keys[i] > keys[j] {
+							keys[i], keys[j] = keys[j], keys[i]
+						}
 					}
+				}
+
+				for _, key := range keys {
+					calculatedRate := resp.ComponentRates[key]
+					currentRate := float64(0)
+					if currentState.State != nil && currentState.State.Rates != nil {
+						currentRate = currentState.State.Rates[key]
+					}
+
+					// Calculate difference
+					diff := calculatedRate - currentRate
+					diffStr := fmt.Sprintf("%+.2f", diff)
+					if diff == 0 {
+						diffStr = "="
+					}
+
+					fmt.Fprintf(w, "%s\t%.2f\t%.2f\t%s\n", key, currentRate, calculatedRate, diffStr)
+				}
+				w.Flush()
+			}
+
+			if len(resp.Warnings) > 0 {
+				fmt.Printf("\nWarnings:\n")
+				for _, warning := range resp.Warnings {
+					fmt.Printf("  ⚠ %s\n", warning)
 				}
 			}
 
-			for _, key := range keys {
-				rate := result.Flows.ComponentRates[key]
-				fmt.Fprintf(w, "%s\t%.2f\n", key, rate)
-			}
-			w.Flush()
-		}
-
-		if len(result.Warnings) > 0 {
-			fmt.Printf("\nWarnings:\n")
-			for _, warning := range result.Warnings {
-				fmt.Printf("  ⚠ %s\n", warning)
-			}
-		}
-
-		return nil
+			return nil
+		})
 	},
 }
 
@@ -161,21 +180,80 @@ updating all component arrival rates based on the analysis.`,
 			strategy = args[0]
 		}
 
-		// Make API call to apply flow strategy
-		_, err := makeAPICall[any]("POST", fmt.Sprintf("/api/flows/%s/apply", strategy), nil)
-		if err != nil {
-			return fmt.Errorf("failed to apply flow strategy: %w", err)
-		}
+		return withCanvasClient(func(client protos.CanvasServiceClient, ctx context.Context) error {
+			// First, evaluate flows with the specified strategy
+			evalResp, err := client.EvaluateFlows(context.Background(), &protos.EvaluateFlowsRequest{
+				CanvasId: canvasID,
+				Strategy: strategy,
+			})
+			if err != nil {
+				return fmt.Errorf("failed to evaluate flows: %w", err)
+			}
 
-		fmt.Printf("Successfully applied '%s' flow strategy\n", strategy)
+			// Convert component rates to parameter updates
+			var updates []*protos.ParameterUpdate
+			for componentMethod, rate := range evalResp.ComponentRates {
+				// Skip zero rates
+				if rate == 0 {
+					continue
+				}
 
-		// Show current state if verbose
-		if verbose {
-			fmt.Println("\nCurrent flow state:")
-			return showCurrentFlow()
-		}
+				// Format as ArrivalRate parameter
+				// Assuming format is "component.method" -> "component.ArrivalRate"
+				parts := strings.Split(componentMethod, ".")
+				if len(parts) >= 2 {
+					paramPath := fmt.Sprintf("%s.ArrivalRate", parts[0])
+					updates = append(updates, &protos.ParameterUpdate{
+						Path:     paramPath,
+						NewValue: fmt.Sprintf("%g", rate),
+					})
+				}
+			}
 
-		return nil
+			if len(updates) == 0 {
+				fmt.Printf("No arrival rates to apply from '%s' strategy\n", strategy)
+				return nil
+			}
+
+			// Apply the rates using batch set
+			batchResp, err := client.BatchSetParameters(ctx, &protos.BatchSetParametersRequest{
+				CanvasId: canvasID,
+				Updates:  updates,
+			})
+			if err != nil {
+				return fmt.Errorf("failed to apply flow rates: %w", err)
+			}
+
+			if !batchResp.Success {
+				return fmt.Errorf("failed to apply some parameters: %s", batchResp.ErrorMessage)
+			}
+
+			fmt.Printf("Successfully applied '%s' flow strategy\n", strategy)
+			fmt.Printf("Updated %d arrival rates\n", len(updates))
+
+			// Show results if verbose
+			if verbose {
+				fmt.Println("\nApplied rates:")
+				w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+				fmt.Fprintln(w, "PARAMETER\tOLD VALUE\tNEW VALUE\tSTATUS")
+				fmt.Fprintln(w, "---------\t---------\t---------\t------")
+
+				for idx, result := range batchResp.Results {
+					status := "✓"
+					if !result.Success {
+						status = "✗"
+					}
+					fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
+						result.Path,
+						result.OldValue,
+						updates[idx].NewValue,
+						status)
+				}
+				w.Flush()
+			}
+
+			return nil
+		})
 	},
 }
 

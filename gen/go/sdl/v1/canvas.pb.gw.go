@@ -987,6 +987,136 @@ func local_request_CanvasService_GetParameters_0(ctx context.Context, marshaler 
 	return msg, metadata, err
 }
 
+func request_CanvasService_BatchSetParameters_0(ctx context.Context, marshaler runtime.Marshaler, client CanvasServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq BatchSetParametersRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	val, ok := pathParams["canvas_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "canvas_id")
+	}
+	protoReq.CanvasId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "canvas_id", err)
+	}
+	msg, err := client.BatchSetParameters(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_CanvasService_BatchSetParameters_0(ctx context.Context, marshaler runtime.Marshaler, server CanvasServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq BatchSetParametersRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	val, ok := pathParams["canvas_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "canvas_id")
+	}
+	protoReq.CanvasId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "canvas_id", err)
+	}
+	msg, err := server.BatchSetParameters(ctx, &protoReq)
+	return msg, metadata, err
+}
+
+func request_CanvasService_EvaluateFlows_0(ctx context.Context, marshaler runtime.Marshaler, client CanvasServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq EvaluateFlowsRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	val, ok := pathParams["canvas_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "canvas_id")
+	}
+	protoReq.CanvasId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "canvas_id", err)
+	}
+	val, ok = pathParams["strategy"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "strategy")
+	}
+	protoReq.Strategy, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "strategy", err)
+	}
+	msg, err := client.EvaluateFlows(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_CanvasService_EvaluateFlows_0(ctx context.Context, marshaler runtime.Marshaler, server CanvasServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq EvaluateFlowsRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	val, ok := pathParams["canvas_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "canvas_id")
+	}
+	protoReq.CanvasId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "canvas_id", err)
+	}
+	val, ok = pathParams["strategy"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "strategy")
+	}
+	protoReq.Strategy, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "strategy", err)
+	}
+	msg, err := server.EvaluateFlows(ctx, &protoReq)
+	return msg, metadata, err
+}
+
+func request_CanvasService_GetFlowState_0(ctx context.Context, marshaler runtime.Marshaler, client CanvasServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq GetFlowStateRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	val, ok := pathParams["canvas_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "canvas_id")
+	}
+	protoReq.CanvasId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "canvas_id", err)
+	}
+	msg, err := client.GetFlowState(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_CanvasService_GetFlowState_0(ctx context.Context, marshaler runtime.Marshaler, server CanvasServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq GetFlowStateRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	val, ok := pathParams["canvas_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "canvas_id")
+	}
+	protoReq.CanvasId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "canvas_id", err)
+	}
+	msg, err := server.GetFlowState(ctx, &protoReq)
+	return msg, metadata, err
+}
+
 func request_CanvasService_AddMetric_0(ctx context.Context, marshaler runtime.Marshaler, client CanvasServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
 		protoReq AddMetricRequest
@@ -1625,6 +1755,66 @@ func RegisterCanvasServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		}
 		forward_CanvasService_GetParameters_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
+	mux.Handle(http.MethodPut, pattern_CanvasService_BatchSetParameters_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/sdl.v1.CanvasService/BatchSetParameters", runtime.WithHTTPPathPattern("/v1/canvases/{canvas_id}/parameters:batch"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_CanvasService_BatchSetParameters_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_CanvasService_BatchSetParameters_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodGet, pattern_CanvasService_EvaluateFlows_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/sdl.v1.CanvasService/EvaluateFlows", runtime.WithHTTPPathPattern("/v1/canvases/{canvas_id}/flows/{strategy}/eval"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_CanvasService_EvaluateFlows_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_CanvasService_EvaluateFlows_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodGet, pattern_CanvasService_GetFlowState_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/sdl.v1.CanvasService/GetFlowState", runtime.WithHTTPPathPattern("/v1/canvases/{canvas_id}/flows/current"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_CanvasService_GetFlowState_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_CanvasService_GetFlowState_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
 	mux.Handle(http.MethodPost, pattern_CanvasService_AddMetric_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -2105,6 +2295,57 @@ func RegisterCanvasServiceHandlerClient(ctx context.Context, mux *runtime.ServeM
 		}
 		forward_CanvasService_GetParameters_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
+	mux.Handle(http.MethodPut, pattern_CanvasService_BatchSetParameters_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/sdl.v1.CanvasService/BatchSetParameters", runtime.WithHTTPPathPattern("/v1/canvases/{canvas_id}/parameters:batch"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_CanvasService_BatchSetParameters_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_CanvasService_BatchSetParameters_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodGet, pattern_CanvasService_EvaluateFlows_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/sdl.v1.CanvasService/EvaluateFlows", runtime.WithHTTPPathPattern("/v1/canvases/{canvas_id}/flows/{strategy}/eval"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_CanvasService_EvaluateFlows_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_CanvasService_EvaluateFlows_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
+	mux.Handle(http.MethodGet, pattern_CanvasService_GetFlowState_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/sdl.v1.CanvasService/GetFlowState", runtime.WithHTTPPathPattern("/v1/canvases/{canvas_id}/flows/current"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_CanvasService_GetFlowState_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_CanvasService_GetFlowState_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
 	mux.Handle(http.MethodPost, pattern_CanvasService_AddMetric_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -2214,6 +2455,9 @@ var (
 	pattern_CanvasService_TraceAllPaths_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 1, 0, 4, 1, 5, 5}, []string{"v1", "canvases", "canvas_id", "paths", "component", "method"}, ""))
 	pattern_CanvasService_SetParameter_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "canvases", "canvas_id", "parameters", "path"}, ""))
 	pattern_CanvasService_GetParameters_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "canvases", "canvas_id", "parameters"}, ""))
+	pattern_CanvasService_BatchSetParameters_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "canvases", "canvas_id", "parameters"}, "batch"))
+	pattern_CanvasService_EvaluateFlows_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4, 2, 5}, []string{"v1", "canvases", "canvas_id", "flows", "strategy", "eval"}, ""))
+	pattern_CanvasService_GetFlowState_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 2, 4}, []string{"v1", "canvases", "canvas_id", "flows", "current"}, ""))
 	pattern_CanvasService_AddMetric_0          = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "canvases", "metric.canvas_id", "metrics"}, ""))
 	pattern_CanvasService_DeleteMetric_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v1", "canvases", "canvas_id", "metrics", "metric_id"}, ""))
 	pattern_CanvasService_ListMetrics_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2, 2, 3}, []string{"v1", "canvases", "canvas_id", "metrics"}, ""))
@@ -2242,6 +2486,9 @@ var (
 	forward_CanvasService_TraceAllPaths_0      = runtime.ForwardResponseMessage
 	forward_CanvasService_SetParameter_0       = runtime.ForwardResponseMessage
 	forward_CanvasService_GetParameters_0      = runtime.ForwardResponseMessage
+	forward_CanvasService_BatchSetParameters_0 = runtime.ForwardResponseMessage
+	forward_CanvasService_EvaluateFlows_0      = runtime.ForwardResponseMessage
+	forward_CanvasService_GetFlowState_0       = runtime.ForwardResponseMessage
 	forward_CanvasService_AddMetric_0          = runtime.ForwardResponseMessage
 	forward_CanvasService_DeleteMetric_0       = runtime.ForwardResponseMessage
 	forward_CanvasService_ListMetrics_0        = runtime.ForwardResponseMessage

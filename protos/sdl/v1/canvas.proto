@@ -169,6 +169,29 @@ service CanvasService {
     };
   }
 
+  // Batch set multiple parameters atomically
+  rpc BatchSetParameters(BatchSetParametersRequest) returns (BatchSetParametersResponse) {
+    option (google.api.http) = {
+      put: "/v1/canvases/{canvas_id}/parameters:batch"
+      body: "*"
+    };
+  }
+
+  // ----- Flow Analysis Operations -----
+  // Evaluate system flows using specified strategy
+  rpc EvaluateFlows(EvaluateFlowsRequest) returns (EvaluateFlowsResponse) {
+    option (google.api.http) = {
+      get: "/v1/canvases/{canvas_id}/flows/{strategy}/eval"
+    };
+  }
+
+  // Get current flow state
+  rpc GetFlowState(GetFlowStateRequest) returns (GetFlowStateResponse) {
+    option (google.api.http) = {
+      get: "/v1/canvases/{canvas_id}/flows/current"
+    };
+  }
+
   //  ----- Generator Operations -----
   // Adds a metric to live plot
   rpc AddMetric(AddMetricRequest) returns (AddMetricResponse) {
@@ -611,6 +634,83 @@ message GetParametersRequest {
 // Response containing parameter values
 message GetParametersResponse {
   map<string, string> parameters = 1;  // Values as SDL expression strings
+}
+
+// Request to batch set multiple parameters
+message BatchSetParametersRequest {
+  string canvas_id = 1;
+  repeated ParameterUpdate updates = 2;
+}
+
+// Single parameter update
+message ParameterUpdate {
+  string path = 1;       // dot-separated path like "server.cache.HitRate"
+  string new_value = 2;  // SDL expression string
+}
+
+// Response from batch setting parameters
+message BatchSetParametersResponse {
+  bool success = 1;
+  string error_message = 2;  // Set if success is false
+  repeated ParameterUpdateResult results = 3;
+}
+
+// Result for individual parameter update
+message ParameterUpdateResult {
+  string path = 1;
+  bool success = 2;
+  string error_message = 3;  // Set if this specific update failed
+  string old_value = 4;      // Previous value
+  string new_value = 5;      // New value that was set
+}
+
+// ----- Flow Analysis Messages -----
+
+// Request to evaluate flows
+message EvaluateFlowsRequest {
+  string canvas_id = 1;
+  string strategy = 2;  // e.g., "runtime", "simulated", etc.
+}
+
+// Request to get current flow state
+message GetFlowStateRequest {
+  string canvas_id = 1;
+}
+
+// Response with current flow state
+message GetFlowStateResponse {
+  FlowState state = 1;
+}
+
+// Current flow state
+message FlowState {
+  string strategy = 1;                       // Current strategy being used
+  map<string, double> rates = 2;            // Current component.method rates
+  map<string, double> manual_overrides = 3; // Manual rate overrides
+}
+
+// Response from flow evaluation
+message EvaluateFlowsResponse {
+  string strategy = 1;
+  string status = 2;     // "converged", "partial", "failed"
+  int32 iterations = 3;
+  repeated string warnings = 4;
+  
+  // Component arrival rates calculated by flow analysis
+  map<string, double> component_rates = 5;  // e.g., "database.pool.ArrivalRate" -> 5.0
+  
+  // Detailed flow information (optional, for debugging)
+  repeated FlowEdge flow_edges = 6;
+}
+
+// Represents a flow edge between components
+message FlowEdge {
+  string from_component = 1;
+  string from_method = 2;
+  string to_component = 3;
+  string to_method = 4;
+  double rate = 5;
+  string condition = 6;  // Optional condition expression
 }
 
 // ----- System Diagram Messages -----

@@ -40,10 +40,7 @@ func (h *SortedFile) Scan() (out *Outcomes[sc.AccessResult]) {
 	// Get the disk read's outcomes and we can reuse them each time
 	out = h.Disk.Read()
 
-	t := time.Now()
-	defer func() {
-		log.Println("Scan Took: ", time.Now().Sub(t))
-	}()
+	// t := time.Now() defer func() { log.Println("Scan Took: ", time.Now().Sub(t)) }()
 
 	// Read all pages
 	for range h.NumPages() {

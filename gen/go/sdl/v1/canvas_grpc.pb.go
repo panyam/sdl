@@ -41,6 +41,9 @@ const (
 	CanvasService_TraceAllPaths_FullMethodName      = "/sdl.v1.CanvasService/TraceAllPaths"
 	CanvasService_SetParameter_FullMethodName       = "/sdl.v1.CanvasService/SetParameter"
 	CanvasService_GetParameters_FullMethodName      = "/sdl.v1.CanvasService/GetParameters"
+	CanvasService_BatchSetParameters_FullMethodName = "/sdl.v1.CanvasService/BatchSetParameters"
+	CanvasService_EvaluateFlows_FullMethodName      = "/sdl.v1.CanvasService/EvaluateFlows"
+	CanvasService_GetFlowState_FullMethodName       = "/sdl.v1.CanvasService/GetFlowState"
 	CanvasService_AddMetric_FullMethodName          = "/sdl.v1.CanvasService/AddMetric"
 	CanvasService_DeleteMetric_FullMethodName       = "/sdl.v1.CanvasService/DeleteMetric"
 	CanvasService_ListMetrics_FullMethodName        = "/sdl.v1.CanvasService/ListMetrics"
@@ -97,6 +100,13 @@ type CanvasServiceClient interface {
 	SetParameter(ctx context.Context, in *SetParameterRequest, opts ...grpc.CallOption) (*SetParameterResponse, error)
 	// Get parameter values
 	GetParameters(ctx context.Context, in *GetParametersRequest, opts ...grpc.CallOption) (*GetParametersResponse, error)
+	// Batch set multiple parameters atomically
+	BatchSetParameters(ctx context.Context, in *BatchSetParametersRequest, opts ...grpc.CallOption) (*BatchSetParametersResponse, error)
+	// ----- Flow Analysis Operations -----
+	// Evaluate system flows using specified strategy
+	EvaluateFlows(ctx context.Context, in *EvaluateFlowsRequest, opts ...grpc.CallOption) (*EvaluateFlowsResponse, error)
+	// Get current flow state
+	GetFlowState(ctx context.Context, in *GetFlowStateRequest, opts ...grpc.CallOption) (*GetFlowStateResponse, error)
 	//	----- Generator Operations -----
 	//
 	// Adds a metric to live plot
@@ -322,6 +332,36 @@ func (c *canvasServiceClient) GetParameters(ctx context.Context, in *GetParamete
 	return out, nil
 }
 
+func (c *canvasServiceClient) BatchSetParameters(ctx context.Context, in *BatchSetParametersRequest, opts ...grpc.CallOption) (*BatchSetParametersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BatchSetParametersResponse)
+	err := c.cc.Invoke(ctx, CanvasService_BatchSetParameters_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *canvasServiceClient) EvaluateFlows(ctx context.Context, in *EvaluateFlowsRequest, opts ...grpc.CallOption) (*EvaluateFlowsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EvaluateFlowsResponse)
+	err := c.cc.Invoke(ctx, CanvasService_EvaluateFlows_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *canvasServiceClient) GetFlowState(ctx context.Context, in *GetFlowStateRequest, opts ...grpc.CallOption) (*GetFlowStateResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetFlowStateResponse)
+	err := c.cc.Invoke(ctx, CanvasService_GetFlowState_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *canvasServiceClient) AddMetric(ctx context.Context, in *AddMetricRequest, opts ...grpc.CallOption) (*AddMetricResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AddMetricResponse)
@@ -439,6 +479,13 @@ type CanvasServiceServer interface {
 	SetParameter(context.Context, *SetParameterRequest) (*SetParameterResponse, error)
 	// Get parameter values
 	GetParameters(context.Context, *GetParametersRequest) (*GetParametersResponse, error)
+	// Batch set multiple parameters atomically
+	BatchSetParameters(context.Context, *BatchSetParametersRequest) (*BatchSetParametersResponse, error)
+	// ----- Flow Analysis Operations -----
+	// Evaluate system flows using specified strategy
+	EvaluateFlows(context.Context, *EvaluateFlowsRequest) (*EvaluateFlowsResponse, error)
+	// Get current flow state
+	GetFlowState(context.Context, *GetFlowStateRequest) (*GetFlowStateResponse, error)
 	//	----- Generator Operations -----
 	//
 	// Adds a metric to live plot
@@ -522,6 +569,15 @@ func (UnimplementedCanvasServiceServer) SetParameter(context.Context, *SetParame
 }
 func (UnimplementedCanvasServiceServer) GetParameters(context.Context, *GetParametersRequest) (*GetParametersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetParameters not implemented")
+}
+func (UnimplementedCanvasServiceServer) BatchSetParameters(context.Context, *BatchSetParametersRequest) (*BatchSetParametersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BatchSetParameters not implemented")
+}
+func (UnimplementedCanvasServiceServer) EvaluateFlows(context.Context, *EvaluateFlowsRequest) (*EvaluateFlowsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EvaluateFlows not implemented")
+}
+func (UnimplementedCanvasServiceServer) GetFlowState(context.Context, *GetFlowStateRequest) (*GetFlowStateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFlowState not implemented")
 }
 func (UnimplementedCanvasServiceServer) AddMetric(context.Context, *AddMetricRequest) (*AddMetricResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddMetric not implemented")
@@ -921,6 +977,60 @@ func _CanvasService_GetParameters_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CanvasService_BatchSetParameters_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BatchSetParametersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CanvasServiceServer).BatchSetParameters(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CanvasService_BatchSetParameters_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CanvasServiceServer).BatchSetParameters(ctx, req.(*BatchSetParametersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CanvasService_EvaluateFlows_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EvaluateFlowsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CanvasServiceServer).EvaluateFlows(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CanvasService_EvaluateFlows_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CanvasServiceServer).EvaluateFlows(ctx, req.(*EvaluateFlowsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CanvasService_GetFlowState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetFlowStateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CanvasServiceServer).GetFlowState(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CanvasService_GetFlowState_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CanvasServiceServer).GetFlowState(ctx, req.(*GetFlowStateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CanvasService_AddMetric_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AddMetricRequest)
 	if err := dec(in); err != nil {
@@ -1108,6 +1218,18 @@ var CanvasService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetParameters",
 			Handler:    _CanvasService_GetParameters_Handler,
+		},
+		{
+			MethodName: "BatchSetParameters",
+			Handler:    _CanvasService_BatchSetParameters_Handler,
+		},
+		{
+			MethodName: "EvaluateFlows",
+			Handler:    _CanvasService_EvaluateFlows_Handler,
+		},
+		{
+			MethodName: "GetFlowState",
+			Handler:    _CanvasService_GetFlowState_Handler,
 		},
 		{
 			MethodName: "AddMetric",

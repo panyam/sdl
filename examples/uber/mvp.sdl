@@ -3,6 +3,7 @@
 // Demonstrates: No caching, synchronous operations, database bottlenecks
 
 import ResourcePool, delay from "../common.sdl"
+import SortedFile, NativeDisk as Disk from "../common.sdl"
 
 // External Maps API Service (simulated)
 component MapsAPI {
@@ -25,6 +26,11 @@ component MapsAPI {
 // Single PostgreSQL Database - stores everything
 component PostgresDatabase {
     uses pool ResourcePool(Size = 3)  // Very limited connections (MVP budget!)
+    uses driverTable SortedFile(
+        NumRecords = 10000,     // 10k drivers in the city
+        RecordSize = 500,       // Driver record with location, status, etc
+        PageSize = 8192         // 8KB pages (standard PostgreSQL page size)
+    )
     
     method FindNearestDriver() Bool {
         let acquired = self.pool.Acquire()
@@ -33,9 +39,13 @@ component PostgresDatabase {
         }
         
         // Full table scan - no geo indexes yet!
-        delay(200ms)  // This is painful
+        // We have to scan ALL drivers to find the nearest one
+        let scanResult = self.driverTable.Scan()
+        if not scanResult {
+            return false
+        }
         
-        // 90% chance of finding available driver
+        // 90% chance of finding available driver after scan
         return true
     }
     
@@ -45,7 +55,7 @@ component PostgresDatabase {
             return false  // Connection pool exhausted
         }
         
-        // Insert into rides table
+        // Insert into rides table - simple append operation
         delay(50ms)
         return true
     }
@@ -56,8 +66,14 @@ component PostgresDatabase {
             return false  // Connection pool exhausted
         }
         
-        // Update driver record
-        delay(30ms)
+        // Find driver record and update it
+        let found = self.driverTable.Find()
+        if not found {
+            return false
+        }
+        
+        // Update the record
+        delay(10ms)
         return true
     }
 }
@@ -66,14 +82,11 @@ component PostgresDatabase {
 component UberWebServer {
     uses db PostgresDatabase
     uses maps MapsAPI
-    uses pool ResourcePool(Size = 20)  // Can handle 20 concurrent requests
+    // No pool - webserver accepts all requests and relies on timeouts
     
     method RequestRide() Bool {
-        // Acquire request handler
-        let acquired = self.pool.Acquire()
-        if not acquired {
-            return false  // Server overloaded
-        }
+        // Note: In real life we'd implement timeouts, but for now
+        // the database slowdown under load will demonstrate the problem
         
         // Step 1: Find nearest available driver (expensive DB query)
         let driverFound = self.db.FindNearestDriver()
@@ -101,12 +114,6 @@ component UberWebServer {
     
     method UpdateLocation() Bool {
         // Driver location update endpoint
-        let acquired = self.pool.Acquire()
-        if not acquired {
-            return false
-        }
-        
-        // Direct database update
         return self.db.UpdateDriverLocation()
     }
 }
@@ -119,12 +126,14 @@ system UberMVP {
 }
 
 // Demo Narrative:
-// 1. Start with 5 RPS - system handles it but latency is high (300-400ms)
-// 2. Increase to 20 RPS - connection pool exhaustion starts
-// 3. Spike to 50 RPS - massive failures, database overwhelmed
+// 1. Show how scan time grows with number of drivers (linear scaling)
+// 2. Start with 5 RPS - system handles it but latency varies based on scan time
+// 3. Increase to 20 RPS - connection pool starts queueing
+// 4. Spike to 50 RPS - massive failures, database overwhelmed
 // 
 // Problems to highlight:
-// - Every request does expensive FindNearestDriver (200ms full scan)
+// - No indexes: FindNearestDriver does full table scan (O(n) complexity)
+// - Scan time grows linearly with data size
 // - Every request calls external Maps API (100ms)
 // - No caching means redundant work
 // - Small connection pool (budget constraints) 

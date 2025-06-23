@@ -12,7 +12,7 @@ func (s *RuntimeFlowStrategy) Evaluate(system *SystemInstance, generators []Gene
 	if system == nil {
 		return nil, fmt.Errorf("system instance is required")
 	}
-	
+
 	// Convert API generator configs to runtime generator entry points
 	var runtimeGenerators []GeneratorEntryPointRuntime
 	for _, gen := range generators {
@@ -22,7 +22,7 @@ func (s *RuntimeFlowStrategy) Evaluate(system *SystemInstance, generators []Gene
 			Warn("RuntimeFlowStrategy: Component not found: %s", gen.Component)
 			continue
 		}
-		
+
 		runtimeGenerators = append(runtimeGenerators, GeneratorEntryPointRuntime{
 			Component:   compInst,
 			Method:      gen.Method,
@@ -30,24 +30,24 @@ func (s *RuntimeFlowStrategy) Evaluate(system *SystemInstance, generators []Gene
 			GeneratorID: gen.ID,
 		})
 	}
-	
+
 	// Create flow scope
 	scope := NewFlowScope(system.Env)
-	
+
 	// Run flow evaluation
 	rateMap := SolveSystemFlowsRuntime(runtimeGenerators, scope)
-	
+
 	// Convert results to API format
 	result := &FlowAnalysisResult{
 		Strategy:   "runtime",
 		Status:     FlowStatusConverged, // TODO: Detect actual convergence status
-		Iterations: 10, // TODO: Track actual iterations
+		Iterations: 10,                  // TODO: Track actual iterations
 		System:     system.GetSystemName(),
 		Generators: generators,
 		Flows:      s.convertToFlowData(rateMap, scope, system),
 		Warnings:   []string{"Control flow analysis may overestimate rates for early return patterns"},
 	}
-	
+
 	return result, nil
 }
 
@@ -74,14 +74,14 @@ func (s *RuntimeFlowStrategy) IsAvailable() bool {
 func (s *RuntimeFlowStrategy) convertToFlowData(rateMap RateMap, scope *FlowScope, system *SystemInstance) FlowData {
 	edges := []FlowEdgeAPI{}
 	componentRates := make(map[string]float64)
-	
+
 	// Convert flow edges if available
 	if scope.FlowEdges != nil {
 		for _, edge := range scope.FlowEdges.GetEdges() {
 			// Find component names from instances
 			fromName := s.findComponentName(edge.FromComponent, system)
 			toName := s.findComponentName(edge.ToComponent, system)
-			
+
 			if fromName != "" && toName != "" {
 				edges = append(edges, FlowEdgeAPI{
 					From: ComponentMethod{
@@ -97,27 +97,27 @@ func (s *RuntimeFlowStrategy) convertToFlowData(rateMap RateMap, scope *FlowScop
 			}
 		}
 	}
-	
+
 	// Convert component rates
 	for component, methods := range rateMap {
 		componentName := s.findComponentName(component, system)
 		if componentName == "" {
 			continue
 		}
-		
+
 		for method, rate := range methods {
 			key := fmt.Sprintf("%s.%s", componentName, method)
 			componentRates[key] = rate
 		}
 	}
-	
+
 	// Metadata
 	metadata := map[string]interface{}{
-		"totalFlow":             s.calculateTotalFlow(componentRates),
-		"maxComponentRate":      s.findMaxRate(componentRates),
-		"convergenceThreshold":  0.01,
+		"totalFlow":            s.calculateTotalFlow(componentRates),
+		"maxComponentRate":     s.findMaxRate(componentRates),
+		"convergenceThreshold": 0.01,
 	}
-	
+
 	return FlowData{
 		Edges:          edges,
 		ComponentRates: componentRates,
@@ -130,7 +130,7 @@ func (s *RuntimeFlowStrategy) findComponentName(comp *ComponentInstance, system 
 	if comp == nil || system == nil {
 		return ""
 	}
-	
+
 	// Search through the system environment for this component instance
 	bindings := system.Env.All()
 	for name, value := range bindings {
@@ -138,10 +138,24 @@ func (s *RuntimeFlowStrategy) findComponentName(comp *ComponentInstance, system 
 			return name
 		}
 	}
-	
+
 	// If not found in system env, it might be a nested component
-	// For now, return the component ID as fallback
-	return comp.ID()
+	// Try to find it as a child of another component
+	for name, value := range bindings {
+		if parentComp, ok := value.Value.(*ComponentInstance); ok && parentComp != nil {
+			// Check if this component is a child of the parent
+			for childName, childBinding := range parentComp.InitialEnv.All() {
+				if childComp, ok := childBinding.Value.(*ComponentInstance); ok && childComp == comp {
+					// Return parent.child format for nested components
+					return fmt.Sprintf("%s.%s", name, childName)
+				}
+			}
+		}
+	}
+
+	// If still not found, it's an internal component that shouldn't be exposed
+	// Return empty string to filter it out
+	return ""
 }
 
 // calculateTotalFlow sums all component rates

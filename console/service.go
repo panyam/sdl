@@ -3,6 +3,7 @@ package console
 import (
 	"context"
 	"fmt"
+	"log"
 	"log/slog"
 	"strings"
 	"sync"
@@ -95,7 +96,7 @@ func (s *CanvasService) DeleteCanvas(ctx context.Context, req *protos.DeleteCanv
 func (s *CanvasService) ResetCanvas(ctx context.Context, req *protos.ResetCanvasRequest) (resp *protos.ResetCanvasResponse, err error) {
 	slog.Info("ResetCanvas Request", "req", req)
 	resp = &protos.ResetCanvasResponse{}
-	
+
 	err = s.withCanvas(req.CanvasId, func(canvas *Canvas) {
 		resetErr := canvas.Reset()
 		if resetErr != nil {
@@ -107,7 +108,7 @@ func (s *CanvasService) ResetCanvas(ctx context.Context, req *protos.ResetCanvas
 			resp.Message = "Canvas reset successfully - all generators stopped, metrics cleared, and state reset"
 		}
 	})
-	
+
 	return
 }
 
@@ -637,14 +638,43 @@ func formatDeclValueAsSDL(value decl.Value) string {
 		if value.Type.Info == "Int" {
 			return fmt.Sprintf("%d", value.IntVal())
 		} else if value.Type.Info == "Float" {
-			return fmt.Sprintf("%d", value.FloatVal())
+			return fmt.Sprintf("%g", value.FloatVal())
 		} else if value.Type.Info == "Bool" {
-			return fmt.Sprintf("%d", value.BoolVal())
+			return fmt.Sprintf("%t", value.BoolVal())
 		} else if value.Type.Info == "String" {
-			return fmt.Sprintf("%d", value.StringVal())
+			return fmt.Sprintf("'%s'", value.StringVal())
 		}
 	}
 	return value.String()
+}
+
+// parseSDLExpression parses an SDL expression string and returns a Go value
+func parseSDLExpression(expr string) (any, error) {
+	// Try to parse as common types first for efficiency
+	if expr == "true" || expr == "false" {
+		return expr == "true", nil
+	}
+
+	// Try to parse as integer
+	var intVal int64
+	if _, err := fmt.Sscanf(expr, "%d", &intVal); err == nil {
+		return intVal, nil
+	}
+
+	// Try to parse as float
+	var floatVal float64
+	if _, err := fmt.Sscanf(expr, "%f", &floatVal); err == nil {
+		return floatVal, nil
+	}
+
+	// If it's a quoted string, extract the content
+	if (strings.HasPrefix(expr, "'") && strings.HasSuffix(expr, "'")) ||
+		(strings.HasPrefix(expr, "\"") && strings.HasSuffix(expr, "\"")) {
+		return expr[1 : len(expr)-1], nil
+	}
+
+	// For more complex expressions, fall back to string
+	return expr, nil
 }
 
 // GetSystemDiagram returns the system topology for visualization
@@ -662,6 +692,112 @@ func (s *CanvasService) GetSystemDiagram(ctx context.Context, req *protos.GetSys
 
 		// Canvas.GetSystemDiagram now returns proto directly
 		resp.Diagram = diagram
+	})
+
+	return
+}
+
+// BatchSetParameters sets multiple parameters atomically
+func (s *CanvasService) BatchSetParameters(ctx context.Context, req *protos.BatchSetParametersRequest) (resp *protos.BatchSetParametersResponse, err error) {
+	slog.Info("BatchSetParameters Request", "req", req)
+	resp = &protos.BatchSetParametersResponse{}
+
+	err = s.withCanvas(req.CanvasId, func(canvas *Canvas) {
+		// Convert proto updates to map
+		updates := make(map[string]any)
+		for _, update := range req.Updates {
+			// Parse SDL expression to Go value
+			value, parseErr := parseSDLExpression(update.NewValue)
+			if parseErr != nil {
+				err = status.Errorf(codes.InvalidArgument, "failed to parse value for %s: %v", update.Path, parseErr)
+				return
+			}
+			updates[update.Path] = value
+		}
+
+		log.Println("1111 Here....")
+		// Apply batch updates
+		results, batchErr := canvas.BatchSetParameters(updates)
+		if batchErr != nil && results == nil {
+			log.Println("Result: ", results)
+			log.Println("Err: ", batchErr)
+			err = status.Errorf(codes.Internal, "failed to batch set parameters: %v", batchErr)
+			return
+		}
+
+		// Convert results to proto format
+		resp.Results = make([]*protos.ParameterUpdateResult, 0, len(results))
+		resp.Success = true
+		for path, result := range results {
+			protoResult := &protos.ParameterUpdateResult{
+				Path:     path,
+				OldValue: result.String(),
+			}
+			resp.Results = append(resp.Results, protoResult)
+		}
+
+		if batchErr != nil {
+			resp.ErrorMessage = batchErr.Error()
+			resp.Success = false
+		}
+	})
+
+	return
+}
+
+// EvaluateFlows evaluates system flows using specified strategy
+func (s *CanvasService) EvaluateFlows(ctx context.Context, req *protos.EvaluateFlowsRequest) (resp *protos.EvaluateFlowsResponse, err error) {
+	slog.Info("EvaluateFlows Request", "req", req)
+	resp = &protos.EvaluateFlowsResponse{}
+
+	err = s.withCanvas(req.CanvasId, func(canvas *Canvas) {
+		// Evaluate flows with the specified strategy
+		result, evalErr := canvas.EvaluateFlowWithStrategy(req.Strategy)
+		if evalErr != nil {
+			err = status.Errorf(codes.Internal, "failed to evaluate flows: %v", evalErr)
+			return
+		}
+
+		// Convert result to proto format
+		resp.Strategy = result.Strategy
+		resp.Status = string(result.Status)
+		resp.Iterations = int32(result.Iterations)
+		resp.Warnings = result.Warnings
+
+		// Convert component rates
+		resp.ComponentRates = result.Flows.ComponentRates
+
+		// Convert flow edges
+		resp.FlowEdges = make([]*protos.FlowEdge, len(result.Flows.Edges))
+		for i, edge := range result.Flows.Edges {
+			resp.FlowEdges[i] = &protos.FlowEdge{
+				FromComponent: edge.From.Component,
+				FromMethod:    edge.From.Method,
+				ToComponent:   edge.To.Component,
+				ToMethod:      edge.To.Method,
+				Rate:          edge.Rate,
+			}
+		}
+	})
+
+	return
+}
+
+// GetFlowState returns the current flow state
+func (s *CanvasService) GetFlowState(ctx context.Context, req *protos.GetFlowStateRequest) (resp *protos.GetFlowStateResponse, err error) {
+	slog.Info("GetFlowState Request", "req", req)
+	resp = &protos.GetFlowStateResponse{}
+
+	err = s.withCanvas(req.CanvasId, func(canvas *Canvas) {
+		// Get current flow state from canvas
+		flowState := canvas.GetCurrentFlowState()
+
+		// Convert to proto format
+		resp.State = &protos.FlowState{
+			Strategy:        flowState.Strategy,
+			Rates:           flowState.Rates,
+			ManualOverrides: flowState.ManualOverrides,
+		}
 	})
 
 	return

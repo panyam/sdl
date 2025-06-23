@@ -116,6 +116,21 @@ class CanvasServiceStub(object):
                 request_serializer=sdl_dot_v1_dot_canvas__pb2.GetParametersRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_canvas__pb2.GetParametersResponse.FromString,
                 _registered_method=True)
+        self.BatchSetParameters = channel.unary_unary(
+                '/sdl.v1.CanvasService/BatchSetParameters',
+                request_serializer=sdl_dot_v1_dot_canvas__pb2.BatchSetParametersRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_canvas__pb2.BatchSetParametersResponse.FromString,
+                _registered_method=True)
+        self.EvaluateFlows = channel.unary_unary(
+                '/sdl.v1.CanvasService/EvaluateFlows',
+                request_serializer=sdl_dot_v1_dot_canvas__pb2.EvaluateFlowsRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_canvas__pb2.EvaluateFlowsResponse.FromString,
+                _registered_method=True)
+        self.GetFlowState = channel.unary_unary(
+                '/sdl.v1.CanvasService/GetFlowState',
+                request_serializer=sdl_dot_v1_dot_canvas__pb2.GetFlowStateRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_canvas__pb2.GetFlowStateResponse.FromString,
+                _registered_method=True)
         self.AddMetric = channel.unary_unary(
                 '/sdl.v1.CanvasService/AddMetric',
                 request_serializer=sdl_dot_v1_dot_canvas__pb2.AddMetricRequest.SerializeToString,
@@ -293,6 +308,28 @@ class CanvasServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def BatchSetParameters(self, request, context):
+        """Batch set multiple parameters atomically
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def EvaluateFlows(self, request, context):
+        """----- Flow Analysis Operations -----
+        Evaluate system flows using specified strategy
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetFlowState(self, request, context):
+        """Get current flow state
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def AddMetric(self, request, context):
         """----- Generator Operations -----
         Adds a metric to live plot
@@ -445,6 +482,21 @@ def add_CanvasServiceServicer_to_server(servicer, server):
                     servicer.GetParameters,
                     request_deserializer=sdl_dot_v1_dot_canvas__pb2.GetParametersRequest.FromString,
                     response_serializer=sdl_dot_v1_dot_canvas__pb2.GetParametersResponse.SerializeToString,
+            ),
+            'BatchSetParameters': grpc.unary_unary_rpc_method_handler(
+                    servicer.BatchSetParameters,
+                    request_deserializer=sdl_dot_v1_dot_canvas__pb2.BatchSetParametersRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_canvas__pb2.BatchSetParametersResponse.SerializeToString,
+            ),
+            'EvaluateFlows': grpc.unary_unary_rpc_method_handler(
+                    servicer.EvaluateFlows,
+                    request_deserializer=sdl_dot_v1_dot_canvas__pb2.EvaluateFlowsRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_canvas__pb2.EvaluateFlowsResponse.SerializeToString,
+            ),
+            'GetFlowState': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetFlowState,
+                    request_deserializer=sdl_dot_v1_dot_canvas__pb2.GetFlowStateRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_canvas__pb2.GetFlowStateResponse.SerializeToString,
             ),
             'AddMetric': grpc.unary_unary_rpc_method_handler(
                     servicer.AddMetric,
@@ -1019,6 +1071,87 @@ class CanvasService(object):
             '/sdl.v1.CanvasService/GetParameters',
             sdl_dot_v1_dot_canvas__pb2.GetParametersRequest.SerializeToString,
             sdl_dot_v1_dot_canvas__pb2.GetParametersResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def BatchSetParameters(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.CanvasService/BatchSetParameters',
+            sdl_dot_v1_dot_canvas__pb2.BatchSetParametersRequest.SerializeToString,
+            sdl_dot_v1_dot_canvas__pb2.BatchSetParametersResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def EvaluateFlows(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.CanvasService/EvaluateFlows',
+            sdl_dot_v1_dot_canvas__pb2.EvaluateFlowsRequest.SerializeToString,
+            sdl_dot_v1_dot_canvas__pb2.EvaluateFlowsResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetFlowState(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.CanvasService/GetFlowState',
+            sdl_dot_v1_dot_canvas__pb2.GetFlowStateRequest.SerializeToString,
+            sdl_dot_v1_dot_canvas__pb2.GetFlowStateResponse.FromString,
             options,
             channel_credentials,
             insecure,

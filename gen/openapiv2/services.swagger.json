@@ -254,6 +254,75 @@
         ]
       }
     },
+    "/v1/canvases/{canvasId}/flows/current": {
+      "get": {
+        "summary": "Get current flow state",
+        "operationId": "CanvasService_GetFlowState",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetFlowStateResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "canvasId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "CanvasService"
+        ]
+      }
+    },
+    "/v1/canvases/{canvasId}/flows/{strategy}/eval": {
+      "get": {
+        "summary": "----- Flow Analysis Operations -----\nEvaluate system flows using specified strategy",
+        "operationId": "CanvasService_EvaluateFlows",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1EvaluateFlowsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "canvasId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "strategy",
+            "description": "e.g., \"runtime\", \"simulated\", etc.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "CanvasService"
+        ]
+      }
+    },
     "/v1/canvases/{canvasId}/generators": {
       "get": {
         "operationId": "CanvasService_ListGenerators",
@@ -735,6 +804,55 @@
                 }
               },
               "title": "Request to set a parameter value"
+            }
+          }
+        ],
+        "tags": [
+          "CanvasService"
+        ]
+      }
+    },
+    "/v1/canvases/{canvasId}/parameters:batch": {
+      "put": {
+        "summary": "Batch set multiple parameters atomically",
+        "operationId": "CanvasService_BatchSetParameters",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1BatchSetParametersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "canvasId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "updates": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "$ref": "#/definitions/v1ParameterUpdate"
+                  }
+                }
+              },
+              "title": "Request to batch set multiple parameters"
             }
           }
         ],
@@ -1251,6 +1369,26 @@
       },
       "title": "Enhanced TraceData for all-paths traversal - represents the complete execution tree"
     },
+    "v1BatchSetParametersResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean"
+        },
+        "errorMessage": {
+          "type": "string",
+          "title": "Set if success is false"
+        },
+        "results": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1ParameterUpdateResult"
+          }
+        }
+      },
+      "title": "Response from batch setting parameters"
+    },
     "v1Canvas": {
       "type": "object",
       "properties": {
@@ -1445,6 +1583,46 @@
       },
       "title": "Edge represents a transition from one node to another in the execution tree"
     },
+    "v1EvaluateFlowsResponse": {
+      "type": "object",
+      "properties": {
+        "strategy": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "title": "\"converged\", \"partial\", \"failed\""
+        },
+        "iterations": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "componentRates": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "format": "double"
+          },
+          "description": "e.g., \"database.pool.ArrivalRate\" -\u003e 5.0",
+          "title": "Component arrival rates calculated by flow analysis"
+        },
+        "flowEdges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1FlowEdge"
+          },
+          "title": "Detailed flow information (optional, for debugging)"
+        }
+      },
+      "title": "Response from flow evaluation"
+    },
     "v1ExecuteTraceResponse": {
       "type": "object",
       "properties": {
@@ -1453,6 +1631,58 @@
           "title": "The complete trace data"
         }
       }
+    },
+    "v1FlowEdge": {
+      "type": "object",
+      "properties": {
+        "fromComponent": {
+          "type": "string"
+        },
+        "fromMethod": {
+          "type": "string"
+        },
+        "toComponent": {
+          "type": "string"
+        },
+        "toMethod": {
+          "type": "string"
+        },
+        "rate": {
+          "type": "number",
+          "format": "double"
+        },
+        "condition": {
+          "type": "string",
+          "title": "Optional condition expression"
+        }
+      },
+      "title": "Represents a flow edge between components"
+    },
+    "v1FlowState": {
+      "type": "object",
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "title": "Current strategy being used"
+        },
+        "rates": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "format": "double"
+          },
+          "title": "Current component.method rates"
+        },
+        "manualOverrides": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "format": "double"
+          },
+          "title": "Manual rate overrides"
+        }
+      },
+      "title": "Current flow state"
     },
     "v1Generator": {
       "type": "object",
@@ -1509,6 +1739,15 @@
         }
       },
       "title": "*\nCanvas get response"
+    },
+    "v1GetFlowStateResponse": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "$ref": "#/definitions/v1FlowState"
+        }
+      },
+      "title": "Response with current flow state"
     },
     "v1GetGeneratorResponse": {
       "type": "object",
@@ -1766,6 +2005,44 @@
           "description": "*\nTotal number of results."
         }
       }
+    },
+    "v1ParameterUpdate": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "title": "dot-separated path like \"server.cache.HitRate\""
+        },
+        "newValue": {
+          "type": "string",
+          "title": "SDL expression string"
+        }
+      },
+      "title": "Single parameter update"
+    },
+    "v1ParameterUpdateResult": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "success": {
+          "type": "boolean"
+        },
+        "errorMessage": {
+          "type": "string",
+          "title": "Set if this specific update failed"
+        },
+        "oldValue": {
+          "type": "string",
+          "title": "Previous value"
+        },
+        "newValue": {
+          "type": "string",
+          "title": "New value that was set"
+        }
+      },
+      "title": "Result for individual parameter update"
     },
     "v1QueryMetricsResponse": {
       "type": "object",

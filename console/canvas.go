@@ -787,6 +787,60 @@ func (c *Canvas) ApplyFlowStrategy(strategy string) error {
 	return nil
 }
 
+// BatchSetParameters sets multiple parameters atomically
+func (c *Canvas) BatchSetParameters(updates map[string]any) (map[string]decl.Value, error) {
+	if c.activeSystem == nil || c.activeSystem.Env == nil {
+		return nil, fmt.Errorf("no active system. Call Use() before BatchSetParameters()")
+	}
+
+	var newValues []decl.Value
+	var paramPaths []string
+
+	// First pass: validate all parameters
+	for path, value := range updates {
+		paramPaths = append(paramPaths, path)
+
+		// Convert value to decl.Value
+		var newValue decl.Value
+		var err error
+		switch v := value.(type) {
+		case int:
+			newValue, err = decl.NewValue(decl.IntType, int64(v))
+		case int64:
+			newValue, err = decl.NewValue(decl.IntType, v)
+		case float64:
+			newValue, err = decl.NewValue(decl.FloatType, v)
+		case bool:
+			newValue, err = decl.NewValue(decl.BoolType, v)
+		case string:
+			newValue, err = decl.NewValue(decl.StrType, v)
+		default:
+			err = fmt.Errorf("param: %s, unsupported value type: %T", path, value)
+		}
+
+		if err != nil {
+			return nil, err
+		}
+		newValues = append(newValues, newValue)
+	}
+
+	// Second pass: apply all validated updates
+	// Now call the BatchSet in the runtime
+	oldValues := map[string]decl.Value{}
+	err := c.runtime.BatchSetParams(c.activeSystem, paramPaths, newValues, oldValues)
+	if err != nil {
+		return nil, err
+	}
+
+	// Recompute flows after parameter changes
+	err = c.recomputeSystemFlows()
+	if err != nil {
+		err = fmt.Errorf("parameters set but flow recomputation failed: %w", err)
+	}
+
+	return oldValues, nil
+}
+
 // GetCurrentFlowState returns the current flow state
 func (c *Canvas) GetCurrentFlowState() *runtime.FlowState {
 	rates := make(map[string]float64)

@@ -42,14 +42,20 @@ The project has undergone significant architectural changes:
   - Batched execution for high-rate generators (1000+ RPS)
   - MetricStore architecture with RingBufferStore
   - Asynchronous metric processing with MetricTracer
+  - Automatic flow calculation with --apply-flows flag
+  - Generator rate updates via `sdl gen update`
+  - Flow evaluation showing both current and calculated rates
 - **Completed Recent Work**:
   - Generator lifecycle management (start/stop/pause/resume)
   - MetricStore interface with pluggable backends
   - Memory-efficient metrics with circular buffers
   - Standard aggregations (count, sum, avg, min, max, percentiles)
+  - EvaluateFlows and BatchSetParameters RPCs for automatic flow calculation
+  - GetFlowState RPC for retrieving current flow rates
+  - Batch generator operations (StartAllGenerators, StopAllGenerators)
+  - Fixed component name resolution for nested components in flow analysis
 - **TODO**: 
   - Human-readable trace command output
-  - Batch generator operations (StartAllGenerators, StopAllGenerators)
   - Dashboard integration with new gRPC endpoints
   - Server-streaming for real-time metrics
 
@@ -68,8 +74,15 @@ When continuing work on FlowEval, note that we're in the middle of migrating fro
 - **Key types**: RateMap (runtime/ratemap.go), FlowScope (runtime/flowscope.go), GeneratorEntryPointRuntime
 - **Architecture**: Uses actual ComponentInstance objects from SimpleEval, no duplicate instances
 - **Pattern**: NWBase wrapper provides smart defaults for non-flow-analyzable components
-- **Status**: Steps 1-7 complete, need to finish migration (steps 8-9) and update Canvas integration
+- **Status**: Migration complete, Canvas integration working with runtime strategy
 - **Test with**: `go test -v ./runtime -run "TestFlowEvalRuntime|TestSolveSystemFlowsRuntime"`
+
+## Automatic Flow Calculation (June 2025)
+- **--apply-flows flag**: Available on all generator commands (add, update, start, stop, remove)
+- **Flow evaluation**: Automatically calculates downstream component rates based on generators
+- **Batch application**: Uses BatchSetParameters RPC to atomically update all arrival rates
+- **sdl gen update**: Efficiently updates generator rates without creating new goroutines
+- **Demo scripts**: Updated to use --apply-flows instead of manual arrival rate settings
 
 ## Important Implementation Notes
 - **Metrics**: Pre-aggregated at collection time, not query time

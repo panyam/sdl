@@ -92,6 +92,15 @@ const (
 	// CanvasServiceGetParametersProcedure is the fully-qualified name of the CanvasService's
 	// GetParameters RPC.
 	CanvasServiceGetParametersProcedure = "/sdl.v1.CanvasService/GetParameters"
+	// CanvasServiceBatchSetParametersProcedure is the fully-qualified name of the CanvasService's
+	// BatchSetParameters RPC.
+	CanvasServiceBatchSetParametersProcedure = "/sdl.v1.CanvasService/BatchSetParameters"
+	// CanvasServiceEvaluateFlowsProcedure is the fully-qualified name of the CanvasService's
+	// EvaluateFlows RPC.
+	CanvasServiceEvaluateFlowsProcedure = "/sdl.v1.CanvasService/EvaluateFlows"
+	// CanvasServiceGetFlowStateProcedure is the fully-qualified name of the CanvasService's
+	// GetFlowState RPC.
+	CanvasServiceGetFlowStateProcedure = "/sdl.v1.CanvasService/GetFlowState"
 	// CanvasServiceAddMetricProcedure is the fully-qualified name of the CanvasService's AddMetric RPC.
 	CanvasServiceAddMetricProcedure = "/sdl.v1.CanvasService/AddMetric"
 	// CanvasServiceDeleteMetricProcedure is the fully-qualified name of the CanvasService's
@@ -154,6 +163,13 @@ type CanvasServiceClient interface {
 	SetParameter(context.Context, *connect.Request[v1.SetParameterRequest]) (*connect.Response[v1.SetParameterResponse], error)
 	// Get parameter values
 	GetParameters(context.Context, *connect.Request[v1.GetParametersRequest]) (*connect.Response[v1.GetParametersResponse], error)
+	// Batch set multiple parameters atomically
+	BatchSetParameters(context.Context, *connect.Request[v1.BatchSetParametersRequest]) (*connect.Response[v1.BatchSetParametersResponse], error)
+	// ----- Flow Analysis Operations -----
+	// Evaluate system flows using specified strategy
+	EvaluateFlows(context.Context, *connect.Request[v1.EvaluateFlowsRequest]) (*connect.Response[v1.EvaluateFlowsResponse], error)
+	// Get current flow state
+	GetFlowState(context.Context, *connect.Request[v1.GetFlowStateRequest]) (*connect.Response[v1.GetFlowStateResponse], error)
 	//	----- Generator Operations -----
 	//
 	// Adds a metric to live plot
@@ -302,6 +318,24 @@ func NewCanvasServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			connect.WithSchema(canvasServiceMethods.ByName("GetParameters")),
 			connect.WithClientOptions(opts...),
 		),
+		batchSetParameters: connect.NewClient[v1.BatchSetParametersRequest, v1.BatchSetParametersResponse](
+			httpClient,
+			baseURL+CanvasServiceBatchSetParametersProcedure,
+			connect.WithSchema(canvasServiceMethods.ByName("BatchSetParameters")),
+			connect.WithClientOptions(opts...),
+		),
+		evaluateFlows: connect.NewClient[v1.EvaluateFlowsRequest, v1.EvaluateFlowsResponse](
+			httpClient,
+			baseURL+CanvasServiceEvaluateFlowsProcedure,
+			connect.WithSchema(canvasServiceMethods.ByName("EvaluateFlows")),
+			connect.WithClientOptions(opts...),
+		),
+		getFlowState: connect.NewClient[v1.GetFlowStateRequest, v1.GetFlowStateResponse](
+			httpClient,
+			baseURL+CanvasServiceGetFlowStateProcedure,
+			connect.WithSchema(canvasServiceMethods.ByName("GetFlowState")),
+			connect.WithClientOptions(opts...),
+		),
 		addMetric: connect.NewClient[v1.AddMetricRequest, v1.AddMetricResponse](
 			httpClient,
 			baseURL+CanvasServiceAddMetricProcedure,
@@ -363,6 +397,9 @@ type canvasServiceClient struct {
 	traceAllPaths      *connect.Client[v1.TraceAllPathsRequest, v1.TraceAllPathsResponse]
 	setParameter       *connect.Client[v1.SetParameterRequest, v1.SetParameterResponse]
 	getParameters      *connect.Client[v1.GetParametersRequest, v1.GetParametersResponse]
+	batchSetParameters *connect.Client[v1.BatchSetParametersRequest, v1.BatchSetParametersResponse]
+	evaluateFlows      *connect.Client[v1.EvaluateFlowsRequest, v1.EvaluateFlowsResponse]
+	getFlowState       *connect.Client[v1.GetFlowStateRequest, v1.GetFlowStateResponse]
 	addMetric          *connect.Client[v1.AddMetricRequest, v1.AddMetricResponse]
 	deleteMetric       *connect.Client[v1.DeleteMetricRequest, v1.DeleteMetricResponse]
 	listMetrics        *connect.Client[v1.ListMetricsRequest, v1.ListMetricsResponse]
@@ -471,6 +508,21 @@ func (c *canvasServiceClient) GetParameters(ctx context.Context, req *connect.Re
 	return c.getParameters.CallUnary(ctx, req)
 }
 
+// BatchSetParameters calls sdl.v1.CanvasService.BatchSetParameters.
+func (c *canvasServiceClient) BatchSetParameters(ctx context.Context, req *connect.Request[v1.BatchSetParametersRequest]) (*connect.Response[v1.BatchSetParametersResponse], error) {
+	return c.batchSetParameters.CallUnary(ctx, req)
+}
+
+// EvaluateFlows calls sdl.v1.CanvasService.EvaluateFlows.
+func (c *canvasServiceClient) EvaluateFlows(ctx context.Context, req *connect.Request[v1.EvaluateFlowsRequest]) (*connect.Response[v1.EvaluateFlowsResponse], error) {
+	return c.evaluateFlows.CallUnary(ctx, req)
+}
+
+// GetFlowState calls sdl.v1.CanvasService.GetFlowState.
+func (c *canvasServiceClient) GetFlowState(ctx context.Context, req *connect.Request[v1.GetFlowStateRequest]) (*connect.Response[v1.GetFlowStateResponse], error) {
+	return c.getFlowState.CallUnary(ctx, req)
+}
+
 // AddMetric calls sdl.v1.CanvasService.AddMetric.
 func (c *canvasServiceClient) AddMetric(ctx context.Context, req *connect.Request[v1.AddMetricRequest]) (*connect.Response[v1.AddMetricResponse], error) {
 	return c.addMetric.CallUnary(ctx, req)
@@ -544,6 +596,13 @@ type CanvasServiceHandler interface {
 	SetParameter(context.Context, *connect.Request[v1.SetParameterRequest]) (*connect.Response[v1.SetParameterResponse], error)
 	// Get parameter values
 	GetParameters(context.Context, *connect.Request[v1.GetParametersRequest]) (*connect.Response[v1.GetParametersResponse], error)
+	// Batch set multiple parameters atomically
+	BatchSetParameters(context.Context, *connect.Request[v1.BatchSetParametersRequest]) (*connect.Response[v1.BatchSetParametersResponse], error)
+	// ----- Flow Analysis Operations -----
+	// Evaluate system flows using specified strategy
+	EvaluateFlows(context.Context, *connect.Request[v1.EvaluateFlowsRequest]) (*connect.Response[v1.EvaluateFlowsResponse], error)
+	// Get current flow state
+	GetFlowState(context.Context, *connect.Request[v1.GetFlowStateRequest]) (*connect.Response[v1.GetFlowStateResponse], error)
 	//	----- Generator Operations -----
 	//
 	// Adds a metric to live plot
@@ -688,6 +747,24 @@ func NewCanvasServiceHandler(svc CanvasServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(canvasServiceMethods.ByName("GetParameters")),
 		connect.WithHandlerOptions(opts...),
 	)
+	canvasServiceBatchSetParametersHandler := connect.NewUnaryHandler(
+		CanvasServiceBatchSetParametersProcedure,
+		svc.BatchSetParameters,
+		connect.WithSchema(canvasServiceMethods.ByName("BatchSetParameters")),
+		connect.WithHandlerOptions(opts...),
+	)
+	canvasServiceEvaluateFlowsHandler := connect.NewUnaryHandler(
+		CanvasServiceEvaluateFlowsProcedure,
+		svc.EvaluateFlows,
+		connect.WithSchema(canvasServiceMethods.ByName("EvaluateFlows")),
+		connect.WithHandlerOptions(opts...),
+	)
+	canvasServiceGetFlowStateHandler := connect.NewUnaryHandler(
+		CanvasServiceGetFlowStateProcedure,
+		svc.GetFlowState,
+		connect.WithSchema(canvasServiceMethods.ByName("GetFlowState")),
+		connect.WithHandlerOptions(opts...),
+	)
 	canvasServiceAddMetricHandler := connect.NewUnaryHandler(
 		CanvasServiceAddMetricProcedure,
 		svc.AddMetric,
@@ -766,6 +843,12 @@ func NewCanvasServiceHandler(svc CanvasServiceHandler, opts ...connect.HandlerOp
 			canvasServiceSetParameterHandler.ServeHTTP(w, r)
 		case CanvasServiceGetParametersProcedure:
 			canvasServiceGetParametersHandler.ServeHTTP(w, r)
+		case CanvasServiceBatchSetParametersProcedure:
+			canvasServiceBatchSetParametersHandler.ServeHTTP(w, r)
+		case CanvasServiceEvaluateFlowsProcedure:
+			canvasServiceEvaluateFlowsHandler.ServeHTTP(w, r)
+		case CanvasServiceGetFlowStateProcedure:
+			canvasServiceGetFlowStateHandler.ServeHTTP(w, r)
 		case CanvasServiceAddMetricProcedure:
 			canvasServiceAddMetricHandler.ServeHTTP(w, r)
 		case CanvasServiceDeleteMetricProcedure:
@@ -865,6 +948,18 @@ func (UnimplementedCanvasServiceHandler) SetParameter(context.Context, *connect.
 
 func (UnimplementedCanvasServiceHandler) GetParameters(context.Context, *connect.Request[v1.GetParametersRequest]) (*connect.Response[v1.GetParametersResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.GetParameters is not implemented"))
+}
+
+func (UnimplementedCanvasServiceHandler) BatchSetParameters(context.Context, *connect.Request[v1.BatchSetParametersRequest]) (*connect.Response[v1.BatchSetParametersResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.BatchSetParameters is not implemented"))
+}
+
+func (UnimplementedCanvasServiceHandler) EvaluateFlows(context.Context, *connect.Request[v1.EvaluateFlowsRequest]) (*connect.Response[v1.EvaluateFlowsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.EvaluateFlows is not implemented"))
+}
+
+func (UnimplementedCanvasServiceHandler) GetFlowState(context.Context, *connect.Request[v1.GetFlowStateRequest]) (*connect.Response[v1.GetFlowStateResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.GetFlowState is not implemented"))
 }
 
 func (UnimplementedCanvasServiceHandler) AddMetric(context.Context, *connect.Request[v1.AddMetricRequest]) (*connect.Response[v1.AddMetricResponse], error) {

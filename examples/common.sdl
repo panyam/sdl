@@ -25,11 +25,22 @@ native component NativeDisk {
 
 // Native components are defined externally
 // We just have to declare them
+
 native component HashIndex {
   // Exposing a dependency that can be configured
   // It is upto the native component to manage setting/getting this
   method Find() Bool
   method Insert() Bool
+  method Delete () Bool
+}
+
+native component SortedFile {
+  param NumRecords Int
+  param RecordSize Int
+  param PageSize Int
+
+  method Find() Bool
+  method Scan() Bool
   method Delete () Bool
 }
 
