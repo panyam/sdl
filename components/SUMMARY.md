@@ -44,6 +44,16 @@ This package provides concrete Go implementations of common distributed system c
     -   `ResourcePool`: Reports success rate degradation under high utilization (M/M/c based)
     -   `MM1Queue`: Models performance degradation and service time increases under overload
     -   Back-pressure effects enable realistic flow analysis with capacity constraints
+*   **Utilization Tracking:** Components now provide comprehensive utilization monitoring:
+    -   `ResourcePool`: Implements UtilizationProvider with M/M/c utilization calculation (ρ = λ/(μ×c))
+    -   `MM1Queue`: Provides M/M/1 utilization tracking with arrival and service rate monitoring
+    -   `MMCKQueue`: Full M/M/c/K utilization support with capacity constraints
+    -   `UtilizationProvider` interface enables hierarchical utilization reporting
+    -   Performance cliff visualization for capacity planning and bottleneck identification
+*   **Enhanced NWBase Wrapper:** The base wrapper now provides utilization delegation and arrival rate management:
+    -   Automatic delegation to wrapped components implementing UtilizationProvider
+    -   Component path construction for hierarchical utilization reporting
+    -   Arrival rate proxy methods for flow analysis integration
 *   **Test Suite Complete:** All component tests pass with standardized patterns for component configuration and initialization.
 
 **Relationship with other packages:**

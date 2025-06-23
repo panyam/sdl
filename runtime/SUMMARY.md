@@ -15,6 +15,7 @@ This package is responsible for the execution and evaluation of System Design La
 
 *   **`SystemInstance` & `ComponentInstance` (`system.go`, `component.go`):**
     *   Runtime representations of `system` and `component` declarations. They manage their respective AST nodes and runtime environments (`Env[Value]`). Their `Initializer()` methods are crucial for compiling declarative bodies into executable statements.
+    *   **Utilization Integration**: ComponentInstance now implements GetUtilizationInfo() for hierarchical utilization reporting from native components. SystemInstance provides AllComponents() for system-wide utilization queries.
 
 *   **`SimpleEval` (`simpleeval.go`):**
     *   The primary interpreter (evaluator) for SDL AST nodes. It walks the AST to evaluate expressions and statements.

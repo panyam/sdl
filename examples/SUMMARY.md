@@ -13,14 +13,23 @@ This package contains example system models with a primary focus on **workshop d
     *   **Workshop Value:** Demonstrates M/M/c queuing theory, cache hit rate impact, capacity planning, and performance trade-offs through real-time parameter modification.
     *   **Files:** `netflix.sdl` (system model), `traffic_spike_demo_test.go` (Canvas-based test suite for validation).
 
+2.  **`uber/` - Ride Sharing Platform Evolution (COMPLETE SUITE):**
+    *   **Purpose:** Three-stage architecture evolution demonstrating system design patterns and performance optimization.
+    *   **MVP Version (`mvp.sdl`):** Monolithic system with single database, full table scans, and synchronous operations.
+    *   **Intermediate Version (`intermediate.sdl`):** Service decomposition with caching, geo-indexing, and async notifications.
+    *   **Modern Version (`modern.sdl`):** Microservices with event streaming, distributed caching, and auto-scaling.
+    *   **Workshop Value:** Complete system evolution story showing database bottlenecks, performance cliffs, caching strategies, and service boundaries.
+    *   **Performance Features:** Float rate support (10.1 RPS), automatic flow calculation, utilization tracking, and performance cliff visualization.
+    *   **Files:** Three complete system models with shared common components and comprehensive demo scripts.
+
 **Additional Workshop Examples:**
 
-2.  **`bitly/` - URL Shortening Service:**
+3.  **`bitly/` - URL Shortening Service:**
     *   SDL model files for a Bitly-style URL shortening service.
     *   **Files:** `db.sdl`, `mvp.sdl` - Component and system definitions.
     *   **Workshop Potential:** Could be expanded for system design interview scenarios demonstrating database sharding, caching strategies, and global distribution.
 
-3.  **`twitter/` - Social Media Platform:**
+4.  **`twitter/` - Social Media Platform:**
     *   SDL models for Twitter-style social media components.
     *   **Files:** `dbs.sdl`, `services.sdl` - Database and service architectures.
     *   **Workshop Potential:** Excellent for demonstrating timeline generation, fan-out patterns, and social graph challenges.

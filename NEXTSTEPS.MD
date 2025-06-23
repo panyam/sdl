@@ -210,6 +210,18 @@ This document outlines the workshop-focused development status and next steps fo
 *   **`[COMPLETED]` Component Name Resolution**: Fixed nested component names in flow visualization
 *   **`[COMPLETED]` Demo Script Updates**: Uber MVP recipe uses automatic flow calculation
 
+### ✅ COMPLETED: Utilization Tracking & Metrics System (June 23, 2025)
+*   **`[COMPLETED]` Component Utilization Tracking**: Added GetUtilization() methods to ResourcePool, MM1Queue, and MMCKQueue for M/M/c queuing theory support
+*   **`[COMPLETED]` Hierarchical Utilization Interface**: UtilizationProvider interface with UtilizationInfo for nested component utilization reporting
+*   **`[COMPLETED]` Performance Cliff Visualization**: Color-coded utilization display showing critical thresholds (>95% red, >80% yellow) with bottleneck identification
+*   **`[COMPLETED]` GetUtilization RPC**: Complete gRPC API for component utilization queries with per-component filtering
+*   **`[COMPLETED]` sdl utilization Command**: CLI command showing resource utilization with load details and status indicators
+*   **`[COMPLETED]` Utilization Metrics Type**: Full support for 'utilization' metrics with periodic sampling instead of event-based collection
+*   **`[COMPLETED]` Float Rate Support**: Generator commands now accept decimal rates (e.g., 10.1 RPS) for fine-grained traffic control
+*   **`[COMPLETED]` Runtime Component Integration**: SystemInstance.AllComponents() method and GetUtilizationInfo() for all component types
+*   **`[COMPLETED]` Dashboard Integration**: Real-time utilization metrics in web dashboard with streaming support
+*   **`[COMPLETED]` Comprehensive Testing**: End-to-end validation showing database pool at 98.9% utilization with performance cliff demonstration
+
 ### ✅ COMPLETED: Parameter Management System (June 21, 2025)
 *   **`[COMPLETED]` gRPC Parameter Endpoints**: SetParameter and GetParameters RPCs in canvas.proto
 *   **`[COMPLETED]` SDL Expression Values**: Parameters use SDL syntax ("42", "true", "'string'")
