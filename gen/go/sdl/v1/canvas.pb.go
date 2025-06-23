@@ -3941,11 +3941,12 @@ func (x *SystemDiagram) GetEdges() []*DiagramEdge {
 // DiagramNode represents a component or instance in the system
 type DiagramNode struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`           // Unique identifier for the node
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`       // Display name
-	Type          string                 `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`       // Component type for display
-	Methods       []*MethodInfo          `protobuf:"bytes,4,rep,name=methods,proto3" json:"methods,omitempty"` // Methods provided by this component
-	Traffic       string                 `protobuf:"bytes,5,opt,name=traffic,proto3" json:"traffic,omitempty"` // Current traffic flow (e.g., "0 rps")
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                             // Unique identifier for the node
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                         // Display name
+	Type          string                 `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`                         // Component type for display
+	Methods       []*MethodInfo          `protobuf:"bytes,4,rep,name=methods,proto3" json:"methods,omitempty"`                   // Methods provided by this component
+	Traffic       string                 `protobuf:"bytes,5,opt,name=traffic,proto3" json:"traffic,omitempty"`                   // Current traffic flow (e.g., "0 rps")
+	FullPath      string                 `protobuf:"bytes,6,opt,name=full_path,json=fullPath,proto3" json:"full_path,omitempty"` // Full path from system root (e.g., "webserver.db.pool")
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -4011,6 +4012,13 @@ func (x *DiagramNode) GetMethods() []*MethodInfo {
 func (x *DiagramNode) GetTraffic() string {
 	if x != nil {
 		return x.Traffic
+	}
+	return ""
+}
+
+func (x *DiagramNode) GetFullPath() string {
+	if x != nil {
+		return x.FullPath
 	}
 	return ""
 }
@@ -4766,13 +4774,14 @@ const file_sdl_v1_canvas_proto_rawDesc = "" +
 	"\vsystem_name\x18\x01 \x01(\tR\n" +
 	"systemName\x12)\n" +
 	"\x05nodes\x18\x02 \x03(\v2\x13.sdl.v1.DiagramNodeR\x05nodes\x12)\n" +
-	"\x05edges\x18\x03 \x03(\v2\x13.sdl.v1.DiagramEdgeR\x05edges\"\x8d\x01\n" +
+	"\x05edges\x18\x03 \x03(\v2\x13.sdl.v1.DiagramEdgeR\x05edges\"\xaa\x01\n" +
 	"\vDiagramNode\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
 	"\x04type\x18\x03 \x01(\tR\x04type\x12,\n" +
 	"\amethods\x18\x04 \x03(\v2\x12.sdl.v1.MethodInfoR\amethods\x12\x18\n" +
-	"\atraffic\x18\x05 \x01(\tR\atraffic\"[\n" +
+	"\atraffic\x18\x05 \x01(\tR\atraffic\x12\x1b\n" +
+	"\tfull_path\x18\x06 \x01(\tR\bfullPath\"[\n" +
 	"\n" +
 	"MethodInfo\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1f\n" +

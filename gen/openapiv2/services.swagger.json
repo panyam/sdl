@@ -1583,6 +1583,10 @@
         "traffic": {
           "type": "string",
           "title": "Current traffic flow (e.g., \"0 rps\")"
+        },
+        "fullPath": {
+          "type": "string",
+          "title": "Full path from system root (e.g., \"webserver.db.pool\")"
         }
       },
       "title": "DiagramNode represents a component or instance in the system"

@@ -748,6 +748,7 @@ message DiagramNode {
   string type = 3;        // Component type for display
   repeated MethodInfo methods = 4;  // Methods provided by this component
   string traffic = 5;     // Current traffic flow (e.g., "0 rps")
+  string full_path = 6;   // Full path from system root (e.g., "webserver.db.pool")
 }
 
 // MethodInfo represents information about a component method
