@@ -193,7 +193,7 @@ func (r *Runtime) CreateNativeComponent(compDecl *ComponentDecl) NativeObject {
 	case "BitmapIndex":
 		return cd.NewBitmapIndex(name)
 	case "Cache":
-		return cd.NewCache(name)
+		return cd.NewCacheWithContention(name)
 	case "LSMTree":
 		return cd.NewLSMTree(name)
 	case "MM1Queue":

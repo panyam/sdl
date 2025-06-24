@@ -38,8 +38,8 @@ echo ""
 
 # Add all metrics
 execWithConfirm "Adding request latency metric" sdl metrics add request_latency webserver RequestRide --type latency --window=1 --aggregation=p90
-execWithConfirm "Adding database query time metric" sdl metrics add db_query database FindNearestDriver  --type latency --window=1 --aggregation=p90
 execWithConfirm "Adding Maps API latency metric" sdl metrics add maps_latency mapsService CalculateRoute  --type latency --window=1 --aggregation=p90
+execWithConfirm "Adding database query time metric" sdl metrics add db_query database FindNearestDriver  --type latency --window=1 --aggregation=p90
 execWithConfirm "Adding utilization metric for db" sdl metrics add db_utilization database --type utilization --canvas ubermvp --window 1
 # Note: Pool utilization metrics not supported yet - only latency and count
 # execWithConfirm "Adding database pool utilization metric" sdl metrics add db_pool database pool utilization

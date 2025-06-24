@@ -39,12 +39,14 @@ echo "5. Better connection pooling (20 connections vs 3)"
 echo ""
 
 # Add metrics
-execWithConfirm "Adding request latency metric" sdl metrics add request_latency gateway RequestRide latency
+execWithConfirm "Adding request latency metric" sdl metrics add request_latency gateway RequestRide --type latency --window=1 --aggregation=p90
 # Cache metrics - we'll track latency instead of hit rate
-execWithConfirm "Adding user lookup latency (with cache)" sdl metrics add user_lookup gateway.userService GetUser latency
-execWithConfirm "Adding driver lookup latency (with cache)" sdl metrics add driver_lookup gateway.driverService GetDriver latency
-execWithConfirm "Adding driver query latency" sdl metrics add driver_query gateway.driverService FindNearbyDrivers latency
-execWithConfirm "Adding notification send latency" sdl metrics add notification_latency gateway.notificationService NotifyDriver latency
+execWithConfirm "Adding driver query latency" sdl metrics add driver_query gateway.driverService FindNearbyDrivers --type latency --window=1 --aggregation=p90
+execWithConfirm "Adding notification send latency" sdl metrics add notification_latency gateway.notificationService NotifyDriver --type latency --window=1 --aggregation=p90
+execWithConfirm "Adding database query time metric" sdl metrics add userdb_query userService.userDB Read --type latency --window=1 --aggregation=p90
+execWithConfirm "Adding utilization metric for db" sdl metrics add userdb_utilization userService.userDB --type utilization --window 1
+execWithConfirm "Adding database query time metric" sdl metrics add driverdb_read_latency driverService.driverDB Read --type latency --window=1 --aggregation=p90
+execWithConfirm "Adding utilization metric for db" sdl metrics add driverdb_utilization driverService.driverDB --type utilization --window 1
 # Note: Pool/queue utilization metrics not supported - only latency and count
 
 echo ""

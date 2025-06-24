@@ -71,7 +71,7 @@ system UberIntermediate {
   )
   use userService UserService
   use driverService DriverService
-  use matchingService MatchingService
+  use matchingService MatchingService(driverService = driverService)
   use notificationService NotificationService
 }
 
@@ -79,7 +79,7 @@ component UserService {
   uses pool1 ResourcePool(Size = 50, AvgHoldTime = 20ms)  // Utilization tracking enabled
   uses pool2 ResourcePool(Size = 20, AvgHoldTime = 25ms)
 
-  uses redis Cache(HitRate = 0.7)  // 70% cache hit for user data
+  uses redis Cache(HitRate = 0.7, MaxThroughput = 50000)  // 70% cache hit for user data
 
   uses userDB Database(
     Pool = pool2,         // Better connection pooling with utilization 
@@ -142,7 +142,7 @@ component UserService {
 component DriverService {
   uses pool ResourcePool(Size = 50, AvgHoldTime = 15ms)  // Driver operations are faster
 
-  uses locationCache Cache(HitRate = 0.9)  // Driver locations heavily cached
+  uses locationCache Cache(HitRate = 0.9, MaxThroughput = 100000)  // Driver locations heavily cached
 
   uses pool2 ResourcePool(Size = 20, AvgHoldTime = 20ms)
   uses driverDB Database(
@@ -218,9 +218,11 @@ component DriverService {
 component MatchingService {
   uses pool ResourcePool(Size = 100, AvgHoldTime = 30ms)  // Handles the heavy lifting - longer operations
 
-  uses routeCache Cache(HitRate = 0.6)  // Route caching helps
+  uses routeCache Cache(HitRate = 0.6, MaxThroughput = 30000)  // Route caching helps
 
   uses mapsAPI ResourcePool(Size = 30, AvgHoldTime = 100ms)  // External API rate limits
+  
+  uses driverService DriverService
 
   method MatchRider() MatchResult {
     let acquired = self.pool.Acquire()
@@ -228,8 +230,11 @@ component MatchingService {
       return MatchResult.RateLimited  // Pool exhausted
     }
     
-    // Find nearby drivers (service call simulation)
-    delay(20ms)  // Service call latency
+    // Find nearby drivers through driver service
+    let driversFound = self.driverService.FindNearbyDrivers()
+    if not driversFound {
+      return MatchResult.NoDriversAvailable
+    }
     
     // Check cached route
     let route = self.routeCache.Read()

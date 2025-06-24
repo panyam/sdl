@@ -61,6 +61,7 @@ native component BitmapIndex {
 
 native component Cache {
   param HitRate Float
+  param MaxThroughput Float
 
   method Read() Bool
   method Write() Bool
