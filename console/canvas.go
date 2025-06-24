@@ -422,9 +422,12 @@ func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
 				Name:    methodName,
 				Traffic: rate,
 			}},
-			Traffic:  fmt.Sprintf("%.1f rps", rate),
 			FullPath: path,
 			Icon:     c.getComponentIcon(inst),
+			Traffic:  "",
+		}
+		if rate > 0 {
+			node.Traffic = fmt.Sprintf("%.1f rps", rate)
 		}
 		methodNodes[nodeId] = node
 		nodes = append(nodes, node)
@@ -455,7 +458,7 @@ func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
 		if path == "" {
 			return
 		}
-		
+
 		methodKey := fmt.Sprintf("%s:%s", path, methodName)
 		if processedMethods[methodKey] {
 			return
@@ -492,13 +495,17 @@ func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
 						}
 					}
 
-					*edges = append(*edges, &protos.DiagramEdge{
+					newedge := &protos.DiagramEdge{
 						FromId:     fromNode.Id,
 						ToId:       toNode.Id,
 						FromMethod: methodName,
 						ToMethod:   neighbor.MethodName,
-						Label:      fmt.Sprintf("%.1f rps", rate),
-					})
+						Label:      "",
+					}
+					if rate > 0 {
+						newedge.Label = fmt.Sprintf("%.1f rps", rate)
+					}
+					*edges = append(*edges, newedge)
 				}
 			}
 
@@ -564,7 +571,7 @@ func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
 					Name:     primaryPath,
 					Type:     inst.ComponentDecl.Name.Value,
 					Methods:  []*protos.MethodInfo{},
-					Traffic:  "0 rps",
+					Traffic:  "-",
 					FullPath: primaryPath,
 					Icon:     c.getComponentIcon(inst),
 				}
@@ -661,7 +668,7 @@ func (c *Canvas) getComponentIcon(inst *runtime.ComponentInstance) string {
 	hasDatabaseDep := false
 	hasCacheDep := false
 	hasPoolDep := false
-	
+
 	for _, dep := range deps {
 		if dep.ResolvedComponent != nil {
 			depType := dep.ResolvedComponent.Name.Value
