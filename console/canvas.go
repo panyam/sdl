@@ -430,9 +430,9 @@ func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
 		return node
 	}
 
-	// Recursive helper to process component methods
-	var processComponentMethods func(inst *runtime.ComponentInstance, fromMethodName string,
-		processedEdges map[string]bool,
+	// Recursive helper to process a specific method and its calls
+	var processMethodCalls func(inst *runtime.ComponentInstance, methodName string,
+		processedMethods map[string]bool,
 		getOrCreateMethodNode func(*runtime.ComponentInstance, string) *protos.DiagramNode,
 		instancePaths map[*runtime.ComponentInstance][]string,
 		currentFlowRates map[string]float64,
@@ -440,8 +440,8 @@ func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
 		edges *[]*protos.DiagramEdge,
 		flowScope *runtime.FlowScope)
 
-	processComponentMethods = func(inst *runtime.ComponentInstance, fromMethodName string,
-		processedEdges map[string]bool,
+	processMethodCalls = func(inst *runtime.ComponentInstance, methodName string,
+		processedMethods map[string]bool,
 		getOrCreateMethodNode func(*runtime.ComponentInstance, string) *protos.DiagramNode,
 		instancePaths map[*runtime.ComponentInstance][]string,
 		currentFlowRates map[string]float64,
@@ -449,33 +449,30 @@ func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
 		edges *[]*protos.DiagramEdge,
 		flowScope *runtime.FlowScope) {
 
-		// Skip if we've already processed this component
+		// Skip if we've already processed this method
 		path := getPrimaryPath(inst)
 		if path == "" {
 			return
 		}
+		
+		methodKey := fmt.Sprintf("%s:%s", path, methodName)
+		if processedMethods[methodKey] {
+			return
+		}
+		processedMethods[methodKey] = true
 
-		// Process all methods of the called component
-		methods, _ := inst.ComponentDecl.Methods()
-		for _, method := range methods {
-			methodName := method.Name.Value
-
-			// Create node for this method
-			fromNode := getOrCreateMethodNode(inst, methodName)
-			if fromNode == nil {
+		// Find all calls this specific method makes
+		neighbors := inst.NeighborsFromMethod(methodName)
+		for _, neighbor := range neighbors {
+			// Create node for the called method
+			toNode := getOrCreateMethodNode(neighbor.Component, neighbor.MethodName)
+			if toNode == nil {
 				continue
 			}
 
-			// Find all calls this method makes
-			neighbors := inst.NeighborsFromMethod(methodName)
-			for _, neighbor := range neighbors {
-				// Create node for the called method
-				toNode := getOrCreateMethodNode(neighbor.Component, neighbor.MethodName)
-				if toNode == nil {
-					continue
-				}
-
-				// Create edge
+			// Create edge
+			fromNode := getOrCreateMethodNode(inst, methodName)
+			if fromNode != nil {
 				edgeKey := fmt.Sprintf("%s->%s", fromNode.Id, toNode.Id)
 				if !processedEdges[edgeKey] {
 					processedEdges[edgeKey] = true
@@ -502,13 +499,16 @@ func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
 						Label:      fmt.Sprintf("%.1f rps", rate),
 					})
 				}
-
-				// Recursively process the called component
-				processComponentMethods(neighbor.Component, neighbor.MethodName, processedEdges,
-					getOrCreateMethodNode, instancePaths, currentFlowRates, nodes, edges, flowScope)
 			}
+
+			// Recursively process the called method
+			processMethodCalls(neighbor.Component, neighbor.MethodName, processedMethods,
+				getOrCreateMethodNode, instancePaths, currentFlowRates, nodes, edges, flowScope)
 		}
 	}
+
+	// Track which methods have been processed to avoid duplicates
+	processedMethods := make(map[string]bool)
 
 	// Process all root instances and traverse their methods
 	for _, rootInst := range rootInstances {
@@ -517,53 +517,15 @@ func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
 		for _, method := range methods {
 			methodName := method.Name.Value
 
-			// Create node for this method
+			// Create node for this root method
 			fromNode := getOrCreateMethodNode(rootInst, methodName)
 			if fromNode == nil {
 				continue
 			}
 
-			// Find all calls this method makes
-			neighbors := rootInst.NeighborsFromMethod(methodName)
-			for _, neighbor := range neighbors {
-				// Create node for the called method
-				toNode := getOrCreateMethodNode(neighbor.Component, neighbor.MethodName)
-				if toNode == nil {
-					continue
-				}
-
-				// Create edge
-				edgeKey := fmt.Sprintf("%s->%s", fromNode.Id, toNode.Id)
-				if !processedEdges[edgeKey] {
-					processedEdges[edgeKey] = true
-
-					// Get rate if available from flow analysis
-					rate := 0.0
-					if c.currentFlowScope != nil && c.currentFlowScope.FlowEdges != nil {
-						for _, flowEdge := range c.currentFlowScope.FlowEdges.GetEdges() {
-							if flowEdge.FromComponent == rootInst &&
-								flowEdge.FromMethod == methodName &&
-								flowEdge.ToComponent == neighbor.Component &&
-								flowEdge.ToMethod == neighbor.MethodName {
-								rate = flowEdge.Rate
-								break
-							}
-						}
-					}
-
-					edges = append(edges, &protos.DiagramEdge{
-						FromId:     fromNode.Id,
-						ToId:       toNode.Id,
-						FromMethod: methodName,
-						ToMethod:   neighbor.MethodName,
-						Label:      fmt.Sprintf("%.1f rps", rate),
-					})
-				}
-
-				// Recursively process the called component's methods
-				processComponentMethods(neighbor.Component, neighbor.MethodName, processedEdges,
-					getOrCreateMethodNode, instancePaths, currentFlowRates, &nodes, &edges, c.currentFlowScope)
-			}
+			// Process all calls from this method recursively
+			processMethodCalls(rootInst, methodName, processedMethods,
+				getOrCreateMethodNode, instancePaths, currentFlowRates, &nodes, &edges, c.currentFlowScope)
 		}
 	}
 
