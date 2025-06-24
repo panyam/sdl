@@ -7,6 +7,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Version variables set during build
+var (
+	Version   = "dev"  // Set by -ldflags
+	GitCommit = "none" // Set by -ldflags
+	BuildDate = "unknown" // Set by -ldflags
+)
+
 // Global flags can be defined here if needed
 // var cfgFile string
 var dslFilePath string

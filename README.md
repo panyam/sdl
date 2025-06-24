@@ -16,6 +16,16 @@ SDL enables rapid analysis of system designs through:
 
 ## 🚀 Quick Start
 
+### Prerequisites
+
+Before installing SDL, ensure you have the following installed:
+
+- **Go 1.24 or later** - [Download](https://golang.org/dl/)
+- **Node.js 18 or later** - [Download](https://nodejs.org/)
+- **npm** (comes with Node.js)
+- **git** - [Download](https://git-scm.com/)
+- **make** - Usually pre-installed on Unix systems
+
 ### Installation
 
 ```bash
@@ -23,28 +33,48 @@ SDL enables rapid analysis of system designs through:
 git clone <repository-url>
 cd sdl
 
-# Install prerequisites
+# Install all dependencies and build SDL (one command)
+make install
 
-# Install Go Tools
-go install github.com/bufbuild/buf/cmd/buf@latest
-go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest
-go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-go install connectrpc.com/connect/cmd/protoc-gen-connect-go@latest
+# This will:
+# 1. Check all prerequisites
+# 2. Install required Go tools (goyacc, buf)
+# 3. Install Node.js dependencies
+# 4. Build the SDL binary
 
-#Install Buf if not already done.  This will make buf generally available
-npm config set @buf:registry https://buf.build/gen/npm/v1/
-npm install @connectrpc/connect @connectrpc/connect-web
-npm install --save-dev -g @bufbuild/buf
-
-# Install the es/connect generator plugins for proto and buf.  Needed for `buf generate`
-npm install --save-dev -g @bufbuild/protoc-gen-es
-
-# Build the CLI tool
-make build
-
-# Or install directly
-go install ./cmd/sdl
+# Verify installation
+sdl version
 ```
+
+#### Manual Installation Steps
+
+If you prefer to install components separately:
+
+```bash
+# Check prerequisites
+make check-deps
+
+# Install Go tools only
+make install-tools
+
+# Install Node dependencies only
+make install-npm
+
+# Build SDL binary
+make binary
+
+# Run tests
+make test
+```
+
+#### Troubleshooting
+
+If you encounter issues:
+
+1. **"Go is not installed"** - Install Go 1.24+ from https://golang.org/dl/
+2. **"goyacc: command not found"** - Run `make install-tools` or `go install golang.org/x/tools/cmd/goyacc@latest`
+3. **"$HOME/go/bin is not in PATH"** - Add to your shell profile: `export PATH="$HOME/go/bin:$PATH"`
+4. **Build errors** - Run `make clean` then `make install` again
 
 ### Your First SDL Model
 
@@ -496,9 +526,69 @@ See [NEXTSTEPS.md](NEXTSTEPS.md) for detailed development plans:
 
 [License information to be added]
 
+## 🛠️ Development
+
+### Hot Reload with Air
+
+For development with automatic rebuilds:
+
+```bash
+# Install air (if not already installed)
+go install github.com/cosmtrek/air@latest
+
+# Run with hot reload
+air
+
+# Air will:
+# - Watch for file changes
+# - Rebuild automatically
+# - Restart the server
+# - Log output to /tmp/sdlserver.log
+```
+
+Note: The `.air.toml` configuration file is set up to work with the default installation. If you need custom paths, copy `.air.toml.template` to `.air.toml` and modify as needed.
+
+### Running Tests
+
+```bash
+# Run all tests
+make test
+
+# Run specific package tests
+go test -v ./runtime/...
+
+# Run benchmarks
+make bench
+
+# Run end-to-end tests
+./test_metrics_e2e.sh
+```
+
+### Building Documentation
+
+```bash
+# Generate protobuf documentation
+buf generate
+
+# Build web dashboard
+make dash
+```
+
 ## 🤝 Contributing
 
-[Contributing guidelines to be added]
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for:
+
+- Code style guidelines
+- Pull request process
+- Testing requirements
+- Development workflow
+
+Quick contribution checklist:
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes with tests
+4. Run `make test` to ensure tests pass
+5. Submit a pull request
 
 ---
 
