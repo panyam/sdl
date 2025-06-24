@@ -5,8 +5,8 @@ tmp_dir = "/tmp"
 [build]
   args_bin = []
   # cmd = "go build -o /tmp/main *.go && ( cd web &&  npm run build & ) "
-  cmd = "make"
-  bin = "sdl serve 2>&1 | tee /tmp/sdlserver.log"
+  cmd = "make binlocal"
+  bin = "/tmp/sdl serve 2>&1 | tee /tmp/sdlserver.log"
   # bin = "sdl serve --load ./test.recipe 2>&1 | tee /tmp/sdlserver.log"
   # bin = "dlv --listen=:9091 --headless=true --log=true --accept-multiclient --api-version=2 exec --continue sdl serve"
 

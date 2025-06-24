@@ -16,6 +16,10 @@ binary:
 	cd parser && make
 	go build -ldflags "$(LDFLAGS)" -o ${GOBIN}/sdl ./cmd/sdl/main.go
 
+binlocal: 
+	cd parser && make
+	go build -ldflags "$(LDFLAGS)" -o /tmp/sdl ./cmd/sdl/main.go
+
 # Installation targets
 .PHONY: deps check-deps install-tools install
 
