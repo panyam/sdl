@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"maps"
-	"reflect"
 	"slices"
 
 	"github.com/panyam/sdl/components"
@@ -255,7 +254,7 @@ func (ci *ComponentInstance) NeighborsFromMethod(methodName string) []*NeighborM
 
 	methodDecl, _ := ci.ComponentDecl.GetMethod(methodName)
 	// analyze the body to see what methods are being called from this method
-	
+
 	if methodDecl == nil || methodDecl.Body == nil {
 		return slices.Collect(maps.Values(neighbors))
 	}
@@ -359,11 +358,12 @@ func (ci *ComponentInstance) NeighborsFromMethod(methodName string) []*NeighborM
 		case *decl.IdentifierExpr:
 			// Resolve from the env
 			val, ok := ci.Env.Get(n.Value)
-			log.Println("Value: ", n.Value, val, reflect.TypeOf(val.Value))
+			// log.Println("Value: ", n.Value, val, reflect.TypeOf(val.Value))
 			if ok && !val.IsNil() {
-				log.Println("Value: ", val, reflect.TypeOf(val.Value))
+				// log.Println("Value: ", val, reflect.TypeOf(val.Value))
 			}
 		case *decl.LiteralExpr:
+		case *decl.MemberAccessExpr:
 			// Ignore these
 			break
 		default:

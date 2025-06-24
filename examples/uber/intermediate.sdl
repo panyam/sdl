@@ -328,7 +328,7 @@ component APIGateway {
     }
     
     // Find a match
-    let matchResult = self.matchingService.MatchRider()
+    let matchResult = matchingService.MatchRider()
     
     if matchResult == MatchResult.NoDriversAvailable {
       return HttpStatusCode.NotFound

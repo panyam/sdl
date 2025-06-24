@@ -375,12 +375,9 @@ func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
 
 	// Step 1: Build the instance and path map
 	rootInstances := c.buildInstancePaths(instancePaths, pathToInstance)
-	log.Println("Root Instances: ", rootInstances, instancePaths[rootInstances[0]])
+	log.Println("Root Instances: ", rootInstances)
 	for comp, ips := range instancePaths {
 		log.Printf("FOUND INSTANCE PATHS: CompId: %p, Decl: %s, IPS: %s", comp, comp.ComponentDecl.Name.Value, strings.Join(ips, ", "))
-	}
-	for path, comp := range pathToInstance {
-		log.Printf("FOUND PATH TO INSTANCE: Path: %s  =====> %p ----- With Paths: [%s]", path, comp, strings.Join(instancePaths[comp], ", "))
 	}
 
 	var nodes []*protos.DiagramNode
@@ -388,18 +385,10 @@ func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
 
 	// Track method nodes we've created
 	methodNodes := make(map[string]*protos.DiagramNode) // "component:method" -> node
+	processedEdges := make(map[string]bool)             // track "from->to" to avoid duplicates
 
-	// Track component-only nodes (for components without methods)
-	componentNodes := make(map[string]*protos.DiagramNode) // "component" -> node
-
-	// Get the current flow rates and edges
+	// Get the current flow rates for traffic labels
 	currentFlowRates := c.GetCurrentFlowRates()
-
-	// Get flow edges from the current flow analysis
-	var flowEdges []runtime.FlowEdge
-	if c.currentFlowScope != nil && c.currentFlowScope.FlowEdges != nil {
-		flowEdges = c.currentFlowScope.FlowEdges.GetEdges()
-	}
 
 	// Helper to find the primary path for an instance
 	getPrimaryPath := func(inst *runtime.ComponentInstance) string {
@@ -409,169 +398,186 @@ func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
 		return ""
 	}
 
-	// Create method nodes based on flow edges
-	for _, edge := range flowEdges {
-		// Create source method node
-		if edge.FromComponent != nil && edge.FromMethod != "" {
-			fromPath := getPrimaryPath(edge.FromComponent)
-			if fromPath != "" {
-				nodeId := fmt.Sprintf("%s:%s", fromPath, edge.FromMethod)
-				if _, exists := methodNodes[nodeId]; !exists {
-					// Get rate for this method
-					rateKey := fmt.Sprintf("%s.%s", fromPath, edge.FromMethod)
-					rate := currentFlowRates[rateKey]
-
-					node := &protos.DiagramNode{
-						Id:   nodeId,
-						Name: nodeId,
-						Type: edge.FromComponent.ComponentDecl.Name.Value,
-						Methods: []*protos.MethodInfo{{
-							Name:    edge.FromMethod,
-							Traffic: rate,
-						}},
-						Traffic:  fmt.Sprintf("%.1f rps", rate),
-						FullPath: fromPath,
-					}
-					methodNodes[nodeId] = node
-					nodes = append(nodes, node)
-				}
-			}
+	// Helper to create or get a method node
+	getOrCreateMethodNode := func(inst *runtime.ComponentInstance, methodName string) *protos.DiagramNode {
+		path := getPrimaryPath(inst)
+		if path == "" {
+			return nil
 		}
 
-		// Create target method node
-		if edge.ToComponent != nil && edge.ToMethod != "" {
-			toPath := getPrimaryPath(edge.ToComponent)
-			if toPath != "" {
-				nodeId := fmt.Sprintf("%s:%s", toPath, edge.ToMethod)
-				if _, exists := methodNodes[nodeId]; !exists {
-					// Get rate for this method
-					rateKey := fmt.Sprintf("%s.%s", toPath, edge.ToMethod)
-					rate := currentFlowRates[rateKey]
-
-					node := &protos.DiagramNode{
-						Id:   nodeId,
-						Name: nodeId,
-						Type: edge.ToComponent.ComponentDecl.Name.Value,
-						Methods: []*protos.MethodInfo{{
-							Name:    edge.ToMethod,
-							Traffic: rate,
-						}},
-						Traffic:  fmt.Sprintf("%.1f rps", rate),
-						FullPath: toPath,
-					}
-					methodNodes[nodeId] = node
-					nodes = append(nodes, node)
-				}
-			}
+		nodeId := fmt.Sprintf("%s:%s", path, methodName)
+		if node, exists := methodNodes[nodeId]; exists {
+			return node
 		}
 
-		// Create edge between methods
-		if edge.FromComponent != nil && edge.ToComponent != nil {
-			fromPath := getPrimaryPath(edge.FromComponent)
-			toPath := getPrimaryPath(edge.ToComponent)
-			if fromPath != "" && toPath != "" {
-				fromId := fmt.Sprintf("%s:%s", fromPath, edge.FromMethod)
-				toId := fmt.Sprintf("%s:%s", toPath, edge.ToMethod)
+		// Get rate for this method if available
+		rateKey := fmt.Sprintf("%s.%s", path, methodName)
+		rate := currentFlowRates[rateKey]
 
-				edges = append(edges, &protos.DiagramEdge{
-					FromId:     fromId,
-					ToId:       toId,
-					FromMethod: edge.FromMethod,
-					ToMethod:   edge.ToMethod,
-					Label:      fmt.Sprintf("%.1f rps", edge.Rate),
-				})
-			}
+		node := &protos.DiagramNode{
+			Id:   nodeId,
+			Name: nodeId,
+			Type: inst.ComponentDecl.Name.Value,
+			Methods: []*protos.MethodInfo{{
+				Name:    methodName,
+				Traffic: rate,
+			}},
+			Traffic:  fmt.Sprintf("%.1f rps", rate),
+			FullPath: path,
 		}
+		methodNodes[nodeId] = node
+		nodes = append(nodes, node)
+		return node
 	}
 
-	// Also check for methods with rates but no edges (e.g., generator entry points)
-	for rateKey, rate := range currentFlowRates {
-		if rate > 0 {
-			// Parse component.method format
-			parts := strings.Split(rateKey, ".")
-			if len(parts) >= 2 {
-				// Find the component path and method
-				methodName := parts[len(parts)-1]
-				componentPath := strings.Join(parts[:len(parts)-1], ".")
+	// Recursive helper to process component methods
+	var processComponentMethods func(inst *runtime.ComponentInstance, fromMethodName string,
+		processedEdges map[string]bool,
+		getOrCreateMethodNode func(*runtime.ComponentInstance, string) *protos.DiagramNode,
+		instancePaths map[*runtime.ComponentInstance][]string,
+		currentFlowRates map[string]float64,
+		nodes *[]*protos.DiagramNode,
+		edges *[]*protos.DiagramEdge,
+		flowScope *runtime.FlowScope)
 
-				// Check if this component path exists
-				if inst, ok := pathToInstance[componentPath]; ok {
-					nodeId := fmt.Sprintf("%s:%s", componentPath, methodName)
+	processComponentMethods = func(inst *runtime.ComponentInstance, fromMethodName string,
+		processedEdges map[string]bool,
+		getOrCreateMethodNode func(*runtime.ComponentInstance, string) *protos.DiagramNode,
+		instancePaths map[*runtime.ComponentInstance][]string,
+		currentFlowRates map[string]float64,
+		nodes *[]*protos.DiagramNode,
+		edges *[]*protos.DiagramEdge,
+		flowScope *runtime.FlowScope) {
 
-					// Only create node if it doesn't already exist
-					if _, exists := methodNodes[nodeId]; !exists {
-						node := &protos.DiagramNode{
-							Id:   nodeId,
-							Name: nodeId,
-							Type: inst.ComponentDecl.Name.Value,
-							Methods: []*protos.MethodInfo{{
-								Name:    methodName,
-								Traffic: rate,
-							}},
-							Traffic:  fmt.Sprintf("%.1f rps", rate),
-							FullPath: componentPath,
-						}
-						methodNodes[nodeId] = node
-						nodes = append(nodes, node)
-					}
-				}
-			}
+		// Skip if we've already processed this component
+		path := getPrimaryPath(inst)
+		if path == "" {
+			return
 		}
-	}
 
-	// Use NeighborsFromMethod to build edges for all method nodes
-	for nodeId := range methodNodes {
-		// Parse node ID to get component path and method
-		parts := strings.Split(nodeId, ":")
-		if len(parts) == 2 {
-			componentPath := parts[0]
-			methodName := parts[1]
+		// Process all methods of the called component
+		methods, _ := inst.ComponentDecl.Methods()
+		for _, method := range methods {
+			methodName := method.Name.Value
 
-			// Get the component instance
-			if inst, ok := pathToInstance[componentPath]; ok {
-				// Use NeighborsFromMethod to find all method calls from this method
-				neighbors := inst.NeighborsFromMethod(methodName)
+			// Create node for this method
+			fromNode := getOrCreateMethodNode(inst, methodName)
+			if fromNode == nil {
+				continue
+			}
 
-				for _, neighbor := range neighbors {
-					// Find the path for the neighbor component
-					if paths, exists := instancePaths[neighbor.Component]; exists && len(paths) > 0 {
-						neighborPath := paths[0] // Use primary path
+			// Find all calls this method makes
+			neighbors := inst.NeighborsFromMethod(methodName)
+			for _, neighbor := range neighbors {
+				// Create node for the called method
+				toNode := getOrCreateMethodNode(neighbor.Component, neighbor.MethodName)
+				if toNode == nil {
+					continue
+				}
 
-						// Create target method node if it doesn't exist
-						targetNodeId := fmt.Sprintf("%s:%s", neighborPath, neighbor.MethodName)
-						if _, exists := methodNodes[targetNodeId]; !exists {
-							// Get rate for this method
-							rateKey := fmt.Sprintf("%s.%s", neighborPath, neighbor.MethodName)
-							rate := currentFlowRates[rateKey]
+				// Create edge
+				edgeKey := fmt.Sprintf("%s->%s", fromNode.Id, toNode.Id)
+				if !processedEdges[edgeKey] {
+					processedEdges[edgeKey] = true
 
-							node := &protos.DiagramNode{
-								Id:   targetNodeId,
-								Name: targetNodeId,
-								Type: neighbor.Component.ComponentDecl.Name.Value,
-								Methods: []*protos.MethodInfo{{
-									Name:    neighbor.MethodName,
-									Traffic: rate,
-								}},
-								Traffic:  fmt.Sprintf("%.1f rps", rate),
-								FullPath: neighborPath,
+					// Get rate if available from flow analysis
+					rate := 0.0
+					if flowScope != nil && flowScope.FlowEdges != nil {
+						for _, flowEdge := range flowScope.FlowEdges.GetEdges() {
+							if flowEdge.FromComponent == inst &&
+								flowEdge.FromMethod == methodName &&
+								flowEdge.ToComponent == neighbor.Component &&
+								flowEdge.ToMethod == neighbor.MethodName {
+								rate = flowEdge.Rate
+								break
 							}
-							methodNodes[targetNodeId] = node
-							nodes = append(nodes, node)
 						}
-
-						// Create edge between methods
-						edges = append(edges, &protos.DiagramEdge{
-							FromId:     nodeId,
-							ToId:       targetNodeId,
-							FromMethod: methodName,
-							ToMethod:   neighbor.MethodName,
-							Label:      "",
-						})
 					}
+
+					*edges = append(*edges, &protos.DiagramEdge{
+						FromId:     fromNode.Id,
+						ToId:       toNode.Id,
+						FromMethod: methodName,
+						ToMethod:   neighbor.MethodName,
+						Label:      fmt.Sprintf("%.1f rps", rate),
+					})
 				}
+
+				// Recursively process the called component
+				processComponentMethods(neighbor.Component, neighbor.MethodName, processedEdges,
+					getOrCreateMethodNode, instancePaths, currentFlowRates, nodes, edges, flowScope)
 			}
 		}
 	}
+
+	// Process all root instances and traverse their methods
+	for _, rootInst := range rootInstances {
+		// Process each method in the root instance
+		methods, _ := rootInst.ComponentDecl.Methods()
+		for _, method := range methods {
+			methodName := method.Name.Value
+
+			// Create node for this method
+			fromNode := getOrCreateMethodNode(rootInst, methodName)
+			if fromNode == nil {
+				continue
+			}
+
+			// Find all calls this method makes
+			neighbors := rootInst.NeighborsFromMethod(methodName)
+			for _, neighbor := range neighbors {
+				// Create node for the called method
+				toNode := getOrCreateMethodNode(neighbor.Component, neighbor.MethodName)
+				if toNode == nil {
+					continue
+				}
+
+				// Create edge
+				edgeKey := fmt.Sprintf("%s->%s", fromNode.Id, toNode.Id)
+				if !processedEdges[edgeKey] {
+					processedEdges[edgeKey] = true
+
+					// Get rate if available from flow analysis
+					rate := 0.0
+					if c.currentFlowScope != nil && c.currentFlowScope.FlowEdges != nil {
+						for _, flowEdge := range c.currentFlowScope.FlowEdges.GetEdges() {
+							if flowEdge.FromComponent == rootInst &&
+								flowEdge.FromMethod == methodName &&
+								flowEdge.ToComponent == neighbor.Component &&
+								flowEdge.ToMethod == neighbor.MethodName {
+								rate = flowEdge.Rate
+								break
+							}
+						}
+					}
+
+					edges = append(edges, &protos.DiagramEdge{
+						FromId:     fromNode.Id,
+						ToId:       toNode.Id,
+						FromMethod: methodName,
+						ToMethod:   neighbor.MethodName,
+						Label:      fmt.Sprintf("%.1f rps", rate),
+					})
+				}
+
+				// Recursively process the called component's methods
+				processComponentMethods(neighbor.Component, neighbor.MethodName, processedEdges,
+					getOrCreateMethodNode, instancePaths, currentFlowRates, &nodes, &edges, c.currentFlowScope)
+			}
+		}
+	}
+
+	// Also add any generator entry points that might not have been traversed
+	for _, gen := range c.generators {
+		if gen.IsRunning() && gen.Rate > 0 {
+			if inst, ok := pathToInstance[gen.Component]; ok {
+				getOrCreateMethodNode(inst, gen.Method)
+			}
+		}
+	}
+
+	// Track component-only nodes (for components without methods)
+	componentNodes := make(map[string]*protos.DiagramNode) // "component" -> node
 
 	// Create component-only nodes for components that have no methods with traffic
 	// This ensures we still show the system structure even without traffic
