@@ -9,7 +9,58 @@
 // - Float rate support and automatic flow calculation
 // - Performance cliff detection via utilization monitoring
 
-import ResourcePool, MM1Queue, MMCKQueue, Cache, Database from "../common.sdl"
+import ResourcePool, MM1Queue, MMCKQueue, Cache, HttpStatusCode, delay from "../common.sdl"
+
+// Define enums for more realistic return types
+enum AuthResult {
+  Success,
+  InvalidToken,
+  TokenExpired,
+  UserNotFound,
+  RateLimited,
+  Failed
+}
+
+enum MatchResult {
+  Matched,
+  NoDriversAvailable,
+  OutsideServiceArea,
+  RateLimited,
+  Failed
+}
+
+enum NotificationResult {
+  Sent,
+  Queued,
+  Failed,
+  DeviceNotRegistered
+}
+
+// Database component that wraps a connection pool and storage
+component Database {
+  uses Pool ResourcePool
+  
+  param ReadLatency Float = 50ms
+  param WriteLatency Float = 100ms
+  
+  method Read() Bool {
+    let acquired = Pool.Acquire()
+    if not acquired {
+      return false
+    }
+    delay(ReadLatency)
+    return true
+  }
+  
+  method Write() Bool {
+    let acquired = Pool.Acquire()
+    if not acquired {
+      return false
+    }
+    delay(WriteLatency)
+    return true
+  }
+}
 
 system UberIntermediate {
   use gateway APIGateway(
@@ -27,7 +78,7 @@ system UberIntermediate {
 component UserService {
   uses pool ResourcePool(Size = 50, AvgHoldTime = 20ms)  // Utilization tracking enabled
 
-  uses redis Cache(HitRate = 0.7, ReadLatency = 5ms, WriteLatency = 10ms)  // 70% cache hit for user data
+  uses redis Cache(HitRate = 0.7)  // 70% cache hit for user data
 
   uses userDB Database(
     Pool = ResourcePool(Size = 20, AvgHoldTime = 25ms),  // Better connection pooling with utilization
@@ -35,56 +86,62 @@ component UserService {
     WriteLatency = 100ms
   )
 
-  method GetUser() Bool {
+  method GetUser() AuthResult {
     let acquired = self.pool.Acquire()
     if not acquired {
-      return false  // Pool exhausted
+      return AuthResult.RateLimited  // Pool exhausted
     }
     
     // Try cache first
     let cached = self.redis.Read()
     if cached {
-      return true
+      return AuthResult.Success
     }
     
     // Cache miss - hit database
     let user = self.userDB.Read()
     if not user {
-      return false
+      return AuthResult.UserNotFound
     }
     
     // Write to cache for next time
     let written = self.redis.Write()
-    
-    return written
+    if written {
+      return AuthResult.Success
+    }
+    return AuthResult.Failed
   }
 
-  method AuthenticateUser() Bool {
+  method AuthenticateUser() AuthResult {
     let acquired = self.pool.Acquire()
     if not acquired {
-      return false  // Pool exhausted
+      return AuthResult.RateLimited  // Pool exhausted
     }
     
     // Auth tokens cached for 5 minutes
     let cached = self.redis.Read()
     if cached {
-      return true
+      // 95% tokens valid, 5% expired
+      return AuthResult.Success  // Simplified for now
     }
     
     let user = self.userDB.Read()
     if not user {
-      return false
+      return AuthResult.InvalidToken
     }
     
     let written = self.redis.Write()
-    return written
+    if written {
+      return AuthResult.Success
+    }
+    return AuthResult.Failed
   }
 }
 
 component DriverService {
   uses pool ResourcePool(Size = 50, AvgHoldTime = 15ms)  // Driver operations are faster
 
-  uses locationCache Cache(HitRate = 0.9, ReadLatency = 2ms, WriteLatency = 5ms)  // Driver locations heavily cached
+  uses locationCache Cache(HitRate = 0.9)  // Driver locations heavily cached
 
   uses driverDB Database(
     Pool = ResourcePool(Size = 20, AvgHoldTime = 20ms),
@@ -159,24 +216,18 @@ component DriverService {
 component MatchingService {
   uses pool ResourcePool(Size = 100, AvgHoldTime = 30ms)  // Handles the heavy lifting - longer operations
 
-  uses routeCache Cache(HitRate = 0.6, ReadLatency = 5ms, WriteLatency = 10ms)  // Route caching helps
+  uses routeCache Cache(HitRate = 0.6)  // Route caching helps
 
   uses mapsAPI ResourcePool(Size = 30, AvgHoldTime = 100ms)  // External API rate limits
 
-  method MatchRider(riderId String, pickup Location, dropoff Location) Bool {
+  method MatchRider() MatchResult {
     let acquired = self.pool.Acquire()
     if not acquired {
-      return false  // Pool exhausted
+      return MatchResult.RateLimited  // Pool exhausted
     }
     
-    // Find nearby drivers (delegated to DriverService)
-    // Note: in real implementation this would be a service call
-    // For simulation purposes, we model this as a database lookup
-    // This would be a separate service call, modeled as additional latency
+    // Find nearby drivers (service call simulation)
     delay(20ms)  // Service call latency
-    
-    // 85% chance of finding drivers in this improved system
-    return true
     
     // Check cached route
     let route = self.routeCache.Read()
@@ -185,17 +236,17 @@ component MatchingService {
       // Calculate route via external API
       let apiAcquired = self.mapsAPI.Acquire()
       if not apiAcquired {
-        return false  // External API rate limited
+        return MatchResult.RateLimited  // External API rate limited
       }
       
       // Cache the route
       let cacheWritten = self.routeCache.Write()
       if not cacheWritten {
-        return false
+        return MatchResult.Failed
       }
     }
     
-    return true
+    return MatchResult.Matched
   }
 
   method CalculateFare() Bool {
@@ -209,40 +260,42 @@ component NotificationService {
   uses pool ResourcePool(Size = 200, AvgHoldTime = 10ms)  // Async, can handle more
   uses queue MM1Queue(ArrivalRate = 100.0, AvgServiceTime = 50ms)  // Notification queue with utilization tracking
 
-  method NotifyDriver() Bool {
+  method NotifyDriver() NotificationResult {
     let acquired = self.pool.Acquire()
     if not acquired {
-      return false  // Pool exhausted
+      return NotificationResult.Failed  // Pool exhausted
     }
     
     // Just enqueue - don't block
     let enqueued = self.queue.Enqueue()
-    
-    return enqueued
+    if enqueued {
+      return NotificationResult.Queued
+    }
+    return NotificationResult.Failed
   }
 
-  method NotifyRider() Bool {
+  method NotifyRider() NotificationResult {
     let acquired = self.pool.Acquire()
     if not acquired {
-      return false  // Pool exhausted
+      return NotificationResult.Failed  // Pool exhausted
     }
     
     let enqueued = self.queue.Enqueue()
-    
-    return enqueued
+    if enqueued {
+      return NotificationResult.Queued
+    }
+    return NotificationResult.Failed
   }
 
   // Background worker processes queue
-  method ProcessNotifications() Bool {
+  method ProcessNotifications() NotificationResult {
     let notification = self.queue.Dequeue()
     if notification {
       // Send via push notification service
       delay(50ms)  // Simulate sending
-      return true
-    } else {
-      delay(100ms)  // No items, wait a bit
-      return false
+      return NotificationResult.Sent
     }
+    return NotificationResult.Failed
   }
 }
 
@@ -254,59 +307,71 @@ component APIGateway {
   uses matchingService MatchingService
   uses notificationService NotificationService
 
-  method RequestRide(authToken: String, pickup: Location, dropoff: Location) Bool {
+  method RequestRide() HttpStatusCode {
     let acquired = self.pool.Acquire()
     if not acquired {
-      return false  // Gateway overloaded
+      return HttpStatusCode.ServiceUnavailable  // Gateway overloaded
     }
     
     // Authenticate user
-    let user = self.userService.AuthenticateUser(authToken)
-    if not user {
-      return false  // Invalid auth token
+    let authResult = self.userService.AuthenticateUser()
+    if authResult == AuthResult.InvalidToken {
+      return HttpStatusCode.Unauthorized
+    }
+    if authResult == AuthResult.TokenExpired {
+      return HttpStatusCode.Unauthorized
+    }
+    if authResult != AuthResult.Success {
+      return HttpStatusCode.InternalServerError
     }
     
     // Find a match
-    let match = self.matchingService.MatchRider(
-      riderId, pickup, dropoff
-    )
+    let matchResult = self.matchingService.MatchRider()
     
-    if not match {
-      return false  // No drivers available
+    if matchResult == MatchResult.NoDriversAvailable {
+      return HttpStatusCode.NotFound
+    }
+    if matchResult == MatchResult.OutsideServiceArea {
+      return HttpStatusCode.BadRequest
+    }
+    if matchResult == MatchResult.RateLimited {
+      return HttpStatusCode.ServiceUnavailable
+    }
+    if matchResult != MatchResult.Matched {
+      return HttpStatusCode.InternalServerError
     }
     
-    // Notify driver (async - don't wait)
-    let driverNotified = self.notificationService.NotifyDriver(
-      "driver123", "New ride request!"
-    )
+    // Notify driver (async - don't wait for result)
+    let driverNotified = self.notificationService.NotifyDriver()
     
     // Notify rider with ETA
-    let riderNotified = self.notificationService.NotifyRider(
-      "rider456", "Driver found!"
-    )
+    let riderNotified = self.notificationService.NotifyRider()
     
-    return driverNotified and riderNotified
+    // Even if notifications fail, ride is created
+    return HttpStatusCode.Ok
   }
 
-  method UpdateDriverLocation(authToken: String, lat: Float, lng: Float) Bool {
+  method UpdateDriverLocation() HttpStatusCode {
     let acquired = self.pool.Acquire()
     if not acquired {
-      return false  // Gateway overloaded
+      return HttpStatusCode.ServiceUnavailable  // Gateway overloaded
     }
     
     // Simple auth check (in reality would be different)
-    let driver = self.userService.AuthenticateUser(authToken)
-    if not driver {
-      return false
+    let authResult = self.userService.AuthenticateUser()
+    if authResult != AuthResult.Success {
+      return HttpStatusCode.Unauthorized
     }
     
-    return self.driverService.UpdateLocation(
-      "driver123", lat, lng
-    )
+    let updated = self.driverService.UpdateLocation()
+    if updated {
+      return HttpStatusCode.Ok
+    }
+    return HttpStatusCode.InternalServerError
   }
 
-  method GenerateId() Bool {
+  method GenerateId() HttpStatusCode {
     delay(1ms)  // ID generation latency
-    return true
+    return HttpStatusCode.Ok
   }
 }

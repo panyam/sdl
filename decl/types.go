@@ -387,7 +387,7 @@ func (t *TypeDecl) Equals(another *TypeDecl) bool {
 }
 func (t *TypeDecl) String() string {
 	if len(t.Args) == 0 {
-		return fmt.Sprintf("Type { %s ", t.Name)
+		return fmt.Sprintf("Type { %s }", t.Name)
 	} else {
 		return fmt.Sprintf("Type { %s[%s] } ", t.Name, strings.Join(gfn.Map(t.Args, func(t *TypeDecl) string { return t.String() }), ", "))
 	}

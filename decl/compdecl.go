@@ -169,7 +169,13 @@ func (d *ComponentDecl) Resolve() error {
 	return nil
 }
 
-func (c *ComponentDecl) String() string         { return fmt.Sprintf("component %s { ... }", c.Name) }
+func (c *ComponentDecl) String() string {
+	body := ""
+	for _, item := range c.Body {
+		body += item.String() + "\n"
+	}
+	return fmt.Sprintf("component %s { %s }", c.Name, body)
+}
 func (c *ComponentDecl) componentBodyItemNode() {}
 func (c *ComponentDecl) PrettyPrint(cp CodePrinter) {
 	cp.Printf("component %s {", c.Name.Value)
@@ -201,7 +207,7 @@ func (p *ParamDecl) Equals(another *ParamDecl) bool {
 }
 func (p *ParamDecl) componentBodyItemNode() {}
 func (p *ParamDecl) String() string {
-	s := fmt.Sprintf("param %s: %s", p.Name, p.TypeDecl)
+	s := fmt.Sprintf("param %s (Type = %s)", p.Name, p.TypeDecl)
 	if p.DefaultValue != nil {
 		s += fmt.Sprintf(" = %s", p.DefaultValue)
 	}

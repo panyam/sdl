@@ -137,8 +137,15 @@ func (ts *TypeScope) Get(name string) (*Type, bool) {
 				}
 			}
 			return nil, false
+		case *ParamDecl:
+			if t := n.TypeDecl.ResolvedType(); t == nil {
+				log.Println("param type not infered not found: ", name, node, reflect.TypeOf(node))
+				panic("Param Decl does not have its type set")
+			} else {
+				return t, true
+			}
 		default:
-			log.Println("not found: node, nodetype: ", node, reflect.TypeOf(node))
+			log.Println("not found: name, node, nodetype: ", name, node, reflect.TypeOf(node))
 			panic("TBD - we have to see if there is a failure else where or just a standard undefined error")
 			// return nil, false
 		}
