@@ -660,7 +660,7 @@ export class Dashboard {
 
     const systemName = this.systemDiagram.systemName || 'System';
     let dotContent = `digraph "${systemName}" {\n`;
-    dotContent += `  rankdir=LR;\n`;
+    dotContent += `  rankdir=TB;\n`;
     dotContent += `  bgcolor="#1a1a1a";\n`;
     dotContent += `  node [fontname="Monaco,Menlo,monospace" fontcolor="white" style=filled];\n`;
     dotContent += `  edge [color="#9ca3af" arrowhead="normal" penwidth=2];\n`;
@@ -742,6 +742,9 @@ export class Dashboard {
       const container = document.getElementById('architecture-svg-container');
       if (container) {
         container.innerHTML = svg;
+        const childSvg = container.querySelector("svg") as Element
+        childSvg.setAttribute("height", "100%")
+        childSvg.setAttribute("width", "100%")
       }
     });
     

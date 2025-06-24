@@ -693,6 +693,25 @@ func (c *Canvas) evaluateProposedFlowsWithStrategy(strategy string) error {
 	// Also populate the FlowScope's ArrivalRates so ApplyToComponents works
 	c.proposedFlowScope.ArrivalRates = c.proposedFlowRates
 
+	// Populate FlowEdges from the result
+	if c.proposedFlowScope.FlowEdges != nil {
+		c.proposedFlowScope.FlowEdges.Clear()
+		for _, edge := range result.Flows.Edges {
+			// Find component instances from names
+			fromComp := c.activeSystem.FindComponent(edge.From.Component)
+			toComp := c.activeSystem.FindComponent(edge.To.Component)
+			if fromComp != nil && toComp != nil {
+				c.proposedFlowScope.FlowEdges.AddEdge(
+					fromComp,
+					edge.From.Method,
+					toComp,
+					edge.To.Method,
+					edge.Rate,
+				)
+			}
+		}
+	}
+
 	return nil
 }
 
