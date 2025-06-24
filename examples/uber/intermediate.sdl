@@ -11,6 +11,19 @@
 
 import ResourcePool, MM1Queue, MMCKQueue, Cache, Database from "../common.sdl"
 
+system UberIntermediate {
+  use gateway APIGateway(
+    userService = userService,
+    driverService = driverService,
+    matchingService = matchingService,
+    notificationService = notificationService
+  )
+  use userService UserService
+  use driverService DriverService
+  use matchingService MatchingService
+  use notificationService NotificationService
+}
+
 component UserService {
   uses pool ResourcePool(Size = 50, AvgHoldTime = 20ms)  // Utilization tracking enabled
 
@@ -22,7 +35,7 @@ component UserService {
     WriteLatency = 100ms
   )
 
-  method GetUser(userId: String) Bool {
+  method GetUser() Bool {
     let acquired = self.pool.Acquire()
     if not acquired {
       return false  // Pool exhausted
@@ -46,7 +59,7 @@ component UserService {
     return written
   }
 
-  method AuthenticateUser(token: String) Bool {
+  method AuthenticateUser() Bool {
     let acquired = self.pool.Acquire()
     if not acquired {
       return false  // Pool exhausted
@@ -79,7 +92,7 @@ component DriverService {
     WriteLatency = 50ms
   )
 
-  method UpdateLocation(driverId: String, lat: Float, lng: Float) Bool {
+  method UpdateLocation() Bool {
     let acquired = self.pool.Acquire()
     if not acquired {
       return false  // Pool exhausted
@@ -98,7 +111,7 @@ component DriverService {
     return dbWritten
   }
 
-  method FindNearbyDrivers(lat: Float, lng: Float, radius: Int) Bool {
+  method FindNearbyDrivers() Bool {
     let acquired = self.pool.Acquire()
     if not acquired {
       return false  // Pool exhausted
@@ -122,7 +135,7 @@ component DriverService {
     return cacheWritten
   }
 
-  method GetDriver(driverId: String) Bool {
+  method GetDriver() Bool {
     let acquired = self.pool.Acquire()
     if not acquired {
       return false  // Pool exhausted
@@ -150,7 +163,7 @@ component MatchingService {
 
   uses mapsAPI ResourcePool(Size = 30, AvgHoldTime = 100ms)  // External API rate limits
 
-  method MatchRider(riderId: String, pickup: Location, dropoff: Location) Bool {
+  method MatchRider(riderId String, pickup Location, dropoff Location) Bool {
     let acquired = self.pool.Acquire()
     if not acquired {
       return false  // Pool exhausted
@@ -185,7 +198,7 @@ component MatchingService {
     return true
   }
 
-  method CalculateFare(distance: Float) Bool {
+  method CalculateFare() Bool {
     // Simple fare calculation - just a compute operation
     delay(5ms)  // Fare calculation latency
     return true
@@ -196,7 +209,7 @@ component NotificationService {
   uses pool ResourcePool(Size = 200, AvgHoldTime = 10ms)  // Async, can handle more
   uses queue MM1Queue(ArrivalRate = 100.0, AvgServiceTime = 50ms)  // Notification queue with utilization tracking
 
-  method NotifyDriver(driverId: String, message: String) Bool {
+  method NotifyDriver() Bool {
     let acquired = self.pool.Acquire()
     if not acquired {
       return false  // Pool exhausted
@@ -208,7 +221,7 @@ component NotificationService {
     return enqueued
   }
 
-  method NotifyRider(riderId: String, message: String) Bool {
+  method NotifyRider() Bool {
     let acquired = self.pool.Acquire()
     if not acquired {
       return false  // Pool exhausted
@@ -296,13 +309,4 @@ component APIGateway {
     delay(1ms)  // ID generation latency
     return true
   }
-}
-
-system UberIntermediate {
-  use gateway APIGateway(
-    userService = UserService,
-    driverService = DriverService,
-    matchingService = MatchingService,
-    notificationService = NotificationService
-  )
 }

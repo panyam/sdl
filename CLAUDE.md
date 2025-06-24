@@ -91,6 +91,16 @@ When continuing work on FlowEval, note that we're in the middle of migrating fro
 - **TraceAllPaths**: Static analysis tool that enumerates all possible execution paths without runtime execution
 - **Path Analysis Limitation**: Control flow dependencies not fully represented - conditional branches shown as siblings
 - **Self References**: Use pattern `self.component.method` for accessing component dependencies in SDL   
+- **SDL Language Note**: SDL is not a real programming language. It is a language for modelling capacities and system performance. So methods in SDL will not need parameters. For example in a real language, an API method GetDriver would take a driverId parameter. In SDL GetDriver is just GetDriver(). It will still have output types to denote outcomes of result types.
+- **SDL Binary Operators**: SDL does not have binary operators. Again - remember it is not a real programming language, it is simple so as to enable performance and error modelling. If you need extra behaviors you CAN suggest native functions to be implemented and called. Eg if you absolutely want binary arithmetic then suggest a "plus" NATIVE function.
+
+## SDL System Declaration Notes
+- In SDL system declaration you can declare the components in any order. There are no "set" statements. You pass the dependencies in the constructor of a "use" keyword.  For example:
+```system Twitter {
+    use app AppServer(db = database)
+    use db Database
+}```
+- Here the AppServer component has a "db" dependency that is set by the "database" component declared in the next line.
 
 Also be conservative on how many comments are you are adding or modifying unless it is absolutely necessary (for example a comment could be contradicting what is going on - in which case it is prudent to modify it).  
 When modifying files just focus on areas where the change is required instead of diving into a full fledged refactor.
@@ -142,3 +152,7 @@ When you are using compact, please focus on test output and code changes
 
 ## SDL Demo Guidelines
 - Make sure when you create SDL demos they are not as markdown but as .recipe files that are executable with pause points that print out what is going to be come next before the SDL command is executed.
+```
+
+**Session Workflow Memories:**
+- When you checkpoint update all relevant .md files with our latest understanding, statuses and progress in the current session and then commit.
