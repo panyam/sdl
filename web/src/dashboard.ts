@@ -19,6 +19,7 @@ export class Dashboard {
   private isUpdatingGenerators: boolean = false; // Flag to prevent UI overwrites during updates
   private generatorUpdateTimeout: number | null = null; // Debounce timer for generator updates
   private layoutTopToBottom = false;
+  private diagramZoom = 1.0; // Current zoom level
 
   // Parameter configurations - populated when a system is loaded
   private parameters: ParameterConfig[] = [];
@@ -740,6 +741,55 @@ export class Dashboard {
     return '📦'; // default component icon
   }
 
+  private setupDiagramInteractions(container: HTMLElement) {
+    const wrapper = container.querySelector('#svg-zoom-wrapper') as HTMLElement;
+    const transformWrapper = container.querySelector('#svg-transform-wrapper') as HTMLElement;
+    
+    if (!wrapper || !transformWrapper) return;
+
+    // Mouse wheel zoom
+    wrapper.addEventListener('wheel', (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        
+        // Store current scroll position as percentages
+        const scrollLeftPercent = wrapper.scrollLeft / (wrapper.scrollWidth - wrapper.clientWidth);
+        const scrollTopPercent = wrapper.scrollTop / (wrapper.scrollHeight - wrapper.clientHeight);
+        
+        const delta = e.deltaY > 0 ? 0.9 : 1.1;
+        const newZoom = Math.max(0.1, Math.min(5, this.diagramZoom * delta));
+        
+        this.diagramZoom = newZoom;
+        this.updateDiagramTransform();
+        
+        // Restore scroll position proportionally after zoom
+        setTimeout(() => {
+          wrapper.scrollLeft = scrollLeftPercent * (wrapper.scrollWidth - wrapper.clientWidth);
+          wrapper.scrollTop = scrollTopPercent * (wrapper.scrollHeight - wrapper.clientHeight);
+        }, 10);
+      }
+    });
+
+    // Reset zoom on double click
+    wrapper.addEventListener('dblclick', () => {
+      this.diagramZoom = 1.0;
+      this.updateDiagramTransform();
+    });
+  }
+
+  private updateDiagramTransform() {
+    const transformWrapper = document.querySelector('#svg-transform-wrapper') as HTMLElement;
+    const zoomIndicator = document.querySelector('#architecture-svg-container > div:last-child') as HTMLElement;
+    
+    if (transformWrapper) {
+      transformWrapper.style.transform = `scale(${this.diagramZoom})`;
+    }
+    
+    if (zoomIndicator) {
+      zoomIndicator.innerHTML = `Zoom: ${Math.round(this.diagramZoom * 100)}% | Use Ctrl+Scroll to zoom | Double-click to reset`;
+    }
+  }
+
   private async convertDotToSVG(dotContent: string): Promise<string> {
     try {
       if (!this.graphviz) {
@@ -777,23 +827,46 @@ export class Dashboard {
     this.convertDotToSVG(dotContent).then(svg => {
       const container = document.getElementById('architecture-svg-container');
       if (container) {
-        container.innerHTML = svg;
-        const childSvg = container.querySelector("svg") as Element
-        if (this.layoutTopToBottom) {
-          childSvg.setAttribute("height", "100%")
-          childSvg.removeAttribute("width")
-          // childSvg.setAttribute("width", "100%")
-        } else {
-          childSvg.setAttribute("width", "100%")
-          childSvg.removeAttribute("height")
-          // childSvg.setAttribute("height", "100%")
+        // Create a wrapper for zoom functionality with scrollbars
+        container.innerHTML = `
+          <div id="svg-zoom-wrapper" style="
+            width: 100%; 
+            height: 100%; 
+            position: relative; 
+            overflow: auto;
+            background: #1a1a1a;
+          ">
+            <div id="svg-transform-wrapper" style="
+              transform-origin: top left;
+              transform: scale(${this.diagramZoom});
+              display: inline-block;
+              min-width: 100%;
+              min-height: 100%;
+            ">
+              ${svg}
+            </div>
+          </div>
+          <div style="position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.7); padding: 5px 10px; border-radius: 5px; font-size: 12px; color: #9ca3af; pointer-events: none;">
+            Zoom: ${Math.round(this.diagramZoom * 100)}% | Use Ctrl+Scroll to zoom
+          </div>
+        `;
+        
+        const childSvg = container.querySelector("svg") as Element;
+        if (childSvg) {
+          // Remove any width/height constraints to let the SVG size naturally
+          childSvg.removeAttribute("width");
+          childSvg.removeAttribute("height");
+          (childSvg as SVGElement).style.display = "block";
         }
+        
+        // Setup zoom handlers
+        this.setupDiagramInteractions(container);
       }
     });
     
     // Return placeholder while conversion happens
     return `
-      <div id="architecture-svg-container" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+      <div id="architecture-svg-container" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;">
         <div style="color: #9ca3af; font-family: monospace;">
           ${this.graphviz ? 'Rendering diagram...' : 'Loading Graphviz...'}
         </div>
