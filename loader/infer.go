@@ -477,7 +477,7 @@ func (i *Inference) EvalForBinaryExpr(expr *BinaryExpr, scope *TypeScope) (*Type
 					return nil, i.Errorf(expr.Pos(), "type mismatch for comparison operator '%s': cannot compare complex type %s", expr.Operator, leftType.String())
 				}
 			*/
-			log.Println("TODO - Unresolved case")
+			log.Println("TODO - Binary logical operators not implemented.  Just returning BoolType")
 			return BoolType, true
 		}
 		return nil, i.Errorf(expr.Pos(), "type mismatch for comparison operator '%s': cannot compare %s and %s", expr.Operator, leftType.String(), rightType.String())
