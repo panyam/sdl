@@ -442,6 +442,9 @@ export class Dashboard {
                 <span class="text-gray-400">System:</span> ${this.state.currentSystem}
               </div>
             ` : ''}
+            <button id="toggle-layout-direction-btn" class="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-gray-300" title="Toggle diagram layout direction">
+              ${this.layoutTopToBottom ? '↕️ Top-Bottom' : '↔️ Left-Right'}
+            </button>
             <button id="reset-layout-btn" class="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-gray-300" title="Reset layout to default">
               ⚙️ Reset Layout
             </button>
@@ -662,7 +665,7 @@ export class Dashboard {
 
     const systemName = this.systemDiagram.systemName || 'System';
     let dotContent = `digraph "${systemName}" {\n`;
-    dotContent += `  rankdir=${this.layoutTopToBottom ? "TB": " LR"};\n`;
+    dotContent += `  rankdir=${this.layoutTopToBottom ? "TB" : "LR"};\n`;
     dotContent += `  bgcolor="#1a1a1a";\n`;
     dotContent += `  node [fontname="Monaco,Menlo,monospace" fontcolor="white" style=filled];\n`;
     dotContent += `  edge [color="#9ca3af" arrowhead="normal" penwidth=2];\n`;
@@ -960,13 +963,32 @@ export class Dashboard {
 
 
   private setupInteractivity() {
+    // Toggle layout direction button
+    const toggleLayoutBtn = document.getElementById('toggle-layout-direction-btn');
+    if (toggleLayoutBtn && !toggleLayoutBtn.dataset.listenerAdded) {
+      toggleLayoutBtn.dataset.listenerAdded = 'true';
+      toggleLayoutBtn.addEventListener('click', () => {
+        this.layoutTopToBottom = !this.layoutTopToBottom;
+        // Update button text
+        const btn = document.getElementById('toggle-layout-direction-btn');
+        if (btn) {
+          btn.innerHTML = this.layoutTopToBottom ? '↕️ Top-Bottom' : '↔️ Left-Right';
+        }
+        // Refresh the system diagram with new layout
+        this.loadSystemDiagram();
+      });
+    }
+
     // Reset layout button
     const resetLayoutBtn = document.getElementById('reset-layout-btn');
-    resetLayoutBtn?.addEventListener('click', () => {
-      if (confirm('Reset layout to default? This will reload the page.')) {
-        this.resetLayout();
-      }
-    });
+    if (resetLayoutBtn && !resetLayoutBtn.dataset.listenerAdded) {
+      resetLayoutBtn.dataset.listenerAdded = 'true';
+      resetLayoutBtn.addEventListener('click', () => {
+        if (confirm('Reset layout to default? This will reload the page.')) {
+          this.resetLayout();
+        }
+      });
+    }
 
     // Toggle all generators button
     const toggleAllBtn = document.getElementById('toggle-all-generators');
