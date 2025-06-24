@@ -8,639 +8,713 @@
 // - Circuit breakers and resilience patterns
 // - Real-time analytics and ML-based matching
 
+import ResourcePool, MM1Queue, MMCKQueue, Cache, HttpStatusCode, delay from "../common.sdl"
+
+// Define enums for more realistic return types
+enum Priority {
+  LOW,
+  NORMAL,
+  HIGH,
+  CRITICAL
+}
+
+enum EventType {
+  USER_UPDATED,
+  LOCATION_UPDATED,
+  RIDE_MATCHED,
+  RIDE_COMPLETED,
+  RIDE_NO_MATCH,
+  NOTIFICATION_SENT
+}
+
+// Database component that wraps a connection pool and storage
+component Database {
+  uses Pool ResourcePool
+  
+  param ReadLatency Float = 50ms
+  param WriteLatency Float = 100ms
+  
+  method Read() Bool {
+    let acquired = self.Pool.Acquire()
+    if not acquired {
+      return false
+    }
+    delay(self.ReadLatency)
+    return true
+  }
+  
+  method Write() Bool {
+    let acquired = self.Pool.Acquire()
+    if not acquired {
+      return false
+    }
+    delay(self.WriteLatency)
+    return true
+  }
+}
+
+// Circuit Breaker component for resilience
+component CircuitBreaker {
+  uses pool ResourcePool(Size = 10, AvgHoldTime = 1ms)
+  
+  param ErrorThreshold Float = 0.5
+  param Timeout Float = 30s
+  param HalfOpenRequests Int = 5
+  
+  method IsOpen() Bool {
+    let acquired = self.pool.Acquire()
+    if not acquired {
+      return true  // Circuit is open if can't check
+    }
+    // Simplified - would track error rates over time window
+    return false
+  }
+  
+  method Call() Bool {
+    let isOpen = self.IsOpen()
+    if isOpen {
+      return false
+    }
+    // Execute the call
+    return true
+  }
+}
+
 // Event Bus for async communication
 component EventBus {
-  pool: ResourcePool = ResourcePool {
-    maxCapacity: 1000
-    acquireLatency: 1ms
-  }
+  uses pool ResourcePool(Size = 1000, AvgHoldTime = 3ms)
 
   // Kafka-like characteristics
-  publishLatency: Duration = 5ms
-  subscribeLatency: Duration = 2ms
+  param PublishLatency Float = 5ms
+  param SubscribeLatency Float = 2ms
 
-  method Publish(topic: String, event: Event) -> Bool {
-    acquire pool
-    delay(publishLatency)
+  method Publish() Bool {
+    let acquired = self.pool.Acquire()
+    if not acquired {
+      return false
+    }
+    delay(self.PublishLatency)
     return true
   }
 
-  method Subscribe(topic: String) -> Event {
-    acquire pool
-    delay(subscribeLatency)
-    return Event {}
+  method Subscribe() Bool {
+    let acquired = self.pool.Acquire()
+    if not acquired {
+      return false
+    }
+    delay(self.SubscribeLatency)
+    return true
   }
 }
 
 // User Service with CQRS pattern
 component UserServiceV3 {
-  pool: ResourcePool = ResourcePool {
-    maxCapacity: 200
-    acquireLatency: 1ms
-  }
+  uses pool ResourcePool(Size = 200, AvgHoldTime = 10ms)
 
   // Dedicated cache with write-through
-  cache: Cache = Cache {
-    hitRate: 0.85
-    readLatency: 2ms
-    writeLatency: 5ms
-  }
+  uses cache Cache(HitRate = 0.85, MaxThroughput = 100000)
 
   // Sharded user database
-  writeDB: Database = Database {
-    pool: ResourcePool {
-      maxCapacity: 50
-      acquireLatency: 2ms
-    }
-    readLatency: 20ms  // SSD + optimized schema
-    writeLatency: 30ms
-  }
+  uses pool2 ResourcePool(Size = 50, AvgHoldTime = 25ms)
+  uses writeDB Database(
+    Pool = pool2,
+    ReadLatency = 20ms,   // SSD + optimized schema
+    WriteLatency = 30ms
+  )
 
   // Read replicas for queries
-  readDB: Database = Database {
-    pool: ResourcePool {
-      maxCapacity: 100
-      acquireLatency: 1ms
+  uses pool3 ResourcePool(Size = 100, AvgHoldTime = 11ms)
+  uses readDB Database(
+    Pool = pool3,
+    ReadLatency = 10ms,   // Read-optimized replicas
+    WriteLatency = 1000ms // Not used for writes
+  )
+
+  uses eventBus EventBus
+  uses circuitBreaker CircuitBreaker()
+
+  method GetUser() Bool {
+    let acquired = self.pool.Acquire()
+    if not acquired {
+      return false
     }
-    readLatency: 10ms  // Read-optimized replicas
-    writeLatency: 1000ms  // Not used for writes
-  }
-
-  eventBus: EventBus
-  circuitBreaker: CircuitBreaker = CircuitBreaker {
-    errorThreshold: 0.5
-    timeout: 30s
-    halfOpenRequests: 5
-  }
-
-  method GetUser(userId: String) -> User {
-    acquire pool
     
     // Check circuit breaker
-    if !circuitBreaker.IsOpen() {
-      let cached = cache.Read(key: userId)
+    let isOpen = self.circuitBreaker.IsOpen()
+    if not isOpen {
+      let cached = self.cache.Read()
       if cached {
-        return cached
+        return true
       }
     }
     
     // Use read replica
-    let user = circuitBreaker.Call(() => {
-      return readDB.ReadUser(userId: userId)
-    })
-    
-    if user {
-      cache.Write(key: userId, value: user)
+    let cbCall = self.circuitBreaker.Call()
+    if not cbCall {
+      return false
     }
     
-    return user
+    let user = self.readDB.Read()
+    
+    if user {
+      let written = self.cache.Write()
+      return written
+    }
+    
+    return false
   }
 
-  method UpdateUser(userId: String, updates: UserUpdate) -> Bool {
-    acquire pool
+  method UpdateUser() Bool {
+    let acquired = self.pool.Acquire()
+    if not acquired {
+      return false
+    }
     
     // Write to master
-    let success = writeDB.UpdateUser(userId: userId, updates: updates)
+    let success = self.writeDB.Write()
     
     if success {
       // Invalidate cache
-      cache.Delete(key: userId)
+      delay(1ms)  // Cache invalidation time
       
       // Publish event
-      eventBus.Publish(topic: "user.updated", event: {
-        userId: userId,
-        updates: updates,
-        timestamp: now()
-      })
+      let published = self.eventBus.Publish()
+      return published
     }
     
-    return success
+    return false
+  }
+}
+
+// Geo Cache component for location data
+component GeoCache {
+  uses pool ResourcePool(Size = 500, AvgHoldTime = 1.5ms)
+  
+  param HitRate Float = 0.95
+  param ReadLatency Float = 1ms
+  param WriteLatency Float = 2ms
+  param TTL Float = 30s
+  param CacheHitOutcome = dist {
+    HitRate => true
+    0.05 => false
+  }
+  
+  method SetLocation() Bool {
+    let acquired = self.pool.Acquire()
+    if not acquired {
+      return false
+    }
+    delay(self.WriteLatency)
+    return true
+  }
+  
+  method RadiusSearch() Bool {
+    let acquired = self.pool.Acquire()
+    if not acquired {
+      return false
+    }
+    
+    // Check hit rate
+    if sample self.CacheHitOutcome {
+      delay(self.ReadLatency)
+      return true
+    }
+    
+    return false
   }
 }
 
 // Location Service with geo-distributed storage
 component LocationServiceV3 {
-  pool: ResourcePool = ResourcePool {
-    maxCapacity: 500  // High throughput service
-    acquireLatency: 0.5ms
-  }
+  uses pool ResourcePool(Size = 500, AvgHoldTime = 3ms)  // High throughput service
 
   // In-memory geo cache (Redis with geo commands)
-  geoCache: GeoCache = GeoCache {
-    hitRate: 0.95  // Very high hit rate
-    readLatency: 1ms
-    writeLatency: 2ms
-    ttl: 30s  // Short TTL for real-time data
-  }
+  uses geoCache GeoCache(HitRate = 0.95, ReadLatency = 1ms, WriteLatency = 2ms, TTL = 30s)
 
   // Time-series database for historical data
-  timeSeriesDB: Database = Database {
-    pool: ResourcePool {
-      maxCapacity: 100
-      acquireLatency: 1ms
+  uses pool2 ResourcePool(Size = 100, AvgHoldTime = 12.5ms)
+  uses timeSeriesDB Database(
+    Pool = pool2,
+    ReadLatency = 15ms,
+    WriteLatency = 10ms  // Optimized for writes
+  )
+
+  uses eventBus EventBus
+
+  method UpdateLocation() Bool {
+    let acquired = self.pool.Acquire()
+    if not acquired {
+      return false
     }
-    readLatency: 15ms
-    writeLatency: 10ms  // Optimized for writes
-  }
-
-  eventBus: EventBus
-
-  method UpdateLocation(driverId: String, lat: Float, lng: Float) -> Bool {
-    acquire pool
     
     // Update geo cache immediately
-    geoCache.SetLocation(driverId: driverId, lat: lat, lng: lng)
+    let cacheUpdated = self.geoCache.SetLocation()
+    if not cacheUpdated {
+      return false
+    }
     
     // Async write to time-series DB
-    eventBus.Publish(topic: "location.updated", event: {
-      driverId: driverId,
-      lat: lat,
-      lng: lng,
-      timestamp: now()
-    })
+    let published = self.eventBus.Publish()
     
-    return true
+    return published
   }
 
-  method FindNearbyDrivers(lat: Float, lng: Float, radius: Int) -> List<Driver> {
-    acquire pool
+  method FindNearbyDrivers() Bool {
+    let acquired = self.pool.Acquire()
+    if not acquired {
+      return false
+    }
     
     // Use geo cache for real-time lookups
-    return geoCache.RadiusSearch(lat: lat, lng: lng, radius: radius)
+    let found = self.geoCache.RadiusSearch()
+    return found
   }
 
-  method GetDriverPath(driverId: String, duration: Duration) -> List<Location> {
-    acquire pool
+  method GetDriverPath() Bool {
+    let acquired = self.pool.Acquire()
+    if not acquired {
+      return false
+    }
     
     // Historical data from time-series DB
-    return timeSeriesDB.QueryTimeSeries(
-      series: "driver.location." + driverId,
-      start: now() - duration,
-      end: now()
-    )
+    let path = self.timeSeriesDB.Read()
+    return path
   }
 }
 
 // ML-powered Matching Service
 component MatchingServiceV3 {
-  pool: ResourcePool = ResourcePool {
-    maxCapacity: 300
-    acquireLatency: 1ms
-  }
+  uses pool ResourcePool(Size = 300, AvgHoldTime = 50ms)
 
   // ML model cache
-  modelCache: Cache = Cache {
-    hitRate: 0.99  // Models rarely change
-    readLatency: 5ms
-    writeLatency: 50ms
-  }
+  uses modelCache Cache(HitRate = 0.99, MaxThroughput = 10000)  // Models rarely change
 
   // Feature store for ML
-  featureStore: Database = Database {
-    pool: ResourcePool {
-      maxCapacity: 50
-      acquireLatency: 2ms
+  uses pool2 ResourcePool(Size = 50, AvgHoldTime = 60ms)
+  uses featureStore Database(
+    Pool = pool2,
+    ReadLatency = 20ms,
+    WriteLatency = 100ms
+  )
+
+  uses locationService LocationServiceV3
+  uses pricingService PricingServiceV3
+  uses eventBus EventBus
+
+  method FindOptimalMatch() Bool {
+    let acquired = self.pool.Acquire()
+    if not acquired {
+      return false
     }
-    readLatency: 20ms
-    writeLatency: 100ms
-  }
-
-  locationService: LocationServiceV3
-  pricingService: PricingServiceV3
-  eventBus: EventBus
-
-  method FindOptimalMatch(request: RideRequest) -> Match {
-    acquire pool
     
     // Get nearby drivers
-    let drivers = locationService.FindNearbyDrivers(
-      lat: request.pickup.lat,
-      lng: request.pickup.lng,
-      radius: 5000
-    )
+    let drivers = self.locationService.FindNearbyDrivers()
     
-    if !drivers || drivers.length == 0 {
-      return null
+    if not drivers {
+      return false
     }
     
     // Load ML model
-    let model = modelCache.Read(key: "matching.model.v2")
-    if !model {
-      model = featureStore.LoadModel(name: "matching.model.v2")
-      modelCache.Write(key: "matching.model.v2", value: model)
+    let model = self.modelCache.Read()
+    if not model {
+      let loaded = self.featureStore.Read()
+      if not loaded {
+        return false
+      }
+      let cached = self.modelCache.Write()
+      if not cached {
+        return false
+      }
     }
     
-    // Score each driver
-    let scores = []
-    for driver in drivers {
-      let features = buildFeatures(request, driver)
-      let score = model.Predict(features)
-      scores.push({driver: driver, score: score})
-    }
-    
-    // Select best match
-    let bestMatch = scores.maxBy(s => s.score)
+    // Score each driver (simplified - would loop through drivers)
+    delay(10ms)  // ML scoring time for all drivers
     
     // Get pricing
-    let fare = pricingService.CalculateFare(
-      pickup: request.pickup,
-      dropoff: request.dropoff,
-      time: now(),
-      demandLevel: getCurrentDemand()
-    )
+    let fare = self.pricingService.CalculateFare()
+    if not fare {
+      return false
+    }
     
     // Publish match event
-    eventBus.Publish(topic: "ride.matched", event: {
-      rideId: request.rideId,
-      driverId: bestMatch.driver.id,
-      riderId: request.riderId,
-      fare: fare
-    })
+    let published = self.eventBus.Publish()
     
-    return {
-      driver: bestMatch.driver,
-      fare: fare,
-      eta: calculateETA(bestMatch.driver.location, request.pickup)
-    }
-  }
-
-  method buildFeatures(request: RideRequest, driver: Driver) -> Features {
-    // Build ML features
-    return {
-      distance: calculateDistance(driver.location, request.pickup),
-      driverRating: driver.rating,
-      driverCompletionRate: driver.completionRate,
-      timeOfDay: now().hour,
-      dayOfWeek: now().dayOfWeek,
-      surgeLevel: getCurrentDemand()
-    }
-  }
-
-  method calculateETA(from: Location, to: Location) -> Duration {
-    let distance = calculateDistance(from, to)
-    return distance * 2  // Simplified: 2 minutes per km
-  }
-
-  method calculateDistance(from: Location, to: Location) -> Float {
-    // Haversine formula (simplified)
-    return sqrt((to.lat - from.lat)^2 + (to.lng - from.lng)^2) * 111  // km
-  }
-
-  method getCurrentDemand() -> Float {
-    // In reality, this would query a demand prediction service
-    return 1.2  // 20% surge
+    return published
   }
 }
 
 // Dynamic Pricing Service
 component PricingServiceV3 {
-  pool: ResourcePool = ResourcePool {
-    maxCapacity: 200
-    acquireLatency: 1ms
-  }
+  uses pool ResourcePool(Size = 200, AvgHoldTime = 15ms)
 
   // Pricing rules cache
-  rulesCache: Cache = Cache {
-    hitRate: 0.95
-    readLatency: 2ms
-    writeLatency: 10ms
-  }
+  uses rulesCache Cache(HitRate = 0.95, MaxThroughput = 50000)
 
   // Historical pricing data
-  pricingDB: Database = Database {
-    pool: ResourcePool {
-      maxCapacity: 30
-      acquireLatency: 2ms
-    }
-    readLatency: 25ms
-    writeLatency: 50ms
-  }
+  uses pool2 ResourcePool(Size = 30, AvgHoldTime = 37.5ms)
+  uses pricingDB Database(
+    Pool = pool2,
+    ReadLatency = 25ms,
+    WriteLatency = 50ms
+  )
 
-  method CalculateFare(pickup: Location, dropoff: Location, time: Time, demandLevel: Float) -> Fare {
-    acquire pool
+  method CalculateFare() Bool {
+    let acquired = self.pool.Acquire()
+    if not acquired {
+      return false
+    }
     
     // Get base rates
-    let rules = rulesCache.Read(key: "pricing.rules")
-    if !rules {
-      rules = pricingDB.LoadPricingRules()
-      rulesCache.Write(key: "pricing.rules", value: rules)
-    }
-    
-    // Calculate base fare
-    let distance = calculateDistance(pickup, dropoff)
-    let baseFare = rules.baseFare + (distance * rules.perKmRate)
-    
-    // Apply surge pricing
-    let surgeFare = baseFare * demandLevel
-    
-    // Apply time-based adjustments
-    if time.hour >= 22 || time.hour <= 6 {
-      surgeFare = surgeFare * 1.2  // Night surcharge
-    }
-    
-    return {
-      baseFare: baseFare,
-      surgeFare: surgeFare,
-      surgeLevel: demandLevel,
-      breakdown: {
-        base: rules.baseFare,
-        distance: distance * rules.perKmRate,
-        surge: surgeFare - baseFare,
-        night: (time.hour >= 22 || time.hour <= 6) ? baseFare * 0.2 : 0
+    let rules = self.rulesCache.Read()
+    if not rules {
+      let loaded = self.pricingDB.Read()
+      if not loaded {
+        return false
+      }
+      let cached = self.rulesCache.Write()
+      if not cached {
+        return false
       }
     }
+    
+    // Calculate fare with surge pricing
+    delay(5ms)  // Fare calculation time
+    
+    return true
   }
+}
 
-  method calculateDistance(from: Location, to: Location) -> Float {
-    return sqrt((to.lat - from.lat)^2 + (to.lng - from.lng)^2) * 111
+// Priority Queue for notifications
+component PriorityQueue {
+  uses pool ResourcePool(Size = 1000, AvgHoldTime = 1ms)
+  
+  param MaxSize Int = 100000
+  param EnqueueLatency Float = 1ms
+  param DequeueLatency Float = 1ms
+  
+  method Enqueue() Bool {
+    let acquired = self.pool.Acquire()
+    if not acquired {
+      return false
+    }
+    delay(self.EnqueueLatency)
+    return true
+  }
+  
+  method Dequeue() Bool {
+    let acquired = self.pool.Acquire()
+    if not acquired {
+      return false
+    }
+    delay(self.DequeueLatency)
+    return true
+  }
+}
+
+// External Service wrapper
+component ExternalService {
+  uses pool ResourcePool()
+  
+  param Latency Float = 50ms
+  param SuccessOutcome = dist {
+    0.98 => true
+    0.02 => false
+  }
+  
+  method Send() Bool {
+    let acquired = self.pool.Acquire()
+    if not acquired {
+      return false
+    }
+    
+    delay(self.Latency)
+    
+    // Simulate error rate
+    return not sample self.SuccessOutcome
   }
 }
 
 // Notification Service with multiple channels
 component NotificationServiceV3 {
-  pool: ResourcePool = ResourcePool {
-    maxCapacity: 1000  // Very high throughput
-    acquireLatency: 0.5ms
-  }
+  uses pool ResourcePool(Size = 1000, AvgHoldTime = 2ms)  // Very high throughput
+  uses pool1 ResourcePool(Size = 200, AvgHoldTime = 55ms)
+  uses pool2 ResourcePool(Size = 100, AvgHoldTime = 210ms)
 
   // Priority queue for notifications
-  priorityQueue: PriorityQueue = PriorityQueue {
-    maxSize: 100000
-    enqueueLatency: 1ms
-    dequeueLatency: 1ms
-  }
+  uses priorityQueue PriorityQueue(MaxSize = 100000, EnqueueLatency = 1ms, DequeueLatency = 1ms)
 
   // Channel-specific services
-  pushService: ExternalService = ExternalService {
-    pool: ResourcePool {
-      maxCapacity: 200
-      acquireLatency: 5ms
+  uses pushService ExternalService(
+    Pool = pool1,
+    Latency = 50ms,
+    ErrorRate = 0.02
+  )
+
+  uses smsService ExternalService(
+    Pool = pool2,
+    Latency = 200ms,
+    ErrorRate = 0.01
+  )
+
+  uses eventBus EventBus
+
+  method SendNotification() Bool {
+    let acquired = self.pool.Acquire()
+    if not acquired {
+      return false
     }
-    latency: 50ms
-    errorRate: 0.02
-  }
-
-  smsService: ExternalService = ExternalService {
-    pool: ResourcePool {
-      maxCapacity: 100
-      acquireLatency: 10ms
-    }
-    latency: 200ms
-    errorRate: 0.01
-  }
-
-  eventBus: EventBus
-
-  method SendNotification(userId: String, message: String, priority: Priority) -> Bool {
-    acquire pool
     
     // Enqueue with priority
-    priorityQueue.Enqueue(item: {
-      userId: userId,
-      message: message,
-      priority: priority,
-      timestamp: now()
-    }, priority: priority)
+    let enqueued = self.priorityQueue.Enqueue()
     
-    return true
+    return enqueued
   }
 
   // Background processor
-  method ProcessNotifications() -> Void {
-    while true {
-      let notification = priorityQueue.Dequeue()
-      if notification {
-        // Determine channel based on user preferences
-        let userPrefs = getUserPreferences(notification.userId)
-        
-        if userPrefs.pushEnabled {
-          pushService.Send(userId: notification.userId, message: notification.message)
-        }
-        
-        if userPrefs.smsEnabled && notification.priority == HIGH {
-          smsService.Send(userId: notification.userId, message: notification.message)
-        }
-        
+  method ProcessNotifications() Bool {
+    let notification = self.priorityQueue.Dequeue()
+    if notification {
+      // Determine channel based on user preferences (simplified)
+      let sent = self.pushService.Send()
+      
+      if sent {
         // Publish delivery event
-        eventBus.Publish(topic: "notification.sent", event: {
-          userId: notification.userId,
-          channels: userPrefs.enabledChannels,
-          timestamp: now()
-        })
-      } else {
-        delay(10ms)
+        let published = self.eventBus.Publish()
+        return published
       }
     }
+    
+    return false
   }
+}
 
-  method getUserPreferences(userId: String) -> UserPreferences {
-    // Simplified - would query user preference service
-    return {
-      pushEnabled: true,
-      smsEnabled: false,
-      emailEnabled: false,
-      enabledChannels: ["push"]
+// Rate Limiter component
+component RateLimiter {
+  uses pool ResourcePool(Size = 100, AvgHoldTime = 0.5ms)
+  
+  param RequestsPerSecond Float = 100.0  // Per user
+  param BurstSize Int = 200
+  param AllowOutcome = dist {
+    0.99 => true
+    0.01 => false
+  }
+  
+  method Allow() Bool {
+    let acquired = self.pool.Acquire()
+    if not acquired {
+      return false
     }
+    
+    // Simplified rate limiting logic
+    // In reality would track per-user counters
+    return sample self.AllowOutcome
+  }
+}
+
+// Stream Processor for analytics
+component StreamProcessor {
+  uses pool ResourcePool(Size = 100, AvgHoldTime = 5ms)
+  
+  param WindowSize Float = 60s
+  param SlideInterval Float = 10s
+  param FlushOutcome = dist {
+    0.1 => true
+    0.9 => false
+  }
+  
+  method Process() Bool {
+    let acquired = self.pool.Acquire()
+    if not acquired {
+      return false
+    }
+    delay(2ms)  // Processing time
+    return true
+  }
+  
+  method ShouldFlush() Bool {
+    // Simplified - would check time window
+    return sample self.FlushOutcome
+  }
+  
+  method GetBatch() Bool {
+    delay(1ms)  // Batch preparation
+    return true
+  }
+  
+  method Clear() Bool {
+    delay(0.5ms)  // Clear buffer
+    return true
   }
 }
 
 // API Gateway with GraphQL and rate limiting
 component APIGatewayV3 {
-  pool: ResourcePool = ResourcePool {
-    maxCapacity: 500
-    acquireLatency: 0.5ms
-  }
+  uses pool ResourcePool(Size = 500, AvgHoldTime = 20ms)
 
   // Rate limiter
-  rateLimiter: RateLimiter = RateLimiter {
-    requestsPerSecond: 100  // Per user
-    burstSize: 200
-  }
+  uses rateLimiter RateLimiter(RequestsPerSecond = 100.0, BurstSize = 200)
 
   // Services
-  userService: UserServiceV3
-  locationService: LocationServiceV3
-  matchingService: MatchingServiceV3
-  pricingService: PricingServiceV3
-  notificationService: NotificationServiceV3
-  eventBus: EventBus
+  uses userService UserServiceV3
+  uses locationService LocationServiceV3
+  uses matchingService MatchingServiceV3
+  uses pricingService PricingServiceV3
+  uses notificationService NotificationServiceV3
+  uses eventBus EventBus
 
-  method RequestRide(authToken: String, pickup: Location, dropoff: Location) -> RideResponse {
-    acquire pool
-    
-    // Rate limiting
-    let user = userService.GetUser(userId: extractUserId(authToken))
-    if !rateLimiter.Allow(userId: user.id) {
-      return {error: "Rate limit exceeded", retryAfter: 60}
+  method RequestRide() HttpStatusCode {
+    let acquired = self.pool.Acquire()
+    if not acquired {
+      return HttpStatusCode.ServiceUnavailable
     }
     
-    // Create ride request
-    let rideId = generateId()
-    let request = {
-      rideId: rideId,
-      riderId: user.id,
-      pickup: pickup,
-      dropoff: dropoff,
-      timestamp: now()
+    // Rate limiting
+    let user = self.userService.GetUser()
+    if not user {
+      return HttpStatusCode.Unauthorized
+    }
+    
+    let allowed = self.rateLimiter.Allow()
+    if not allowed {
+      return HttpStatusCode.TooManyRequests
     }
     
     // Find match asynchronously
-    let match = matchingService.FindOptimalMatch(request)
+    let match = self.matchingService.FindOptimalMatch()
     
-    if !match {
+    if not match {
       // Publish failed match event
-      eventBus.Publish(topic: "ride.no_match", event: request)
-      return {error: "No drivers available"}
+      let published = self.eventBus.Publish()
+      return HttpStatusCode.NotFound
     }
     
     // Send notifications
-    notificationService.SendNotification(
-      userId: match.driver.id,
-      message: "New ride request! Tap to accept",
-      priority: HIGH
-    )
+    let driverNotified = self.notificationService.SendNotification()
+    let riderNotified = self.notificationService.SendNotification()
     
-    notificationService.SendNotification(
-      userId: user.id,
-      message: "Driver found! " + match.driver.name + " arriving in " + match.eta,
-      priority: NORMAL
-    )
-    
-    return {
-      success: true,
-      rideId: rideId,
-      driver: match.driver,
-      eta: match.eta,
-      fare: match.fare
-    }
+    return HttpStatusCode.Ok
   }
 
-  method UpdateDriverLocation(authToken: String, lat: Float, lng: Float) -> Bool {
-    acquire pool
-    
-    let driverId = extractUserId(authToken)
+  method UpdateDriverLocation() HttpStatusCode {
+    let acquired = self.pool.Acquire()
+    if not acquired {
+      return HttpStatusCode.ServiceUnavailable
+    }
     
     // Update location
-    return locationService.UpdateLocation(
-      driverId: driverId,
-      lat: lat,
-      lng: lng
-    )
+    let updated = self.locationService.UpdateLocation()
+    
+    if updated {
+      return HttpStatusCode.Ok
+    }
+    
+    return HttpStatusCode.InternalServerError
   }
 
-  method GetRideHistory(authToken: String, limit: Int) -> List<Ride> {
-    acquire pool
-    
-    let userId = extractUserId(authToken)
+  method GetRideHistory() HttpStatusCode {
+    let acquired = self.pool.Acquire()
+    if not acquired {
+      return HttpStatusCode.ServiceUnavailable
+    }
     
     // This would query a ride history service
-    // For demo, return empty list
-    return []
-  }
-
-  method extractUserId(authToken: String) -> String {
-    // Simplified - would validate JWT and extract claims
-    return "user_" + authToken.substring(0, 8)
-  }
-
-  method generateId() -> String {
-    return "ride_" + uuid()
+    // For demo, return success
+    delay(50ms)  // Database query time
+    
+    return HttpStatusCode.Ok
   }
 }
 
 // Analytics Service for real-time metrics
 component AnalyticsServiceV3 {
-  pool: ResourcePool = ResourcePool {
-    maxCapacity: 200
-    acquireLatency: 1ms
-  }
+  uses pool ResourcePool(Size = 200, AvgHoldTime = 10ms)
 
   // Stream processing for real-time analytics
-  streamProcessor: StreamProcessor = StreamProcessor {
-    windowSize: 60s
-    slideInterval: 10s
-  }
+  uses streamProcessor StreamProcessor(WindowSize = 60s, SlideInterval = 10s)
 
   // Analytics database (ClickHouse-like)
-  analyticsDB: Database = Database {
-    pool: ResourcePool {
-      maxCapacity: 50
-      acquireLatency: 5ms
+  uses pool2 ResourcePool(Size = 50, AvgHoldTime = 60ms)
+  uses analyticsDB Database(
+    Pool = pool2,
+    ReadLatency = 100ms,  // Complex queries
+    WriteLatency = 20ms   // Batch writes
+  )
+
+  uses eventBus EventBus
+
+  method ProcessEvents() Bool {
+    let event = self.eventBus.Subscribe()
+    if not event {
+      return false
     }
-    readLatency: 100ms  // Complex queries
-    writeLatency: 20ms  // Batch writes
-  }
-
-  eventBus: EventBus
-
-  method ProcessEvents() -> Void {
-    while true {
-      let event = eventBus.Subscribe(topic: "*")
-      
-      // Update real-time metrics
-      streamProcessor.Process(event)
-      
-      // Batch write to analytics DB
-      if streamProcessor.ShouldFlush() {
-        let batch = streamProcessor.GetBatch()
-        analyticsDB.WriteBatch(data: batch)
-        streamProcessor.Clear()
+    
+    // Update real-time metrics
+    let processed = self.streamProcessor.Process()
+    if not processed {
+      return false
+    }
+    
+    // Batch write to analytics DB
+    let shouldFlush = self.streamProcessor.ShouldFlush()
+    if shouldFlush {
+      let batch = self.streamProcessor.GetBatch()
+      if batch {
+        let written = self.analyticsDB.Write()
+        if written {
+          let cleared = self.streamProcessor.Clear()
+          return cleared
+        }
       }
     }
+    
+    return true
   }
 
-  method GetRealTimeMetrics() -> Metrics {
-    acquire pool
-    
-    return {
-      activeRides: streamProcessor.Count("ride.matched") - streamProcessor.Count("ride.completed"),
-      requestsPerMinute: streamProcessor.Rate("ride.requested"),
-      avgMatchTime: streamProcessor.Avg("match.duration"),
-      surgeAreas: streamProcessor.TopK("surge.areas", k: 10)
+  method GetRealTimeMetrics() Bool {
+    let acquired = self.pool.Acquire()
+    if not acquired {
+      return false
     }
+    
+    // Return current stream processor metrics
+    delay(5ms)  // Metric aggregation time
+    
+    return true
   }
 
-  method GetHistoricalMetrics(start: Time, end: Time) -> Metrics {
-    acquire pool
+  method GetHistoricalMetrics() Bool {
+    let acquired = self.pool.Acquire()
+    if not acquired {
+      return false
+    }
     
-    return analyticsDB.Query(
-      query: "SELECT * FROM metrics WHERE time >= ? AND time <= ?",
-      params: [start, end]
-    )
+    let metrics = self.analyticsDB.Read()
+    return metrics
   }
 }
 
 system UberModern {
   // Core services
-  gateway: APIGatewayV3 = APIGatewayV3 {
-    userService: UserServiceV3 {
-      eventBus: EventBus {}
-    },
-    locationService: LocationServiceV3 {
-      eventBus: EventBus {}
-    },
-    matchingService: MatchingServiceV3 {
-      locationService: LocationServiceV3 {
-        eventBus: EventBus {}
-      },
-      pricingService: PricingServiceV3 {},
-      eventBus: EventBus {}
-    },
-    pricingService: PricingServiceV3 {},
-    notificationService: NotificationServiceV3 {
-      eventBus: EventBus {}
-    },
-    eventBus: EventBus {}
-  }
+  use gateway APIGatewayV3(
+    userService = userService,
+    locationService = locationService,
+    matchingService = matchingService,
+    pricingService = pricingService,
+    notificationService = notificationService,
+    eventBus = eventBus
+  )
+  
+  use userService UserServiceV3(eventBus = eventBus)
+  use locationService LocationServiceV3(eventBus = eventBus)
+  use matchingService MatchingServiceV3(
+    locationService = locationService,
+    pricingService = pricingService,
+    eventBus = eventBus
+  )
+  use pricingService PricingServiceV3
+  use notificationService NotificationServiceV3(eventBus = eventBus)
+  use eventBus EventBus
   
   // Analytics running in background
-  analytics: AnalyticsServiceV3 = AnalyticsServiceV3 {
-    eventBus: EventBus {}
-  }
-  
-  // Start background processors
-  init {
-    gateway.notificationService.ProcessNotifications()
-    analytics.ProcessEvents()
-  }
+  use analytics AnalyticsServiceV3(eventBus = eventBus)
 }

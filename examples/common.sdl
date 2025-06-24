@@ -6,6 +6,7 @@ enum HttpStatusCode {
   NotFound,
   Unauthorized,
   BadRequest,
+  TooManyRequests,
   InternalError,
   InternalServerError, // Server-side error (e.g., HTTP 500)
   ServiceUnavailable

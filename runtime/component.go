@@ -363,6 +363,7 @@ func (ci *ComponentInstance) NeighborsFromMethod(methodName string) []*NeighborM
 				// log.Println("Value: ", val, reflect.TypeOf(val.Value))
 			}
 		case *decl.LiteralExpr:
+		case *decl.SampleExpr:
 		case *decl.MemberAccessExpr:
 			// Ignore these
 			break

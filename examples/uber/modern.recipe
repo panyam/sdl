@@ -16,7 +16,10 @@ function execWithConfirm() {
   echo "    >    $cmd $args"
   echo ""
   echo "$msg ... Press enter to continue"
-  read
+  if [ "$START_PROMPTING" == "true" ];
+  then
+    read
+  fi
   $cmd $args
 }
 
@@ -25,6 +28,10 @@ echo "Welcome to the future - a globally distributed, event-driven architecture"
 echo "capable of handling millions of requests per second."
 execWithConfirm "Loading the modern system" sdl load examples/uber/modern.sdl
 execWithConfirm "Activate the UberModern system" sdl use UberModern
+
+# Start baseline traffic - what used to stress the MVP
+execWithConfirm "Creating baseline generator (20 RPS)" sdl gen add baseline gateway.RequestRide 20
+execWithConfirm "Starting baseline traffic" sdl gen start baseline
 
 echo ""
 echo "=== Revolutionary Architecture Changes ==="
@@ -38,6 +45,8 @@ echo "7. CQRS pattern with read replicas"
 echo ""
 echo "Press enter to set up comprehensive metrics..."
 read
+
+START_PROMPTING=true
 
 # Core metrics
 execWithConfirm "Adding request latency" sdl metrics add request_latency gateway.RequestRide latency
@@ -57,8 +66,8 @@ echo "Press enter to start normal traffic..."
 read
 
 # Start normal traffic
-execWithConfirm "Creating normal traffic generator (100 RPS)" sdl gen add normal gateway.RequestRide 100
-execWithConfirm "Starting normal traffic" sdl gen start normal
+execWithConfirm "Creating normal traffic generator (100 RPS)" sdl gen add normal gateway.RequestRide 100 --apply-flows
+execWithConfirm "Starting normal traffic" sdl gen start normal --apply-flows
 
 echo ""
 echo "=== Observing Modern Performance ==="
@@ -73,8 +82,8 @@ echo "Press enter to add realistic driver updates..."
 read
 
 # Add driver location updates - much higher volume
-execWithConfirm "Creating driver fleet updates (1000 RPS)" sdl gen add drivers gateway.UpdateDriverLocation 1000
-execWithConfirm "Starting driver updates" sdl gen start drivers
+execWithConfirm "Creating driver fleet updates (1000 RPS)" sdl gen add drivers gateway.UpdateDriverLocation 1000 --apply-flows
+execWithConfirm "Starting driver updates" sdl gen start drivers --apply-flows
 
 echo ""
 echo "=== Handling Fleet-Scale Updates ==="
@@ -89,8 +98,8 @@ echo "Press enter to simulate peak hours..."
 read
 
 # Peak traffic - 1000 RPS
-execWithConfirm "Creating peak traffic (900 RPS additional)" sdl gen add peak gateway.RequestRide 900
-execWithConfirm "Starting peak traffic" sdl gen start peak
+execWithConfirm "Creating peak traffic (900 RPS additional)" sdl gen add peak gateway.RequestRide 900 --apply-flows
+execWithConfirm "Starting peak traffic" sdl gen start peak --apply-flows
 
 echo ""
 echo "=== Peak Hours (1000 RPS) ==="
@@ -106,8 +115,8 @@ echo "Press enter to simulate a regional surge..."
 read
 
 # Surge event - 2000 RPS
-execWithConfirm "Creating surge traffic (1000 RPS additional)" sdl gen add surge gateway.RequestRide 1000
-execWithConfirm "Starting surge event" sdl gen start surge
+execWithConfirm "Creating surge traffic (1000 RPS additional)" sdl gen add surge gateway.RequestRide 1000 --apply-flows
+execWithConfirm "Starting surge event" sdl gen start surge --apply-flows
 
 echo ""
 echo "=== Regional Surge Event (2000 RPS) ==="
@@ -157,12 +166,12 @@ echo "Press enter to see extreme scale..."
 read
 
 # Stop previous load
-execWithConfirm "Stopping surge traffic" sdl gen stop surge
-execWithConfirm "Stopping peak traffic" sdl gen stop peak
+execWithConfirm "Stopping surge traffic" sdl gen stop surge --apply-flows
+execWithConfirm "Stopping peak traffic" sdl gen stop peak --apply-flows
 
 # Extreme load test
-execWithConfirm "Creating extreme load (5000 RPS)" sdl gen add extreme gateway.RequestRide 5000
-execWithConfirm "Starting extreme load test" sdl gen start extreme
+execWithConfirm "Creating extreme load (5000 RPS)" sdl gen add extreme gateway.RequestRide 5000 --apply-flows
+execWithConfirm "Starting extreme load test" sdl gen start extreme --apply-flows
 
 echo ""
 echo "=== Extreme Scale Test (5000 RPS) ==="
@@ -177,7 +186,7 @@ echo "Press enter to examine costs..."
 read
 
 # Clean up extreme load
-execWithConfirm "Stopping extreme load" sdl gen stop extreme
+execWithConfirm "Stopping extreme load" sdl gen stop extreme --apply-flows
 execWithConfirm "Returning to normal traffic" sdl gen start normal
 
 echo ""
