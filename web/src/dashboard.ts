@@ -1348,7 +1348,9 @@ export class Dashboard {
       console.log('🔄 Starting metric stream for:', metricIds);
       
       // Start streaming metrics
+      let i = 0
       for await (const response of this.api.streamMetrics(metricIds)) {
+        i++;
         if (this.metricStreamController?.signal.aborted) {
           break;
         }
@@ -1356,7 +1358,9 @@ export class Dashboard {
         if (response.success && response.data) {
           // Process each metric update
           for (const update of response.data) {
-            console.log('📊 Metric update:', update.metricId, update.point);
+            if (i % 10 == 0) {
+              console.log('📊 Metric update:', update.metricId, update.point);
+            }
             this.updateChartWithStreamData(update.metricId, update.point);
           }
         }
