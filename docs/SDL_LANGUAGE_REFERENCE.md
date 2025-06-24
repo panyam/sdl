@@ -325,8 +325,10 @@ let outcome = sample dist {
 ```
 
 ### Asynchronous Execution
+
+#### Simple Async Operations
 ```sdl
-// Simple async
+// Fire and forget
 go self.notificationService.Send()
 
 // Async with block
@@ -335,9 +337,67 @@ go {
     self.cleanup.Run()
 }
 
-// Batch async execution
+// Store future for later
+let future = go self.slowOperation()
+// ... do other work ...
+let result = wait future
+```
+
+#### Batch Processing
+```sdl
+// Execute N operations concurrently
 gobatch 10 {
     self.worker.Process()
+}
+
+// Batch with variable concurrency
+component BatchProcessor {
+    param Concurrency Int = 5
+    
+    method ProcessBatch() Bool {
+        gobatch self.Concurrency {
+            let item = self.queue.Dequeue()
+            self.processItem(item)
+        }
+        return true
+    }
+}
+```
+
+#### Complex Async Patterns
+```sdl
+component ParallelService {
+    uses services List[Service]
+    
+    method FanOut() Bool {
+        // Launch all requests in parallel
+        let futures = []
+        for i < len(self.services) {
+            let f = go self.services[i].Process()
+            futures = append(futures, f)
+        }
+        
+        // Wait for all to complete
+        let results = wait futures using WaitAll()
+        
+        // Check if all succeeded
+        for result in results {
+            if !result {
+                return false
+            }
+        }
+        return true
+    }
+    
+    method FirstToRespond() Bool {
+        // Launch competing requests
+        let f1 = go self.primary.Query()
+        let f2 = go self.secondary.Query()
+        let f3 = go self.tertiary.Query()
+        
+        // Return first successful response
+        return wait f1, f2, f3 using WaitAny()
+    }
 }
 ```
 
@@ -357,6 +417,31 @@ let results = wait f1, f2 using WaitAll()
 
 SDL's strength lies in modeling uncertainty and probabilistic behavior.
 
+### Understanding Distributions
+
+#### Basic Distribution Syntax
+```sdl
+// Simple distribution - weights are relative
+dist {
+    80 => true,   // 80% probability
+    20 => false   // 20% probability
+}
+
+// Distribution with explicit total
+dist 100 {
+    75 => "success",
+    20 => "retry",
+    5 => "failure"
+}
+
+// Distribution with variables
+let successRate = 0.95
+dist {
+    successRate * 100 => true,
+    (1 - successRate) * 100 => false
+}
+```
+
 ### Modeling Failures
 ```sdl
 method QueryDatabase() Bool {
@@ -364,6 +449,25 @@ method QueryDatabase() Bool {
     return sample dist {
         99 => true,
         1 => false
+    }
+}
+
+// More complex failure modeling
+method ResilientQuery() Bool {
+    let result = sample dist {
+        95 => "success",
+        3 => "timeout",
+        2 => "error"
+    }
+    
+    switch result {
+        "success" => return true
+        "timeout" => {
+            delay(1s)
+            return false
+        }
+        "error" => return false
+        default => return false
     }
 }
 ```
@@ -380,18 +484,73 @@ method ProcessRequest() Bool {
     delay(processingTime)
     return true
 }
+
+// Latency that degrades with load
+component AdaptiveService {
+    param Load Float = 0.5
+    
+    method Process() Bool {
+        let baseLatency = 10ms
+        let loadMultiplier = 1 + (self.Load * 4)  // Up to 5x slower
+        
+        delay(baseLatency * loadMultiplier)
+        return true
+    }
+}
 ```
 
 ### Modeling Cache Behavior
 ```sdl
 component CacheLayer {
     param HitRate Float = 0.8
+    param Capacity Int = 10000
     
     method Get() Bool {
         return sample dist 100 {
-            80 => true,   // Cache hit
-            20 => false   // Cache miss
+            self.HitRate * 100 => true,   // Cache hit
+            (1 - self.HitRate) * 100 => false   // Cache miss
         }
+    }
+    
+    // Cache with degradation
+    method GetWithDegradation() Bool {
+        // Hit rate decreases as cache fills
+        let effectiveHitRate = self.HitRate * 0.9  // 90% effectiveness
+        
+        return sample dist {
+            effectiveHitRate * 100 => true,
+            (1 - effectiveHitRate) * 100 => false
+        }
+    }
+}
+```
+
+### Modeling Complex Behaviors
+```sdl
+component NetworkService {
+    param PacketLossRate Float = 0.001
+    param LatencyDistribution = dist {
+        60 => 10ms,   // Low latency
+        30 => 50ms,   // Medium latency
+        10 => 200ms   // High latency
+    }
+    
+    method Send() Bool {
+        // Model packet loss
+        let lost = sample dist {
+            self.PacketLossRate * 1000 => true,
+            (1 - self.PacketLossRate) * 1000 => false
+        }
+        
+        if lost {
+            return false
+        }
+        
+        // Model network latency
+        let latency = sample self.LatencyDistribution
+        delay(latency)
+        
+        return true
     }
 }
 ```
@@ -453,6 +612,35 @@ component ServiceWithCache {
             self.cache.Store()
         }
         return result
+    }
+}
+
+// More sophisticated cache-aside pattern
+component CacheAsideService {
+    uses cache Cache(HitRate = 0.85)
+    uses db Database
+    uses metrics MetricsCollector
+    
+    method Get() Bool {
+        // Try cache first
+        let hit = self.cache.Read()
+        if hit {
+            self.metrics.RecordCacheHit()
+            return true
+        }
+        
+        // Cache miss - record metric
+        self.metrics.RecordCacheMiss()
+        
+        // Load from database
+        let data = self.db.Query()
+        if data {
+            // Update cache for next time
+            self.cache.Write()
+            return true
+        }
+        
+        return false
     }
 }
 ```
