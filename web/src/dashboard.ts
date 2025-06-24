@@ -18,6 +18,7 @@ export class Dashboard {
   private canvasId: string;
   private isUpdatingGenerators: boolean = false; // Flag to prevent UI overwrites during updates
   private generatorUpdateTimeout: number | null = null; // Debounce timer for generator updates
+  private layoutTopToBottom = false;
 
   // Parameter configurations - populated when a system is loaded
   private parameters: ParameterConfig[] = [];
@@ -660,7 +661,7 @@ export class Dashboard {
 
     const systemName = this.systemDiagram.systemName || 'System';
     let dotContent = `digraph "${systemName}" {\n`;
-    dotContent += `  rankdir=TB;\n`;
+    dotContent += `  rankdir=${this.layoutTopToBottom ? "TB": " LR"};\n`;
     dotContent += `  bgcolor="#1a1a1a";\n`;
     dotContent += `  node [fontname="Monaco,Menlo,monospace" fontcolor="white" style=filled];\n`;
     dotContent += `  edge [color="#9ca3af" arrowhead="normal" penwidth=2];\n`;
@@ -670,7 +671,10 @@ export class Dashboard {
     this.systemDiagram?.nodes?.forEach((node) => {
       // Each node represents a method with traffic rate
       const nodeId = node.id.replace(':', '_'); // Replace colon for DOT syntax
-      const displayLabel = `${node.id}\\n${node.traffic}`;
+      
+      // Get icon for the node
+      const icon = this.getIconForNode(node);
+      const displayLabel = `${icon} ${node.id}\\n${node.traffic}`;
       
       // Check if this is an internal component method
       const isInternal = node.type.includes('(internal)') || node.id.includes('.pool:') || node.id.includes('.driverTable:');
@@ -702,6 +706,38 @@ export class Dashboard {
 
     dotContent += `}\n`;
     return dotContent;
+  }
+
+  private getIconForNode(node: any): string {
+    // Use the icon field if available
+    if (node.icon) {
+      const iconMap: Record<string, string> = {
+        'cache': '💾',
+        'database': '🗄️',
+        'service': '⚙️',
+        'gateway': '🚪',
+        'api': '🔌',
+        'queue': '📋',
+        'pool': '🏊',
+        'network': '🌐',
+        'storage': '💿',
+        'index': '📇',
+        'component': '📦'
+      };
+      return iconMap[node.icon] || '📦';
+    }
+    
+    // Fallback to type-based icons for backward compatibility
+    const type = node.type?.toLowerCase() || '';
+    if (type.includes('cache')) return '💾';
+    if (type.includes('database') || type.includes('db')) return '🗄️';
+    if (type.includes('gateway')) return '🚪';
+    if (type.includes('service')) return '⚙️';
+    if (type.includes('queue')) return '📋';
+    if (type.includes('pool')) return '🏊';
+    if (type.includes('api')) return '🔌';
+    
+    return '📦'; // default component icon
   }
 
   private async convertDotToSVG(dotContent: string): Promise<string> {
@@ -743,8 +779,15 @@ export class Dashboard {
       if (container) {
         container.innerHTML = svg;
         const childSvg = container.querySelector("svg") as Element
-        childSvg.setAttribute("height", "100%")
-        childSvg.setAttribute("width", "100%")
+        if (this.layoutTopToBottom) {
+          childSvg.setAttribute("height", "100%")
+          childSvg.removeAttribute("width")
+          // childSvg.setAttribute("width", "100%")
+        } else {
+          childSvg.setAttribute("width", "100%")
+          childSvg.removeAttribute("height")
+          // childSvg.setAttribute("height", "100%")
+        }
       }
     });
     
