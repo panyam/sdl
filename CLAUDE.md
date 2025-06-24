@@ -93,6 +93,7 @@ When continuing work on FlowEval, note that we're in the middle of migrating fro
 - **Self References**: Use pattern `self.component.method` for accessing component dependencies in SDL   
 - **SDL Language Note**: SDL is not a real programming language. It is a language for modelling capacities and system performance. So methods in SDL will not need parameters. For example in a real language, an API method GetDriver would take a driverId parameter. In SDL GetDriver is just GetDriver(). It will still have output types to denote outcomes of result types.
 - **SDL Binary Operators**: SDL does not have binary operators. Again - remember it is not a real programming language, it is simple so as to enable performance and error modelling. If you need extra behaviors you CAN suggest native functions to be implemented and called. Eg if you absolutely want binary arithmetic then suggest a "plus" NATIVE function.
+- **Enums must be comma seperated in SDL**
 
 ## SDL System Declaration Notes
 - In SDL system declaration you can declare the components in any order. There are no "set" statements. You pass the dependencies in the constructor of a "use" keyword.  For example:
@@ -156,3 +157,4 @@ When you are using compact, please focus on test output and code changes
 
 **Session Workflow Memories:**
 - When you checkpoint update all relevant .md files with our latest understanding, statuses and progress in the current session and then commit.
+```

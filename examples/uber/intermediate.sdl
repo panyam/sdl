@@ -44,20 +44,20 @@ component Database {
   param WriteLatency Float = 100ms
   
   method Read() Bool {
-    let acquired = Pool.Acquire()
+    let acquired = self.Pool.Acquire()
     if not acquired {
       return false
     }
-    delay(ReadLatency)
+    delay(self.ReadLatency)
     return true
   }
   
   method Write() Bool {
-    let acquired = Pool.Acquire()
+    let acquired = self.Pool.Acquire()
     if not acquired {
       return false
     }
-    delay(WriteLatency)
+    delay(self.WriteLatency)
     return true
   }
 }
@@ -76,18 +76,19 @@ system UberIntermediate {
 }
 
 component UserService {
-  uses pool ResourcePool(Size = 50, AvgHoldTime = 20ms)  // Utilization tracking enabled
+  uses pool1 ResourcePool(Size = 50, AvgHoldTime = 20ms)  // Utilization tracking enabled
+  uses pool2 ResourcePool(Size = 20, AvgHoldTime = 25ms)
 
   uses redis Cache(HitRate = 0.7)  // 70% cache hit for user data
 
   uses userDB Database(
-    Pool = ResourcePool(Size = 20, AvgHoldTime = 25ms),  // Better connection pooling with utilization
+    Pool = pool2,         // Better connection pooling with utilization 
     ReadLatency = 50ms,   // Indexed queries
     WriteLatency = 100ms
   )
 
   method GetUser() AuthResult {
-    let acquired = self.pool.Acquire()
+    let acquired = self.pool1.Acquire()
     if not acquired {
       return AuthResult.RateLimited  // Pool exhausted
     }
@@ -113,7 +114,7 @@ component UserService {
   }
 
   method AuthenticateUser() AuthResult {
-    let acquired = self.pool.Acquire()
+    let acquired = self.pool1.Acquire()
     if not acquired {
       return AuthResult.RateLimited  // Pool exhausted
     }
@@ -143,8 +144,9 @@ component DriverService {
 
   uses locationCache Cache(HitRate = 0.9)  // Driver locations heavily cached
 
+  uses pool2 ResourcePool(Size = 20, AvgHoldTime = 20ms)
   uses driverDB Database(
-    Pool = ResourcePool(Size = 20, AvgHoldTime = 20ms),
+    Pool = pool2,
     ReadLatency = 30ms,   // Geo-indexed queries
     WriteLatency = 50ms
   )

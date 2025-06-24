@@ -376,6 +376,12 @@ func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
 	// Step 1: Build the instance and path map
 	rootInstances := c.buildInstancePaths(instancePaths, pathToInstance)
 	log.Println("Root Instances: ", rootInstances, instancePaths[rootInstances[0]])
+	for comp, ips := range instancePaths {
+		log.Printf("FOUND INSTANCE PATHS: CompId: %p, Decl: %s, IPS: %s", comp, comp.ComponentDecl.Name.Value, strings.Join(ips, ", "))
+	}
+	for path, comp := range pathToInstance {
+		log.Printf("FOUND PATH TO INSTANCE: Path: %s  =====> %p ----- With Paths: [%s]", path, comp, strings.Join(instancePaths[comp], ", "))
+	}
 
 	var nodes []*protos.DiagramNode
 	var edges []*protos.DiagramEdge
@@ -525,12 +531,12 @@ func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
 			if inst, ok := pathToInstance[componentPath]; ok {
 				// Use NeighborsFromMethod to find all method calls from this method
 				neighbors := inst.NeighborsFromMethod(methodName)
-				
+
 				for _, neighbor := range neighbors {
 					// Find the path for the neighbor component
 					if paths, exists := instancePaths[neighbor.Component]; exists && len(paths) > 0 {
 						neighborPath := paths[0] // Use primary path
-						
+
 						// Create target method node if it doesn't exist
 						targetNodeId := fmt.Sprintf("%s:%s", neighborPath, neighbor.MethodName)
 						if _, exists := methodNodes[targetNodeId]; !exists {

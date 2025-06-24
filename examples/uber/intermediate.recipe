@@ -16,7 +16,10 @@ function execWithConfirm() {
   echo "    >    $cmd $args"
   echo ""
   echo "$msg ... Press enter to continue"
-  read
+  if [ "$START_PROMPTING" == "true" ];
+  then
+    read
+  fi
   $cmd $args
 }
 
@@ -34,16 +37,14 @@ echo "3. Geo-indexed database queries (30ms vs 200ms for driver searches)"
 echo "4. Async notifications via queue"
 echo "5. Better connection pooling (20 connections vs 3)"
 echo ""
-echo "Press enter to set up metrics..."
-read
 
 # Add metrics
-execWithConfirm "Adding request latency metric" sdl metrics add request_latency gateway.RequestRide latency
+execWithConfirm "Adding request latency metric" sdl metrics add request_latency gateway RequestRide latency
 # Cache metrics - we'll track latency instead of hit rate
-execWithConfirm "Adding user lookup latency (with cache)" sdl metrics add user_lookup gateway.userService.GetUser latency
-execWithConfirm "Adding driver lookup latency (with cache)" sdl metrics add driver_lookup gateway.driverService.GetDriver latency
-execWithConfirm "Adding driver query latency" sdl metrics add driver_query gateway.driverService.FindNearbyDrivers latency
-execWithConfirm "Adding notification send latency" sdl metrics add notification_latency gateway.notificationService.NotifyDriver latency
+execWithConfirm "Adding user lookup latency (with cache)" sdl metrics add user_lookup gateway.userService GetUser latency
+execWithConfirm "Adding driver lookup latency (with cache)" sdl metrics add driver_lookup gateway.driverService GetDriver latency
+execWithConfirm "Adding driver query latency" sdl metrics add driver_query gateway.driverService FindNearbyDrivers latency
+execWithConfirm "Adding notification send latency" sdl metrics add notification_latency gateway.notificationService NotifyDriver latency
 # Note: Pool/queue utilization metrics not supported - only latency and count
 
 echo ""
@@ -53,6 +54,8 @@ echo "Notice how much better the system handles it now..."
 echo ""
 echo "Press enter to start baseline traffic..."
 read
+
+START_PROMPTING=true
 
 # Start baseline traffic - what used to stress the MVP
 execWithConfirm "Creating baseline generator (20 RPS)" sdl gen add baseline gateway.RequestRide 20
