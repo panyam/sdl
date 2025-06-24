@@ -424,6 +424,7 @@ func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
 			}},
 			Traffic:  fmt.Sprintf("%.1f rps", rate),
 			FullPath: path,
+			Icon:     c.getComponentIcon(inst),
 		}
 		methodNodes[nodeId] = node
 		nodes = append(nodes, node)
@@ -565,6 +566,7 @@ func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
 					Methods:  []*protos.MethodInfo{},
 					Traffic:  "0 rps",
 					FullPath: primaryPath,
+					Icon:     c.getComponentIcon(inst),
 				}
 				componentNodes[primaryPath] = node
 				nodes = append(nodes, node)
@@ -602,6 +604,89 @@ func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
 		Nodes:      nodes,
 		Edges:      edges,
 	}, nil
+}
+
+// getComponentIcon determines the appropriate icon for a component based on its type and characteristics
+func (c *Canvas) getComponentIcon(inst *runtime.ComponentInstance) string {
+	if inst == nil || inst.ComponentDecl == nil {
+		return "component" // default icon
+	}
+
+	compType := inst.ComponentDecl.Name.Value
+	compTypeLower := strings.ToLower(compType)
+
+	// Check native component types first
+	switch compType {
+	case "Cache", "CacheWithContention":
+		return "cache"
+	case "Database":
+		return "database"
+	case "ResourcePool":
+		return "pool"
+	case "MM1Queue", "MMCKQueue":
+		return "queue"
+	case "Link":
+		return "network"
+	case "HashIndex", "BTreeIndex", "BitmapIndex":
+		return "index"
+	case "SortedFile", "HeapFile", "LSMTree":
+		return "storage"
+	}
+
+	// Check by naming patterns
+	if strings.Contains(compTypeLower, "service") {
+		return "service"
+	}
+	if strings.Contains(compTypeLower, "gateway") {
+		return "gateway"
+	}
+	if strings.Contains(compTypeLower, "api") {
+		return "api"
+	}
+	if strings.Contains(compTypeLower, "cache") {
+		return "cache"
+	}
+	if strings.Contains(compTypeLower, "database") || strings.Contains(compTypeLower, "db") {
+		return "database"
+	}
+	if strings.Contains(compTypeLower, "queue") {
+		return "queue"
+	}
+	if strings.Contains(compTypeLower, "pool") {
+		return "pool"
+	}
+
+	// Check by dependencies - if it has certain types of dependencies, infer its role
+	deps, _ := inst.ComponentDecl.Dependencies()
+	hasDatabaseDep := false
+	hasCacheDep := false
+	hasPoolDep := false
+	
+	for _, dep := range deps {
+		if dep.ResolvedComponent != nil {
+			depType := dep.ResolvedComponent.Name.Value
+			if depType == "Database" || strings.Contains(strings.ToLower(depType), "db") {
+				hasDatabaseDep = true
+			}
+			if depType == "Cache" || strings.Contains(strings.ToLower(depType), "cache") {
+				hasCacheDep = true
+			}
+			if depType == "ResourcePool" || strings.Contains(strings.ToLower(depType), "pool") {
+				hasPoolDep = true
+			}
+		}
+	}
+
+	// Infer based on dependencies
+	if hasDatabaseDep && hasCacheDep {
+		return "service" // Likely a service that uses both cache and database
+	}
+	if hasPoolDep {
+		return "service" // Components with pools are typically services
+	}
+
+	// Default icon
+	return "component"
 }
 
 // Helper to build instance path map

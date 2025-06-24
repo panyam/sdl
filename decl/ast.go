@@ -27,6 +27,12 @@ type Node interface {
 	PrettyPrint(cp CodePrinter)
 }
 
+// Annotations are tings that can be added to other constructs via @ syntax
+type Annotation struct {
+	Node
+	Key *IdentifierExpr
+}
+
 // --- Base Struct ---
 
 // NodeInfo embeddable struct for position tracking.
@@ -159,7 +165,7 @@ type InstanceDecl struct {
 	Name          *IdentifierExpr
 	ComponentName *IdentifierExpr
 	Overrides     []*AssignmentStmt
-	
+
 	// Resolved during type inference/checking
 	ResolvedComponentDecl *ComponentDecl // The resolved component declaration (handles imports)
 }
