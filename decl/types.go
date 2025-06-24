@@ -163,6 +163,9 @@ func (t *Type) String() string {
 		return fmt.Sprintf("Component(%s)", t.Info.(*ComponentDecl).Name.Value)
 	} else if t.Tag == TypeTagMethod {
 	} else if t.Tag == TypeTagOutcomes {
+	} else if t.Tag == TypeTagRef {
+		rti := t.Info.(*RefTypeInfo)
+		return fmt.Sprintf("Ref(Component(%s).Param(%s))", rti.Component.Name, rti.ParamType)
 	}
 	return "Unknown Type"
 }

@@ -593,7 +593,14 @@ func (i *Inference) EvalForCallExpr(expr *CallExpr, scope *TypeScope) (*Type, bo
 			}
 			if !argType.Equals(expectedParamTypes[idx]) {
 				isIntToFloat := argType.Equals(IntType) && expectedParamTypes[idx].Equals(FloatType)
+				if !isIntToFloat && argType.Tag == decl.TypeTagRef {
+					rti := argType.Info.(*decl.RefTypeInfo)
+					if rti.ParamType.Equals(IntType) || rti.ParamType.Equals(FloatType) {
+						isIntToFloat = true
+					}
+				}
 				if !isIntToFloat {
+					log.Println("Error Arg Type: ", argType)
 					return nil, i.Errorf(argExpr.Pos(), "type mismatch for argument %d of call to '%s': expected %s, got %s", idx, funcNameForError, expectedParamTypes[idx].String(), argType.String())
 				}
 			}
