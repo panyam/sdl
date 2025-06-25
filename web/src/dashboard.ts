@@ -660,7 +660,95 @@ export class Dashboard {
     `;
   }
 
-  private generateDotFile(): string {
+  private generateDotFileV2(): string {
+    if (!this.systemDiagram) return '';
+
+    const systemName = this.systemDiagram.systemName || 'System';
+    let dotContent = `digraph "${systemName}" {\n`;
+    dotContent += `  rankdir=${this.layoutTopToBottom ? "TB" : "LR"};\n`;
+    dotContent += `  bgcolor="#1a1a1a";\n`;
+    dotContent += `  node [fontname="Monaco,Menlo,monospace" fontcolor="white" style=filled];\n`;
+    dotContent += `  edge [color="#9ca3af" arrowhead="normal" penwidth=2];\n`;
+    dotContent += `  graph [ranksep=1.0 nodesep=0.8 pad=0.5];\n`;
+    dotContent += `  compound=true;\n\n`;  // Allow edges between clusters
+
+    // Group nodes by component
+    const componentGroups = new Map<string, any[]>();
+    
+    this.systemDiagram?.nodes?.forEach((node) => {
+      // Extract component name from node.id (format: "component:method")
+      const [componentName, methodName] = node.id.split(':');
+      if (!componentGroups.has(componentName)) {
+        componentGroups.set(componentName, []);
+      }
+      componentGroups.get(componentName)!.push({...node, methodName});
+    });
+
+    // Generate subgraph clusters for each component
+    let clusterIndex = 0;
+    componentGroups.forEach((methods, componentName) => {
+      // Determine if this component has any internal methods
+      const hasInternalMethods = methods.some(m => 
+        m.type.includes('(internal)') || 
+        m.id.includes('.pool:') || 
+        m.id.includes('.driverTable:')
+      );
+      
+      // Get icon for the component (use the icon from the first method)
+      const componentIcon = this.getIconForNode(methods[0]);
+      
+      dotContent += `  subgraph cluster_${clusterIndex} {\n`;
+      dotContent += `    label="${componentIcon} ${componentName}";\n`;
+      dotContent += `    style="filled,rounded";\n`;
+      dotContent += `    fillcolor="${hasInternalMethods ? '#1e1b4b' : '#111827'}";\n`;
+      dotContent += `    fontcolor="#e5e7eb";\n`;
+      dotContent += `    fontsize=14;\n`;
+      dotContent += `    margin=12;\n`;
+      dotContent += `    penwidth=2;\n`;
+      dotContent += `    color="${hasInternalMethods ? '#4c1d95' : '#374151'}";\n\n`;
+      
+      // Add method nodes within the cluster
+      methods.forEach((node) => {
+        const nodeId = node.id.replace(':', '_'); // Replace colon for DOT syntax
+        const methodLabel = `${node.methodName}\\n${node.traffic}`;
+        
+        // Check if this is an internal component method
+        const isInternal = node.type.includes('(internal)') || 
+                          node.id.includes('.pool:') || 
+                          node.id.includes('.driverTable:');
+        
+        dotContent += `    "${nodeId}" [label="${methodLabel}"`;
+        dotContent += ` shape=box style="filled,rounded"`;
+        dotContent += ` fillcolor="${isInternal ? '#4c1d95' : '#1f2937'}"`;
+        dotContent += ` fontcolor="${isInternal ? '#e9d5ff' : '#a3e635'}"`;
+        dotContent += ` fontsize=${isInternal ? '10' : '11'}`;
+        dotContent += ` margin=0.1 penwidth=1];\n`;
+      });
+      
+      dotContent += `  }\n\n`;
+      clusterIndex++;
+    });
+
+    // Generate edges between method nodes
+    this.systemDiagram?.edges?.forEach(edge => {
+      const fromNodeId = edge.fromId.replace(':', '_');
+      const toNodeId = edge.toId.replace(':', '_');
+      
+      // Use generator-specific color if available, otherwise default
+      const edgeColor = edge.color || "#9ca3af";
+      let edgeStyle = ` color="${edgeColor}" fontcolor="${edgeColor}" fontsize=10`;
+      
+      // Add label if available
+      const label = edge.label ? ` label="${edge.label}"` : '';
+      
+      dotContent += `  "${fromNodeId}" -> "${toNodeId}"[${label}${edgeStyle}];\n`;
+    });
+
+    dotContent += `}\n`;
+    return dotContent;
+  }
+
+  private generateDotFileV1(): string {
     if (!this.systemDiagram) return '';
 
     const systemName = this.systemDiagram.systemName || 'System';
@@ -824,7 +912,12 @@ export class Dashboard {
     if (!this.systemDiagram) return '';
 
     // Generate dot file content
-    const dotContent = this.generateDotFile();
+    let dotContent = ""
+    if (localStorage.getItem("diagramLayout") == "v1") {
+      dotContent = this.generateDotFileV1();
+    } else {
+      dotContent = this.generateDotFileV2();
+    }
     
     // Convert to SVG and render
     this.convertDotToSVG(dotContent).then(svg => {
