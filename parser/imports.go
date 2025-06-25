@@ -19,6 +19,8 @@ type ComponentDecl = decl.ComponentDecl
 type SystemDecl = decl.SystemDecl
 type AggregatorDecl = decl.AggregatorDecl
 type EnumDecl = decl.EnumDecl
+type Annotatable = decl.Annotatable
+type AnnotationDecl = decl.AnnotationDecl
 type Value = decl.Value
 
 type Node = decl.Node

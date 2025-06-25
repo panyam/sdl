@@ -39,9 +39,11 @@ func yyerrok(lexer SDLLexer) {
     node        Node // Generic interface for lists and for accessing NodeInfo
     // tokenNode   TokenNode // Generic interface for lists and for accessing NodeInfo
     expr        Expr
+    memberAccessExpr *MemberAccessExpr
     chainedExpr *ChainedExpr
     stmt        Stmt
     typeDecl    *TypeDecl
+    annotationDecl   *AnnotationDecl
     paramDecl   *ParamDecl
     usesDecl    *UsesDecl
     methodDef   *MethodDecl
@@ -70,6 +72,7 @@ func yyerrok(lexer SDLLexer) {
     sampleExpr *SampleExpr
 
     // Slices for lists
+    fqn             string
     nodeList          []Node
     caseExprList      []*CaseExpr
     typeDeclList      []*TypeDecl
@@ -78,6 +81,7 @@ func yyerrok(lexer SDLLexer) {
     compBodyItem      ComponentDeclBodyItem
     compBodyItemList  []ComponentDeclBodyItem
     sysBodyItemList   []SystemDeclBodyItem
+    annotationList    []*AnnotationDecl
     paramList         []*ParamDecl
     assignList        []*AssignmentStmt
     exprList          []Expr
@@ -95,7 +99,7 @@ func yyerrok(lexer SDLLexer) {
 
 // --- Tokens ---
 // Keywords (assume lexer returns token type, parser might need pos for some)
-%token<node> SYSTEM USES AGGREGATOR METHOD ANALYZE EXPECT LET IF ELSE SAMPLE DISTRIBUTE DEFAULT RETURN DELAY WAIT GO GOBATCH USING SWITCH CASE FOR 
+%token<node> SYSTEM USES AGGREGATOR METHOD ANALYZE EXPECT LET IF ELSE SAMPLE DISTRIBUTE DEFAULT RETURN DELAY WAIT GO GOBATCH USING SWITCH AT FOR CASE
 
 // Marking these as nodes so can be returned as Node for their locations
 %token<node> USE NATIVE LSQUARE RSQUARE LBRACE RBRACE OPTIONS ENUM COMPONENT PARAM IMPORT FROM AS
@@ -131,6 +135,7 @@ func yyerrok(lexer SDLLexer) {
 %type <enumDecl>     EnumDecl
 %type <identList>    CommaIdentifierList 
 %type <importDecl>   ImportItem
+%type <fqn>   Fqn
 %type <importDeclList>   ImportDecl ImportList
 %type <stmt>         Stmt IfStmtElseOpt LetStmt ExprStmt ReturnStmt 
 // %type <delayStmt>    DelayStmt 
@@ -139,8 +144,11 @@ func yyerrok(lexer SDLLexer) {
 %type <blockStmt>    BlockStmt
 %type <stmtList>     StmtList 
 %type <tupleExpr>         TupleExpr
-%type <expr>         Expression UnaryExpr PrimaryExpr LiteralExpr CallExpr MemberAccessExpr IndexExpr LeafExpr ParenExpr  WaitExpr
+%type <expr>         Expression UnaryExpr PrimaryExpr LiteralExpr CallExpr IndexExpr LeafExpr ParenExpr  WaitExpr
+%type <memberAccessExpr>         MemberAccessExpr
 %type <chainedExpr>         ChainedExpr
+%type <annotationDecl> AnnotationDecl
+%type <annotationList> AnnotationList
 %type <paramDecl>    ParamDecl MethodParamDecl
 %type <paramList>    MethodParamList MethodParamListOpt
 %type <typeDecl>     TypeDecl
@@ -207,14 +215,31 @@ DeclarationList:
 
 TopLevelDeclaration:
       ComponentDecl { $$ = $1 }
+    | AnnotationList ComponentDecl {
+      $$ = $2
+      $2.Annotations = $1
+    }
     | SystemDecl    { $$ = $1 }
+    | AnnotationList SystemDecl    {
+      $$ = $2
+      $2.Annotations = $1
+    }
     | AggregatorDecl { $$ = $1 }
     | NATIVE METHOD MethodSigDecl   { 
         $3.IsNative = true
         $$ = $3
     }
+    | AnnotationList NATIVE METHOD MethodSigDecl   { 
+        $4.IsNative = true
+        $$ = $4
+        $4.Annotations = $1
+    }
     | OptionsDecl   { $$ = $1 }
     | EnumDecl      { $$ = $1 }
+    | AnnotationList EnumDecl      {
+      $$ = $2
+      $2.Annotations = $1
+    }
     ;
 
 OptionsDecl:
@@ -239,10 +264,34 @@ OptionsDecl:
     }
     ;
 
+AnnotationList:
+    AnnotationDecl               { $$ = []*AnnotationDecl{$1} }
+    | AnnotationList AnnotationDecl { $$ = append($1, $2) }
+    ;
+
+AnnotationDecl:
+    AT Fqn LPAREN RPAREN {
+      $$ = &AnnotationDecl{
+        NodeInfo: NewNodeInfo($1.(Node).Pos(), $4.(Node).End()),
+        Fqn: $2,
+      }
+    }
+  | AT Fqn LPAREN KWArgList RPAREN {
+      $$ = &AnnotationDecl{
+        NodeInfo: NewNodeInfo($1.(Node).Pos(), $5.(Node).End()),
+        Fqn: $2,
+        ArgMap: $4,
+      }
+    };
+
+Fqn: IDENTIFIER { $$ = $1.Value }
+    | Fqn DOT IDENTIFIER { $$ = $1 + "." + $3.Value }
+    ;
+
 ComponentDecl:
     NATIVE COMPONENT IDENTIFIER LBRACE NativeComponentBodyItemOptList RBRACE { // COMPONENT($1) ... RBRACE($5)
         $$ = &ComponentDecl{
-            NodeInfo: NewNodeInfo($1.(Node).Pos(), $6.(Node).End()),
+            Annotatable: Annotatable{NodeInfo: NewNodeInfo($1.(Node).Pos(), $6.(Node).End())},
             Name: $3,
             Body: $5,
             IsNative: true,
@@ -250,7 +299,7 @@ ComponentDecl:
     }
     | COMPONENT IDENTIFIER LBRACE ComponentBodyItemOptList RBRACE { // COMPONENT($1) ... RBRACE($5)
         $$ = &ComponentDecl{
-            NodeInfo: NewNodeInfo($1.(Node).Pos(), $5.(Node).End()),
+            Annotatable: Annotatable{NodeInfo: NewNodeInfo($1.(Node).Pos(), $5.(Node).End())},
             Name: $2,
             Body: $4,
          }
@@ -260,7 +309,7 @@ ComponentDecl:
 EnumDecl:
     ENUM IDENTIFIER LBRACE CommaIdentifierList RBRACE { // ENUM($1) IDENTIFIER($2) ... RBRACE($5)
         $$ = &EnumDecl{
-            NodeInfo: NewNodeInfo($1.(Node).Pos(), $5.(Node).End()),
+            Annotatable: Annotatable{NodeInfo: NewNodeInfo($1.(Node).Pos(), $5.(Node).End())},
             Name: $2, // $2 is an IdentifierExpr from lexer, has Pos/End
             Values: $4,
         }
@@ -293,14 +342,14 @@ ImportItem: IDENTIFIER { $$ = &ImportDecl{ImportedItem: $1, Alias: $1 } }
 MethodSigDecl:
     IDENTIFIER LPAREN MethodParamListOpt RPAREN { // METHOD($1) ... BlockStmt($6)
         $$ = &MethodDecl{
-            NodeInfo: NewNodeInfo($1.Pos(), $4.End()),
+            Annotatable: Annotatable{NodeInfo: NewNodeInfo($1.Pos(), $4.End())},
             Name: $1,
             Parameters: $3,
         }
     }
     | IDENTIFIER LPAREN MethodParamListOpt RPAREN TypeDecl { // METHOD($1) ... BlockStmt($8)
         $$ = &MethodDecl{
-            NodeInfo: NewNodeInfo($1.Pos(), $5.End()),
+            Annotatable: Annotatable{NodeInfo: NewNodeInfo($1.Pos(), $5.End())},
             Name: $1,
             Parameters: $3,
             ReturnType: $5,
@@ -344,21 +393,21 @@ ComponentBodyItem:
 ParamDecl:
     PARAM IDENTIFIER TypeDecl { // PARAM($1) ... 
         $$ = &ParamDecl{
-            NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.End()),
+            Annotatable: Annotatable{NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.End())},
             Name: $2,
             TypeDecl: $3, // TypeDecl also needs to have NodeInfo
         }
     }
     | PARAM IDENTIFIER ASSIGN Expression { // PARAM($1) ... 
         $$ = &ParamDecl{
-            NodeInfo: NewNodeInfo($1.(Node).Pos(), $4.End()),
+            Annotatable: Annotatable{NodeInfo: NewNodeInfo($1.(Node).Pos(), $4.End())},
             Name: $2,
             DefaultValue: $4,
         }
     }
     | PARAM IDENTIFIER TypeDecl ASSIGN Expression { // PARAM($1) ... 
         $$ = &ParamDecl{
-            NodeInfo: NewNodeInfo($1.(Node).Pos(), $5.End()),
+            Annotatable: Annotatable{NodeInfo: NewNodeInfo($1.(Node).Pos(), $5.End())},
             Name: $2,
             TypeDecl: $3,
             DefaultValue: $5,
@@ -409,7 +458,7 @@ TypeDeclList:
 UsesDecl:
     USES IDENTIFIER IDENTIFIER { // USES($1) ... 
         $$ = &UsesDecl{
-            NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.End()),
+            Annotatable: Annotatable{NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.End())},
             Name: $2,
             ComponentName: $3,
          }
@@ -417,7 +466,7 @@ UsesDecl:
     // Optional: Add syntax for overrides within uses? Like `uses x: T { p1 = v1; }`
     | USES IDENTIFIER IDENTIFIER LPAREN AssignListOpt RPAREN {
         $$ = &UsesDecl{
-             NodeInfo: NewNodeInfo($1.(Node).Pos(), $6.End()),
+             Annotatable: Annotatable{NodeInfo: NewNodeInfo($1.(Node).Pos(), $6.End())},
              Name: $2,
              ComponentName: $3,
              Overrides: $5,
@@ -446,14 +495,14 @@ MethodParamList:
 MethodParamDecl:    // thse dont need "param" unlike param decls in components
     IDENTIFIER TypeDecl { // PARAM($1) ... 
         $$ = &ParamDecl{
-            NodeInfo: NewNodeInfo($1.Pos(), $2.End()),
+            Annotatable: Annotatable{NodeInfo: NewNodeInfo($1.Pos(), $2.End())},
             Name: $1,
             TypeDecl: $2, // TypeDecl also needs to have NodeInfo
         }
     }
     | IDENTIFIER TypeDecl ASSIGN Expression { // PARAM($1) ... 
         $$ = &ParamDecl{
-            NodeInfo: NewNodeInfo($1.Pos(), $4.End()),
+            Annotatable: Annotatable{ NodeInfo: NewNodeInfo($1.Pos(), $4.End())},
             Name: $1,
             TypeDecl: $2,
             DefaultValue: $4,
@@ -465,7 +514,7 @@ MethodParamDecl:    // thse dont need "param" unlike param decls in components
 SystemDecl:
     SYSTEM IDENTIFIER LBRACE SystemBodyItemOptList RBRACE { // SYSTEM($1) ... RBRACE($5)
         $$ = &SystemDecl{
-             NodeInfo: NewNodeInfo($1.(Node).Pos(), $5.(Node).End()),
+            Annotatable: Annotatable{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $5.(Node).End())},
              Name: $2,
              Body: $4,
         }
@@ -475,10 +524,10 @@ SystemDecl:
 AggregatorDecl:
     NATIVE AGGREGATOR MethodSigDecl { // SYSTEM($1) ... RBRACE($5)
         $$ = &AggregatorDecl{
-             NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.End()),
-             Name: $3.Name,
-             Parameters: $3.Parameters,
-             ReturnType: $3.ReturnType,
+              Annotatable: Annotatable{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.End())},
+              Name: $3.Name,
+              Parameters: $3.Parameters,
+              ReturnType: $3.ReturnType,
         }
     }
     ;
@@ -498,18 +547,18 @@ SystemBodyItem:
 InstanceDecl:
     USE IDENTIFIER IDENTIFIER { // IDENTIFIER($1) ... 
          $$ = &InstanceDecl{
-             NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.End()),
-             Name: $2,
-             ComponentName: $3,
-             Overrides: []*AssignmentStmt{},
+              Annotatable: Annotatable{ NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.End())},
+              Name: $2,
+              ComponentName: $3,
+              Overrides: []*AssignmentStmt{},
          }
     }
     | USE IDENTIFIER IDENTIFIER LPAREN AssignListOpt RPAREN { // IDENTIFIER($1) ... 
         $$ = &InstanceDecl{
-             NodeInfo: NewNodeInfo($1.(Node).Pos(), $6.End()),
-             Name: $2,
-             ComponentName: $3,
-             Overrides: $5,
+              Annotatable: Annotatable{NodeInfo: NewNodeInfo($1.(Node).Pos(), $6.End())},
+              Name: $2,
+              ComponentName: $3,
+              Overrides: $5,
          }
     }
     ;
@@ -807,14 +856,14 @@ MemberAccessExpr:
              Receiver: $1,
              Member: $3,
         }
-        $$.(*MemberAccessExpr).NodeInfo = NewNodeInfo($1.Pos(), $3.End())
+        $$.NodeInfo = NewNodeInfo($1.Pos(), $3.End())
     }
     | MemberAccessExpr DOT IDENTIFIER { // PrimaryExpr($1) DOT($2) IDENTIFIER($3)
         $$ = &MemberAccessExpr{
             Receiver: $1,
             Member: $3,
         }
-        $$.(*MemberAccessExpr).NodeInfo = NewNodeInfo($1.Pos(), $3.End())
+        $$.NodeInfo = NewNodeInfo($1.Pos(), $3.End())
     }
     ;
 

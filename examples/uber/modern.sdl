@@ -18,6 +18,7 @@ enum Priority {
   CRITICAL
 }
 
+@a.b.c.d()
 enum EventType {
   USER_UPDATED,
   LOCATION_UPDATED,

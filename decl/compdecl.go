@@ -10,7 +10,7 @@ import "fmt"
 
 // ComponentDecl represents `component Name { ... }`
 type ComponentDecl struct {
-	NodeInfo
+	Annotatable
 	Name *IdentifierExpr         // ComponentDecl type name
 	Body []ComponentDeclBodyItem // ParamDecl, UsesDecl, MethodDecl
 
@@ -196,7 +196,7 @@ type ComponentDeclBodyItem interface {
 
 // ParamDecl represents `param name: TypeDecl [= defaultExpr];`
 type ParamDecl struct {
-	NodeInfo
+	Annotatable
 	Name         *IdentifierExpr
 	TypeDecl     *TypeDecl
 	DefaultValue Expr // Optional
@@ -227,7 +227,7 @@ func (p *ParamDecl) PrettyPrint(cp CodePrinter) {
 
 // UsesDecl represents `uses varName: ComponentType [{ overrides }];`
 type UsesDecl struct {
-	NodeInfo
+	Annotatable
 	Name          *IdentifierExpr
 	ComponentName *IdentifierExpr   // Type name of the dependency
 	Overrides     []*AssignmentStmt // When overrides are specified - the component is also instantiated otherwise it must be set in a system or in the enclosing component's uses decl
@@ -256,7 +256,7 @@ func (u *UsesDecl) PrettyPrint(cp CodePrinter) {
 
 // MethodDecl represents `method name(params) [: returnType] { body }`
 type MethodDecl struct {
-	NodeInfo
+	Annotatable
 	Name       *IdentifierExpr
 	Parameters []*ParamDecl // Signature parameters (can be empty)
 	ReturnType *TypeDecl    // Optional return type (primitive or enum)

@@ -27,12 +27,6 @@ type Node interface {
 	PrettyPrint(cp CodePrinter)
 }
 
-// Annotations are tings that can be added to other constructs via @ syntax
-type Annotation struct {
-	Node
-	Key *IdentifierExpr
-}
-
 // --- Base Struct ---
 
 // NodeInfo embeddable struct for position tracking.
@@ -43,6 +37,21 @@ func (n *NodeInfo) End() Location { return n.StopPos }
 func (n *NodeInfo) stmtNode()     {}
 
 // --- Top Level declarations ---
+
+// Annotations are tings that can be added to other constructs via @ syntax
+type AnnotationDecl struct {
+	NodeInfo
+	Fqn string
+	// Annotations are always named for now
+	ArgMap map[string]Expr
+}
+
+type Annotatable struct {
+	NodeInfo
+
+	// List of annotations before the Decl
+	Annotations []*AnnotationDecl
+}
 
 // OptionsDecl represents `options { ... }` (structure TBD)
 type OptionsDecl struct {
@@ -56,8 +65,8 @@ func (o *OptionsDecl) PrettyPrint(cp CodePrinter) { cp.Println("options { ... }"
 
 // EnumDecl represents `enum Name { Val1, Val2, ... };`
 type EnumDecl struct {
-	NodeInfo
-	Name   *IdentifierExpr   // EnumDecl type name
+	Annotatable
+	Name   *IdentifierExpr
 	Values []*IdentifierExpr // List of enum value names
 
 	// Resolved values so we can work with processed/loaded values instead of resolving
@@ -133,7 +142,7 @@ func (i *ImportDecl) ImportedAs() string {
 
 // SystemDecl represents `system Name { ... }`
 type SystemDecl struct {
-	NodeInfo
+	Annotatable
 	Name *IdentifierExpr
 	Body []SystemDeclBodyItem // InstanceDecl, AnalyzeDecl, OptionsDecl, LetStmt
 
@@ -161,7 +170,7 @@ type SystemDeclBodyItem interface {
 
 // InstanceDecl represents `instanceName ComponentType ( overrides );`
 type InstanceDecl struct {
-	NodeInfo
+	Annotatable
 	Name          *IdentifierExpr
 	ComponentName *IdentifierExpr
 	Overrides     []*AssignmentStmt
@@ -218,7 +227,7 @@ func (e *ExpectationsDecl) String() string { return "expect { ... }" }
 // Aggregator declarations - For now they can only be native
 // Aggregators are used to select from a set of futures being waited on
 type AggregatorDecl struct {
-	NodeInfo
+	Annotatable
 	Name       *IdentifierExpr
 	Parameters []*ParamDecl // Signature parameters (can be empty)
 	ReturnType *TypeDecl    // Optional return type (primitive or enum)

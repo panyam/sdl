@@ -514,6 +514,8 @@ func (l *Lexer) Lex(lval *SDLSymType) int {
 		if optoken == "-" {
 			tokenCode = MINUS
 			// } else if optoken == "==" { tokenCode = EQ
+		} else if optoken == "@" {
+			tokenCode = AT
 		} else if optoken == "=" {
 			tokenCode = ASSIGN
 		} else if optoken == ":=" {
@@ -562,6 +564,7 @@ var testTokenNames = map[int]string{
 	USING:            "USING",
 	// LOG:              "LOG",
 	SWITCH:     "SWITCH",
+	AT:         "AT",
 	CASE:       "CASE",
 	ENUM:       "ENUM",
 	IMPORT:     "IMPORT",
