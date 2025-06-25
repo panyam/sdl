@@ -12,22 +12,16 @@ component AppServer {
   uses db Database
   param RetryCount = 3
 
-  method CheckDuplicateShortId() Bool {
-    // 0.01% chance of collissions
-    return sample dist {
-      9999 => false
-      1 => true
-    }
-  }
-
   method Shorten() HttpStatusCode {
     for RetryCount {
-      let foundDuplicate = self.CheckDuplicateShortId()
+      // 0.01% chance of a collision
+      let foundDuplicate = sample dist {
+          9999 => false
+          1 => true
+      }
 
       if not foundDuplicate {
-        // log "hello world", foundDuplicate, self.db.PutShortUrl()
-        // Success so try saving a new short ID
-        if self.db.PutShortUrl() {
+        if db.Insert() {
           return HttpStatusCode.Ok
         } else {
           return HttpStatusCode.InternalError
@@ -40,7 +34,7 @@ component AppServer {
   }
 
   method Redirect() HttpStatusCode {
-    if self.db.GetByShortId() {
+    if self.db.Select() {
       return HttpStatusCode.Ok // or may be 302
     }
 
@@ -54,57 +48,4 @@ system Bitly {
     // This allows cyclical links
     use app AppServer ( db = db )
     use db Database
-}
-
-component AppServerWithCache {
-  // Our main DB
-  uses db Database
-  uses cache Cache
-
-  param RetryCount = 3
-
-  method Shorten() HttpStatusCode {
-    for RetryCount {
-      if not self.CheckDuplicateShortId() {
-        // Success so try saving a new short ID
-        if self.db.PutShortUrl() {
-          // .... Write to cache as well
-          return HttpStatusCode.Ok
-        } else {
-          return HttpStatusCode.InternalError
-        }
-      }
-    }
-
-    // All retries elapsed - too many conflicts
-    return HttpStatusCode.Conflict
-  }
-
-  method Redirect() HttpStatusCode {
-    // See if there is a cache hit
-    if cache.Read() {
-      return HttpStatusCode.Ok // or may be 302
-    }
-
-    if self.db.GetByShortId() {
-      return HttpStatusCode.Ok // or may be 302
-    }
-
-    // Simplified - can model more errors
-    return HttpStatusCode.InternalError
-  }
-
-  method CheckDuplicateShortId() Bool {
-    // 0.001% chance of collissions
-    return sample dist {
-      99999 => false
-      1 => true
-    }
-  }
-}
-
-system BitlyWithCache {
-    use cache Cache
-    use db Database
-    use app AppServerWithCache ( db = db, cache = cache )
 }
