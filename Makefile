@@ -45,7 +45,6 @@ install-tools:
 # Install Node dependencies
 install-npm:
 	@echo "Installing Node.js dependencies..."
-	npm install
 	cd web && npm install
 	@echo "✓ Node.js dependencies installed"
 
