@@ -12,7 +12,6 @@ import (
 
 	"github.com/panyam/sdl/core"
 	"github.com/panyam/sdl/decl"
-	protos "github.com/panyam/sdl/gen/go/sdl/v1"
 	"github.com/panyam/sdl/loader"
 	"github.com/panyam/sdl/runtime"
 	"google.golang.org/grpc/codes"
@@ -267,13 +266,13 @@ func (c *Canvas) AddGenerator(gen *GeneratorInfo) error {
 }
 
 // UpdateGenerator updates an existing traffic generator configuration
-func (c *Canvas) UpdateGenerator(gen *protos.Generator) error {
+func (c *Canvas) UpdateGenerator(gen *Generator) error {
 	c.generatorsLock.Lock()
 	defer c.generatorsLock.Unlock()
 
-	existing, exists := c.generators[gen.Id]
+	existing, exists := c.generators[gen.ID]
 	if !exists {
-		return status.Error(codes.NotFound, fmt.Sprintf("generator '%s' not found", gen.Id))
+		return status.Error(codes.NotFound, fmt.Sprintf("generator '%s' not found", gen.ID))
 	}
 
 	// Stop the existing generator if it's running
@@ -364,7 +363,7 @@ func (c *Canvas) ListGenerators() map[string]*GeneratorInfo {
 // --- Option types for Run/Plot ---
 
 // GetSystemDiagram returns the system topology with method-level nodes and edges
-func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
+func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
 	if c.activeSystem == nil {
 		return nil, fmt.Errorf("no active system set. Use Load() and Use() commands first")
 	}
@@ -380,11 +379,11 @@ func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
 		log.Printf("FOUND INSTANCE PATHS: CompId: %p, Decl: %s, IPS: %s", comp, comp.ComponentDecl.Name.Value, strings.Join(ips, ", "))
 	}
 
-	var nodes []*protos.DiagramNode
-	var edges []*protos.DiagramEdge
+	var nodes []DiagramNode
+	var edges []DiagramEdge
 
 	// Track method nodes we've created
-	methodNodes := make(map[string]*protos.DiagramNode) // "component:method" -> node
+	methodNodes := make(map[string]*DiagramNode) // "component:method" -> node
 	processedEdges := make(map[string]bool)             // track "from->to" to avoid duplicates
 
 	// Get the current flow rates for traffic labels
@@ -399,7 +398,7 @@ func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
 	}
 
 	// Helper to create or get a method node
-	getOrCreateMethodNode := func(inst *runtime.ComponentInstance, methodName string) *protos.DiagramNode {
+	getOrCreateMethodNode := func(inst *runtime.ComponentInstance, methodName string) *DiagramNode {
 		path := getPrimaryPath(inst)
 		if path == "" {
 			return nil
@@ -414,11 +413,11 @@ func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
 		rateKey := fmt.Sprintf("%s.%s", path, methodName)
 		rate := currentFlowRates[rateKey]
 
-		node := &protos.DiagramNode{
-			Id:   nodeId,
+		node := &DiagramNode{
+			ID:   nodeId,
 			Name: nodeId,
 			Type: inst.ComponentDecl.Name.Value,
-			Methods: []*protos.MethodInfo{{
+			Methods: []MethodInfo{{
 				Name:    methodName,
 				Traffic: rate,
 			}},
@@ -430,27 +429,27 @@ func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
 			node.Traffic = fmt.Sprintf("%.1f rps", rate)
 		}
 		methodNodes[nodeId] = node
-		nodes = append(nodes, node)
+		nodes = append(nodes, *node)
 		return node
 	}
 
 	// Recursive helper to process a specific method and its calls
 	var processMethodCalls func(inst *runtime.ComponentInstance, methodName string,
 		processedMethods map[string]bool,
-		getOrCreateMethodNode func(*runtime.ComponentInstance, string) *protos.DiagramNode,
+		getOrCreateMethodNode func(*runtime.ComponentInstance, string) *DiagramNode,
 		instancePaths map[*runtime.ComponentInstance][]string,
 		currentFlowRates map[string]float64,
-		nodes *[]*protos.DiagramNode,
-		edges *[]*protos.DiagramEdge,
+		nodes *[]DiagramNode,
+		edges *[]DiagramEdge,
 		flowScope *runtime.FlowScope)
 
 	processMethodCalls = func(inst *runtime.ComponentInstance, methodName string,
 		processedMethods map[string]bool,
-		getOrCreateMethodNode func(*runtime.ComponentInstance, string) *protos.DiagramNode,
+		getOrCreateMethodNode func(*runtime.ComponentInstance, string) *DiagramNode,
 		instancePaths map[*runtime.ComponentInstance][]string,
 		currentFlowRates map[string]float64,
-		nodes *[]*protos.DiagramNode,
-		edges *[]*protos.DiagramEdge,
+		nodes *[]DiagramNode,
+		edges *[]DiagramEdge,
 		flowScope *runtime.FlowScope) {
 
 		// Skip if we've already processed this method
@@ -477,7 +476,7 @@ func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
 			// Create edge
 			fromNode := getOrCreateMethodNode(inst, methodName)
 			if fromNode != nil {
-				edgeKey := fmt.Sprintf("%s->%s", fromNode.Id, toNode.Id)
+				edgeKey := fmt.Sprintf("%s->%s", fromNode.ID, toNode.ID)
 				if !processedEdges[edgeKey] {
 					processedEdges[edgeKey] = true
 
@@ -495,9 +494,9 @@ func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
 						}
 					}
 
-					newedge := &protos.DiagramEdge{
-						FromId:     fromNode.Id,
-						ToId:       toNode.Id,
+					newedge := &DiagramEdge{
+						FromID:     fromNode.ID,
+						ToID:       toNode.ID,
 						FromMethod: methodName,
 						ToMethod:   neighbor.MethodName,
 						Label:      "",
@@ -505,7 +504,7 @@ func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
 					if rate > 0 {
 						newedge.Label = fmt.Sprintf("%.1f rps", rate)
 					}
-					*edges = append(*edges, newedge)
+					*edges = append(*edges, *newedge)
 				}
 			}
 
@@ -547,7 +546,7 @@ func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
 	}
 
 	// Track component-only nodes (for components without methods)
-	componentNodes := make(map[string]*protos.DiagramNode) // "component" -> node
+	componentNodes := make(map[string]*DiagramNode) // "component" -> node
 
 	// Create component-only nodes for components that have no methods with traffic
 	// This ensures we still show the system structure even without traffic
@@ -566,17 +565,17 @@ func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
 
 			// If no method nodes exist, create a component-only node
 			if !hasMethodNode {
-				node := &protos.DiagramNode{
-					Id:       primaryPath,
+				node := &DiagramNode{
+					ID:       primaryPath,
 					Name:     primaryPath,
 					Type:     inst.ComponentDecl.Name.Value,
-					Methods:  []*protos.MethodInfo{},
+					Methods:  []MethodInfo{},
 					Traffic:  "-",
 					FullPath: primaryPath,
 					Icon:     c.getComponentIcon(inst),
 				}
 				componentNodes[primaryPath] = node
-				nodes = append(nodes, node)
+				nodes = append(nodes, *node)
 			}
 		}
 	}
@@ -592,9 +591,9 @@ func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
 
 			// Only add edge if parent also has a component-only node
 			if _, hasParentNode := componentNodes[parentPath]; hasParentNode {
-				edges = append(edges, &protos.DiagramEdge{
-					FromId: parentPath,
-					ToId:   componentPath,
+				edges = append(edges, DiagramEdge{
+					FromID: parentPath,
+					ToID:   componentPath,
 					Label:  "",
 				})
 			}
@@ -606,7 +605,7 @@ func (c *Canvas) GetSystemDiagram() (*protos.SystemDiagram, error) {
 		systemName = c.activeSystem.System.Name.Value
 	}
 
-	return &protos.SystemDiagram{
+	return &SystemDiagram{
 		SystemName: systemName,
 		Nodes:      nodes,
 		Edges:      edges,

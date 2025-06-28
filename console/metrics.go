@@ -7,7 +7,6 @@ import (
 
 	"github.com/panyam/sdl/core"
 	"github.com/panyam/sdl/decl"
-	protos "github.com/panyam/sdl/gen/go/sdl/v1"
 	"github.com/panyam/sdl/runtime"
 )
 
@@ -30,7 +29,7 @@ const (
 // This will corresponding to each "LiveMetric" that can be plotted and will result in a series
 // of points
 type MetricSpec struct {
-	*protos.Metric
+	*Metric // Use native type instead of proto
 
 	// The system this metric spec applies to
 	System                    *runtime.SystemInstance

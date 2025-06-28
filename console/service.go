@@ -158,7 +158,7 @@ func (s *CanvasService) ListGenerators(ctx context.Context, req *protos.ListGene
 	s.withCanvas(req.CanvasId, func(canvas *Canvas) {
 		gens := canvas.ListGenerators()
 		for _, v := range gens {
-			resp.Generators = append(resp.Generators, v.Generator)
+			resp.Generators = append(resp.Generators, toProtoGenerator(v.Generator))
 		}
 	})
 	return
@@ -172,7 +172,7 @@ func (s *CanvasService) GetGenerator(ctx context.Context, req *protos.GetGenerat
 	err = s.withCanvas(req.CanvasId, func(canvas *Canvas) {
 		generator := canvas.GetGenerator(req.GeneratorId)
 		// Convert to proto format
-		resp.Generator = generator.Generator
+		resp.Generator = toProtoGenerator(generator.Generator)
 	})
 
 	return
@@ -182,7 +182,8 @@ func (s *CanvasService) AddGenerator(ctx context.Context, req *protos.AddGenerat
 	slog.Info("AddGenerator Request", "req", req)
 	resp = &protos.AddGeneratorResponse{}
 	s.withCanvas(req.Generator.CanvasId, func(canvas *Canvas) {
-		gen := &GeneratorInfo{Generator: req.Generator}
+		nativeGen := fromProtoGenerator(req.Generator)
+		gen := &GeneratorInfo{Generator: nativeGen}
 		err = canvas.AddGenerator(gen)
 	})
 	return
@@ -261,7 +262,8 @@ func (s *CanvasService) UpdateGenerator(ctx context.Context, req *protos.UpdateG
 
 	err = s.withCanvas(req.Generator.CanvasId, func(canvas *Canvas) {
 		// Update the generator
-		err = canvas.UpdateGenerator(req.Generator)
+		nativeGen := fromProtoGenerator(req.Generator)
+		err = canvas.UpdateGenerator(nativeGen)
 		if err != nil {
 			return
 		}
@@ -715,8 +717,8 @@ func (s *CanvasService) GetSystemDiagram(ctx context.Context, req *protos.GetSys
 			return
 		}
 
-		// Canvas.GetSystemDiagram now returns proto directly
-		resp.Diagram = diagram
+		// Convert native diagram to proto
+		resp.Diagram = toProtoSystemDiagram(diagram)
 	})
 
 	return
