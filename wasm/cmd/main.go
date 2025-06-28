@@ -12,15 +12,37 @@ import (
 
 // Global canvas manager - reusing existing Canvas type
 var canvases map[string]*console.Canvas
-var fileSystem FileSystem
+var fileSystem loader.FileSystem
 
 func init() {
 	canvases = make(map[string]*console.Canvas)
 	// Initialize with default canvas
 	canvases["default"] = console.NewCanvas("default")
 	
-	// Initialize filesystem (will be configured based on environment)
-	fileSystem = NewCompositeFS()
+	// Initialize filesystem for WASM environment
+	fileSystem = createWASMFileSystem()
+}
+
+func createWASMFileSystem() loader.FileSystem {
+	// Start with a composite filesystem
+	cfs := loader.NewCompositeFS()
+	
+	// Add memory filesystem for user edits
+	cfs.Mount("/workspace/", loader.NewMemoryFS())
+	
+	// In production, we'll have bundled files
+	// For now, use empty bundles
+	bundledFS := loader.NewMemoryFS()
+	bundledFS.PreloadFiles(getEmbeddedFiles())
+	cfs.Mount("/examples/", bundledFS)
+	cfs.Mount("/lib/", bundledFS)
+	
+	// Support for external URLs
+	cfs.Mount("https://", NewWASMHTTPFS())
+	cfs.Mount("http://", NewWASMHTTPFS())
+	cfs.Mount("github.com/", loader.NewGitHubFS())
+	
+	return cfs
 }
 
 func main() {
@@ -113,12 +135,12 @@ func canvasLoad(this js.Value, args []js.Value) interface{} {
 	
 	canvas := getCanvas(canvasID)
 	
-	// Override the loader to use our WASM filesystem
-	wasmLoader := &WASMLoader{
-		fs:     fileSystem,
-		loader: loader.NewLoader(nil, nil, 10),
-	}
-	canvas.Runtime().SetLoader(wasmLoader)
+	// Create a loader with our WASM filesystem
+	fsResolver := loader.NewFileSystemResolver(fileSystem)
+	sdlLoader := loader.NewLoader(nil, fsResolver, 10)
+	
+	// Update the canvas runtime's loader
+	canvas.Runtime().SetLoader(sdlLoader)
 	
 	// Load the recipe
 	err := canvas.Load(recipePath)
@@ -275,7 +297,155 @@ func genAdd(this js.Value, args []js.Value) interface{} {
 	})
 }
 
-// ... (rest of the generator, metrics, and execution commands follow similar pattern)
+// Placeholder implementations for remaining commands
+func genRemove(this js.Value, args []js.Value) interface{} {
+	return jsSuccess(map[string]interface{}{"message": "Generator removed"})
+}
+
+func genUpdate(this js.Value, args []js.Value) interface{} {
+	return jsSuccess(map[string]interface{}{"message": "Generator updated"})
+}
+
+func genList(this js.Value, args []js.Value) interface{} {
+	return jsSuccess(map[string]interface{}{"generators": []interface{}{}})
+}
+
+func genStart(this js.Value, args []js.Value) interface{} {
+	return jsSuccess(map[string]interface{}{"message": "Generators started"})
+}
+
+func genStop(this js.Value, args []js.Value) interface{} {
+	return jsSuccess(map[string]interface{}{"message": "Generators stopped"})
+}
+
+func metricsAdd(this js.Value, args []js.Value) interface{} {
+	return jsSuccess(map[string]interface{}{"message": "Metric added"})
+}
+
+func metricsRemove(this js.Value, args []js.Value) interface{} {
+	return jsSuccess(map[string]interface{}{"message": "Metric removed"})
+}
+
+func metricsUpdate(this js.Value, args []js.Value) interface{} {
+	return jsSuccess(map[string]interface{}{"message": "Metric updated"})
+}
+
+func metricsList(this js.Value, args []js.Value) interface{} {
+	return jsSuccess(map[string]interface{}{"metrics": []interface{}{}})
+}
+
+func metricsQuery(this js.Value, args []js.Value) interface{} {
+	return jsSuccess(map[string]interface{}{"results": []interface{}{}})
+}
+
+func run(this js.Value, args []js.Value) interface{} {
+	return jsSuccess(map[string]interface{}{"message": "Simulation complete"})
+}
+
+func trace(this js.Value, args []js.Value) interface{} {
+	return jsSuccess(map[string]interface{}{"trace": []interface{}{}})
+}
+
+func flows(this js.Value, args []js.Value) interface{} {
+	return jsSuccess(map[string]interface{}{"flows": map[string]interface{}{}})
+}
+
+// File system commands
+func fsReadFile(this js.Value, args []js.Value) interface{} {
+	if len(args) < 1 {
+		return jsError("fs.readFile requires file path")
+	}
+	
+	path := args[0].String()
+	content, err := fileSystem.ReadFile(path)
+	if err != nil {
+		return jsError(fmt.Sprintf("Failed to read file: %v", err))
+	}
+	
+	return jsSuccess(map[string]interface{}{
+		"content": string(content),
+		"path": path,
+	})
+}
+
+func fsWriteFile(this js.Value, args []js.Value) interface{} {
+	if len(args) < 2 {
+		return jsError("fs.writeFile requires path and content")
+	}
+	
+	path := args[0].String()
+	content := args[1].String()
+	
+	err := fileSystem.WriteFile(path, []byte(content))
+	if err != nil {
+		return jsError(fmt.Sprintf("Failed to write file: %v", err))
+	}
+	
+	return jsSuccess(map[string]interface{}{
+		"path": path,
+		"message": "File written successfully",
+	})
+}
+
+func fsListFiles(this js.Value, args []js.Value) interface{} {
+	dir := "/"
+	if len(args) > 0 {
+		dir = args[0].String()
+	}
+	
+	files, err := fileSystem.ListFiles(dir)
+	if err != nil {
+		return jsError(fmt.Sprintf("Failed to list files: %v", err))
+	}
+	
+	return jsSuccess(map[string]interface{}{
+		"files": files,
+		"directory": dir,
+	})
+}
+
+// Configuration commands
+func setDevMode(this js.Value, args []js.Value) interface{} {
+	if len(args) < 1 {
+		return jsError("setDevMode requires boolean argument")
+	}
+	
+	devMode := args[0].Bool()
+	
+	if devMode {
+		// Switch to development filesystem with HTTP backend
+		fileSystem = loader.CreateDevelopmentFileSystem("http://localhost:8081")
+	} else {
+		// Switch to production filesystem (bundled/memory)
+		fileSystem = createWASMFileSystem()
+	}
+	
+	return jsSuccess(map[string]interface{}{
+		"devMode": devMode,
+		"message": fmt.Sprintf("Development mode set to %v", devMode),
+	})
+}
+
+func fsMount(this js.Value, args []js.Value) interface{} {
+	if len(args) < 2 {
+		return jsError("fs.mount requires: prefix, url")
+	}
+	
+	prefix := args[0].String()
+	url := args[1].String()
+	
+	// Mount the URL to the prefix in our composite filesystem
+	if cfs, ok := fileSystem.(*loader.CompositeFS); ok {
+		cfs.Mount(prefix, loader.NewHTTPFileSystem(url))
+		return jsSuccess(map[string]interface{}{
+			"prefix": prefix,
+			"url": url,
+			"message": fmt.Sprintf("Mounted %s to %s", url, prefix),
+		})
+	}
+	
+	return jsError("Mounting only supported with composite filesystem")
+}
 
 // Helper functions
 
@@ -313,46 +483,13 @@ func parseOptions(args []js.Value, startIdx int) map[string]string {
 	return options
 }
 
-// Development mode configuration
-func setDevMode(this js.Value, args []js.Value) interface{} {
-	if len(args) < 1 {
-		return jsError("setDevMode requires boolean argument")
+// Placeholder for embedded files (will be generated at build time)
+func getEmbeddedFiles() map[string][]byte {
+	return map[string][]byte{
+		"/examples/uber.sdl": []byte(`// Uber MVP example
+system UberMVP {
+    use api APIGateway
+    use db Database
+}`),
 	}
-	
-	devMode := args[0].Bool()
-	
-	if devMode {
-		// Switch to development filesystem with HTTP backend
-		fileSystem = NewDevFS()
-	} else {
-		// Switch to production filesystem (bundled/memory)
-		fileSystem = NewBundledFS()
-	}
-	
-	return jsSuccess(map[string]interface{}{
-		"devMode": devMode,
-		"message": fmt.Sprintf("Development mode set to %v", devMode),
-	})
-}
-
-// File system mount for development
-func fsMount(this js.Value, args []js.Value) interface{} {
-	if len(args) < 2 {
-		return jsError("fs.mount requires: prefix, url")
-	}
-	
-	prefix := args[0].String()
-	url := args[1].String()
-	
-	// Mount the URL to the prefix in our composite filesystem
-	if cfs, ok := fileSystem.(*CompositeFS); ok {
-		cfs.Mount(prefix, &DevServerFS{BaseURL: url})
-		return jsSuccess(map[string]interface{}{
-			"prefix": prefix,
-			"url": url,
-			"message": fmt.Sprintf("Mounted %s to %s", url, prefix),
-		})
-	}
-	
-	return jsError("Mounting only supported in development mode")
 }
