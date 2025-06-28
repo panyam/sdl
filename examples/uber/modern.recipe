@@ -3,7 +3,7 @@
 # Shows a globally distributed, event-driven architecture
 
 # Setup canvas for modern demo
-export SDL_CANVAS_ID=uberv3
+export SDL_CANVAS_ID=default
 
 sdl canvas create $SDL_CANVAS_ID
 sdl canvas reset $SDL_CANVAS_ID

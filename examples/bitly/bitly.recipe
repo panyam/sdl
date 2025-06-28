@@ -1,3 +1,4 @@
+
 #!/usr/bin/env bash
 # Uber MVP Demo Script
 # Shows the evolution from a simple monolithic system to a distributed architecture
@@ -24,9 +25,8 @@ function execWithConfirm() {
 }
 
 echo "=== Uber MVP Demo - 'Two friends with an app' ==="
-echo "We'll start with how Uber might have looked in the early days - a simple monolithic application."
-execWithConfirm "Loading the MVP system" sdl load examples/uber/mvp.sdl
-execWithConfirm "Activate the UberMVP system" sdl use UberMVP
+execWithConfirm "Loading the MVP system" sdl load examples/bitly/mvp.sdl
+execWithConfirm "Activate the UberMVP system" sdl use Bitly
 
 # Load the MVP system
 

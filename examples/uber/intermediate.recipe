@@ -3,7 +3,7 @@
 # Shows the improvements made to scale the system
 
 # Setup canvas for intermediate demo
-export SDL_CANVAS_ID=uberv2
+export SDL_CANVAS_ID=default
 
 sdl canvas create $SDL_CANVAS_ID
 sdl canvas reset $SDL_CANVAS_ID
