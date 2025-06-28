@@ -68,14 +68,6 @@ func (s *CanvasService) CreateCanvas(ctx context.Context, req *protos.CreateCanv
 	return resp, nil
 }
 
-func (c *Canvas) ToProto() *protos.Canvas {
-	out := protos.Canvas{}
-	out.Id = c.id
-	if c.activeSystem != nil {
-		out.ActiveSystem = c.activeSystem.System.Name.Value
-	}
-	return &out
-}
 
 func (s *CanvasService) ListCanvases(ctx context.Context, req *protos.ListCanvasesRequest) (resp *protos.ListCanvasesResponse, err error) {
 	slog.Info("TODO: ListCanvases Request", "req", req)
@@ -277,7 +269,8 @@ func (s *CanvasService) AddMetric(ctx context.Context, req *protos.AddMetricRequ
 	slog.Info("AddMetric Request", "req", req)
 	resp = &protos.AddMetricResponse{}
 	s.withCanvas(req.Metric.CanvasId, func(canvas *Canvas) {
-		err = canvas.metricTracer.AddMetricSpec(&MetricSpec{Metric: req.Metric})
+		nativeMetric := fromProtoMetric(req.Metric)
+		err = canvas.metricTracer.AddMetricSpec(&MetricSpec{Metric: nativeMetric})
 		resp.Metric = req.Metric
 	})
 	return
@@ -428,7 +421,11 @@ func (s *CanvasService) ListMetrics(ctx context.Context, req *protos.ListMetrics
 
 		// Get all metrics from the metric tracer
 		metrics := canvas.metricTracer.ListMetrics()
-		resp.Metrics = metrics
+		protoMetrics := make([]*protos.Metric, len(metrics))
+		for i, m := range metrics {
+			protoMetrics[i] = toProtoMetric(m)
+		}
+		resp.Metrics = protoMetrics
 	})
 
 	return

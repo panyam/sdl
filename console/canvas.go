@@ -257,10 +257,10 @@ func (c *Canvas) AddGenerator(gen *GeneratorInfo) error {
 	gen.canvas = c
 
 	gen.System = c.activeSystem
-	if c.generators[gen.Id] != nil {
+	if c.generators[gen.ID] != nil {
 		return status.Error(codes.AlreadyExists, "Generator with name already exists")
 	}
-	c.generators[gen.Id] = gen
+	c.generators[gen.ID] = gen
 	gen.Start()
 	return c.recomputeSystemFlows()
 }
@@ -582,7 +582,7 @@ func (c *Canvas) GetSystemDiagram() (*SystemDiagram, error) {
 
 	// Add structural edges between component-only nodes (parent-child relationships)
 	for _, node := range componentNodes {
-		componentPath := node.Id
+		componentPath := node.ID
 
 		// Check if this component has a parent
 		lastDot := strings.LastIndex(componentPath, ".")
@@ -762,7 +762,7 @@ func (c *Canvas) evaluateProposedFlowsWithStrategy(strategy string) error {
 	for _, gen := range c.generators {
 		if gen.Enabled {
 			generators = append(generators, runtime.GeneratorConfigAPI{
-				ID:        gen.Id,
+				ID:        gen.ID,
 				Component: gen.Component,
 				Method:    gen.Method,
 				Rate:      float64(gen.Rate),
@@ -1102,7 +1102,7 @@ func (c *Canvas) EvaluateFlowWithStrategy(strategy string) (*runtime.FlowAnalysi
 	for _, gen := range c.generators {
 		if gen.Enabled {
 			generators = append(generators, runtime.GeneratorConfigAPI{
-				ID:        gen.Id,
+				ID:        gen.ID,
 				Component: gen.Component,
 				Method:    gen.Method,
 				Rate:      float64(gen.Rate),

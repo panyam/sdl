@@ -33,9 +33,11 @@ func (c *Canvas) GetState() *CanvasState {
 	// Collect metrics
 	var metrics []Metric
 	if c.metricTracer != nil {
-		for _, spec := range c.metricTracer.metricSpecs {
-			if spec.Metric != nil {
-				metrics = append(metrics, *spec.Metric)
+		// Use the public ListMetrics method to get metrics
+		metricsList := c.metricTracer.ListMetrics()
+		for _, m := range metricsList {
+			if m != nil {
+				metrics = append(metrics, *m)
 			}
 		}
 	}

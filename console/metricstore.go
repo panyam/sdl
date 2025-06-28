@@ -3,8 +3,6 @@ package console
 import (
 	"context"
 	"time"
-
-	protos "github.com/panyam/sdl/gen/go/sdl/v1"
 )
 
 // MetricPoint represents a single metric measurement
@@ -22,25 +20,25 @@ type MetricPoint struct {
 // MetricStore defines the interface for storing and querying metrics
 type MetricStore interface {
 	// WritePoint stores a single metric point for a specific metric
-	WritePoint(ctx context.Context, metric *protos.Metric, point *MetricPoint) error
+	WritePoint(ctx context.Context, metric *Metric, point *MetricPoint) error
 
 	// WriteBatch stores multiple metric points for a specific metric
-	WriteBatch(ctx context.Context, metric *protos.Metric, points []*MetricPoint) error
+	WriteBatch(ctx context.Context, metric *Metric, points []*MetricPoint) error
 
 	// Query retrieves raw metric points for a specific metric
-	Query(ctx context.Context, metric *protos.Metric, opts QueryOptions) (QueryResult, error)
+	Query(ctx context.Context, metric *Metric, opts QueryOptions) (QueryResult, error)
 
 	// QueryMultiple retrieves points for multiple metrics (e.g., for correlation)
-	QueryMultiple(ctx context.Context, metrics []*protos.Metric, opts QueryOptions) (map[string]QueryResult, error)
+	QueryMultiple(ctx context.Context, metrics []*Metric, opts QueryOptions) (map[string]QueryResult, error)
 
 	// Aggregate computes aggregations for a specific metric
-	Aggregate(ctx context.Context, metric *protos.Metric, opts AggregateOptions) (AggregateResult, error)
+	Aggregate(ctx context.Context, metric *Metric, opts AggregateOptions) (AggregateResult, error)
 
 	// Subscribe creates a subscription for real-time metric updates
 	Subscribe(ctx context.Context, metricIDs []string) (<-chan *MetricUpdateBatch, error)
 
 	// GetMetricStats returns statistics for a metric
-	GetMetricStats(metric *protos.Metric) MetricStats
+	GetMetricStats(metric *Metric) MetricStats
 
 	// Close cleanly shuts down the store
 	Close() error
@@ -126,7 +124,7 @@ type AggregateResult struct {
 	Buckets []TimeBucket
 
 	// Reference to the metric this result is for
-	Metric *protos.Metric
+	Metric *Metric
 
 	// Aggregation window used
 	Window time.Duration

@@ -10,7 +10,6 @@ import (
 
 	"github.com/panyam/sdl/core"
 	"github.com/panyam/sdl/decl"
-	protos "github.com/panyam/sdl/gen/go/sdl/v1"
 	"github.com/panyam/sdl/runtime"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -71,11 +70,11 @@ func (mt *MetricTracer) AddMetricSpec(spec *MetricSpec) error {
 	mt.seriesLock.Lock()
 	defer mt.seriesLock.Unlock()
 
-	if spec.Id == "" {
+	if spec.ID == "" {
 		return status.Error(codes.InvalidArgument, fmt.Sprintf("measurement ID cannot be empty"))
 	}
 
-	if mt.seriesMap[spec.Id] != nil {
+	if mt.seriesMap[spec.ID] != nil {
 		return status.Error(codes.AlreadyExists, fmt.Sprintf("Metric already exists"))
 	}
 
@@ -112,7 +111,7 @@ func (mt *MetricTracer) AddMetricSpec(spec *MetricSpec) error {
 	spec.resolvedComponentInstance = resolvedComponent
 	spec.store = mt.store
 	spec.canvas = mt.canvas
-	mt.seriesMap[spec.Id] = spec
+	mt.seriesMap[spec.ID] = spec
 	spec.Start()
 	return nil
 }
@@ -136,17 +135,17 @@ func (mt *MetricTracer) RemoveMetricSpec(specId string) {
 }
 
 // ListMetrics returns all configured metrics with statistics
-func (mt *MetricTracer) ListMetrics() []*protos.Metric {
+func (mt *MetricTracer) ListMetrics() []*Metric {
 	mt.seriesLock.RLock()
 	defer mt.seriesLock.RUnlock()
 
-	metrics := make([]*protos.Metric, 0, len(mt.seriesMap))
+	metrics := make([]*Metric, 0, len(mt.seriesMap))
 	for _, spec := range mt.seriesMap {
 		if spec.Metric != nil {
 			// Create a copy of the metric with updated statistics
-			metricCopy := &protos.Metric{
-				Id:                spec.Metric.Id,
-				CanvasId:          spec.Metric.CanvasId,
+			metricCopy := &Metric{
+				ID:                spec.Metric.ID,
+				CanvasID:          spec.Metric.CanvasID,
 				Name:              spec.Metric.Name,
 				Component:         spec.Metric.Component,
 				Methods:           spec.Metric.Methods,
@@ -173,7 +172,7 @@ func (mt *MetricTracer) ListMetrics() []*protos.Metric {
 }
 
 // GetMetricByID finds a metric by its ID
-func (mt *MetricTracer) GetMetricByID(id string) *protos.Metric {
+func (mt *MetricTracer) GetMetricByID(id string) *Metric {
 	mt.seriesLock.RLock()
 	defer mt.seriesLock.RUnlock()
 

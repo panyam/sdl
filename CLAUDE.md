@@ -123,6 +123,15 @@ To build the SDL binary use `make`.  The binary is now already in path and can b
 
 ## Key Architecture Decisions (June 2025)
 
+### WASM Support Architecture (June 2025)
+- **Native Types**: Created in `console/types.go` - Generator, Metric, SystemDiagram, etc.
+- **Proto Types**: Only used at gRPC service boundaries (service.go)
+- **Conversions**: Bidirectional converters in `console/conversions.go` and `console/canvas_conversions.go`
+- **Clean Core**: Canvas, MetricTracer, and other core components now use native types exclusively
+- **WASM Compatible**: No proto dependencies in core logic enables WASM compilation
+- **DuckDB Removed**: Eliminated unused time-series database dependency
+- **WASM Binary**: Successfully builds at 28.6MB (optimization pending)
+
 ### Metrics System
 - Only supports `latency` and `count` metric types (no `utilization` or `throughput`)
 - Metrics are pre-aggregated at collection time using specified aggregation function

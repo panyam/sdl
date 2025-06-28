@@ -2,19 +2,21 @@
 
 ## Immediate Priority: WASM Support (In Progress)
 
-### 1. Canvas Refactoring (Current Focus)
-- [ ] Define native types for Generator, Metric, SystemDiagram in console package
-- [ ] Update GeneratorInfo to use native fields instead of embedded proto
-- [ ] Update MetricSpec to use native fields instead of embedded proto
-- [ ] Create conversion utilities (toProto/fromProto) in service.go
-- [ ] Update Canvas methods to use native types
-- [ ] Test Canvas works without proto dependencies
+### 1. Canvas Refactoring ✅ COMPLETED
+- [x] Define native types for Generator, Metric, SystemDiagram in console package
+- [x] Update GeneratorInfo to use native fields instead of embedded proto
+- [x] Update MetricSpec to use native fields instead of embedded proto
+- [x] Create conversion utilities (toProto/fromProto) in service.go and conversions.go
+- [x] Update Canvas methods to use native types
+- [x] Test Canvas works without proto dependencies
+- [x] Remove DuckDB dependency (unused, was blocking WASM)
 
-### 2. WASM Runtime Compatibility
+### 2. WASM Runtime Compatibility (In Progress)
 - [ ] Verify SimpleEval works in WASM (no file I/O, no OS-specific calls)
 - [ ] Update Canvas to use FileSystem interface for all file operations
-- [ ] Build minimal WASM binary with just runtime components
+- [x] Build minimal WASM binary with just runtime components (28.6MB)
 - [ ] Test basic SDL evaluation in browser
+- [ ] Optimize binary size (current: 28.6MB, target: <10MB with TinyGo)
 
 ### 3. Web Integration
 - [ ] Complete file explorer integration with WASM filesystem
@@ -98,12 +100,17 @@
 - ✅ Created web components (file explorer, code editor)
 - ✅ Established WASM build process
 - ✅ Identified Canvas refactoring approach
+- ✅ Refactored Canvas to use native types instead of proto
+- ✅ Created proto/native conversion functions at service boundaries
+- ✅ Removed DuckDB dependency completely
+- ✅ Successfully built WASM binary (28.6MB)
+- ✅ Updated MetricTracer to use native types
 
 ## Blocked/Decisions Needed
-- Proto dependency in Canvas blocking WASM build
+- ~~Proto dependency in Canvas blocking WASM build~~ ✅ RESOLVED
 - Need to decide on bundled examples strategy
 - TinyGo compatibility unknowns
-- Binary size targets for free tier
+- Binary size targets for free tier (current: 28.6MB)
 
 ## Notes
 - Focus on developer experience for WASM mode

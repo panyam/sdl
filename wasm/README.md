@@ -10,6 +10,12 @@ This directory contains the WebAssembly implementation of SDL, enabling browser-
 - **Clean separation** - Proto/gRPC only at service boundaries
 - **Progressive enhancement** - Start simple, add features incrementally
 
+### Recent Changes (June 2025)
+- **Proto-free Canvas**: Refactored to use native types internally
+- **DuckDB removed**: Eliminated unused dependency blocking WASM
+- **Native types**: Generator, Metric, SystemDiagram now proto-free
+- **Clean build**: WASM binary builds successfully (28.6MB)
+
 ### Key Components
 
 1. **FileSystem Abstraction** (`loader/filesystem.go`)

@@ -4,8 +4,6 @@ package main
 
 import (
 	"fmt"
-	"io"
-	"net/http"
 	"strings"
 	"sync"
 	"syscall/js"

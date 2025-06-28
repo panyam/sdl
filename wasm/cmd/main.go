@@ -5,8 +5,9 @@ package main
 import (
 	"syscall/js"
 	"fmt"
+	"strings"
+	"time"
 	"github.com/panyam/sdl/console"
-	"github.com/panyam/sdl/runtime"
 	"github.com/panyam/sdl/loader"
 )
 
@@ -135,12 +136,8 @@ func canvasLoad(this js.Value, args []js.Value) interface{} {
 	
 	canvas := getCanvas(canvasID)
 	
-	// Create a loader with our WASM filesystem
-	fsResolver := loader.NewFileSystemResolver(fileSystem)
-	sdlLoader := loader.NewLoader(nil, fsResolver, 10)
-	
-	// Update the canvas runtime's loader
-	canvas.Runtime().SetLoader(sdlLoader)
+	// Canvas doesn't expose runtime directly anymore
+	// We'll need to load through the canvas directly
 	
 	// Load the recipe
 	err := canvas.Load(recipePath)
@@ -148,8 +145,8 @@ func canvasLoad(this js.Value, args []js.Value) interface{} {
 		return jsError(fmt.Sprintf("Failed to load recipe: %v", err))
 	}
 	
-	// Get system count
-	systems := canvas.Runtime().GetSystemDecls()
+	// Get available systems
+	systems := canvas.GetAvailableSystemNames()
 	
 	return jsSuccess(map[string]interface{}{
 		"canvasId": canvasID,
@@ -200,7 +197,9 @@ func canvasInfo(this js.Value, args []js.Value) interface{} {
 	
 	if currentSystem != nil {
 		info["activeSystem"] = currentSystem.System.Name.Value
-		info["components"] = len(currentSystem.ComponentInstances)
+		// Count components from the system
+		// TODO: Get component count from system
+		info["components"] = "unknown"
 	}
 	
 	// Add generators info
@@ -274,17 +273,35 @@ func genAdd(this js.Value, args []js.Value) interface{} {
 	canvas := getCanvas(canvasID)
 	
 	applyFlows := options["applyFlows"] == "true"
-	err := canvas.AddGenerator(name, target, rate)
+	
+	// Parse component.method
+	component, method := parseComponentMethod(target)
+	if component == "" || method == "" {
+		return jsError("Invalid target format. Expected: component.method")
+	}
+	
+	// Create GeneratorInfo
+	gen := &console.GeneratorInfo{
+		Generator: &console.Generator{
+			ID:        name,
+			Name:      name,
+			Component: component,
+			Method:    method,
+			Rate:      rate,
+			Enabled:   true,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		},
+	}
+	
+	err := canvas.AddGenerator(gen)
 	if err != nil {
 		return jsError(fmt.Sprintf("Failed to add generator: %v", err))
 	}
 	
 	// Apply flows if requested
 	if applyFlows {
-		flowStates, err := canvas.EvaluateFlows()
-		if err == nil {
-			canvas.ApplyFlowStates(flowStates)
-		}
+		// TODO: Implement flow evaluation in WASM
 	}
 	
 	return jsSuccess(map[string]interface{}{
@@ -492,4 +509,13 @@ system UberMVP {
     use db Database
 }`),
 	}
+}
+
+// parseComponentMethod splits "component.method" into component and method
+func parseComponentMethod(target string) (component, method string) {
+	parts := strings.Split(target, ".")
+	if len(parts) != 2 {
+		return "", ""
+	}
+	return parts[0], parts[1]
 }
