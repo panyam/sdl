@@ -11,11 +11,12 @@
 - [x] Test Canvas works without proto dependencies
 - [x] Remove DuckDB dependency (unused, was blocking WASM)
 
-### 2. WASM Runtime Compatibility (In Progress)
-- [ ] Verify SimpleEval works in WASM (no file I/O, no OS-specific calls)
-- [ ] Update Canvas to use FileSystem interface for all file operations
+### 2. WASM Runtime Compatibility ✅ COMPLETED
+- [x] Verify FileSystem abstraction works in WASM
+- [x] Update Canvas to accept custom runtime with FileSystem resolver
 - [x] Build minimal WASM binary with just runtime components (28.6MB)
-- [ ] Test basic SDL evaluation in browser
+- [x] Test basic SDL loading in browser
+- [x] Fix Go WASM slice marshaling issue ([]string to []interface{})
 - [ ] Optimize binary size (current: 28.6MB, target: <10MB with TinyGo)
 
 ### 3. Web Integration
@@ -105,6 +106,10 @@
 - ✅ Removed DuckDB dependency completely
 - ✅ Successfully built WASM binary (28.6MB)
 - ✅ Updated MetricTracer to use native types
+- ✅ Fixed Go WASM []string marshaling issue (must convert to []interface{})
+- ✅ Modified Canvas to accept runtime parameter for dependency injection
+- ✅ Integrated WASM FileSystem with Canvas via custom runtime
+- ✅ Created working test page demonstrating SDL loading in browser
 
 ## Blocked/Decisions Needed
 - ~~Proto dependency in Canvas blocking WASM build~~ ✅ RESOLVED

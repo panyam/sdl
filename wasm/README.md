@@ -15,6 +15,9 @@ This directory contains the WebAssembly implementation of SDL, enabling browser-
 - **DuckDB removed**: Eliminated unused dependency blocking WASM
 - **Native types**: Generator, Metric, SystemDiagram now proto-free
 - **Clean build**: WASM binary builds successfully (28.6MB)
+- **Canvas DI**: Modified Canvas to accept runtime parameter for FileSystem injection
+- **Go WASM Fix**: Fixed []string marshaling issue (must convert to []interface{})
+- **Working Demo**: FileSystem and SDL loading now work in browser
 
 ### Key Components
 
@@ -42,6 +45,30 @@ This directory contains the WebAssembly implementation of SDL, enabling browser-
    - Monaco editor with SDL syntax highlighting
    - Reuses existing UI components
 
+## Key Learnings
+
+### Go WASM Marshaling
+When returning data to JavaScript, Go's WASM implementation has limitations:
+- `[]string` cannot be directly marshaled - must convert to `[]interface{}`
+- Example fix:
+```go
+// Convert []string to []interface{} for JavaScript
+jsFiles := make([]interface{}, len(files))
+for i, f := range files {
+    jsFiles[i] = f
+}
+```
+
+### Canvas Runtime Injection
+The Canvas now accepts a runtime parameter, enabling WASM to inject custom FileSystem:
+```go
+// Create custom runtime with WASM filesystem
+fsResolver := loader.NewFileSystemResolver(fileSystem)
+sdlLoader := loader.NewLoader(nil, fsResolver, 10)
+r := runtime.NewRuntime(sdlLoader)
+canvas := console.NewCanvas(id, r)
+```
+
 ## Building
 
 ```bash
@@ -50,8 +77,8 @@ cd wasm
 ```
 
 This creates:
-- `web/sdl.wasm` - The WASM binary
-- `web/wasm_exec.js` - Go's WASM support file
+- `sdl.wasm` - The WASM binary (28.6MB)
+- `wasm_exec.js` - Go's WASM support file (copied from Go distribution)
 
 ## Development Setup
 

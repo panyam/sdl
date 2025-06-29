@@ -9,7 +9,7 @@ import (
 
 // TestContactsServiceBasic validates Canvas API with simple two-tier system
 func TestContactsServiceBasic(t *testing.T) {
-	canvas := console.NewCanvas()
+	canvas := console.NewCanvas("test", nil)
 
 	// Load the contacts service
 	err := canvas.Load("contacts.sdl")
@@ -96,7 +96,7 @@ func TestContactsServiceBasic(t *testing.T) {
 
 // TestContactsParameterModification validates different parameter types
 func TestContactsParameterModification(t *testing.T) {
-	canvas := console.NewCanvas()
+	canvas := console.NewCanvas("test", nil)
 
 	err := canvas.Load("contacts.sdl")
 	if err != nil {
@@ -145,7 +145,7 @@ func TestContactsParameterModification(t *testing.T) {
 
 // TestContactsVisualization validates plot and diagram generation
 func TestContactsVisualization(t *testing.T) {
-	canvas := console.NewCanvas()
+	canvas := console.NewCanvas("test", nil)
 
 	err := canvas.Load("contacts.sdl")
 	if err != nil {
@@ -199,7 +199,7 @@ func TestContactsVisualization(t *testing.T) {
 
 // TestContactsRapidIteration simulates rapid parameter changes for live demos
 func TestContactsRapidIteration(t *testing.T) {
-	canvas := console.NewCanvas()
+	canvas := console.NewCanvas("test", nil)
 
 	err := canvas.Load("contacts.sdl")
 	if err != nil {

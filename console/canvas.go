@@ -40,10 +40,13 @@ type Canvas struct {
 	simulationStarted   bool
 }
 
-// NewCanvas creates a new interactive canvas session.
-func NewCanvas(id string) *Canvas {
-	l := loader.NewLoader(nil, nil, 10)
-	r := runtime.NewRuntime(l)
+// NewCanvas creates a new interactive canvas session with a custom runtime.
+// If runtime is nil, a default runtime with no resolvers will be created.
+func NewCanvas(id string, r *runtime.Runtime) *Canvas {
+	if r == nil {
+		l := loader.NewLoader(nil, nil, 10)
+		r = runtime.NewRuntime(l)
+	}
 	return &Canvas{
 		id:                  id,
 		runtime:             r,

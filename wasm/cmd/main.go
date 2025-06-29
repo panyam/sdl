@@ -9,6 +9,7 @@ import (
 	"time"
 	"github.com/panyam/sdl/console"
 	"github.com/panyam/sdl/loader"
+	"github.com/panyam/sdl/runtime"
 )
 
 // Global canvas manager - reusing existing Canvas type
@@ -17,11 +18,15 @@ var fileSystem loader.FileSystem
 
 func init() {
 	canvases = make(map[string]*console.Canvas)
-	// Initialize with default canvas
-	canvases["default"] = console.NewCanvas("default")
 	
 	// Initialize filesystem for WASM environment
 	fileSystem = createWASMFileSystem()
+	
+	// Initialize default canvas with WASM filesystem
+	fsResolver := loader.NewFileSystemResolver(fileSystem)
+	sdlLoader := loader.NewLoader(nil, fsResolver, 10)
+	r := runtime.NewRuntime(sdlLoader)
+	canvases["default"] = console.NewCanvas("default", r)
 }
 
 func createWASMFileSystem() loader.FileSystem {
@@ -39,9 +44,10 @@ func createWASMFileSystem() loader.FileSystem {
 	cfs.Mount("/lib/", bundledFS)
 	
 	// Support for external URLs
-	cfs.Mount("https://", NewWASMHTTPFS())
-	cfs.Mount("http://", NewWASMHTTPFS())
-	cfs.Mount("github.com/", loader.NewGitHubFS())
+	// TODO: Implement WASM-compatible HTTP filesystem using loader.FileSystem interface
+	// cfs.Mount("https://", NewWASMHTTPFS())
+	// cfs.Mount("http://", NewWASMHTTPFS())
+	// cfs.Mount("github.com/", loader.NewGitHubFS())
 	
 	return cfs
 }
@@ -115,7 +121,12 @@ func getCanvas(id string) *console.Canvas {
 	
 	canvas, exists := canvases[id]
 	if !exists {
-		canvas = console.NewCanvas(id)
+		// Create a loader with our WASM filesystem
+		fsResolver := loader.NewFileSystemResolver(fileSystem)
+		sdlLoader := loader.NewLoader(nil, fsResolver, 10)
+		r := runtime.NewRuntime(sdlLoader)
+		
+		canvas = console.NewCanvas(id, r)
 		canvases[id] = canvas
 	}
 	return canvas
@@ -227,7 +238,10 @@ func canvasReset(this js.Value, args []js.Value) interface{} {
 	}
 	
 	// Create a new canvas to replace the old one
-	canvases[canvasID] = console.NewCanvas(canvasID)
+	fsResolver := loader.NewFileSystemResolver(fileSystem)
+	sdlLoader := loader.NewLoader(nil, fsResolver, 10)
+	r := runtime.NewRuntime(sdlLoader)
+	canvases[canvasID] = console.NewCanvas(canvasID, r)
 	
 	return jsSuccess(map[string]interface{}{
 		"canvasId": canvasID,
@@ -415,8 +429,19 @@ func fsListFiles(this js.Value, args []js.Value) interface{} {
 		return jsError(fmt.Sprintf("Failed to list files: %v", err))
 	}
 	
+	// Ensure files is not nil
+	if files == nil {
+		files = []string{}
+	}
+	
+	// Convert []string to []interface{} for JavaScript compatibility
+	jsFiles := make([]interface{}, len(files))
+	for i, f := range files {
+		jsFiles[i] = f
+	}
+	
 	return jsSuccess(map[string]interface{}{
-		"files": files,
+		"files": jsFiles,
 		"directory": dir,
 	})
 }

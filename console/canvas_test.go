@@ -9,7 +9,7 @@ import (
 )
 
 func TestCapacityModeling(t *testing.T) {
-	canvas := NewCanvas()
+	canvas := NewCanvas("test", nil)
 
 	// 1. Load the SDL file with the capacity-aware component
 	err := canvas.Load("../examples/disk.sdl")

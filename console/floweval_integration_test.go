@@ -6,7 +6,7 @@ import (
 
 func TestFlowEvalIntegration(t *testing.T) {
 	// Test FlowEval integration with Canvas traffic generators
-	canvas := NewCanvas()
+	canvas := NewCanvas("test", nil)
 
 	// Load the contacts system
 	err := canvas.Load("../examples/contacts/contacts.sdl")

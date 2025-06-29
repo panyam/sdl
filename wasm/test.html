@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>SDL WASM Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #e0e0e0;
+        }
+        #console {
+            background: #000;
+            padding: 10px;
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #444;
+            margin: 20px 0;
+        }
+        .log { color: #e0e0e0; }
+        .error { color: #ff6b6b; }
+        .success { color: #51cf66; }
+        .info { color: #339af0; }
+        button {
+            background: #339af0;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: monospace;
+        }
+        button:hover {
+            background: #1c7ed6;
+        }
+        pre {
+            background: #2e2e2e;
+            padding: 10px;
+            border: 1px solid #444;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>SDL WASM Test Page</h1>
+    
+    <div>
+        <h2>Test Controls</h2>
+        <button onclick="testFileSystem()">Test FileSystem</button>
+        <button onclick="testCanvasLoad()">Test Canvas Load</button>
+        <button onclick="testCanvasUse()">Test Canvas Use</button>
+        <button onclick="testGenerators()">Test Generators</button>
+        <button onclick="runFullDemo()">Run Full Demo</button>
+        <button onclick="clearConsole()">Clear Console</button>
+    </div>
+
+    <div id="console"></div>
+
+    <div>
+        <h2>Sample SDL Recipe</h2>
+        <pre id="sampleRecipe">
+// Simple test system
+system TestSystem {
+    component api APIGateway {
+        method GetUser() -> User
+        method UpdateUser(user User) -> User
+    }
+    
+    component db Database {
+        method Query(sql string) -> Result
+        method Update(sql string) -> Result
+    }
+    
+    // Wire up dependencies
+    use gateway APIGateway(database = db)
+    use database Database
+}
+        </pre>
+    </div>
+
+    <script src="wasm_exec.js"></script>
+    <script>
+        const consoleDiv = document.getElementById('console');
+        
+        function log(message, type = 'log') {
+            const entry = document.createElement('div');
+            entry.className = type;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            consoleDiv.appendChild(entry);
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+
+        function clearConsole() {
+            consoleDiv.innerHTML = '';
+        }
+
+        async function loadWasm() {
+            try {
+                log('Loading WASM module...', 'info');
+                
+                const go = new Go();
+                const result = await WebAssembly.instantiateStreaming(
+                    fetch('sdl.wasm'), 
+                    go.importObject
+                );
+                
+                go.run(result.instance);
+                log('WASM module loaded successfully!', 'success');
+                log(`SDL version: ${SDL.version}`, 'info');
+                
+                // Make SDL globally available for console debugging
+                window.SDL = SDL;
+                
+                return true;
+            } catch (err) {
+                log(`Failed to load WASM: ${err}`, 'error');
+                console.error(err);
+                return false;
+            }
+        }
+
+        async function testFileSystem() {
+            log('Testing FileSystem...', 'info');
+            
+            try {
+                // Write a test file
+                const result1 = SDL.fs.writeFile('/workspace/test.sdl', `system Test {
+    // Empty test system
+}`);
+                if (result1.success) {
+                    log('✓ File written successfully', 'success');
+                } else {
+                    log(`✗ Write failed: ${result1.error}`, 'error');
+                    return;
+                }
+                
+                // Read it back
+                const result2 = SDL.fs.readFile('/workspace/test.sdl');
+                if (result2.success) {
+                    log(`✓ File read successfully: "${result2.content}"`, 'success');
+                } else {
+                    log(`✗ Read failed: ${result2.error}`, 'error');
+                    return;
+                }
+                
+                // List files
+                try {
+                    const result3 = SDL.fs.listFiles('/workspace/');
+                    if (result3 && result3.success) {
+                        log(`✓ Files in /workspace/: ${result3.files.join(', ')}`, 'success');
+                    } else if (result3) {
+                        log(`✗ List failed: ${result3.error}`, 'error');
+                    } else {
+                        log(`✗ List failed: function returned undefined`, 'error');
+                    }
+                } catch (listErr) {
+                    log(`✗ List failed: ${listErr}`, 'error');
+                }
+                
+            } catch (err) {
+                log(`FileSystem test error: ${err}`, 'error');
+            }
+        }
+
+        async function testCanvasLoad() {
+            log('Testing Canvas Load...', 'info');
+            
+            try {
+                // First write the sample recipe
+                const recipe = document.getElementById('sampleRecipe').textContent;
+                const writeResult = SDL.fs.writeFile('/workspace/test.sdl', recipe);
+                if (!writeResult.success) {
+                    log(`Failed to write recipe: ${writeResult.error}`, 'error');
+                    return;
+                }
+                
+                // Load the recipe
+                const result = SDL.canvas.load('/workspace/test.sdl');
+                if (result.success) {
+                    log(`✓ Recipe loaded: ${result.systems} systems found`, 'success');
+                    log(`Canvas ID: ${result.canvasId}`, 'info');
+                } else {
+                    log(`✗ Load failed: ${result.error}`, 'error');
+                }
+                
+            } catch (err) {
+                log(`Canvas load test error: ${err}`, 'error');
+            }
+        }
+
+        async function testCanvasUse() {
+            log('Testing Canvas Use...', 'info');
+            
+            try {
+                const result = SDL.canvas.use('Test');
+                if (result.success) {
+                    log(`✓ Using system: ${result.system}`, 'success');
+                    
+                    // Get canvas info
+                    const info = SDL.canvas.info();
+                    if (info.success) {
+                        log(`Canvas info:`, 'info');
+                        log(`  - Active system: ${info.activeSystem}`, 'info');
+                        log(`  - Components: ${info.components}`, 'info');
+                        log(`  - Generators: ${info.generators}`, 'info');
+                    }
+                } else {
+                    log(`✗ Use failed: ${result.error}`, 'error');
+                }
+                
+            } catch (err) {
+                log(`Canvas use test error: ${err}`, 'error');
+            }
+        }
+
+        async function testGenerators() {
+            log('Testing Generators...', 'info');
+            
+            try {
+                // Add a generator
+                const addResult = SDL.gen.add('userTraffic', 'api.GetUser', 100);
+                if (addResult.success) {
+                    log(`✓ Generator added: ${addResult.name} -> ${addResult.target} at ${addResult.rate} RPS`, 'success');
+                } else {
+                    log(`✗ Add generator failed: ${addResult.error}`, 'error');
+                    return;
+                }
+                
+                // List generators
+                const listResult = SDL.gen.list();
+                if (listResult.success) {
+                    log(`✓ Generators: ${JSON.stringify(listResult.generators)}`, 'success');
+                } else {
+                    log(`✗ List generators failed: ${listResult.error}`, 'error');
+                }
+                
+            } catch (err) {
+                log(`Generator test error: ${err}`, 'error');
+            }
+        }
+
+        async function runFullDemo() {
+            log('Running full demo...', 'info');
+            
+            // Clear console for demo
+            clearConsole();
+            
+            await testFileSystem();
+            log('---', 'info');
+            
+            await testCanvasLoad();
+            log('---', 'info');
+            
+            await testCanvasUse();
+            log('---', 'info');
+            
+            await testGenerators();
+            log('---', 'info');
+            
+            log('Demo complete!', 'success');
+        }
+
+        // Load WASM on page load
+        window.addEventListener('load', async () => {
+            await loadWasm();
+        });
+    </script>
+</body>
+</html>

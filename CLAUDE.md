@@ -131,6 +131,14 @@ To build the SDL binary use `make`.  The binary is now already in path and can b
 - **WASM Compatible**: No proto dependencies in core logic enables WASM compilation
 - **DuckDB Removed**: Eliminated unused time-series database dependency
 - **WASM Binary**: Successfully builds at 28.6MB (optimization pending)
+- **Canvas DI**: Canvas now accepts runtime parameter, enabling custom FileSystem injection
+- **Go WASM Gotcha**: Must convert `[]string` to `[]interface{}` for JavaScript marshaling
+
+### WASM Implementation Learnings
+- **FileSystem Works**: Virtual filesystem abstraction successfully replaces OS file operations
+- **Runtime Injection**: Canvas constructor now accepts runtime parameter for WASM compatibility
+- **JavaScript Marshaling**: Go slices must be converted to `[]interface{}` before returning to JS
+- **Test Page**: Created working demo showing FileSystem operations and SDL loading in browser
 
 ### Metrics System
 - Only supports `latency` and `count` metric types (no `utilization` or `throughput`)
