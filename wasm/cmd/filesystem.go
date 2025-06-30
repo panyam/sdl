@@ -7,146 +7,10 @@ import (
 	"strings"
 	"sync"
 	"syscall/js"
+	"github.com/panyam/sdl/loader"
 )
 
-// FileSystem interface for WASM-compatible file operations
-type FileSystem interface {
-	ReadFile(path string) ([]byte, error)
-	WriteFile(path string, data []byte) error
-	ListFiles(dir string) ([]string, error)
-	Exists(path string) bool
-}
-
-// CompositeFS allows multiple file systems to be composed
-type CompositeFS struct {
-	mu          sync.RWMutex
-	filesystems map[string]FileSystem
-}
-
-func NewCompositeFS() *CompositeFS {
-	return &CompositeFS{
-		filesystems: make(map[string]FileSystem),
-	}
-}
-
-func (c *CompositeFS) Mount(prefix string, fs FileSystem) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.filesystems[prefix] = fs
-}
-
-func (c *CompositeFS) findFS(path string) (FileSystem, string) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	
-	// Check for exact prefix matches first
-	for prefix, fs := range c.filesystems {
-		if strings.HasPrefix(path, prefix) {
-			return fs, path
-		}
-	}
-	
-	// Check for protocol handlers (https://, github://)
-	if strings.Contains(path, "://") {
-		protocol := strings.Split(path, "://")[0] + "://"
-		if fs, exists := c.filesystems[protocol]; exists {
-			return fs, path
-		}
-	}
-	
-	// Default to memory FS
-	if fs, exists := c.filesystems["/"]; exists {
-		return fs, path
-	}
-	
-	return nil, path
-}
-
-func (c *CompositeFS) ReadFile(path string) ([]byte, error) {
-	fs, adjustedPath := c.findFS(path)
-	if fs == nil {
-		return nil, fmt.Errorf("no filesystem mounted for path: %s", path)
-	}
-	return fs.ReadFile(adjustedPath)
-}
-
-func (c *CompositeFS) WriteFile(path string, data []byte) error {
-	fs, adjustedPath := c.findFS(path)
-	if fs == nil {
-		return fmt.Errorf("no filesystem mounted for path: %s", path)
-	}
-	return fs.WriteFile(adjustedPath, data)
-}
-
-func (c *CompositeFS) ListFiles(dir string) ([]string, error) {
-	fs, adjustedPath := c.findFS(dir)
-	if fs == nil {
-		return nil, fmt.Errorf("no filesystem mounted for path: %s", dir)
-	}
-	return fs.ListFiles(adjustedPath)
-}
-
-func (c *CompositeFS) Exists(path string) bool {
-	fs, adjustedPath := c.findFS(path)
-	if fs == nil {
-		return false
-	}
-	return fs.Exists(adjustedPath)
-}
-
-// MemoryFS implements an in-memory file system
-type MemoryFS struct {
-	mu    sync.RWMutex
-	files map[string][]byte
-}
-
-func NewMemoryFS() *MemoryFS {
-	return &MemoryFS{
-		files: make(map[string][]byte),
-	}
-}
-
-func (m *MemoryFS) ReadFile(path string) ([]byte, error) {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	
-	data, exists := m.files[path]
-	if !exists {
-		return nil, fmt.Errorf("file not found: %s", path)
-	}
-	return data, nil
-}
-
-func (m *MemoryFS) WriteFile(path string, data []byte) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	
-	m.files[path] = data
-	return nil
-}
-
-func (m *MemoryFS) ListFiles(dir string) ([]string, error) {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	
-	var files []string
-	for path := range m.files {
-		if strings.HasPrefix(path, dir) {
-			files = append(files, path)
-		}
-	}
-	return files, nil
-}
-
-func (m *MemoryFS) Exists(path string) bool {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	
-	_, exists := m.files[path]
-	return exists
-}
-
-// DevServerFS fetches files from a development server
+// DevServerFS fetches files from a development server using browser's fetch API
 type DevServerFS struct {
 	BaseURL string
 	cache   sync.Map // path -> []byte
@@ -267,7 +131,7 @@ func (b *BundledFS) Exists(path string) bool {
 	return exists
 }
 
-// URLFetcherFS fetches files from URLs
+// URLFetcherFS fetches files from URLs using browser's fetch API
 type URLFetcherFS struct{}
 
 func (u *URLFetcherFS) ReadFile(url string) ([]byte, error) {
@@ -329,8 +193,8 @@ func (u *URLFetcherFS) Exists(path string) bool {
 }
 
 // Helper function to create default dev filesystem
-func NewDevFS() FileSystem {
-	cfs := NewCompositeFS()
+func NewDevFS() loader.FileSystem {
+	cfs := loader.NewCompositeFS()
 	
 	// Mount development servers
 	cfs.Mount("/examples", &DevServerFS{BaseURL: "http://localhost:8081/examples"})
@@ -338,7 +202,7 @@ func NewDevFS() FileSystem {
 	cfs.Mount("/demos", &DevServerFS{BaseURL: "http://localhost:8081/demos"})
 	
 	// Mount memory FS for temporary files
-	cfs.Mount("/tmp", NewMemoryFS())
+	cfs.Mount("/tmp", loader.NewMemoryFS())
 	
 	// Mount URL fetchers
 	cfs.Mount("https://", &URLFetcherFS{})

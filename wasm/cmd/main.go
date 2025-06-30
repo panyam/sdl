@@ -43,11 +43,10 @@ func createWASMFileSystem() loader.FileSystem {
 	cfs.Mount("/examples/", bundledFS)
 	cfs.Mount("/lib/", bundledFS)
 	
-	// Support for external URLs
-	// TODO: Implement WASM-compatible HTTP filesystem using loader.FileSystem interface
-	// cfs.Mount("https://", NewWASMHTTPFS())
-	// cfs.Mount("http://", NewWASMHTTPFS())
-	// cfs.Mount("github.com/", loader.NewGitHubFS())
+	// Support for external URLs using WASM fetch API
+	cfs.Mount("https://", &URLFetcherFS{})
+	cfs.Mount("http://", &URLFetcherFS{})
+	cfs.Mount("github.com/", loader.NewGitHubFS())
 	
 	return cfs
 }
@@ -455,8 +454,8 @@ func setDevMode(this js.Value, args []js.Value) interface{} {
 	devMode := args[0].Bool()
 	
 	if devMode {
-		// Switch to development filesystem with HTTP backend
-		fileSystem = loader.CreateDevelopmentFileSystem("http://localhost:8081")
+		// Switch to development filesystem with WASM fetch backend
+		fileSystem = NewDevFS()
 	} else {
 		// Switch to production filesystem (bundled/memory)
 		fileSystem = createWASMFileSystem()
