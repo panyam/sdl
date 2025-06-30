@@ -12,7 +12,7 @@ export GOARCH=wasm
 go build -o ../web/sdl.wasm ./cmd/
 
 # Copy the Go WASM support file
-cp "$(go env GOROOT)/misc/wasm/wasm_exec.js" ../web/
+cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" ../web/
 
 echo "Build complete! Output:"
 echo "  - web/sdl.wasm"
