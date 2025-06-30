@@ -1,5 +1,6 @@
 import './style.css';
 import { Dashboard } from './dashboard.js';
+import { WASMDashboard } from './wasm-dashboard.js';
 
 // Extract canvas ID from URL path
 function getCanvasIdFromUrl(): string {
@@ -14,9 +15,25 @@ function getCanvasIdFromUrl(): string {
   return 'default';
 }
 
+// Check if WASM mode is requested
+function isWASMMode(): boolean {
+  return true;
+  /*
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get('wasm') === 'true';
+ */
+}
+
 // Initialize the dashboard when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
   const canvasId = getCanvasIdFromUrl();
-  console.log(`🚀 SDL Canvas Dashboard starting for canvas: ${canvasId}`);
-  new Dashboard(canvasId);
+  const useWASM = isWASMMode();
+  
+  console.log(`🚀 SDL Canvas Dashboard starting for canvas: ${canvasId} (WASM: ${useWASM})`);
+  
+  if (useWASM) {
+    new WASMDashboard(canvasId, true);
+  } else {
+    new Dashboard(canvasId);
+  }
 });
