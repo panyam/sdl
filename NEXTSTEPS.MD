@@ -17,6 +17,7 @@
 - [x] Build minimal WASM binary with just runtime components (28.6MB)
 - [x] Test basic SDL loading in browser
 - [x] Fix Go WASM slice marshaling issue ([]string to []interface{})
+- [x] Clean up duplicate FileSystem implementations (removed ~150 lines)
 - [ ] Optimize binary size (current: 28.6MB, target: <10MB with TinyGo)
 
 ### 3. Web Integration
@@ -110,6 +111,11 @@
 - ✅ Modified Canvas to accept runtime parameter for dependency injection
 - ✅ Integrated WASM FileSystem with Canvas via custom runtime
 - ✅ Created working test page demonstrating SDL loading in browser
+- ✅ Cleaned up duplicate FileSystem implementations in WASM:
+  - Removed duplicate FileSystem interface, CompositeFS, and MemoryFS
+  - Kept WASM-specific implementations (DevServerFS, URLFetcherFS, BundledFS)
+  - Removed redundant WASMHTTPFileSystem
+  - All WASM code now uses loader.FileSystem interface
 
 ## Blocked/Decisions Needed
 - ~~Proto dependency in Canvas blocking WASM build~~ ✅ RESOLVED
