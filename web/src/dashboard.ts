@@ -624,7 +624,7 @@ export class Dashboard {
       position: { referencePanel: 'systemArchitecture', direction: 'below' }
     });
 
-    // Add console/metrics panel at bottom
+    // Add console panel at bottom
     this.dockview.addPanel({
       id: 'console',
       component: 'console',
@@ -632,13 +632,23 @@ export class Dashboard {
       position: { direction: 'below' }
     });
 
-    // Add live metrics as a tab with console
+    // Add live metrics as a tab in the same group as console
     this.dockview.addPanel({
       id: 'liveMetrics',
       component: 'liveMetrics',
       title: 'Live Metrics',
-      position: { direction: 'below' }
+      position: { referencePanel: 'console', direction: 'within' }
     });
+    
+    // Make Live Metrics the active tab
+    setTimeout(() => {
+      if (this.dockview) {
+        const liveMetricsPanel = this.dockview.getPanel('liveMetrics');
+        if (liveMetricsPanel) {
+          liveMetricsPanel.api.setActive();
+        }
+      }
+    }, 100);
   }
 
   private updateSystemArchitecturePanel() {
