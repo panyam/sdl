@@ -1,12 +1,4 @@
-export interface FileSystem {
-  id: string;
-  name: string;
-  type: 'local' | 'github' | 'indexeddb';
-  mountPath: string;
-  url?: string; // For GitHub FS
-  isReadOnly: boolean;
-  icon?: string;
-}
+import { FileSystemClient, LocalFileSystemClient, GitHubFileSystemClient } from '../filesystem-clients.js';
 
 export interface FileNode {
   name: string;
@@ -23,7 +15,7 @@ export class MultiFSExplorer {
   private selectedFile: string | null = null;
   private onFileSelect?: (path: string, fsId: string) => void;
   private onFileCreate?: (path: string, fsId: string) => void;
-  private fileSystems: FileSystem[] = [];
+  private fileSystems: FileSystemClient[] = [];
   private fileTreesByFS: Map<string, FileNode[]> = new Map();
 
   constructor(container: HTMLElement) {
@@ -32,25 +24,24 @@ export class MultiFSExplorer {
   }
 
   private initializeDefaultFileSystems() {
-    // Default file systems
+    // Default file systems using FileSystemClient implementations
     this.fileSystems = [
-      {
-        id: 'examples',
-        name: 'Examples',
-        type: 'local',
-        mountPath: '/examples',
-        isReadOnly: false,
-        icon: '📚'
-      },
-      {
-        id: 'github-examples',
-        name: 'GitHub Examples',
-        type: 'github',
-        mountPath: '/github',
-        url: 'https://github.com/panyam/sdl/tree/main/examples',
-        isReadOnly: true,
-        icon: '🐙'
-      }
+      new LocalFileSystemClient(
+        '/api/filesystems',  // Server path for filesystem API
+        'examples',          // ID
+        'Examples',          // Display name
+        false,               // Not read-only
+        '📚'                // Icon
+      ),
+      new GitHubFileSystemClient(
+        'github-examples',   // ID
+        'GitHub Examples',   // Display name
+        'panyam',           // Repo owner
+        'sdl',              // Repo name
+        'main',             // Branch
+        '/examples',        // Base path in repo
+        '🐙'                // Icon
+      )
     ];
   }
 
@@ -62,39 +53,18 @@ export class MultiFSExplorer {
     this.onFileCreate = handler;
   }
   
-  getFileSystem(fsId: string): FileSystem | undefined {
+  getFileSystem(fsId: string): FileSystemClient | undefined {
     return this.fileSystems.find(fs => fs.id === fsId);
   }
+  
+  getFileSystems(): FileSystemClient[] {
+    return this.fileSystems;
+  }
 
-  async loadFileSystem(fs: FileSystem) {
+  async loadFileSystem(fs: FileSystemClient) {
     try {
-      let files: string[] = [];
-      
-      if (fs.type === 'local') {
-        // Check if we're in WASM mode
-        if ((window as any).SDL?.fs) {
-          // Load from WASM filesystem
-          const result = await (window as any).SDL.fs.listFiles(fs.mountPath);
-          if (result.success) {
-            files = result.files || [];
-          }
-        } else {
-          // Load from server filesystem
-          const api = (window as any).dashboard?.api;
-          if (api && api.listFiles) {
-            // Start from root of examples
-            files = await this.loadDirectoryRecursive(api, '');
-          }
-        }
-      } else if (fs.type === 'github') {
-        // For now, show a placeholder
-        files = [
-          '/github/examples/basic/hello.sdl',
-          '/github/examples/basic/simple_service.sdl',
-          '/github/examples/advanced/microservices.sdl',
-          '/github/examples/advanced/cache_patterns.sdl'
-        ];
-      }
+      // Use the FileSystemClient interface to list files
+      const files = await this.loadDirectoryRecursive(fs, '/');
       
       const tree = await this.buildFileTree(files, fs);
       this.fileTreesByFS.set(fs.id, tree);
@@ -104,18 +74,18 @@ export class MultiFSExplorer {
     }
   }
 
-  private async loadDirectoryRecursive(api: any, path: string): Promise<string[]> {
+  private async loadDirectoryRecursive(fs: FileSystemClient, path: string): Promise<string[]> {
     const allFiles: string[] = [];
     
     try {
-      const files = await api.listFiles(path || '/');
+      const files = await fs.listFiles(path);
       
       for (const file of files) {
         allFiles.push(file);
         
         // If it's a directory (ends with /), recursively load its contents
         if (file.endsWith('/')) {
-          const subFiles = await this.loadDirectoryRecursive(api, file);
+          const subFiles = await this.loadDirectoryRecursive(fs, file);
           allFiles.push(...subFiles);
         }
       }
@@ -126,7 +96,7 @@ export class MultiFSExplorer {
     return allFiles;
   }
 
-  private async buildFileTree(files: string[], fs: FileSystem): Promise<FileNode[]> {
+  private async buildFileTree(files: string[], fs: FileSystemClient): Promise<FileNode[]> {
     const root: FileNode[] = [];
     const nodeMap = new Map<string, FileNode>();
 
@@ -134,19 +104,15 @@ export class MultiFSExplorer {
     files.sort();
 
     files.forEach(filePath => {
-      // Skip files not under this filesystem's mount path
-      if (!filePath.startsWith(fs.mountPath)) return;
-
-      const relativePath = filePath.substring(fs.mountPath.length);
-      const parts = relativePath.split('/').filter(p => p);
-      let currentPath = fs.mountPath;
+      const parts = filePath.split('/').filter(p => p);
+      let currentPath = '';
       let parentNodes = root;
 
       parts.forEach((part, index) => {
         currentPath += '/' + part;
         
         if (!nodeMap.has(currentPath)) {
-          const isDirectory = index < parts.length - 1 || !part.includes('.');
+          const isDirectory = index < parts.length - 1 || filePath.endsWith('/');
           const node: FileNode = {
             name: part,
             path: currentPath,
@@ -205,7 +171,7 @@ export class MultiFSExplorer {
     (window as any).multiFSExplorer = this;
   }
 
-  private renderFileSystem(fs: FileSystem): string {
+  private renderFileSystem(fs: FileSystemClient): string {
     const tree = this.fileTreesByFS.get(fs.id) || [];
     const isEmpty = tree.length === 0;
     
@@ -319,31 +285,29 @@ export class MultiFSExplorer {
 
     const name = prompt('Enter file name:');
     if (name) {
-      const path = `${fs.mountPath}/${name}`;
+      const path = `/${name}`;
       if (this.onFileCreate) {
         this.onFileCreate(path, fsId);
       }
     }
   }
 
-  createNewFolder(fsId: string) {
+  async createNewFolder(fsId: string) {
     const fs = this.fileSystems.find(f => f.id === fsId);
     if (!fs || fs.isReadOnly) return;
 
     const name = prompt('Enter folder name:');
     if (name) {
-      const path = `${fs.mountPath}/${name}`;
-      // Add folder to tree
-      const tree = this.fileTreesByFS.get(fsId) || [];
-      tree.push({
-        name: name,
-        path: path,
-        fsId: fsId,
-        isDirectory: true,
-        children: [],
-        expanded: true
-      });
-      this.render();
+      const path = `/${name}`;
+      try {
+        // Create directory using FileSystemClient
+        await fs.createDirectory(path);
+        // Refresh the filesystem to show the new folder
+        await this.refreshFileSystem(fsId);
+      } catch (error) {
+        console.error('Failed to create folder:', error);
+        alert(`Failed to create folder: ${error}`);
+      }
     }
   }
 
@@ -360,7 +324,7 @@ export class MultiFSExplorer {
     alert('FileSystem management coming soon!\n\nYou will be able to:\n- Add IndexedDB filesystem for local storage\n- Mount GitHub repositories\n- Configure custom file sources');
   }
 
-  addFileSystem(fs: FileSystem) {
+  addFileSystem(fs: FileSystemClient) {
     this.fileSystems.push(fs);
     this.loadFileSystem(fs).then(() => this.render());
   }

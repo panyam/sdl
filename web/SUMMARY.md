@@ -80,11 +80,15 @@ The dashboard now features a unified layout that works seamlessly in both server
 - **Modification Tracking**: Visual (*) indicator for unsaved changes
 - **File Operations**: Save active tab, close with unsaved changes warning
 
-#### FileSystem Architecture (In Progress)
-- **Issue**: Path mismatch between filesystem mount paths and server responses
-- **Solution**: FileSystemClient interface with concrete implementations
-- **Security**: Server controls which folders are exposed
-- **Flexibility**: Easy to add new filesystem types
+#### FileSystem Architecture (Completed)
+- **FileSystemClient Interface**: Unified interface for all filesystem operations
+- **Implementations**:
+  - `LocalFileSystemClient`: Server-hosted filesystems via REST API
+  - `GitHubFileSystemClient`: Read-only GitHub repository access
+  - `IndexedDBFileSystemClient`: Browser-local storage using IndexedDB
+- **Server Handler**: `/api/filesystems/{fsId}/{path}` with security and filtering
+- **Security**: Path traversal protection, read-only enforcement
+- **File Filtering**: Configurable extensions (`.sdl`, `.recipe`)
 
 ### Key Components
 
@@ -94,6 +98,7 @@ The dashboard now features a unified layout that works seamlessly in both server
 - **FileClient Interface**: Uses abstraction for file operations
 - **Dynamic Chart Management**: Creates and updates charts based on metrics
 - **Component Creation**: Factory methods for all panel components
+- **FileSystem Integration**: Uses FileSystemClient instances for all file operations
 
 #### WASMDashboard Class (`src/wasm-dashboard.ts`)
 - **WASM Extension**: Extends base Dashboard with WASM-specific features
@@ -204,6 +209,15 @@ The dashboard now features a unified layout that works seamlessly in both server
 - **Professional Presentation**: Suitable for large-screen conference demos
 - **Enhanced Engagement**: "Incredible Machine" experience with real-time console synchronization captures attention
 - **No curl Required**: Clean REPL interface eliminates clunky HTTP commands during presentations
+
+## 🔒 Security Architecture
+
+### FileSystem Security
+- **Path Traversal Protection**: All file paths validated to prevent directory escape
+- **Server-Side Control**: Server defines which directories are accessible
+- **Read-Only Enforcement**: Filesystem-level write protection
+- **File Type Filtering**: Only allowed extensions visible and accessible
+- **Clean Separation**: Client doesn't know actual server paths, only filesystem IDs
 
 ### Technical Reliability
 - **Production Ready**: Comprehensive testing ensures demo reliability

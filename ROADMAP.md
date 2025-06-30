@@ -14,6 +14,7 @@ SDL aims to become the industry standard for system design education, capacity p
 - **Architecture**: gRPC-based microservices with HTTP gateway
 - **Metrics**: Real-time streaming metrics with aggregation
 - **Visualization**: Interactive web dashboard with system diagrams
+- **File Management**: Multi-filesystem support with security and filtering
 
 ### Key Features
 - Traffic generation up to 1000+ RPS
@@ -21,6 +22,14 @@ SDL aims to become the industry standard for system design education, capacity p
 - M/M/c queuing theory implementation
 - Method-level system visualization
 - Multi-canvas isolation for concurrent simulations
+- Secure filesystem access with extension filtering
+- Tabbed editor with real-time file operations
+
+### Recent Achievements (v3.2)
+- **FileSystem Architecture**: Complete abstraction layer for file operations
+- **Security Implementation**: Path traversal protection and read-only enforcement
+- **File Filtering**: Server-side extension filtering (.sdl, .recipe)
+- **Multi-FileSystem Support**: Local and GitHub filesystem clients
 
 ## Roadmap Phases
 

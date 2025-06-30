@@ -1696,11 +1696,15 @@ export class Dashboard {
     // Set up handlers
     this.fileExplorer.setFileSelectHandler(async (path, fsId) => {
       try {
-        const content = await this.api.readFile(path);
+        // Get the filesystem client
+        const fs = this.fileExplorer?.getFileSystem(fsId);
+        if (!fs) {
+          throw new Error(`FileSystem not found: ${fsId}`);
+        }
+        
+        const content = await fs.readFile(path);
         if (this.tabbedEditor) {
-          // Get filesystem to check if it's read-only
-          const fs = this.fileExplorer?.getFileSystem(fsId);
-          const isReadOnly = fs?.isReadOnly || false;
+          const isReadOnly = fs.isReadOnly;
           
           await this.tabbedEditor.openFile(path, content, isReadOnly);
           this.currentFile = path;
@@ -1716,7 +1720,13 @@ export class Dashboard {
 
     this.fileExplorer.setFileCreateHandler(async (path, fsId) => {
       try {
-        await this.api.writeFile(path, '// New SDL file\n');
+        // Get the filesystem client
+        const fs = this.fileExplorer?.getFileSystem(fsId);
+        if (!fs) {
+          throw new Error(`FileSystem not found: ${fsId}`);
+        }
+        
+        await fs.writeFile(path, '// New SDL file\n');
         if (this.fileExplorer) {
           await this.fileExplorer.refreshFileSystem(fsId);
         }
@@ -1725,6 +1735,7 @@ export class Dashboard {
         }
       } catch (error) {
         console.error('Failed to create file:', error);
+        alert(`Failed to create file: ${error}`);
       }
     });
 
@@ -1754,8 +1765,27 @@ export class Dashboard {
           // Handle save when modified becomes false (i.e., file was saved)
           if (!modified) {
             try {
-              await this.api.writeFile(path, content);
-              this.consolePanel?.success(`Saved: ${path}`);
+              // Find which filesystem this file belongs to
+              let savedSuccessfully = false;
+              
+              for (const fs of this.fileExplorer?.getFileSystems() || []) {
+                try {
+                  // Try to save with this filesystem
+                  await fs.writeFile(path, content);
+                  this.consolePanel?.success(`Saved: ${path}`);
+                  savedSuccessfully = true;
+                  break;
+                } catch (err) {
+                  // This filesystem doesn't contain the file, try next
+                  continue;
+                }
+              }
+              
+              if (!savedSuccessfully) {
+                // Fallback to API if no filesystem claimed the file
+                await this.api.writeFile(path, content);
+                this.consolePanel?.success(`Saved: ${path}`);
+              }
             } catch (error) {
               this.consolePanel?.error(`Failed to save: ${error}`);
             }
