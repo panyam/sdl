@@ -6,6 +6,7 @@ export class CodeEditor {
   private currentFile: string | null = null;
   private onChange?: (content: string) => void;
   private modified: boolean = false;
+  private isReadOnly: boolean = false;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -137,13 +138,29 @@ export class CodeEditor {
     this.onChange = handler;
   }
 
-  async loadFile(path: string, content: string) {
+  async loadFile(path: string, content: string, readOnly?: boolean) {
     this.currentFile = path;
     this.modified = false;
+    
+    // Check if file is readonly
+    if (readOnly === undefined && (window as any).SDL && (window as any).SDL.fs) {
+      try {
+        const result = await (window as any).SDL.fs.isReadOnly(path);
+        this.isReadOnly = result.success && result.isReadOnly;
+      } catch (err) {
+        // Default check by prefix
+        this.isReadOnly = path.startsWith('/examples/') || 
+                         path.startsWith('/lib/') || 
+                         path.startsWith('/demos/');
+      }
+    } else {
+      this.isReadOnly = readOnly || false;
+    }
     
     if (this.editor) {
       this.editor.setValue(content);
       this.editor.setPosition({ lineNumber: 1, column: 1 });
+      this.editor.updateOptions({ readOnly: this.isReadOnly });
       
       // Update editor title/status
       this.updateStatus();
@@ -161,6 +178,12 @@ export class CodeEditor {
   }
 
   save() {
+    if (this.isReadOnly) {
+      console.warn('Cannot save readonly file:', this.currentFile);
+      // Could show a dialog to save as a copy
+      return;
+    }
+    
     if (this.modified && this.onChange) {
       this.onChange(this.getValue());
       this.modified = false;
@@ -172,7 +195,8 @@ export class CodeEditor {
     // Could update a status bar or indicator
     const fileName = this.currentFile ? this.currentFile.split('/').pop() : 'Untitled';
     const dirtyIndicator = this.modified ? ' ●' : '';
-    console.log(`Editing: ${fileName}${dirtyIndicator}`);
+    const readOnlyIndicator = this.isReadOnly ? ' [Read Only]' : '';
+    console.log(`Editing: ${fileName}${dirtyIndicator}${readOnlyIndicator}`);
   }
 
   dispose() {

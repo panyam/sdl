@@ -1,7 +1,7 @@
 
 # Default target
 .PHONY: all
-all: deps binary
+all: binary
 
 # Version information
 VERSION := $(shell cat VERSION)
@@ -12,10 +12,14 @@ LDFLAGS := -X 'github.com/panyam/sdl/cmd/sdl/commands.Version=$(VERSION)' \
            -X 'github.com/panyam/sdl/cmd/sdl/commands.BuildDate=$(BUILD_DATE)'
 
 # Build targets
-binary: 
-	cd parser && make
-	cd wasm && make
+binary: parserbin wasmbin
 	go build -ldflags "$(LDFLAGS)" -o ${GOBIN}/sdl ./cmd/sdl/main.go
+
+parserbin:
+	cd parser && make
+
+wasmbin:
+	cd wasm && make
 
 binlocal: 
 	cd parser && make

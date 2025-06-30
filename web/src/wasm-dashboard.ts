@@ -87,65 +87,74 @@ export class WASMDashboard extends Dashboard {
     // Apply dark theme to container
     container.className = 'dockview-theme-dark flex-1';
     
-    // Create DockView component with WASM-specific components
+    // Load saved layout - but only if it's a WASM layout
+    let savedLayout = this.loadLayoutConfig();
+    
+    // Check if saved layout has WASM components, otherwise ignore it
+    /*
+    if (savedLayout && (!savedLayout.panels || !savedLayout.panels.some((p: any) => 
+      p.id === 'fileExplorer' || p.id === 'codeEditor' || p.id === 'console'))) {
+      console.log('Ignoring non-WASM saved layout');
+      savedLayout = null;
+    }
+   */
+    
+    // Create DockView component with component factory
     const dockviewComponent = new DockviewComponent(container, {
       createComponent: (options: any) => {
         // Handle WASM-specific components
-        if (this.isWASMMode) {
-          switch (options.name) {
-            case 'fileExplorer':
-              return this.createFileExplorerComponent();
-            case 'codeEditor':
-              return this.createCodeEditorComponent();
-            case 'console':
-              return this.createConsoleComponent();
-            case 'systemArchitecture':
-            case 'trafficGeneration':
-            case 'liveMetrics':
-              // Use parent's rendering for these
-              const element = document.createElement('div');
-              element.className = 'h-full p-4 overflow-auto';
-              
-              switch (options.name) {
-                case 'systemArchitecture':
-                  element.innerHTML = this.renderSystemArchitectureOnly();
-                  break;
-                case 'trafficGeneration':
-                  element.innerHTML = this.renderGenerateControls();
-                  break;
-                case 'liveMetrics':
-                  element.innerHTML = `
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" style="grid-auto-rows: 200px;">
-                      ${this.renderDynamicCharts()}
-                    </div>
-                  `;
-                  break;
-              }
-              
-              return {
-                element,
-                init: () => {},
-                dispose: () => {}
-              };
-          }
+        switch (options.name) {
+          case 'fileExplorer':
+            return this.createFileExplorerComponent();
+          case 'codeEditor':
+            return this.createCodeEditorComponent();
+          case 'console':
+            return this.createConsoleComponent();
+          case 'systemArchitecture':
+          case 'trafficGeneration':
+          case 'liveMetrics':
+            // Use parent's rendering for these
+            const element = document.createElement('div');
+            element.className = 'h-full p-4 overflow-auto';
+            
+            switch (options.name) {
+              case 'systemArchitecture':
+                element.innerHTML = this.renderSystemArchitectureOnly();
+                break;
+              case 'trafficGeneration':
+                element.innerHTML = this.renderGenerateControls();
+                break;
+              case 'liveMetrics':
+                element.innerHTML = `
+                  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" style="grid-auto-rows: 200px;">
+                    ${this.renderDynamicCharts()}
+                  </div>
+                `;
+                break;
+            }
+            
+            return {
+              element,
+              init: () => {},
+              dispose: () => {}
+            };
+          default:
+            // Unknown component
+            const unknownElement = document.createElement('div');
+            unknownElement.className = 'h-full p-4 overflow-auto';
+            unknownElement.innerHTML = `<div>Unknown component: ${options.name}</div>`;
+            return {
+              element: unknownElement,
+              init: () => {},
+              dispose: () => {}
+            };
         }
-        
-        // This shouldn't happen in WASM mode
-        const element = document.createElement('div');
-        element.className = 'h-full p-4 overflow-auto';
-        element.innerHTML = '<div>Unknown component</div>';
-        return {
-          element,
-          init: () => {},
-          dispose: () => {}
-        };
       }
     });
 
     this.dockview = dockviewComponent.api;
 
     // Load or create layout
-    const savedLayout = this.loadLayoutConfig();
     if (savedLayout) {
       try {
         this.dockview.fromJSON(savedLayout);
@@ -161,6 +170,16 @@ export class WASMDashboard extends Dashboard {
     this.dockview.onDidLayoutChange(() => {
       this.saveLayoutConfig();
     });
+
+    // Initialize WASM
+    if (this.isWASMMode && this.wasmClient) {
+      this.wasmClient.initialize().then(() => {
+        console.log('✅ WASM initialized');
+        this.refreshFileList();
+      }).catch(error => {
+        console.error('❌ Failed to initialize WASM:', error);
+      });
+    }
 
     // Setup interactivity after layout is initialized
     setTimeout(() => {
@@ -243,49 +262,39 @@ export class WASMDashboard extends Dashboard {
 
   private createConsoleComponent() {
     const element = document.createElement('div');
-    element.className = 'h-full p-4 overflow-auto bg-gray-900 text-gray-300 font-mono text-sm';
-    element.innerHTML = `
-      <div id="console-output">
-        <div class="text-green-400">SDL WASM Console Ready</div>
-        <div class="text-gray-500">Use the editor above to write SDL code and click Load to run simulations.</div>
-      </div>
-    `;
-
-    // Capture console output
-    const originalLog = console.log;
-    const originalError = console.error;
+    element.className = 'h-full';
     
-    console.log = (...args) => {
-      originalLog(...args);
-      this.appendToConsole(args.join(' '), 'log');
-    };
-    
-    console.error = (...args) => {
-      originalError(...args);
-      this.appendToConsole(args.join(' '), 'error');
-    };
+    // Import and create console panel
+    import('./components/console-panel.js').then(({ ConsolePanel, ConsoleInterceptor }) => {
+      const consolePanel = new ConsolePanel(element);
+      const interceptor = new ConsoleInterceptor();
+      interceptor.attach(consolePanel);
+      
+      // Store for cleanup
+      (element as any)._consolePanel = consolePanel;
+      (element as any)._interceptor = interceptor;
+      
+      // Initial messages
+      consolePanel.success('SDL WASM Console Ready');
+      consolePanel.info('Use the editor above to write SDL code and click Load to run simulations.');
+    });
 
     return {
       element,
       init: () => {},
       dispose: () => {
-        // Restore original console methods
-        console.log = originalLog;
-        console.error = originalError;
+        const panel = (element as any)._consolePanel;
+        const interceptor = (element as any)._interceptor;
+        if (interceptor) {
+          interceptor.detach();
+        }
+        if (panel) {
+          panel.dispose();
+        }
       }
     };
   }
 
-  private appendToConsole(message: string, type: 'log' | 'error' = 'log') {
-    const output = document.getElementById('console-output');
-    if (output) {
-      const div = document.createElement('div');
-      div.className = type === 'error' ? 'text-red-400' : 'text-gray-300';
-      div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-      output.appendChild(div);
-      output.scrollTop = output.scrollHeight;
-    }
-  }
 
   private async refreshFileList() {
     if (!this.fileExplorer || !this.wasmClient) return;

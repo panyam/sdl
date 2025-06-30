@@ -835,7 +835,7 @@ func fsIsReadOnly(this js.Value, args []js.Value) interface{} {
 	
 	// Check if the path would be readonly based on mount points
 	// For composite filesystem, we'll check based on path prefix
-	if cfs, ok := fileSystem.(*loader.CompositeFS); ok {
+	if _, ok := fileSystem.(*loader.CompositeFS); ok {
 		// Check common readonly prefixes
 		readonlyPrefixes := []string{"/examples/", "/lib/", "/demos/", "https://", "http://", "github.com/"}
 		for _, prefix := range readonlyPrefixes {

@@ -2,6 +2,7 @@ export interface FileNode {
   name: string;
   path: string;
   isDirectory: boolean;
+  isReadOnly?: boolean;
   children?: FileNode[];
   expanded?: boolean;
 }
@@ -27,16 +28,35 @@ export class FileExplorer {
 
   async loadFiles(files: string[]) {
     // Build tree structure from flat file list
-    this.fileTree = this.buildFileTree(files);
+    this.fileTree = await this.buildFileTree(files);
     this.render();
   }
 
-  private buildFileTree(files: string[]): FileNode[] {
+  private async buildFileTree(files: string[]): Promise<FileNode[]> {
     const root: FileNode[] = [];
     const nodeMap = new Map<string, FileNode>();
 
     // Sort files to ensure directories come before their contents
     files.sort();
+
+    // Check readonly status for each file
+    const readOnlyChecks = new Map<string, boolean>();
+    if ((window as any).SDL && (window as any).SDL.fs) {
+      for (const filePath of files) {
+        try {
+          const result = await (window as any).SDL.fs.isReadOnly(filePath);
+          if (result.success) {
+            readOnlyChecks.set(filePath, result.isReadOnly);
+          }
+        } catch (err) {
+          // Default check by prefix
+          const isReadOnly = filePath.startsWith('/examples/') || 
+                            filePath.startsWith('/lib/') || 
+                            filePath.startsWith('/demos/');
+          readOnlyChecks.set(filePath, isReadOnly);
+        }
+      }
+    }
 
     files.forEach(filePath => {
       const parts = filePath.split('/').filter(p => p);
@@ -48,10 +68,12 @@ export class FileExplorer {
         
         if (!nodeMap.has(currentPath)) {
           const isDirectory = index < parts.length - 1 || !part.includes('.');
+          const isReadOnly = readOnlyChecks.get(currentPath) || false;
           const node: FileNode = {
             name: part,
             path: currentPath,
             isDirectory,
+            isReadOnly,
             children: isDirectory ? [] : undefined,
             expanded: currentPath.startsWith('/examples') || currentPath === '/workspace'
           };
@@ -115,13 +137,15 @@ export class FileExplorer {
       : '📄';
     
     const selected = node.path === this.selectedFile ? 'selected' : '';
+    const readOnlyClass = node.isReadOnly ? 'readonly' : '';
     
     let html = `
-      <div class="file-node ${selected}" style="padding-left: ${indent}px" 
+      <div class="file-node ${selected} ${readOnlyClass}" style="padding-left: ${indent}px" 
            data-path="${node.path}"
            onclick="window.fileExplorer?.selectFile('${node.path}', ${node.isDirectory})">
         <span class="file-icon">${icon}</span>
         <span class="file-name">${node.name}</span>
+        ${node.isReadOnly ? '<span class="lock-icon" title="Read-only">🔒</span>' : ''}
       </div>
     `;
 
@@ -265,6 +289,17 @@ style.textContent = `
   
   .file-name {
     color: #cccccc;
+  }
+  
+  .file-node.readonly .file-name {
+    font-style: italic;
+    color: #999999;
+  }
+  
+  .lock-icon {
+    margin-left: 4px;
+    font-size: 12px;
+    opacity: 0.7;
   }
 `;
 document.head.appendChild(style);
