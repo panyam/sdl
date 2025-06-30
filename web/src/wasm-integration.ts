@@ -272,6 +272,11 @@ export class WASMCanvasClient implements FileClient {
     }
     return result.files || [];
   }
+  
+  async deleteFile(_path: string): Promise<void> {
+    // WASM filesystem doesn't support delete yet
+    throw new Error('Delete not supported in WASM mode');
+  }
 
   // Add stub methods that dashboard expects
   async streamMetrics(_metrics: string[], _onData: (data: any) => void, _signal?: AbortSignal): Promise<void> {

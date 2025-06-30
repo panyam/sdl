@@ -6,7 +6,8 @@ import { Graphviz } from "@hpcc-js/wasm";
 import { DockviewApi, DockviewComponent } from 'dockview-core';
 import { MultiFSExplorer } from './components/multi-fs-explorer.js';
 import { Toolbar } from './components/toolbar.js';
-import { CodeEditor, configureMonacoLoader } from './components/code-editor.js';
+import { TabbedEditor } from './components/tabbed-editor.js';
+import { configureMonacoLoader } from './components/code-editor.js';
 import { ConsolePanel, ConsoleInterceptor } from './components/console-panel.js';
 
 export class Dashboard {
@@ -25,7 +26,7 @@ export class Dashboard {
   private layoutTopToBottom = false;
   private diagramZoom = 1.0; // Current zoom level
   protected fileExplorer: MultiFSExplorer | null = null;
-  protected codeEditor: CodeEditor | null = null;
+  protected tabbedEditor: TabbedEditor | null = null;
   protected toolbar: Toolbar | null = null;
   protected consolePanel: ConsolePanel | null = null;
   protected currentFile: string | null = null;
@@ -1358,15 +1359,16 @@ export class Dashboard {
   }
 
   protected async handleSave() {
-    if (!this.currentFile || !this.codeEditor) return;
-
-    try {
-      const content = this.codeEditor.getValue();
-      await this.api.writeFile(this.currentFile, content);
-      this.consolePanel?.success(`Saved: ${this.currentFile}`);
-    } catch (error) {
-      this.consolePanel?.error(`Failed to save: ${error}`);
+    if (!this.tabbedEditor) return;
+    
+    const activeTab = this.tabbedEditor.getActiveTab();
+    if (!activeTab) {
+      this.consolePanel?.info('No file open to save');
+      return;
     }
+
+    // Save the active tab
+    this.tabbedEditor.saveTab(activeTab);
   }
 
   protected async handleRun() {
@@ -1692,14 +1694,18 @@ export class Dashboard {
     this.fileExplorer = new MultiFSExplorer(element);
     
     // Set up handlers
-    this.fileExplorer.setFileSelectHandler(async (path, _fsId) => {
+    this.fileExplorer.setFileSelectHandler(async (path, fsId) => {
       try {
         const content = await this.api.readFile(path);
-        if (this.codeEditor) {
-          this.codeEditor.loadFile(path, content);
+        if (this.tabbedEditor) {
+          // Get filesystem to check if it's read-only
+          const fs = this.fileExplorer?.getFileSystem(fsId);
+          const isReadOnly = fs?.isReadOnly || false;
+          
+          await this.tabbedEditor.openFile(path, content, isReadOnly);
           this.currentFile = path;
-          // Enable save button
-          this.toolbar?.updateButton('save', { disabled: false });
+          // Enable save button only if not read-only
+          this.toolbar?.updateButton('save', { disabled: isReadOnly });
           this.consolePanel?.info(`Loaded file: ${path}`);
         }
       } catch (error) {
@@ -1714,16 +1720,16 @@ export class Dashboard {
         if (this.fileExplorer) {
           await this.fileExplorer.refreshFileSystem(fsId);
         }
-        if (this.codeEditor) {
-          this.codeEditor.loadFile(path, '// New SDL file\n');
+        if (this.tabbedEditor) {
+          await this.tabbedEditor.openFile(path, '// New SDL file\n', false);
         }
       } catch (error) {
         console.error('Failed to create file:', error);
       }
     });
 
-    // Initialize the multi-filesystem explorer
-    this.fileExplorer.initialize();
+    // Initialize the multi-filesystem explorer with dashboard reference
+    this.fileExplorer.initialize(this);
 
     return {
       element,
@@ -1737,26 +1743,33 @@ export class Dashboard {
     element.className = 'h-full';
     
     // Configure Monaco loader if not already done
-    if (!this.codeEditor) {
-      configureMonacoLoader();
-    }
+    configureMonacoLoader();
     
-    // Wait for Monaco to load
+    // Create tabbed editor
     setTimeout(() => {
-      this.codeEditor = new CodeEditor(element);
-      
-      this.codeEditor.setChangeHandler(async () => {
-        // Auto-save functionality could be added here if needed
-        console.log('Editor content changed');
-      });
+      if (this.dockview) {
+        this.tabbedEditor = new TabbedEditor(element, this.dockview);
+        
+        this.tabbedEditor.setChangeHandler(async (path, content, modified) => {
+          // Handle save when modified becomes false (i.e., file was saved)
+          if (!modified) {
+            try {
+              await this.api.writeFile(path, content);
+              this.consolePanel?.success(`Saved: ${path}`);
+            } catch (error) {
+              this.consolePanel?.error(`Failed to save: ${error}`);
+            }
+          }
+        });
+      }
     }, 100);
 
     return {
       element,
       init: () => {},
       dispose: () => {
-        if (this.codeEditor) {
-          this.codeEditor.dispose();
+        if (this.tabbedEditor) {
+          this.tabbedEditor.dispose();
         }
       }
     };

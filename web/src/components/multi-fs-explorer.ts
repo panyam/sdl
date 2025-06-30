@@ -61,16 +61,30 @@ export class MultiFSExplorer {
   setFileCreateHandler(handler: (path: string, fsId: string) => void) {
     this.onFileCreate = handler;
   }
+  
+  getFileSystem(fsId: string): FileSystem | undefined {
+    return this.fileSystems.find(fs => fs.id === fsId);
+  }
 
   async loadFileSystem(fs: FileSystem) {
     try {
       let files: string[] = [];
       
-      if (fs.type === 'local' && (window as any).SDL?.fs) {
-        // Load from WASM filesystem
-        const result = await (window as any).SDL.fs.listFiles(fs.mountPath);
-        if (result.success) {
-          files = result.files || [];
+      if (fs.type === 'local') {
+        // Check if we're in WASM mode
+        if ((window as any).SDL?.fs) {
+          // Load from WASM filesystem
+          const result = await (window as any).SDL.fs.listFiles(fs.mountPath);
+          if (result.success) {
+            files = result.files || [];
+          }
+        } else {
+          // Load from server filesystem
+          const api = (window as any).dashboard?.api;
+          if (api && api.listFiles) {
+            // Start from root of examples
+            files = await this.loadDirectoryRecursive(api, '');
+          }
         }
       } else if (fs.type === 'github') {
         // For now, show a placeholder
@@ -88,6 +102,28 @@ export class MultiFSExplorer {
       console.error(`Failed to load filesystem ${fs.name}:`, error);
       this.fileTreesByFS.set(fs.id, []);
     }
+  }
+
+  private async loadDirectoryRecursive(api: any, path: string): Promise<string[]> {
+    const allFiles: string[] = [];
+    
+    try {
+      const files = await api.listFiles(path || '/');
+      
+      for (const file of files) {
+        allFiles.push(file);
+        
+        // If it's a directory (ends with /), recursively load its contents
+        if (file.endsWith('/')) {
+          const subFiles = await this.loadDirectoryRecursive(api, file);
+          allFiles.push(...subFiles);
+        }
+      }
+    } catch (error) {
+      console.error(`Failed to load directory ${path}:`, error);
+    }
+    
+    return allFiles;
   }
 
   private async buildFileTree(files: string[], fs: FileSystem): Promise<FileNode[]> {
@@ -135,7 +171,12 @@ export class MultiFSExplorer {
     return root;
   }
 
-  async initialize() {
+  async initialize(dashboard?: any) {
+    // Store dashboard reference for API access
+    if (dashboard) {
+      (window as any).dashboard = dashboard;
+    }
+    
     // Load all filesystems
     for (const fs of this.fileSystems) {
       await this.loadFileSystem(fs);

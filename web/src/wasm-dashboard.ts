@@ -48,24 +48,30 @@ export class WASMDashboard extends Dashboard {
 
   // Override handleSave to handle read-only files in WASM
   protected async handleSave() {
-    if (!this.currentFile || !this.codeEditor || !this.wasmClient) return;
+    if (!this.wasmClient) return;
 
-    const content = this.codeEditor.getValue();
+    if (!this.tabbedEditor) return;
+    
+    const activeTab = this.tabbedEditor.getActiveTab();
+    const content = this.tabbedEditor.getActiveContent();
+    
+    if (!activeTab || !content) return;
     
     try {
       // Check if file is readonly in WASM
-      const result = await (window as any).SDL.fs.isReadOnly(this.currentFile);
+      const result = await (window as any).SDL.fs.isReadOnly(activeTab);
       if (result.success && result.isReadOnly) {
         // Offer to save as a copy
-        const newPath = prompt('This file is read-only. Save as:', `/workspace/${this.currentFile.split('/').pop()}`);
+        const newPath = prompt('This file is read-only. Save as:', `/workspace/${activeTab.split('/').pop()}`);
         if (newPath) {
           await this.wasmClient.writeFile(newPath, content);
           this.consolePanel?.success(`Saved as: ${newPath}`);
           await this.refreshFileList();
         }
       } else {
-        await this.wasmClient.writeFile(this.currentFile, content);
-        this.consolePanel?.success(`Saved: ${this.currentFile}`);
+        await this.wasmClient.writeFile(activeTab, content);
+        this.consolePanel?.success(`Saved: ${activeTab}`);
+        this.tabbedEditor.saveTab(activeTab);
       }
     } catch (error) {
       this.consolePanel?.error(`Failed to save: ${error}`);

@@ -1,6 +1,6 @@
 # SDL Web Dashboard Summary
 
-**Version:** Unified Dashboard Layout (v3.0)
+**Version:** Unified Dashboard Layout with FileSystem Refactoring (v3.1)
 
 ## 🎯 Purpose
 
@@ -65,6 +65,26 @@ The dashboard now features a unified layout that works seamlessly in both server
 - **Layout Persistence**: Custom layouts automatically saved to localStorage
 - **Professional Styling**: Dark theme with blue highlights for active tabs
 - **Reset Functionality**: One-click return to default 2x2 grid layout
+
+### Recent Updates (v3.1)
+
+#### Multi-Filesystem Support
+- **MultiFSExplorer Component**: Manages multiple mounted filesystems
+- **FileSystem Types**: Local (editable) and GitHub (read-only) 
+- **Per-Filesystem Actions**: Add/Delete files, Refresh, with read-only indicators
+- **Visual Hierarchy**: Collapsible file trees with folder/file icons
+
+#### Tabbed Editor
+- **TabbedEditor Component**: Replaces single-file editor
+- **Multiple Files**: Open multiple files simultaneously in tabs
+- **Modification Tracking**: Visual (*) indicator for unsaved changes
+- **File Operations**: Save active tab, close with unsaved changes warning
+
+#### FileSystem Architecture (In Progress)
+- **Issue**: Path mismatch between filesystem mount paths and server responses
+- **Solution**: FileSystemClient interface with concrete implementations
+- **Security**: Server controls which folders are exposed
+- **Flexibility**: Easy to add new filesystem types
 
 ### Key Components
 

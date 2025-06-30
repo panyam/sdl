@@ -1,6 +1,15 @@
 # SDL Web Dashboard - Next Steps
 
-## ✅ Recently Completed (DockView v2.0 Migration)
+## ✅ Recently Completed
+
+### Dashboard Layout Unification (v3.0)
+- **Unified Layout**: Single dashboard implementation for both server and WASM modes
+- **FileClient Interface**: Abstraction layer for file operations across modes
+- **Multi-Filesystem Explorer**: Support for multiple mounted filesystems with visual indicators
+- **Tabbed Editor**: Multiple file editing with modification tracking
+- **Real File Operations**: Server-side file listing, reading, writing (partial implementation)
+
+### DockView v2.0 Migration
 
 ### Major UI Upgrade
 - **Migrated from GoldenLayout to DockView** - Modern, actively maintained library with better TypeScript support
@@ -35,9 +44,33 @@
 - ✅ **Measurements**: Measurement configuration (currently shows empty state)
 - ✅ **Live Metrics**: Dynamic charts grid (currently shows empty state)
 
+## 🚧 In Progress
+
+### FileSystem Architecture Refactoring
+- **Current Issue**: Mismatch between filesystem mount paths and actual file paths from server
+- **Solution**: Implement FileSystemClient interface with concrete implementations
+- **Benefits**: 
+  - Server controls exposed folders for security
+  - Client doesn't know actual server paths
+  - Consistent interface for all filesystem types
+  - Easy to add new filesystem types (IndexedDB, S3, etc.)
+
+### Implementation Plan:
+1. **FileSystemClient Interface**: Base interface for all filesystem operations
+2. **LocalFileSystemClient**: For server-hosted file systems with HTTP REST API
+3. **GitHubFileSystemClient**: For read-only GitHub repositories
+4. **Server Handler**: `/filesystems/{fsId}/{path}` endpoint with security checks
+5. **MultiFSExplorer Update**: Use FileSystemClient instances instead of type checking
+
 ## 🔄 Next Development Priorities
 
-### 1. Data Integration (High Priority)
+### 1. Complete FileSystem Architecture (Immediate)
+- Implement FileSystemClient interface and concrete classes
+- Create server-side filesystem handler with security
+- Update MultiFSExplorer to use new clients
+- Test file operations end-to-end
+
+### 2. Data Integration (High Priority)
 - **Load SDL Files**: Connect file loading functionality to populate System Architecture panel
 - **Generator Integration**: Wire up traffic generation controls with backend API
 - **Measurement System**: Enable measurement creation and configuration

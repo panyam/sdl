@@ -99,18 +99,82 @@ export class CanvasClient implements FileClient {
 
   // FileClient interface implementation (placeholder for server mode)
   async listFiles(path: string): Promise<string[]> {
-    console.warn(`listFiles not implemented for server CanvasClient. Path: ${path}`);
-    return [];
+    try {
+      // Fetch directory listing from server
+      const response = await fetch(`/examples${path === '/' ? '' : path}/`);
+      if (!response.ok) {
+        throw new Error(`Failed to list files: ${response.statusText}`);
+      }
+      
+      const html = await response.text();
+      
+      // Parse HTML directory listing
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const links = doc.querySelectorAll('a');
+      
+      const files: string[] = [];
+      links.forEach(link => {
+        const href = link.getAttribute('href');
+        if (href && href !== '../') {
+          // Convert relative paths to absolute paths
+          const fullPath = path === '/' ? `/${href}` : `${path}/${href}`.replace(/\/+/g, '/');
+          files.push(fullPath);
+        }
+      });
+      
+      return files;
+    } catch (error) {
+      console.error(`Failed to list files at ${path}:`, error);
+      return [];
+    }
   }
 
   async readFile(path: string): Promise<string> {
-    console.warn(`readFile not implemented for server CanvasClient. Path: ${path}`);
-    throw new Error(`readFile not implemented for server CanvasClient. Path: ${path}`);
+    try {
+      const response = await fetch(`/examples${path}`);
+      if (!response.ok) {
+        throw new Error(`Failed to read file: ${response.statusText}`);
+      }
+      return await response.text();
+    } catch (error) {
+      console.error(`Failed to read file ${path}:`, error);
+      throw error;
+    }
   }
 
-  async writeFile(path: string, _content: string): Promise<void> {
-    console.warn(`writeFile not implemented for server CanvasClient. Path: ${path}`);
-    throw new Error(`writeFile not implemented for server CanvasClient. Path: ${path}`);
+  async writeFile(path: string, content: string): Promise<void> {
+    try {
+      const response = await fetch(`/examples${path}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'text/plain',
+        },
+        body: content
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to write file: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error(`Failed to write file ${path}:`, error);
+      throw error;
+    }
+  }
+  
+  async deleteFile(path: string): Promise<void> {
+    try {
+      const response = await fetch(`/examples${path}`, {
+        method: 'DELETE'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to delete file: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error(`Failed to delete file ${path}:`, error);
+      throw error;
+    }
   }
 
   // Set a parameter value
