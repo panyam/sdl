@@ -15,28 +15,25 @@ function getCanvasIdFromUrl(): string {
   return 'default';
 }
 
-// Check if WASM mode is requested
-function isWASMMode(): boolean {
-  return true;
-  /*
+// Check if Server mode is requested
+function isServerMode(): boolean {
   const urlParams = new URLSearchParams(window.location.search);
-  return urlParams.get('wasm') === 'true';
- */
+  return urlParams.get('server') === 'true';
 }
 
 // Initialize the dashboard when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
     const canvasId = getCanvasIdFromUrl();
-    const useWASM = isWASMMode();
+    const useServerCanvas = isServerMode();
     
-    console.log(`🚀 SDL Canvas Dashboard starting for canvas: ${canvasId} (WASM: ${useWASM})`);
+    console.log(`🚀 SDL Canvas Dashboard starting for canvas: ${canvasId} (Mode: ${useServerCanvas ? "ServerRuntime" : "WASMRuntime"})`);
     
-    if (useWASM) {
-      const dashboard = new WASMDashboard(canvasId, true);
+    if (useServerCanvas ) {
+      const dashboard = new Dashboard(canvasId);
       dashboard.initialize();
     } else {
-      const dashboard = new Dashboard(canvasId);
+      const dashboard = new WASMDashboard(canvasId);
       dashboard.initialize();
     }
   }, 100);

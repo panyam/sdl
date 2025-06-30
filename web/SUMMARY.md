@@ -1,6 +1,6 @@
 # SDL Web Dashboard Summary
 
-**Version:** DockView Professional Layout (v2.0)
+**Version:** Unified Dashboard Layout (v3.0)
 
 ## 🎯 Purpose
 
@@ -15,27 +15,47 @@ The SDL Web Dashboard provides an interactive "Incredible Machine" style interfa
 - **Layout System**: DockView for professional dockable panels with persistence
 - **Charting**: Chart.js for real-time performance visualization
 - **System Visualization**: Graphviz WASM for automatic system diagram layout
-- **Communication**: Native WebSocket API for live updates
+- **Communication**: 
+  - Server Mode: gRPC-Web/Connect for API calls
+  - WASM Mode: Direct WASM function calls
+- **Code Editing**: Monaco Editor for SDL syntax highlighting
+- **File Management**: FileClient interface for consistent file operations across modes
 
 ### Layout Architecture
 
-#### DockView Professional Layout
-The dashboard features a modern, professional dockable layout system using DockView that provides maximum flexibility and customization:
+#### Unified Dashboard Layout (v3.0)
+The dashboard now features a unified layout that works seamlessly in both server and WASM modes:
 
-**4-Panel Dockable System**
+**6-Panel Dockable System**
+- **File Explorer Panel**: Browse and select SDL files
+  - Server Mode: Limited file browsing (examples only)
+  - WASM Mode: Full virtual filesystem with read/write capabilities
+  - Tree view with folder expansion
+  - Read-only file indicators
+  
+- **Code Editor Panel**: Monaco-powered SDL editing
+  - Syntax highlighting for SDL language
+  - Auto-save functionality in WASM mode
+  - Read-only mode for example files
+  
 - **System Architecture Panel**: Enhanced system visualization with Graphviz/dot rendering
   - Displays complete system structure from Canvas API
   - Shows all components with per-method traffic values
   - Automatic layout via dot engine for clean presentation
   - Dynamically updates based on loaded SDL file
+  
 - **Traffic Generation Panel**: Generator controls with Start/Stop functionality
   - Real-time traffic control and monitoring
   - Add/remove generators dynamically
-- **Measurements Panel**: System measurement configuration
-  - Add and configure custom metrics
-  - Real-time measurement management
-- **Live Metrics Panel**: Dynamic charts grid
-  - Unlimited scrollable charts supporting infinite metrics via `canvas.Measure()` calls
+  - Rate adjustment with fine-grained control (0.1 RPS increments)
+  
+- **Console Panel**: System output and logs
+  - Real-time console output capture
+  - Error and warning highlighting
+  - Command execution feedback
+  
+- **Live Metrics Panel**: Dynamic charts grid (tabbed with Console)
+  - Unlimited scrollable charts supporting infinite metrics
   - 3-column responsive grid that adapts to screen size
   - Real-time chart updates with proper scaling
 
@@ -50,18 +70,29 @@ The dashboard features a modern, professional dockable layout system using DockV
 
 #### Dashboard Class (`src/dashboard.ts`)
 - **Main Application Controller**: Manages the entire dashboard state and rendering
-- **WebSocket Integration**: Handles real-time communication with backend
-- **Dynamic Chart Management**: Creates and updates charts based on server metrics
-- **Parameter Control**: Manages real-time system parameter modification
+- **Unified Layout**: Single layout implementation for both server and WASM modes
+- **FileClient Interface**: Uses abstraction for file operations
+- **Dynamic Chart Management**: Creates and updates charts based on metrics
+- **Component Creation**: Factory methods for all panel components
 
-#### Canvas API Client (`src/canvas-api.ts`)
-- **RESTful API Integration**: Full implementation of Canvas REST endpoints
-- **WebSocket Client**: Manages real-time bidirectional communication with REPL console synchronization
-- **Enhanced State Management**: Handles complete Canvas state save/restore including system parameters and session recovery
-- **Traffic Generation**: Complete generator lifecycle management
-- **Measurement Control**: Dynamic chart creation from Canvas measurements
-- **REPL Synchronization**: Real-time updates from console commands via WebSocket broadcasting
-- **Error Handling**: Robust error management for all API operations
+#### WASMDashboard Class (`src/wasm-dashboard.ts`)
+- **WASM Extension**: Extends base Dashboard with WASM-specific features
+- **WASMCanvasClient**: Replaces server API with WASM function calls
+- **File Management**: Handles WASM virtual filesystem operations
+- **Read-only Detection**: Special handling for bundled example files
+
+#### CanvasClient (`src/canvas-client.ts`)
+- **gRPC-Web Integration**: Uses Connect/gRPC-Web for server communication
+- **FileClient Implementation**: Implements file operations for server mode
+- **State Management**: Handles Canvas state and system operations
+- **Generator Control**: Full generator lifecycle management
+- **Metrics Streaming**: Real-time metric updates via streaming RPCs
+
+#### WASMCanvasClient (`src/wasm-integration.ts`)
+- **WASM Bridge**: Direct JavaScript-to-Go function calls
+- **FileClient Implementation**: Virtual filesystem operations
+- **Canvas Operations**: Load files, use systems, manage generators
+- **Type Conversions**: Handles Go-to-JS type marshaling
 
 #### Type System (`src/types.ts`)
 - **Shared Data Structures**: Type-safe communication with Go backend
@@ -160,20 +191,34 @@ The dashboard features a modern, professional dockable layout system using DockV
 - **Network Resilient**: Graceful handling of connection issues
 - **Performance Optimized**: Smooth experience even under load
 
+## 🌐 WASM Mode Features
+
+### Browser-Based Runtime
+- **Zero Server Cost**: Run simulations entirely in the browser
+- **Instant Feedback**: No network latency for operations
+- **Offline Capability**: Works without internet connection
+- **Local File System**: Virtual filesystem for SDL projects
+
+### Mode Selection
+- **URL Parameter Based**: `?server=true` for server mode, default is WASM
+- **Seamless Switching**: Same UI experience in both modes
+- **Feature Parity**: Most features work identically
+- **Performance Trade-offs**: WASM is slower but free
+
 ## 🔮 Future Enhancements
 
-### Advanced Visualization
-- **Drag-and-Drop**: Visual system composition interface
-- **3D Architecture**: Enhanced system visualization capabilities
-- **Animation Effects**: Smooth transitions for parameter changes
-- **Presentation Mode**: Large-screen optimization features
+### WASM Optimization
+- **Binary Size Reduction**: Target <10MB with TinyGo
+- **Performance Improvements**: Web Workers for simulation
+- **Progressive Loading**: Lazy load WASM modules
+- **Caching Strategy**: Browser-based WASM caching
 
-### Collaboration Features
-- **Multi-User Sessions**: Synchronized parameter changes across browsers
-- **Presenter Controls**: Workshop leader override capabilities
-- **Audience Interaction**: Real-time polling and feedback integration
-- **Session Recording**: Capture and replay demonstration sessions
+### Advanced Features
+- **GitHub Integration**: Load examples directly from repos
+- **Project Sharing**: Export/import SDL projects
+- **Collaborative Editing**: Real-time multi-user support
+- **Visual System Designer**: Drag-and-drop system composition
 
 ---
 
-**The SDL Web Dashboard represents a breakthrough in system design education, providing an unparalleled interactive experience for understanding distributed systems performance.**
+**The SDL Web Dashboard v3.0 with unified layout brings professional system modeling to everyone - free WASM mode for learning and experimentation, server mode for production workloads.**

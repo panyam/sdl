@@ -20,12 +20,14 @@
 - [x] Clean up duplicate FileSystem implementations (removed ~150 lines)
 - [ ] Optimize binary size (current: 28.6MB, target: <10MB with TinyGo)
 
-### 3. Web Integration
-- [ ] Complete file explorer integration with WASM filesystem
-- [ ] Wire up Monaco editor with SDL syntax highlighting
-- [ ] Connect load/run buttons to WASM API
-- [ ] Add simulation results visualization
-    - [x] Implement mode toggle (server vs WASM) - Panel display issue resolved.
+### 3. Web Integration ✅ COMPLETED
+- [x] Complete file explorer integration with WASM filesystem
+- [x] Wire up Monaco editor with SDL syntax highlighting
+- [x] Connect load/run buttons to WASM API
+- [x] Unified dashboard layout for both server and WASM modes
+- [x] Implement mode toggle (server vs WASM) - URL parameter based (?server=true)
+- [x] FileClient interface adopted for consistent file operations
+- [ ] Add simulation results visualization (metrics streaming)
 
 ### 4. WASM Optimization
 - [ ] Measure initial binary size with standard Go
@@ -116,6 +118,12 @@
   - Kept WASM-specific implementations (DevServerFS, URLFetcherFS, BundledFS)
   - Removed redundant WASMHTTPFileSystem
   - All WASM code now uses loader.FileSystem interface
+- ✅ Unified dashboard layout implementation (June 2025):
+  - Refactored base Dashboard class to support both server and WASM modes
+  - Implemented FileClient interface for consistent file operations
+  - WASMDashboard now extends base Dashboard with minimal overrides
+  - Mode detection via URL parameters (?server=true for server mode)
+  - Unified panel layout: File Explorer | Code Editor | System Architecture | Traffic Generation | Console/Metrics
 
 ## Blocked/Decisions Needed
 - ~~Proto dependency in Canvas blocking WASM build~~ ✅ RESOLVED

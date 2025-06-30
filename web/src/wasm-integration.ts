@@ -1,3 +1,5 @@
+import { FileClient } from './types.js';
+
 export interface WASMFileSystem {
   readFile(path: string): Promise<{ success: boolean; content?: string; error?: string }>;
   writeFile(path: string, content: string): Promise<{ success: boolean; error?: string }>;
@@ -44,7 +46,7 @@ export interface WASMSDL {
  * WASMCanvasClient provides a Canvas API interface that uses WASM
  * It doesn't extend CanvasClient but provides similar methods
  */
-export class WASMCanvasClient {
+export class WASMCanvasClient implements FileClient {
   private wasm: WASMSDL | null = null;
   private wasmLoaded: boolean = false;
   protected canvasId: string;

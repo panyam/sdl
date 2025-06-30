@@ -4,6 +4,10 @@ import type { SystemDiagram } from './gen/sdl/v1/canvas_pb.ts';
 import { Chart, ChartConfiguration } from 'chart.js/auto';
 import { Graphviz } from "@hpcc-js/wasm";
 import { DockviewApi, DockviewComponent } from 'dockview-core';
+import { FileExplorer } from './components/file-explorer.js';
+import { Toolbar } from './components/toolbar.js';
+import { CodeEditor, configureMonacoLoader } from './components/code-editor.js';
+import { ConsolePanel, ConsoleInterceptor } from './components/console-panel.js';
 
 export class Dashboard {
   protected api: CanvasClient;
@@ -20,6 +24,12 @@ export class Dashboard {
   private generatorUpdateTimeout: number | null = null; // Debounce timer for generator updates
   private layoutTopToBottom = false;
   private diagramZoom = 1.0; // Current zoom level
+  protected fileExplorer: FileExplorer | null = null;
+  protected codeEditor: CodeEditor | null = null;
+  protected toolbar: Toolbar | null = null;
+  protected consolePanel: ConsolePanel | null = null;
+  protected currentFile: string | null = null;
+  private consoleInterceptor: ConsoleInterceptor | null = null;
 
   // Parameter configurations - populated when a system is loaded
   private parameters: ParameterConfig[] = [];
@@ -427,36 +437,68 @@ export class Dashboard {
     if (!app) return;
 
     app.innerHTML = `
-      <div class="h-screen flex flex-col">
+      <div class="flex flex-col h-screen">
         <!-- Header -->
-        <div class="p-4 flex-shrink-0 bg-gray-900 border-b border-gray-700">
-          <h1 class="text-xl font-bold text-blue-300 mb-2">SDL Canvas Dashboard - ${this.canvasId}</h1>
-          <div class="flex items-center gap-4">
-            <div class="flex items-center gap-2">
-              <div class="w-2 h-2 rounded-full ${this.state.isConnected ? 'bg-green-400' : 'bg-red-400'}"></div>
-              <span class="text-xs text-gray-400">${this.state.isConnected ? 'Connected' : 'Disconnected'}</span>
-            </div>
-            ${this.state.currentSystem ? `
-              <div class="text-xs text-gray-300">
-                <span class="text-gray-400">System:</span> ${this.state.currentSystem}
-              </div>
-            ` : ''}
-            <button id="toggle-layout-direction-btn" class="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-gray-300" title="Toggle diagram layout direction">
-              ${this.layoutTopToBottom ? '↕️ Top-Bottom' : '↔️ Left-Right'}
-            </button>
-            <button id="reset-layout-btn" class="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-gray-300" title="Reset layout to default">
-              ⚙️ Reset Layout
-            </button>
+        <header class="bg-gray-800 border-b border-gray-700 px-4 py-2">
+          <div class="flex items-center justify-between">
+            <h1 class="text-xl font-bold">SDL Canvas: ${this.canvasId}</h1>
+            <span class="text-xs text-gray-400">SDL Dashboard</span>
           </div>
-          <div id="error-display" class="hidden mt-2 p-2 bg-red-800 text-red-200 rounded text-sm"></div>
-        </div>
-
-        <!-- DockView Container -->
+        </header>
+        
+        <!-- Toolbar -->
+        <div id="toolbar-container"></div>
+        
+        <!-- Main Content with DockView -->
         <div id="dockview-container" class="flex-1"></div>
       </div>
     `;
 
+    // Initialize toolbar
+    this.initializeToolbar();
+    
+    // Initialize layout
     this.initializeLayout();
+  }
+
+  private initializeToolbar() {
+    const container = document.getElementById('toolbar-container');
+    if (!container) return;
+
+    this.toolbar = new Toolbar(container);
+    this.toolbar.setButtons([
+      {
+        id: 'load',
+        label: 'Load',
+        icon: '📂',
+        tooltip: 'Load and compile SDL file',
+        onClick: () => this.handleLoad()
+      },
+      {
+        id: 'save',
+        label: 'Save',
+        icon: '💾',
+        tooltip: 'Save current file',
+        disabled: true,
+        onClick: () => this.handleSave()
+      },
+      {
+        id: 'run',
+        label: 'Run',
+        icon: '▶️',
+        tooltip: 'Run simulation',
+        disabled: true,
+        onClick: () => this.handleRun()
+      },
+      {
+        id: 'stop',
+        label: 'Stop',
+        icon: '⏹️',
+        tooltip: 'Stop simulation',
+        disabled: true,
+        onClick: () => this.handleStop()
+      }
+    ]);
   }
 
   protected initializeLayout() {
@@ -499,6 +541,12 @@ export class Dashboard {
               </div>
             `;
             break;
+          case 'fileExplorer':
+            return this.createFileExplorerComponent();
+          case 'codeEditor':
+            return this.createCodeEditorComponent();
+          case 'console':
+            return this.createConsoleComponent();
         }
         
         return {
@@ -541,33 +589,54 @@ export class Dashboard {
   }
 
   protected createDefaultLayout() {
-    // Add panels to DockView in default configuration
-    this.dockview!.addPanel({
-      id: 'systemArchitecture',
-      component: 'systemArchitecture',
-      title: 'System Architecture'
+    if (!this.dockview) return;
+
+    // Unified layout for both server and WASM modes
+    // Add file explorer panel
+    this.dockview.addPanel({
+      id: 'fileExplorer',
+      component: 'fileExplorer',
+      title: 'Files',
+      params: { width: 250 }
     });
 
-    this.dockview!.addPanel({
-      id: 'trafficGeneration', 
-      component: 'trafficGeneration',
-      title: 'Traffic Generation',
+    // Add code editor panel
+    this.dockview.addPanel({
+      id: 'codeEditor',
+      component: 'codeEditor',
+      title: 'SDL Editor',
       position: { direction: 'right' }
     });
 
-    /*
-    this.dockview!.addPanel({
-      id: 'measurements',
-      component: 'measurements', 
-      title: 'Measurements',
+    // Add system architecture panel
+    this.dockview.addPanel({
+      id: 'systemArchitecture',
+      component: 'systemArchitecture',
+      title: 'System Architecture',
+      position: { direction: 'right' }
+    });
+
+    // Add traffic generation panel
+    this.dockview.addPanel({
+      id: 'trafficGeneration',
+      component: 'trafficGeneration',
+      title: 'Traffic Generation',
+      position: { referencePanel: 'systemArchitecture', direction: 'below' }
+    });
+
+    // Add console/metrics panel at bottom
+    this.dockview.addPanel({
+      id: 'console',
+      component: 'console',
+      title: 'Console',
       position: { direction: 'below' }
     });
-   */
 
-    this.dockview!.addPanel({
+    // Add live metrics as a tab with console
+    this.dockview.addPanel({
       id: 'liveMetrics',
       component: 'liveMetrics',
-      title: 'Live Metrics', 
+      title: 'Live Metrics',
       position: { direction: 'below' }
     });
   }
@@ -996,14 +1065,14 @@ export class Dashboard {
               <div class="flex items-center gap-2">
                 <div class="flex items-center border border-gray-600 rounded overflow-hidden">
                   <button class="bg-gray-700 hover:bg-gray-600 px-2 py-1 text-xs" 
-                          data-rate-dec-id="${call.id}">−</button>
+                          data-rate-dec-id="${call.id}">－</button>
                   <input type="number" 
                          min="0" max="20" step="0.1" 
                          value="${call.rate.toFixed(1)}"
                          data-rate-input-id="${call.id}"
                          class="w-12 px-1 py-1 text-xs text-center bg-gray-800 border-0 outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none">
                   <button class="bg-gray-700 hover:bg-gray-600 px-2 py-1 text-xs" 
-                          data-rate-inc-id="${call.id}">+</button>
+                          data-rate-inc-id="${call.id}">＋</button>
                 </div>
                 <input type="checkbox" ${call.enabled ? 'checked' : ''} 
                        data-generate-id="${call.id}"
@@ -1022,7 +1091,7 @@ export class Dashboard {
         `}
         
         <button id="add-generator" class="w-full btn btn-outline text-xs py-1" ${!this.state.currentSystem ? 'disabled' : ''}>
-          + Add Generator
+          ＋ Add Generator
         </button>
       </div>
     `;
@@ -1237,6 +1306,96 @@ export class Dashboard {
     // TODO: Show a form/dialog to collect generator details
     // For now, just show a message that this feature needs implementation
     this.showError('Add Generator form not yet implemented. Use the Canvas API directly for now.');
+  }
+
+  protected async handleLoad() {
+    if (!this.currentFile) {
+      this.consolePanel?.warning('Please select an SDL file to load');
+      return;
+    }
+
+    this.toolbar?.setStatus('Loading...', 'info');
+    this.consolePanel?.info(`Loading ${this.currentFile}...`);
+
+    try {
+      // Load the file into the canvas
+      await this.api.loadFile(this.currentFile);
+      
+      // Get canvas info to check active system
+      const info = await this.api.getCanvas();
+      
+      if (info && info.activeSystem) {
+        // System already active, just update UI
+        this.state.currentSystem = info.activeSystem;
+        await this.loadSystemDiagram();
+        
+        this.consolePanel?.success(`Loaded system: ${info.activeSystem}`);
+        this.toolbar?.setStatus('Ready', 'success');
+        
+        // Enable run button
+        this.toolbar?.updateButton('run', { disabled: false });
+        
+        // Update system architecture
+        this.updateAllPanels();
+      } else {
+        this.consolePanel?.warning('No systems found in SDL file');
+        this.toolbar?.setStatus('No systems found', 'error');
+      }
+    } catch (error) {
+      this.consolePanel?.error(`Failed to load: ${error}`);
+      this.toolbar?.setStatus('Load failed', 'error');
+    }
+  }
+
+  protected async handleSave() {
+    if (!this.currentFile || !this.codeEditor) return;
+
+    try {
+      const content = this.codeEditor.getValue();
+      await this.api.writeFile(this.currentFile, content);
+      this.consolePanel?.success(`Saved: ${this.currentFile}`);
+    } catch (error) {
+      this.consolePanel?.error(`Failed to save: ${error}`);
+    }
+  }
+
+  protected async handleRun() {
+    if (!this.api) return;
+
+    this.toolbar?.setStatus('Running simulation...', 'info');
+    this.toolbar?.updateButton('run', { disabled: true });
+    this.toolbar?.updateButton('stop', { disabled: false });
+
+    try {
+      // Start all generators
+      await this.api.startAllGenerators();
+      this.consolePanel?.success('Simulation started');
+      
+      // Update UI
+      this.updateAllPanels();
+    } catch (error) {
+      this.consolePanel?.error(`Failed to start simulation: ${error}`);
+      this.toolbar?.setStatus('Error', 'error');
+    }
+  }
+
+  protected async handleStop() {
+    if (!this.api) return;
+
+    try {
+      // Stop all generators
+      await this.api.stopAllGenerators();
+      this.consolePanel?.info('Simulation stopped');
+      
+      this.toolbar?.updateButton('run', { disabled: false });
+      this.toolbar?.updateButton('stop', { disabled: true });
+      this.toolbar?.setStatus('Ready', 'info');
+      
+      // Update UI
+      this.updateAllPanels();
+    } catch (error) {
+      this.consolePanel?.error(`Failed to stop simulation: ${error}`);
+    }
   }
 
   private async toggleAllGenerators() {
@@ -1516,6 +1675,136 @@ export class Dashboard {
     }
   }
 
+  protected createFileExplorerComponent() {
+    const element = document.createElement('div');
+    element.className = 'h-full overflow-auto';
+    
+    this.fileExplorer = new FileExplorer(element);
+    
+    // Set up handlers
+    this.fileExplorer.setFileSelectHandler(async (path) => {
+      try {
+        const content = await this.api.readFile(path);
+        if (this.codeEditor) {
+          this.codeEditor.loadFile(path, content);
+          this.currentFile = path;
+          // Enable save button
+          this.toolbar?.updateButton('save', { disabled: false });
+          this.consolePanel?.info(`Loaded file: ${path}`);
+        }
+      } catch (error) {
+        console.error('Failed to load file:', error);
+        this.consolePanel?.error(`Failed to load file: ${error}`);
+      }
+    });
+
+    this.fileExplorer.setFileCreateHandler(async (path) => {
+      try {
+        await this.api.writeFile(path, '// New SDL file\n');
+        await this.refreshFileList();
+        if (this.codeEditor) {
+          this.codeEditor.loadFile(path, '// New SDL file\n');
+        }
+      } catch (error) {
+        console.error('Failed to create file:', error);
+      }
+    });
+
+    // Load initial files
+    this.refreshFileList();
+
+    return {
+      element,
+      init: () => {},
+      dispose: () => {}
+    };
+  }
+
+  protected createCodeEditorComponent() {
+    const element = document.createElement('div');
+    element.className = 'h-full';
+    
+    // Configure Monaco loader if not already done
+    if (!this.codeEditor) {
+      configureMonacoLoader();
+    }
+    
+    // Wait for Monaco to load
+    setTimeout(() => {
+      this.codeEditor = new CodeEditor(element);
+      
+      this.codeEditor.setChangeHandler(async () => {
+        // Auto-save functionality could be added here if needed
+        console.log('Editor content changed');
+      });
+    }, 100);
+
+    return {
+      element,
+      init: () => {},
+      dispose: () => {
+        if (this.codeEditor) {
+          this.codeEditor.dispose();
+        }
+      }
+    };
+  }
+
+  protected createConsoleComponent() {
+    const element = document.createElement('div');
+    element.className = 'h-full';
+    
+    this.consolePanel = new ConsolePanel(element);
+    this.consoleInterceptor = new ConsoleInterceptor();
+    this.consoleInterceptor.attach(this.consolePanel);
+    
+    // Initial messages
+    this.consolePanel.success('SDL Console Ready');
+    this.consolePanel.info('Load an SDL file to begin working with your system.');
+
+    return {
+      element,
+      init: () => {},
+      dispose: () => {
+        if (this.consoleInterceptor) {
+          this.consoleInterceptor.detach();
+        }
+        if (this.consolePanel) {
+          this.consolePanel.dispose();
+        }
+      }
+    };
+  }
+
+  protected async refreshFileList() {
+    if (!this.fileExplorer) return;
+
+    try {
+      // Get files from various directories
+      const allFiles: string[] = [];
+      
+      // Try to list common directories
+      for (const dir of ['/examples', '/lib', '/workspace']) {
+        try {
+          const files = await this.api.listFiles(dir);
+          allFiles.push(...files);
+        } catch (error) {
+          // Directory might not exist or not supported in server mode
+          console.debug(`Could not list ${dir}:`, error);
+        }
+      }
+
+      await this.fileExplorer.loadFiles(allFiles);
+    } catch (error) {
+      console.error('Failed to refresh file list:', error);
+      // In server mode, file listing might not be fully supported
+      // Show a message to use the Load button
+      if (this.fileExplorer) {
+        await this.fileExplorer.loadFiles([]);
+      }
+    }
+  }
+
   // Cleanup method for proper resource disposal
   public cleanup() {
     this.stopChartUpdates();
@@ -1526,6 +1815,12 @@ export class Dashboard {
       chart.destroy();
     });
     this.charts = {};
+
+    // Cleanup console interceptor
+    if (this.consoleInterceptor) {
+      this.consoleInterceptor.detach();
+      this.consoleInterceptor = null;
+    }
 
     // Cleanup DockView
     if (this.dockview) {
@@ -1607,7 +1902,7 @@ export class Dashboard {
         `).join('')}
         
         <button class="w-full btn btn-outline text-xs py-1" ${!this.state.currentSystem ? 'disabled' : ''}>
-          + Add Measurement
+          ＋ Add Measurement
         </button>
       </div>
     `;

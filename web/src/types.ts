@@ -44,6 +44,12 @@ export interface SeriesInfo {
   from: string;
 }
 
+export interface FileClient {
+  listFiles(path: string): Promise<string[]>;
+  readFile(path: string): Promise<string>;
+  writeFile(path: string, content: string): Promise<void>;
+}
+
 // WebSocket message types
 export interface WebSocketMessage {
   type: 'fileLoaded' | 'systemActivated' | 'parameterChanged' | 'simulationCompleted' | 'plotGenerated' |

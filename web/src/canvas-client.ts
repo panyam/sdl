@@ -4,6 +4,7 @@ import { CanvasService } from "./gen/sdl/v1/canvas_pb.ts";
 import { create } from "@bufbuild/protobuf";
 import { GeneratorSchema, MetricSchema, CanvasSchema } from "./gen/sdl/v1/models_pb.ts";
 import type { Generator, Metric, Canvas } from "./gen/sdl/v1/models_pb.ts";
+import { FileClient } from './types.js';
 
 // Create transport with the Connect endpoint mounted at /api
 const transport = createConnectTransport({
@@ -17,7 +18,7 @@ const client = createClient(CanvasService, transport);
 // Default canvas ID
 const DEFAULT_CANVAS_ID = "default";
 
-export class CanvasClient {
+export class CanvasClient implements FileClient {
   protected canvasId: string;
 
   constructor(canvasId: string = DEFAULT_CANVAS_ID) {
@@ -93,6 +94,23 @@ export class CanvasClient {
   // Get current state (canvas info)
   async getState() {
     return this.getCanvas();
+  }
+
+
+  // FileClient interface implementation (placeholder for server mode)
+  async listFiles(path: string): Promise<string[]> {
+    console.warn(`listFiles not implemented for server CanvasClient. Path: ${path}`);
+    return [];
+  }
+
+  async readFile(path: string): Promise<string> {
+    console.warn(`readFile not implemented for server CanvasClient. Path: ${path}`);
+    throw new Error(`readFile not implemented for server CanvasClient. Path: ${path}`);
+  }
+
+  async writeFile(path: string, _content: string): Promise<void> {
+    console.warn(`writeFile not implemented for server CanvasClient. Path: ${path}`);
+    throw new Error(`writeFile not implemented for server CanvasClient. Path: ${path}`);
   }
 
   // Set a parameter value
