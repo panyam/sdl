@@ -39,20 +39,8 @@ export class WASMDashboard extends Dashboard {
     if (!this.fileExplorer || !this.wasmClient) return;
 
     try {
-      const allFiles: string[] = [];
-      
-      // WASM has specific directories
-      for (const dir of ['/examples', '/lib', '/workspace']) {
-        try {
-          const files = await this.wasmClient.listFiles(dir);
-          allFiles.push(...files);
-        } catch (error) {
-          // Directory might not exist
-          console.debug(`Could not list ${dir}:`, error);
-        }
-      }
-
-      await this.fileExplorer.loadFiles(allFiles);
+      // Refresh the 'examples' filesystem (in WASM mode, this will load from virtual FS)
+      await this.fileExplorer.refreshFileSystem('examples');
     } catch (error) {
       console.error('Failed to refresh file list:', error);
     }

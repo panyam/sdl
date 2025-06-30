@@ -4,7 +4,7 @@ import type { SystemDiagram } from './gen/sdl/v1/canvas_pb.ts';
 import { Chart, ChartConfiguration } from 'chart.js/auto';
 import { Graphviz } from "@hpcc-js/wasm";
 import { DockviewApi, DockviewComponent } from 'dockview-core';
-import { FileExplorer } from './components/file-explorer.js';
+import { MultiFSExplorer } from './components/multi-fs-explorer.js';
 import { Toolbar } from './components/toolbar.js';
 import { CodeEditor, configureMonacoLoader } from './components/code-editor.js';
 import { ConsolePanel, ConsoleInterceptor } from './components/console-panel.js';
@@ -24,7 +24,7 @@ export class Dashboard {
   private generatorUpdateTimeout: number | null = null; // Debounce timer for generator updates
   private layoutTopToBottom = false;
   private diagramZoom = 1.0; // Current zoom level
-  protected fileExplorer: FileExplorer | null = null;
+  protected fileExplorer: MultiFSExplorer | null = null;
   protected codeEditor: CodeEditor | null = null;
   protected toolbar: Toolbar | null = null;
   protected consolePanel: ConsolePanel | null = null;
@@ -1689,10 +1689,10 @@ export class Dashboard {
     const element = document.createElement('div');
     element.className = 'h-full overflow-auto';
     
-    this.fileExplorer = new FileExplorer(element);
+    this.fileExplorer = new MultiFSExplorer(element);
     
     // Set up handlers
-    this.fileExplorer.setFileSelectHandler(async (path) => {
+    this.fileExplorer.setFileSelectHandler(async (path, _fsId) => {
       try {
         const content = await this.api.readFile(path);
         if (this.codeEditor) {
@@ -1708,10 +1708,12 @@ export class Dashboard {
       }
     });
 
-    this.fileExplorer.setFileCreateHandler(async (path) => {
+    this.fileExplorer.setFileCreateHandler(async (path, fsId) => {
       try {
         await this.api.writeFile(path, '// New SDL file\n');
-        await this.refreshFileList();
+        if (this.fileExplorer) {
+          await this.fileExplorer.refreshFileSystem(fsId);
+        }
         if (this.codeEditor) {
           this.codeEditor.loadFile(path, '// New SDL file\n');
         }
@@ -1720,8 +1722,8 @@ export class Dashboard {
       }
     });
 
-    // Load initial files
-    this.refreshFileList();
+    // Initialize the multi-filesystem explorer
+    this.fileExplorer.initialize();
 
     return {
       element,
@@ -1790,28 +1792,11 @@ export class Dashboard {
     if (!this.fileExplorer) return;
 
     try {
-      // Get files from various directories
-      const allFiles: string[] = [];
-      
-      // Try to list common directories
-      for (const dir of ['/examples', '/lib', '/workspace']) {
-        try {
-          const files = await this.api.listFiles(dir);
-          allFiles.push(...files);
-        } catch (error) {
-          // Directory might not exist or not supported in server mode
-          console.debug(`Could not list ${dir}:`, error);
-        }
-      }
-
-      await this.fileExplorer.loadFiles(allFiles);
+      // Refresh the 'examples' filesystem
+      await this.fileExplorer.refreshFileSystem('examples');
     } catch (error) {
       console.error('Failed to refresh file list:', error);
       // In server mode, file listing might not be fully supported
-      // Show a message to use the Load button
-      if (this.fileExplorer) {
-        await this.fileExplorer.loadFiles([]);
-      }
     }
   }
 
