@@ -25,7 +25,7 @@
 - [ ] Wire up Monaco editor with SDL syntax highlighting
 - [ ] Connect load/run buttons to WASM API
 - [ ] Add simulation results visualization
-- [ ] Implement mode toggle (server vs WASM)
+    - [x] Implement mode toggle (server vs WASM) - Panel display issue resolved.
 
 ### 4. WASM Optimization
 - [ ] Measure initial binary size with standard Go

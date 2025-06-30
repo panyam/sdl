@@ -91,6 +91,7 @@ SDL is a language and runtime for modeling and simulating distributed system per
 - ✅ Basic WASM build structure created
 - ✅ FileSystem abstraction implemented
 - ✅ Web dashboard components designed
+- ✅ Panel display issue resolved.
 - 🚧 Canvas refactoring in progress
 - ⏳ SimpleEval WASM compatibility pending
 - ⏳ Binary size optimization pending
