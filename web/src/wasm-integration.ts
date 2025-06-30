@@ -1,5 +1,3 @@
-import { CanvasClient } from './canvas-client.js';
-
 export interface WASMFileSystem {
   readFile(path: string): Promise<{ success: boolean; content?: string; error?: string }>;
   writeFile(path: string, content: string): Promise<{ success: boolean; error?: string }>;
@@ -42,15 +40,15 @@ export interface WASMSDL {
 }
 
 /**
- * WASMCanvasClient implements the same interface as CanvasClient but uses WASM
+ * WASMCanvasClient provides a Canvas API interface that uses WASM
+ * It doesn't extend CanvasClient but provides similar methods
  */
-export class WASMCanvasClient extends CanvasClient {
+export class WASMCanvasClient {
   private wasm: WASMSDL | null = null;
   private wasmLoaded: boolean = false;
-  private canvasId: string;
+  protected canvasId: string;
 
   constructor(canvasId: string = 'default') {
-    super(canvasId);
     this.canvasId = canvasId;
   }
 
@@ -82,37 +80,56 @@ export class WASMCanvasClient extends CanvasClient {
     }
   }
 
-  async ensureCanvas(): Promise<void> {
+  // CanvasClient-compatible methods
+
+  async ensureCanvas(): Promise<any> {
     await this.initialize();
     // WASM always has a canvas ready
+    return { id: this.canvasId };
   }
 
-  async loadFile(filePath: string): Promise<void> {
+  async loadFile(filePath: string): Promise<any> {
     await this.initialize();
     const result = this.wasm!.canvas.load(filePath, this.canvasId);
     if (!result.success) {
       throw new Error(result.error);
     }
+    return { success: true, data: result };
   }
 
-  async useSystem(systemName: string): Promise<void> {
+  async useSystem(systemName: string): Promise<any> {
     await this.initialize();
     const result = this.wasm!.canvas.use(systemName, this.canvasId);
     if (!result.success) {
       throw new Error(result.error);
     }
+    return { success: true, data: result };
+  }
+
+  async getCanvas(): Promise<any> {
+    await this.initialize();
+    const info = this.wasm!.canvas.info(this.canvasId);
+    return info.success ? { id: this.canvasId, ...info } : null;
   }
 
   async getState(): Promise<any> {
     await this.initialize();
     const info = this.wasm!.canvas.info(this.canvasId);
     
+    // Get generators
+    const genResult = this.wasm!.gen.list({ canvas: this.canvasId });
+    const generators = genResult.success && genResult.generators ? genResult.generators : [];
+    
+    // Get metrics
+    const metricsResult = this.wasm!.metrics.list({ canvas: this.canvasId });
+    const metrics = metricsResult.success && metricsResult.metrics ? metricsResult.metrics : [];
+    
     // Convert WASM response to match server format
     return {
       loadedFiles: [], // TODO: track loaded files
       activeSystem: info.activeSystem,
-      generators: [], // TODO: get generators from WASM
-      metrics: [] // TODO: get metrics from WASM
+      generators: generators,
+      metrics: metrics
     };
   }
 
@@ -121,7 +138,43 @@ export class WASMCanvasClient extends CanvasClient {
     return null;
   }
 
-  async addGenerator(name: string, component: string, method: string, rate: number): Promise<void> {
+  async getGenerators(): Promise<any> {
+    await this.initialize();
+    const result = this.wasm!.gen.list({ canvas: this.canvasId });
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
+    
+    // Convert array to object format expected by dashboard
+    const generatorsObj: any = {};
+    if (result.generators) {
+      result.generators.forEach((gen: any) => {
+        generatorsObj[gen.id] = gen;
+      });
+    }
+    
+    return { success: true, data: generatorsObj };
+  }
+
+  async getMetrics(): Promise<any> {
+    await this.initialize();
+    const result = this.wasm!.metrics.list({ canvas: this.canvasId });
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
+    
+    // Convert array to object format expected by dashboard
+    const metricsObj: any = {};
+    if (result.metrics) {
+      result.metrics.forEach((metric: any) => {
+        metricsObj[metric.id] = metric;
+      });
+    }
+    
+    return { success: true, data: metricsObj };
+  }
+
+  async addGenerator(name: string, component: string, method: string, rate: number): Promise<any> {
     await this.initialize();
     const target = `${component}.${method}`;
     const result = this.wasm!.gen.add(name, target, rate, {
@@ -131,6 +184,7 @@ export class WASMCanvasClient extends CanvasClient {
     if (!result.success) {
       throw new Error(result.error);
     }
+    return { success: true, data: result.generator };
   }
 
   async removeGenerator(name: string): Promise<void> {
@@ -204,16 +258,33 @@ export class WASMCanvasClient extends CanvasClient {
     if (!result.success) {
       throw new Error(result.error);
     }
-    return result.files!;
+    return result.files || [];
+  }
+
+  // Add stub methods that dashboard expects
+  async streamMetrics(_metrics: string[], _onData: (data: any) => void, _signal?: AbortSignal): Promise<void> {
+    // WASM doesn't support streaming yet
+    console.warn('Metric streaming not supported in WASM mode');
+  }
+
+  async getFlowState(): Promise<any> {
+    // TODO: Implement flow state in WASM
+    return { success: true, data: {} };
+  }
+
+  async loadSystemDiagram(): Promise<any> {
+    // TODO: Implement system diagram generation in WASM
+    return { success: false, error: 'Not implemented in WASM mode' };
   }
 }
 
 /**
  * Factory function to create appropriate client based on mode
  */
-export function createCanvasClient(canvasId: string, useWASM: boolean = false): CanvasClient {
+export function createCanvasClient(canvasId: string, useWASM: boolean = false): any {
   if (useWASM) {
     return new WASMCanvasClient(canvasId);
   }
-  return new CanvasClient(canvasId);
+  // Dynamic import to avoid circular dependency
+  return import('./canvas-client.js').then(module => new module.CanvasClient(canvasId));
 }

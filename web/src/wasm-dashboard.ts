@@ -1,8 +1,8 @@
 import { Dashboard } from './dashboard.js';
-import { WASMCanvasClient, createCanvasClient } from './wasm-integration.js';
+import { WASMCanvasClient } from './wasm-integration.js';
 import { FileExplorer } from './components/file-explorer.js';
 import { CodeEditor, configureMonacoLoader } from './components/code-editor.js';
-import { DockviewApi } from 'dockview-core';
+import { DockviewComponent } from 'dockview-core';
 
 /**
  * Extended Dashboard that supports both server and WASM modes
@@ -23,9 +23,9 @@ export class WASMDashboard extends Dashboard {
     this.isWASMMode = useWASM;
 
     if (this.isWASMMode) {
-      // Replace the API client with WASM client
-      this.api = createCanvasClient(canvasId, true) as WASMCanvasClient;
-      this.wasmClient = this.api as WASMCanvasClient;
+      // Create WASM client directly
+      this.wasmClient = new WASMCanvasClient(canvasId);
+      this.api = this.wasmClient as any; // Type assertion needed due to different interfaces
       
       // Configure Monaco for code editor
       configureMonacoLoader();
@@ -77,20 +77,18 @@ export class WASMDashboard extends Dashboard {
     }
   }
 
-  protected initDockView() {
+  protected initializeLayout() {
     const container = document.getElementById('dockview-container');
     if (!container) {
       console.error('❌ DockView container not found');
       return;
     }
 
-    // Add mode indicator
-    this.addModeToggle();
-
-    // Call parent's initDockView with extended component factory
-    const originalCreateComponent = this.createComponent.bind(this);
+    // Apply dark theme to container
+    container.className = 'dockview-theme-dark flex-1';
     
-    this.dockview = new DockviewComponent(container, {
+    // Create DockView component with WASM-specific components
+    const dockviewComponent = new DockviewComponent(container, {
       createComponent: (options: any) => {
         // Handle WASM-specific components
         if (this.isWASMMode) {
@@ -101,13 +99,50 @@ export class WASMDashboard extends Dashboard {
               return this.createCodeEditorComponent();
             case 'console':
               return this.createConsoleComponent();
+            case 'systemArchitecture':
+            case 'trafficGeneration':
+            case 'liveMetrics':
+              // Use parent's rendering for these
+              const element = document.createElement('div');
+              element.className = 'h-full p-4 overflow-auto';
+              
+              switch (options.name) {
+                case 'systemArchitecture':
+                  element.innerHTML = this.renderSystemArchitectureOnly();
+                  break;
+                case 'trafficGeneration':
+                  element.innerHTML = this.renderGenerateControls();
+                  break;
+                case 'liveMetrics':
+                  element.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" style="grid-auto-rows: 200px;">
+                      ${this.renderDynamicCharts()}
+                    </div>
+                  `;
+                  break;
+              }
+              
+              return {
+                element,
+                init: () => {},
+                dispose: () => {}
+              };
           }
         }
         
-        // Fall back to parent's component creation
-        return originalCreateComponent(options);
+        // This shouldn't happen in WASM mode
+        const element = document.createElement('div');
+        element.className = 'h-full p-4 overflow-auto';
+        element.innerHTML = '<div>Unknown component</div>';
+        return {
+          element,
+          init: () => {},
+          dispose: () => {}
+        };
       }
-    }).api;
+    });
+
+    this.dockview = dockviewComponent.api;
 
     // Load or create layout
     const savedLayout = this.loadLayoutConfig();
@@ -121,32 +156,19 @@ export class WASMDashboard extends Dashboard {
     } else {
       this.createDefaultLayout();
     }
+
+    // Listen for layout changes and save them
+    this.dockview.onDidLayoutChange(() => {
+      this.saveLayoutConfig();
+    });
+
+    // Setup interactivity after layout is initialized
+    setTimeout(() => {
+      this.setupInteractivity();
+      this.initDynamicCharts();
+    }, 100);
   }
 
-  private addModeToggle() {
-    const header = document.querySelector('.header-controls');
-    if (header) {
-      const toggle = document.createElement('div');
-      toggle.className = 'mode-toggle';
-      toggle.innerHTML = `
-        <label class="switch">
-          <input type="checkbox" id="wasmModeToggle" ${this.isWASMMode ? 'checked' : ''}>
-          <span class="slider"></span>
-          <span class="label">WASM Mode</span>
-        </label>
-      `;
-      header.insertBefore(toggle, header.firstChild);
-
-      // Add toggle handler
-      const toggleInput = document.getElementById('wasmModeToggle') as HTMLInputElement;
-      toggleInput.addEventListener('change', (e) => {
-        const target = e.target as HTMLInputElement;
-        const newUrl = new URL(window.location.href);
-        newUrl.searchParams.set('wasm', target.checked.toString());
-        window.location.href = newUrl.toString();
-      });
-    }
-  }
 
   private createFileExplorerComponent() {
     const element = document.createElement('div');
@@ -288,16 +310,6 @@ export class WASMDashboard extends Dashboard {
     }
   }
 
-  // Override load file to use current editor content in WASM mode
-  async loadFile(filePath: string) {
-    if (this.isWASMMode && this.codeEditor) {
-      // Save current editor content as the file
-      const content = this.codeEditor.getValue();
-      await this.wasmClient!.writeFile(filePath, content);
-    }
-    
-    await super.loadFile(filePath);
-  }
 }
 
 // Add WASM mode styles

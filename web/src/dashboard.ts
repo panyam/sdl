@@ -6,13 +6,13 @@ import { Graphviz } from "@hpcc-js/wasm";
 import { DockviewApi, DockviewComponent } from 'dockview-core';
 
 export class Dashboard {
-  private api: CanvasClient;
-  private state: DashboardState;
+  protected api: CanvasClient;
+  protected state: DashboardState;
   private charts: Record<string, Chart> = {};
-  private systemDiagram: SystemDiagram | null = null;
+  protected systemDiagram: SystemDiagram | null = null;
   private chartUpdateInterval: number | null = null;
   private graphviz: any = null; // Will be initialized asynchronously
-  private dockview: DockviewApi | null = null;
+  protected dockview: DockviewApi | null = null;
   private metricStreamController: AbortController | null = null;
   private generatorPollInterval: number | null = null;
   private canvasId: string;
@@ -460,7 +460,7 @@ export class Dashboard {
     this.initializeLayout();
   }
 
-  private initializeLayout() {
+  protected initializeLayout() {
     // Destroy existing dockview if it exists
     if (this.dockview) {
       this.dockview.dispose();
@@ -541,7 +541,7 @@ export class Dashboard {
     }, 100);
   }
 
-  private createDefaultLayout() {
+  protected createDefaultLayout() {
     // Add panels to DockView in default configuration
     this.dockview!.addPanel({
       id: 'systemArchitecture',
@@ -633,7 +633,7 @@ export class Dashboard {
   }
 
 
-  private renderSystemArchitectureOnly(): string {
+  protected renderSystemArchitectureOnly(): string {
     if (!this.state.currentSystem || !this.systemDiagram) {
       return `
         <div class="flex items-center justify-center h-full">
@@ -970,7 +970,7 @@ export class Dashboard {
     `;
   }
 
-  private renderGenerateControls(): string {
+  protected renderGenerateControls(): string {
     const hasGenerators = this.state.generateCalls.length > 0;
     const hasEnabledGenerators = this.state.generateCalls.some(g => g.enabled);
     
@@ -1029,7 +1029,7 @@ export class Dashboard {
     `;
   }
 
-  private renderDynamicCharts(): string {
+  protected renderDynamicCharts(): string {
     const charts = Object.values(this.state.dynamicCharts);
     
     if (charts.length === 0) {
@@ -1055,7 +1055,7 @@ export class Dashboard {
 
 
 
-  private setupInteractivity() {
+  protected setupInteractivity() {
     // Toggle layout direction button
     const toggleLayoutBtn = document.getElementById('toggle-layout-direction-btn');
     if (toggleLayoutBtn && !toggleLayoutBtn.dataset.listenerAdded) {
@@ -1347,7 +1347,7 @@ export class Dashboard {
     // Chart updates handled by real-time chart updates
   }
 
-  private initDynamicCharts() {
+  protected initDynamicCharts() {
     Object.values(this.state.dynamicCharts).forEach(chartData => {
       const canvas = document.getElementById(`chart-${chartData.chartName}`) as HTMLCanvasElement;
       if (!canvas) return;
@@ -1535,7 +1535,7 @@ export class Dashboard {
     }
   }
 
-  private saveLayoutConfig() {
+  protected saveLayoutConfig() {
     if (!this.dockview) return;
     
     try {
@@ -1547,7 +1547,7 @@ export class Dashboard {
     }
   }
 
-  private loadLayoutConfig(): any | null {
+  protected loadLayoutConfig(): any | null {
     try {
       const saved = localStorage.getItem('sdl-dockview-layout');
       if (saved) {
