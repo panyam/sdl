@@ -21,8 +21,7 @@ parserbin:
 wasmbin:
 	cd wasm && make
 
-binlocal: 
-	cd parser && make
+binlocal: parserbin wasmbin
 	go build -ldflags "$(LDFLAGS)" -o /tmp/sdl ./cmd/sdl/main.go
 
 # Installation targets
