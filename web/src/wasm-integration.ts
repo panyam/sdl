@@ -3,6 +3,7 @@ export interface WASMFileSystem {
   writeFile(path: string, content: string): Promise<{ success: boolean; error?: string }>;
   listFiles(dir: string): Promise<{ success: boolean; files?: string[]; error?: string }>;
   mount(prefix: string, url: string): Promise<{ success: boolean; error?: string }>;
+  isReadOnly(path: string): Promise<{ success: boolean; isReadOnly?: boolean; error?: string }>;
 }
 
 export interface WASMSDL {

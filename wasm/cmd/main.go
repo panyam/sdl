@@ -94,10 +94,11 @@ func main() {
 		
 		// File system access
 		"fs": map[string]interface{}{
-			"readFile":  js.FuncOf(fsReadFile),
-			"writeFile": js.FuncOf(fsWriteFile),
-			"listFiles": js.FuncOf(fsListFiles),
-			"mount":     js.FuncOf(fsMount), // For dev server mounting
+			"readFile":   js.FuncOf(fsReadFile),
+			"writeFile":  js.FuncOf(fsWriteFile),
+			"listFiles":  js.FuncOf(fsListFiles),
+			"mount":      js.FuncOf(fsMount), // For dev server mounting
+			"isReadOnly": js.FuncOf(fsIsReadOnly),
 		},
 		
 		// Configuration
@@ -327,45 +328,382 @@ func genAdd(this js.Value, args []js.Value) interface{} {
 	})
 }
 
-// Placeholder implementations for remaining commands
 func genRemove(this js.Value, args []js.Value) interface{} {
-	return jsSuccess(map[string]interface{}{"message": "Generator removed"})
+	if len(args) < 1 {
+		return jsError("gen.remove requires generator name")
+	}
+	
+	name := args[0].String()
+	options := parseOptions(args, 1)
+	canvasID := options["canvas"]
+	if canvasID == "" {
+		canvasID = "default"
+	}
+	
+	canvas := getCanvas(canvasID)
+	applyFlows := options["applyFlows"] == "true"
+	
+	err := canvas.RemoveGenerator(name)
+	if err != nil {
+		return jsError(fmt.Sprintf("Failed to remove generator: %v", err))
+	}
+	
+	// Apply flows if requested
+	if applyFlows {
+		// TODO: Implement flow evaluation in WASM
+	}
+	
+	return jsSuccess(map[string]interface{}{
+		"name": name,
+		"canvasId": canvasID,
+		"message": fmt.Sprintf("Removed generator %s", name),
+	})
 }
 
 func genUpdate(this js.Value, args []js.Value) interface{} {
-	return jsSuccess(map[string]interface{}{"message": "Generator updated"})
+	if len(args) < 2 {
+		return jsError("gen.update requires: name, rate")
+	}
+	
+	name := args[0].String()
+	rate := args[1].Float()
+	
+	options := parseOptions(args, 2)
+	canvasID := options["canvas"]
+	if canvasID == "" {
+		canvasID = "default"
+	}
+	
+	canvas := getCanvas(canvasID)
+	applyFlows := options["applyFlows"] == "true"
+	
+	// Find and update the generator
+	gen := canvas.GetGenerator(name)
+	if gen == nil {
+		return jsError(fmt.Sprintf("Generator not found: %s", name))
+	}
+	
+	gen.Generator.Rate = rate
+	gen.Generator.UpdatedAt = time.Now()
+	
+	// Apply flows if requested
+	if applyFlows {
+		// TODO: Implement flow evaluation in WASM
+	}
+	
+	return jsSuccess(map[string]interface{}{
+		"name": name,
+		"rate": rate,
+		"canvasId": canvasID,
+		"applyFlows": applyFlows,
+		"message": fmt.Sprintf("Updated generator %s to %v RPS", name, rate),
+	})
 }
 
 func genList(this js.Value, args []js.Value) interface{} {
-	return jsSuccess(map[string]interface{}{"generators": []interface{}{}})
+	options := parseOptions(args, 0)
+	canvasID := options["canvas"]
+	if canvasID == "" {
+		canvasID = "default"
+	}
+	
+	canvas := getCanvas(canvasID)
+	generators := canvas.ListGenerators()
+	
+	// Convert to JS-friendly format
+	var genList []interface{}
+	for _, gen := range generators {
+		genList = append(genList, map[string]interface{}{
+			"id": gen.Generator.ID,
+			"name": gen.Generator.Name,
+			"component": gen.Generator.Component,
+			"method": gen.Generator.Method,
+			"rate": gen.Generator.Rate,
+			"enabled": gen.Generator.Enabled,
+			"createdAt": gen.Generator.CreatedAt.Format(time.RFC3339),
+			"updatedAt": gen.Generator.UpdatedAt.Format(time.RFC3339),
+		})
+	}
+	
+	return jsSuccess(map[string]interface{}{
+		"generators": genList,
+		"canvasId": canvasID,
+	})
 }
 
 func genStart(this js.Value, args []js.Value) interface{} {
-	return jsSuccess(map[string]interface{}{"message": "Generators started"})
+	options := parseOptions(args, 0)
+	canvasID := options["canvas"]
+	if canvasID == "" {
+		canvasID = "default"
+	}
+	
+	canvas := getCanvas(canvasID)
+	applyFlows := options["applyFlows"] == "true"
+	
+	// Parse generator names if provided
+	var names []string
+	if len(args) > 0 && args[0].Type() == js.TypeObject {
+		// Names might be in the first argument as an array
+		namesValue := args[0]
+		if namesValue.Length() > 0 {
+			for i := 0; i < namesValue.Length(); i++ {
+				names = append(names, namesValue.Index(i).String())
+			}
+		}
+	}
+	
+	// Start specified generators or all if none specified
+	if len(names) == 0 {
+		// Start all generators
+		_, err := canvas.StartAllGenerators()
+		if err != nil {
+			return jsError(fmt.Sprintf("Failed to start generators: %v", err))
+		}
+	} else {
+		// Start specific generators
+		for _, name := range names {
+			err := canvas.StartGenerator(name)
+			if err != nil {
+				return jsError(fmt.Sprintf("Failed to start generator %s: %v", name, err))
+			}
+		}
+	}
+	
+	// Apply flows if requested
+	if applyFlows {
+		// TODO: Implement flow evaluation in WASM
+	}
+	
+	return jsSuccess(map[string]interface{}{
+		"names": names,
+		"canvasId": canvasID,
+		"message": "Generators started",
+	})
 }
 
 func genStop(this js.Value, args []js.Value) interface{} {
-	return jsSuccess(map[string]interface{}{"message": "Generators stopped"})
+	options := parseOptions(args, 0)
+	canvasID := options["canvas"]
+	if canvasID == "" {
+		canvasID = "default"
+	}
+	
+	canvas := getCanvas(canvasID)
+	applyFlows := options["applyFlows"] == "true"
+	
+	// Parse generator names if provided
+	var names []string
+	if len(args) > 0 && args[0].Type() == js.TypeObject {
+		// Names might be in the first argument as an array
+		namesValue := args[0]
+		if namesValue.Length() > 0 {
+			for i := 0; i < namesValue.Length(); i++ {
+				names = append(names, namesValue.Index(i).String())
+			}
+		}
+	}
+	
+	// Stop specified generators or all if none specified
+	if len(names) == 0 {
+		// Stop all generators
+		_, err := canvas.StopAllGenerators()
+		if err != nil {
+			return jsError(fmt.Sprintf("Failed to stop generators: %v", err))
+		}
+	} else {
+		// Stop specific generators
+		for _, name := range names {
+			err := canvas.StopGenerator(name)
+			if err != nil {
+				return jsError(fmt.Sprintf("Failed to stop generator %s: %v", name, err))
+			}
+		}
+	}
+	
+	// Apply flows if requested
+	if applyFlows {
+		// TODO: Implement flow evaluation in WASM
+	}
+	
+	return jsSuccess(map[string]interface{}{
+		"names": names,
+		"canvasId": canvasID,
+		"message": "Generators stopped",
+	})
 }
 
 func metricsAdd(this js.Value, args []js.Value) interface{} {
-	return jsSuccess(map[string]interface{}{"message": "Metric added"})
+	if len(args) < 4 {
+		return jsError("metrics.add requires: name, target, type, aggregation")
+	}
+	
+	name := args[0].String()
+	target := args[1].String()
+	metricType := args[2].String()
+	aggregation := args[3].String()
+	
+	options := parseOptions(args, 4)
+	canvasID := options["canvas"]
+	if canvasID == "" {
+		canvasID = "default"
+	}
+	
+	// canvas := getCanvas(canvasID)
+	
+	// Parse component.method from target
+	component, method := parseComponentMethod(target)
+	if component == "" {
+		return jsError("Invalid target format. Expected: component.method or component")
+	}
+	
+	// Create MetricSpec
+	metric := &console.MetricSpec{
+		Metric: &console.Metric{
+			ID:          name,
+			CanvasID:    canvasID,
+			Component:   component,
+			Methods:     []string{method},
+			MetricType:  metricType,
+			Aggregation: aggregation,
+			Enabled:     true,
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+		},
+	}
+	
+	// Parse optional window
+	if window := options["window"]; window != "" {
+		if w, err := time.ParseDuration(window); err == nil {
+			metric.Metric.AggregationWindow = float64(w.Seconds())
+		}
+	}
+	
+	// TODO: Implement metric management in Canvas
+	// For now, metrics are managed through the metric tracer
+	// err := canvas.AddMetric(metric)
+	// if err != nil {
+	// 	return jsError(fmt.Sprintf("Failed to add metric: %v", err))
+	// }
+	
+	return jsSuccess(map[string]interface{}{
+		"name": name,
+		"target": target,
+		"type": metricType,
+		"aggregation": aggregation,
+		"canvasId": canvasID,
+		"message": fmt.Sprintf("Added metric %s", name),
+	})
 }
 
 func metricsRemove(this js.Value, args []js.Value) interface{} {
-	return jsSuccess(map[string]interface{}{"message": "Metric removed"})
+	if len(args) < 1 {
+		return jsError("metrics.remove requires metric name")
+	}
+	
+	name := args[0].String()
+	options := parseOptions(args, 1)
+	canvasID := options["canvas"]
+	if canvasID == "" {
+		canvasID = "default"
+	}
+	
+	// canvas := getCanvas(canvasID)
+	
+	// TODO: Implement metric management in Canvas
+	// err := canvas.RemoveMetric(name)
+	// if err != nil {
+	// 	return jsError(fmt.Sprintf("Failed to remove metric: %v", err))
+	// }
+	
+	return jsSuccess(map[string]interface{}{
+		"name": name,
+		"canvasId": canvasID,
+		"message": fmt.Sprintf("Removed metric %s", name),
+	})
 }
 
 func metricsUpdate(this js.Value, args []js.Value) interface{} {
-	return jsSuccess(map[string]interface{}{"message": "Metric updated"})
+	if len(args) < 1 {
+		return jsError("metrics.update requires metric name")
+	}
+	
+	// name := args[0].String()
+	// options := parseOptions(args, 1)
+	// canvasID := options["canvas"]
+	// if canvasID == "" {
+	// 	canvasID = "default"
+	// }
+	
+	// canvas := getCanvas(canvasID)
+	
+	// TODO: Implement metric management in Canvas
+	// Find the metric
+	// metric := canvas.GetMetric(name)
+	// if metric == nil {
+	// 	return jsError(fmt.Sprintf("Metric not found: %s", name))
+	// }
+	return jsSuccess(map[string]interface{}{
+		"message": "Metric update not yet implemented in WASM",
+	})
+	
 }
 
 func metricsList(this js.Value, args []js.Value) interface{} {
-	return jsSuccess(map[string]interface{}{"metrics": []interface{}{}})
+	options := parseOptions(args, 0)
+	canvasID := options["canvas"]
+	if canvasID == "" {
+		canvasID = "default"
+	}
+	
+	// canvas := getCanvas(canvasID)
+	// TODO: Implement metric management in Canvas
+	// metrics := canvas.ListMetrics()
+	var metrics []*console.MetricSpec
+	
+	// Convert to JS-friendly format
+	var metricList []interface{}
+	for _, metric := range metrics {
+		metricList = append(metricList, map[string]interface{}{
+			"id": metric.Metric.ID,
+			"component": metric.Metric.Component,
+			"methods": metric.Metric.Methods,
+			"metricType": metric.Metric.MetricType,
+			"aggregation": metric.Metric.Aggregation,
+			"aggregationWindow": metric.Metric.AggregationWindow,
+			"enabled": metric.Metric.Enabled,
+			"createdAt": metric.Metric.CreatedAt.Format(time.RFC3339),
+			"updatedAt": metric.Metric.UpdatedAt.Format(time.RFC3339),
+		})
+	}
+	
+	return jsSuccess(map[string]interface{}{
+		"metrics": metricList,
+		"canvasId": canvasID,
+	})
 }
 
 func metricsQuery(this js.Value, args []js.Value) interface{} {
-	return jsSuccess(map[string]interface{}{"results": []interface{}{}})
+	if len(args) < 1 {
+		return jsError("metrics.query requires metric name")
+	}
+	
+	metricName := args[0].String()
+	options := parseOptions(args, 1)
+	canvasID := options["canvas"]
+	if canvasID == "" {
+		canvasID = "default"
+	}
+	
+	// For now, return empty results as we don't have metric storage in WASM yet
+	// TODO: Implement metric storage and querying
+	
+	return jsSuccess(map[string]interface{}{
+		"metric": metricName,
+		"canvasId": canvasID,
+		"results": []interface{}{},
+		"message": "Metric querying not yet implemented in WASM",
+	})
 }
 
 func run(this js.Value, args []js.Value) interface{} {
@@ -486,6 +824,42 @@ func fsMount(this js.Value, args []js.Value) interface{} {
 	}
 	
 	return jsError("Mounting only supported with composite filesystem")
+}
+
+func fsIsReadOnly(this js.Value, args []js.Value) interface{} {
+	if len(args) < 1 {
+		return jsError("fs.isReadOnly requires file path")
+	}
+	
+	path := args[0].String()
+	
+	// Check if the path would be readonly based on mount points
+	// For composite filesystem, we'll check based on path prefix
+	if cfs, ok := fileSystem.(*loader.CompositeFS); ok {
+		// Check common readonly prefixes
+		readonlyPrefixes := []string{"/examples/", "/lib/", "/demos/", "https://", "http://", "github.com/"}
+		for _, prefix := range readonlyPrefixes {
+			if strings.HasPrefix(path, prefix) {
+				return jsSuccess(map[string]interface{}{
+					"path": path,
+					"isReadOnly": true,
+				})
+			}
+		}
+		// Workspace is writable
+		if strings.HasPrefix(path, "/workspace/") {
+			return jsSuccess(map[string]interface{}{
+				"path": path,
+				"isReadOnly": false,
+			})
+		}
+	}
+	
+	// Fall back to checking the main filesystem
+	return jsSuccess(map[string]interface{}{
+		"path": path,
+		"isReadOnly": fileSystem.IsReadOnly(),
+	})
 }
 
 // Helper functions

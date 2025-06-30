@@ -17,6 +17,7 @@ type FileSystem interface {
 	WriteFile(path string, data []byte) error
 	ListFiles(dir string) ([]string, error)
 	Exists(path string) bool
+	IsReadOnly() bool
 }
 
 // CompositeFS allows multiple file systems to be composed with different mount points
@@ -111,13 +112,36 @@ func (c *CompositeFS) Exists(path string) bool {
 	return fs.Exists(adjustedPath)
 }
 
+func (c *CompositeFS) IsReadOnly() bool {
+	// CompositeFS is writable if any mounted filesystem is writable
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	
+	for _, fs := range c.filesystems {
+		if !fs.IsReadOnly() {
+			return false
+		}
+	}
+	
+	if c.fallback != nil {
+		return c.fallback.IsReadOnly()
+	}
+	
+	return true
+}
+
 // LocalFS implements FileSystem using the local disk
 type LocalFS struct {
 	basePath string
+	readOnly bool
 }
 
 func NewLocalFS(basePath string) *LocalFS {
-	return &LocalFS{basePath: basePath}
+	return &LocalFS{basePath: basePath, readOnly: false}
+}
+
+func NewReadOnlyLocalFS(basePath string) *LocalFS {
+	return &LocalFS{basePath: basePath, readOnly: true}
 }
 
 func (l *LocalFS) resolvePath(path string) string {
@@ -133,6 +157,9 @@ func (l *LocalFS) ReadFile(path string) ([]byte, error) {
 }
 
 func (l *LocalFS) WriteFile(path string, data []byte) error {
+	if l.readOnly {
+		return fmt.Errorf("filesystem is read-only")
+	}
 	fullPath := l.resolvePath(path)
 	dir := filepath.Dir(fullPath)
 	if err := os.MkdirAll(dir, 0755); err != nil {
@@ -161,6 +188,10 @@ func (l *LocalFS) Exists(path string) bool {
 	fullPath := l.resolvePath(path)
 	_, err := os.Stat(fullPath)
 	return err == nil
+}
+
+func (l *LocalFS) IsReadOnly() bool {
+	return l.readOnly
 }
 
 // MemoryFS implements an in-memory file system
@@ -213,6 +244,10 @@ func (m *MemoryFS) Exists(path string) bool {
 	
 	_, exists := m.files[path]
 	return exists
+}
+
+func (m *MemoryFS) IsReadOnly() bool {
+	return false // MemoryFS is always writable
 }
 
 // PreloadFiles adds files to the memory filesystem
@@ -288,6 +323,10 @@ func (h *HTTPFileSystem) Exists(path string) bool {
 	return err == nil
 }
 
+func (h *HTTPFileSystem) IsReadOnly() bool {
+	return true // HTTPFileSystem is always read-only
+}
+
 // ClearCache clears the HTTP cache
 func (h *HTTPFileSystem) ClearCache() {
 	h.cache = sync.Map{}
@@ -331,4 +370,8 @@ func (g *GitHubFS) ListFiles(dir string) ([]string, error) {
 func (g *GitHubFS) Exists(path string) bool {
 	_, err := g.ReadFile(path)
 	return err == nil
+}
+
+func (g *GitHubFS) IsReadOnly() bool {
+	return true // GitHubFS is always read-only
 }

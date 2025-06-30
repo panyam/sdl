@@ -92,6 +92,10 @@ func (d *DevServerFS) Exists(path string) bool {
 	return err == nil
 }
 
+func (d *DevServerFS) IsReadOnly() bool {
+	return true // DevServerFS is read-only
+}
+
 // BundledFS uses embedded files (will be generated at build time)
 type BundledFS struct {
 	files map[string][]byte
@@ -129,6 +133,10 @@ func (b *BundledFS) ListFiles(dir string) ([]string, error) {
 func (b *BundledFS) Exists(path string) bool {
 	_, exists := b.files[path]
 	return exists
+}
+
+func (b *BundledFS) IsReadOnly() bool {
+	return true // BundledFS is read-only
 }
 
 // URLFetcherFS fetches files from URLs using browser's fetch API
@@ -190,6 +198,10 @@ func (u *URLFetcherFS) ListFiles(dir string) ([]string, error) {
 func (u *URLFetcherFS) Exists(path string) bool {
 	// Can't check existence without fetching
 	return false
+}
+
+func (u *URLFetcherFS) IsReadOnly() bool {
+	return true // URLFetcherFS is read-only
 }
 
 // Helper function to create default dev filesystem
