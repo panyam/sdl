@@ -134,6 +134,9 @@ func (ws *WebServer) Handler() http.Handler {
 	// API routes
 	r.Handle("/api/", http.StripPrefix("/api", ws.api.Handler()))
 	
+	// Serve examples directory for WASM demos
+	r.Handle("/examples/", http.StripPrefix("/examples", http.FileServer(http.Dir("./examples/"))))
+	
 	// Canvas-specific routes
 	r.HandleFunc("/canvases/", ws.handleCanvasRoute)
 	
