@@ -18,7 +18,7 @@ const client = createClient(CanvasService, transport);
 const DEFAULT_CANVAS_ID = "default";
 
 export class CanvasClient {
-  private canvasId: string;
+  protected canvasId: string;
 
   constructor(canvasId: string = DEFAULT_CANVAS_ID) {
     this.canvasId = canvasId;
