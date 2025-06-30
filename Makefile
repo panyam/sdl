@@ -14,6 +14,7 @@ LDFLAGS := -X 'github.com/panyam/sdl/cmd/sdl/commands.Version=$(VERSION)' \
 # Build targets
 binary: 
 	cd parser && make
+	cd wasm && make
 	go build -ldflags "$(LDFLAGS)" -o ${GOBIN}/sdl ./cmd/sdl/main.go
 
 binlocal: 
