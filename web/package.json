@@ -34,6 +34,7 @@
     "@hpcc-js/wasm": "^2.23.0",
     "chart.js": "^4.4.0",
     "dockview": "^1.0.0",
-    "dockview-core": "^1.0.0"
+    "dockview-core": "^1.0.0",
+    "monaco-editor": "^0.52.2"
   }
 }
