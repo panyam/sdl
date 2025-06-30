@@ -207,7 +207,9 @@ func canvasInfo(this js.Value, args []js.Value) interface{} {
 	}
 	
 	if currentSystem != nil {
-		info["activeSystem"] = currentSystem.System.Name.Value
+		if currentSystem.System != nil && currentSystem.System.Name != nil {
+			info["activeSystem"] = currentSystem.System.Name.Value
+		}
 		// Count components from the system
 		// TODO: Get component count from system
 		info["components"] = "unknown"
@@ -221,7 +223,7 @@ func canvasInfo(this js.Value, args []js.Value) interface{} {
 }
 
 func canvasList(this js.Value, args []js.Value) interface{} {
-	var canvasIDs []string
+	canvasIDs := []string{}
 	for id := range canvases {
 		canvasIDs = append(canvasIDs, id)
 	}
@@ -411,18 +413,27 @@ func genList(this js.Value, args []js.Value) interface{} {
 	generators := canvas.ListGenerators()
 	
 	// Convert to JS-friendly format
-	var genList []interface{}
+	genList := []interface{}{}
 	for _, gen := range generators {
-		genList = append(genList, map[string]interface{}{
+		if gen == nil || gen.Generator == nil {
+			continue
+		}
+		genItem := map[string]interface{}{
 			"id": gen.Generator.ID,
 			"name": gen.Generator.Name,
 			"component": gen.Generator.Component,
 			"method": gen.Generator.Method,
 			"rate": gen.Generator.Rate,
 			"enabled": gen.Generator.Enabled,
-			"createdAt": gen.Generator.CreatedAt.Format(time.RFC3339),
-			"updatedAt": gen.Generator.UpdatedAt.Format(time.RFC3339),
-		})
+		}
+		// Only add time fields if they are not zero
+		if !gen.Generator.CreatedAt.IsZero() {
+			genItem["createdAt"] = gen.Generator.CreatedAt.Format(time.RFC3339)
+		}
+		if !gen.Generator.UpdatedAt.IsZero() {
+			genItem["updatedAt"] = gen.Generator.UpdatedAt.Format(time.RFC3339)
+		}
+		genList = append(genList, genItem)
 	}
 	
 	return jsSuccess(map[string]interface{}{
@@ -662,7 +673,7 @@ func metricsList(this js.Value, args []js.Value) interface{} {
 	var metrics []*console.MetricSpec
 	
 	// Convert to JS-friendly format
-	var metricList []interface{}
+	metricList := []interface{}{}
 	for _, metric := range metrics {
 		metricList = append(metricList, map[string]interface{}{
 			"id": metric.Metric.ID,

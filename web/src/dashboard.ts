@@ -15,7 +15,7 @@ export class Dashboard {
   protected dockview: DockviewApi | null = null;
   private metricStreamController: AbortController | null = null;
   private generatorPollInterval: number | null = null;
-  private canvasId: string;
+  protected canvasId: string;
   private isUpdatingGenerators: boolean = false; // Flag to prevent UI overwrites during updates
   private generatorUpdateTimeout: number | null = null; // Debounce timer for generator updates
   private layoutTopToBottom = false;
@@ -40,7 +40,6 @@ export class Dashboard {
     };
 
     this.initializeGraphviz();
-    this.initialize();
   }
 
   private async initializeGraphviz() {
@@ -52,7 +51,7 @@ export class Dashboard {
     }
   }
 
-  private async initialize() {
+  public async initialize() {
     try {
       // Ensure the canvas exists (create if needed)
       await this.api.ensureCanvas();
@@ -423,7 +422,7 @@ export class Dashboard {
   }
 
 
-  private render() {
+  protected render() {
     const app = document.getElementById('app');
     if (!app) return;
 
@@ -589,7 +588,7 @@ export class Dashboard {
     }
   }
 
-  private updateAllPanels() {
+  protected updateAllPanels() {
     if (!this.dockview) return;
     
     // Update all panel contents with current state

@@ -6,6 +6,24 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Ensure full height for dockview */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+#app {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+#dockview-container {
+  flex: 1;
+  min-height: 0;
+}
+
 /* Custom styles for the dashboard */
 @layer components {
   .panel {

@@ -60,7 +60,7 @@ export class WASMCanvasClient {
       // Load WASM module
       const go = new (window as any).Go();
       const result = await WebAssembly.instantiateStreaming(
-        fetch("sdl.wasm"),
+        fetch(`sdl.wasm?t=${Date.now()}`),
         go.importObject
       );
       go.run(result.instance);
@@ -110,7 +110,16 @@ export class WASMCanvasClient {
   async getCanvas(): Promise<any> {
     await this.initialize();
     const info = this.wasm!.canvas.info(this.canvasId);
-    return info.success ? { id: this.canvasId, ...info } : null;
+    if (info.success) {
+      return { 
+        id: this.canvasId, 
+        hasActiveSystem: info.hasActiveSystem,
+        activeSystem: info.activeSystem,
+        systems: info.systems || [],
+        generators: info.generators || 0
+      };
+    }
+    return null;
   }
 
   async getState(): Promise<any> {

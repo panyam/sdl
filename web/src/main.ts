@@ -26,14 +26,18 @@ function isWASMMode(): boolean {
 
 // Initialize the dashboard when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-  const canvasId = getCanvasIdFromUrl();
-  const useWASM = isWASMMode();
-  
-  console.log(`🚀 SDL Canvas Dashboard starting for canvas: ${canvasId} (WASM: ${useWASM})`);
-  
-  if (useWASM) {
-    new WASMDashboard(canvasId, true);
-  } else {
-    new Dashboard(canvasId);
-  }
+  setTimeout(() => {
+    const canvasId = getCanvasIdFromUrl();
+    const useWASM = isWASMMode();
+    
+    console.log(`🚀 SDL Canvas Dashboard starting for canvas: ${canvasId} (WASM: ${useWASM})`);
+    
+    if (useWASM) {
+      const dashboard = new WASMDashboard(canvasId, true);
+      dashboard.initialize();
+    } else {
+      const dashboard = new Dashboard(canvasId);
+      dashboard.initialize();
+    }
+  }, 100);
 });
