@@ -1,0 +1,28 @@
+#!/bin/bash
+# Test Recipe for Recipe Integration
+
+echo "Testing recipe execution in editor..."
+
+# Load a simple SDL file
+sdl load bank.sdl
+
+# Use the Banking system
+sdl use Banking
+
+# Add a traffic generator
+echo "Adding traffic generator..."
+sdl gen add myGen api.newUser 10
+
+# Start the generator
+echo "Starting traffic..."
+sdl gen start myGen
+
+# Pause for observation
+echo "Pausing to observe metrics..."
+read
+
+# Stop the generator
+echo "Stopping traffic..."
+sdl gen stop myGen
+
+echo "Recipe execution complete!"

@@ -1,0 +1,162 @@
+/* Recipe Panel Styles */
+.recipe-panel {
+  background-color: #1e1e1e;
+  color: #d4d4d4;
+}
+
+.recipe-header {
+  flex-shrink: 0;
+}
+
+.recipe-steps {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+/* Step styles */
+.recipe-step {
+  padding: 8px 12px;
+  margin-bottom: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.recipe-step:hover {
+  background-color: #2a2a2a;
+}
+
+.recipe-step.current {
+  background-color: #1e3a5f;
+  border-color: #3b82f6;
+}
+
+/* Step type styles */
+.recipe-command {
+  background-color: #1a1a1a;
+}
+
+.recipe-echo {
+  background-color: #1e1e2e;
+  border-left: 3px solid #4b5563;
+}
+
+.recipe-comment {
+  opacity: 0.7;
+}
+
+.recipe-pause {
+  background-color: #2d2611;
+  border-left: 3px solid #f59e0b;
+}
+
+.recipe-empty {
+  height: 8px;
+  padding: 0;
+  margin: 0;
+}
+
+/* Control buttons */
+.btn-control {
+  background-color: #374151;
+  color: #d1d5db;
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 28px;
+}
+
+.btn-control:hover:not(:disabled) {
+  background-color: #4b5563;
+}
+
+.btn-control:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.btn-control:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-control.btn-danger {
+  background-color: #7f1d1d;
+}
+
+.btn-control.btn-danger:hover:not(:disabled) {
+  background-color: #991b1b;
+}
+
+/* Status indicators */
+.step-status {
+  font-weight: bold;
+  width: 16px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Code blocks */
+.recipe-step code {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  background-color: #2d2d30;
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: #9cdcfe;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* Select and input styles */
+.recipe-panel select,
+.recipe-panel input[type="number"] {
+  background-color: #374151;
+  color: #e5e7eb;
+  border: 1px solid #4b5563;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  outline: none;
+}
+
+.recipe-panel select:focus,
+.recipe-panel input[type="number"]:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.5);
+}
+
+/* Scrollbar styling */
+.recipe-steps::-webkit-scrollbar {
+  width: 8px;
+}
+
+.recipe-steps::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+.recipe-steps::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 4px;
+}
+
+.recipe-steps::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}

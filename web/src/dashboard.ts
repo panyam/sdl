@@ -9,6 +9,7 @@ import { Toolbar } from './components/toolbar.js';
 import { TabbedEditor } from './components/tabbed-editor.js';
 import { configureMonacoLoader } from './components/code-editor.js';
 import { ConsolePanel, ConsoleInterceptor } from './components/console-panel.js';
+import { RecipeRunner } from './components/recipe-runner.js';
 
 export class Dashboard {
   protected api: CanvasClient;
@@ -31,6 +32,7 @@ export class Dashboard {
   protected consolePanel: ConsolePanel | null = null;
   protected currentFile: string | null = null;
   private consoleInterceptor: ConsoleInterceptor | null = null;
+  protected recipeRunner: RecipeRunner | null = null;
 
   // Parameter configurations - populated when a system is loaded
   private parameters: ParameterConfig[] = [];
@@ -501,6 +503,12 @@ export class Dashboard {
       }
     ]);
   }
+
+  private updateToolbarForFile(_filePath: string) {
+    // No longer need special handling for recipe files
+    // Recipe controls are now integrated into the editor
+  }
+
 
   protected initializeLayout() {
     // Destroy existing dockview if it exists
@@ -1371,6 +1379,7 @@ export class Dashboard {
     this.tabbedEditor.saveTab(activeTab);
   }
 
+
   protected async handleRun() {
     if (!this.api) return;
 
@@ -1710,6 +1719,10 @@ export class Dashboard {
           this.currentFile = path;
           // Enable save button only if not read-only
           this.toolbar?.updateButton('save', { disabled: isReadOnly });
+          
+          // Update toolbar based on file type
+          this.updateToolbarForFile(path);
+          
           this.consolePanel?.info(`Loaded file: ${path}`);
         }
       } catch (error) {
@@ -1803,6 +1816,70 @@ export class Dashboard {
               disabled: fs.isReadOnly || !hasUnsavedChanges 
             });
           }
+          
+          // Update toolbar for file type
+          this.currentFile = path;
+          this.updateToolbarForFile(path);
+        });
+        
+        // Set up recipe action handler
+        this.tabbedEditor.setRecipeActionHandler(async (action, content) => {
+          if (!this.recipeRunner) {
+            // Create recipe runner if not exists
+            this.recipeRunner = new RecipeRunner(this.api);
+            
+            // Set up output handler to write to console
+            this.recipeRunner.setOutputHandler((msg, type) => {
+              this.consolePanel?.[type](msg);
+            });
+            
+            // Set up state change handler to update editor
+            this.recipeRunner.setStateChangeHandler((state) => {
+              // Update current line highlighting in editor
+              const activeTabKey = this.tabbedEditor?.getActiveTabKey();
+              if (activeTabKey && this.tabbedEditor) {
+                // Get the current command line number
+                let currentLineNumber: number | undefined;
+                if (state.isRunning && state.currentStep < state.steps.length) {
+                  const currentStep = state.steps[state.currentStep];
+                  currentLineNumber = currentStep?.command?.lineNumber;
+                }
+                
+                this.tabbedEditor.setRecipeRunning(
+                  activeTabKey,
+                  state.isRunning,
+                  currentLineNumber
+                );
+              }
+            });
+          }
+          
+          const activeTabKey = this.tabbedEditor?.getActiveTabKey();
+          if (!activeTabKey) return;
+          
+          switch (action) {
+            case 'run':
+              // Load and start the recipe
+              if (this.currentFile) {
+                await this.recipeRunner.loadRecipe(this.currentFile, content);
+                await this.recipeRunner.start('step');
+              }
+              break;
+              
+            case 'stop':
+              this.recipeRunner.stop();
+              break;
+              
+            case 'step':
+              await this.recipeRunner.step();
+              break;
+              
+            case 'restart':
+              this.recipeRunner.restart();
+              // Start again in step mode
+              await this.recipeRunner.start('step');
+              break;
+          }
         });
       }
     }, 100);
@@ -1843,6 +1920,7 @@ export class Dashboard {
       }
     };
   }
+
 
   protected async refreshFileList() {
     if (!this.fileExplorer) return;

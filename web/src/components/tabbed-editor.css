@@ -102,3 +102,72 @@
 .tab:not(.active):not(:hover) .tab-close {
   opacity: 0;
 }
+
+/* Recipe toolbar styles */
+.recipe-toolbar {
+  background-color: #2d2d30;
+  border-bottom: 1px solid #3e3e3e;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.recipe-btn {
+  padding: 4px 12px;
+  background-color: #3e3e3e;
+  border: 1px solid #4e4e4e;
+  color: #cccccc;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.1s ease;
+}
+
+.recipe-btn:hover:not(:disabled) {
+  background-color: #4e4e4e;
+  border-color: #5e5e5e;
+  color: #ffffff;
+}
+
+.recipe-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.recipe-btn-primary {
+  background-color: #007acc;
+  border-color: #007acc;
+  color: #ffffff;
+}
+
+.recipe-btn-primary:hover:not(:disabled) {
+  background-color: #0098ff;
+  border-color: #0098ff;
+}
+
+.recipe-btn-danger {
+  background-color: #cc0000;
+  border-color: #cc0000;
+  color: #ffffff;
+}
+
+.recipe-btn-danger:hover:not(:disabled) {
+  background-color: #ff0000;
+  border-color: #ff0000;
+}
+
+/* Recipe current line highlighting */
+.recipe-current-line {
+  background-color: rgba(0, 122, 204, 0.2) !important;
+  border-left: 3px solid #007acc;
+}
+
+.recipe-current-line-glyph {
+  background-color: #007acc;
+  width: 10px !important;
+  margin-left: 3px;
+}
