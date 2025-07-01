@@ -67,10 +67,13 @@ export class SystemDetailsPage {
       });
     }
 
+    // Determine theme based on current page theme
+    const isDarkMode = document.documentElement.classList.contains('dark');
+    
     this.editor = monaco.editor.create(container, {
       value: this.pageData.sdlContent,
       language: 'sdl',
-      theme: 'vs-dark',
+      theme: isDarkMode ? 'vs-dark' : 'vs',
       automaticLayout: true,
       minimap: { enabled: false },
       fontSize: 14,
@@ -134,6 +137,21 @@ export class SystemDetailsPage {
     // Share button
     document.getElementById('share-btn')?.addEventListener('click', () => {
       this.shareSystem();
+    });
+
+    // Listen for theme changes
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+          const isDarkMode = document.documentElement.classList.contains('dark');
+          monaco.editor.setTheme(isDarkMode ? 'vs-dark' : 'vs');
+        }
+      });
+    });
+    
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
     });
   }
 

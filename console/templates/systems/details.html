@@ -1,21 +1,21 @@
 {{# include "base.html" #}}
 
 {{define "content"}}
-<div class="h-screen flex flex-col bg-gray-950">
+<div class="h-screen flex flex-col bg-gray-50 dark:bg-gray-950">
     <!-- Header -->
-    <header class="bg-gray-800 border-b border-gray-700 px-6 py-3">
-        <div class="flex justify-between items-center">
+    <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-3">
+        <div class="flex justify-between items-center pr-48">
             <div class="flex items-center gap-4">
-                <a href="/systems" class="inline-flex items-center gap-2 px-4 py-2 text-gray-400 border border-gray-600 rounded-lg hover:text-white hover:border-gray-500 transition-colors">
+                <a href="/systems" class="inline-flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 rounded-lg hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                     </svg>
                     Back to Systems
                 </a>
-                <h1 class="text-2xl font-bold text-white">{{.System.Name}}</h1>
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{.System.Name}}</h1>
             </div>
             <div class="flex items-center gap-2">
-                <button id="share-btn" class="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors">
+                <button id="share-btn" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
                     Share
                 </button>
                 <button id="run-btn" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold flex items-center gap-2">
@@ -30,7 +30,7 @@
                     </svg>
                     Stop
                 </button>
-                <a href="/canvases/{{.System.ID}}" class="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors">
+                <a href="/canvases/{{.System.ID}}" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
                     Open in IDE
                 </a>
             </div>
@@ -42,11 +42,11 @@
         <!-- Editor Section -->
         <div class="flex-1 flex flex-col">
             <!-- Tabs -->
-            <div class="bg-gray-850 border-b border-gray-700 flex">
-                <button class="tab-btn px-6 py-3 text-gray-400 hover:text-white border-b-2 border-transparent transition-colors active" data-tab="sdl">
+            <div class="bg-gray-100 dark:bg-gray-850 border-b border-gray-200 dark:border-gray-700 flex">
+                <button class="tab-btn px-6 py-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border-b-2 border-transparent transition-colors active" data-tab="sdl">
                     System Design
                 </button>
-                <button class="tab-btn px-6 py-3 text-gray-400 hover:text-white border-b-2 border-transparent transition-colors" data-tab="recipe">
+                <button class="tab-btn px-6 py-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border-b-2 border-transparent transition-colors" data-tab="recipe">
                     Demo Recipe
                 </button>
             </div>
@@ -56,7 +56,7 @@
         </div>
         
         <!-- Visualization Section -->
-        <div class="w-2/5 flex flex-col border-l border-gray-700">
+        <div class="w-2/5 flex flex-col border-l border-gray-200 dark:border-gray-700">
             <div id="architecture-panel" class="flex-1 overflow-auto"></div>
             <div id="metrics-panel" class="flex-1 overflow-auto hidden"></div>
             <div id="traffic-panel" class="flex-1 overflow-auto hidden"></div>
@@ -64,11 +64,11 @@
     </div>
     
     <!-- Output Section -->
-    <div id="output-section" class="hidden border-t border-gray-700 bg-gray-850">
-        <div class="px-4 py-2 border-b border-gray-700">
-            <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wide">Output</h3>
+    <div id="output-section" class="hidden border-t border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-850">
+        <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">Output</h3>
         </div>
-        <div id="output-content" class="p-4 text-sm font-mono text-gray-300 max-h-48 overflow-auto"></div>
+        <div id="output-content" class="p-4 text-sm font-mono text-gray-700 dark:text-gray-300 max-h-48 overflow-auto"></div>
     </div>
 </div>
 {{end}}
@@ -76,7 +76,7 @@
 {{define "head"}}
 <style>
     .tab-btn.active {
-        @apply text-white border-blue-500;
+        @apply text-gray-900 dark:text-white border-blue-500;
     }
     
     #output-content .info {
