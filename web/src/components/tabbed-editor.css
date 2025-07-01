@@ -1,0 +1,104 @@
+/* Tabbed Editor Styles */
+.editor-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.tab-bar {
+  display: flex;
+  align-items: center;
+  background-color: #2d2d30;
+  border-bottom: 1px solid #3e3e3e;
+  height: 35px;
+  flex-shrink: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #4a4a4a #2d2d30;
+}
+
+.tab-bar::-webkit-scrollbar {
+  height: 6px;
+}
+
+.tab-bar::-webkit-scrollbar-track {
+  background: #2d2d30;
+}
+
+.tab-bar::-webkit-scrollbar-thumb {
+  background-color: #4a4a4a;
+  border-radius: 3px;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  padding: 4px 12px;
+  background-color: #3e3e3e;
+  cursor: pointer;
+  border-right: 1px solid #2d2d30;
+  white-space: nowrap;
+  min-width: 0;
+  transition: background-color 0.1s ease;
+}
+
+.tab:hover {
+  background-color: #4e4e4e;
+}
+
+.tab.active {
+  background-color: #1e1e1e;
+  border-bottom: 2px solid #007acc;
+}
+
+.tab-title {
+  font-size: 13px;
+  color: #cccccc;
+  margin-right: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.tab.active .tab-title {
+  color: #ffffff;
+}
+
+.tab-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  background: none;
+  color: #999999;
+  cursor: pointer;
+  border-radius: 3px;
+  opacity: 0.7;
+  transition: all 0.1s ease;
+  flex-shrink: 0;
+}
+
+.tab-close:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  opacity: 1;
+  color: #ffffff;
+}
+
+.tab-close svg {
+  width: 12px;
+  height: 12px;
+}
+
+.editor-content {
+  flex: 1;
+  overflow: hidden;
+  background-color: #1e1e1e;
+}
+
+/* Hide close button on non-active tabs until hover */
+.tab:not(.active):not(:hover) .tab-close {
+  opacity: 0;
+}

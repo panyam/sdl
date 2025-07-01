@@ -1,5 +1,6 @@
 import * as monaco from 'monaco-editor';
 import { DockviewApi } from 'dockview-core';
+import './tabbed-editor.css';
 
 export interface FileTab {
   path: string;
@@ -16,12 +17,14 @@ export class TabbedEditor {
   private tabs: Map<string, FileTab> = new Map();
   private activeTab: string | null = null;
   private onChange?: (path: string, content: string, modified: boolean) => void;
+  private tabBar: HTMLElement | null = null;
+  private editorContainer: HTMLElement | null = null;
   
   constructor(container: HTMLElement, dockview: DockviewApi) {
     this.container = container;
     this.dockview = dockview;
     this.initializeMonaco();
-    this.showWelcome();
+    this.initializeLayout();
   }
 
   private initializeMonaco() {
@@ -114,9 +117,26 @@ export class TabbedEditor {
     });
   }
 
-  private showWelcome() {
-    // Show welcome message in the container
+  private initializeLayout() {
+    // Create layout structure
     this.container.innerHTML = `
+      <div class="editor-layout flex flex-col h-full">
+        <div class="tab-bar flex items-center bg-gray-800 border-b border-gray-700 overflow-x-auto" style="height: 35px; flex-shrink: 0;"></div>
+        <div class="editor-content flex-1 overflow-hidden"></div>
+      </div>
+    `;
+    
+    this.tabBar = this.container.querySelector('.tab-bar');
+    this.editorContainer = this.container.querySelector('.editor-content');
+    
+    this.showWelcome();
+  }
+  
+  private showWelcome() {
+    if (!this.editorContainer) return;
+    
+    // Show welcome message in the editor container
+    this.editorContainer.innerHTML = `
       <div class="flex items-center justify-center h-full text-gray-400">
         <div class="text-center">
           <div class="text-lg mb-2">SDL Editor</div>
@@ -138,10 +158,12 @@ export class TabbedEditor {
     }
 
     // Create a new tab
+    this.createTabElement(path);
     
     // Create editor container
     const editorContainer = document.createElement('div');
     editorContainer.className = 'h-full';
+    editorContainer.style.display = 'none'; // Initially hidden
     
     // Create Monaco editor instance
     const editor = monaco.editor.create(editorContainer, {
@@ -190,42 +212,81 @@ export class TabbedEditor {
       model
     });
 
-    // Add tab to dockview
-    if (this.dockview) {
-      const existingPanel = this.dockview.getPanel('codeEditor');
-      if (existingPanel) {
-        // Replace the welcome content with editor tabs
-        if (this.tabs.size === 1) {
-          this.container.innerHTML = '';
-          this.container.appendChild(editorContainer);
-        } else {
-          // For multiple tabs, we need a more complex solution
-          // For now, just replace the content
-          this.container.innerHTML = '';
-          this.container.appendChild(editorContainer);
-        }
+    // Add editor to container
+    if (this.editorContainer) {
+      // Clear welcome message if this is the first tab
+      if (this.tabs.size === 1) {
+        this.editorContainer.innerHTML = '';
       }
+      this.editorContainer.appendChild(editorContainer);
     }
 
-    this.activeTab = path;
-    this.updateTabTitle(path);
+    // Switch to the new tab
+    this.switchToTab(path);
   }
 
+  private createTabElement(path: string) {
+    if (!this.tabBar) return;
+    
+    const fileName = path.split('/').pop() || 'untitled';
+    const tabElement = document.createElement('div');
+    tabElement.className = 'tab';
+    tabElement.dataset.path = path;
+    
+    tabElement.innerHTML = `
+      <span class="tab-title text-sm text-gray-200">${fileName}</span>
+      <button class="tab-close ml-2 text-gray-400 hover:text-gray-200" title="Close">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M8 8.707l3.646 3.647.708-.707L8.707 8l3.647-3.646-.707-.708L8 7.293 4.354 3.646l-.707.708L7.293 8l-3.647 3.646.708.708L8 8.707z"/>
+        </svg>
+      </button>
+    `;
+    
+    // Tab click handler
+    tabElement.addEventListener('click', (e) => {
+      if (!(e.target as HTMLElement).closest('.tab-close')) {
+        this.switchToTab(path);
+      }
+    });
+    
+    // Close button handler
+    const closeBtn = tabElement.querySelector('.tab-close');
+    closeBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.closeTab(path);
+    });
+    
+    this.tabBar.appendChild(tabElement);
+  }
+  
   private updateTabTitle(path: string) {
     const tab = this.tabs.get(path);
-    if (!tab || !this.dockview) return;
+    if (!tab) return;
 
-    const panel = this.dockview.getPanel('codeEditor');
-    if (panel) {
-      const fileName = path.split('/').pop() || 'untitled';
-      const title = tab.modified ? `${fileName} *` : fileName;
-      panel.api.setTitle(title);
+    // Update tab element
+    const tabElement = this.tabBar?.querySelector(`[data-path="${CSS.escape(path)}"]`);
+    if (tabElement) {
+      const titleElement = tabElement.querySelector('.tab-title');
+      if (titleElement) {
+        const fileName = path.split('/').pop() || 'untitled';
+        titleElement.textContent = tab.modified ? `${fileName} *` : fileName;
+      }
+    }
+    
+    // Update dockview panel title if this is the active tab
+    if (this.activeTab === path && this.dockview) {
+      const panel = this.dockview.getPanel('codeEditor');
+      if (panel) {
+        const fileName = path.split('/').pop() || 'untitled';
+        const title = tab.modified ? `${fileName} *` : fileName;
+        panel.api.setTitle(title);
+      }
     }
   }
 
   switchToTab(path: string) {
     const tab = this.tabs.get(path);
-    if (!tab) return;
+    if (!tab || !this.editorContainer) return;
 
     // Hide current editor
     if (this.activeTab && this.activeTab !== path) {
@@ -233,20 +294,40 @@ export class TabbedEditor {
       if (currentTab?.editor) {
         // Save view state
         currentTab.viewState = currentTab.editor.saveViewState() || undefined;
+        // Hide the editor container
+        const currentContainer = currentTab.editor.getContainerDomNode();
+        if (currentContainer) {
+          currentContainer.style.display = 'none';
+        }
+      }
+      
+      // Update tab appearance
+      const currentTabElement = this.tabBar?.querySelector(`[data-path="${CSS.escape(this.activeTab)}"]`);
+      if (currentTabElement) {
+        currentTabElement.classList.remove('active');
       }
     }
 
     // Show new editor
     if (tab.editor) {
-      this.container.innerHTML = '';
-      this.container.appendChild(tab.editor.getContainerDomNode());
+      const editorContainer = tab.editor.getContainerDomNode();
+      if (editorContainer) {
+        editorContainer.style.display = 'block';
+      }
       
       // Restore view state
       if (tab.viewState) {
         tab.editor.restoreViewState(tab.viewState);
       }
       
+      tab.editor.layout();
       tab.editor.focus();
+    }
+    
+    // Update tab appearance
+    const newTabElement = this.tabBar?.querySelector(`[data-path="${CSS.escape(path)}"]`);
+    if (newTabElement) {
+      newTabElement.classList.add('active');
     }
 
     this.activeTab = path;
@@ -265,8 +346,18 @@ export class TabbedEditor {
       }
     }
 
-    // Dispose editor
+    // Remove tab element
+    const tabElement = this.tabBar?.querySelector(`[data-path="${CSS.escape(path)}"]`);
+    if (tabElement) {
+      tabElement.remove();
+    }
+
+    // Remove editor container
     if (tab.editor) {
+      const editorContainer = tab.editor.getContainerDomNode();
+      if (editorContainer && editorContainer.parentNode) {
+        editorContainer.parentNode.removeChild(editorContainer);
+      }
       tab.editor.dispose();
     }
     if (tab.model) {
@@ -279,8 +370,26 @@ export class TabbedEditor {
     if (this.tabs.size === 0) {
       this.showWelcome();
       this.activeTab = null;
+      
+      // Update panel title
+      if (this.dockview) {
+        const panel = this.dockview.getPanel('codeEditor');
+        if (panel) {
+          panel.api.setTitle('Code Editor');
+        }
+      }
     } else {
-      const nextTab = this.tabs.keys().next().value;
+      // Switch to the next tab (prefer tabs to the right)
+      let nextTab: string | null = null;
+      const tabPaths = Array.from(this.tabs.keys());
+      const currentIndex = tabPaths.indexOf(path);
+      
+      if (currentIndex > 0) {
+        nextTab = tabPaths[currentIndex - 1];
+      } else if (tabPaths.length > 0) {
+        nextTab = tabPaths[0];
+      }
+      
       if (nextTab) {
         this.switchToTab(nextTab);
       }
