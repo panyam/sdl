@@ -15,6 +15,7 @@ import (
 	"github.com/panyam/goutils/conc"
 	gohttp "github.com/panyam/goutils/http"
 	"github.com/panyam/sdl/loader"
+	"github.com/panyam/templar"
 )
 
 // CanvasWSMessage represents a WebSocket message for the Canvas API
@@ -39,9 +40,11 @@ type CanvasWSHandler struct {
 
 // WebServer wraps the Canvas API for HTTP access
 type WebServer struct {
-	api           *SDLApi
-	wsHandler     *CanvasWSHandler
-	canvasService *CanvasService
+	api            *SDLApi
+	wsHandler      *CanvasWSHandler
+	canvasService  *CanvasService
+	systemsHandler *SystemsHandler
+	templateGroup  *templar.TemplateGroup
 }
 
 // NewWebServer creates a new web server instance
@@ -56,6 +59,16 @@ func NewWebServer(grpcAddress string, canvasService *CanvasService) *WebServer {
 		webServer: ws,
 		clients:   make(map[string]*CanvasWSConn),
 	}
+
+	// Initialize template engine
+	templateGroup, err := SetupTemplates("console/templates")
+	if err != nil {
+		Warn("Failed to setup templates: %v", err)
+	}
+	ws.templateGroup = templateGroup
+
+	// Initialize systems handler
+	ws.systemsHandler = NewSystemsHandler(templateGroup)
 
 	return ws
 }
@@ -149,13 +162,20 @@ func (ws *WebServer) Handler() http.Handler {
 	// Serve examples directory for WASM demos
 	r.Handle("/examples/", http.StripPrefix("/examples", http.FileServer(http.Dir("./examples/"))))
 	
+	// System showcase routes (server-rendered)
+	if ws.systemsHandler != nil {
+		r.Handle("/systems", ws.systemsHandler.Handler())
+		r.Handle("/systems/", ws.systemsHandler.Handler())
+		r.Handle("/system/", ws.systemsHandler.Handler())
+	}
+	
 	// Canvas-specific routes
 	r.HandleFunc("/canvases/", ws.handleCanvasRoute)
 	
-	// Root redirect to default canvas
+	// Root redirect to systems listing
 	r.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		if req.URL.Path == "/" {
-			http.Redirect(w, req, "/canvases/default/", http.StatusFound)
+			http.Redirect(w, req, "/systems", http.StatusFound)
 			return
 		}
 		// Serve static files for other root-level paths
