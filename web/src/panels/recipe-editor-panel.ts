@@ -53,6 +53,10 @@ export class RecipeEditorPanel extends BasePanel {
 
   protected onDispose(): void {
     if (this.editor) {
+      const model = this.editor.getModel();
+      if (model) {
+        model.dispose();
+      }
       this.editor.dispose();
       this.editor = null;
     }
@@ -89,9 +93,11 @@ export class RecipeEditorPanel extends BasePanel {
     setTimeout(() => {
       const editorContainer = document.getElementById(`${this.id}-editor`);
       if (editorContainer && !this.editor) {
+        // Create a unique model for this editor
+        const model = monaco.editor.createModel(this.recipeContent, 'shell');
+        
         this.editor = monaco.editor.create(editorContainer, {
-          value: this.recipeContent,
-          language: 'shell',
+          model: model,
           theme: isDarkMode ? 'vs-dark' : 'vs',
           automaticLayout: false,
           minimap: { enabled: false },
@@ -154,6 +160,14 @@ export class RecipeEditorPanel extends BasePanel {
       this.highlightError(event.lineNumber);
     }
   };
+
+  public get isRunning(): boolean {
+    return this._isRunning;
+  }
+  
+  public get currentLine(): number | undefined {
+    return this._currentLine;
+  }
 
   public setRunning(isRunning: boolean, currentLine?: number): void {
     this._isRunning = isRunning;

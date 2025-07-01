@@ -37,7 +37,7 @@ func NewSDLApi(grpcAddr string, canvasService *CanvasService) *SDLApi {
 	out.mux.Handle("/v1/", gwmux)
 	log.Println("Registered gRPC-gateway at /v1/")
 
-	// Add Connect handler
+	// Add Connect handlers
 	if canvasService != nil {
 		log.Println("Adding Connect handler...")
 		adapter := NewConnectCanvasServiceAdapter(canvasService)
@@ -47,6 +47,13 @@ func NewSDLApi(grpcAddr string, canvasService *CanvasService) *SDLApi {
 	} else {
 		log.Println("No CanvasService provided, skipping Connect handler")
 	}
+	
+	// Add Systems Connect handler
+	log.Println("Adding Systems Connect handler...")
+	systemsAdapter := NewConnectSystemsServiceAdapter(NewSystemsService())
+	systemsConnectPath, systemsConnectHandler := v1connect.NewSystemsServiceHandler(systemsAdapter)
+	out.mux.Handle(systemsConnectPath, systemsConnectHandler)
+	log.Printf("Registered Systems Connect handler at: %s", systemsConnectPath)
 
 	return &out
 }
@@ -109,8 +116,13 @@ func (web *SDLApi) createSvcMux(grpc_addr string) (*runtime.ServeMux, error) {
 	// Register existing services
 	err := v1.RegisterCanvasServiceHandlerFromEndpoint(ctx, svcMux, grpc_addr, opts)
 	if err != nil {
-		log.Fatal("Unable to register design service: ", err)
-		// panic(err) // Keep panic or return error
+		log.Fatal("Unable to register canvas service: ", err)
+		return nil, err
+	}
+	
+	err = v1.RegisterSystemsServiceHandlerFromEndpoint(ctx, svcMux, grpc_addr, opts)
+	if err != nil {
+		log.Fatal("Unable to register systems service: ", err)
 		return nil, err
 	}
 	return svcMux, nil // Return nil error on success

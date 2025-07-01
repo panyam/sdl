@@ -1,6 +1,6 @@
 import { BasePanel, PanelConfig } from './base-panel.js';
 import { AppState } from '../core/app-state-manager.js';
-import { AppEvents } from '../core/event-bus.js';
+import { AppEvents, EventHandler } from '../core/event-bus.js';
 import { Graphviz } from "@hpcc-js/wasm";
 import { SystemDiagram } from '../gen/sdl/v1/canvas_pb.js';
 
@@ -16,6 +16,7 @@ export class SystemArchitecturePanel extends BasePanel {
   private systemDiagram: SystemDiagram | null = null;
   private layoutTopToBottom = false;
   private diagramZoom = 1.0;
+  private diagramLoadedHandler?: EventHandler;
 
   constructor(config: SystemArchitecturePanelConfig) {
     super({
@@ -40,10 +41,20 @@ export class SystemArchitecturePanel extends BasePanel {
 
     // Listen for layout toggle events
     this.eventBus.on(AppEvents.TOOLBAR_ACTION, this.handleToolbarAction);
+    
+    // Listen for system diagram loaded events
+    this.diagramLoadedHandler = (diagram: any) => {
+      this.systemDiagram = diagram;
+      this.render();
+    };
+    this.eventBus.on('system:diagram:loaded', this.diagramLoadedHandler);
   }
 
   protected onDispose(): void {
     this.eventBus.off(AppEvents.TOOLBAR_ACTION, this.handleToolbarAction);
+    if (this.diagramLoadedHandler) {
+      this.eventBus.off('system:diagram:loaded', this.diagramLoadedHandler);
+    }
   }
 
   onStateChange(state: AppState, changedKeys: string[]): void {

@@ -30,6 +30,7 @@ func (s *Server) Start(ctx context.Context, srvErr chan error, srvChan chan bool
 
 	// Register services
 	v1.RegisterCanvasServiceServer(server, canvasSvc)
+	v1.RegisterSystemsServiceServer(server, NewSystemsService())
 
 	l, err := net.Listen("tcp", s.Address)
 	if err != nil {

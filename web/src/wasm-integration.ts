@@ -1,4 +1,6 @@
 import { FileClient } from './types.js';
+import { create } from '@bufbuild/protobuf';
+import { SystemDiagramSchema, DiagramNodeSchema, DiagramEdgeSchema } from './gen/sdl/v1/canvas_pb.js';
 
 export interface WASMFileSystem {
   readFile(path: string): Promise<{ success: boolean; content?: string; error?: string }>;
@@ -60,9 +62,9 @@ export class WASMCanvasClient implements FileClient {
 
     try {
       // Load WASM module
-      const go = new (window as any).Go();
+      const go = new (globalThis as any).Go();
       const result = await WebAssembly.instantiateStreaming(
-        fetch(`sdl.wasm?t=${Date.now()}`),
+        fetch(`/sdl.wasm?t=${Date.now()}`),
         go.importObject
       );
       go.run(result.instance);
@@ -304,4 +306,204 @@ export function createCanvasClient(canvasId: string, useWASM: boolean = false): 
   }
   // Dynamic import to avoid circular dependency
   return import('./canvas-client.js').then(module => new module.CanvasClient(canvasId));
+}
+
+/**
+ * Generate a system diagram from SDL content using WASM
+ * This parses the SDL and creates a diagram structure similar to what the server would return
+ */
+export async function generateSystemDiagram(sdlContent: string): Promise<any> {
+  try {
+    // Initialize WASM if not already loaded
+    const wasm = (window as any).SDL;
+    if (!wasm) {
+      // Try to load WASM
+      const go = new (globalThis as any).Go();
+      const result = await WebAssembly.instantiateStreaming(
+        fetch(`/sdl.wasm?t=${Date.now()}`),
+        go.importObject
+      );
+      go.run(result.instance);
+      
+      // Wait for SDL to be available
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      if (!(window as any).SDL) {
+        throw new Error('Failed to load SDL WASM');
+      }
+    }
+    
+    // Use WASM to parse SDL content
+    const sdl = (window as any).SDL;
+    
+    // Create a temporary canvas to load the SDL
+    const tempCanvasId = 'temp-diagram-' + Date.now();
+    
+    // Save SDL content to virtual filesystem
+    const tempPath = '/tmp/system.sdl';
+    await sdl.fs.writeFile(tempPath, sdlContent);
+    
+    // Load the SDL file into the canvas
+    const loadResult = sdl.canvas.load(tempPath, tempCanvasId);
+    if (!loadResult.success) {
+      throw new Error(loadResult.error || 'Failed to load SDL');
+    }
+    
+    // Get canvas info which includes the system information
+    const info = sdl.canvas.info(tempCanvasId);
+    if (!info.success) {
+      throw new Error(info.error || 'Failed to get canvas info');
+    }
+    
+    // Extract system name from the loaded systems
+    const systemName = info.systems && info.systems.length > 0 ? info.systems[0] : 'System';
+    
+    // Parse SDL to extract components and their methods
+    const components = parseSDLComponents(sdlContent);
+    
+    // Create nodes for each component method
+    const nodes: any[] = [];
+    const edges: any[] = [];
+    
+    // Generate nodes
+    components.forEach(component => {
+      component.methods.forEach(method => {
+        const nodeId = `${component.name}:${method}`;
+        nodes.push(create(DiagramNodeSchema, {
+          id: nodeId,
+          name: method,
+          type: component.type,
+          traffic: '0 req/s', // Initial traffic
+          fullPath: component.varName,
+          icon: component.type,
+          methods: [] // Will be populated later if needed
+        }));
+      });
+    });
+    
+    // Generate edges based on dependencies
+    components.forEach(component => {
+      component.dependencies.forEach(dep => {
+        // Find the dependency component
+        const depComponent = components.find(c => c.varName === dep.varName);
+        if (depComponent) {
+          // Create edges from each method of the component to methods of the dependency
+          component.methods.forEach(method => {
+            depComponent.methods.forEach(depMethod => {
+              edges.push(create(DiagramEdgeSchema, {
+                fromId: `${component.name}:${method}`,
+                toId: `${depComponent.name}:${depMethod}`,
+                fromMethod: method,
+                toMethod: depMethod,
+                label: '',
+                color: '#9ca3af',
+                order: 0,
+                condition: '',
+                probability: 0,
+                generatorId: ''
+              }));
+            });
+          });
+        }
+      });
+    });
+    
+    // Clean up temporary canvas
+    sdl.canvas.remove(tempCanvasId);
+    
+    // Create and return the system diagram
+    const diagram = create(SystemDiagramSchema, {
+      systemName: systemName,
+      nodes: nodes,
+      edges: edges
+    });
+    
+    return diagram;
+  } catch (error) {
+    console.error('Failed to generate system diagram:', error);
+    throw error;
+  }
+}
+
+/**
+ * Parse SDL content to extract components and their relationships
+ */
+function parseSDLComponents(sdlContent: string): Array<{
+  name: string;
+  varName: string;
+  type: string;
+  methods: string[];
+  dependencies: Array<{varName: string; paramName: string}>;
+}> {
+  const components: Array<any> = [];
+  
+  // Simple SDL parser - this is a basic implementation
+  // In a real implementation, you'd want to use a proper SDL parser
+  
+  // Match system declaration
+  const systemMatch = sdlContent.match(/system\s+(\w+)\s*{([^}]+)}/s);
+  if (!systemMatch) {
+    return components;
+  }
+  
+  const systemBody = systemMatch[2];
+  
+  // Match component declarations (use statements)
+  const useRegex = /use\s+(\w+)\s+(\w+)(?:\s*\(([^)]+)\))?/g;
+  let match;
+  
+  while ((match = useRegex.exec(systemBody)) !== null) {
+    const varName = match[1];
+    const componentType = match[2];
+    const paramsStr = match[3] || '';
+    
+    // Parse dependencies from parameters
+    const dependencies: Array<{varName: string; paramName: string}> = [];
+    if (paramsStr) {
+      const depRegex = /(\w+)\s*=\s*(\w+)/g;
+      let depMatch;
+      while ((depMatch = depRegex.exec(paramsStr)) !== null) {
+        dependencies.push({
+          paramName: depMatch[1],
+          varName: depMatch[2]
+        });
+      }
+    }
+    
+    // Determine component type and default methods
+    let methods: string[] = [];
+    let type = componentType;
+    
+    // Common SDL component types and their typical methods
+    if (componentType === 'AppServer' || componentType === 'Server') {
+      methods = ['handle', 'process'];
+      type = 'server';
+    } else if (componentType === 'Database' || componentType === 'DB') {
+      methods = ['query', 'insert', 'update', 'delete'];
+      type = 'database';
+    } else if (componentType === 'Cache') {
+      methods = ['get', 'set', 'delete'];
+      type = 'cache';
+    } else if (componentType === 'Gateway' || componentType === 'APIGateway') {
+      methods = ['route', 'authenticate'];
+      type = 'gateway';
+    } else if (componentType === 'Queue' || componentType === 'MessageQueue') {
+      methods = ['publish', 'consume'];
+      type = 'queue';
+    } else {
+      // Default methods for unknown components
+      methods = ['process'];
+      type = 'service';
+    }
+    
+    components.push({
+      name: componentType,
+      varName: varName,
+      type: type,
+      methods: methods,
+      dependencies: dependencies
+    });
+  }
+  
+  return components;
 }

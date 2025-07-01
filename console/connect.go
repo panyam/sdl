@@ -302,3 +302,36 @@ func (b *connectStreamBridge[T]) SendHeader(metadata.MD) error {
 func (b *connectStreamBridge[T]) SetTrailer(metadata.MD) {
 	// Handle metadata if needed
 }
+
+// ConnectSystemsServiceAdapter adapts the gRPC SystemsService to Connect's interface
+type ConnectSystemsServiceAdapter struct {
+	svc *SystemsServiceImpl
+}
+
+func NewConnectSystemsServiceAdapter(svc *SystemsServiceImpl) *ConnectSystemsServiceAdapter {
+	return &ConnectSystemsServiceAdapter{svc: svc}
+}
+
+func (a *ConnectSystemsServiceAdapter) ListSystems(ctx context.Context, req *connect.Request[v1.ListSystemsRequest]) (*connect.Response[v1.ListSystemsResponse], error) {
+	resp, err := a.svc.ListSystems(ctx, req.Msg)
+	if err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (a *ConnectSystemsServiceAdapter) GetSystem(ctx context.Context, req *connect.Request[v1.GetSystemRequest]) (*connect.Response[v1.GetSystemResponse], error) {
+	resp, err := a.svc.GetSystem(ctx, req.Msg)
+	if err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (a *ConnectSystemsServiceAdapter) GetSystemContent(ctx context.Context, req *connect.Request[v1.GetSystemContentRequest]) (*connect.Response[v1.GetSystemContentResponse], error) {
+	resp, err := a.svc.GetSystemContent(ctx, req.Msg)
+	if err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(resp), nil
+}

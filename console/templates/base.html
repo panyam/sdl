@@ -32,11 +32,16 @@
     {{block "content" .}}{{end}}
     
     <div id="app" 
-         data-page-type="{{.PageType}}"
-         data-page-data='{{.PageDataJSON}}'>
+         data-page-type="{{.PageType}}">
     </div>
     
-    <script type="module" src="/assets/index-DOi60oj6.js"></script>
+    <!-- Pass page data via script tag to avoid HTML escaping issues -->
+    <script type="application/json" id="page-data">{{.PageDataJSON}}</script>
+    
+    <!-- WASM runtime support -->
+    <script src="/wasm_exec.js"></script>
+    
+    <script type="module" src="/assets/index-BE1WQf4O.js"></script>
     
     <!-- Inline theme switcher script for immediate functionality -->
     <script>

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	
+
 	"github.com/panyam/templar"
 )
 
@@ -26,14 +26,14 @@ func NewSystemsHandler(templateGroup *templar.TemplateGroup) *SystemsHandler {
 // Handler returns an HTTP handler for systems routes
 func (h *SystemsHandler) Handler() http.Handler {
 	mux := http.NewServeMux()
-	
+
 	// System listing page
 	mux.HandleFunc("/systems", h.handleSystemListing)
 	mux.HandleFunc("/systems/", h.handleSystemListing)
-	
+
 	// System details page
 	mux.HandleFunc("/system/", h.handleSystemDetails)
-	
+
 	return mux
 }
 
@@ -41,7 +41,7 @@ func (h *SystemsHandler) Handler() http.Handler {
 func (h *SystemsHandler) handleSystemListing(w http.ResponseWriter, r *http.Request) {
 	// Get all systems from catalog
 	systems := h.catalog.ListSystems()
-	
+
 	// Prepare template data
 	data := map[string]interface{}{
 		"Title":    "System Examples",
@@ -51,10 +51,10 @@ func (h *SystemsHandler) handleSystemListing(w http.ResponseWriter, r *http.Requ
 			"pageType": "system-listing",
 		}),
 	}
-	
+
 	// Load and render template
 	templates := h.templateGroup.MustLoad("systems/listing.html", "")
-	
+
 	// Render the template
 	if err := h.templateGroup.RenderHtmlTemplate(w, templates[0], "", data, nil); err != nil {
 		http.Error(w, fmt.Sprintf("Failed to render page: %v", err), http.StatusInternalServerError)
@@ -72,39 +72,35 @@ func (h *SystemsHandler) handleSystemDetails(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	systemID := parts[2]
-	
+
 	// Get system from catalog
 	system := h.catalog.GetSystem(systemID)
 	if system == nil {
 		http.NotFound(w, r)
 		return
 	}
-	
+
 	// Get mode from query params (default to server mode)
 	mode := "server"
 	if r.URL.Query().Get("mode") == "wasm" {
 		mode = "wasm"
 	}
-	
+
 	// Get version (default to system's default version)
 	version := r.URL.Query().Get("version")
 	if version == "" {
 		version = system.DefaultVersion
 	}
-	
+
 	// Get SDL and recipe content for the version
 	versionData := system.Versions[version]
-	
-	// Prepare page data for the client
+
+	// Prepare minimal page data for the client (content will be loaded via API)
 	pageData := map[string]interface{}{
-		"systemId":          system.ID,
-		"systemName":        system.Name,
-		"systemDescription": system.Description,
-		"sdlContent":        versionData.SDL,
-		"recipeContent":     versionData.Recipe,
-		"mode":              mode,
+		"systemId": system.ID,
+		"mode":     mode,
 	}
-	
+
 	// Prepare template data
 	data := map[string]interface{}{
 		"Title":        system.Name + " - SDL System",
@@ -115,10 +111,10 @@ func (h *SystemsHandler) handleSystemDetails(w http.ResponseWriter, r *http.Requ
 		"Mode":         mode,
 		"PageDataJSON": toJSON(pageData),
 	}
-	
+
 	// Load and render template
 	templates := h.templateGroup.MustLoad("systems/details.html", "")
-	
+
 	// Render the template
 	if err := h.templateGroup.RenderHtmlTemplate(w, templates[0], "", data, nil); err != nil {
 		http.Error(w, fmt.Sprintf("Failed to render page: %v", err), http.StatusInternalServerError)

@@ -11,13 +11,11 @@ import { Toolbar } from './components/toolbar';
 import { RecipeRunner } from './components/recipe-runner';
 import { DockviewApi, DockviewComponent } from 'dockview-core';
 import { configureMonacoLoader } from './components/code-editor';
+import { systemsService } from './services/systems-service';
+import type { SystemProject } from './gen/sdl/v1/systems_pb';
 
 interface SystemPageData {
   systemId: string;
-  systemName: string;
-  systemDescription: string;
-  sdlContent: string;
-  recipeContent: string;
   mode?: 'wasm' | 'server';
 }
 
@@ -26,6 +24,8 @@ export class SystemDetailsPage {
   private eventBus: EventBus;
   private stateManager: AppStateManager;
   private pageData: SystemPageData;
+  private systemData: SystemProject | null = null;
+  private systemContent: { sdlContent: string; recipeContent: string; readmeContent: string } | null = null;
   private dockview: DockviewApi | null = null;
   private canvasClient: CanvasClient;
   
@@ -53,23 +53,58 @@ export class SystemDetailsPage {
   }
 
   async initialize(): Promise<void> {
-    // Create the page layout first
-    this.createPageLayout();
+    try {
+      // Load system data and content via API
+      await this.loadSystemData();
+      
+      // Create the page layout
+      this.createPageLayout();
+      
+      // Initialize state
+      this.stateManager.updateState({
+        currentSystem: this.pageData.systemId,
+        currentFile: 'system.sdl'
+      });
+      
+      // Setup toolbar
+      this.initializeToolbar();
+      
+      // Initialize dockview layout
+      this.initializeLayout();
+      
+      // Load system diagram
+      this.loadSystemDiagram();
+    } catch (error) {
+      console.error('Failed to initialize system details page:', error);
+      this.showError('Failed to load system data');
+    }
+  }
+  
+  private async loadSystemData(): Promise<void> {
+    // Load system metadata and content in parallel
+    const [systemData, systemContent] = await Promise.all([
+      systemsService.getSystem(this.pageData.systemId),
+      systemsService.getSystemContent(this.pageData.systemId)
+    ]);
     
-    // Initialize state
-    this.stateManager.updateState({
-      currentSystem: this.pageData.systemId,
-      currentFile: 'system.sdl'
-    });
+    this.systemData = systemData;
+    this.systemContent = systemContent;
     
-    // Setup toolbar
-    this.initializeToolbar();
-    
-    // Initialize dockview layout
-    this.initializeLayout();
-    
-    // Load system diagram
-    this.loadSystemDiagram();
+    // Update page title with actual system name
+    if (this.systemData) {
+      document.title = `${this.systemData.name} - SDL System`;
+    }
+  }
+  
+  private showError(message: string): void {
+    this.container.innerHTML = `
+      <div class="flex items-center justify-center h-full">
+        <div class="text-center">
+          <div class="text-red-500 text-lg mb-2">⚠️ Error</div>
+          <div class="text-gray-600 dark:text-gray-400">${message}</div>
+        </div>
+      </div>
+    `;
   }
 
   private createPageLayout(): void {
@@ -85,10 +120,10 @@ export class SystemDetailsPage {
                         </svg>
                         Back to Systems
                     </a>
-                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">${this.pageData.systemName}</h1>
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">${this.systemData?.name || 'Loading...'}</h1>
                 </div>
                 <div class="flex items-center gap-2">
-                    <span class="text-sm text-gray-600 dark:text-gray-400">${this.pageData.systemDescription}</span>
+                    <span class="text-sm text-gray-600 dark:text-gray-400">${this.systemData?.description || ''}</span>
                 </div>
             </div>
         </header>
@@ -234,11 +269,12 @@ export class SystemDetailsPage {
       title: 'System Design (SDL)'
     });
 
-    // Add recipe editor panel  
+    // Add recipe editor panel as a separate panel below SDL editor
     this.dockview.addPanel({
       id: 'recipeEditor',
       component: 'recipeEditor',
-      title: 'Demo Recipe'
+      title: 'Demo Recipe',
+      position: { direction: 'below', referencePanel: 'sdlEditor' }
     });
 
     // Add system architecture panel
@@ -265,12 +301,12 @@ export class SystemDetailsPage {
       position: { direction: 'below', referencePanel: 'trafficGeneration' }
     });
 
-    // Add console panel
+    // Add console panel below recipe editor
     this.dockview.addPanel({
       id: 'console',
       component: 'console',
       title: 'Output',
-      position: { direction: 'below', referencePanel: 'sdlEditor' }
+      position: { direction: 'below', referencePanel: 'recipeEditor' }
     });
   }
 
@@ -284,7 +320,7 @@ export class SystemDetailsPage {
       title: 'System Design (SDL)',
       eventBus: this.eventBus,
       stateManager: this.stateManager,
-      sdlContent: this.pageData.sdlContent,
+      sdlContent: this.systemContent?.sdlContent || '',
       readOnly: false,
       onChange: (_content) => {
         // Update state when SDL content changes
@@ -296,6 +332,11 @@ export class SystemDetailsPage {
       element: container,
       init: async () => {
         await this.sdlEditorPanel?.initialize(container);
+        
+        // Update content after initialization if we have it
+        if (this.systemContent?.sdlContent && this.sdlEditorPanel) {
+          this.sdlEditorPanel.updateContent(this.systemContent.sdlContent);
+        }
       },
       dispose: () => this.sdlEditorPanel?.dispose()
     };
@@ -311,7 +352,7 @@ export class SystemDetailsPage {
       title: 'Demo Recipe',
       eventBus: this.eventBus,
       stateManager: this.stateManager,
-      recipeContent: this.pageData.recipeContent,
+      recipeContent: this.systemContent?.recipeContent || '',
       readOnly: false,
       onChange: (_content) => {
         // Update state when recipe content changes
@@ -323,6 +364,11 @@ export class SystemDetailsPage {
       element: container,
       init: async () => {
         await this.recipeEditorPanel?.initialize(container);
+        
+        // Update content after initialization if we have it
+        if (this.systemContent?.recipeContent && this.recipeEditorPanel) {
+          this.recipeEditorPanel.updateContent(this.systemContent.recipeContent);
+        }
       },
       dispose: () => this.recipeEditorPanel?.dispose()
     };
@@ -411,34 +457,32 @@ export class SystemDetailsPage {
     this.recipeRunner = new RecipeRunner(this.canvasClient);
   }
   
-  private async runRecipe(): Promise<void> {
-    const recipeContent = this.recipeEditorPanel?.getContent() || this.pageData.recipeContent;
-    if (!recipeContent) {
-      this.consolePanel?.error('No recipe content available');
-      return;
-    }
-    
-    this.consolePanel?.info('Starting recipe execution...');
-    // TODO: Implement recipe execution
-  }
-  
-  private stopRecipe(): void {
-    if (this.recipeRunner) {
-      this.recipeRunner.stop();
-      this.consolePanel?.info('Recipe execution stopped');
-    }
-  }
 
   private async loadSystemDiagram(): Promise<void> {
     try {
-      const response = await this.canvasClient.getSystemDiagram();
-      if (response.success && response.data) {
-        this.stateManager.updateState({ currentSystem: this.pageData.systemId });
+      // Use WASM to generate the system diagram from SDL content
+      if (!this.systemContent?.sdlContent) {
+        console.warn('No SDL content available for diagram generation');
+        return;
+      }
+
+      // Import the WASM module dynamically
+      const { generateSystemDiagram } = await import('./wasm-integration');
+      
+      // Generate diagram using WASM
+      const diagramData = await generateSystemDiagram(this.systemContent.sdlContent);
+      
+      if (diagramData) {
+        // Update state
+        this.stateManager.updateState({ 
+          currentSystem: this.pageData.systemId
+        });
+        
         // Emit event so architecture panel can update
-        this.eventBus.emit('system:diagram:loaded', response.data);
+        this.eventBus.emit('system:diagram:loaded', diagramData);
       }
     } catch (error) {
-      console.error('Failed to load system diagram:', error);
+      console.error('Failed to generate system diagram:', error);
     }
   }
 
@@ -497,11 +541,9 @@ export class SystemDetailsPage {
     this.toolbar?.setStatus('Saving...', 'info');
     
     try {
-      // Get current content from editors
-      const sdlContent = this.sdlEditorPanel?.getContent();
-      const recipeContent = this.recipeEditorPanel?.getContent();
-      
       // TODO: Implement save endpoint
+      // const sdlContent = this.sdlEditorPanel?.getContent();
+      // const recipeContent = this.recipeEditorPanel?.getContent();
       // For now, just show success
       this.consolePanel?.success('Changes saved successfully');
       this.toolbar?.setStatus('Saved', 'success');

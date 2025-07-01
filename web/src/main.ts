@@ -11,9 +11,22 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!appElement) return;
   
   const pageType = appElement.dataset.pageType;
-  const pageData = appElement.dataset.pageData ? JSON.parse(appElement.dataset.pageData) : {};
   
-  console.log(`🚀 SDL Canvas loading page type: ${pageType}`);
+  // Read page data from script tag instead of data attribute to avoid HTML escaping issues
+  const pageDataScript = document.getElementById('page-data');
+  let pageData: any = {};
+  if (pageDataScript && pageDataScript.textContent) {
+    try {
+      // The server might double-encode the JSON, so try parsing twice if needed
+      const parsed = JSON.parse(pageDataScript.textContent);
+      pageData = typeof parsed === 'string' ? JSON.parse(parsed) : parsed;
+    } catch (e) {
+      console.error('Failed to parse page data:', e);
+      pageData = {};
+    }
+  }
+  
+  console.log(`🚀 SDL Canvas loading page type: ${pageType}`, pageData);
   
   switch (pageType) {
     case 'canvas-dashboard':

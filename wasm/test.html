@@ -101,7 +101,7 @@ system TestSystem {
                 
                 const go = new Go();
                 const result = await WebAssembly.instantiateStreaming(
-                    fetch('sdl.wasm'), 
+                    fetch('/sdl.wasm'), 
                     go.importObject
                 );
                 

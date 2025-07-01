@@ -7,6 +7,9 @@
   "tags": [
     {
       "name": "CanvasService"
+    },
+    {
+      "name": "SystemsService"
     }
   ],
   "consumes": [
@@ -1351,6 +1354,105 @@
           "CanvasService"
         ]
       }
+    },
+    "/v1/systems": {
+      "get": {
+        "summary": "ListSystems returns all available systems",
+        "operationId": "SystemsService_ListSystems",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListSystemsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "SystemsService"
+        ]
+      }
+    },
+    "/v1/systems/{id}": {
+      "get": {
+        "summary": "GetSystem returns a specific system with metadata",
+        "operationId": "SystemsService_GetSystem",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetSystemResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "version",
+            "description": "Optional, defaults to default_version",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "SystemsService"
+        ]
+      }
+    },
+    "/v1/systems/{id}/content": {
+      "get": {
+        "summary": "GetSystemContent returns the SDL and recipe content for a system",
+        "operationId": "SystemsService_GetSystemContent",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetSystemContentResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "version",
+            "description": "Optional, defaults to default_version",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "SystemsService"
+        ]
+      }
     }
   },
   "definitions": {
@@ -1820,6 +1922,20 @@
       },
       "title": "Response containing parameter values"
     },
+    "v1GetSystemContentResponse": {
+      "type": "object",
+      "properties": {
+        "sdlContent": {
+          "type": "string"
+        },
+        "recipeContent": {
+          "type": "string"
+        },
+        "readmeContent": {
+          "type": "string"
+        }
+      }
+    },
     "v1GetSystemDiagramResponse": {
       "type": "object",
       "properties": {
@@ -1828,6 +1944,14 @@
         }
       },
       "title": "Response containing the system diagram"
+    },
+    "v1GetSystemResponse": {
+      "type": "object",
+      "properties": {
+        "system": {
+          "$ref": "#/definitions/v1SystemProject"
+        }
+      }
     },
     "v1GetUtilizationResponse": {
       "type": "object",
@@ -1903,6 +2027,18 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1Metric"
+          }
+        }
+      }
+    },
+    "v1ListSystemsResponse": {
+      "type": "object",
+      "properties": {
+        "systems": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1SystemInfo"
           }
         }
       }
@@ -2258,6 +2394,96 @@
         }
       },
       "title": "SystemDiagram represents the topology of a system"
+    },
+    "v1SystemInfo": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "difficulty": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "icon": {
+          "type": "string"
+        },
+        "lastUpdated": {
+          "type": "string"
+        }
+      },
+      "title": "SystemInfo represents a system in the catalog"
+    },
+    "v1SystemProject": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "difficulty": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "icon": {
+          "type": "string"
+        },
+        "versions": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/v1SystemVersion"
+          }
+        },
+        "defaultVersion": {
+          "type": "string"
+        },
+        "lastUpdated": {
+          "type": "string"
+        }
+      },
+      "title": "SystemProject represents a full system project"
+    },
+    "v1SystemVersion": {
+      "type": "object",
+      "properties": {
+        "sdl": {
+          "type": "string"
+        },
+        "recipe": {
+          "type": "string"
+        },
+        "readme": {
+          "type": "string"
+        }
+      },
+      "title": "SystemVersion represents a version of a system"
     },
     "v1TraceAllPathsResponse": {
       "type": "object",
