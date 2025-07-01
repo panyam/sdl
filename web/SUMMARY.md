@@ -1,6 +1,6 @@
 # SDL Web Dashboard Summary
 
-**Version:** Unified Dashboard Layout with Recipe Integration (v3.2)
+**Version:** Decoupled Architecture with Event-Driven Components (v4.0)
 
 ## 🎯 Purpose
 
@@ -66,6 +66,35 @@ The dashboard now features a unified layout that works seamlessly in both server
 - **Professional Styling**: Dark theme with blue highlights for active tabs
 - **Reset Functionality**: One-click return to default 2x2 grid layout
 
+### Architecture Refactoring (v4.0)
+
+#### Event-Driven Architecture
+- **EventBus**: Central publish-subscribe system for component communication
+- **AppStateManager**: Centralized state management with observer pattern
+- **Decoupled Components**: Components communicate via events, not direct references
+- **Type-Safe Events**: Predefined event constants in `AppEvents`
+
+#### Panel Component System
+- **BasePanel**: Abstract base class providing common panel functionality
+- **IPanelComponent Interface**: Consistent contract for all panels
+- **Extracted Panels**:
+  - `SystemArchitecturePanel`: Self-contained system visualization
+  - `TrafficGenerationPanel`: Independent generator controls
+  - `LiveMetricsPanel`: Autonomous chart management
+- **PanelComponentFactory**: Creates panels with dependency injection
+
+#### Service Layer
+- **CanvasService**: Wraps API calls and emits events
+- **Service Abstraction**: Clean separation of API logic from UI
+- **Event Integration**: Services emit events for state changes
+- **Error Handling**: Centralized error event emission
+
+#### Dashboard Refactoring
+- **DashboardCoordinator**: Thin orchestration layer (~400 lines vs 2041)
+- **Component Wiring**: Uses EventBus for all communication
+- **State Management**: Delegates to AppStateManager
+- **Reduced Coupling**: No direct component references
+
 ### Recent Updates (v3.1)
 
 #### Multi-Filesystem Support
@@ -104,13 +133,59 @@ The dashboard now features a unified layout that works seamlessly in both server
 
 ### Key Components
 
-#### Dashboard Class (`src/dashboard.ts`)
-- **Main Application Controller**: Manages the entire dashboard state and rendering
-- **Unified Layout**: Single layout implementation for both server and WASM modes
-- **FileClient Interface**: Uses abstraction for file operations
-- **Dynamic Chart Management**: Creates and updates charts based on metrics
-- **Component Creation**: Factory methods for all panel components
-- **FileSystem Integration**: Uses FileSystemClient instances for all file operations
+#### Dashboard Architecture (v4.0)
+
+##### Core Infrastructure
+- **EventBus** (`core/event-bus.ts`): Decoupled communication mechanism
+  - Publish/subscribe pattern implementation
+  - Support for one-time event handlers
+  - Type-safe event names in AppEvents constant
+  
+- **AppStateManager** (`core/app-state-manager.ts`): Centralized state management
+  - Immutable state updates with batching
+  - Observable state changes via listeners
+  - Automatic event emission on state changes
+  - State change tracking with changedKeys
+
+##### Panel Components
+- **BasePanel** (`panels/base-panel.ts`): Abstract base for all panels
+  - Lifecycle management (initialize, dispose)
+  - Automatic state subscription
+  - Helper methods for loading/error/empty states
+  
+- **SystemArchitecturePanel**: Manages system visualization
+  - Self-contained Graphviz rendering
+  - Zoom/pan interactions
+  - Responds to state changes independently
+  
+- **TrafficGenerationPanel**: Generator controls
+  - Event-based generator management
+  - Debounced rate updates
+  - Optimistic UI updates
+  
+- **LiveMetricsPanel**: Dynamic chart display
+  - Responsive chart management
+  - Automatic resizing with ResizeObserver
+  - Efficient chart updates
+
+##### Service Layer
+- **CanvasService** (`services/canvas-service.ts`): API abstraction
+  - Wraps all Canvas API calls
+  - Emits events for operations
+  - Handles errors consistently
+  - Manages metrics streaming
+
+##### Coordination
+- **DashboardCoordinator** (`dashboard/dashboard-coordinator.ts`): Thin orchestrator
+  - Wires components via EventBus
+  - Delegates to services and state manager
+  - Minimal business logic
+  - ~400 lines vs original 2041
+
+#### Legacy Dashboard Class (`src/dashboard.ts`)
+- **Original Monolithic Controller**: 2041 lines handling everything
+- **To Be Replaced**: Will be phased out in favor of new architecture
+- **Migration Path**: Components can be migrated incrementally
 
 #### WASMDashboard Class (`src/wasm-dashboard.ts`)
 - **WASM Extension**: Extends base Dashboard with WASM-specific features
@@ -155,6 +230,10 @@ The dashboard now features a unified layout that works seamlessly in both server
 2. **Real-time Updates**: WebSocket integration for live data synchronization
 3. **Performance Optimization**: Efficient chart updates and memory management
 4. **Error Resilience**: Graceful handling of connection issues and API errors
+5. **Component Isolation**: Each component can fail independently
+6. **Event-Driven Updates**: Reactive UI without tight coupling
+7. **State Consistency**: Single source of truth with AppStateManager
+8. **Testability**: Components can be unit tested in isolation
 
 ## 🔄 Data Flow
 

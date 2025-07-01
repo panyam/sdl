@@ -6,7 +6,7 @@ This document outlines the long-term vision and development roadmap for SDL (Sys
 
 SDL aims to become the industry standard for system design education, capacity planning, and performance modeling. Our goal is to make complex distributed systems behavior understandable and predictable through interactive simulations.
 
-## Current State (June 2025)
+## Current State (July 2025)
 
 ### Core Platform
 - **Language**: SDL modeling language with components, systems, and probabilistic outcomes
@@ -15,6 +15,7 @@ SDL aims to become the industry standard for system design education, capacity p
 - **Metrics**: Real-time streaming metrics with aggregation
 - **Visualization**: Interactive web dashboard with system diagrams
 - **File Management**: Multi-filesystem support with security and filtering
+- **Dashboard Architecture**: Event-driven components with centralized state management
 
 ### Key Features
 - Traffic generation up to 1000+ RPS
@@ -27,7 +28,7 @@ SDL aims to become the industry standard for system design education, capacity p
 - Integrated recipe execution with visual debugging
 - Multi-filesystem support with unified interface
 
-### Recent Achievements (v3.2)
+### Recent Achievements (v4.0)
 - **FileSystem Architecture**: Complete abstraction layer for file operations
 - **Security Implementation**: Path traversal protection and read-only enforcement
 - **File Filtering**: Server-side extension filtering (.sdl, .recipe)
@@ -35,11 +36,21 @@ SDL aims to become the industry standard for system design education, capacity p
 - **Recipe Integration**: In-editor execution controls for SDL command sequences
 - **Tab Management**: Composite keys for unique file identification across filesystems
 - **Visual Debugging**: Line highlighting and execution tracking for recipes
+- **Architecture Refactoring**: Event-driven dashboard with 80% code reduction
+- **Component Isolation**: Self-contained panels with lifecycle management
+- **Service Layer**: Clean API abstraction with event emission
+- **State Management**: Centralized AppStateManager with observer pattern
 
 ## Roadmap Phases
 
-### Phase 1: Production Readiness (Q3 2025)
+### Phase 1: Production Readiness (Q3 2025) - In Progress
 **Goal**: Make SDL accessible to the broader developer community
+
+- **Architecture Modernization** (NEW)
+  - ✅ Event-driven component architecture
+  - ✅ Decoupled dashboard components
+  - ⏳ Complete migration from legacy dashboard
+  - ⏳ WASM mode compatibility with new architecture
 
 - **Documentation**
   - Comprehensive SDL language reference

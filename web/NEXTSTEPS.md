@@ -55,6 +55,16 @@
 
 ## 🔧 Current State
 
+### Architecture Refactoring (v4.0) - Completed
+- ✅ **EventBus Implementation**: Central publish-subscribe system for decoupled communication
+- ✅ **AppStateManager**: Centralized state management with observer pattern
+- ✅ **Panel Extraction**: SystemArchitecturePanel, TrafficGenerationPanel, LiveMetricsPanel
+- ✅ **Service Layer**: CanvasService wraps API calls and emits events
+- ✅ **Dashboard Refactoring**: Reduced from 2041 lines to ~400 lines in coordinator
+- ✅ **BasePanel Framework**: Consistent lifecycle and state management for all panels
+- ✅ **Type-Safe Events**: Predefined event constants in AppEvents
+- ✅ **Component Factory**: PanelComponentFactory for dependency injection
+
 ### Fully Functional Features
 - ✅ **FileSystem Architecture**: Complete client-server implementation
 - ✅ **Multi-FileSystem Support**: Local and GitHub filesystems working
@@ -69,37 +79,44 @@
 
 ## 🔄 Next Development Priorities
 
-### 1. GitHub FileSystem Implementation (High Priority)
+### 1. Integrate Refactored Components (Immediate Priority)
+- Replace legacy dashboard.ts with new architecture components
+- Wire up DashboardCoordinator as main entry point
+- Migrate remaining functionality from old dashboard
+- Test end-to-end with all features working
+- Ensure WASM mode compatibility with new architecture
+
+### 2. GitHub FileSystem Implementation (High Priority)
 - Implement actual GitHub API calls in GitHubFileSystemClient
 - Add caching layer for GitHub filesystem to reduce API calls
 - Handle rate limiting and authentication
 - Support private repositories with token authentication
 
-### 2. IndexedDB FileSystem (Medium Priority)
+### 3. IndexedDB FileSystem (Medium Priority)
 - Implement IndexedDBFileSystemClient for browser storage
 - Enable saving projects locally in browser
 - Support import/export of local projects
 - Offline mode capabilities
 
-### 3. Data Integration (High Priority)
+### 4. Data Integration (High Priority)
 - **Load SDL Files**: Connect file loading functionality to populate System Architecture panel
 - **Generator Integration**: Wire up traffic generation controls with backend API
 - **Measurement System**: Enable measurement creation and configuration
 - **Live Data Flow**: Connect real-time metrics to charts
 
-### 4. Enhanced Visualization (Medium Priority)
+### 5. Enhanced Visualization (Medium Priority)
 - **Interactive System Diagrams**: Click to select/highlight components
 - **Traffic Flow Animation**: Visual representation of data flow between components
 - **Component Details**: Hover tooltips with component information
 - **Method-level Metrics**: Drill-down views for individual component methods
 
-### 5. User Experience Improvements (Medium Priority)
+### 6. User Experience Improvements (Medium Priority)
 - **Loading States**: Proper loading indicators during operations
 - **Error Feedback**: User-friendly error messages and recovery options
 - **Keyboard Shortcuts**: Quick actions for common operations
 - **Tour/Help System**: Guided introduction for new users
 
-### 6. Advanced Features (Low Priority)
+### 7. Advanced Features (Low Priority)
 - **Layout Templates**: Predefined layouts for different use cases
 - **Panel Maximization**: Full-screen mode for individual panels
 - **Export Functionality**: Save diagrams and charts as images
@@ -121,6 +138,13 @@
 - **Styling System**: CSS overrides for dark theme integration
 
 ## 💡 Key Learnings
+
+### Architecture Refactoring Insights
+1. **Event-Driven Benefits**: Components can evolve independently without breaking others
+2. **State Management**: Single source of truth prevents inconsistencies
+3. **Service Layer**: API abstraction makes testing and mocking easier
+4. **Component Isolation**: Each panel can be developed and tested in isolation
+5. **Reduced Coupling**: 80% reduction in coordinator code complexity
 
 ### Recipe Integration Design
 1. **In-Context Execution**: Keep execution controls where the code is
@@ -146,6 +170,9 @@
 - **Type Safety**: Full TypeScript coverage for DockView API
 - **Error Boundaries**: Graceful handling of layout corruption
 - **Performance**: Efficient updates and memory management
+- **Event-Based Architecture**: Clean separation of concerns with EventBus
+- **Observable State**: Components react to state changes automatically
+- **Service Abstraction**: API calls isolated from UI logic
 
 ### Technical Debt
 - **Minimal**: Clean migration with proper cleanup of old GoldenLayout code
