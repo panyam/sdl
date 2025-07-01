@@ -15,6 +15,8 @@ export interface FileTab {
   model?: monaco.editor.ITextModel;
   viewState?: monaco.editor.ICodeEditorViewState;
   decorations?: string[];
+  executionDecorations?: string[];
+  errorDecorations?: string[];
 }
 
 export class TabbedEditor {
@@ -587,6 +589,8 @@ export class TabbedEditor {
     const tab = this.tabs.get(tabKey);
     if (!tab) return;
     
+    console.log(`setRecipeRunning called - tabKey: ${tabKey}, isRunning: ${isRunning}, currentLine: ${currentLine}`);
+    
     tab.isRunning = isRunning;
     tab.currentLine = currentLine;
     
@@ -595,16 +599,15 @@ export class TabbedEditor {
     
     // Update line highlighting
     if (tab.editor) {
-      // Clear previous decorations - but preserve error decorations
-      const model = tab.editor.getModel();
-      const hasErrors = model && monaco.editor.getModelMarkers({ resource: model.uri }).length > 0;
-      
-      if (tab.decorations && !hasErrors) {
-        tab.editor.deltaDecorations(tab.decorations, []);
+      // Clear previous execution decorations
+      if (tab.executionDecorations) {
+        tab.editor.deltaDecorations(tab.executionDecorations, []);
+        tab.executionDecorations = undefined;
       }
       
       // Add new decoration for current line
       if (isRunning && currentLine) {
+        console.log(`Setting recipe line decoration for line ${currentLine}`);
         const newDecorations = [{
           range: new monaco.Range(currentLine, 1, currentLine, 1),
           options: {
@@ -614,16 +617,14 @@ export class TabbedEditor {
           }
         }];
         
-        // If we have error decorations, we need to merge them
-        if (hasErrors && tab.decorations) {
-          tab.decorations = tab.editor.deltaDecorations(tab.decorations, newDecorations);
-        } else {
-          tab.decorations = tab.editor.deltaDecorations([], newDecorations);
-        }
+        tab.executionDecorations = tab.editor.deltaDecorations([], newDecorations);
+        console.log(`Decorations set: ${tab.executionDecorations}`);
         
         // Scroll to line
         tab.editor.revealLineInCenter(currentLine);
       }
+    } else {
+      console.log('No editor found for tab');
     }
   }
 
@@ -636,8 +637,8 @@ export class TabbedEditor {
     if (!tab || !tab.editor) return;
     
     // Clear existing error decorations
-    if (tab.decorations) {
-      tab.editor.deltaDecorations(tab.decorations, []);
+    if (tab.errorDecorations) {
+      tab.editor.deltaDecorations(tab.errorDecorations, []);
     }
     
     // Create model markers for errors
@@ -669,7 +670,7 @@ export class TabbedEditor {
       }
     }));
     
-    tab.decorations = tab.editor.deltaDecorations([], decorations);
+    tab.errorDecorations = tab.editor.deltaDecorations([], decorations);
   }
 
   clearErrorDecorations(tabKey: string) {
@@ -677,9 +678,9 @@ export class TabbedEditor {
     if (!tab || !tab.editor) return;
     
     // Clear decorations
-    if (tab.decorations) {
-      tab.editor.deltaDecorations(tab.decorations, []);
-      tab.decorations = undefined;
+    if (tab.errorDecorations) {
+      tab.editor.deltaDecorations(tab.errorDecorations, []);
+      tab.errorDecorations = undefined;
     }
     
     // Clear markers

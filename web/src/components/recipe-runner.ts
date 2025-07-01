@@ -123,7 +123,7 @@ export class RecipeRunner {
           errors.push(`Line ${lineNumber}: Empty echo statement`);
         }
         // Check for variable expansion
-        if (echoContent.includes('$')) {
+        if (this.containsUnquotedVariable(echoContent)) {
           errors.push(`Line ${lineNumber}: Variable expansion not supported in echo statements`);
         }
         commands.push({
@@ -162,7 +162,7 @@ export class RecipeRunner {
           }
           
           // Check for variable expansion in SDL commands
-          if (trimmed.includes('$')) {
+          if (this.containsUnquotedVariable(trimmed)) {
             errors.push(`Line ${lineNumber}: Variable expansion not supported in SDL commands`);
           }
           
@@ -194,8 +194,6 @@ export class RecipeRunner {
         { pattern: /^\s*export\s+/, message: 'export not supported' },
         { pattern: /^\s*source\s+/, message: 'source not supported' },
         { pattern: /^\s*\.\s+/, message: 'source (.) not supported' },
-        { pattern: /.*\$\{.*\}/, message: 'variable expansion not supported' },
-        { pattern: /.*\$\w+/, message: 'variables not supported' },
         { pattern: /.*&\s*$/, message: 'background jobs not supported' },
         { pattern: /^\s*\[.*\]/, message: 'test expressions not supported' },
         { pattern: /^\s*\[\[.*\]\]/, message: 'test expressions not supported' },
@@ -293,6 +291,21 @@ export class RecipeRunner {
     this.state.isPaused = false;
     this.abortController = new AbortController();
     
+    // Skip to the first executable step
+    while (this.state.currentStep < this.state.steps.length) {
+      const step = this.state.steps[this.state.currentStep];
+      if (step.command.type !== 'empty' && step.command.type !== 'comment') {
+        break;
+      }
+      this.state.currentStep++;
+    }
+    
+    console.log(`After skipping empty/comments, currentStep: ${this.state.currentStep}, total steps: ${this.state.steps.length}`);
+    if (this.state.currentStep < this.state.steps.length) {
+      const nextStep = this.state.steps[this.state.currentStep];
+      console.log(`Ready to execute step at line ${nextStep.command.lineNumber}, type: ${nextStep.command.type}`);
+    }
+    
     this.notifyStateChange();
 
     if (mode === 'auto') {
@@ -383,6 +396,7 @@ export class RecipeRunner {
     if (!this.state || this.state.currentStep >= this.state.steps.length) return;
 
     const step = this.state.steps[this.state.currentStep];
+    console.log(`Executing step ${this.state.currentStep}, line ${step.command.lineNumber}, type: ${step.command.type}`);
     step.status = 'running';
     step.startTime = Date.now();
     this.notifyStateChange();
@@ -412,6 +426,16 @@ export class RecipeRunner {
     }
 
     this.state.currentStep++;
+    
+    // Skip empty lines and comments to find next executable step
+    while (this.state.currentStep < this.state.steps.length) {
+      const nextStep = this.state.steps[this.state.currentStep];
+      if (nextStep.command.type !== 'empty' && nextStep.command.type !== 'comment') {
+        break;
+      }
+      this.state.currentStep++;
+    }
+    
     this.notifyStateChange();
   }
 
@@ -634,6 +658,37 @@ export class RecipeRunner {
     }
   }
 
+  // Helper function to check if text contains variables outside of quoted strings
+  private containsUnquotedVariable(text: string): boolean {
+    let inSingleQuote = false;
+    let inDoubleQuote = false;
+    let escaped = false;
+    
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+      
+      if (char === '\\') {
+        escaped = true;
+        continue;
+      }
+      
+      if (char === "'" && !inDoubleQuote) {
+        inSingleQuote = !inSingleQuote;
+      } else if (char === '"' && !inSingleQuote) {
+        inDoubleQuote = !inDoubleQuote;
+      } else if (char === '$' && !inSingleQuote && !inDoubleQuote) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+
   // Validate recipe content without loading it
   validateRecipe(content: string): RecipeValidationError[] {
     const lines = content.split('\n');
@@ -658,7 +713,7 @@ export class RecipeRunner {
             severity: 'error'
           });
         }
-        if (echoContent.includes('$')) {
+        if (this.containsUnquotedVariable(echoContent)) {
           errors.push({
             lineNumber,
             message: 'Variable expansion not supported in echo statements',
@@ -693,7 +748,7 @@ export class RecipeRunner {
               severity: 'error'
             });
           }
-          if (trimmed.includes('$')) {
+          if (this.containsUnquotedVariable(trimmed)) {
             errors.push({
               lineNumber,
               message: 'Variable expansion not supported in SDL commands',
@@ -725,8 +780,6 @@ export class RecipeRunner {
         { pattern: /^\s*export\s+/, message: 'export not supported' },
         { pattern: /^\s*source\s+/, message: 'source not supported' },
         { pattern: /^\s*\.\s+/, message: 'source (.) not supported' },
-        { pattern: /.*\$\{.*\}/, message: 'variable expansion not supported' },
-        { pattern: /.*\$\w+/, message: 'variables not supported' },
         { pattern: /.*&\s*$/, message: 'background jobs not supported' },
         { pattern: /^\s*\[.*\]/, message: 'test expressions not supported' },
         { pattern: /^\s*\[\[.*\]\]/, message: 'test expressions not supported' },
@@ -742,6 +795,16 @@ export class RecipeRunner {
           });
           return;
         }
+      }
+      
+      // Check for variables outside of quotes
+      if (this.containsUnquotedVariable(trimmed)) {
+        errors.push({
+          lineNumber,
+          message: 'variables not supported outside of quoted strings',
+          severity: 'error'
+        });
+        return;
       }
 
       // Check for other executable commands

@@ -30,8 +30,8 @@ sdl metrics add db_query database FindNearestDriver  --type latency --window=1 -
 sdl metrics add db_utilization database --type utilization --window 1
 
 # Note: Pool utilization metrics not supported yet - only latency and count
-# execWithConfirm "Adding database pool utilization metric" sdl metrics add db_pool database pool utilization
-# execWithConfirm "Adding server pool utilization metric" sdl metrics add server_pool webserver pool utilization
+# echo "Adding database pool utilization metric" sdl metrics add db_pool database pool utilization
+# echo "Adding server pool utilization metric" sdl metrics add server_pool webserver pool utilization
 
 # "=== Setting Pool Parameters ==="
 # "First, let's configure the resource pools with realistic hold times..."
@@ -84,11 +84,13 @@ echo "- Every request hits the Maps API (100ms)"
 echo "- But it works! All requests succeed"
 echo ""
 echo "Press enter to add driver location updates..."
-read
 
 # Add background driver updates
-execWithConfirm "Creating driver location update generator (10 RPS) with automatic flow calculation..." sdl gen add drivers webserver.UpdateLocation 10 --apply-flows
-execWithConfirm "Starting driver updates..." sdl gen start drivers
+echo "Creating driver location update generator (10 RPS) with automatic flow calculation..."
+sdl gen add drivers webserver.UpdateLocation 10 --apply-flows
+
+echo "Starting driver updates..."
+sdl gen start drivers
 
 # Note: Arrival rates are automatically calculated and applied with --apply-flows
 
@@ -98,10 +100,10 @@ echo "Now let's simulate morning rush hour with 20 requests per second."
 echo "Watch what happens to our tiny connection pool..."
 echo ""
 echo "Press enter to simulate morning rush..."
-read
 
 # Increase load by updating the baseline generator rate
-execWithConfirm "Updating baseline generator to 20 RPS for morning rush..." sdl gen update baseline 20 --apply-flows
+echo "Updating baseline generator to 20 RPS for morning rush..."
+sdl gen update baseline 20 --apply-flows
 
 # Note: Arrival rates are automatically calculated and applied with --apply-flows
 
@@ -114,10 +116,10 @@ echo "- Some requests start failing"
 echo "- We're finding the same drivers repeatedly (no cache!)"
 echo ""
 echo "Press enter to simulate a surge event..."
-read
 
 # Simulate surge by updating baseline generator to very high rate
-execWithConfirm "Updating baseline generator to 50 RPS for surge event..." sdl gen update baseline 50 --apply-flows
+echo "Updating baseline generator to 50 RPS for surge event..."
+sdl gen update baseline 50 --apply-flows
 
 # Note: Arrival rates are automatically calculated and applied with --apply-flows
 
@@ -131,11 +133,13 @@ echo "- Every failed request still took 200ms+ of DB time"
 echo "- This is when your VP of Engineering gets paged!"
 echo ""
 echo "Press enter to stop the chaos..."
-read
 
 # Return to normal traffic levels
-execWithConfirm "Reducing baseline generator back to 5 RPS..." sdl gen update baseline 5 --apply-flows
-execWithConfirm "Stopping driver updates..." sdl gen stop drivers --apply-flows
+echo "Reducing baseline generator back to 5 RPS..."
+sdl gen update baseline 5 --apply-flows
+
+echo "Stopping driver updates..."
+sdl gen stop drivers --apply-flows
 
 # Note: Arrival rates are automatically recalculated when generators are stopped
 
@@ -148,20 +152,20 @@ echo "4. Synchronous Everything - Maps API blocks requests"
 echo "5. No Fault Isolation - One slow query affects everyone"
 echo ""
 echo "Press enter to see what happens if Maps API fails..."
-read
 
 echo ""
 echo "=== Disaster Scenario: Maps API Outage ==="
 echo "Let's simulate the Maps API being slow or down..."
 echo ""
 echo "Press enter to modify Maps API latency..."
-read
 
 # Make Maps API very slow
-execWithConfirm "Making Maps API very slow (2 second latency)..." sdl set mapsService.pool.AcquireLatency 2000ms
+echo "Making Maps API very slow (2 second latency)..."
+sdl set mapsService.pool.AcquireLatency 2000ms
 
 # Restart baseline traffic
-execWithConfirm "Restarting baseline traffic to see the impact..." sdl gen start baseline --apply-flows
+echo "Restarting baseline traffic to see the impact..."
+sdl gen start baseline --apply-flows
 
 echo ""
 echo "=== Complete System Failure ==="
@@ -173,11 +177,13 @@ echo "- Asynchronous operations"
 echo "- Service isolation"
 echo ""
 echo "Press enter to restore normal operations..."
-read
 
 # Restore Maps API
-execWithConfirm "Restoring Maps API to normal latency..." sdl set mapsService.pool.AcquireLatency 10ms
-execWithConfirm "Stopping baseline traffic..." sdl gen stop baseline --apply-flows
+echo "Restoring Maps API to normal latency..."
+sdl set mapsService.pool.AcquireLatency 10ms
+
+echo "Stopping baseline traffic..."
+sdl gen stop baseline --apply-flows
 
 echo ""
 echo "=== Cost Analysis ==="
@@ -190,10 +196,10 @@ echo "It actually works for hundreds of users!"
 echo "But not for millions..."
 echo ""
 echo "Press enter to clean up..."
-read
 
 # Clean up
-execWithConfirm "Stopping all generators..." sdl gen stop --all
+echo "Stopping all generators..."
+sdl gen stop --all
 
 echo ""
 echo "=== Next Steps ==="
@@ -207,4 +213,3 @@ echo ""
 echo "The journey from MVP to scale is about evolution, not revolution!"
 echo ""
 echo "Demo complete. Press enter to exit..."
-read

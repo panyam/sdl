@@ -1,0 +1,18 @@
+# Test that dollar signs in quoted strings are allowed
+
+echo "Starting demo..."
+echo "- 1x t2.small EC2 instance: $20/month"
+echo 'Single quoted: $50 per user'
+echo "Mixed quotes: That'll cost $30"
+
+# This should still fail - unquoted variable
+echo Hello $USER
+
+# This should also fail - variable outside quotes
+echo "Hello" $USER "there"
+
+# SDL commands with quoted strings should work
+sdl set app.server description "Costs $10/month"
+
+# But variables in SDL commands should fail
+sdl set app.server cost $COST

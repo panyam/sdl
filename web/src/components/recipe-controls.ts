@@ -30,6 +30,7 @@ export class RecipeControls {
     
     // Set up state change handler
     this.runner.setStateChangeHandler((state) => {
+      console.log(`Recipe state change handler called - isRunning: ${state.isRunning}, currentStep: ${state.currentStep}`);
       this.isRunning = state.isRunning;
       
       // Update current line highlighting in editor
@@ -38,8 +39,12 @@ export class RecipeControls {
         if (state.isRunning && state.currentStep < state.steps.length) {
           const currentStep = state.steps[state.currentStep];
           currentLineNumber = currentStep?.command?.lineNumber;
+          console.log(`Recipe state change - currentStep: ${state.currentStep}, lineNumber: ${currentLineNumber}, command type: ${currentStep?.command?.type}, step status: ${currentStep?.status}`);
+        } else {
+          console.log(`Recipe not running or no more steps - isRunning: ${state.isRunning}, currentStep: ${state.currentStep}, steps.length: ${state.steps.length}`);
         }
         
+        console.log(`Calling setRecipeRunning with tabKey: ${this.currentRecipeTab}, isRunning: ${state.isRunning}, currentLine: ${currentLineNumber}`);
         this.tabbedEditor.setRecipeRunning(
           this.currentRecipeTab,
           state.isRunning,
@@ -51,10 +56,16 @@ export class RecipeControls {
           const [_fsId, path] = this.currentRecipeTab.split(':');
           this.onRecipeStateChange(state.isRunning, path, currentLineNumber);
         }
+      } else {
+        console.log(`No currentRecipeTab (${this.currentRecipeTab}) or tabbedEditor`);
       }
       
-      if (!state.isRunning) {
-        this.currentRecipeTab = null;
+      if (!state.isRunning && this.currentRecipeTab) {
+        // Only clear currentRecipeTab if we're actually stopping a running recipe
+        // Don't clear it during initial load
+        if (this.isRunning) {
+          this.currentRecipeTab = null;
+        }
       }
       
       this.render();
