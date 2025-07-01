@@ -40,6 +40,8 @@ SDL aims to become the industry standard for system design education, capacity p
 - **Component Isolation**: Self-contained panels with lifecycle management
 - **Service Layer**: Clean API abstraction with event emission
 - **State Management**: Centralized AppStateManager with observer pattern
+- **Recipe Controls**: Singleton pattern with global toolbar integration
+- **UI Stability**: Fixed toolbar render issues preserving child components
 
 ## Roadmap Phases
 

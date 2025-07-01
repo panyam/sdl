@@ -10,6 +10,7 @@ export interface ToolbarButton {
 export class Toolbar {
   private element: HTMLElement;
   private buttons: ToolbarButton[] = [];
+  private recipeControlsContainer: HTMLElement | null = null;
 
   constructor(container: HTMLElement) {
     this.element = container;
@@ -25,7 +26,33 @@ export class Toolbar {
     const button = this.buttons.find(b => b.id === id);
     if (button) {
       Object.assign(button, updates);
-      this.render();
+      
+      // Update just the specific button without re-rendering everything
+      const buttonEl = this.element.querySelector(`#toolbar-${id}`) as HTMLButtonElement;
+      if (buttonEl) {
+        // Update disabled state
+        if (updates.disabled !== undefined) {
+          buttonEl.disabled = updates.disabled;
+          if (updates.disabled) {
+            buttonEl.className = 'toolbar-button px-3 py-1 rounded text-sm bg-gray-700 text-gray-500 cursor-not-allowed';
+          } else {
+            buttonEl.className = 'toolbar-button px-3 py-1 rounded text-sm bg-gray-700 hover:bg-gray-600 text-gray-200';
+          }
+        }
+        
+        // Update tooltip
+        if (updates.tooltip) {
+          buttonEl.title = updates.tooltip;
+        }
+        
+        // Update label/icon if needed
+        if (updates.label || updates.icon) {
+          buttonEl.innerHTML = `
+            ${button.icon ? `<span class="mr-1">${button.icon}</span>` : ''}
+            ${button.label}
+          `;
+        }
+      }
     }
   }
 
@@ -48,12 +75,17 @@ export class Toolbar {
             </button>
           `).join('')}
         </div>
+        <div class="mx-4 h-6 w-px bg-gray-700"></div>
+        <div id="recipe-controls-container" class="flex items-center gap-2"></div>
         <div class="flex-1"></div>
         <div class="text-xs text-gray-400 mr-2">
           <span id="toolbar-status">Ready</span>
         </div>
       </div>
     `;
+
+    // Store reference to recipe controls container
+    this.recipeControlsContainer = this.element.querySelector('#recipe-controls-container');
 
     // Attach click handlers
     this.buttons.forEach(button => {
@@ -62,6 +94,10 @@ export class Toolbar {
         el.addEventListener('click', button.onClick);
       }
     });
+  }
+
+  getRecipeControlsContainer(): HTMLElement | null {
+    return this.recipeControlsContainer;
   }
 
   setStatus(message: string, type: 'info' | 'success' | 'error' = 'info') {
@@ -95,6 +131,35 @@ style.textContent = `
 
   .toolbar-button:not(:disabled):active {
     transform: scale(0.95);
+  }
+
+  .toolbar-btn {
+    padding: 4px 8px;
+    background: #374151;
+    border: 1px solid #4b5563;
+    border-radius: 4px;
+    color: #d1d5db;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .toolbar-btn:hover:not(:disabled) {
+    background: #4b5563;
+    border-color: #6b7280;
+  }
+
+  .toolbar-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .recipe-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 `;
 document.head.appendChild(style);

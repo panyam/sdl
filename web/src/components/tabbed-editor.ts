@@ -24,10 +24,8 @@ export class TabbedEditor {
   private activeTab: string | null = null;
   private onChange?: (path: string, content: string, modified: boolean, fsId?: string) => void;
   private onTabSwitch?: (path: string, fsId: string) => void;
-  private onRecipeAction?: (action: 'run' | 'stop' | 'step' | 'restart', content: string) => void;
   private tabBar: HTMLElement | null = null;
   private editorContainer: HTMLElement | null = null;
-  private recipeToolbar: HTMLElement | null = null;
   
   constructor(container: HTMLElement, dockview: DockviewApi) {
     this.container = container;
@@ -131,14 +129,12 @@ export class TabbedEditor {
     this.container.innerHTML = `
       <div class="editor-layout flex flex-col h-full">
         <div class="tab-bar flex items-center bg-gray-800 border-b border-gray-700 overflow-x-auto" style="height: 35px; flex-shrink: 0;"></div>
-        <div class="recipe-toolbar hidden bg-gray-800 border-b border-gray-700 p-2" style="flex-shrink: 0;"></div>
         <div class="editor-content flex-1 overflow-hidden"></div>
       </div>
     `;
     
     this.tabBar = this.container.querySelector('.tab-bar');
     this.editorContainer = this.container.querySelector('.editor-content');
-    this.recipeToolbar = this.container.querySelector('.recipe-toolbar');
     
     this.showWelcome();
   }
@@ -165,9 +161,6 @@ export class TabbedEditor {
     this.onTabSwitch = handler;
   }
 
-  setRecipeActionHandler(handler: (action: 'run' | 'stop' | 'step' | 'restart', content: string) => void) {
-    this.onRecipeAction = handler;
-  }
 
   async openFile(path: string, content: string, readOnly: boolean = false, fsId: string = 'local', fsName?: string) {
     const tabKey = `${fsId}:${path}`;
@@ -385,9 +378,6 @@ export class TabbedEditor {
     if (this.onTabSwitch && tab) {
       this.onTabSwitch(tab.path, tab.fsId);
     }
-    
-    // Update recipe toolbar visibility
-    this.updateRecipeToolbar();
   }
 
   closeTab(tabKey: string) {
@@ -499,73 +489,6 @@ export class TabbedEditor {
     this.tabs.clear();
   }
 
-  private updateRecipeToolbar() {
-    if (!this.recipeToolbar || !this.activeTab) return;
-    
-    const tab = this.tabs.get(this.activeTab);
-    if (!tab || !tab.isRecipe) {
-      this.recipeToolbar.classList.add('hidden');
-      return;
-    }
-    
-    // Show recipe toolbar
-    this.recipeToolbar.classList.remove('hidden');
-    
-    // Update toolbar content based on running state
-    if (tab.isRunning) {
-      this.recipeToolbar.innerHTML = `
-        <div class="flex items-center gap-2">
-          <button class="recipe-btn" onclick="window.tabbedEditor?.handleRecipeAction('step')">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M5 3l3 2.5L5 8V3zm4 0l3 2.5L9 8V3zm4 0h2v5h-2V3z"/>
-            </svg>
-            Step
-          </button>
-          <button class="recipe-btn recipe-btn-danger" onclick="window.tabbedEditor?.handleRecipeAction('stop')">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M4 4h8v8H4V4z"/>
-            </svg>
-            Stop
-          </button>
-          <button class="recipe-btn" onclick="window.tabbedEditor?.handleRecipeAction('restart')">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M13.451 5.609l-.579-.939-1.068.812-.076.094c-.335.415-.927 1.341-1.124 2.876l-.021.165.033.163c.071.363.224.694.456.97l.087.102c.25.282.554.514.897.683l.123.061c.404.182.852.279 1.312.279.51 0 1.003-.12 1.444-.349l.105-.059c.435-.255.785-.618 1.014-1.051l.063-.119c.185-.38.283-.8.283-1.228 0-.347-.063-.684-.183-1.003l-.056-.147-.098-.245zm-3.177 3.342c-.169 0-.331-.037-.48-.109l-.044-.023c-.122-.061-.227-.145-.313-.249l-.032-.04c-.084-.106-.144-.227-.176-.361l-.012-.056c-.03-.137-.037-.283-.01-.428l.008-.059c.088-.987.373-1.76.603-2.122.183.338.276.735.276 1.142 0 .168-.02.332-.06.491l-.023.079c-.082.268-.225.51-.417.703l-.037.035c-.189.186-.423.325-.689.413l-.064.021c-.14.042-.288.063-.44.063zm1.373-4.326l2.255-1.718 1.017 1.647-2.351 1.79-.921-1.719zm-10.296.577l1.017-1.647 2.255 1.718-.921 1.719-2.351-1.79z"/>
-            </svg>
-            Restart
-          </button>
-          <div class="flex-1"></div>
-          <span class="text-xs text-gray-400">Line ${tab.currentLine || 0}</span>
-        </div>
-      `;
-    } else {
-      this.recipeToolbar.innerHTML = `
-        <div class="flex items-center gap-2">
-          <button class="recipe-btn recipe-btn-primary" onclick="window.tabbedEditor?.handleRecipeAction('run')">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M5 3l8 5-8 5V3z"/>
-            </svg>
-            Run
-          </button>
-          <div class="flex-1"></div>
-          <span class="text-xs text-gray-400">SDL Recipe</span>
-        </div>
-      `;
-    }
-    
-    // Make this instance globally accessible for button handlers
-    (window as any).tabbedEditor = this;
-  }
-
-  handleRecipeAction(action: 'run' | 'stop' | 'step' | 'restart') {
-    if (!this.activeTab || !this.onRecipeAction) return;
-    
-    const tab = this.tabs.get(this.activeTab);
-    if (!tab || !tab.editor) return;
-    
-    const content = tab.editor.getValue();
-    this.onRecipeAction(action, content);
-  }
-
   setRecipeRunning(tabKey: string, isRunning: boolean, currentLine?: number) {
     const tab = this.tabs.get(tabKey);
     if (!tab) return;
@@ -575,11 +498,6 @@ export class TabbedEditor {
     
     // Update tab title
     this.updateTabTitle(tabKey);
-    
-    // Update toolbar if this is the active tab
-    if (tabKey === this.activeTab) {
-      this.updateRecipeToolbar();
-    }
     
     // Update line highlighting
     if (tab.editor) {

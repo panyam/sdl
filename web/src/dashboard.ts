@@ -10,6 +10,7 @@ import { TabbedEditor } from './components/tabbed-editor.js';
 import { configureMonacoLoader } from './components/code-editor.js';
 import { ConsolePanel, ConsoleInterceptor } from './components/console-panel.js';
 import { RecipeRunner } from './components/recipe-runner.js';
+import { RecipeControls } from './components/recipe-controls.js';
 
 export class Dashboard {
   protected api: CanvasClient;
@@ -33,6 +34,7 @@ export class Dashboard {
   protected currentFile: string | null = null;
   private consoleInterceptor: ConsoleInterceptor | null = null;
   protected recipeRunner: RecipeRunner | null = null;
+  private recipeControls: RecipeControls | null = null;
 
   // Parameter configurations - populated when a system is loaded
   private parameters: ParameterConfig[] = [];
@@ -502,11 +504,46 @@ export class Dashboard {
         onClick: () => this.handleStop()
       }
     ]);
+    
   }
 
   private updateToolbarForFile(_filePath: string) {
     // No longer need special handling for recipe files
-    // Recipe controls are now integrated into the editor
+    // Recipe controls are now integrated into the toolbar
+  }
+  
+  private initializeRecipeControls() {
+    if (!this.toolbar) {
+      return;
+    }
+    
+    const recipeControlsContainer = this.toolbar.getRecipeControlsContainer();
+    if (!recipeControlsContainer) {
+      return;
+    }
+    
+    // Only create recipe controls if they don't exist
+    if (!this.recipeControls && this.tabbedEditor) {
+      this.recipeControls = new RecipeControls(recipeControlsContainer, {
+        api: this.api,
+        tabbedEditor: this.tabbedEditor,
+        onConsoleOutput: (msg, type) => {
+          this.consolePanel?.[type](msg);
+        },
+        onRecipeStateChange: (isRunning, recipePath, currentLine) => {
+          // Update toolbar status
+          if (isRunning && recipePath) {
+            const fileName = recipePath.split('/').pop() || 'recipe';
+            this.toolbar?.setStatus(`Running: ${fileName} (Line ${currentLine || 0})`, 'info');
+          } else {
+            this.toolbar?.setStatus('Ready', 'info');
+          }
+        }
+      });
+    } else if (this.recipeControls) {
+      // Just update the existing controls
+      this.recipeControls.updateForActiveTab();
+    }
   }
 
 
@@ -1820,67 +1857,20 @@ export class Dashboard {
           // Update toolbar for file type
           this.currentFile = path;
           this.updateToolbarForFile(path);
+          
+          // Update recipe controls for active tab
+          setTimeout(() => {
+            if (this.recipeControls) {
+              this.recipeControls.updateForActiveTab();
+            }
+          }, 10);
         });
         
-        // Set up recipe action handler
-        this.tabbedEditor.setRecipeActionHandler(async (action, content) => {
-          if (!this.recipeRunner) {
-            // Create recipe runner if not exists
-            this.recipeRunner = new RecipeRunner(this.api);
-            
-            // Set up output handler to write to console
-            this.recipeRunner.setOutputHandler((msg, type) => {
-              this.consolePanel?.[type](msg);
-            });
-            
-            // Set up state change handler to update editor
-            this.recipeRunner.setStateChangeHandler((state) => {
-              // Update current line highlighting in editor
-              const activeTabKey = this.tabbedEditor?.getActiveTabKey();
-              if (activeTabKey && this.tabbedEditor) {
-                // Get the current command line number
-                let currentLineNumber: number | undefined;
-                if (state.isRunning && state.currentStep < state.steps.length) {
-                  const currentStep = state.steps[state.currentStep];
-                  currentLineNumber = currentStep?.command?.lineNumber;
-                }
-                
-                this.tabbedEditor.setRecipeRunning(
-                  activeTabKey,
-                  state.isRunning,
-                  currentLineNumber
-                );
-              }
-            });
-          }
-          
-          const activeTabKey = this.tabbedEditor?.getActiveTabKey();
-          if (!activeTabKey) return;
-          
-          switch (action) {
-            case 'run':
-              // Load and start the recipe
-              if (this.currentFile) {
-                await this.recipeRunner.loadRecipe(this.currentFile, content);
-                await this.recipeRunner.start('step');
-              }
-              break;
-              
-            case 'stop':
-              this.recipeRunner.stop();
-              break;
-              
-            case 'step':
-              await this.recipeRunner.step();
-              break;
-              
-            case 'restart':
-              this.recipeRunner.restart();
-              // Start again in step mode
-              await this.recipeRunner.start('step');
-              break;
-          }
-        });
+        // Initialize recipe controls now that tabbed editor is ready
+        // Use a small delay to ensure DOM is updated
+        setTimeout(() => {
+          this.initializeRecipeControls();
+        }, 50);
       }
     }, 100);
 

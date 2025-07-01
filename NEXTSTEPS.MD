@@ -124,9 +124,53 @@
   - WASMDashboard now extends base Dashboard with minimal overrides
   - Mode detection via URL parameters (?server=true for server mode)
   - Unified panel layout: File Explorer | Code Editor | System Architecture | Traffic Generation | Console/Metrics
+- ✅ Recipe execution integration (July 2025):
+  - Implemented singleton recipe controls in global toolbar
+  - Fixed toolbar re-render issues destroying child components
+  - Made recipe controls context-sensitive (enable for .recipe files)
+  - Added visual feedback for running recipes in tab titles
+
+## Recent Learnings (July 1, 2025)
+
+### Recipe Control Integration
+1. **UI Component Lifecycle Management**:
+   - Toolbar re-renders were destroying recipe control DOM elements
+   - Solution: Update specific DOM elements instead of full innerHTML replacement
+   - Lesson: Preserve child component state during parent updates
+
+2. **Singleton Pattern Benefits**:
+   - Global recipe controls prevent multiple simultaneous executions
+   - Clearer UX with controls always visible in same location
+   - Easier state management with single source of truth
+
+3. **Context-Sensitive UI**:
+   - Controls enable/disable based on active file type
+   - Tab key format (`fsId:path`) requires parsing for file detection
+   - Recipe state persists across file switches
+
+## Immediate Next Steps
+
+### Recipe Integration Completion
+- [ ] Show running recipe filename in toolbar alongside controls
+- [ ] Link traffic generators created by recipes to Traffic Generation panel
+- [ ] Highlight metrics from recipe execution in Live Metrics panel
+- [ ] Add recipe execution events to EventBus for better integration
+
+### Architecture Migration
+- [ ] Complete EventBus integration for recipe execution
+- [ ] Move recipe state to AppStateManager
+- [ ] Migrate remaining dashboard functionality to new architecture
+- [ ] Ensure WASM mode works with new event-driven architecture
+
+### UI/UX Improvements
+- [ ] Add visual indicator in file explorer for running recipe
+- [ ] Show recipe execution progress (line X of Y)
+- [ ] Add keyboard shortcuts (F5=Run, F10=Step, Shift+F5=Stop)
+- [ ] Improve error display for recipe failures
 
 ## Blocked/Decisions Needed
 - ~~Proto dependency in Canvas blocking WASM build~~ ✅ RESOLVED
+- ~~Recipe controls disappearing on file switch~~ ✅ RESOLVED
 - Need to decide on bundled examples strategy
 - TinyGo compatibility unknowns
 - Binary size targets for free tier (current: 28.6MB)

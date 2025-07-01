@@ -114,12 +114,14 @@ The dashboard now features a unified layout that works seamlessly in both server
 
 #### Recipe Integration (v3.2)
 - **Integrated Recipe Execution**: No separate Recipe Runner panel needed
-- **Editor Toolbar**: Context-sensitive controls appear for .recipe files
-- **Execution Controls**: Run, Step, Stop, Restart buttons in editor toolbar
+- **Singleton Recipe Controls**: Global controls in main toolbar, not per-file
+- **Context-Sensitive Activation**: Controls enable when viewing .recipe files
+- **Execution Controls**: Run, Step, Stop buttons with visual state feedback
 - **Line Highlighting**: Current executing line highlighted with blue background
 - **Tab Indicators**: Running recipes show ▶ in tab title
 - **Console Output**: Recipe execution feedback in console panel
 - **Debugger Experience**: Step through SDL commands with visual feedback
+- **UI Persistence**: Recipe controls remain visible when switching files
 
 #### FileSystem Architecture (Completed)
 - **FileSystemClient Interface**: Unified interface for all filesystem operations
