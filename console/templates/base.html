@@ -4,26 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.Title}} - SDL Canvas</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        // Configure Tailwind to use dark mode
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        gray: {
-                            850: '#1f2937',
-                            950: '#0f172a'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <link rel="stylesheet" href="/assets/index-W1uXUlrc.css">
     {{block "head" .}}{{end}}
 </head>
-<body class="h-full bg-gray-900 text-white font-mono">
+<body class="h-full bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-mono transition-colors">
+    <!-- Theme Switcher -->
+    <div class="fixed top-4 right-4 z-50">
+        <div class="flex items-center gap-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-1 shadow-md">
+            <button data-theme="light" class="theme-btn p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title="Light mode">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>
+            </button>
+            <button data-theme="dark" class="theme-btn p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title="Dark mode">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                </svg>
+            </button>
+            <button data-theme="system" class="theme-btn p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title="System theme">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+    
     {{block "content" .}}{{end}}
     
     <div id="app" 
@@ -31,7 +36,7 @@
          data-page-data='{{.PageDataJSON}}'>
     </div>
     
-    <script type="module" src="/assets/main.js"></script>
+    <script type="module" src="/assets/index-DYzZ0XVo.js"></script>
     {{block "scripts" .}}{{end}}
 </body>
 </html>

@@ -9,6 +9,7 @@ type SystemInfo struct {
 	Difficulty  string   `json:"difficulty"`
 	Tags        []string `json:"tags"`
 	Thumbnail   string   `json:"thumbnail,omitempty"`
+	LastUpdated string   `json:"lastUpdated"`
 }
 
 // SystemProject represents a full system project
@@ -21,6 +22,7 @@ type SystemProject struct {
 	Tags           []string                 `json:"tags"`
 	Versions       map[string]SystemVersion `json:"versions"`
 	DefaultVersion string                   `json:"defaultVersion"`
+	LastUpdated    string                   `json:"lastUpdated"`
 }
 
 // SystemVersion represents a version of a system
@@ -55,6 +57,7 @@ func (s *SystemCatalogService) initializeCatalog() {
 		Difficulty:     "beginner",
 		Tags:           []string{"web", "database", "caching", "rest-api"},
 		DefaultVersion: "v1",
+		LastUpdated:    "2024-01-15T10:00:00Z",
 		Versions: map[string]SystemVersion{
 			"v1": {
 				SDL: `// Bitly URL Shortener System
@@ -145,6 +148,7 @@ stop`,
 		Difficulty:     "intermediate",
 		Tags:           []string{"microservices", "real-time", "geo-spatial", "matching"},
 		DefaultVersion: "v1",
+		LastUpdated:    "2024-02-10T14:30:00Z",
 		Versions: map[string]SystemVersion{
 			"v1": {
 				SDL: `// Uber Ride Sharing System (Simplified)
@@ -271,6 +275,7 @@ stop`,
 		Difficulty:     "beginner",
 		Tags:           []string{"websocket", "real-time", "messaging"},
 		DefaultVersion: "v1",
+		LastUpdated:    "2024-03-05T09:15:00Z",
 		Versions: map[string]SystemVersion{
 			"v1": {
 				SDL: `// Real-time Chat Application
@@ -356,6 +361,7 @@ func (s *SystemCatalogService) ListSystems() []SystemInfo {
 			Category:    project.Category,
 			Difficulty:  project.Difficulty,
 			Tags:        project.Tags,
+			LastUpdated: project.LastUpdated,
 		})
 	}
 	return systems

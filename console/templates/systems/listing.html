@@ -1,13 +1,13 @@
 {{# include "base.html" #}}
 
 {{define "content"}}
-<div class="min-h-screen bg-gray-900">
+<div class="min-h-screen">
     <!-- Header -->
-    <header class="bg-gray-800 border-b border-gray-700">
+    <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div class="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
             <div class="text-center">
-                <h1 class="text-4xl font-bold text-white mb-4">SDL System Examples</h1>
-                <p class="text-xl text-gray-400">Explore and learn from real-world system architectures</p>
+                <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">SDL System Examples</h1>
+                <p class="text-xl text-gray-600 dark:text-gray-400">Explore and learn from real-world system architectures</p>
             </div>
         </div>
     </header>
@@ -19,23 +19,35 @@
             <input type="text" 
                    id="search-input" 
                    placeholder="Search systems..." 
-                   class="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                   class="flex-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
             
             <!-- Filter Buttons -->
             <div class="flex gap-2">
-                <button class="filter-btn px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-gray-400 hover:text-white hover:border-gray-600 transition-colors cursor-pointer active" data-filter="all">
+                <button class="filter-btn px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-600 transition-colors cursor-pointer active" data-filter="all">
                     All
                 </button>
-                <button class="filter-btn px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-gray-400 hover:text-white hover:border-gray-600 transition-colors cursor-pointer" data-filter="beginner">
+                <button class="filter-btn px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-600 transition-colors cursor-pointer" data-filter="beginner">
                     Beginner
                 </button>
-                <button class="filter-btn px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-gray-400 hover:text-white hover:border-gray-600 transition-colors cursor-pointer" data-filter="intermediate">
+                <button class="filter-btn px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-600 transition-colors cursor-pointer" data-filter="intermediate">
                     Intermediate
                 </button>
-                <button class="filter-btn px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-gray-400 hover:text-white hover:border-gray-600 transition-colors cursor-pointer" data-filter="advanced">
+                <button class="filter-btn px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-600 transition-colors cursor-pointer" data-filter="advanced">
                     Advanced
                 </button>
             </div>
+            
+            <!-- Sort Dropdown -->
+            <select id="sort-select" class="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                <option value="name">Sort by Name</option>
+                <option value="difficulty">Sort by Difficulty</option>
+                <option value="updated">Sort by Last Updated</option>
+            </select>
+        </div>
+        
+        <!-- Results count -->
+        <div class="mt-4 text-gray-600 dark:text-gray-400 text-sm">
+            <span id="results-count"></span>
         </div>
     </div>
     
@@ -43,14 +55,16 @@
     <div class="max-w-7xl mx-auto px-4 pb-12 sm:px-6 lg:px-8">
         <div id="systems-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {{range .Systems}}
-            <div class="system-card bg-gray-800 border border-gray-700 rounded-lg p-6 hover:border-gray-600 transition-all cursor-pointer hover:transform hover:scale-105 hover:shadow-xl" 
+            <div class="system-card bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 hover:border-gray-300 dark:hover:border-gray-600 transition-all cursor-pointer hover:transform hover:scale-105 hover:shadow-xl" 
                  data-id="{{.ID}}"
                  data-difficulty="{{.Difficulty}}"
                  data-name="{{.Name}}"
                  data-description="{{.Description}}"
-                 data-tags="{{range .Tags}}{{.}} {{end}}">
+                 data-tags="{{range .Tags}}{{.}} {{end}}"
+                 data-category="{{.Category}}"
+                 data-last-updated="{{.LastUpdated}}">
                 <div class="flex justify-between items-start mb-4">
-                    <h3 class="text-xl font-semibold text-white">{{.Name}}</h3>
+                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white">{{.Name}}</h3>
                     <span class="difficulty-badge px-3 py-1 text-xs rounded-full font-medium 
                         {{if eq .Difficulty "beginner"}}bg-green-900 text-green-300{{end}}
                         {{if eq .Difficulty "intermediate"}}bg-yellow-900 text-yellow-300{{end}}
@@ -59,11 +73,11 @@
                     </span>
                 </div>
                 
-                <p class="text-gray-400 mb-4 line-clamp-2">{{.Description}}</p>
+                <p class="text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">{{.Description}}</p>
                 
                 <div class="flex flex-wrap gap-2 mb-4">
                     {{range .Tags}}
-                    <span class="px-2 py-1 bg-gray-700 text-gray-300 text-xs rounded">{{.}}</span>
+                    <span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs rounded">{{.}}</span>
                     {{end}}
                 </div>
                 
@@ -86,6 +100,10 @@
 <style>
     .filter-btn.active {
         @apply bg-blue-600 border-blue-600 text-white;
+    }
+    
+    .theme-btn.active {
+        @apply bg-blue-100 dark:bg-blue-900;
     }
     
     .line-clamp-2 {

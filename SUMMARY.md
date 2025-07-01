@@ -100,6 +100,32 @@ SDL is a language and runtime for modeling and simulating distributed system per
 - ✅ Recipe parser enhanced with syntax validation (July 2025)
 - ⏳ Binary size optimization pending (current: 28.6MB)
 
+## System Showcase (July 2025)
+
+### Motivation
+- Provide beginner-friendly experience alongside IDE-like dashboard
+- Enable quick exploration of example systems
+- Support shareable links for specific system designs
+- Progressive learning path from examples to full editing
+
+### Implementation
+- **Server-Side Rendering**: Using Templar template engine
+- **System Catalog**: Pre-built examples (Bitly, Uber, Chat)
+- **Unified Styling**: Single Tailwind CSS build for consistency
+- **Enhanced UX Features**:
+  - Search and filtering by difficulty/tags
+  - Sorting by name, difficulty, or last updated
+  - Light/Dark/System theme switcher
+  - Responsive mobile-friendly design
+
+### Current Status
+- ✅ Server-side routing with Templar templates
+- ✅ System listing page with search/filter/sort
+- ✅ System details page with focused editing
+- ✅ Unified Tailwind CSS (replaced CDN usage)
+- ✅ Theme switcher for all pages
+- ✅ TypeScript handlers for enhanced interactivity
+
 ## Performance Characteristics
 
 ### Traffic Generation
