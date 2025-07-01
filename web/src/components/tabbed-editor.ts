@@ -446,6 +446,12 @@ export class TabbedEditor {
     return false;
   }
 
+  activeTabHasUnsavedChanges(): boolean {
+    if (!this.activeTab) return false;
+    const tab = this.tabs.get(this.activeTab);
+    return tab?.modified || false;
+  }
+
   dispose() {
     for (const tab of this.tabs.values()) {
       if (tab.editor) {

@@ -472,7 +472,7 @@ export class Dashboard {
         id: 'load',
         label: 'Load',
         icon: '📂',
-        tooltip: 'Load and compile SDL file',
+        tooltip: 'Load current file into Canvas for compilation and simulation',
         onClick: () => this.handleLoad()
       },
       {
@@ -1762,19 +1762,29 @@ export class Dashboard {
         this.tabbedEditor = new TabbedEditor(element, this.dockview);
         
         this.tabbedEditor.setChangeHandler(async (path, content, modified, fsId) => {
-          // Handle save when modified becomes false (i.e., file was saved)
-          if (!modified && fsId) {
-            try {
-              // Use the provided filesystem ID to save the file
-              const fs = this.fileExplorer?.getFileSystem(fsId);
-              if (fs && !fs.isReadOnly) {
-                await fs.writeFile(path, content);
-                this.consolePanel?.success(`Saved: ${path}`);
-              } else {
-                this.consolePanel?.error(`Cannot save: filesystem ${fsId} is read-only or not found`);
+          if (fsId) {
+            const fs = this.fileExplorer?.getFileSystem(fsId);
+            
+            // Update Save button state based on modification status and filesystem writability
+            if (fs) {
+              this.toolbar?.updateButton('save', { 
+                disabled: fs.isReadOnly || !modified 
+              });
+            }
+            
+            // Handle save when modified becomes false (i.e., file was saved)
+            if (!modified) {
+              try {
+                // Use the provided filesystem ID to save the file
+                if (fs && !fs.isReadOnly) {
+                  await fs.writeFile(path, content);
+                  this.consolePanel?.success(`Saved: ${path}`);
+                } else {
+                  this.consolePanel?.error(`Cannot save: filesystem ${fsId} is read-only or not found`);
+                }
+              } catch (error) {
+                this.consolePanel?.error(`Failed to save: ${error}`);
               }
-            } catch (error) {
-              this.consolePanel?.error(`Failed to save: ${error}`);
             }
           }
         });
@@ -1783,6 +1793,15 @@ export class Dashboard {
           // Highlight the file in the explorer
           if (this.fileExplorer) {
             this.fileExplorer.highlightFile(path, fsId);
+          }
+          
+          // Update Save button state for the current tab
+          const fs = this.fileExplorer?.getFileSystem(fsId);
+          if (fs && this.tabbedEditor) {
+            const hasUnsavedChanges = this.tabbedEditor.activeTabHasUnsavedChanges();
+            this.toolbar?.updateButton('save', { 
+              disabled: fs.isReadOnly || !hasUnsavedChanges 
+            });
           }
         });
       }
