@@ -97,6 +97,7 @@ SDL is a language and runtime for modeling and simulating distributed system per
 - ✅ Panel display issue resolved
 - ✅ Recipe execution in WASM mode implemented
 - ✅ Singleton recipe controls integrated into toolbar
+- ✅ Recipe parser enhanced with syntax validation (July 2025)
 - ⏳ Binary size optimization pending (current: 28.6MB)
 
 ## Performance Characteristics

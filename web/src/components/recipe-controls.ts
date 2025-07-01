@@ -138,15 +138,22 @@ export class RecipeControls {
     const content = this.tabbedEditor.getActiveContent();
     if (!content) return;
     
-    // Stop any currently running recipe
-    if (this.currentRecipeTab && this.currentRecipeTab !== activeTab) {
-      await this.runner.stop();
-      this.tabbedEditor.setRecipeRunning(this.currentRecipeTab, false);
+    try {
+      // Stop any currently running recipe
+      if (this.currentRecipeTab && this.currentRecipeTab !== activeTab) {
+        await this.runner.stop();
+        this.tabbedEditor.setRecipeRunning(this.currentRecipeTab, false);
+      }
+      
+      this.currentRecipeTab = activeTab;
+      await this.runner.loadRecipe(activeTab.split(':')[1], content);
+      await this.runner.start('step');
+    } catch (error: any) {
+      // Recipe failed to load - reset state
+      this.currentRecipeTab = null;
+      this.render();
+      // Error already shown to console by runner
     }
-    
-    this.currentRecipeTab = activeTab;
-    await this.runner.loadRecipe(activeTab.split(':')[1], content);
-    await this.runner.start('step');
   }
 
   async handleStep() {

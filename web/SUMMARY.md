@@ -122,6 +122,9 @@ The dashboard now features a unified layout that works seamlessly in both server
 - **Console Output**: Recipe execution feedback in console panel
 - **Debugger Experience**: Step through SDL commands with visual feedback
 - **UI Persistence**: Recipe controls remain visible when switching files
+- **Syntax Validation**: Parser detects and reports unsupported shell syntax
+- **Monaco Integration**: Custom syntax highlighting for .recipe files
+- **Error Visualization**: Invalid syntax shown in red during editing
 
 #### FileSystem Architecture (Completed)
 - **FileSystemClient Interface**: Unified interface for all filesystem operations

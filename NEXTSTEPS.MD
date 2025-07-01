@@ -148,6 +148,22 @@
    - Tab key format (`fsId:path`) requires parsing for file detection
    - Recipe state persists across file switches
 
+### Recipe Parser Enhancement
+1. **Limited Shell Syntax**:
+   - Recipe files support only safe SDL commands, echo, and read
+   - No support for variables, control flow, pipes, or redirections
+   - Clear error messages for unsupported syntax patterns
+
+2. **Monaco Editor Integration**:
+   - Custom language definition for .recipe files
+   - Syntax highlighting with invalid patterns shown in red
+   - Visual feedback for syntax errors during editing
+
+3. **Error Detection Patterns**:
+   - Comprehensive regex patterns detect unsupported features
+   - Line-specific error reporting for debugging
+   - Fail-fast approach prevents confusing partial execution
+
 ## Immediate Next Steps
 
 ### Recipe Integration Completion

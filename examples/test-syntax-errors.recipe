@@ -1,0 +1,59 @@
+#!/bin/bash
+# Test Recipe with Various Syntax Errors
+
+# Valid commands
+echo "Starting test..."
+sdl load bank.sdl
+
+# Variables - not supported
+NAME="test"
+echo "Hello $NAME"
+
+# If statement - not supported
+if [ $? -eq 0 ]; then
+  echo "Success"
+fi
+
+# For loop - not supported
+for i in 1 2 3; do
+  echo "Iteration $i"
+done
+
+# Pipes - not supported
+ls | grep sdl
+
+# Command substitution - not supported
+DATE=$(date)
+echo "Today is `date`"
+
+# Background jobs - not supported
+sdl gen start myGen &
+
+# Redirections - not supported
+echo "output" > file.txt
+cat < input.txt
+
+# Export - not supported
+export PATH=/usr/bin:$PATH
+
+# Other shell commands - not supported
+cd /tmp
+pwd
+mkdir test
+
+# Valid SDL commands
+sdl use Banking
+sdl gen add myGen api.newUser 10
+read
+sdl gen start myGen
+
+# Invalid SDL command
+sdl invalid-command arg1 arg2
+
+# Empty echo - not valid
+echo
+
+# Read with variable - not supported
+read response
+
+echo "Test complete"

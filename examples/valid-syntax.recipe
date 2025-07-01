@@ -1,0 +1,54 @@
+#!/bin/bash
+# Valid Recipe Syntax Example
+
+# Comments are supported with # at the beginning of a line
+# This recipe demonstrates all supported SDL recipe commands
+
+# Echo statements for output
+echo "Starting Banking system simulation..."
+echo "This recipe will load a system and generate traffic"
+
+# Load an SDL file
+sdl load bank.sdl
+
+# Use a specific system
+sdl use Banking
+
+# Create traffic generators
+echo "Setting up traffic generators..."
+sdl gen add userTraffic api.newUser 100
+sdl gen add transactionTraffic api.createTransaction 50
+
+# Add metrics to monitor
+echo "Configuring metrics..."
+sdl metrics add userLatency api newUser --type latency --aggregation avg
+sdl metrics add transactionCount api createTransaction --type count
+
+# Start generators
+echo "Starting traffic generation..."
+sdl gen start userTraffic
+sdl gen start transactionTraffic
+
+# Pause for observation
+echo "Traffic is now running. Press Step/Continue to proceed..."
+read
+
+# Modify generator rates
+echo "Increasing traffic rates..."
+sdl gen update userTraffic 200
+sdl gen update transactionTraffic 100
+
+# Another pause point
+echo "Observe the increased traffic. Press Step/Continue to stop..."
+read
+
+# Stop generators
+echo "Stopping traffic generation..."
+sdl gen stop --all
+
+# Clean up
+echo "Cleaning up generators..."
+sdl gen delete userTraffic
+sdl gen delete transactionTraffic
+
+echo "Recipe execution complete!"

@@ -122,6 +122,76 @@ export class TabbedEditor {
         'editor.background': '#1e1e1e'
       }
     });
+
+    // Register Recipe language
+    monaco.languages.register({ id: 'recipe' });
+
+    // Define Recipe syntax highlighting
+    monaco.languages.setMonarchTokensProvider('recipe', {
+      keywords: ['sdl', 'echo', 'read'],
+      
+      tokenizer: {
+        root: [
+          // Comments
+          [/^#.*$/, 'comment'],
+          
+          // SDL commands
+          [/^sdl\s+(load|use|gen|metrics|set|canvas)/, 'keyword'],
+          
+          // Echo statements
+          [/^echo\s+/, 'keyword'],
+          
+          // Read (pause) statements
+          [/^read\s*$/, 'keyword'],
+          
+          // Strings in quotes
+          [/"([^"\\]|\\.)*"/, 'string'],
+          [/'([^'\\]|\\.)*'/, 'string'],
+          
+          // Numbers
+          [/\d+(\.\d+)?/, 'number'],
+          
+          // Variables (shown as errors)
+          [/\$\w+/, 'invalid'],
+          [/\$\{[^}]+\}/, 'invalid'],
+          
+          // Unsupported shell constructs
+          [/^\s*(if|for|while|case|function)\s+/, 'invalid'],
+          [/\|/, 'invalid'],
+          [/>>?/, 'invalid'],
+          [/</, 'invalid'],
+          [/&\s*$/, 'invalid'],
+          
+          // Component.method patterns
+          [/\b\w+\.\w+\b/, 'type'],
+          
+          // Flags
+          [/--\w+/, 'attribute'],
+          
+          // Default
+          [/.*/, 'text']
+        ]
+      }
+    });
+
+    // Define Recipe theme
+    monaco.editor.defineTheme('recipe-dark', {
+      base: 'vs-dark',
+      inherit: true,
+      rules: [
+        { token: 'comment', foreground: '6A9955' },
+        { token: 'keyword', foreground: '569CD6' },
+        { token: 'string', foreground: 'CE9178' },
+        { token: 'number', foreground: 'B5CEA8' },
+        { token: 'type', foreground: '4EC9B0' },
+        { token: 'attribute', foreground: '9CDCFE' },
+        { token: 'invalid', foreground: 'FF6B6B', fontStyle: 'bold' },
+        { token: 'text', foreground: 'D4D4D4' }
+      ],
+      colors: {
+        'editor.background': '#1e1e1e'
+      }
+    });
   }
 
   private initializeLayout() {
@@ -179,11 +249,23 @@ export class TabbedEditor {
     editorContainer.className = 'h-full';
     editorContainer.style.display = 'none'; // Initially hidden
     
+    // Determine language and theme based on file extension
+    let language = 'plaintext';
+    let theme = 'vs-dark';
+    
+    if (path.endsWith('.sdl')) {
+      language = 'sdl';
+      theme = 'sdl-dark';
+    } else if (path.endsWith('.recipe')) {
+      language = 'recipe';
+      theme = 'recipe-dark';
+    }
+    
     // Create Monaco editor instance
     const editor = monaco.editor.create(editorContainer, {
       value: content,
-      language: path.endsWith('.sdl') ? 'sdl' : 'plaintext',
-      theme: 'sdl-dark',
+      language: language,
+      theme: theme,
       automaticLayout: true,
       minimap: { enabled: false },
       fontSize: 14,
