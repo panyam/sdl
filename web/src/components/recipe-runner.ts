@@ -9,6 +9,12 @@ export interface RecipeCommand {
   description?: string;
 }
 
+export interface RecipeValidationError {
+  lineNumber: number;
+  message: string;
+  severity: 'error' | 'warning';
+}
+
 export interface RecipeStep {
   index: number;
   command: RecipeCommand;
@@ -626,5 +632,141 @@ export class RecipeRunner {
       this.state.autoDelay = Math.max(100, delay); // Minimum 100ms
       this.notifyStateChange();
     }
+  }
+
+  // Validate recipe content without loading it
+  validateRecipe(content: string): RecipeValidationError[] {
+    const lines = content.split('\n');
+    const errors: RecipeValidationError[] = [];
+
+    lines.forEach((line, index) => {
+      const trimmed = line.trim();
+      const lineNumber = index + 1;
+
+      // Empty line or comment - skip
+      if (trimmed === '' || trimmed.startsWith('#')) {
+        return;
+      }
+
+      // Echo statement
+      if (trimmed.startsWith('echo ')) {
+        const echoContent = trimmed.substring(5).trim();
+        if (!echoContent) {
+          errors.push({
+            lineNumber,
+            message: 'Empty echo statement',
+            severity: 'error'
+          });
+        }
+        if (echoContent.includes('$')) {
+          errors.push({
+            lineNumber,
+            message: 'Variable expansion not supported in echo statements',
+            severity: 'error'
+          });
+        }
+        return;
+      }
+
+      // Read command
+      if (trimmed === 'read' || trimmed.startsWith('read ')) {
+        if (trimmed.includes(' ') && trimmed !== 'read') {
+          errors.push({
+            lineNumber,
+            message: "'read' with variables not supported. Use plain 'read' for pause points",
+            severity: 'error'
+          });
+        }
+        return;
+      }
+
+      // SDL command
+      if (trimmed.startsWith('sdl ')) {
+        const parts = this.parseCommandLine(trimmed);
+        if (parts.length > 1) {
+          const validCommands = ['load', 'use', 'gen', 'metrics', 'set', 'canvas'];
+          const sdlCommand = parts[1];
+          if (!validCommands.includes(sdlCommand)) {
+            errors.push({
+              lineNumber,
+              message: `Unknown SDL command '${sdlCommand}'. Valid commands: ${validCommands.join(', ')}`,
+              severity: 'error'
+            });
+          }
+          if (trimmed.includes('$')) {
+            errors.push({
+              lineNumber,
+              message: 'Variable expansion not supported in SDL commands',
+              severity: 'error'
+            });
+          }
+        } else {
+          errors.push({
+            lineNumber,
+            message: 'SDL command missing arguments',
+            severity: 'error'
+          });
+        }
+        return;
+      }
+
+      // Check for unsupported shell syntax
+      const unsupportedPatterns = [
+        { pattern: /^\s*if\s+/, message: 'if statements not supported' },
+        { pattern: /^\s*for\s+/, message: 'for loops not supported' },
+        { pattern: /^\s*while\s+/, message: 'while loops not supported' },
+        { pattern: /^\s*case\s+/, message: 'case statements not supported' },
+        { pattern: /^\s*function\s+/, message: 'function definitions not supported' },
+        { pattern: /.*\|.*/, message: 'pipes not supported' },
+        { pattern: /.*>>?.*/, message: 'redirections not supported' },
+        { pattern: /.*<.*/, message: 'input redirection not supported' },
+        { pattern: /.*\$\(.*\)/, message: 'command substitution not supported' },
+        { pattern: /.*`.*`/, message: 'backtick command substitution not supported' },
+        { pattern: /^\s*export\s+/, message: 'export not supported' },
+        { pattern: /^\s*source\s+/, message: 'source not supported' },
+        { pattern: /^\s*\.\s+/, message: 'source (.) not supported' },
+        { pattern: /.*\$\{.*\}/, message: 'variable expansion not supported' },
+        { pattern: /.*\$\w+/, message: 'variables not supported' },
+        { pattern: /.*&\s*$/, message: 'background jobs not supported' },
+        { pattern: /^\s*\[.*\]/, message: 'test expressions not supported' },
+        { pattern: /^\s*\[\[.*\]\]/, message: 'test expressions not supported' },
+        { pattern: /.*\$\(\(.*\)\)/, message: 'arithmetic expansion not supported' }
+      ];
+
+      for (const { pattern, message } of unsupportedPatterns) {
+        if (pattern.test(trimmed)) {
+          errors.push({
+            lineNumber,
+            message: `${message}`,
+            severity: 'error'
+          });
+          return;
+        }
+      }
+
+      // Check for other executable commands
+      const firstWord = trimmed.split(/\s+/)[0];
+      const unsupportedCommands = [
+        'cd', 'pwd', 'ls', 'mkdir', 'rm', 'cp', 'mv', 'cat', 'grep', 'sed', 'awk',
+        'find', 'chmod', 'chown', 'curl', 'wget', 'git', 'npm', 'yarn', 'python',
+        'node', 'bash', 'sh', 'zsh', 'exit', 'return', 'break', 'continue'
+      ];
+      
+      if (unsupportedCommands.includes(firstWord)) {
+        errors.push({
+          lineNumber,
+          message: `Command '${firstWord}' not supported. Only 'sdl', 'echo', and 'read' commands are allowed`,
+          severity: 'error'
+        });
+      } else if (!['echo', 'read', 'sdl'].includes(firstWord)) {
+        errors.push({
+          lineNumber,
+          message: `Unknown command '${firstWord}'. Only 'sdl', 'echo', and 'read' commands are supported`,
+          severity: 'error'
+        });
+      }
+    });
+
+    return errors;
   }
 }

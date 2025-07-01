@@ -1866,6 +1866,13 @@ export class Dashboard {
           }, 10);
         });
         
+        // Set up recipe content change handler for validation
+        this.tabbedEditor.setRecipeContentChangeHandler(() => {
+          if (this.recipeControls) {
+            this.recipeControls.validateCurrentRecipe();
+          }
+        });
+        
         // Initialize recipe controls now that tabbed editor is ready
         // Use a small delay to ensure DOM is updated
         setTimeout(() => {

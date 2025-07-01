@@ -171,3 +171,26 @@
   width: 10px !important;
   margin-left: 3px;
 }
+
+/* Recipe error highlighting */
+.recipe-error-line {
+  background-color: rgba(255, 0, 0, 0.1) !important;
+}
+
+.recipe-warning-line {
+  background-color: rgba(255, 165, 0, 0.1) !important;
+}
+
+.recipe-error-glyph {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23ff6b6b'%3E%3Cpath d='M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM0 8a8 8 0 1116 0A8 8 0 010 8zm7.25-3.25v4.5h1.5v-4.5h-1.5zm0 6v1.5h1.5v-1.5h-1.5z'/%3E%3C/svg%3E") no-repeat center center;
+  background-size: 14px 14px;
+  width: 16px !important;
+  margin-left: 2px;
+}
+
+.recipe-warning-glyph {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23ffa500'%3E%3Cpath d='M7.56 1h.88l6.54 12.26-.44.74H1.46L1 13.26 7.56 1zM8 2.28L2.07 13h11.86L8 2.28zM8.625 12v-1.5h-1.25V12h1.25zm-1.25-3V6h1.25v3h-1.25z'/%3E%3C/svg%3E") no-repeat center center;
+  background-size: 14px 14px;
+  width: 16px !important;
+  margin-left: 2px;
+}

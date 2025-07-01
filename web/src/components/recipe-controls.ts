@@ -67,11 +67,23 @@ export class RecipeControls {
     const activeTab = this.tabbedEditor.getActiveTab();
     
     let isRecipeFile = false;
+    let recipeErrors: string[] = [];
     if (activeTab) {
       const [_fsId, path] = activeTab.split(':');
       isRecipeFile = path?.endsWith('.recipe') || false;
+      
+      // Validate recipe content if it's a recipe file
+      if (isRecipeFile && !this.isRunning) {
+        const content = this.tabbedEditor.getActiveContent();
+        if (content) {
+          const validationErrors = this.runner.validateRecipe(content);
+          recipeErrors = validationErrors.map(err => `Line ${err.lineNumber}: ${err.message}`);
+        }
+      }
     }
-    const canRun = isRecipeFile && !this.isRunning;
+    
+    const hasErrors = recipeErrors.length > 0;
+    const canRun = isRecipeFile && !this.isRunning && !hasErrors;
     const canStop = this.isRunning;
     const canStep = this.isRunning;
     
@@ -79,6 +91,16 @@ export class RecipeControls {
     if (this.currentRecipeTab) {
       const [_fsId, path] = this.currentRecipeTab.split(':');
       recipeName = path.split('/').pop() || '';
+    }
+    
+    // Build tooltip for run button
+    let runTooltip = 'Run recipe';
+    if (hasErrors) {
+      runTooltip = `Recipe has errors:\n${recipeErrors.join('\n')}`;
+    } else if (!isRecipeFile) {
+      runTooltip = 'Open a .recipe file to run';
+    } else if (this.isRunning) {
+      runTooltip = 'A recipe is already running';
     }
     
     this.container.innerHTML = `
@@ -93,10 +115,10 @@ export class RecipeControls {
         ` : ''}
         
         <button 
-          class="toolbar-btn ${canRun ? '' : 'opacity-50 cursor-not-allowed'}"
+          class="toolbar-btn ${canRun ? '' : 'opacity-50 cursor-not-allowed'} ${hasErrors ? 'text-red-400' : ''}"
           onclick="window.recipeControls?.handleRun()"
           ${canRun ? '' : 'disabled'}
-          title="Run recipe"
+          title="${runTooltip}"
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
             <path d="M5 3l8 5-8 5V3z"/>
@@ -172,6 +194,32 @@ export class RecipeControls {
   updateForActiveTab() {
     // Re-render when active tab changes
     this.render();
+    
+    // Validate recipe if it's active
+    const activeTab = this.tabbedEditor.getActiveTab();
+    if (activeTab) {
+      const [_fsId, path] = activeTab.split(':');
+      if (path?.endsWith('.recipe')) {
+        this.validateCurrentRecipe();
+      } else {
+        // Clear any existing errors
+        this.tabbedEditor.clearErrorDecorations(activeTab);
+      }
+    }
+  }
+
+  validateCurrentRecipe() {
+    const activeTab = this.tabbedEditor.getActiveTab();
+    if (!activeTab) return;
+    
+    const [_fsId, path] = activeTab.split(':');
+    if (!path?.endsWith('.recipe')) return;
+    
+    const content = this.tabbedEditor.getActiveContent();
+    if (!content) return;
+    
+    const errors = this.runner.validateRecipe(content);
+    this.tabbedEditor.updateErrorDecorations(activeTab, errors);
   }
 
   dispose() {

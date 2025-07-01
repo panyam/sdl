@@ -24,6 +24,7 @@ export class TabbedEditor {
   private activeTab: string | null = null;
   private onChange?: (path: string, content: string, modified: boolean, fsId?: string) => void;
   private onTabSwitch?: (path: string, fsId: string) => void;
+  private onRecipeContentChange?: (tabKey: string) => void;
   private tabBar: HTMLElement | null = null;
   private editorContainer: HTMLElement | null = null;
   
@@ -231,6 +232,10 @@ export class TabbedEditor {
     this.onTabSwitch = handler;
   }
 
+  setRecipeContentChangeHandler(handler: (tabKey: string) => void) {
+    this.onRecipeContentChange = handler;
+  }
+
 
   async openFile(path: string, content: string, readOnly: boolean = false, fsId: string = 'local', fsName?: string) {
     const tabKey = `${fsId}:${path}`;
@@ -285,11 +290,18 @@ export class TabbedEditor {
     // Track changes
     editor.onDidChangeModelContent(() => {
       const tab = this.tabs.get(tabKey);
-      if (tab && !tab.modified) {
-        tab.modified = true;
-        this.updateTabTitle(tabKey);
-        if (this.onChange) {
-          this.onChange(path, editor.getValue(), true, fsId);
+      if (tab) {
+        if (!tab.modified) {
+          tab.modified = true;
+          this.updateTabTitle(tabKey);
+          if (this.onChange) {
+            this.onChange(path, editor.getValue(), true, fsId);
+          }
+        }
+        
+        // Notify about recipe content changes for validation
+        if (path.endsWith('.recipe') && this.onRecipeContentChange) {
+          this.onRecipeContentChange(tabKey);
         }
       }
     });
@@ -583,23 +595,31 @@ export class TabbedEditor {
     
     // Update line highlighting
     if (tab.editor) {
-      // Clear previous decorations
-      if (tab.decorations) {
+      // Clear previous decorations - but preserve error decorations
+      const model = tab.editor.getModel();
+      const hasErrors = model && monaco.editor.getModelMarkers({ resource: model.uri }).length > 0;
+      
+      if (tab.decorations && !hasErrors) {
         tab.editor.deltaDecorations(tab.decorations, []);
       }
       
       // Add new decoration for current line
       if (isRunning && currentLine) {
-        tab.decorations = tab.editor.deltaDecorations([], [
-          {
-            range: new monaco.Range(currentLine, 1, currentLine, 1),
-            options: {
-              isWholeLine: true,
-              className: 'recipe-current-line',
-              glyphMarginClassName: 'recipe-current-line-glyph'
-            }
+        const newDecorations = [{
+          range: new monaco.Range(currentLine, 1, currentLine, 1),
+          options: {
+            isWholeLine: true,
+            className: 'recipe-current-line',
+            glyphMarginClassName: 'recipe-current-line-glyph'
           }
-        ]);
+        }];
+        
+        // If we have error decorations, we need to merge them
+        if (hasErrors && tab.decorations) {
+          tab.decorations = tab.editor.deltaDecorations(tab.decorations, newDecorations);
+        } else {
+          tab.decorations = tab.editor.deltaDecorations([], newDecorations);
+        }
         
         // Scroll to line
         tab.editor.revealLineInCenter(currentLine);
@@ -609,5 +629,63 @@ export class TabbedEditor {
 
   getActiveTabKey(): string | null {
     return this.activeTab;
+  }
+
+  updateErrorDecorations(tabKey: string, errors: Array<{lineNumber: number, message: string, severity: 'error' | 'warning'}>) {
+    const tab = this.tabs.get(tabKey);
+    if (!tab || !tab.editor) return;
+    
+    // Clear existing error decorations
+    if (tab.decorations) {
+      tab.editor.deltaDecorations(tab.decorations, []);
+    }
+    
+    // Create model markers for errors
+    const model = tab.editor.getModel();
+    if (!model) return;
+    
+    // Convert errors to Monaco markers
+    const markers = errors.map(error => ({
+      severity: error.severity === 'error' ? monaco.MarkerSeverity.Error : monaco.MarkerSeverity.Warning,
+      startLineNumber: error.lineNumber,
+      startColumn: 1,
+      endLineNumber: error.lineNumber,
+      endColumn: model.getLineMaxColumn(error.lineNumber),
+      message: error.message,
+      source: 'Recipe Validator'
+    }));
+    
+    // Set markers on the model
+    monaco.editor.setModelMarkers(model, 'recipe-validator', markers);
+    
+    // Also add decorations for visual feedback
+    const decorations = errors.map(error => ({
+      range: new monaco.Range(error.lineNumber, 1, error.lineNumber, 1),
+      options: {
+        isWholeLine: true,
+        className: error.severity === 'error' ? 'recipe-error-line' : 'recipe-warning-line',
+        glyphMarginClassName: error.severity === 'error' ? 'recipe-error-glyph' : 'recipe-warning-glyph',
+        glyphMarginHoverMessage: { value: error.message }
+      }
+    }));
+    
+    tab.decorations = tab.editor.deltaDecorations([], decorations);
+  }
+
+  clearErrorDecorations(tabKey: string) {
+    const tab = this.tabs.get(tabKey);
+    if (!tab || !tab.editor) return;
+    
+    // Clear decorations
+    if (tab.decorations) {
+      tab.editor.deltaDecorations(tab.decorations, []);
+      tab.decorations = undefined;
+    }
+    
+    // Clear markers
+    const model = tab.editor.getModel();
+    if (model) {
+      monaco.editor.setModelMarkers(model, 'recipe-validator', []);
+    }
   }
 }
