@@ -1,6 +1,6 @@
 # SDL Web Dashboard Summary
 
-**Version:** Unified Dashboard Layout with FileSystem Refactoring (v3.1)
+**Version:** Unified Dashboard Layout with Recipe Integration (v3.2)
 
 ## 🎯 Purpose
 
@@ -79,13 +79,25 @@ The dashboard now features a unified layout that works seamlessly in both server
 - **Multiple Files**: Open multiple files simultaneously in tabs
 - **Modification Tracking**: Visual (*) indicator for unsaved changes
 - **File Operations**: Save active tab, close with unsaved changes warning
+- **Tab Uniqueness**: Composite keys (fsId:path) handle same-named files across filesystems
+- **Filesystem Names**: Tab titles show filesystem:filename for clarity
+- **Sync with Explorer**: Selecting tab highlights corresponding file in tree
+
+#### Recipe Integration (v3.2)
+- **Integrated Recipe Execution**: No separate Recipe Runner panel needed
+- **Editor Toolbar**: Context-sensitive controls appear for .recipe files
+- **Execution Controls**: Run, Step, Stop, Restart buttons in editor toolbar
+- **Line Highlighting**: Current executing line highlighted with blue background
+- **Tab Indicators**: Running recipes show ▶ in tab title
+- **Console Output**: Recipe execution feedback in console panel
+- **Debugger Experience**: Step through SDL commands with visual feedback
 
 #### FileSystem Architecture (Completed)
 - **FileSystemClient Interface**: Unified interface for all filesystem operations
 - **Implementations**:
   - `LocalFileSystemClient`: Server-hosted filesystems via REST API
   - `GitHubFileSystemClient`: Read-only GitHub repository access
-  - `IndexedDBFileSystemClient`: Browser-local storage using IndexedDB
+  - `IndexedDBFileSystemClient`: Browser-local storage using IndexedDB (planned)
 - **Server Handler**: `/api/filesystems/{fsId}/{path}` with security and filtering
 - **Security**: Path traversal protection, read-only enforcement
 - **File Filtering**: Configurable extensions (`.sdl`, `.recipe`)

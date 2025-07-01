@@ -24,12 +24,17 @@ SDL aims to become the industry standard for system design education, capacity p
 - Multi-canvas isolation for concurrent simulations
 - Secure filesystem access with extension filtering
 - Tabbed editor with real-time file operations
+- Integrated recipe execution with visual debugging
+- Multi-filesystem support with unified interface
 
 ### Recent Achievements (v3.2)
 - **FileSystem Architecture**: Complete abstraction layer for file operations
 - **Security Implementation**: Path traversal protection and read-only enforcement
 - **File Filtering**: Server-side extension filtering (.sdl, .recipe)
 - **Multi-FileSystem Support**: Local and GitHub filesystem clients
+- **Recipe Integration**: In-editor execution controls for SDL command sequences
+- **Tab Management**: Composite keys for unique file identification across filesystems
+- **Visual Debugging**: Line highlighting and execution tracking for recipes
 
 ## Roadmap Phases
 

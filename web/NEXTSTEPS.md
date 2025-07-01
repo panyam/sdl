@@ -2,6 +2,15 @@
 
 ## ✅ Recently Completed
 
+### Recipe Integration (v3.2)
+- **Integrated Recipe Execution**: Recipe controls now embedded in tabbed editor
+- **No Separate Panel**: Removed Recipe Runner panel for cleaner interface
+- **Editor Toolbar**: Context-sensitive controls for .recipe files
+- **Line Highlighting**: Visual execution tracking with blue highlighting
+- **Tab Indicators**: Running recipes show ▶ in tab title
+- **Console Integration**: All output directed to console panel
+- **Debugger Experience**: Step-by-step execution with visual feedback
+
 ### Dashboard Layout Unification (v3.0)
 - **Unified Layout**: Single dashboard implementation for both server and WASM modes
 - **FileClient Interface**: Abstraction layer for file operations across modes
@@ -50,6 +59,8 @@
 - ✅ **FileSystem Architecture**: Complete client-server implementation
 - ✅ **Multi-FileSystem Support**: Local and GitHub filesystems working
 - ✅ **Tabbed Editor**: Full multi-file editing with save/load
+- ✅ **Recipe Integration**: In-editor execution controls for .recipe files
+- ✅ **Tab Uniqueness**: Proper handling of same-named files across filesystems
 - ✅ **File Filtering**: Server enforces `.sdl` and `.recipe` only
 - ✅ **Security**: Path traversal protection and read-only enforcement
 - ✅ **File Operations**: Create, read, update, delete files and directories
@@ -58,31 +69,37 @@
 
 ## 🔄 Next Development Priorities
 
-### 1. Complete FileSystem Architecture (Immediate)
-- Implement FileSystemClient interface and concrete classes
-- Create server-side filesystem handler with security
-- Update MultiFSExplorer to use new clients
-- Test file operations end-to-end
+### 1. GitHub FileSystem Implementation (High Priority)
+- Implement actual GitHub API calls in GitHubFileSystemClient
+- Add caching layer for GitHub filesystem to reduce API calls
+- Handle rate limiting and authentication
+- Support private repositories with token authentication
 
-### 2. Data Integration (High Priority)
+### 2. IndexedDB FileSystem (Medium Priority)
+- Implement IndexedDBFileSystemClient for browser storage
+- Enable saving projects locally in browser
+- Support import/export of local projects
+- Offline mode capabilities
+
+### 3. Data Integration (High Priority)
 - **Load SDL Files**: Connect file loading functionality to populate System Architecture panel
 - **Generator Integration**: Wire up traffic generation controls with backend API
 - **Measurement System**: Enable measurement creation and configuration
 - **Live Data Flow**: Connect real-time metrics to charts
 
-### 2. Enhanced Visualization (Medium Priority)
+### 4. Enhanced Visualization (Medium Priority)
 - **Interactive System Diagrams**: Click to select/highlight components
 - **Traffic Flow Animation**: Visual representation of data flow between components
 - **Component Details**: Hover tooltips with component information
 - **Method-level Metrics**: Drill-down views for individual component methods
 
-### 3. User Experience Improvements (Medium Priority)
+### 5. User Experience Improvements (Medium Priority)
 - **Loading States**: Proper loading indicators during operations
 - **Error Feedback**: User-friendly error messages and recovery options
 - **Keyboard Shortcuts**: Quick actions for common operations
 - **Tour/Help System**: Guided introduction for new users
 
-### 4. Advanced Features (Low Priority)
+### 6. Advanced Features (Low Priority)
 - **Layout Templates**: Predefined layouts for different use cases
 - **Panel Maximization**: Full-screen mode for individual panels
 - **Export Functionality**: Save diagrams and charts as images
@@ -105,6 +122,12 @@
 
 ## 💡 Key Learnings
 
+### Recipe Integration Design
+1. **In-Context Execution**: Keep execution controls where the code is
+2. **Visual Feedback**: Line highlighting essential for step debugging
+3. **State Management**: Recipe runner and editor must sync execution state
+4. **UI Simplicity**: Removing panels can improve user experience
+
 ### FileSystem Security Implementation
 1. **Path Validation**: Always use `filepath.Clean()` and check absolute paths
 2. **Extension Filtering**: Whitelist approach is safer than blacklist
@@ -116,6 +139,7 @@
 2. **ID-Based Routing**: Clients use filesystem IDs, not actual paths
 3. **REST Conventions**: Use HTTP methods appropriately (GET/PUT/DELETE/POST)
 4. **JSON Responses**: Consistent structure for all API responses
+5. **Composite Keys**: Use fsId:path for unique file identification across filesystems
 
 ### Code Organization
 - **Modular Structure**: Separate methods for default layout and restoration
