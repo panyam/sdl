@@ -200,9 +200,26 @@ export class GitHubFileSystemClient implements FileSystemClient {
 
   async listFiles(path: string): Promise<string[]> {
     try {
-      // Construct GitHub API path
+      // Normalize the path
       const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-      const repoPath = `${this.basePath}${normalizedPath}`.replace(/\/+/g, '/').replace(/\/$/, '');
+      
+      // Build the repo path
+      let repoPath: string;
+      if (normalizedPath === '/') {
+        // Root listing - use basePath directly
+        repoPath = this.basePath;
+      } else {
+        // For subpaths, append to basePath only if path doesn't already include it
+        if (normalizedPath.startsWith(this.basePath)) {
+          repoPath = normalizedPath;
+        } else {
+          repoPath = `${this.basePath}${normalizedPath}`;
+        }
+      }
+      
+      // Clean up the path
+      repoPath = repoPath.replace(/\/+/g, '/').replace(/\/$/, '');
+      
       const apiUrl = `${this.apiBase}/repos/${this.repoOwner}/${this.repoName}/contents${repoPath}?ref=${this.branch}`;
       
       const response = await fetch(apiUrl, {
@@ -227,8 +244,9 @@ export class GitHubFileSystemClient implements FileSystemClient {
       }
       
       return items.map((item: any) => {
-        const itemPath = item.path.replace(this.basePath, '').replace(/^\//, '');
-        const fullPath = `/${itemPath}`;
+        // Return the path relative to our virtual root
+        const itemPath = item.path.substring(this.basePath.length).replace(/^\//, '');
+        const fullPath = itemPath ? `/${itemPath}` : '/';
         return item.type === 'dir' ? `${fullPath}/` : fullPath;
       });
     } catch (error) {
@@ -240,8 +258,23 @@ export class GitHubFileSystemClient implements FileSystemClient {
   async readFile(path: string): Promise<string> {
     try {
       const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-      const repoPath = `${this.basePath}${normalizedPath}`.replace(/\/+/g, '/');
+      
+      // Build the repo path
+      let repoPath: string;
+      if (normalizedPath.startsWith(this.basePath)) {
+        // Path already includes basePath
+        repoPath = normalizedPath;
+      } else {
+        // Append to basePath
+        repoPath = `${this.basePath}${normalizedPath}`;
+      }
+      
+      // Clean up the path
+      repoPath = repoPath.replace(/\/+/g, '/');
+      
       const rawUrl = `${this.rawBase}/${this.repoOwner}/${this.repoName}/${this.branch}${repoPath}`;
+      
+      console.log(`GitHub raw URL: ${rawUrl}`);
       
       const response = await fetch(rawUrl);
       if (!response.ok) {
