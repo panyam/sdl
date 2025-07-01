@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.Title}} - SDL Canvas</title>
-    <link rel="stylesheet" href="/assets/index-W1uXUlrc.css">
+    <link rel="stylesheet" href="/assets/index-DKboTzDh.css">
     {{block "head" .}}{{end}}
 </head>
 <body class="h-full bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-mono transition-colors">
@@ -36,7 +36,59 @@
          data-page-data='{{.PageDataJSON}}'>
     </div>
     
-    <script type="module" src="/assets/index-DYzZ0XVo.js"></script>
+    <script type="module" src="/assets/index-usKFKKTh.js"></script>
+    
+    <!-- Inline theme switcher script for immediate functionality -->
+    <script>
+        (function() {
+            // Initialize theme from localStorage or system preference
+            const savedTheme = localStorage.getItem('sdl-theme') || 'system';
+            
+            function applyTheme(theme) {
+                if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            }
+            
+            function setTheme(theme) {
+                localStorage.setItem('sdl-theme', theme);
+                
+                if (theme === 'system') {
+                    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    applyTheme(prefersDark ? 'dark' : 'light');
+                } else {
+                    applyTheme(theme);
+                }
+                
+                // Update active button state
+                document.querySelectorAll('[data-theme]').forEach(btn => {
+                    btn.classList.toggle('active', btn.getAttribute('data-theme') === theme);
+                });
+            }
+            
+            // Apply initial theme
+            setTheme(savedTheme);
+            
+            // Listen for system theme changes
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                if (localStorage.getItem('sdl-theme') === 'system') {
+                    applyTheme(e.matches ? 'dark' : 'light');
+                }
+            });
+            
+            // Attach click handlers
+            document.addEventListener('click', function(e) {
+                const themeBtn = e.target.closest('[data-theme]');
+                if (themeBtn) {
+                    const theme = themeBtn.getAttribute('data-theme');
+                    setTheme(theme);
+                }
+            });
+        })();
+    </script>
+    
     {{block "scripts" .}}{{end}}
 </body>
 </html>

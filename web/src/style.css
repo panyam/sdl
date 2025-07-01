@@ -122,17 +122,23 @@ html, body {
   @apply max-w-7xl mx-auto px-4 py-8 flex flex-col md:flex-row gap-4;
 }
 
+/* Removed hardcoded dark colors - now using theme-aware classes in templates */
+/*
 .search-input {
   @apply flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500;
 }
+*/
 
 .filter-buttons {
   @apply flex gap-2;
 }
 
+/* Removed hardcoded dark colors - now using theme-aware classes in templates */
+/*
 .filter-btn {
   @apply px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-gray-400 hover:text-white hover:border-gray-600 transition-colors cursor-pointer;
 }
+*/
 
 .filter-btn.active {
   @apply bg-blue-600 border-blue-600 text-white;
@@ -142,9 +148,12 @@ html, body {
   @apply max-w-7xl mx-auto px-4 pb-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
 }
 
+/* Removed hardcoded dark colors - now using theme-aware classes in templates */
+/*
 .system-card {
   @apply bg-gray-800 border border-gray-700 rounded-lg p-6 hover:border-gray-600 transition-all cursor-pointer hover:transform hover:scale-105;
 }
+*/
 
 .card-header {
   @apply flex justify-between items-start mb-4;
@@ -154,6 +163,8 @@ html, body {
   @apply text-xl font-semibold;
 }
 
+/* Removed hardcoded dark colors - now using theme-aware classes in templates */
+/*
 .difficulty-badge {
   @apply px-2 py-1 text-xs rounded-full font-medium;
 }
@@ -169,18 +180,25 @@ html, body {
 .difficulty-badge.advanced {
   @apply bg-red-900 text-red-300;
 }
+*/
 
+/* Removed hardcoded dark colors - now using theme-aware classes in templates */
+/*
 .card-description {
   @apply text-gray-400 mb-4 line-clamp-2;
 }
+*/
 
 .card-tags {
   @apply flex flex-wrap gap-2 mb-4;
 }
 
+/* Removed hardcoded dark colors - now using theme-aware classes in templates */
+/*
 .tag {
   @apply px-2 py-1 bg-gray-700 text-gray-300 text-xs rounded;
 }
+*/
 
 .card-footer {
   @apply flex justify-end;
