@@ -128,6 +128,8 @@ export const AppEvents = {
   RECIPE_STOPPED: 'recipe:stopped',
   RECIPE_STEP: 'recipe:step',
   RECIPE_COMPLETED: 'recipe:completed',
+  RECIPE_STEP_EXECUTED: 'recipe:step:executed',
+  RECIPE_ERROR: 'recipe:error',
   
   // UI events
   PANEL_RESIZED: 'ui:panel:resized',

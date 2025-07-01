@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build && npm run update-templates",
+    "build:only": "vite build && npm run update-templates",
+    "update-templates": "node scripts/update-template-assets.js",
     "watch": "tsc && vite build --watch",
     "preview": "vite preview",
     "test": "vitest",

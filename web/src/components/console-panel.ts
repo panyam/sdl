@@ -17,22 +17,22 @@ export class ConsolePanel {
 
   private render() {
     this.element.innerHTML = `
-      <div class="console-panel flex flex-col h-full bg-gray-900">
-        <div class="console-header flex items-center justify-between p-2 border-b border-gray-700">
+      <div class="console-panel flex flex-col h-full bg-gray-50 dark:bg-gray-900">
+        <div class="console-header flex items-center justify-between p-2 border-b border-gray-200 dark:border-gray-700">
           <div class="flex items-center gap-2">
-            <span class="text-gray-400 text-sm font-medium">Console</span>
+            <span class="text-gray-700 dark:text-gray-400 text-sm font-medium">Console</span>
             <div class="flex gap-1">
               ${this.renderFilterButtons()}
             </div>
           </div>
-          <button class="clear-button p-1 hover:bg-gray-800 rounded" title="Clear console">
-            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button class="clear-button p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded" title="Clear console">
+            <svg class="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
             </svg>
           </button>
         </div>
-        <div class="console-output flex-1 overflow-auto p-2 font-mono text-sm" id="console-output">
-          <div class="text-gray-500">SDL Console Ready</div>
+        <div class="console-output flex-1 overflow-auto p-2 font-mono text-sm bg-white dark:bg-gray-900" id="console-output">
+          <div class="text-gray-600 dark:text-gray-500">SDL Console Ready</div>
         </div>
       </div>
     `;
@@ -116,15 +116,15 @@ export class ConsolePanel {
     messageDiv.dataset.type = type;
     
     const colorClass = {
-      log: 'text-gray-300',
-      error: 'text-red-400',
-      warning: 'text-yellow-400',
-      info: 'text-blue-400',
-      success: 'text-green-400'
+      log: 'text-gray-700 dark:text-gray-300',
+      error: 'text-red-600 dark:text-red-400',
+      warning: 'text-yellow-600 dark:text-yellow-400',
+      info: 'text-blue-600 dark:text-blue-400',
+      success: 'text-green-600 dark:text-green-400'
     }[type];
 
     messageDiv.innerHTML = `
-      <span class="text-gray-600">[${timestamp}]</span>
+      <span class="text-gray-500 dark:text-gray-600">[${timestamp}]</span>
       <span class="${colorClass} ml-2">${this.escapeHtml(message)}</span>
     `;
 
@@ -163,7 +163,7 @@ export class ConsolePanel {
 
   public clear() {
     if (this.outputElement) {
-      this.outputElement.innerHTML = '<div class="text-gray-500">Console cleared</div>';
+      this.outputElement.innerHTML = '<div class="text-gray-600 dark:text-gray-500">Console cleared</div>';
     }
   }
 
@@ -238,10 +238,6 @@ export class ConsoleInterceptor {
 // CSS styles for console panel
 const style = document.createElement('style');
 style.textContent = `
-  .console-panel {
-    background: #1a1a1a;
-  }
-
   .console-output {
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
     line-height: 1.4;
@@ -270,16 +266,15 @@ style.textContent = `
   }
 
   .console-output::-webkit-scrollbar-track {
-    background: #2a2a2a;
+    @apply bg-gray-100 dark:bg-gray-800;
   }
 
   .console-output::-webkit-scrollbar-thumb {
-    background: #4a4a4a;
-    border-radius: 4px;
+    @apply bg-gray-400 dark:bg-gray-600 rounded;
   }
 
   .console-output::-webkit-scrollbar-thumb:hover {
-    background: #5a5a5a;
+    @apply bg-gray-500 dark:bg-gray-500;
   }
 `;
 document.head.appendChild(style);

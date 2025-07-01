@@ -1,7 +1,6 @@
 /* Import DockView CSS */
 @import 'dockview-core/dist/styles/dockview.css';
 
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

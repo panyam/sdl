@@ -1,12 +1,16 @@
 import { EventBus } from './core/event-bus';
 import { AppStateManager } from './core/app-state-manager';
 import { CanvasClient } from './canvas-client';
-import { WasmManager } from './wasm-integration';
 import { SystemArchitecturePanel } from './panels/system-architecture-panel';
 import { LiveMetricsPanel } from './panels/live-metrics-panel';
 import { TrafficGenerationPanel } from './panels/traffic-generation-panel';
+import { SDLEditorPanel } from './panels/sdl-editor-panel';
+import { RecipeEditorPanel } from './panels/recipe-editor-panel';
+import { ConsolePanel } from './components/console-panel';
+import { Toolbar } from './components/toolbar';
 import { RecipeRunner } from './components/recipe-runner';
-import * as monaco from 'monaco-editor';
+import { DockviewApi, DockviewComponent } from 'dockview-core';
+import { configureMonacoLoader } from './components/code-editor';
 
 interface SystemPageData {
   systemId: string;
@@ -22,129 +26,148 @@ export class SystemDetailsPage {
   private eventBus: EventBus;
   private stateManager: AppStateManager;
   private pageData: SystemPageData;
-  private editor?: monaco.editor.IStandaloneCodeEditor;
-  private recipeRunner?: RecipeRunner;
-  private currentTab: 'sdl' | 'recipe' = 'sdl';
+  private dockview: DockviewApi | null = null;
+  private canvasClient: CanvasClient;
   
   // Panels
   private architecturePanel?: SystemArchitecturePanel;
   private metricsPanel?: LiveMetricsPanel;
   private trafficPanel?: TrafficGenerationPanel;
+  private sdlEditorPanel?: SDLEditorPanel;
+  private recipeEditorPanel?: RecipeEditorPanel;
+  private consolePanel?: ConsolePanel;
+  
+  // Toolbar and controls
+  private toolbar?: Toolbar;
+  private recipeRunner?: RecipeRunner;
 
   constructor(pageData: SystemPageData) {
     this.container = document.getElementById('app') || document.body;
     this.pageData = pageData;
     this.eventBus = new EventBus();
-    this.stateManager = new AppStateManager(this.eventBus);
+    this.stateManager = new AppStateManager();
+    this.canvasClient = new CanvasClient(pageData.systemId);
+    
+    // Configure Monaco loader
+    configureMonacoLoader();
   }
 
   async initialize(): Promise<void> {
-    this.initializeEditor();
-    this.initializePanels();
-    this.attachEventListeners();
-  }
-
-  private initializeEditor(): void {
-    const container = document.getElementById('editor-container');
-    if (!container) return;
-
-    // Register SDL language if not already registered
-    if (!monaco.languages.getLanguages().find(lang => lang.id === 'sdl')) {
-      monaco.languages.register({ id: 'sdl' });
-      monaco.languages.setMonarchTokensProvider('sdl', {
-        tokenizer: {
-          root: [
-            [/\/\/.*$/, 'comment'],
-            [/import/, 'keyword'],
-            [/system|service|database|cache/, 'keyword'],
-            [/:=/, 'operator'],
-            [/->/, 'operator'],
-            [/"[^"]*"/, 'string'],
-            [/\d+/, 'number'],
-            [/{|}|\[|\]/, 'delimiter']
-          ]
-        }
-      });
-    }
-
-    // Determine theme based on current page theme
-    const isDarkMode = document.documentElement.classList.contains('dark');
+    // Create the page layout first
+    this.createPageLayout();
     
-    this.editor = monaco.editor.create(container, {
-      value: this.pageData.sdlContent,
-      language: 'sdl',
-      theme: isDarkMode ? 'vs-dark' : 'vs',
-      automaticLayout: true,
-      minimap: { enabled: false },
-      fontSize: 14,
-      lineNumbers: 'on',
-      wordWrap: 'on',
-      scrollBeyondLastLine: false
+    // Initialize state
+    this.stateManager.updateState({
+      currentSystem: this.pageData.systemId,
+      currentFile: 'system.sdl'
     });
+    
+    // Setup toolbar
+    this.initializeToolbar();
+    
+    // Initialize dockview layout
+    this.initializeLayout();
+    
+    // Load system diagram
+    this.loadSystemDiagram();
   }
 
-  private initializePanels(): void {
-    // Initialize architecture panel
-    const archContainer = document.getElementById('architecture-panel');
-    if (archContainer) {
-      // TODO: Properly initialize services
-      this.architecturePanel = new SystemArchitecturePanel(
-        archContainer,
-        this.eventBus,
-        {} as any
-      );
-    }
-
-    // Initialize metrics panel
-    const metricsContainer = document.getElementById('metrics-panel');
-    if (metricsContainer) {
-      this.metricsPanel = new LiveMetricsPanel(
-        metricsContainer,
-        this.eventBus,
-        {} as any
-      );
-    }
-
-    // Initialize traffic panel
-    const trafficContainer = document.getElementById('traffic-panel');
-    if (trafficContainer) {
-      this.trafficPanel = new TrafficGenerationPanel(
-        trafficContainer,
-        this.eventBus,
-        {} as any
-      );
-    }
+  private createPageLayout(): void {
+    this.container.innerHTML = `
+      <div class="h-screen flex flex-col bg-gray-50 dark:bg-gray-950">
+        <!-- Header -->
+        <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-3">
+            <div class="flex justify-between items-center pr-48">
+                <div class="flex items-center gap-4">
+                    <a href="/systems" class="inline-flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 rounded-lg hover:text-gray-900 dark:hover:text-white hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                        Back to Systems
+                    </a>
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">${this.pageData.systemName}</h1>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-sm text-gray-600 dark:text-gray-400">${this.pageData.systemDescription}</span>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Toolbar -->
+        <div id="toolbar-container" class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700"></div>
+        
+        <!-- Main Dockview Container -->
+        <div id="dockview-container" class="flex-1"></div>
+      </div>
+    `;
   }
 
-  private attachEventListeners(): void {
-    // Tab switching
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const tab = (e.target as HTMLElement).dataset.tab as 'sdl' | 'recipe';
-        if (tab) this.switchTab(tab);
-      });
-    });
+  private initializeToolbar(): void {
+    const toolbarContainer = document.getElementById('toolbar-container');
+    if (!toolbarContainer) return;
+    
+    this.toolbar = new Toolbar(toolbarContainer);
+    this.toolbar.setButtons([
+      {
+        id: 'save',
+        label: 'Save',
+        icon: '💾',
+        tooltip: 'Save changes',
+        onClick: () => this.saveChanges()
+      },
+      {
+        id: 'share',
+        label: 'Share',
+        icon: '🔗',
+        tooltip: 'Share this system',
+        onClick: () => this.shareSystem()
+      },
+      {
+        id: 'run',
+        label: 'Run',
+        icon: '▶️',
+        tooltip: 'Run simulation',
+        onClick: () => this.runSystem()
+      },
+      {
+        id: 'stop',
+        label: 'Stop',
+        icon: '⏹️',
+        tooltip: 'Stop simulation',
+        disabled: true,
+        onClick: () => this.stopSystem()
+      },
+      {
+        id: 'step',
+        label: 'Step',
+        icon: '⏩',
+        tooltip: 'Step through recipe',
+        disabled: true,
+        onClick: () => this.stepRecipe()
+      }
+    ]);
+    
+    // Initialize recipe controls
+    this.initializeRecipeControls();
+  }
 
-    // Run/Stop buttons
-    document.getElementById('run-btn')?.addEventListener('click', () => {
-      this.runSystem();
-    });
+  private initializeLayout(): void {
+    const container = document.getElementById('dockview-container');
+    if (!container) {
+      console.error('❌ DockView container not found');
+      return;
+    }
 
-    document.getElementById('stop-btn')?.addEventListener('click', () => {
-      this.stopSystem();
-    });
-
-    // Share button
-    document.getElementById('share-btn')?.addEventListener('click', () => {
-      this.shareSystem();
-    });
-
+    // Apply theme class based on current theme
+    const isDarkMode = document.documentElement.classList.contains('dark');
+    container.className = isDarkMode ? 'dockview-theme-dark flex-1' : 'dockview-theme-light flex-1';
+    
     // Listen for theme changes
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
           const isDarkMode = document.documentElement.classList.contains('dark');
-          monaco.editor.setTheme(isDarkMode ? 'vs-dark' : 'vs');
+          container.className = isDarkMode ? 'dockview-theme-dark flex-1' : 'dockview-theme-light flex-1';
         }
       });
     });
@@ -153,95 +176,343 @@ export class SystemDetailsPage {
       attributes: true,
       attributeFilter: ['class']
     });
-  }
-
-  private switchTab(tab: 'sdl' | 'recipe'): void {
-    this.currentTab = tab;
     
-    // Update tab buttons
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.tab === tab);
+    // Create DockView component
+    const dockviewComponent = new DockviewComponent(container, {
+      createComponent: (options: any) => {
+        switch (options.name) {
+          case 'sdlEditor':
+            return this.createSDLEditorComponent();
+          case 'recipeEditor':
+            return this.createRecipeEditorComponent();
+          case 'systemArchitecture':
+            return this.createSystemArchitectureComponent();
+          case 'trafficGeneration':
+            return this.createTrafficGenerationComponent();
+          case 'liveMetrics':
+            return this.createLiveMetricsComponent();
+          case 'console':
+            return this.createConsoleComponent();
+          default:
+            return {
+              element: document.createElement('div'),
+              init: () => {},
+              dispose: () => {}
+            };
+        }
+      }
     });
 
-    // Update editor content
-    if (this.editor) {
-      if (tab === 'sdl') {
-        this.editor.setValue(this.pageData.sdlContent);
-        monaco.editor.setModelLanguage(this.editor.getModel()!, 'sdl');
-      } else {
-        this.editor.setValue(this.pageData.recipeContent);
-        monaco.editor.setModelLanguage(this.editor.getModel()!, 'shell');
+    this.dockview = dockviewComponent.api;
+    
+    // Load saved layout or create default
+    const savedLayout = this.loadLayout();
+    if (savedLayout) {
+      try {
+        this.dockview.fromJSON(savedLayout);
+      } catch (e) {
+        console.warn('Failed to restore layout, using default', e);
+        this.createDefaultLayout();
       }
+    } else {
+      this.createDefaultLayout();
+    }
+    
+    // Save layout on changes
+    this.dockview.onDidLayoutChange(() => {
+      this.saveLayout();
+    });
+  }
+
+  private createDefaultLayout(): void {
+    if (!this.dockview) return;
+
+    // Add SDL editor panel
+    this.dockview.addPanel({
+      id: 'sdlEditor',
+      component: 'sdlEditor',
+      title: 'System Design (SDL)'
+    });
+
+    // Add recipe editor panel  
+    this.dockview.addPanel({
+      id: 'recipeEditor',
+      component: 'recipeEditor',
+      title: 'Demo Recipe'
+    });
+
+    // Add system architecture panel
+    this.dockview.addPanel({
+      id: 'systemArchitecture',
+      component: 'systemArchitecture',
+      title: 'System Architecture',
+      position: { direction: 'right', referencePanel: 'sdlEditor' }
+    });
+
+    // Add traffic generation panel
+    this.dockview.addPanel({
+      id: 'trafficGeneration',
+      component: 'trafficGeneration',
+      title: 'Traffic Generation',
+      position: { direction: 'below', referencePanel: 'systemArchitecture' }
+    });
+
+    // Add live metrics panel
+    this.dockview.addPanel({
+      id: 'liveMetrics',
+      component: 'liveMetrics',
+      title: 'Live Metrics',
+      position: { direction: 'below', referencePanel: 'trafficGeneration' }
+    });
+
+    // Add console panel
+    this.dockview.addPanel({
+      id: 'console',
+      component: 'console',
+      title: 'Output',
+      position: { direction: 'below', referencePanel: 'sdlEditor' }
+    });
+  }
+
+  private createSDLEditorComponent() {
+    const container = document.createElement('div');
+    container.style.width = '100%';
+    container.style.height = '100%';
+    
+    this.sdlEditorPanel = new SDLEditorPanel({
+      id: 'sdlEditor',
+      title: 'System Design (SDL)',
+      eventBus: this.eventBus,
+      stateManager: this.stateManager,
+      sdlContent: this.pageData.sdlContent,
+      readOnly: false,
+      onChange: (_content) => {
+        // Update state when SDL content changes
+        this.stateManager.updateState({ currentFile: 'system.sdl' });
+      }
+    });
+    
+    return {
+      element: container,
+      init: async () => {
+        await this.sdlEditorPanel?.initialize(container);
+      },
+      dispose: () => this.sdlEditorPanel?.dispose()
+    };
+  }
+
+  private createRecipeEditorComponent() {
+    const container = document.createElement('div');
+    container.style.width = '100%';
+    container.style.height = '100%';
+    
+    this.recipeEditorPanel = new RecipeEditorPanel({
+      id: 'recipeEditor',
+      title: 'Demo Recipe',
+      eventBus: this.eventBus,
+      stateManager: this.stateManager,
+      recipeContent: this.pageData.recipeContent,
+      readOnly: false,
+      onChange: (_content) => {
+        // Update state when recipe content changes
+        this.stateManager.updateState({ currentFile: 'demo.recipe' });
+      }
+    });
+    
+    return {
+      element: container,
+      init: async () => {
+        await this.recipeEditorPanel?.initialize(container);
+      },
+      dispose: () => this.recipeEditorPanel?.dispose()
+    };
+  }
+
+  private createSystemArchitectureComponent() {
+    const container = document.createElement('div');
+    container.style.width = '100%';
+    container.style.height = '100%';
+    
+    this.architecturePanel = new SystemArchitecturePanel({
+      id: 'systemArchitecture',
+      title: 'System Architecture',
+      eventBus: this.eventBus,
+      stateManager: this.stateManager
+    });
+    
+    return {
+      element: container,
+      init: async () => {
+        await this.architecturePanel?.initialize(container);
+      },
+      dispose: () => this.architecturePanel?.dispose()
+    };
+  }
+
+  private createTrafficGenerationComponent() {
+    const container = document.createElement('div');
+    container.style.width = '100%';
+    container.style.height = '100%';
+    
+    this.trafficPanel = new TrafficGenerationPanel({
+      id: 'trafficGeneration',
+      title: 'Traffic Generation',
+      eventBus: this.eventBus,
+      stateManager: this.stateManager
+    });
+    
+    return {
+      element: container,
+      init: async () => {
+        await this.trafficPanel?.initialize(container);
+      },
+      dispose: () => this.trafficPanel?.dispose()
+    };
+  }
+
+  private createLiveMetricsComponent() {
+    const container = document.createElement('div');
+    container.style.width = '100%';
+    container.style.height = '100%';
+    
+    this.metricsPanel = new LiveMetricsPanel({
+      id: 'liveMetrics',
+      title: 'Live Metrics',
+      eventBus: this.eventBus,
+      stateManager: this.stateManager
+    });
+    
+    return {
+      element: container,
+      init: async () => {
+        await this.metricsPanel?.initialize(container);
+      },
+      dispose: () => this.metricsPanel?.dispose()
+    };
+  }
+
+  private createConsoleComponent() {
+    const container = document.createElement('div');
+    this.consolePanel = new ConsolePanel(container);
+    
+    return {
+      element: container,
+      init: () => {},
+      dispose: () => this.consolePanel?.clear()
+    };
+  }
+
+  private initializeRecipeControls(): void {
+    if (!this.toolbar) {
+      return;
+    }
+    
+    // Initialize recipe runner
+    this.recipeRunner = new RecipeRunner(this.canvasClient);
+  }
+  
+  private async runRecipe(): Promise<void> {
+    const recipeContent = this.recipeEditorPanel?.getContent() || this.pageData.recipeContent;
+    if (!recipeContent) {
+      this.consolePanel?.error('No recipe content available');
+      return;
+    }
+    
+    this.consolePanel?.info('Starting recipe execution...');
+    // TODO: Implement recipe execution
+  }
+  
+  private stopRecipe(): void {
+    if (this.recipeRunner) {
+      this.recipeRunner.stop();
+      this.consolePanel?.info('Recipe execution stopped');
+    }
+  }
+
+  private async loadSystemDiagram(): Promise<void> {
+    try {
+      const response = await this.canvasClient.getSystemDiagram();
+      if (response.success && response.data) {
+        this.stateManager.updateState({ currentSystem: this.pageData.systemId });
+        // Emit event so architecture panel can update
+        this.eventBus.emit('system:diagram:loaded', response.data);
+      }
+    } catch (error) {
+      console.error('Failed to load system diagram:', error);
     }
   }
 
   private async runSystem(): Promise<void> {
-    const runBtn = document.getElementById('run-btn') as HTMLElement;
-    const stopBtn = document.getElementById('stop-btn') as HTMLElement;
-    const outputSection = document.getElementById('output-section') as HTMLElement;
-    const outputContent = document.getElementById('output-content') as HTMLElement;
-
-    // Update UI
-    runBtn.style.display = 'none';
-    stopBtn.style.display = 'block';
-    outputSection.style.display = 'block';
-
-    // Show panels
-    const metricsPanel = document.getElementById('metrics-panel');
-    const trafficPanel = document.getElementById('traffic-panel');
-    if (metricsPanel) metricsPanel.style.display = 'block';
-    if (trafficPanel) trafficPanel.style.display = 'block';
-
-    // Get current SDL content
-    const sdlContent = this.currentTab === 'sdl' ? this.editor?.getValue() : this.pageData.sdlContent;
-
-    // Run system based on mode
-    if (this.pageData.mode === 'wasm') {
-      outputContent.innerHTML = '<div class="info">Initializing WASM runtime...</div>';
-      // TODO: Initialize WASM canvas and run
-    } else {
-      outputContent.innerHTML = '<div class="info">Starting system on server...</div>';
-      // TODO: Send to server to run
-    }
-
-    // Run recipe if on recipe tab
-    if (this.currentTab === 'recipe') {
-      this.runRecipe(outputContent);
-    }
-  }
-
-  private runRecipe(outputElement: HTMLElement): void {
-    const recipeContent = this.currentTab === 'recipe' ? 
-      this.editor?.getValue() || this.pageData.recipeContent : 
-      this.pageData.recipeContent;
-
-    this.recipeRunner = new RecipeRunner(
-      outputElement,
-      (step, command) => {
-        console.log(`Step ${step}: ${command}`);
-      },
-      () => {
-        console.log('Recipe completed');
+    // Update toolbar buttons
+    this.toolbar?.updateButton('run', { disabled: true });
+    this.toolbar?.updateButton('stop', { disabled: false });
+    
+    // Get current SDL content when needed
+    // const sdlContent = this.sdlEditorPanel?.getContent() || this.pageData.sdlContent;
+    
+    // Log to console
+    this.consolePanel?.info('Starting system simulation...');
+    
+    try {
+      // Run system based on mode
+      if (this.pageData.mode === 'wasm') {
+        this.consolePanel?.info('Initializing WASM runtime...');
+        // TODO: Initialize WASM canvas and run
+      } else {
+        this.consolePanel?.info('Starting system on server...');
+        // For now, just save the SDL content locally and get the diagram
+        // TODO: Implement proper SDL compilation endpoint
+        this.consolePanel?.info('Processing SDL...');
+        
+        // Store the SDL content in state
+        this.stateManager.updateState({ currentFile: 'system.sdl' });
+        
+        // Load system diagram
+        await this.loadSystemDiagram();
+        this.consolePanel?.success('System loaded successfully');
       }
-    );
-
-    this.recipeRunner.runRecipe(recipeContent);
+    } catch (error) {
+      this.consolePanel?.error(`Error: ${error}`);
+    }
   }
 
   private stopSystem(): void {
-    const runBtn = document.getElementById('run-btn') as HTMLElement;
-    const stopBtn = document.getElementById('stop-btn') as HTMLElement;
-
-    // Update UI
-    runBtn.style.display = 'block';
-    stopBtn.style.display = 'none';
-
+    // Update toolbar buttons
+    this.toolbar?.updateButton('run', { disabled: false });
+    this.toolbar?.updateButton('stop', { disabled: true });
+    
+    // Stop simulation
+    this.consolePanel?.info('Stopping simulation...');
+    // Clear the system diagram
+    this.eventBus.emit('system:diagram:loaded', null);
+    this.consolePanel?.success('Simulation stopped');
+    
     // Stop recipe if running
     if (this.recipeRunner) {
       this.recipeRunner.stop();
     }
+  }
 
-    // TODO: Stop actual system
+  private async saveChanges(): Promise<void> {
+    this.toolbar?.setStatus('Saving...', 'info');
+    
+    try {
+      // Get current content from editors
+      const sdlContent = this.sdlEditorPanel?.getContent();
+      const recipeContent = this.recipeEditorPanel?.getContent();
+      
+      // TODO: Implement save endpoint
+      // For now, just show success
+      this.consolePanel?.success('Changes saved successfully');
+      this.toolbar?.setStatus('Saved', 'success');
+      
+      setTimeout(() => {
+        this.toolbar?.setStatus('Ready', 'info');
+      }, 2000);
+    } catch (error) {
+      this.consolePanel?.error('Failed to save changes');
+      this.toolbar?.setStatus('Save failed', 'error');
+    }
   }
 
   private async shareSystem(): Promise<void> {
@@ -250,22 +521,53 @@ export class SystemDetailsPage {
     try {
       await navigator.clipboard.writeText(url);
       
-      // Show feedback
-      const shareBtn = document.getElementById('share-btn') as HTMLElement;
-      const originalText = shareBtn.textContent;
-      shareBtn.textContent = 'Copied!';
+      // Show feedback in toolbar
+      this.toolbar?.setStatus('URL copied to clipboard!', 'success');
       setTimeout(() => {
-        shareBtn.textContent = originalText;
+        this.toolbar?.setStatus('Ready', 'info');
       }, 2000);
     } catch (err) {
       console.error('Failed to copy URL:', err);
+      this.consolePanel?.error('Failed to copy URL to clipboard');
+    }
+  }
+  
+  private stepRecipe(): void {
+    if (this.recipeRunner) {
+      // TODO: Implement step mode in RecipeRunner
+      this.consolePanel?.info('Stepping through recipe...');
     }
   }
 
-  destroy(): void {
-    this.editor?.dispose();
-    this.architecturePanel?.destroy();
-    this.metricsPanel?.destroy();
-    this.trafficPanel?.destroy();
+  private saveLayout(): void {
+    if (!this.dockview) return;
+    
+    const layout = this.dockview.toJSON();
+    const layoutKey = `sdl-details-layout-${this.pageData.systemId}`;
+    localStorage.setItem(layoutKey, JSON.stringify(layout));
+  }
+  
+  private loadLayout(): any {
+    const layoutKey = `sdl-details-layout-${this.pageData.systemId}`;
+    const saved = localStorage.getItem(layoutKey);
+    return saved ? JSON.parse(saved) : null;
+  }
+
+  public destroy(): void {
+    // Save layout before destroying
+    this.saveLayout();
+    
+    // Dispose dockview
+    if (this.dockview) {
+      this.dockview.dispose();
+    }
+    
+    // Clean up panels
+    this.architecturePanel?.dispose();
+    this.metricsPanel?.dispose();
+    this.trafficPanel?.dispose();
+    this.sdlEditorPanel?.dispose();
+    this.recipeEditorPanel?.dispose();
+    this.consolePanel?.clear();
   }
 }

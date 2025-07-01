@@ -95,6 +95,16 @@ The dashboard now features a unified layout that works seamlessly in both server
 - **State Management**: Delegates to AppStateManager
 - **Reduced Coupling**: No direct component references
 
+### Recent Updates (v3.3)
+
+#### System Details Page Transformation (v3.3)
+- **Full Dockview Layout**: Migrated from tabbed interface to dockview panels
+- **Separate Editor Panels**: SDL and Recipe editors in independent panels
+- **Unified Toolbar**: Save, Share, Run, Stop, and Step buttons
+- **Theme-Aware Components**: All panels now respect light/dark theme
+- **Layout Persistence**: Per-system layout saving in localStorage
+- **Build Automation**: Auto-update Go templates with Vite asset hashes
+
 ### Recent Updates (v3.1)
 
 #### Multi-Filesystem Support

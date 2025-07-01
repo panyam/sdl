@@ -67,13 +67,13 @@ export class SystemArchitecturePanel extends BasePanel {
     }
 
     this.setContent(`
-      <div class="w-full h-full flex flex-col">
+      <div class="w-full h-full flex flex-col bg-gray-50 dark:bg-gray-900 p-4">
         <div class="text-center mb-4">
-          <h3 class="text-lg font-semibold text-gray-300">${this.systemDiagram.systemName}</h3>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-300">${this.systemDiagram.systemName}</h3>
         </div>
         
         <!-- SVG System Architecture -->
-        <div id="architecture-svg-container" class="flex-1 overflow-auto">
+        <div id="architecture-svg-container" class="flex-1 overflow-auto bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
           ${this.renderSystemDiagramSVG()}
         </div>
       </div>
@@ -95,7 +95,7 @@ export class SystemArchitecturePanel extends BasePanel {
           ${svgContent}
         </div>
       </div>
-      <div class="absolute bottom-2 right-2 text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded">
+      <div class="absolute bottom-2 right-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
         Zoom: ${Math.round(this.diagramZoom * 100)}% | Use Ctrl+Scroll to zoom | Double-click to reset
       </div>
     `;

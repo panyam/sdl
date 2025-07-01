@@ -34,9 +34,9 @@ export class Toolbar {
         if (updates.disabled !== undefined) {
           buttonEl.disabled = updates.disabled;
           if (updates.disabled) {
-            buttonEl.className = 'toolbar-button px-3 py-1 rounded text-sm bg-gray-700 text-gray-500 cursor-not-allowed';
+            buttonEl.className = 'toolbar-button px-3 py-1 rounded text-sm transition-colors bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed';
           } else {
-            buttonEl.className = 'toolbar-button px-3 py-1 rounded text-sm bg-gray-700 hover:bg-gray-600 text-gray-200';
+            buttonEl.className = 'toolbar-button px-3 py-1 rounded text-sm transition-colors bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200';
           }
         }
         
@@ -58,15 +58,15 @@ export class Toolbar {
 
   private render() {
     this.element.innerHTML = `
-      <div class="toolbar flex items-center gap-2 p-2 bg-gray-800 border-b border-gray-700">
+      <div class="toolbar flex items-center gap-2 p-2 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div class="flex items-center gap-1">
           ${this.buttons.map(button => `
             <button 
               id="toolbar-${button.id}"
-              class="toolbar-button px-3 py-1 rounded text-sm ${
+              class="toolbar-button px-3 py-1 rounded text-sm transition-colors ${
                 button.disabled 
-                  ? 'bg-gray-700 text-gray-500 cursor-not-allowed' 
-                  : 'bg-gray-700 hover:bg-gray-600 text-gray-200'
+                  ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed' 
+                  : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200'
               }"
               ${button.disabled ? 'disabled' : ''}
               title="${button.tooltip || button.label}">
@@ -75,10 +75,10 @@ export class Toolbar {
             </button>
           `).join('')}
         </div>
-        <div class="mx-4 h-6 w-px bg-gray-700"></div>
+        <div class="mx-4 h-6 w-px bg-gray-300 dark:bg-gray-700"></div>
         <div id="recipe-controls-container" class="flex items-center gap-2"></div>
         <div class="flex-1"></div>
-        <div class="text-xs text-gray-400 mr-2">
+        <div class="text-xs text-gray-600 dark:text-gray-400 mr-2">
           <span id="toolbar-status">Ready</span>
         </div>
       </div>
@@ -104,9 +104,9 @@ export class Toolbar {
     const statusEl = this.element.querySelector('#toolbar-status');
     if (statusEl) {
       const colorClass = {
-        info: 'text-gray-400',
-        success: 'text-green-400',
-        error: 'text-red-400'
+        info: 'text-gray-600 dark:text-gray-400',
+        success: 'text-green-600 dark:text-green-400',
+        error: 'text-red-600 dark:text-red-400'
       }[type];
       
       statusEl.className = `text-xs ${colorClass}`;

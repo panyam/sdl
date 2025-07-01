@@ -64,8 +64,8 @@ export class LiveMetricsPanel extends BasePanel {
     
     if (chartIds.length === 0) {
       return `
-        <div class="h-full flex items-center justify-center">
-          <div class="text-center text-gray-400">
+        <div class="h-full flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+          <div class="text-center text-gray-600 dark:text-gray-400">
             <div class="text-6xl mb-4">📊</div>
             <div class="text-lg">No Active Metrics</div>
             <div class="text-sm">Start a simulation to see live metrics</div>
@@ -75,7 +75,7 @@ export class LiveMetricsPanel extends BasePanel {
     }
 
     return `
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4" style="grid-auto-rows: 200px;">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-gray-50 dark:bg-gray-900" style="grid-auto-rows: 200px;">
         ${chartIds.map(chartId => this.renderChartContainer(chartId)).join('')}
       </div>
     `;
@@ -86,8 +86,8 @@ export class LiveMetricsPanel extends BasePanel {
     const title = chartData.chartName || chartId;
     
     return `
-      <div class="bg-gray-800 rounded-lg p-4 flex flex-col">
-        <h4 class="text-sm font-medium text-gray-300 mb-2">${title}</h4>
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-4 flex flex-col border border-gray-200 dark:border-gray-700">
+        <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">${title}</h4>
         <div class="flex-1 relative">
           <canvas id="chart-${chartId}" class="absolute inset-0 w-full h-full"></canvas>
         </div>
@@ -123,6 +123,10 @@ export class LiveMetricsPanel extends BasePanel {
     const chartData = this.dynamicCharts[chartId];
     if (!chartData) return null;
 
+    const isDarkMode = document.documentElement.classList.contains('dark');
+    const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+    const textColor = isDarkMode ? '#9CA3AF' : '#6B7280';
+
     const config: ChartConfiguration = {
       type: 'line',
       data: {
@@ -150,10 +154,10 @@ export class LiveMetricsPanel extends BasePanel {
             display: false
           },
           tooltip: {
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            titleColor: '#fff',
-            bodyColor: '#fff',
-            borderColor: '#333',
+            backgroundColor: isDarkMode ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.9)',
+            titleColor: isDarkMode ? '#fff' : '#000',
+            bodyColor: isDarkMode ? '#fff' : '#000',
+            borderColor: isDarkMode ? '#333' : '#ccc',
             borderWidth: 1
           }
         },
@@ -161,10 +165,10 @@ export class LiveMetricsPanel extends BasePanel {
           x: {
             display: true,
             grid: {
-              color: 'rgba(255, 255, 255, 0.1)',
+              color: gridColor,
             },
             ticks: {
-              color: '#9CA3AF',
+              color: textColor,
               autoSkip: true,
               maxTicksLimit: 5
             }
@@ -172,10 +176,10 @@ export class LiveMetricsPanel extends BasePanel {
           y: {
             display: true,
             grid: {
-              color: 'rgba(255, 255, 255, 0.1)',
+              color: gridColor,
             },
             ticks: {
-              color: '#9CA3AF',
+              color: textColor,
               callback: function(value) {
                 return Number(value).toFixed(1);
               }

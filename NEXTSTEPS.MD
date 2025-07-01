@@ -183,6 +183,34 @@
    - LocalStorage for theme persistence
    - System preference detection for auto theme
 
+## Recent Completions (July 1, 2025)
+
+### System Details Page Transformation
+1. **Full Dockview Implementation**:
+   - Migrated from tabbed interface to professional dockview layout
+   - Created SDLEditorPanel and RecipeEditorPanel as BasePanel extensions
+   - Integrated all existing panels with proper event-driven architecture
+   - Each panel now independently manages its lifecycle
+
+2. **Theme System Overhaul**:
+   - Fixed ConsolePanel hardcoded dark theme issues
+   - Updated Toolbar to use Tailwind theme-aware classes
+   - Removed all hardcoded colors in favor of dark: modifiers
+   - Smooth theme transitions across all components
+
+3. **Build Automation**:
+   - Created update-template-assets.js script
+   - Automated Go template updates with Vite asset hashes
+   - Added npm scripts: build (with template update) and build:only
+   - Solved asset versioning issues between builds
+
+4. **UI/UX Improvements**:
+   - Added Save button to toolbar (placeholder implementation)
+   - Removed duplicate recipe control buttons
+   - Added Step button for recipe debugging
+   - Implemented per-system layout persistence
+   - Dockview layouts save/restore from localStorage
+
 ## Immediate Next Steps
 
 ### System Showcase Enhancements

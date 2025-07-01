@@ -118,7 +118,7 @@ class SystemListingHandlers {
         case 'name':
           return a.name.localeCompare(b.name);
         case 'difficulty':
-          const diffOrder = { 'beginner': 0, 'intermediate': 1, 'advanced': 2 };
+          const diffOrder: Record<string, number> = { 'beginner': 0, 'intermediate': 1, 'advanced': 2 };
           return (diffOrder[a.difficulty] || 0) - (diffOrder[b.difficulty] || 0);
         case 'updated':
           if (!a.lastUpdated || !b.lastUpdated) return 0;

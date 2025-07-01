@@ -49,8 +49,8 @@ export class TrafficGenerationPanel extends BasePanel {
   private renderGenerateControls(): string {
     if (!this.generateCalls || this.generateCalls.length === 0) {
       return `
-        <div class="h-full flex items-center justify-center">
-          <div class="text-center text-gray-400">
+        <div class="h-full flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+          <div class="text-center text-gray-600 dark:text-gray-400">
             <div class="text-6xl mb-4">🚦</div>
             <div class="text-lg">No Traffic Generators</div>
             <div class="text-sm">Load a system to configure traffic generation</div>
@@ -63,20 +63,20 @@ export class TrafficGenerationPanel extends BasePanel {
     const toggleButtonText = allEnabled ? '⏹️ Stop All' : '▶️ Start All';
     
     return `
-      <div class="space-y-4">
+      <div class="space-y-4 p-4 bg-gray-50 dark:bg-gray-900">
         <div class="flex justify-between items-center mb-4">
-          <h3 class="text-lg font-semibold">Traffic Generators</h3>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Traffic Generators</h3>
           <button id="toggle-all-generators" 
-                  class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm transition-colors">
+                  class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors">
             ${toggleButtonText}
           </button>
         </div>
         
         ${this.generateCalls.map(call => this.renderGeneratorControl(call)).join('')}
         
-        <div class="mt-6 pt-4 border-t border-gray-700">
+        <div class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
           <button id="add-generator" 
-                  class="w-full py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm transition-colors">
+                  class="w-full py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded text-sm transition-colors">
             ➕ Add Generator
           </button>
         </div>
@@ -90,25 +90,25 @@ export class TrafficGenerationPanel extends BasePanel {
     const toggleText = isEnabled ? 'ON' : 'OFF';
     
     return `
-      <div class="bg-gray-800 rounded-lg p-4" data-generator-id="${call.id}">
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700" data-generator-id="${call.id}">
         <div class="flex items-center justify-between mb-3">
           <div class="flex items-center space-x-3">
-            <button class="toggle-generator ${toggleClass} px-3 py-1 rounded text-xs font-semibold transition-colors"
+            <button class="toggle-generator ${toggleClass} px-3 py-1 rounded text-xs font-semibold text-white transition-colors"
                     data-id="${call.id}">
               ${toggleText}
             </button>
-            <span class="font-medium">${call.name}</span>
+            <span class="font-medium text-gray-900 dark:text-white">${call.name}</span>
           </div>
-          <button class="remove-generator text-red-400 hover:text-red-300 transition-colors"
+          <button class="remove-generator text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors"
                   data-id="${call.id}">
             ✕
           </button>
         </div>
         
-        <div class="text-sm text-gray-400 mb-2">Target: ${call.target}</div>
+        <div class="text-sm text-gray-600 dark:text-gray-400 mb-2">Target: ${call.target}</div>
         
         <div class="flex items-center space-x-2">
-          <label class="text-sm">Rate (RPS):</label>
+          <label class="text-sm text-gray-700 dark:text-gray-300">Rate (RPS):</label>
           <input type="range" 
                  class="rate-slider flex-1" 
                  min="0" 
@@ -118,7 +118,7 @@ export class TrafficGenerationPanel extends BasePanel {
                  data-id="${call.id}"
                  ${!isEnabled ? 'disabled' : ''}>
           <input type="number" 
-                 class="rate-input w-20 px-2 py-1 bg-gray-700 rounded text-sm"
+                 class="rate-input w-20 px-2 py-1 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-900 dark:text-white"
                  min="0" 
                  max="1000" 
                  step="0.1"
