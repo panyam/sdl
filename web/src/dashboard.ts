@@ -1706,7 +1706,7 @@ export class Dashboard {
         if (this.tabbedEditor) {
           const isReadOnly = fs.isReadOnly;
           
-          await this.tabbedEditor.openFile(path, content, isReadOnly);
+          await this.tabbedEditor.openFile(path, content, isReadOnly, fsId);
           this.currentFile = path;
           // Enable save button only if not read-only
           this.toolbar?.updateButton('save', { disabled: isReadOnly });
@@ -1731,7 +1731,7 @@ export class Dashboard {
           await this.fileExplorer.refreshFileSystem(fsId);
         }
         if (this.tabbedEditor) {
-          await this.tabbedEditor.openFile(path, '// New SDL file\n', false);
+          await this.tabbedEditor.openFile(path, '// New SDL file\n', false, fsId);
         }
       } catch (error) {
         console.error('Failed to create file:', error);
@@ -1761,30 +1761,17 @@ export class Dashboard {
       if (this.dockview) {
         this.tabbedEditor = new TabbedEditor(element, this.dockview);
         
-        this.tabbedEditor.setChangeHandler(async (path, content, modified) => {
+        this.tabbedEditor.setChangeHandler(async (path, content, modified, fsId) => {
           // Handle save when modified becomes false (i.e., file was saved)
-          if (!modified) {
+          if (!modified && fsId) {
             try {
-              // Find which filesystem this file belongs to
-              let savedSuccessfully = false;
-              
-              for (const fs of this.fileExplorer?.getFileSystems() || []) {
-                try {
-                  // Try to save with this filesystem
-                  await fs.writeFile(path, content);
-                  this.consolePanel?.success(`Saved: ${path}`);
-                  savedSuccessfully = true;
-                  break;
-                } catch (err) {
-                  // This filesystem doesn't contain the file, try next
-                  continue;
-                }
-              }
-              
-              if (!savedSuccessfully) {
-                // Fallback to API if no filesystem claimed the file
-                await this.api.writeFile(path, content);
+              // Use the provided filesystem ID to save the file
+              const fs = this.fileExplorer?.getFileSystem(fsId);
+              if (fs && !fs.isReadOnly) {
+                await fs.writeFile(path, content);
                 this.consolePanel?.success(`Saved: ${path}`);
+              } else {
+                this.consolePanel?.error(`Cannot save: filesystem ${fsId} is read-only or not found`);
               }
             } catch (error) {
               this.consolePanel?.error(`Failed to save: ${error}`);

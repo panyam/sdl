@@ -4,6 +4,7 @@ import './tabbed-editor.css';
 
 export interface FileTab {
   path: string;
+  fsId: string;
   content: string;
   modified: boolean;
   editor?: monaco.editor.IStandaloneCodeEditor;
@@ -14,9 +15,9 @@ export interface FileTab {
 export class TabbedEditor {
   private container: HTMLElement;
   private dockview: DockviewApi | null = null;
-  private tabs: Map<string, FileTab> = new Map();
+  private tabs: Map<string, FileTab> = new Map(); // Key is now fsId:path
   private activeTab: string | null = null;
-  private onChange?: (path: string, content: string, modified: boolean) => void;
+  private onChange?: (path: string, content: string, modified: boolean, fsId?: string) => void;
   private tabBar: HTMLElement | null = null;
   private editorContainer: HTMLElement | null = null;
   
@@ -146,19 +147,21 @@ export class TabbedEditor {
     `;
   }
 
-  setChangeHandler(handler: (path: string, content: string, modified: boolean) => void) {
+  setChangeHandler(handler: (path: string, content: string, modified: boolean, fsId?: string) => void) {
     this.onChange = handler;
   }
 
-  async openFile(path: string, content: string, readOnly: boolean = false) {
+  async openFile(path: string, content: string, readOnly: boolean = false, fsId: string = 'local') {
+    const tabKey = `${fsId}:${path}`;
+    
     // Check if file is already open
-    if (this.tabs.has(path)) {
-      this.switchToTab(path);
+    if (this.tabs.has(tabKey)) {
+      this.switchToTab(tabKey);
       return;
     }
 
     // Create a new tab
-    this.createTabElement(path);
+    this.createTabElement(tabKey, path, fsId);
     
     // Create editor container
     const editorContainer = document.createElement('div');
@@ -188,24 +191,25 @@ export class TabbedEditor {
     
     // Track changes
     editor.onDidChangeModelContent(() => {
-      const tab = this.tabs.get(path);
+      const tab = this.tabs.get(tabKey);
       if (tab && !tab.modified) {
         tab.modified = true;
-        this.updateTabTitle(path);
+        this.updateTabTitle(tabKey);
         if (this.onChange) {
-          this.onChange(path, editor.getValue(), true);
+          this.onChange(path, editor.getValue(), true, fsId);
         }
       }
     });
 
     // Add keyboard shortcuts
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
-      this.saveTab(path);
+      this.saveTab(tabKey);
     });
 
     // Store tab info
-    this.tabs.set(path, {
+    this.tabs.set(tabKey, {
       path,
+      fsId,
       content,
       modified: false,
       editor,
@@ -222,16 +226,18 @@ export class TabbedEditor {
     }
 
     // Switch to the new tab
-    this.switchToTab(path);
+    this.switchToTab(tabKey);
   }
 
-  private createTabElement(path: string) {
+  private createTabElement(tabKey: string, path: string, fsId: string) {
     if (!this.tabBar) return;
     
     const fileName = path.split('/').pop() || 'untitled';
     const tabElement = document.createElement('div');
     tabElement.className = 'tab';
+    tabElement.dataset.tabKey = tabKey;
     tabElement.dataset.path = path;
+    tabElement.dataset.fsId = fsId;
     
     tabElement.innerHTML = `
       <span class="tab-title text-sm text-gray-200">${fileName}</span>
@@ -245,7 +251,7 @@ export class TabbedEditor {
     // Tab click handler
     tabElement.addEventListener('click', (e) => {
       if (!(e.target as HTMLElement).closest('.tab-close')) {
-        this.switchToTab(path);
+        this.switchToTab(tabKey);
       }
     });
     
@@ -253,43 +259,43 @@ export class TabbedEditor {
     const closeBtn = tabElement.querySelector('.tab-close');
     closeBtn?.addEventListener('click', (e) => {
       e.stopPropagation();
-      this.closeTab(path);
+      this.closeTab(tabKey);
     });
     
     this.tabBar.appendChild(tabElement);
   }
   
-  private updateTabTitle(path: string) {
-    const tab = this.tabs.get(path);
+  private updateTabTitle(tabKey: string) {
+    const tab = this.tabs.get(tabKey);
     if (!tab) return;
 
     // Update tab element
-    const tabElement = this.tabBar?.querySelector(`[data-path="${CSS.escape(path)}"]`);
+    const tabElement = this.tabBar?.querySelector(`[data-tab-key="${CSS.escape(tabKey)}"]`);
     if (tabElement) {
       const titleElement = tabElement.querySelector('.tab-title');
       if (titleElement) {
-        const fileName = path.split('/').pop() || 'untitled';
+        const fileName = tab.path.split('/').pop() || 'untitled';
         titleElement.textContent = tab.modified ? `${fileName} *` : fileName;
       }
     }
     
     // Update dockview panel title if this is the active tab
-    if (this.activeTab === path && this.dockview) {
+    if (this.activeTab === tabKey && this.dockview) {
       const panel = this.dockview.getPanel('codeEditor');
       if (panel) {
-        const fileName = path.split('/').pop() || 'untitled';
+        const fileName = tab.path.split('/').pop() || 'untitled';
         const title = tab.modified ? `${fileName} *` : fileName;
         panel.api.setTitle(title);
       }
     }
   }
 
-  switchToTab(path: string) {
-    const tab = this.tabs.get(path);
+  switchToTab(tabKey: string) {
+    const tab = this.tabs.get(tabKey);
     if (!tab || !this.editorContainer) return;
 
     // Hide current editor
-    if (this.activeTab && this.activeTab !== path) {
+    if (this.activeTab && this.activeTab !== tabKey) {
       const currentTab = this.tabs.get(this.activeTab);
       if (currentTab?.editor) {
         // Save view state
@@ -302,7 +308,7 @@ export class TabbedEditor {
       }
       
       // Update tab appearance
-      const currentTabElement = this.tabBar?.querySelector(`[data-path="${CSS.escape(this.activeTab)}"]`);
+      const currentTabElement = this.tabBar?.querySelector(`[data-tab-key="${CSS.escape(this.activeTab)}"]`);
       if (currentTabElement) {
         currentTabElement.classList.remove('active');
       }
@@ -325,29 +331,29 @@ export class TabbedEditor {
     }
     
     // Update tab appearance
-    const newTabElement = this.tabBar?.querySelector(`[data-path="${CSS.escape(path)}"]`);
+    const newTabElement = this.tabBar?.querySelector(`[data-tab-key="${CSS.escape(tabKey)}"]`);
     if (newTabElement) {
       newTabElement.classList.add('active');
     }
 
-    this.activeTab = path;
-    this.updateTabTitle(path);
+    this.activeTab = tabKey;
+    this.updateTabTitle(tabKey);
   }
 
-  closeTab(path: string) {
-    const tab = this.tabs.get(path);
+  closeTab(tabKey: string) {
+    const tab = this.tabs.get(tabKey);
     if (!tab) return;
 
     // Check for unsaved changes
     if (tab.modified) {
-      const save = confirm(`Save changes to ${path}?`);
+      const save = confirm(`Save changes to ${tab.path}?`);
       if (save) {
-        this.saveTab(path);
+        this.saveTab(tabKey);
       }
     }
 
     // Remove tab element
-    const tabElement = this.tabBar?.querySelector(`[data-path="${CSS.escape(path)}"]`);
+    const tabElement = this.tabBar?.querySelector(`[data-tab-key="${CSS.escape(tabKey)}"]`);
     if (tabElement) {
       tabElement.remove();
     }
@@ -364,7 +370,7 @@ export class TabbedEditor {
       tab.model.dispose();
     }
 
-    this.tabs.delete(path);
+    this.tabs.delete(tabKey);
 
     // Switch to another tab or show welcome
     if (this.tabs.size === 0) {
@@ -381,13 +387,13 @@ export class TabbedEditor {
     } else {
       // Switch to the next tab (prefer tabs to the right)
       let nextTab: string | null = null;
-      const tabPaths = Array.from(this.tabs.keys());
-      const currentIndex = tabPaths.indexOf(path);
+      const tabKeys = Array.from(this.tabs.keys());
+      const currentIndex = tabKeys.indexOf(tabKey);
       
       if (currentIndex > 0) {
-        nextTab = tabPaths[currentIndex - 1];
-      } else if (tabPaths.length > 0) {
-        nextTab = tabPaths[0];
+        nextTab = tabKeys[currentIndex - 1];
+      } else if (tabKeys.length > 0) {
+        nextTab = tabKeys[0];
       }
       
       if (nextTab) {
@@ -396,15 +402,15 @@ export class TabbedEditor {
     }
   }
 
-  saveTab(path: string) {
-    const tab = this.tabs.get(path);
+  saveTab(tabKey: string) {
+    const tab = this.tabs.get(tabKey);
     if (!tab || !tab.modified) return;
 
     tab.modified = false;
-    this.updateTabTitle(path);
+    this.updateTabTitle(tabKey);
     
     if (this.onChange) {
-      this.onChange(path, tab.editor?.getValue() || '', false);
+      this.onChange(tab.path, tab.editor?.getValue() || '', false, tab.fsId);
     }
   }
 
