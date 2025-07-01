@@ -1706,7 +1706,7 @@ export class Dashboard {
         if (this.tabbedEditor) {
           const isReadOnly = fs.isReadOnly;
           
-          await this.tabbedEditor.openFile(path, content, isReadOnly, fsId);
+          await this.tabbedEditor.openFile(path, content, isReadOnly, fsId, fs.name);
           this.currentFile = path;
           // Enable save button only if not read-only
           this.toolbar?.updateButton('save', { disabled: isReadOnly });
@@ -1731,7 +1731,7 @@ export class Dashboard {
           await this.fileExplorer.refreshFileSystem(fsId);
         }
         if (this.tabbedEditor) {
-          await this.tabbedEditor.openFile(path, '// New SDL file\n', false, fsId);
+          await this.tabbedEditor.openFile(path, '// New SDL file\n', false, fsId, fs.name);
         }
       } catch (error) {
         console.error('Failed to create file:', error);
@@ -1776,6 +1776,13 @@ export class Dashboard {
             } catch (error) {
               this.consolePanel?.error(`Failed to save: ${error}`);
             }
+          }
+        });
+        
+        this.tabbedEditor.setTabSwitchHandler((path, fsId) => {
+          // Highlight the file in the explorer
+          if (this.fileExplorer) {
+            this.fileExplorer.highlightFile(path, fsId);
           }
         });
       }

@@ -224,7 +224,8 @@ export class MultiFSExplorer {
       ? (node.expanded ? '📂' : '📁')
       : '📄';
     
-    const selected = node.path === this.selectedFile ? 'selected' : '';
+    const nodeKey = `${node.fsId}:${node.path}`;
+    const selected = nodeKey === this.selectedFile ? 'selected' : '';
     const readOnlyClass = node.isReadOnly ? 'readonly' : '';
     
     let html = `
@@ -244,11 +245,14 @@ export class MultiFSExplorer {
   }
 
   selectFile(path: string, fsId: string, isDirectory: boolean) {
-    this.selectedFile = path;
+    this.selectedFile = `${fsId}:${path}`;
     
     // Update UI
     document.querySelectorAll('.file-node').forEach(el => {
-      el.classList.toggle('selected', el.getAttribute('data-path') === path);
+      const elPath = el.getAttribute('data-path');
+      const elFsId = el.getAttribute('data-fs-id');
+      const isSelected = elPath === path && elFsId === fsId;
+      el.classList.toggle('selected', isSelected);
     });
 
     if (!isDirectory && this.onFileSelect) {
@@ -333,6 +337,47 @@ export class MultiFSExplorer {
     this.fileSystems = this.fileSystems.filter(fs => fs.id !== fsId);
     this.fileTreesByFS.delete(fsId);
     this.render();
+  }
+
+  highlightFile(path: string, fsId: string) {
+    // Update selected file with composite key
+    this.selectedFile = `${fsId}:${path}`;
+    
+    // Update UI to highlight the file
+    document.querySelectorAll('.file-node').forEach(el => {
+      const elPath = el.getAttribute('data-path');
+      const elFsId = el.getAttribute('data-fs-id');
+      const isSelected = elPath === path && elFsId === fsId;
+      el.classList.toggle('selected', isSelected);
+    });
+    
+    // Ensure parent directories are expanded
+    const tree = this.fileTreesByFS.get(fsId);
+    if (tree) {
+      this.expandParentDirectories(path, tree);
+      this.render();
+      
+      // After render, scroll to the selected file
+      setTimeout(() => {
+        const selectedElement = document.querySelector(`.file-node[data-path="${CSS.escape(path)}"][data-fs-id="${CSS.escape(fsId)}"]`);
+        if (selectedElement) {
+          selectedElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+    }
+  }
+
+  private expandParentDirectories(path: string, nodes: FileNode[]) {
+    const parts = path.split('/').filter(p => p);
+    let currentPath = '';
+    
+    for (let i = 0; i < parts.length - 1; i++) {
+      currentPath += '/' + parts[i];
+      const node = this.findNode(currentPath, nodes);
+      if (node && node.isDirectory) {
+        node.expanded = true;
+      }
+    }
   }
 }
 

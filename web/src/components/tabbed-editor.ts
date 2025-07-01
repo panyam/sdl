@@ -5,6 +5,7 @@ import './tabbed-editor.css';
 export interface FileTab {
   path: string;
   fsId: string;
+  fsName?: string;
   content: string;
   modified: boolean;
   editor?: monaco.editor.IStandaloneCodeEditor;
@@ -18,6 +19,7 @@ export class TabbedEditor {
   private tabs: Map<string, FileTab> = new Map(); // Key is now fsId:path
   private activeTab: string | null = null;
   private onChange?: (path: string, content: string, modified: boolean, fsId?: string) => void;
+  private onTabSwitch?: (path: string, fsId: string) => void;
   private tabBar: HTMLElement | null = null;
   private editorContainer: HTMLElement | null = null;
   
@@ -151,7 +153,11 @@ export class TabbedEditor {
     this.onChange = handler;
   }
 
-  async openFile(path: string, content: string, readOnly: boolean = false, fsId: string = 'local') {
+  setTabSwitchHandler(handler: (path: string, fsId: string) => void) {
+    this.onTabSwitch = handler;
+  }
+
+  async openFile(path: string, content: string, readOnly: boolean = false, fsId: string = 'local', fsName?: string) {
     const tabKey = `${fsId}:${path}`;
     
     // Check if file is already open
@@ -161,7 +167,7 @@ export class TabbedEditor {
     }
 
     // Create a new tab
-    this.createTabElement(tabKey, path, fsId);
+    this.createTabElement(tabKey, path, fsId, fsName);
     
     // Create editor container
     const editorContainer = document.createElement('div');
@@ -210,6 +216,7 @@ export class TabbedEditor {
     this.tabs.set(tabKey, {
       path,
       fsId,
+      fsName,
       content,
       modified: false,
       editor,
@@ -229,10 +236,11 @@ export class TabbedEditor {
     this.switchToTab(tabKey);
   }
 
-  private createTabElement(tabKey: string, path: string, fsId: string) {
+  private createTabElement(tabKey: string, path: string, fsId: string, fsName?: string) {
     if (!this.tabBar) return;
     
     const fileName = path.split('/').pop() || 'untitled';
+    const tabTitle = fsName ? `${fsName}:${fileName}` : fileName;
     const tabElement = document.createElement('div');
     tabElement.className = 'tab';
     tabElement.dataset.tabKey = tabKey;
@@ -240,7 +248,7 @@ export class TabbedEditor {
     tabElement.dataset.fsId = fsId;
     
     tabElement.innerHTML = `
-      <span class="tab-title text-sm text-gray-200">${fileName}</span>
+      <span class="tab-title text-sm text-gray-200">${tabTitle}</span>
       <button class="tab-close ml-2 text-gray-400 hover:text-gray-200" title="Close">
         <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
           <path d="M8 8.707l3.646 3.647.708-.707L8.707 8l3.647-3.646-.707-.708L8 7.293 4.354 3.646l-.707.708L7.293 8l-3.647 3.646.708.708L8 8.707z"/>
@@ -275,7 +283,8 @@ export class TabbedEditor {
       const titleElement = tabElement.querySelector('.tab-title');
       if (titleElement) {
         const fileName = tab.path.split('/').pop() || 'untitled';
-        titleElement.textContent = tab.modified ? `${fileName} *` : fileName;
+        const baseTitle = tab.fsName ? `${tab.fsName}:${fileName}` : fileName;
+        titleElement.textContent = tab.modified ? `${baseTitle} *` : baseTitle;
       }
     }
     
@@ -284,7 +293,8 @@ export class TabbedEditor {
       const panel = this.dockview.getPanel('codeEditor');
       if (panel) {
         const fileName = tab.path.split('/').pop() || 'untitled';
-        const title = tab.modified ? `${fileName} *` : fileName;
+        const baseTitle = tab.fsName ? `${tab.fsName}:${fileName}` : fileName;
+        const title = tab.modified ? `${baseTitle} *` : baseTitle;
         panel.api.setTitle(title);
       }
     }
@@ -338,6 +348,11 @@ export class TabbedEditor {
 
     this.activeTab = tabKey;
     this.updateTabTitle(tabKey);
+    
+    // Notify about tab switch
+    if (this.onTabSwitch && tab) {
+      this.onTabSwitch(tab.path, tab.fsId);
+    }
   }
 
   closeTab(tabKey: string) {
