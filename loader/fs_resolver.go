@@ -52,23 +52,29 @@ func (r *FileSystemResolver) Resolve(importerPath, importPath string, open bool)
 func (r *FileSystemResolver) resolveImportPath(importPath, importerPath string) string {
 	// Handle different import types
 	
-	// 1. URL imports (https://, http://)
+	// 1. Named imports (@stdlib/, @examples/, etc.)
+	if strings.HasPrefix(importPath, "@") {
+		// These are handled as-is by the filesystem mount
+		return importPath
+	}
+	
+	// 2. URL imports (https://, http://)
 	if strings.Contains(importPath, "://") {
 		return importPath
 	}
 	
-	// 2. GitHub imports (github.com/...)
+	// 3. GitHub imports (github.com/...)
 	if strings.HasPrefix(importPath, "github.com/") {
 		// Let the GitHub filesystem handle the transformation
 		return importPath
 	}
 	
-	// 3. Absolute paths
+	// 4. Absolute paths
 	if strings.HasPrefix(importPath, "/") {
 		return importPath
 	}
 	
-	// 4. Relative paths - resolve relative to the importer's directory
+	// 5. Relative paths - resolve relative to the importer's directory
 	if importerPath == "" {
 		// If no importer path, treat as relative to root
 		return importPath

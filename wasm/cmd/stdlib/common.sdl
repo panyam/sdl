@@ -1,0 +1,92 @@
+
+
+enum HttpStatusCode {
+  Ok,
+  Conflict,
+  NotFound,
+  Unauthorized,
+  BadRequest,
+  TooManyRequests,
+  InternalError,
+  InternalServerError, // Server-side error (e.g., HTTP 500)
+  ServiceUnavailable
+}
+
+// An aggregator method used for selecting from futures
+native aggregator WaitAll(statusCodes List[HttpStatusCode]) HttpStatusCode
+native aggregator WaitAny(statusCodes List[HttpStatusCode]) HttpStatusCode
+
+native method log(msg String)
+
+native method delay(duration Float)
+
+native component NativeDisk {
+  method Read()
+}
+
+// Native components are defined externally
+// We just have to declare them
+
+native component HashIndex {
+  // Exposing a dependency that can be configured
+  // It is upto the native component to manage setting/getting this
+  method Find() Bool
+  method Insert() Bool
+  method Delete () Bool
+}
+
+native component SortedFile {
+  param ArrivalRate Float
+  param NumRecords Int
+  param RecordSize Int
+  param PageSize Int
+
+  method Find() Bool
+  method Scan() Bool
+  method Delete () Bool
+}
+
+native component BTreeIndex {
+  method Find() Bool
+  method Range() Bool
+  method Insert() Bool
+  method Delete () Bool
+}
+
+native component BitmapIndex {
+  method Find() Bool
+  method Insert() Bool
+  method Delete () Bool
+  method Update() Bool
+}
+
+native component Cache {
+  param HitRate Float
+  param MaxThroughput Float
+
+  method Read() Bool
+  method Write() Bool
+}
+
+native component LSMTree {
+  method Read() Bool
+  method Write() Bool
+}
+
+native component MM1Queue {
+  method Enqueue() Bool
+  method Dequeue() Bool
+}
+
+native component MMCKQueue {
+  method Enqueue() Bool
+  method Dequeue() Bool
+}
+
+native component ResourcePool {
+  method Acquire() Bool
+}
+
+native component Link {
+  method Transfer() Bool
+}

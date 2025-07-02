@@ -3,6 +3,7 @@
 package main
 
 import (
+	"embed"
 	"syscall/js"
 	"fmt"
 	"strings"
@@ -11,6 +12,10 @@ import (
 	"github.com/panyam/sdl/loader"
 	"github.com/panyam/sdl/runtime"
 )
+
+// Embed stdlib SDL files
+//go:embed stdlib/*.sdl
+var stdlibFiles embed.FS
 
 // Global canvas manager - reusing existing Canvas type
 var canvases map[string]*console.Canvas
@@ -42,6 +47,11 @@ func createWASMFileSystem() loader.FileSystem {
 	bundledFS.PreloadFiles(getEmbeddedFiles())
 	cfs.Mount("/examples/", bundledFS)
 	cfs.Mount("/lib/", bundledFS)
+	
+	// Mount stdlib files at @stdlib prefix
+	stdlibFS := loader.NewMemoryFS()
+	stdlibFS.PreloadFiles(getStdlibFiles())
+	cfs.Mount("@stdlib/", stdlibFS)
 	
 	// Support for external URLs using WASM fetch API
 	cfs.Mount("https://", &URLFetcherFS{})
@@ -909,15 +919,36 @@ func parseOptions(args []js.Value, startIdx int) map[string]string {
 	return options
 }
 
-// Placeholder for embedded files (will be generated at build time)
+// Load embedded SDL library files (placeholder for now)
 func getEmbeddedFiles() map[string][]byte {
-	return map[string][]byte{
-		"/examples/uber.sdl": []byte(`// Uber MVP example
-system UberMVP {
-    use api APIGateway
-    use db Database
-}`),
+	// This can be used for example files in the future
+	return map[string][]byte{}
+}
+
+// getStdlibFiles returns the standard library SDL files from embedded FS
+func getStdlibFiles() map[string][]byte {
+	files := make(map[string][]byte)
+	
+	// Read all files from the embedded stdlib directory
+	entries, err := stdlibFiles.ReadDir("stdlib")
+	if err != nil {
+		fmt.Printf("Failed to read stdlib directory: %v\n", err)
+		return files
 	}
+	
+	for _, entry := range entries {
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".sdl") {
+			data, err := stdlibFiles.ReadFile("stdlib/" + entry.Name())
+			if err != nil {
+				fmt.Printf("Failed to read stdlib file %s: %v\n", entry.Name(), err)
+				continue
+			}
+			// Store without the @stdlib/ prefix - the mount point handles that
+			files[entry.Name()] = data
+		}
+	}
+	
+	return files
 }
 
 // parseComponentMethod splits "component.method" into component and method

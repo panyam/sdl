@@ -46,6 +46,25 @@ export class WASMDashboard extends Dashboard {
     }
   }
 
+  // Override loadSystemDiagram to use WASM canvas instead of server API
+  protected async loadSystemDiagram() {
+    try {
+      // Use WASM canvas to get the system diagram, passing SDL content if available
+      const response = await this.wasmClient!.getDiagram(this.currentSDLContent || undefined);
+      if (response.success && response.data) {
+        this.systemDiagram = response.data;
+        console.log('📊 System diagram loaded from WASM:', this.systemDiagram);
+        // Update only the system architecture panel
+        this.updateSystemArchitecturePanel();
+      } else {
+        throw new Error(response.error || 'Failed to get system diagram from WASM');
+      }
+    } catch (error) {
+      console.error('❌ Failed to load system diagram:', error);
+      this.systemDiagram = null;
+    }
+  }
+
   // Override handleSave to handle read-only files in WASM
   protected async handleSave() {
     if (!this.wasmClient) return;

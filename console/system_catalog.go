@@ -75,6 +75,19 @@ func (s *SystemCatalogService) initializeCatalog() {
 	})
 
 	s.addSystem(&SystemProject{
+		ID:             "bitly-new",
+		Name:           "Bitly URL Shortener (Stdlib)",
+		Description:    "Bitly example using @stdlib imports",
+		Category:       "Web Services",
+		Difficulty:     "beginner",
+		Tags:           []string{"web", "database", "caching", "rest-api", "stdlib"},
+		Icon:           "🔗",
+		DefaultVersion: "v1",
+		sdlFile:        "bitly/mvp_new.sdl",
+		recipeFile:     "bitly/mvp.recipe",
+	})
+
+	s.addSystem(&SystemProject{
 		ID:             "uber-basic",
 		Name:           "Uber Ride Sharing (Basic)",
 		Description:    "Simplified ride-sharing platform with driver matching",

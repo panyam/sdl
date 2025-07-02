@@ -32,6 +32,7 @@ export class Dashboard {
   protected toolbar: Toolbar | null = null;
   protected consolePanel: ConsolePanel | null = null;
   protected currentFile: string | null = null;
+  protected currentSDLContent: string | null = null;
   private consoleInterceptor: ConsoleInterceptor | null = null;
   protected recipeRunner: RecipeRunner | null = null;
   private recipeControls: RecipeControls | null = null;
@@ -317,7 +318,7 @@ export class Dashboard {
   }
   */
 
-  private async loadSystemDiagram() {
+  protected async loadSystemDiagram() {
     try {
       // Fetch the system diagram from the server
       const response = await this.api.getSystemDiagram();
@@ -697,7 +698,7 @@ export class Dashboard {
     }, 100);
   }
 
-  private updateSystemArchitecturePanel() {
+  protected updateSystemArchitecturePanel() {
     if (!this.dockview) return;
     
     // Update the system architecture panel content
@@ -1754,6 +1755,12 @@ export class Dashboard {
           
           await this.tabbedEditor.openFile(path, content, isReadOnly, fsId, fs.name);
           this.currentFile = path;
+          
+          // Store SDL content if it's an SDL file
+          if (path.endsWith('.sdl')) {
+            this.currentSDLContent = content;
+          }
+          
           // Enable save button only if not read-only
           this.toolbar?.updateButton('save', { disabled: isReadOnly });
           
@@ -1856,6 +1863,12 @@ export class Dashboard {
           
           // Update toolbar for file type
           this.currentFile = path;
+          
+          // Update SDL content if switching to an SDL file
+          if (path.endsWith('.sdl') && this.tabbedEditor) {
+            this.currentSDLContent = this.tabbedEditor.getActiveContent() || null;
+          }
+          
           this.updateToolbarForFile(path);
           
           // Update recipe controls for active tab

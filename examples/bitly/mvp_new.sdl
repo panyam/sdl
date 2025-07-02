@@ -1,0 +1,50 @@
+
+import Cache, NativeDisk, HttpStatusCode, HashIndex, delay, log from "@stdlib/common.sdl" ;
+import InfiniteBandwidthDisk as Disk from "../disk.sdl"
+import Database from "./db.sdl"
+
+enum DBResult { FOUND, NOT_FOUND, INTERNAL_ERROR }
+enum DuplicateCheck { FOUND, NOTFOUND, ERROR }
+
+component AppServer {
+  // Our main DB
+  uses db Database
+  param RetryCount = 3
+
+  method Shorten() HttpStatusCode {
+    for RetryCount {
+      // 0.01% chance of a collision
+      let foundDuplicate = sample dist {
+          9999 => false
+          1 => true
+      }
+
+      if not foundDuplicate {
+        if db.Insert() {
+          return HttpStatusCode.Ok
+        } else {
+          return HttpStatusCode.InternalError
+        }
+      }
+    }
+
+    // All retries elapsed - too many conflicts
+    return HttpStatusCode.Conflict
+  }
+
+  method Redirect() HttpStatusCode {
+    if self.db.Select() {
+      return HttpStatusCode.Ok // or may be 302
+    }
+
+    // Simplified - can model more errors
+    return HttpStatusCode.InternalError
+  }
+}
+
+system Bitly {
+    // Order of dependencies does not matter  They will be bound later
+    // This allows cyclical links
+    use app AppServer ( db = db )
+    use db Database
+}

@@ -147,9 +147,49 @@ export class WASMCanvasClient implements FileClient {
     };
   }
 
-  async getDiagram(): Promise<any> {
-    // TODO: Generate diagram from WASM system
-    return null;
+  async getDiagram(sdlContent?: string): Promise<any> {
+    await this.initialize();
+    
+    // If SDL content is provided, use it directly
+    if (sdlContent) {
+      try {
+        const diagram = await generateSystemDiagram(sdlContent);
+        return { success: true, data: diagram };
+      } catch (error) {
+        return { 
+          success: false, 
+          error: error instanceof Error ? error.message : 'Failed to generate diagram' 
+        };
+      }
+    }
+    
+    // Otherwise, check if we have an active system
+    const info = this.wasm!.canvas.info(this.canvasId);
+    if (!info.success || !info.activeSystem) {
+      return { success: false, error: 'No active system in canvas' };
+    }
+    
+    // Get the SDL content from the loaded files
+    // Note: This assumes the SDL was loaded from a file
+    const files = await this.listFiles();
+    const sdlFile = files.find(f => f.endsWith('.sdl'));
+    
+    if (!sdlFile) {
+      return { success: false, error: 'No SDL file found in canvas' };
+    }
+    
+    const fileContent = await this.readFile(sdlFile);
+    
+    // Generate diagram using the helper function
+    try {
+      const diagram = await generateSystemDiagram(fileContent);
+      return { success: true, data: diagram };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to generate diagram' 
+      };
+    }
   }
 
   async getGenerators(): Promise<any> {
@@ -309,8 +349,8 @@ export function createCanvasClient(canvasId: string, useWASM: boolean = false): 
 }
 
 /**
- * Generate a system diagram from SDL content using WASM
- * This parses the SDL and creates a diagram structure similar to what the server would return
+ * Generate a system diagram from SDL content using WASM Canvas
+ * This loads the SDL into a WASM canvas and extracts system structure
  */
 export async function generateSystemDiagram(sdlContent: string): Promise<any> {
   try {
@@ -340,8 +380,13 @@ export async function generateSystemDiagram(sdlContent: string): Promise<any> {
     const tempCanvasId = 'temp-diagram-' + Date.now();
     
     // Save SDL content to virtual filesystem
-    const tempPath = '/tmp/system.sdl';
-    await sdl.fs.writeFile(tempPath, sdlContent);
+    // Use the workspace directory which is mounted in WASM
+    const tempPath = `/workspace/system-${tempCanvasId}.sdl`;
+    
+    const writeResult = await sdl.fs.writeFile(tempPath, sdlContent);
+    if (!writeResult.success) {
+      throw new Error(writeResult.error || 'Failed to write SDL to filesystem');
+    }
     
     // Load the SDL file into the canvas
     const loadResult = sdl.canvas.load(tempPath, tempCanvasId);
@@ -358,41 +403,67 @@ export async function generateSystemDiagram(sdlContent: string): Promise<any> {
     // Extract system name from the loaded systems
     const systemName = info.systems && info.systems.length > 0 ? info.systems[0] : 'System';
     
+    // Use the active system in the canvas
+    if (info.activeSystem) {
+      const useResult = sdl.canvas.use(info.activeSystem, tempCanvasId);
+      if (!useResult.success) {
+        console.warn('Failed to use system:', useResult.error);
+      }
+    }
+    
+    // Get flow information if available
+    let flows: any = null;
+    try {
+      const flowResult = sdl.flows({ canvas: tempCanvasId });
+      if (flowResult.success) {
+        flows = flowResult.flows;
+      }
+    } catch (e) {
+      console.log('Flows not available in WASM:', e);
+    }
+    
     // Parse SDL to extract components and their methods
     const components = parseSDLComponents(sdlContent);
     
     // Create nodes for each component method
     const nodes: any[] = [];
     const edges: any[] = [];
+    const methodNodes = new Map<string, any>();
     
-    // Generate nodes
+    // Generate nodes for each component and method
     components.forEach(component => {
+      // For each component, create method nodes
       component.methods.forEach(method => {
-        const nodeId = `${component.name}:${method}`;
-        nodes.push(create(DiagramNodeSchema, {
+        const nodeId = `${component.varName}:${method}`;
+        const node = create(DiagramNodeSchema, {
           id: nodeId,
           name: method,
           type: component.type,
-          traffic: '0 req/s', // Initial traffic
+          traffic: '0 req/s', // Will be updated if we have flow data
           fullPath: component.varName,
           icon: component.type,
-          methods: [] // Will be populated later if needed
-        }));
+          methods: [] // Methods array for the node
+        });
+        nodes.push(node);
+        methodNodes.set(nodeId, node);
       });
     });
     
-    // Generate edges based on dependencies
+    // Generate edges based on dependencies and method calls
     components.forEach(component => {
       component.dependencies.forEach(dep => {
         // Find the dependency component
         const depComponent = components.find(c => c.varName === dep.varName);
         if (depComponent) {
-          // Create edges from each method of the component to methods of the dependency
+          // Create edges based on likely method call patterns
+          // This is a simplified approach - ideally we'd parse method bodies
           component.methods.forEach(method => {
-            depComponent.methods.forEach(depMethod => {
+            // Connect to the most likely called methods based on component type
+            const targetMethods = getTargetMethods(method, component.type, depComponent.type, depComponent.methods);
+            targetMethods.forEach(depMethod => {
               edges.push(create(DiagramEdgeSchema, {
-                fromId: `${component.name}:${method}`,
-                toId: `${depComponent.name}:${depMethod}`,
+                fromId: `${component.varName}:${method}`,
+                toId: `${depComponent.varName}:${depMethod}`,
                 fromMethod: method,
                 toMethod: depMethod,
                 label: '',
@@ -408,8 +479,23 @@ export async function generateSystemDiagram(sdlContent: string): Promise<any> {
       });
     });
     
-    // Clean up temporary canvas
-    sdl.canvas.remove(tempCanvasId);
+    // Update traffic information from flows if available
+    if (flows) {
+      Object.entries(flows).forEach(([target, rate]) => {
+        const node = methodNodes.get(target);
+        if (node && typeof rate === 'number' && rate > 0) {
+          node.traffic = `${rate.toFixed(1)} req/s`;
+        }
+      });
+    }
+    
+    // Clean up temporary canvas and file
+    try {
+      sdl.canvas.remove(tempCanvasId);
+      // Note: WASM filesystem doesn't support delete yet, but the file will be overwritten next time
+    } catch (cleanupError) {
+      console.warn('Failed to clean up temporary canvas:', cleanupError);
+    }
     
     // Create and return the system diagram
     const diagram = create(SystemDiagramSchema, {
@@ -506,4 +592,45 @@ function parseSDLComponents(sdlContent: string): Array<{
   }
   
   return components;
+}
+
+/**
+ * Determine which methods are likely to be called based on method and component types
+ */
+function getTargetMethods(_callerMethod: string, callerType: string, targetType: string, targetMethods: string[]): string[] {
+  // If there's only one method, always connect to it
+  if (targetMethods.length === 1) {
+    return targetMethods;
+  }
+  
+  // Common patterns for method calls
+  const patterns: Record<string, Record<string, string[]>> = {
+    server: {
+      database: ['query', 'insert', 'update'], // servers typically call DB methods
+      cache: ['get', 'set'], // servers check cache
+      queue: ['publish'], // servers publish to queues
+    },
+    gateway: {
+      server: ['handle', 'process'], // gateways route to servers
+      cache: ['get'], // gateways might check cache
+    },
+    queue: {
+      server: ['process'], // queue consumers call processors
+    },
+  };
+  
+  // Check if we have a pattern for this caller->target type combination
+  if (patterns[callerType] && patterns[callerType][targetType]) {
+    const preferredMethods = patterns[callerType][targetType];
+    const matches = targetMethods.filter(m => preferredMethods.includes(m));
+    if (matches.length > 0) {
+      return matches;
+    }
+  }
+  
+  // Default: connect to first method or 'process' if available
+  if (targetMethods.includes('process')) {
+    return ['process'];
+  }
+  return [targetMethods[0]];
 }
