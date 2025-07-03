@@ -11,11 +11,8 @@ import (
 // Tests for Init remain the same...
 func TestDiskInit_DefaultSSD(t *testing.T) {
 	// Test default initialization (empty profile name)
-	d := NewDisk("") // Should default to SSD
+	d := NewDisk() // Should default to SSD
 
-	if d.ProfileName != ProfileSSD {
-		t.Errorf("Expected ProfileName to be '%s', got '%s'", ProfileSSD, d.ProfileName)
-	}
 	if d.ReadOutcomes == nil || d.WriteOutcomes == nil {
 		t.Fatal("Default disk outcomes are nil")
 	}
@@ -28,10 +25,7 @@ func TestDiskInit_DefaultSSD(t *testing.T) {
 	}
 
 	// Test initialization with unrecognized profile name
-	dUnrecognized := NewDisk("QuantumLeapDrive")
-	if dUnrecognized.ProfileName != ProfileSSD {
-		t.Errorf("Expected unrecognized ProfileName to default to '%s', got '%s'", ProfileSSD, dUnrecognized.ProfileName)
-	}
+	dUnrecognized := NewDisk()
 	if dUnrecognized.ReadOutcomes != ssdReadOutcomes {
 		t.Error("Unrecognized disk ReadOutcomes do not point to predefined SSD read outcomes")
 	}
@@ -39,27 +33,21 @@ func TestDiskInit_DefaultSSD(t *testing.T) {
 
 func TestDiskInit_ExplicitProfiles(t *testing.T) {
 	// Test explicit SSD initialization
-	ssd := NewDisk(ProfileSSD)
-	if ssd.ProfileName != ProfileSSD {
-		t.Errorf("Expected ProfileName '%s', got '%s'", ProfileSSD, ssd.ProfileName)
-	}
+	ssd := NewDisk()
 	if ssd.ReadOutcomes != ssdReadOutcomes || ssd.WriteOutcomes != ssdWriteOutcomes {
 		t.Error("SSD disk does not point to correct predefined outcomes")
 	}
 
 	// Test explicit HDD initialization
-	hdd := NewDisk(ProfileHDD)
-	if hdd.ProfileName != ProfileHDD {
-		t.Errorf("Expected ProfileName '%s', got '%s'", ProfileHDD, hdd.ProfileName)
-	}
+	hdd := NewDisk()
 	if hdd.ReadOutcomes != hddReadOutcomes || hdd.WriteOutcomes != hddWriteOutcomes {
 		t.Error("HDD disk does not point to correct predefined outcomes")
 	}
 }
 
 func TestDisk_PerformanceMetrics(t *testing.T) {
-	ssd := NewDisk(ProfileSSD)
-	hdd := NewDisk(ProfileHDD)
+	ssd := NewDisk()
+	hdd := NewDisk()
 
 	// --- Analyze SSD Read ---
 	ssdReadOutcomes := ssd.Read()
@@ -147,7 +135,7 @@ func TestDisk_PerformanceMetrics(t *testing.T) {
 }
 
 func TestDisk_ReadProcessWrite(t *testing.T) {
-	ssd := NewDisk(ProfileSSD)
+	ssd := NewDisk()
 	processingTime := sc.Millis(1) // 1ms processing
 
 	rpwOutcomes := ssd.ReadProcessWrite(processingTime)

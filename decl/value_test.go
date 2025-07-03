@@ -201,7 +201,7 @@ func TestValueGetters(t *testing.T) {
 	// --- Test GetInt ---
 	valI, errI := rvInt.GetInt()
 	assert.NoError(t, errI)
-	assert.Equal(t, 123, valI)
+	assert.Equal(t, int64(123), valI)
 	_, errI = rvStr.GetInt() // Wrong type
 	assert.Error(t, errI)
 	assert.Contains(t, errI.Error(), "cannot get Int, value is type string")
@@ -253,9 +253,6 @@ func TestValueGetters(t *testing.T) {
 	assert.Contains(t, errO.Error(), "cannot get Outcomes, value is type List[string]")
 
 	// --- Test GetNil ---
-	errN := rvNil.GetNil() // Correct type
-	assert.NoError(t, errN)
-	errN = rvInt.GetNil() // Wrong type
-	assert.Error(t, errN)
-	assert.Contains(t, errN.Error(), "cannot get Nil, value is type int")
+	assert.True(t, rvNil.IsNil())  // Correct type
+	assert.False(t, rvInt.IsNil()) // Wrong type
 }

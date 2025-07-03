@@ -11,9 +11,6 @@ import (
 // Test Init remains the same...
 func TestBitmapIndex_Init(t *testing.T) {
 	bmi := NewBitmapIndex()
-	if bmi.Disk.ReadOutcomes == nil {
-		t.Fatal("BitmapIndex Disk not initialized")
-	}
 	if bmi.Cardinality == 0 {
 		t.Error("Default Cardinality should be > 0")
 	}

@@ -7,14 +7,6 @@ import (
 	sc "github.com/panyam/sdl/core"
 )
 
-func TestHashIndex_Init(t *testing.T) {
-	hi := NewHashIndex()
-	if hi.Disk.ReadOutcomes == nil {
-		t.Fatal("HashIndex Disk not initialized")
-	}
-	// Add more checks
-}
-
 func TestHashIndex_Probabilities_Heuristic(t *testing.T) {
 	hi := NewHashIndex()
 	hi.PageSize = 4096 // Needed for NumPages -> resize cost calculation

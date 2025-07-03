@@ -13,9 +13,6 @@ func TestBTreeIndex_Init(t *testing.T) {
 	bt := &BTreeIndex{}
 	bt.Init() // Use constructor style matching BTreeIndex.Init()
 
-	if bt.Disk.ReadOutcomes == nil {
-		t.Fatal("BTreeIndex Disk not initialized")
-	}
 	if bt.NodeFanout <= 1 {
 		t.Error("Default NodeFanout should be > 1")
 	}

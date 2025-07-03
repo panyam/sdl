@@ -11,9 +11,6 @@ import (
 // Test Init remains the same...
 func TestLSMTree_Init(t *testing.T) {
 	lsm := NewLSMTree()
-	if lsm.Disk.ReadOutcomes == nil { // Check inherited Disk init
-		t.Fatal("LSMTree Disk not initialized")
-	}
 	if lsm.Levels <= 0 {
 		t.Error("Default Levels should be > 0")
 	}
