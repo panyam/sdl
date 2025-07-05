@@ -18,6 +18,10 @@
 ## WASM Build Memory
 - You can build the wasm binary by simply doing `make wasmbin` in the top level directory but this is being built as files are changed.
 
+## Continuous Builds
+
+Builds for frontend, wasm, backend are all running continuously and can be queried against the remote `devloop` mcp server with project ID - "sdl".  You can use it to get the results of the latest build for the various components being watched and live loaded.
+
 ## Summary instructions
 
 - When you are using compact, please focus on test output and code changes

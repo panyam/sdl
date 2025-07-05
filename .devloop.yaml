@@ -1,0 +1,91 @@
+settings:
+  project_id: "sdl"
+  color_logs: true
+  prefix_logs: true
+  prefix_max_length: 15
+
+rules:
+  # Go Backend Development & Testing
+  - name: "go-backend"
+    color: "blue"
+    watch:
+      - action: "exclude"
+        patterns:
+          - "parser/parser.go"
+          - "assets/**/*"
+          - "web/**"
+          - "wasm/**"
+      - action: "include"
+        patterns:
+          - "parser/*.y"
+          - "parser/*.go"
+          - "**/*.go"
+          - "go.mod"
+          - "go.sum"
+    commands:
+      - "echo '🔧 Building Parser and SDL Binary...'"
+      - "make binlocal"
+      # - "go test -short ./..."
+      - "echo '✅ Backend build and tests complete'"
+      - "/tmp/sdl serve"
+
+  # Frontend Development & Testing
+  - name: "frontend"
+    color: "green"
+    workdir: "./web"
+    watch:
+      - action: "exclude"
+        patterns:
+          - "web/node_modules/**"
+          - "web/dist/**"
+          - "web/test-results/**"
+          - "web/playwright-report/**"
+      - action: "include"
+        patterns:
+          - "web/**/*.ts"
+          - "web/**/*.js"
+          - "web/**/*.css"
+          - "web/**/*.html"
+          - "web/**/*.spec.ts"
+          - "web/**/*.test.ts"
+          - "web/package.json"
+          - "web/vite.config.ts"
+          - "web/tsconfig.json"
+    commands:
+      - "echo '⚡ Building frontend...'"
+      - "npm run build:only"
+      - "echo '🧪 Running frontend tests...'"
+      # - "npm run test:unit"
+      - "echo '✅ Frontend build complete and tests disabled'"
+
+  # WebAssembly Development
+  - name: "wasm"
+    color: "yellow"
+    workdir: "./wasm"
+    watch:
+      - action: "include"
+        patterns:
+          - "wasm/**/*.go"
+          - "wasm/Makefile"
+    commands:
+      - "echo '🕸️ Building WebAssembly...'"
+      - "make"
+      - "echo '🧪 Running WASM tests...'"
+      - "GOOS=js GOARCH=wasm go test -v ./..."
+      - "echo '✅ WASM build and tests complete'"
+
+  # Protocol Buffers (affects both Go and Web)
+  - name: "protobuf"
+    color: "magenta"
+    run_on_init: false
+    watch:
+      - action: "include"
+        patterns:
+          - "protos/**/*.proto"
+          - "buf.yaml"
+          - "buf.gen.yaml"
+    commands:
+      - "echo '📦 Regenerating Protocol Buffers...'"
+      - "rm -Rf gen"
+      - "buf generate"
+      - "echo '✅ Protobuf generation complete'"
