@@ -47,7 +47,7 @@ func NewSDLApi(grpcAddr string, canvasService *CanvasService) *SDLApi {
 	} else {
 		log.Println("No CanvasService provided, skipping Connect handler")
 	}
-	
+
 	// Add Systems Connect handler
 	log.Println("Adding Systems Connect handler...")
 	systemsAdapter := NewConnectSystemsServiceAdapter(NewSystemsService())
@@ -119,7 +119,7 @@ func (web *SDLApi) createSvcMux(grpc_addr string) (*runtime.ServeMux, error) {
 		log.Fatal("Unable to register canvas service: ", err)
 		return nil, err
 	}
-	
+
 	err = v1.RegisterSystemsServiceHandlerFromEndpoint(ctx, svcMux, grpc_addr, opts)
 	if err != nil {
 		log.Fatal("Unable to register systems service: ", err)

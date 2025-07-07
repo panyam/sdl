@@ -25,8 +25,8 @@ type SystemProject struct {
 	Description    string                   `json:"description"`
 	Category       string                   `json:"category"`
 	Difficulty     string                   `json:"difficulty"`
-	Tags         []string                 `json:"tags"`
-	Icon         string                   `json:"icon,omitempty"`
+	Tags           []string                 `json:"tags"`
+	Icon           string                   `json:"icon,omitempty"`
 	Versions       map[string]SystemVersion `json:"versions"`
 	DefaultVersion string                   `json:"defaultVersion"`
 	LastUpdated    string                   `json:"lastUpdated"`
@@ -71,19 +71,6 @@ func (s *SystemCatalogService) initializeCatalog() {
 		Icon:           "🔗",
 		DefaultVersion: "v1",
 		sdlFile:        "bitly/mvp.sdl",
-		recipeFile:     "bitly/mvp.recipe",
-	})
-
-	s.addSystem(&SystemProject{
-		ID:             "bitly-new",
-		Name:           "Bitly URL Shortener (Stdlib)",
-		Description:    "Bitly example using @stdlib imports",
-		Category:       "Web Services",
-		Difficulty:     "beginner",
-		Tags:           []string{"web", "database", "caching", "rest-api", "stdlib"},
-		Icon:           "🔗",
-		DefaultVersion: "v1",
-		sdlFile:        "bitly/mvp_new.sdl",
 		recipeFile:     "bitly/mvp.recipe",
 	})
 
@@ -133,11 +120,11 @@ func (s *SystemCatalogService) addSystem(project *SystemProject) {
 	// Load SDL and recipe content from files
 	sdlPath := filepath.Join(s.basePath, project.sdlFile)
 	recipePath := filepath.Join(s.basePath, project.recipeFile)
-	
+
 	sdlContent := ""
 	recipeContent := ""
 	var lastMod time.Time
-	
+
 	// Read SDL file
 	if sdlBytes, err := os.ReadFile(sdlPath); err == nil {
 		sdlContent = string(sdlBytes)
@@ -145,7 +132,7 @@ func (s *SystemCatalogService) addSystem(project *SystemProject) {
 			lastMod = info.ModTime()
 		}
 	}
-	
+
 	// Read Recipe file
 	if recipeBytes, err := os.ReadFile(recipePath); err == nil {
 		recipeContent = string(recipeBytes)
@@ -155,12 +142,12 @@ func (s *SystemCatalogService) addSystem(project *SystemProject) {
 			}
 		}
 	}
-	
+
 	// If files don't exist, use empty content and current time
 	if lastMod.IsZero() {
 		lastMod = time.Now()
 	}
-	
+
 	// Create version with file content
 	project.Versions = map[string]SystemVersion{
 		"v1": {
@@ -169,7 +156,7 @@ func (s *SystemCatalogService) addSystem(project *SystemProject) {
 		},
 	}
 	project.LastUpdated = lastMod.Format(time.RFC3339)
-	
+
 	s.systems[project.ID] = project
 }
 
@@ -181,17 +168,17 @@ func (s *SystemCatalogService) ListSystems() []SystemInfo {
 			ID:          project.ID,
 			Name:        project.Name,
 			Description: project.Description,
-		Category:    project.Category,
+			Category:    project.Category,
 			Difficulty:  project.Difficulty,
-		Tags:        project.Tags,
+			Tags:        project.Tags,
 			Icon:        project.Icon,
 			LastUpdated: project.LastUpdated,
 		})
-}
+	}
 	return systems
 }
 
 // GetSystem returns a specific system project
 func (s *SystemCatalogService) GetSystem(id string) *SystemProject {
-return s.systems[id]
+	return s.systems[id]
 }

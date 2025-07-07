@@ -1,8 +1,5 @@
 
-
-import Cache, NativeDisk, HttpStatusCode, HashIndex, delay, log from "../common.sdl" ;
-import InfiniteBandwidthDisk as Disk from "../disk.sdl"
-import Database from "./db.sdl"
+import Cache, HashIndex, NativeDisk, HttpStatusCode, HashIndex, delay, log from "@stdlib/common.sdl" ;
 
 enum DBResult { FOUND, NOT_FOUND, INTERNAL_ERROR }
 enum DuplicateCheck { FOUND, NOTFOUND, ERROR }
@@ -41,6 +38,18 @@ component AppServer {
     // Simplified - can model more errors
     return HttpStatusCode.InternalError
   }
+}
+
+component Database {
+    uses itemsById HashIndex()
+
+    method Select() Bool {
+      return itemsById.Find()
+    }
+
+    method Insert() Bool {
+       return itemsById.Insert() 
+    }
 }
 
 system Bitly {
