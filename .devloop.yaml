@@ -31,6 +31,7 @@ rules:
 
   # Frontend Development & Testing
   - name: "frontend"
+    skip_run_on_init: true
     color: "green"
     workdir: "./web"
     watch:
@@ -77,7 +78,7 @@ rules:
   # Protocol Buffers (affects both Go and Web)
   - name: "protobuf"
     color: "magenta"
-    run_on_init: false
+    skip_run_on_init: true
     watch:
       - action: "include"
         patterns:
