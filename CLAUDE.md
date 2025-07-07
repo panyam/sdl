@@ -20,7 +20,12 @@
 
 ## Continuous Builds
 
-Builds for frontend, wasm, backend are all running continuously and can be queried against the remote `devloop` mcp server with project ID - "sdl".  You can use it to get the results of the latest build for the various components being watched and live loaded.
+Builds for frontend, wasm, backend are all running continuously and can be queried using the `devloop` cli tool.   You have the following devloop commands:
+- `devloop config` - Get configuration from running devloop server
+- `devloop paths` - List all file patterns being watched
+- `devloop trigger <rulename>` - Trigger execution of a specific rule
+- `devloop logs <rulename>`  - Stream logs from running devloop server
+- `devloop status <rulename>` - Get status of rules from running devloop server
 
 ## Summary instructions
 
