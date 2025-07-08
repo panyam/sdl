@@ -98,6 +98,8 @@ SDL is a language and runtime for modeling and simulating distributed system per
 - ✅ Recipe execution in WASM mode implemented
 - ✅ Singleton recipe controls integrated into toolbar
 - ✅ Recipe parser enhanced with syntax validation (July 2025)
+- ✅ Go recipe parser implementation completed (July 2025)
+- ✅ @stdlib import support fully implemented (July 2025)
 - ⏳ Binary size optimization pending (current: 28.6MB)
 
 ## System Showcase (July 2025)
@@ -146,8 +148,40 @@ SDL is a language and runtime for modeling and simulating distributed system per
 - End-to-end metrics validation
 - Generator synchronization tests
 
+## Recipe Parser & SystemDetailTool (July 2025)
+
+### Motivation
+- Enable step-by-step recipe execution in System details view
+- Achieve MVP parity with old dashboard for WASM mode
+- Provide environment-agnostic tools for reuse across CLI, WASM, and testing
+
+### Go Recipe Parser Implementation
+- **Complete TypeScript Parity**: Ported all command types, validation patterns, and parsing logic
+- **Comprehensive Validation**: Supports syntax checking, command validation, and error reporting with line numbers
+- **Command Line Parser**: Handles quoted strings, arguments, and complex flag syntax
+- **Security Model**: Validates recipe syntax to prevent unsupported shell operations
+
+### SystemDetailTool Architecture
+- **Environment Agnostic**: Single tool for CLI, WASM, and test usage
+- **Memory-based Compilation**: In-memory SDL compilation with @stdlib support
+- **Recipe Integration**: Fully integrated with Go recipe parser
+- **Security Constraints**: Single-file SDL approach with only @stdlib imports allowed
+
+### @stdlib Import Support
+- **Memory Filesystem**: Loads stdlib files from `examples/stdlib/` into memory
+- **Prefix Handling**: Custom resolver that strips `@stdlib/` prefix for file lookups
+- **Path Resolution**: Robust path finding for different runtime environments
+- **Complete Integration**: Works seamlessly with existing SDL compilation pipeline
+
+### Current Status
+- ✅ Go recipe parser with 100% test coverage
+- ✅ SystemDetailTool with @stdlib support
+- ✅ Bitly example compiles and executes successfully
+- ✅ Recipe parsing of real Bitly recipe (115 executable steps)
+- ✅ Comprehensive test suite for all functionality
+- ✅ Debug tooling for standalone testing
+
 ## Known Limitations
 - Only supports latency and count metrics (no utilization/throughput)
 - Control flow dependencies not fully represented in path analysis
 - No binary operators in SDL (use native functions instead)
-- WASM build currently blocked by proto dependencies

@@ -1,5 +1,5 @@
 
-import Cache, HashIndex, NativeDisk, HttpStatusCode, HashIndex, delay, log from "@stdlib/common.sdl" ;
+import Cache, HashIndex, NativeDisk, HttpStatusCode, delay, log from "@stdlib/common.sdl" ;
 
 enum DBResult { FOUND, NOT_FOUND, INTERNAL_ERROR }
 enum DuplicateCheck { FOUND, NOTFOUND, ERROR }

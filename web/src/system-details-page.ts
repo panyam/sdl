@@ -357,6 +357,9 @@ export class SystemDetailsPage {
       onChange: (_content) => {
         // Update state when recipe content changes
         this.stateManager.updateState({ currentFile: 'demo.recipe' });
+      },
+      onRunningStateChange: (isRunning: boolean, currentLine?: number) => {
+        console.log(`Recipe editor state change - isRunning: ${isRunning}, currentLine: ${currentLine}`);
       }
     });
     
@@ -455,6 +458,50 @@ export class SystemDetailsPage {
     
     // Initialize recipe runner
     this.recipeRunner = new RecipeRunner(this.canvasClient);
+    
+    // Set up output handler to pipe to console
+    this.recipeRunner.setOutputHandler((message: string, type: 'info' | 'success' | 'error' | 'warning') => {
+      switch (type) {
+        case 'success':
+          this.consolePanel?.success(message);
+          break;
+        case 'error':
+          this.consolePanel?.error(message);
+          break;
+        case 'warning':
+          this.consolePanel?.warning(message);
+          break;
+        default:
+          this.consolePanel?.info(message);
+          break;
+      }
+    });
+    
+    // Set up state change handler to update UI
+    this.recipeRunner.setStateChangeHandler((state) => {
+      console.log(`Recipe state changed - isRunning: ${state.isRunning}, currentStep: ${state.currentStep}`);
+      
+      // Update toolbar buttons
+      this.toolbar?.updateButton('run', { disabled: state.isRunning });
+      this.toolbar?.updateButton('stop', { disabled: !state.isRunning });
+      this.toolbar?.updateButton('step', { disabled: !state.isRunning });
+      
+      // Update recipe editor highlighting
+      if (state.isRunning && state.currentStep < state.steps.length) {
+        const currentStep = state.steps[state.currentStep];
+        const lineNumber = currentStep?.command?.lineNumber;
+        this.recipeEditorPanel?.setRunning(true, lineNumber);
+      } else {
+        this.recipeEditorPanel?.setRunning(false);
+      }
+      
+      // Emit events for other components
+      if (state.isRunning) {
+        this.eventBus.emit('recipe:started', { fileName: state.fileName });
+      } else {
+        this.eventBus.emit('recipe:completed', { fileName: state.fileName });
+      }
+    });
   }
   
 
@@ -487,36 +534,34 @@ export class SystemDetailsPage {
   }
 
   private async runSystem(): Promise<void> {
+    // Start recipe execution instead of system simulation
+    const recipeContent = this.recipeEditorPanel?.getContent() || this.systemContent?.recipeContent || '';
+    
+    if (!recipeContent.trim()) {
+      this.consolePanel?.error('No recipe content to execute');
+      return;
+    }
+    
     // Update toolbar buttons
     this.toolbar?.updateButton('run', { disabled: true });
     this.toolbar?.updateButton('stop', { disabled: false });
-    
-    // Get current SDL content when needed
-    // const sdlContent = this.sdlEditorPanel?.getContent() || this.pageData.sdlContent;
+    this.toolbar?.updateButton('step', { disabled: false });
     
     // Log to console
-    this.consolePanel?.info('Starting system simulation...');
+    this.consolePanel?.info('Starting recipe execution...');
     
     try {
-      // Run system based on mode
-      if (this.pageData.mode === 'wasm') {
-        this.consolePanel?.info('Initializing WASM runtime...');
-        // TODO: Initialize WASM canvas and run
-      } else {
-        this.consolePanel?.info('Starting system on server...');
-        // For now, just save the SDL content locally and get the diagram
-        // TODO: Implement proper SDL compilation endpoint
-        this.consolePanel?.info('Processing SDL...');
-        
-        // Store the SDL content in state
-        this.stateManager.updateState({ currentFile: 'system.sdl' });
-        
-        // Load system diagram
-        await this.loadSystemDiagram();
-        this.consolePanel?.success('System loaded successfully');
-      }
-    } catch (error) {
-      this.consolePanel?.error(`Error: ${error}`);
+      // Load and start recipe
+      await this.recipeRunner?.loadRecipe('demo.recipe', recipeContent);
+      await this.recipeRunner?.start('step');
+      
+      this.consolePanel?.success('Recipe loaded and ready');
+    } catch (error: any) {
+      this.consolePanel?.error(`Recipe error: ${error.message}`);
+      // Reset toolbar buttons on error
+      this.toolbar?.updateButton('run', { disabled: false });
+      this.toolbar?.updateButton('stop', { disabled: true });
+      this.toolbar?.updateButton('step', { disabled: true });
     }
   }
 
@@ -524,17 +569,19 @@ export class SystemDetailsPage {
     // Update toolbar buttons
     this.toolbar?.updateButton('run', { disabled: false });
     this.toolbar?.updateButton('stop', { disabled: true });
+    this.toolbar?.updateButton('step', { disabled: true });
     
-    // Stop simulation
-    this.consolePanel?.info('Stopping simulation...');
-    // Clear the system diagram
-    this.eventBus.emit('system:diagram:loaded', null);
-    this.consolePanel?.success('Simulation stopped');
+    // Stop recipe execution
+    this.consolePanel?.info('Stopping recipe execution...');
     
-    // Stop recipe if running
     if (this.recipeRunner) {
       this.recipeRunner.stop();
     }
+    
+    // Clear recipe highlighting
+    this.recipeEditorPanel?.setRunning(false);
+    
+    this.consolePanel?.success('Recipe execution stopped');
   }
 
   private async saveChanges(): Promise<void> {
@@ -576,7 +623,7 @@ export class SystemDetailsPage {
   
   private stepRecipe(): void {
     if (this.recipeRunner) {
-      // TODO: Implement step mode in RecipeRunner
+      this.recipeRunner.step();
       this.consolePanel?.info('Stepping through recipe...');
     }
   }

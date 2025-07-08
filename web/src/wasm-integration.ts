@@ -390,8 +390,9 @@ export async function generateSystemDiagram(sdlContent: string): Promise<any> {
     
     // Load the SDL file into the canvas
     const loadResult = sdl.canvas.load(tempPath, tempCanvasId);
-    if (!loadResult.success) {
-      throw new Error(loadResult.error || 'Failed to load SDL');
+    console.log('Load result:', loadResult);
+    if (!loadResult || !loadResult.success) {
+      throw new Error(loadResult?.error || 'Failed to load SDL - no result returned');
     }
     
     // Get canvas info which includes the system information
