@@ -43,6 +43,16 @@ SDL aims to become the industry standard for system design education, capacity p
 - **Recipe Controls**: Singleton pattern with global toolbar integration
 - **UI Stability**: Fixed toolbar render issues preserving child components
 
+### Latest Achievements (v4.1 - December 2024)
+- **Minitools Architecture**: Page-specific WASM modules replacing monolithic approach
+- **SystemDetailTool**: Complete Go implementation with @stdlib import support and recipe parsing
+- **WASM Integration**: Dedicated 27MB WASM module with JavaScript bindings and TypeScript wrapper
+- **Enhanced Build System**: Multiple WASM module discovery, cataloging, and conditional loading
+- **Security Model**: Import validation preventing local imports, shell syntax protection
+- **Template Infrastructure**: SystemDetailTool serves as template for creating additional focused tools
+- **Environment Agnostic**: Same tool works across CLI, server, and WASM contexts
+- **Performance Optimization**: Lazy loading of WASM modules with cache busting for development
+
 ## Roadmap Phases
 
 ### Phase 1: Production Readiness (Q3 2025) - In Progress
