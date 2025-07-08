@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
-	"github.com/panyam/sdl/console"
+	"github.com/panyam/sdl/web/services"
 	"github.com/panyam/sdl/loader"
 	"github.com/panyam/sdl/runtime"
 )
@@ -18,11 +18,11 @@ import (
 var stdlibFiles embed.FS
 
 // Global canvas manager - reusing existing Canvas type
-var canvases map[string]*console.Canvas
+var canvases map[string]*services.Canvas
 var fileSystem loader.FileSystem
 
 func init() {
-	canvases = make(map[string]*console.Canvas)
+	canvases = make(map[string]*services.Canvas)
 	
 	// Initialize filesystem for WASM environment
 	fileSystem = createWASMFileSystem()
@@ -31,7 +31,7 @@ func init() {
 	fsResolver := loader.NewFileSystemResolver(fileSystem)
 	sdlLoader := loader.NewLoader(nil, fsResolver, 10)
 	r := runtime.NewRuntime(sdlLoader)
-	canvases["default"] = console.NewCanvas("default", r)
+	canvases["default"] = services.NewCanvas("default", r)
 }
 
 func createWASMFileSystem() loader.FileSystem {
@@ -124,7 +124,7 @@ func main() {
 }
 
 // Helper to get or create canvas
-func getCanvas(id string) *console.Canvas {
+func getCanvas(id string) *services.Canvas {
 	if id == "" {
 		id = "default"
 	}
@@ -136,7 +136,7 @@ func getCanvas(id string) *console.Canvas {
 		sdlLoader := loader.NewLoader(nil, fsResolver, 10)
 		r := runtime.NewRuntime(sdlLoader)
 		
-		canvas = console.NewCanvas(id, r)
+		canvas = services.NewCanvas(id, r)
 		canvases[id] = canvas
 	}
 	return canvas
@@ -253,7 +253,7 @@ func canvasReset(this js.Value, args []js.Value) interface{} {
 	fsResolver := loader.NewFileSystemResolver(fileSystem)
 	sdlLoader := loader.NewLoader(nil, fsResolver, 10)
 	r := runtime.NewRuntime(sdlLoader)
-	canvases[canvasID] = console.NewCanvas(canvasID, r)
+	canvases[canvasID] = services.NewCanvas(canvasID, r)
 	
 	return jsSuccess(map[string]interface{}{
 		"canvasId": canvasID,
@@ -307,8 +307,8 @@ func genAdd(this js.Value, args []js.Value) interface{} {
 	}
 	
 	// Create GeneratorInfo
-	gen := &console.GeneratorInfo{
-		Generator: &console.Generator{
+	gen := &services.GeneratorInfo{
+		Generator: &services.Generator{
 			ID:        name,
 			Name:      name,
 			Component: component,
@@ -579,8 +579,8 @@ func metricsAdd(this js.Value, args []js.Value) interface{} {
 	}
 	
 	// Create MetricSpec
-	metric := &console.MetricSpec{
-		Metric: &console.Metric{
+	metric := &services.MetricSpec{
+		Metric: &services.Metric{
 			ID:          name,
 			CanvasID:    canvasID,
 			Component:   component,
@@ -680,7 +680,7 @@ func metricsList(this js.Value, args []js.Value) interface{} {
 	// canvas := getCanvas(canvasID)
 	// TODO: Implement metric management in Canvas
 	// metrics := canvas.ListMetrics()
-	var metrics []*console.MetricSpec
+	var metrics []*services.MetricSpec
 	
 	// Convert to JS-friendly format
 	metricList := []interface{}{}

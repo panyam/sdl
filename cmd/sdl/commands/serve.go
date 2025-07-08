@@ -5,7 +5,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/panyam/sdl/console"
+	"github.com/panyam/sdl/web/server"
+	"github.com/panyam/sdl/web/services"
 	"github.com/spf13/cobra"
 )
 
@@ -45,14 +46,14 @@ Example:
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Create shared CanvasService instance
-		canvasService := console.NewCanvasService()
+		canvasService := services.NewCanvasService()
 		
 		// Create web server with Canvas
 		log.Println("Grpc, Address: ", grpcAddress)
 		log.Println("gateway, Address: ", gatewayAddress)
 		app := App{Ctx: context.Background()}
-		app.AddServer(&console.Server{Address: grpcAddress, CanvasService: canvasService})
-		app.AddServer(&console.WebAppServer{GrpcAddress: grpcAddress, Address: gatewayAddress, CanvasService: canvasService})
+		app.AddServer(&server.Server{Address: grpcAddress, CanvasService: canvasService})
+		app.AddServer(&server.WebAppServer{GrpcAddress: grpcAddress, Address: gatewayAddress, CanvasService: canvasService})
 		app.Start()
 		app.Done(nil)
 	},
@@ -60,7 +61,7 @@ Example:
 
 // displayServerStats shows periodic server statistics
 /*
-func displayServerStats(ctx context.Context, canvas *console.Canvas) {
+func displayServerStats(ctx context.Context, canvas *services.Canvas) {
 	ticker := time.NewTicker(statsInterval)
 	defer ticker.Stop()
 
@@ -92,7 +93,7 @@ func displayServerStats(ctx context.Context, canvas *console.Canvas) {
 */
 
 // loadInitialFiles loads SDL files into the canvas on server startup
-func loadInitialFiles(canvas *console.Canvas, files []string) {
+func loadInitialFiles(canvas *services.Canvas, files []string) {
 	// Give the server a moment to fully start
 	time.Sleep(1 * time.Second)
 

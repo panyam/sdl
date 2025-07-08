@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/panyam/sdl/console"
+	"github.com/panyam/sdl/web/services"
 	"github.com/panyam/sdl/decl"
 	"github.com/panyam/sdl/loader"
 	"github.com/panyam/sdl/runtime"
@@ -183,7 +183,7 @@ func (t *SystemDetailTool) compileSDL() error {
 
 	// Create runtime and canvas
 	runtime := runtime.NewRuntime(loader)
-	canvas := console.NewCanvas(t.canvasID, runtime)
+	canvas := services.NewCanvas(t.canvasID, runtime)
 
 	// Update tool with new runtime components
 	t.runtime = runtime

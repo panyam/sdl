@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/panyam/sdl/console"
+	"github.com/panyam/sdl/web/services"
 	"github.com/panyam/sdl/runtime"
 	"github.com/panyam/sdl/tools/shared/recipe"
 )
@@ -87,7 +87,7 @@ type SystemDetailTool struct {
 	compileResult *CompileResult
 	
 	// SDL runtime components
-	canvas        *console.Canvas
+	canvas        *services.Canvas
 	runtime       *runtime.Runtime
 	canvasID      string
 	

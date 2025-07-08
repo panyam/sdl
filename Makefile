@@ -50,7 +50,7 @@ install-tools:
 # Install Node dependencies
 install-npm:
 	@echo "Installing Node.js dependencies..."
-	cd web && npm install
+	cd web/frontend && npm install
 	@echo "✓ Node.js dependencies installed"
 
 # Install everything needed for development
@@ -134,18 +134,18 @@ buf:
 reload: buf
 
 dash:
-	cd web && npm run build
+	cd web/frontend && npm run build
 
 # Development workflow: build and test dashboard
 dev-test: binary
-	cd web && ./dev-test.sh
+	cd web/frontend && ./dev-test.sh
 
 # Quick development validation
 dev-quick: binary
-	cd web && npm run dev-quick
+	cd web/frontend && npm run dev-quick
 
 dev-screenshot: binary
-	cd web && npm run dev-screenshot
+	cd web/frontend && npm run dev-screenshot
 
 run:
 	go test
@@ -167,7 +167,7 @@ clean:
 	@echo "Cleaning build artifacts..."
 	rm -f ${GOBIN}/sdl
 	rm -rf web/dist
-	rm -rf web/node_modules
+	rm -rf web/frontend/node_modules
 	rm -rf node_modules
 	cd parser && make clean || true
 	@echo "✓ Clean complete"

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}} - SDL Canvas</title>
+    <link rel="stylesheet" href="/assets/index-BB1MTwK5.css">
+    {{block "head" .}}{{end}}
+</head>
+<body class="h-full bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-mono transition-colors">
+    <!-- Theme Switcher -->
+    <div class="fixed top-4 right-4 z-50">
+        <div class="flex items-center gap-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-1 shadow-md">
+            <button data-theme="light" class="theme-btn p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title="Light mode">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>
+            </button>
+            <button data-theme="dark" class="theme-btn p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title="Dark mode">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                </svg>
+            </button>
+            <button data-theme="system" class="theme-btn p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title="System theme">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+    
+    {{block "content" .}}{{end}}
+    
+    <div id="app" 
+         data-page-type="{{.PageType}}">
+    </div>
+    
+    <!-- Pass page data via script tag to avoid HTML escaping issues -->
+    <script type="application/json" id="page-data">{{.PageDataJSON}}</script>
+    
+    <!-- WASM runtime support -->
+    <script src="/wasm_exec.js"></script>
+    
+    <!-- Page-specific WASM modules -->
+    {{if .WasmModules}}
+    {{range .WasmModules}}
+    <script>
+        // Preload WASM module: {{.Name}}
+        window.sdlWasmModules = window.sdlWasmModules || {};
+        window.sdlWasmModules['{{.Name}}'] = {
+            path: '{{.Path}}',
+            loaded: false,
+            instance: null
+        };
+    </script>
+    {{end}}
+    {{end}}
+    
+    <script type="module" src="/assets/index-Bd9FuQZA.js"></script>
+    
+    <!-- Inline theme switcher script for immediate functionality -->
+    <script>
+        (function() {
+            // Initialize theme from localStorage or system preference
+            const savedTheme = localStorage.getItem('sdl-theme') || 'system';
+            
+            function applyTheme(theme) {
+                if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            }
+            
+            function setTheme(theme) {
+                localStorage.setItem('sdl-theme', theme);
+                
+                if (theme === 'system') {
+                    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    applyTheme(prefersDark ? 'dark' : 'light');
+                } else {
+                    applyTheme(theme);
+                }
+                
+                // Update active button state
+                document.querySelectorAll('[data-theme]').forEach(btn => {
+                    btn.classList.toggle('active', btn.getAttribute('data-theme') === theme);
+                });
+            }
+            
+            // Apply initial theme
+            setTheme(savedTheme);
+            
+            // Listen for system theme changes
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                if (localStorage.getItem('sdl-theme') === 'system') {
+                    applyTheme(e.matches ? 'dark' : 'light');
+                }
+            });
+            
+            // Attach click handlers
+            document.addEventListener('click', function(e) {
+                const themeBtn = e.target.closest('[data-theme]');
+                if (themeBtn) {
+                    const theme = themeBtn.getAttribute('data-theme');
+                    setTheme(theme);
+                }
+            });
+        })();
+    </script>
+    
+    {{block "scripts" .}}{{end}}
+</body>
+</html>
