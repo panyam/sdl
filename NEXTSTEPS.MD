@@ -1,6 +1,26 @@
 # SDL Project Next Steps
 
-## Immediate Priority: WASM Support (In Progress)
+## Completed: Minitools WASM Architecture ✅ COMPLETED
+
+### SystemDetailTool Implementation ✅ COMPLETED
+- [x] Complete Go implementation with @stdlib import support
+- [x] Recipe parser with TypeScript parity (echo, sdl, pause, read commands)  
+- [x] Security validation preventing local imports and unsafe shell syntax
+- [x] Comprehensive test suite with 100% pass rate
+- [x] WASM bindings with JavaScript/TypeScript integration
+- [x] Dedicated 27MB WASM module (vs 28.6MB monolithic)
+- [x] Frontend integration with system details page
+- [x] Comprehensive documentation and template README
+- [x] CLI, server, and WASM environment compatibility
+
+### Enhanced Build System ✅ COMPLETED
+- [x] Multiple WASM module discovery and cataloging
+- [x] Enhanced update-template-assets.js with WASM detection
+- [x] Template support for conditional WASM loading
+- [x] Centralized WASM loader utility with cache busting
+- [x] Page-specific WASM loading replacing monolithic approach
+
+## Previous: WASM Support ✅ COMPLETED
 
 ### 1. Canvas Refactoring ✅ COMPLETED
 - [x] Define native types for Generator, Metric, SystemDiagram in console package
@@ -58,6 +78,33 @@
 - [ ] Add telemetry for usage analytics
 - [ ] Create deployment pipeline
 - [ ] Document WASM limitations clearly
+
+## Immediate Next Steps: Expanding Minitools Ecosystem
+
+### 1. Recipe Execution Engine
+- [ ] Implement real-time recipe step execution in SystemDetailTool
+- [ ] Add recipe step breakpoints and debugging
+- [ ] Create recipe execution history and logging
+- [ ] Support recipe variables and parameter substitution
+- [ ] Add recipe execution metrics collection
+
+### 2. Additional Minitools
+- [ ] Create PerformanceTool for metrics analysis and capacity planning
+- [ ] Build DiagramTool for visual system design and editing
+- [ ] Implement ValidationTool for SDL linting and best practices
+- [ ] Design ExportTool for generating documentation and deployment configs
+
+### 3. Tool Ecosystem Infrastructure
+- [ ] Create tool registry and discovery system
+- [ ] Implement tool communication protocol for inter-tool data sharing
+- [ ] Add tool lifecycle management and dependency resolution
+- [ ] Build unified tool marketplace and distribution system
+
+### 4. Enhanced WASM Capabilities
+- [ ] Implement WASM worker threads for background processing
+- [ ] Add WASM module hot-reloading for development
+- [ ] Create WASM debugging and profiling infrastructure
+- [ ] Optimize WASM binary sizes with tree shaking
 
 ## Long Term Vision
 
