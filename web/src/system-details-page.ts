@@ -8,7 +8,7 @@ import { SDLEditorPanel } from './panels/sdl-editor-panel';
 import { RecipeEditorPanel } from './panels/recipe-editor-panel';
 import { ConsolePanel } from './components/console-panel';
 import { Toolbar } from './components/toolbar';
-import { RecipeRunner } from './components/recipe-runner';
+import { WASMSystemDetailTool } from './wasm-system-detail-tool';
 import { DockviewApi, DockviewComponent } from 'dockview-core';
 import { configureMonacoLoader } from './components/code-editor';
 import { systemsService } from './services/systems-service';
@@ -39,7 +39,7 @@ export class SystemDetailsPage {
   
   // Toolbar and controls
   private toolbar?: Toolbar;
-  private recipeRunner?: RecipeRunner;
+  private wasmTool?: WASMSystemDetailTool;
 
   constructor(pageData: SystemPageData) {
     this.container = document.getElementById('app') || document.body;
@@ -47,6 +47,8 @@ export class SystemDetailsPage {
     this.eventBus = new EventBus();
     this.stateManager = new AppStateManager();
     this.canvasClient = new CanvasClient(pageData.systemId);
+
+    console.log("Created client: ", this.canvasClient)
     
     // Configure Monaco loader
     configureMonacoLoader();
@@ -71,6 +73,9 @@ export class SystemDetailsPage {
       
       // Initialize dockview layout
       this.initializeLayout();
+      
+      // Initialize WASM tool
+      await this.initializeWASMTool();
       
       // Load system diagram
       this.loadSystemDiagram();
@@ -451,82 +456,68 @@ export class SystemDetailsPage {
     };
   }
 
-  private initializeRecipeControls(): void {
-    if (!this.toolbar) {
-      return;
+  private async initializeWASMTool(): Promise<void> {
+    if (!this.systemContent) {
+      throw new Error('System content not loaded');
     }
+
+    // Initialize WASM SystemDetailTool
+    this.wasmTool = new WASMSystemDetailTool();
     
-    // Initialize recipe runner
-    this.recipeRunner = new RecipeRunner(this.canvasClient);
-    
-    // Set up output handler to pipe to console
-    this.recipeRunner.setOutputHandler((message: string, type: 'info' | 'success' | 'error' | 'warning') => {
-      switch (type) {
-        case 'success':
-          this.consolePanel?.success(message);
-          break;
-        case 'error':
-          this.consolePanel?.error(message);
-          break;
-        case 'warning':
-          this.consolePanel?.warning(message);
-          break;
-        default:
-          this.consolePanel?.info(message);
-          break;
+    // Set up callbacks for output handling
+    this.wasmTool.setCallbacks({
+      onError: (message: string) => {
+        this.consolePanel?.error(message);
+      },
+      onInfo: (message: string) => {
+        this.consolePanel?.info(message);
+      },
+      onSuccess: (message: string) => {
+        this.consolePanel?.success(message);
       }
     });
+
+    // Initialize the tool with system data
+    await this.wasmTool.initialize(
+      this.pageData.systemId,
+      this.systemContent.sdlContent,
+      this.systemContent.recipeContent
+    );
     
-    // Set up state change handler to update UI
-    this.recipeRunner.setStateChangeHandler((state) => {
-      console.log(`Recipe state changed - isRunning: ${state.isRunning}, currentStep: ${state.currentStep}`);
-      
-      // Update toolbar buttons
-      this.toolbar?.updateButton('run', { disabled: state.isRunning });
-      this.toolbar?.updateButton('stop', { disabled: !state.isRunning });
-      this.toolbar?.updateButton('step', { disabled: !state.isRunning });
-      
-      // Update recipe editor highlighting
-      if (state.isRunning && state.currentStep < state.steps.length) {
-        const currentStep = state.steps[state.currentStep];
-        const lineNumber = currentStep?.command?.lineNumber;
-        this.recipeEditorPanel?.setRunning(true, lineNumber);
-      } else {
-        this.recipeEditorPanel?.setRunning(false);
-      }
-      
-      // Emit events for other components
-      if (state.isRunning) {
-        this.eventBus.emit('recipe:started', { fileName: state.fileName });
-      } else {
-        this.eventBus.emit('recipe:completed', { fileName: state.fileName });
-      }
-    });
+    console.log('✅ WASM SystemDetailTool initialized');
+  }
+
+  private initializeRecipeControls(): void {
+    // Recipe controls are now handled through WASM tool
+    // UI updates will be handled in the action methods
   }
   
 
   private async loadSystemDiagram(): Promise<void> {
     try {
-      // Use WASM to generate the system diagram from SDL content
-      if (!this.systemContent?.sdlContent) {
-        console.warn('No SDL content available for diagram generation');
+      if (!this.wasmTool) {
+        console.warn('WASM tool not initialized');
         return;
       }
 
-      // Import the WASM module dynamically
-      const { generateSystemDiagram } = await import('./wasm-integration');
+      // Get compile result from WASM tool
+      const compileResult = await this.wasmTool.getCompileResult();
       
-      // Generate diagram using WASM
-      const diagramData = await generateSystemDiagram(this.systemContent.sdlContent);
-      
-      if (diagramData) {
-        // Update state
-        this.stateManager.updateState({ 
-          currentSystem: this.pageData.systemId
-        });
+      if (compileResult && compileResult.success) {
+        // Use diagram data from compilation result
+        const diagramData = compileResult.diagram;
         
-        // Emit event so architecture panel can update
-        this.eventBus.emit('system:diagram:loaded', diagramData);
+        if (diagramData) {
+          // Update state
+          this.stateManager.updateState({ 
+            currentSystem: this.pageData.systemId
+          });
+          
+          // Emit event so architecture panel can update
+          this.eventBus.emit('system:diagram:loaded', diagramData);
+        }
+      } else {
+        console.warn('SDL compilation failed, cannot generate diagram');
       }
     } catch (error) {
       console.error('Failed to generate system diagram:', error);
@@ -534,7 +525,12 @@ export class SystemDetailsPage {
   }
 
   private async runSystem(): Promise<void> {
-    // Start recipe execution instead of system simulation
+    if (!this.wasmTool) {
+      this.consolePanel?.error('WASM tool not initialized');
+      return;
+    }
+
+    // Get current recipe content
     const recipeContent = this.recipeEditorPanel?.getContent() || this.systemContent?.recipeContent || '';
     
     if (!recipeContent.trim()) {
@@ -551,37 +547,47 @@ export class SystemDetailsPage {
     this.consolePanel?.info('Starting recipe execution...');
     
     try {
-      // Load and start recipe
-      await this.recipeRunner?.loadRecipe('demo.recipe', recipeContent);
-      await this.recipeRunner?.start('step');
+      // Parse recipe using WASM tool
+      await this.wasmTool.setRecipeContent(recipeContent);
+      const execState = await this.wasmTool.getExecState();
       
-      this.consolePanel?.success('Recipe loaded and ready');
+      if (execState && execState.totalSteps > 0) {
+        this.consolePanel?.success(`Recipe loaded: ${execState.totalSteps} steps ready for execution`);
+        
+        // Start recipe execution by highlighting first step
+        this.recipeEditorPanel?.setRunning(true, 1);
+        
+        // Emit event for other components
+        this.eventBus.emit('recipe:started', { fileName: 'demo.recipe' });
+      } else {
+        this.consolePanel?.error('Recipe parsing failed or no executable steps found');
+        this.resetToolbarButtons();
+      }
     } catch (error: any) {
       this.consolePanel?.error(`Recipe error: ${error.message}`);
-      // Reset toolbar buttons on error
-      this.toolbar?.updateButton('run', { disabled: false });
-      this.toolbar?.updateButton('stop', { disabled: true });
-      this.toolbar?.updateButton('step', { disabled: true });
+      this.resetToolbarButtons();
     }
   }
 
   private stopSystem(): void {
-    // Update toolbar buttons
-    this.toolbar?.updateButton('run', { disabled: false });
-    this.toolbar?.updateButton('stop', { disabled: true });
-    this.toolbar?.updateButton('step', { disabled: true });
+    this.resetToolbarButtons();
     
     // Stop recipe execution
     this.consolePanel?.info('Stopping recipe execution...');
     
-    if (this.recipeRunner) {
-      this.recipeRunner.stop();
-    }
-    
     // Clear recipe highlighting
     this.recipeEditorPanel?.setRunning(false);
     
+    // Emit event for other components
+    this.eventBus.emit('recipe:completed', { fileName: 'demo.recipe' });
+    
     this.consolePanel?.success('Recipe execution stopped');
+  }
+
+  private resetToolbarButtons(): void {
+    this.toolbar?.updateButton('run', { disabled: false });
+    this.toolbar?.updateButton('stop', { disabled: true });
+    this.toolbar?.updateButton('step', { disabled: true });
   }
 
   private async saveChanges(): Promise<void> {
@@ -621,10 +627,37 @@ export class SystemDetailsPage {
     }
   }
   
-  private stepRecipe(): void {
-    if (this.recipeRunner) {
-      this.recipeRunner.step();
-      this.consolePanel?.info('Stepping through recipe...');
+  private async stepRecipe(): Promise<void> {
+    if (!this.wasmTool) {
+      this.consolePanel?.error('WASM tool not initialized');
+      return;
+    }
+
+    try {
+      // Get current execution state
+      const execState = await this.wasmTool.getExecState();
+      
+      if (!execState || !execState.isRunning) {
+        this.consolePanel?.error('No recipe execution in progress');
+        return;
+      }
+
+      // For now, just show step progress
+      const nextStep = execState.currentStep + 1;
+      if (nextStep < execState.totalSteps) {
+        this.consolePanel?.info(`Stepping through recipe... Step ${nextStep + 1}/${execState.totalSteps}`);
+        
+        // Update highlighting to next step
+        const step = execState.steps[nextStep];
+        if (step) {
+          this.recipeEditorPanel?.setRunning(true, step.lineNumber);
+        }
+      } else {
+        this.consolePanel?.success('Recipe execution completed');
+        this.stopSystem();
+      }
+    } catch (error: any) {
+      this.consolePanel?.error(`Step error: ${error.message}`);
     }
   }
 

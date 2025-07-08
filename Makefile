@@ -20,6 +20,7 @@ parserbin:
 
 wasmbin:
 	cd wasm && make
+	cd tools/systemdetail && make
 
 binlocal: parserbin wasmbin
 	go build -ldflags "$(LDFLAGS)" -o /tmp/sdl ./cmd/sdl/main.go
