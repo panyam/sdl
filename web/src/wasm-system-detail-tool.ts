@@ -3,6 +3,8 @@
  * Provides a clean interface matching the Go tool's test structure
  */
 
+import { loadSystemDetailTool } from './utils/wasm-loader';
+
 export interface SystemInfo {
   compiled: boolean;
   systemCount: number;
@@ -57,15 +59,8 @@ export class WASMSystemDetailTool {
 
   private async loadWASM(): Promise<void> {
     try {
-      // Load the WASM module
-      const wasmPath = `/dist/wasm/systemdetail.wasm?t=${Date.now()}`;
-      await this.loadWebAssembly(wasmPath);
-      
-      // Wait for the module to be ready
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Initialize the module
-      this.wasmModule = window;
+      // Use the centralized WASM loader
+      this.wasmModule = await loadSystemDetailTool();
       this.isLoaded = true;
       
       // Create a new tool instance
@@ -76,20 +71,6 @@ export class WASMSystemDetailTool {
       console.error('❌ Failed to load SystemDetailTool WASM:', error);
       throw error;
     }
-  }
-
-  private async loadWebAssembly(wasmPath: string): Promise<void> {
-    // Get the WASM support script
-    const go = new (globalThis as any).Go();
-    
-    // Load and instantiate the WASM module
-    const result = await WebAssembly.instantiateStreaming(
-      fetch(wasmPath),
-      go.importObject
-    );
-    
-    // Run the Go program
-    go.run(result.instance);
   }
 
   async waitForReady(): Promise<void> {

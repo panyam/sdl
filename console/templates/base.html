@@ -41,7 +41,22 @@
     <!-- WASM runtime support -->
     <script src="/wasm_exec.js"></script>
     
-    <script type="module" src="/assets/index-DudFCuIg.js"></script>
+    <!-- Page-specific WASM modules -->
+    {{if .WasmModules}}
+    {{range .WasmModules}}
+    <script>
+        // Preload WASM module: {{.Name}}
+        window.sdlWasmModules = window.sdlWasmModules || {};
+        window.sdlWasmModules['{{.Name}}'] = {
+            path: '{{.Path}}',
+            loaded: false,
+            instance: null
+        };
+    </script>
+    {{end}}
+    {{end}}
+    
+    <script type="module" src="/assets/index-BfuqIBko.js"></script>
     
     <!-- Inline theme switcher script for immediate functionality -->
     <script>

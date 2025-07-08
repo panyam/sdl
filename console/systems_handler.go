@@ -9,6 +9,12 @@ import (
 	"github.com/panyam/templar"
 )
 
+// WasmModule represents a WASM module to be loaded by the page
+type WasmModule struct {
+	Name string `json:"name"` // Module identifier (e.g., "systemdetail")
+	Path string `json:"path"` // Path to .wasm file (e.g., "/dist/wasm/systemdetail.wasm")
+}
+
 // SystemsHandler handles system showcase pages
 type SystemsHandler struct {
 	templateGroup *templar.TemplateGroup
@@ -101,6 +107,16 @@ func (h *SystemsHandler) handleSystemDetails(w http.ResponseWriter, r *http.Requ
 		"mode":     mode,
 	}
 
+	// Determine WASM modules needed for this page
+	var wasmModules []WasmModule
+	if mode == "wasm" {
+		// For system details page, always include SystemDetailTool
+		wasmModules = append(wasmModules, WasmModule{
+			Name: "systemdetail",
+			Path: "/dist/wasm/systemdetail.wasm",
+		})
+	}
+
 	// Prepare template data
 	data := map[string]interface{}{
 		"Title":        system.Name + " - SDL System",
@@ -109,6 +125,7 @@ func (h *SystemsHandler) handleSystemDetails(w http.ResponseWriter, r *http.Requ
 		"SDL":          versionData.SDL,
 		"Recipe":       versionData.Recipe,
 		"Mode":         mode,
+		"WasmModules":  wasmModules,
 		"PageDataJSON": toJSON(pageData),
 	}
 
