@@ -1,12 +1,21 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "sdl/v1/models.proto",
+    "title": "sdl/v1/models/models.proto",
     "version": "version not set"
   },
   "tags": [
     {
       "name": "CanvasService"
+    },
+    {
+      "name": "CanvasDashboardPage"
+    },
+    {
+      "name": "SingletonInitializerService"
+    },
+    {
+      "name": "CanvasViewPresenter"
     },
     {
       "name": "SystemsService"
@@ -21,7 +30,7 @@
   "paths": {
     "/v1/canvases": {
       "get": {
-        "summary": "*\nList all canvases from a user.",
+        "summary": "List all canvases from a user.",
         "operationId": "CanvasService_ListCanvases",
         "responses": {
           "200": {
@@ -40,14 +49,14 @@
         "parameters": [
           {
             "name": "pagination.pageKey",
-            "description": "*\nInstead of an offset an abstract  \"page\" key is provided that offers\nan opaque \"pointer\" into some offset in a result set.",
+            "description": "Instead of an offset an abstract  \"page\" key is provided that offers\nan opaque \"pointer\" into some offset in a result set.",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
             "name": "pagination.pageOffset",
-            "description": "*\nIf a pagekey is not supported we can also support a direct integer offset\nfor cases where it makes sense.",
+            "description": "If a pagekey is not supported we can also support a direct integer offset\nfor cases where it makes sense.",
             "in": "query",
             "required": false,
             "type": "integer",
@@ -55,7 +64,7 @@
           },
           {
             "name": "pagination.pageSize",
-            "description": "*\nNumber of results to return.",
+            "description": "Number of results to return.",
             "in": "query",
             "required": false,
             "type": "integer",
@@ -67,7 +76,7 @@
         ]
       },
       "post": {
-        "summary": "*\nCreate a new canvas sesssion.",
+        "summary": "Create a new canvas sesssion.",
         "operationId": "CanvasService_CreateCanvas",
         "responses": {
           "200": {
@@ -144,7 +153,7 @@
     },
     "/v1/canvases/{canvasId}/actions:reset": {
       "post": {
-        "summary": "*\nReset a canvas - clears all state, generators, and metrics",
+        "summary": "Reset a canvas - clears all state, generators, and metrics",
         "operationId": "CanvasService_ResetCanvas",
         "responses": {
           "200": {
@@ -172,8 +181,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "type": "object",
-              "title": "Request to reset a canvas"
+              "type": "object"
             }
           }
         ],
@@ -290,7 +298,7 @@
     },
     "/v1/canvases/{canvasId}/flows/{strategy}/eval": {
       "get": {
-        "summary": "----- Flow Analysis Operations -----\nEvaluate system flows using specified strategy",
+        "summary": "Evaluate system flows using specified strategy",
         "operationId": "CanvasService_EvaluateFlows",
         "responses": {
           "200": {
@@ -315,7 +323,6 @@
           },
           {
             "name": "strategy",
-            "description": "e.g., \"runtime\", \"simulated\", etc.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -397,7 +404,7 @@
     },
     "/v1/canvases/{canvasId}/generators/actions:stopall": {
       "put": {
-        "summary": "Request to start all generators",
+        "summary": "Request to stop all generators",
         "operationId": "CanvasService_StopAllGenerators",
         "responses": {
           "200": {
@@ -530,7 +537,6 @@
           },
           {
             "name": "generatorId",
-            "description": "The generator being moved",
             "in": "path",
             "required": true,
             "type": "string"
@@ -575,7 +581,6 @@
           },
           {
             "name": "generatorId",
-            "description": "The generator being moved",
             "in": "path",
             "required": true,
             "type": "string"
@@ -627,7 +632,7 @@
     },
     "/v1/canvases/{canvasId}/metrics/{metricId}": {
       "delete": {
-        "summary": "*\nDelete a particular metriccanvas.  Frees up resources used by it and all the connections",
+        "summary": "Delete a particular metric",
         "operationId": "CanvasService_DeleteMetric",
         "responses": {
           "200": {
@@ -689,14 +694,12 @@
           },
           {
             "name": "metricId",
-            "description": "Metric identifier (component.method.type)",
             "in": "path",
             "required": true,
             "type": "string"
           },
           {
             "name": "startTime",
-            "description": "Time range for the query\n\nUnix timestamp in seconds",
             "in": "query",
             "required": false,
             "type": "number",
@@ -704,7 +707,6 @@
           },
           {
             "name": "endTime",
-            "description": "Unix timestamp in seconds",
             "in": "query",
             "required": false,
             "type": "number",
@@ -712,7 +714,6 @@
           },
           {
             "name": "limit",
-            "description": "Optional: limit number of points returned",
             "in": "query",
             "required": false,
             "type": "integer",
@@ -751,7 +752,6 @@
           },
           {
             "name": "path",
-            "description": "Optional: if empty, return all parameters",
             "in": "query",
             "required": false,
             "type": "string"
@@ -764,7 +764,7 @@
     },
     "/v1/canvases/{canvasId}/parameters/{path}": {
       "put": {
-        "summary": "----- Parameter Operations -----\nSet a component parameter value",
+        "summary": "Set a component parameter value",
         "operationId": "CanvasService_SetParameter",
         "responses": {
           "200": {
@@ -789,7 +789,6 @@
           },
           {
             "name": "path",
-            "description": "dot-separated path like \"server.cache.HitRate\"",
             "in": "path",
             "required": true,
             "type": "string"
@@ -802,11 +801,9 @@
               "type": "object",
               "properties": {
                 "newValue": {
-                  "type": "string",
-                  "title": "SDL expression string (e.g., \"42\", \"true\", \"'hello'\", \"[1,2,3]\", etc.)"
+                  "type": "string"
                 }
-              },
-              "title": "Request to set a parameter value"
+              }
             }
           }
         ],
@@ -854,8 +851,7 @@
                     "$ref": "#/definitions/v1ParameterUpdate"
                   }
                 }
-              },
-              "title": "Request to batch set multiple parameters"
+              }
             }
           }
         ],
@@ -903,7 +899,6 @@
           },
           {
             "name": "maxDepth",
-            "description": "Optional: maximum depth to traverse (default unlimited)",
             "in": "query",
             "required": false,
             "type": "integer",
@@ -948,7 +943,6 @@
           },
           {
             "name": "method",
-            "description": "Optional: arguments for the method call (for future enhancement)\n repeated string args = 4;",
             "in": "path",
             "required": true,
             "type": "string"
@@ -986,7 +980,6 @@
           },
           {
             "name": "components",
-            "description": "Optional: filter by specific components",
             "in": "query",
             "required": false,
             "type": "array",
@@ -1003,7 +996,7 @@
     },
     "/v1/canvases/{generator.canvasId}/generators": {
       "post": {
-        "summary": "----- Generator Operations -----\nAdds a generator to a canvas's generator_ids list and creates the generator resource.",
+        "summary": "Adds a generator to a canvas's generator_ids list and creates the generator resource.",
         "operationId": "CanvasService_AddGenerator",
         "responses": {
           "200": {
@@ -1088,7 +1081,7 @@
     },
     "/v1/canvases/{generator.canvasId}/generators/{generator.id}": {
       "patch": {
-        "summary": "Use PATCH for partial updates to a generator (title, content)",
+        "summary": "Use PATCH for partial updates to a generator",
         "operationId": "CanvasService_UpdateGenerator",
         "responses": {
           "200": {
@@ -1163,16 +1156,12 @@
                       "type": "boolean",
                       "title": "whether it is enabled or not"
                     }
-                  },
-                  "description": "Generator object containing *only* the fields to be updated.\nThe server will use the update_mask to know which fields from\nthis 'generator' message to apply to the stored generator.",
-                  "title": "Generator object containing *only* the fields to be updated.\nThe server will use the update_mask to know which fields from\nthis 'generator' message to apply to the stored generator."
+                  }
                 },
                 "updateMask": {
-                  "type": "string",
-                  "title": "e.g., paths: \"title\", paths: \"text_content\""
+                  "type": "string"
                 }
-              },
-              "title": "Consolidate generator updates into one RPC using PATCH and FieldMask"
+              }
             }
           }
         ],
@@ -1183,7 +1172,7 @@
     },
     "/v1/canvases/{id}": {
       "get": {
-        "summary": "*\nGet details/stats for a particular canvas",
+        "summary": "Get details/stats for a particular canvas",
         "operationId": "CanvasService_GetCanvas",
         "responses": {
           "200": {
@@ -1202,7 +1191,6 @@
         "parameters": [
           {
             "name": "id",
-            "description": "*\nID of the canvas to be fetched",
             "in": "path",
             "required": true,
             "type": "string",
@@ -1214,7 +1202,7 @@
         ]
       },
       "delete": {
-        "summary": "*\nDelete a particular canvas.  Frees up resources used by it and all the connections",
+        "summary": "Delete a particular canvas. Frees up resources used by it and all the connections",
         "operationId": "CanvasService_DeleteCanvas",
         "responses": {
           "200": {
@@ -1233,7 +1221,6 @@
         "parameters": [
           {
             "name": "id",
-            "description": "*\nID of the canvas to be deleted.",
             "in": "path",
             "required": true,
             "type": "string",
@@ -1247,7 +1234,7 @@
     },
     "/v1/canvases/{metric.canvasId}/metrics": {
       "post": {
-        "summary": "----- Generator Operations -----\nAdds a metric to live plot",
+        "summary": "Adds a metric to live plot",
         "operationId": "CanvasService_AddMetric",
         "responses": {
           "200": {
@@ -1520,8 +1507,7 @@
           "type": "boolean"
         },
         "errorMessage": {
-          "type": "string",
-          "title": "Set if success is false"
+          "type": "string"
         },
         "results": {
           "type": "array",
@@ -1530,8 +1516,7 @@
             "$ref": "#/definitions/v1ParameterUpdateResult"
           }
         }
-      },
-      "title": "Response from batch setting parameters"
+      }
     },
     "v1Canvas": {
       "type": "object",
@@ -1577,42 +1562,72 @@
         }
       }
     },
+    "v1ClearConsoleResponse": {
+      "type": "object"
+    },
+    "v1ClearFlowPathsResponse": {
+      "type": "object"
+    },
+    "v1ClearHighlightsResponse": {
+      "type": "object"
+    },
+    "v1ClearMetricsResponse": {
+      "type": "object"
+    },
+    "v1ClientReadyResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean"
+        }
+      }
+    },
     "v1CreateCanvasRequest": {
       "type": "object",
       "properties": {
         "canvas": {
-          "$ref": "#/definitions/v1Canvas",
-          "title": "*\nCanvas being updated"
+          "$ref": "#/definitions/v1Canvas"
         }
-      },
-      "title": "*\nCanvas creation request object"
+      }
     },
     "v1CreateCanvasResponse": {
       "type": "object",
       "properties": {
         "canvas": {
-          "$ref": "#/definitions/v1Canvas",
-          "title": "*\nCanvas being created"
+          "$ref": "#/definitions/v1Canvas"
         },
         "fieldErrors": {
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          },
-          "description": "*\nError specific to a field if there are any errors."
+          }
         }
-      },
-      "description": "*\nResponse of an canvas creation."
+      }
     },
     "v1DeleteCanvasResponse": {
-      "type": "object",
-      "title": "*\nCanvas deletion response"
+      "type": "object"
     },
     "v1DeleteGeneratorResponse": {
       "type": "object"
     },
     "v1DeleteMetricResponse": {
       "type": "object"
+    },
+    "v1DiagramComponentClickedResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1DiagramComponentHoveredResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean"
+        }
+      }
     },
     "v1DiagramEdge": {
       "type": "object",
@@ -1742,8 +1757,7 @@
           "type": "string"
         },
         "status": {
-          "type": "string",
-          "title": "\"converged\", \"partial\", \"failed\""
+          "type": "string"
         },
         "iterations": {
           "type": "integer",
@@ -1760,27 +1774,47 @@
           "additionalProperties": {
             "type": "number",
             "format": "double"
-          },
-          "description": "e.g., \"database.pool.ArrivalRate\" -\u003e 5.0",
-          "title": "Component arrival rates calculated by flow analysis"
+          }
         },
         "flowEdges": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1FlowEdge"
-          },
-          "title": "Detailed flow information (optional, for debugging)"
+          }
         }
-      },
-      "title": "Response from flow evaluation"
+      }
     },
     "v1ExecuteTraceResponse": {
       "type": "object",
       "properties": {
         "traceData": {
-          "$ref": "#/definitions/v1TraceData",
-          "title": "The complete trace data"
+          "$ref": "#/definitions/v1TraceData"
+        }
+      }
+    },
+    "v1FileSavedResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean"
+        },
+        "error": {
+          "type": "string"
+        }
+      }
+    },
+    "v1FileSelectedResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean"
+        },
+        "content": {
+          "type": "string"
+        },
+        "error": {
+          "type": "string"
         }
       }
     },
@@ -1809,6 +1843,27 @@
         }
       },
       "title": "Represents a flow edge between components"
+    },
+    "v1FlowPathSegment": {
+      "type": "object",
+      "properties": {
+        "fromComponent": {
+          "type": "string"
+        },
+        "fromMethod": {
+          "type": "string"
+        },
+        "toComponent": {
+          "type": "string"
+        },
+        "toMethod": {
+          "type": "string"
+        },
+        "rate": {
+          "type": "number",
+          "format": "double"
+        }
+      }
     },
     "v1FlowState": {
       "type": "object",
@@ -1889,8 +1944,7 @@
         "canvas": {
           "$ref": "#/definitions/v1Canvas"
         }
-      },
-      "title": "*\nCanvas get response"
+      }
     },
     "v1GetFlowStateResponse": {
       "type": "object",
@@ -1898,8 +1952,7 @@
         "state": {
           "$ref": "#/definitions/v1FlowState"
         }
-      },
-      "title": "Response with current flow state"
+      }
     },
     "v1GetGeneratorResponse": {
       "type": "object",
@@ -1916,11 +1969,9 @@
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          },
-          "title": "Values as SDL expression strings"
+          }
         }
-      },
-      "title": "Response containing parameter values"
+      }
     },
     "v1GetSystemContentResponse": {
       "type": "object",
@@ -1942,8 +1993,7 @@
         "diagram": {
           "$ref": "#/definitions/v1SystemDiagram"
         }
-      },
-      "title": "Response containing the system diagram"
+      }
     },
     "v1GetSystemResponse": {
       "type": "object",
@@ -1963,8 +2013,7 @@
             "$ref": "#/definitions/v1UtilizationInfo"
           }
         }
-      },
-      "title": "Response with utilization information"
+      }
     },
     "v1GroupInfo": {
       "type": "object",
@@ -1990,6 +2039,49 @@
       },
       "title": "GroupInfo allows flexible grouping of edges with labels"
     },
+    "v1HighlightComponentsResponse": {
+      "type": "object"
+    },
+    "v1InitializePresenterResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean"
+        },
+        "error": {
+          "type": "string"
+        },
+        "diagram": {
+          "$ref": "#/definitions/v1SystemDiagram",
+          "title": "Initial state to render"
+        },
+        "generators": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Generator"
+          }
+        },
+        "metrics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Metric"
+          }
+        }
+      }
+    },
+    "v1InitializeSingletonResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean"
+        },
+        "error": {
+          "type": "string"
+        }
+      }
+    },
     "v1ListCanvasesResponse": {
       "type": "object",
       "properties": {
@@ -1998,14 +2090,12 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1Canvas"
-          },
-          "description": "*\nThe list of canvases found as part of this response."
+          }
         },
         "pagination": {
           "$ref": "#/definitions/v1PaginationResponse"
         }
-      },
-      "description": "*\nResponse of a canvas search/listing."
+      }
     },
     "v1ListGeneratorsResponse": {
       "type": "object",
@@ -2044,6 +2134,9 @@
       }
     },
     "v1LoadFileResponse": {
+      "type": "object"
+    },
+    "v1LogMessageResponse": {
       "type": "object"
     },
     "v1MethodInfo": {
@@ -2168,17 +2261,17 @@
       "properties": {
         "pageKey": {
           "type": "string",
-          "description": "*\nInstead of an offset an abstract  \"page\" key is provided that offers\nan opaque \"pointer\" into some offset in a result set."
+          "description": "Instead of an offset an abstract  \"page\" key is provided that offers\nan opaque \"pointer\" into some offset in a result set."
         },
         "pageOffset": {
           "type": "integer",
           "format": "int32",
-          "description": "*\nIf a pagekey is not supported we can also support a direct integer offset\nfor cases where it makes sense."
+          "description": "If a pagekey is not supported we can also support a direct integer offset\nfor cases where it makes sense."
         },
         "pageSize": {
           "type": "integer",
           "format": "int32",
-          "description": "*\nNumber of results to return."
+          "description": "Number of results to return."
         }
       }
     },
@@ -2187,21 +2280,21 @@
       "properties": {
         "nextPageKey": {
           "type": "string",
-          "description": "*\nThe key/pointer string that subsequent List requests should pass to\ncontinue the pagination."
+          "description": "The key/pointer string that subsequent List requests should pass to\ncontinue the pagination."
         },
         "nextPageOffset": {
           "type": "integer",
           "format": "int32",
-          "title": "*\nAlso support an integer offset if possible"
+          "title": "Also support an integer offset if possible"
         },
         "hasMore": {
           "type": "boolean",
-          "description": "*\nWhether theere are more results."
+          "description": "Whether theere are more results."
         },
         "totalResults": {
           "type": "integer",
           "format": "int32",
-          "description": "*\nTotal number of results."
+          "description": "Total number of results."
         }
       }
     },
@@ -2255,6 +2348,28 @@
         }
       }
     },
+    "v1RemoveGeneratorResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean"
+        },
+        "error": {
+          "type": "string"
+        }
+      }
+    },
+    "v1RemoveMetricResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean"
+        },
+        "error": {
+          "type": "string"
+        }
+      }
+    },
     "v1ResetCanvasResponse": {
       "type": "object",
       "properties": {
@@ -2262,11 +2377,15 @@
           "type": "boolean"
         },
         "message": {
-          "type": "string",
-          "title": "Optional message about what was reset"
+          "type": "string"
         }
-      },
-      "title": "Response from resetting a canvas"
+      }
+    },
+    "v1SetGeneratorListResponse": {
+      "type": "object"
+    },
+    "v1SetMetricsListResponse": {
+      "type": "object"
     },
     "v1SetParameterResponse": {
       "type": "object",
@@ -2275,48 +2394,43 @@
           "type": "boolean"
         },
         "errorMessage": {
-          "type": "string",
-          "title": "Set if success is false"
+          "type": "string"
         },
         "newValue": {
-          "type": "string",
-          "title": "SDL expression string (e.g., \"42\", \"true\", \"'hello'\", \"[1,2,3]\", etc.)"
+          "type": "string"
         },
         "oldValue": {
           "type": "string"
         }
-      },
-      "title": "Response from setting a parameter"
+      }
+    },
+    "v1ShowFlowPathResponse": {
+      "type": "object"
     },
     "v1StartAllGeneratorsResponse": {
       "type": "object",
       "properties": {
         "totalGenerators": {
           "type": "integer",
-          "format": "int32",
-          "title": "Total number of generators"
+          "format": "int32"
         },
         "startedCount": {
           "type": "integer",
-          "format": "int32",
-          "title": "Number successfully started"
+          "format": "int32"
         },
         "alreadyRunningCount": {
           "type": "integer",
-          "format": "int32",
-          "title": "Number already running"
+          "format": "int32"
         },
         "failedCount": {
           "type": "integer",
-          "format": "int32",
-          "title": "Number that failed to start"
+          "format": "int32"
         },
         "failedIds": {
           "type": "array",
           "items": {
             "type": "string"
-          },
-          "title": "IDs of generators that failed"
+          }
         }
       }
     },
@@ -2328,30 +2442,25 @@
       "properties": {
         "totalGenerators": {
           "type": "integer",
-          "format": "int32",
-          "title": "Total number of generators"
+          "format": "int32"
         },
         "stoppedCount": {
           "type": "integer",
-          "format": "int32",
-          "title": "Number successfully stopped"
+          "format": "int32"
         },
         "alreadyStoppedCount": {
           "type": "integer",
-          "format": "int32",
-          "title": "Number already stopped"
+          "format": "int32"
         },
         "failedCount": {
           "type": "integer",
-          "format": "int32",
-          "title": "Number that failed to stop"
+          "format": "int32"
         },
         "failedIds": {
           "type": "array",
           "items": {
             "type": "string"
-          },
-          "title": "IDs of generators that failed"
+          }
         }
       }
     },
@@ -2366,11 +2475,9 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1MetricUpdate"
-          },
-          "title": "Metric updates in this batch"
+          }
         }
-      },
-      "title": "Stream metrics response - can contain updates for multiple metrics"
+      }
     },
     "v1SystemDiagram": {
       "type": "object",
@@ -2489,8 +2596,7 @@
       "type": "object",
       "properties": {
         "traceData": {
-          "$ref": "#/definitions/v1AllPathsTraceData",
-          "title": "All discovered execution paths in tree format"
+          "$ref": "#/definitions/v1AllPathsTraceData"
         }
       }
     },
@@ -2585,6 +2691,12 @@
       },
       "title": "TraceNode represents a single node in the execution tree"
     },
+    "v1UpdateDiagramResponse": {
+      "type": "object"
+    },
+    "v1UpdateFlowRatesResponse": {
+      "type": "object"
+    },
     "v1UpdateGeneratorResponse": {
       "type": "object",
       "properties": {
@@ -2592,6 +2704,15 @@
           "$ref": "#/definitions/v1Generator"
         }
       }
+    },
+    "v1UpdateGeneratorStateResponse": {
+      "type": "object"
+    },
+    "v1UpdateMetricResponse": {
+      "type": "object"
+    },
+    "v1UpdateUtilizationResponse": {
+      "type": "object"
     },
     "v1UseSystemResponse": {
       "type": "object"

@@ -1,0 +1,80 @@
+version: v2
+clean: true
+managed:
+  enabled: true
+  disable:
+    # Don't modify any files in buf.build/googleapis/googleapis
+    - module: buf.build/googleapis/googleapis
+    - module: buf.build/grpc-ecosystem/grpc-gateway
+    - module: buf.build/panyam/protoc-gen-go-wasmjs
+    - module: buf.build/prototools/protoc-gen-dal
+    # - module: connectrpc.com/connect
+  override:
+    - file_option: go_package_prefix
+      value: github.com/panyam/sdl/gen/go
+plugins:
+  - remote: buf.build/protocolbuffers/go
+    out: ./gen/go
+    opt: paths=source_relative
+
+  - local: protoc-gen-connect-go
+    out: gen/go
+    opt: paths=source_relative
+  - local: protoc-gen-go-grpc
+    out: gen/go
+    opt: paths=source_relative,require_unimplemented_servers=false
+  - local: protoc-gen-grpc-gateway
+    out: ./gen/go
+    opt: paths=source_relative
+  - remote: buf.build/protocolbuffers/python
+    out: gen/python
+  - remote: buf.build/grpc/python
+    out: gen/python
+  - remote: buf.build/grpc-ecosystem/openapiv2:v2.16.0
+    out: gen/openapiv2
+    opt: allow_merge=true,merge_file_name=services
+
+  # GORM DAL generator
+  - local: protoc-gen-dal-gorm
+    out: ./gen/gorm
+    opt:
+      - paths=source_relative
+      - generate_dal=true
+      - dal_filename_suffix=_dal
+      - dal_output_dir=dal
+      - entity_import_path=github.com/panyam/sdl/gen/gorm
+
+  # Datastore DAL generator
+  - local: protoc-gen-dal-datastore
+    out: ./gen/datastore
+    opt: paths=source_relative
+
+  # This will invoke protoc-gen-es and write output to web/gen
+  - local: protoc-gen-es
+    out: web/gen
+    # Also generate any imported dependencies
+    include_imports: true
+    # Add more plugin options here
+    opt: target=ts
+
+  # Generate Go WASM bindings with new Go generator
+  - local: protoc-gen-go-wasmjs-go
+    out: ./gen/wasm/go
+    opt:
+      - wasm_export_path=.
+      - js_structure=namespaced
+      - js_namespace=sdl
+      - module_name=sdl
+      - generate_build_script=true
+
+  # Generate TypeScript clients with new TS generator
+  - local: protoc-gen-go-wasmjs-ts
+    out: ./web/gen/wasmjs
+    opt:
+      - ts_export_path=.
+      - js_structure=namespaced
+      - js_namespace=sdl
+      - module_name=sdl
+      - generate_clients=true
+      - generate_types=true
+      - generate_factories=true

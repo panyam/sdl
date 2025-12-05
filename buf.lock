@@ -2,8 +2,17 @@
 version: v2
 deps:
   - name: buf.build/googleapis/googleapis
-    commit: 5ae7f88519b04fe1965da0f8a375a088
-    digest: b5:ac717f02b210c53aeaa5d8801b118cae7a1883dab531034859889622dcb389979ee731ab42192c16c3cdb39b40f2dda72a8c1ebeefa3bcdf95f9e5739dc30cca
+    commit: 004180b77378443887d3b55cabc00384
+    digest: b5:e8f475fe3330f31f5fd86ac689093bcd274e19611a09db91f41d637cb9197881ce89882b94d13a58738e53c91c6e4bae7dc1feba85f590164c975a89e25115dc
   - name: buf.build/grpc-ecosystem/grpc-gateway
-    commit: a1ecdc58eccd49aa8bea2a7a9022dc27
-    digest: b5:74f71040b7c3dfc67bc5e5cf358eafaaf0ca9a7b623d025e2102cd9659f11f87cd2caadb4cfd1e323fd39f5ac855dbd722a0bf68ec51abfdb5da794728d42714
+    commit: 4c5ba75caaf84e928b7137ae5c18c26a
+    digest: b5:c113e62fb3b29289af785866cae062b55ec8ae19ab3f08f3004098928fbca657730a06810b2012951294326b95669547194fa84476b9e9b688d4f8bf77a0691d
+  - name: buf.build/panyam/protoc-gen-go-wasmjs
+    commit: 1053a215753a461cbe5806240ac2ef7b
+    digest: b5:3a5aab199b90d301090869c164ec9ef9bc6dcddc76e1d5428f9bef473fffbe8eab72e39907417f0c8128cf0f18c5149b7110f3ab3570cd4caf9f2cafda39a11a
+  - name: buf.build/protocolbuffers/wellknowntypes
+    commit: 9220c3cb4fac4bb4a8587d4fd7aa7582
+    digest: b5:412c81d3f1549cc9ef52b364a11ab41d9ea6ba5e8e22a2b3f1f614c180b991a76503d715574e94ff77e33f216a1614a8026f1fc01aeaefdaf701155cb125e8bc
+  - name: buf.build/prototools/protoc-gen-dal
+    commit: 68ddf8f84cf84f0089ee137fa7a6da75
+    digest: b5:c65f5be55de6192974069d4bd6dfb1d5391439805b51f36655506d94e96645a4026e8d7303c0ed6a37f1705b08b39b14a9fc2619615c9d58ee69443149da8f56
