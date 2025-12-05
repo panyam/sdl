@@ -6,7 +6,7 @@ import (
 	"os"
 
 	v1 "github.com/panyam/sdl/gen/go/sdl/v1"
-	"github.com/panyam/sdl/viz"
+	"github.com/panyam/sdl/lib/viz"
 	"github.com/spf13/cobra"
 )
 

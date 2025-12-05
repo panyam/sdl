@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/panyam/sdl/loader"
-	"github.com/panyam/sdl/runtime"
+	"github.com/panyam/sdl/lib/loader"
+	"github.com/panyam/sdl/lib/runtime"
 	"github.com/spf13/cobra"
 )
 

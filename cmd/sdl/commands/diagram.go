@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/panyam/sdl/decl"
 	protos "github.com/panyam/sdl/gen/go/sdl/v1"
-	"github.com/panyam/sdl/loader"
-	"github.com/panyam/sdl/runtime"
-	"github.com/panyam/sdl/viz"
+	"github.com/panyam/sdl/lib/decl"
+	"github.com/panyam/sdl/lib/loader"
+	"github.com/panyam/sdl/lib/runtime"
+	"github.com/panyam/sdl/lib/viz"
 	"github.com/spf13/cobra"
 )
 
@@ -164,7 +164,7 @@ func generateStaticDiagram(systemName, outputFile, format string) {
 		Nodes:      nodes,
 		Edges:      edges,
 	}
-	
+
 	diagramOutput, err := generator.Generate(diagram)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error generating %s diagram: %v\n", format, err)

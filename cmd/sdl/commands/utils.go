@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/panyam/sdl/decl"
-	"github.com/panyam/sdl/parser"
+	"github.com/panyam/sdl/lib/decl"
+	"github.com/panyam/sdl/lib/parser"
 )
 
 // SDLParserAdapter adapts the existing parser function to the loader.Parser interface.

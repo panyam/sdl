@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/panyam/sdl/parser" // Assuming parser is in decl
+	"github.com/panyam/sdl/lib/parser" // Assuming parser is in decl
 	"github.com/spf13/cobra"
 )
 

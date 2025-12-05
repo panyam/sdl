@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/panyam/sdl/decl"
-	"github.com/panyam/sdl/loader"
-	"github.com/panyam/sdl/runtime"
-	"github.com/panyam/sdl/viz"
+	"github.com/panyam/sdl/lib/decl"
+	"github.com/panyam/sdl/lib/loader"
+	"github.com/panyam/sdl/lib/runtime"
+	"github.com/panyam/sdl/lib/viz"
 	"github.com/spf13/cobra"
 )
 

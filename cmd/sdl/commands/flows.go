@@ -9,7 +9,7 @@ import (
 	"text/tabwriter"
 
 	protos "github.com/panyam/sdl/gen/go/sdl/v1"
-	"github.com/panyam/sdl/runtime"
+	"github.com/panyam/sdl/lib/runtime"
 	"github.com/spf13/cobra"
 )
 
