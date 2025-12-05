@@ -47,6 +47,7 @@
     "@connectrpc/connect": "^2.0.2",
     "@connectrpc/connect-web": "^2.0.2",
     "@hpcc-js/wasm": "^2.23.0",
+    "@panyam/tsappkit": "link:../../../../typescript/tsappkit",
     "chart.js": "^4.4.0",
     "dockview": "^1.0.0",
     "dockview-core": "^1.0.0",

@@ -1,6 +1,6 @@
 # SDL Web Dashboard Summary
 
-**Version:** Decoupled Architecture with Event-Driven Components (v4.0)
+**Version:** tsappkit Integration with LCMComponent Pattern (v4.1)
 
 ## 🎯 Purpose
 
@@ -69,13 +69,16 @@ The dashboard now features a unified layout that works seamlessly in both server
 ### Architecture Refactoring (v4.0)
 
 #### Event-Driven Architecture
-- **EventBus**: Central publish-subscribe system for component communication
+- **EventBus**: Re-exported from @panyam/tsappkit for component communication
 - **AppStateManager**: Centralized state management with observer pattern
 - **Decoupled Components**: Components communicate via events, not direct references
 - **Type-Safe Events**: Predefined event constants in `AppEvents`
+- **tsappkit Integration**: Uses EventHandler type and EventBus from shared library
 
 #### Panel Component System
-- **BasePanel**: Abstract base class providing common panel functionality
+- **BasePanel**: Implements LCMComponent interface from tsappkit
+- **LCMComponent Lifecycle**: performLocalInit, setupDependencies, activate, deactivate
+- **DockView Bridge**: BasePanel bridges LCMComponent with DockView's initialize(container) pattern
 - **IPanelComponent Interface**: Consistent contract for all panels
 - **Extracted Panels**:
   - `SystemArchitecturePanel`: Self-contained system visualization
@@ -151,10 +154,11 @@ The dashboard now features a unified layout that works seamlessly in both server
 #### Dashboard Architecture (v4.0)
 
 ##### Core Infrastructure
-- **EventBus** (`core/event-bus.ts`): Decoupled communication mechanism
+- **EventBus** (`core/event-bus.ts`): Re-exports from @panyam/tsappkit
   - Publish/subscribe pattern implementation
-  - Support for one-time event handlers
+  - Support for on/off/once/emit methods
   - Type-safe event names in AppEvents constant
+  - EventHandler type from tsappkit
   
 - **AppStateManager** (`core/app-state-manager.ts`): Centralized state management
   - Immutable state updates with batching
@@ -163,10 +167,12 @@ The dashboard now features a unified layout that works seamlessly in both server
   - State change tracking with changedKeys
 
 ##### Panel Components
-- **BasePanel** (`panels/base-panel.ts`): Abstract base for all panels
-  - Lifecycle management (initialize, dispose)
-  - Automatic state subscription
+- **BasePanel** (`panels/base-panel.ts`): Implements LCMComponent from tsappkit
+  - LCMComponent lifecycle (performLocalInit, setupDependencies, activate, deactivate)
+  - Bridges DockView's initialize(container) pattern
+  - Automatic state subscription via stateManager
   - Helper methods for loading/error/empty states
+  - Event helpers using tsappkit's EventHandler type
   
 - **SystemArchitecturePanel**: Manages system visualization
   - Self-contained Graphviz rendering

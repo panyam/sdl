@@ -2,6 +2,14 @@
 
 ## ✅ Recently Completed
 
+### tsappkit Migration (v4.1)
+- **EventBus Migration**: Now re-exports EventBus from @panyam/tsappkit
+- **BasePanel Refactoring**: Implements LCMComponent interface from tsappkit
+- **Package Manager**: Switched from npm to pnpm
+- **Consistent Lifecycle**: BasePanel now follows LCMComponent lifecycle (performLocalInit, setupDependencies, activate, deactivate)
+- **Type Safety**: Uses EventHandler type from tsappkit
+- **DockView Bridge**: BasePanel bridges tsappkit's LCMComponent with DockView's initialize(container) pattern
+
 ### Recipe Integration (v3.2)
 - **Integrated Recipe Execution**: Recipe controls now embedded in tabbed editor
 - **No Separate Panel**: Removed Recipe Runner panel for cleaner interface
@@ -79,14 +87,20 @@
 
 ## 🔄 Next Development Priorities
 
-### 1. Integrate Refactored Components (Immediate Priority)
+### 1. Complete Weewar Convention Migration (Immediate Priority)
+- Add protoc-gen-go-wasmjs for WASM TypeScript bindings
+- Implement WASM computation stubs (currently server-side only)
+- Migrate services to fsbe/singleton pattern
+- Evaluate build system migration to DevLoop
+
+### 2. Integrate Refactored Components (High Priority)
 - Replace legacy dashboard.ts with new architecture components
 - Wire up DashboardCoordinator as main entry point
 - Migrate remaining functionality from old dashboard
 - Test end-to-end with all features working
 - Ensure WASM mode compatibility with new architecture
 
-### 2. GitHub FileSystem Implementation (High Priority)
+### 3. GitHub FileSystem Implementation (Medium Priority)
 - Implement actual GitHub API calls in GitHubFileSystemClient
 - Add caching layer for GitHub filesystem to reduce API calls
 - Handle rate limiting and authentication
