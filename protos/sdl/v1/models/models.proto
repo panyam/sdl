@@ -1,0 +1,302 @@
+syntax = "proto3";
+
+package sdl.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/panyam/sdl/gen/go/sdl/v1/models";
+
+message Pagination {
+  // Instead of an offset an abstract  "page" key is provided that offers
+  // an opaque "pointer" into some offset in a result set.
+  string page_key = 1;
+
+  // If a pagekey is not supported we can also support a direct integer offset
+  // for cases where it makes sense.
+  int32 page_offset = 2;
+
+  // Number of results to return.
+  int32 page_size = 3;
+}
+
+message PaginationResponse {
+  // The key/pointer string that subsequent List requests should pass to
+  // continue the pagination.
+  string next_page_key = 2;
+
+  // Also support an integer offset if possible
+  int32 next_page_offset = 3;
+
+  // Whether theere are more results.
+  bool has_more = 4;
+
+  // Total number of results.
+  int32 total_results = 5;
+}
+
+message Canvas {
+  google.protobuf.Timestamp created_at = 1;
+  google.protobuf.Timestamp updated_at = 2;
+
+  // Unique ID for the canvas
+  string id = 3;
+
+  // Active system being observed
+  string active_system = 4;
+
+  // Files that have been loaded so far
+  repeated string loaded_files = 5;
+
+  // Registered generators for this canvas
+  repeated Generator generators = 6;
+
+  // Registered live metrics for this canvas
+  repeated Metric metrics = 7;
+}
+
+message Generator {
+  google.protobuf.Timestamp created_at = 1;
+  google.protobuf.Timestamp updated_at = 2;
+
+  // ID of the generator
+  string id = 3;
+
+  // Canvas this generator is sending traffic to
+  string canvas_id = 4;
+
+  // A descriptive label
+  string name = 5;
+
+  // Name of the target component to generate traffic on. This component should be defined in the System,
+  // eg "server"
+  string component = 6;
+
+  // Method in the target component to generate traffic on.
+  string method = 7;
+
+  // Traffic rate in RPS (>= 1).  Does not support < 1 yet
+  double rate = 8;
+
+  // Duration in seconds over which the genarator is run. 0 => For ever
+  double duration = 9;
+
+  // whether it is enabled or not
+  bool enabled = 10;
+}
+
+message Metric {
+  google.protobuf.Timestamp created_at = 1;
+  google.protobuf.Timestamp updated_at = 2;
+
+  string id = 3;
+
+  string canvas_id = 4;
+
+  // A descriptive label
+  string name = 5;
+
+  // Name of the target component to monitor
+  // eg "server"
+  string component = 6;
+
+  // Method in the target component to generate traffic on.
+  repeated string methods = 7;
+
+  // whether it is enabled or not
+  bool enabled = 8;
+
+  // Type of metric "count" or "latency"
+  string metric_type = 9;
+
+  // Type of aggregation on the metric
+  string aggregation = 10;
+
+  // Aggregation window (in seconds) to match on
+  double aggregation_window = 11;
+
+  // Result value to match
+  string match_result = 12;
+
+  // The result "type" if a matching result is provided
+  // This will be parsed into a type declaration so we know how to treat
+  // the match_result value provided
+  string match_result_type = 13;
+
+
+  double oldest_timestamp = 14;
+  double newest_timestamp = 15;
+  int64 num_data_points = 16;  // Number of data points stored
+}
+
+message MetricPoint {
+  double timestamp = 1;  // Unix timestamp in seconds
+  double value = 2;
+}
+
+// Individual metric update
+message MetricUpdate {
+  string metric_id = 1;
+  MetricPoint point = 2;
+}
+
+// ----- System Diagram Messages -----
+
+// SystemDiagram represents the topology of a system
+message SystemDiagram {
+  string system_name = 1;
+  repeated DiagramNode nodes = 2;
+  repeated DiagramEdge edges = 3;
+}
+
+// DiagramNode represents a component or instance in the system
+message DiagramNode {
+  string id = 1;          // Unique identifier for the node
+  string name = 2;        // Display name
+  string type = 3;        // Component type for display
+  repeated MethodInfo methods = 4;  // Methods provided by this component
+  string traffic = 5;     // Current traffic flow (e.g., "0 rps")
+  string full_path = 6;   // Full path from system root (e.g., "webserver.db.pool")
+  string icon = 7;        // Icon identifier (e.g., "database", "cache", "service")
+}
+
+// MethodInfo represents information about a component method
+message MethodInfo {
+  string name = 1;        // Method name
+  string return_type = 2; // Return type (e.g., "Bool", "Int", etc.)
+  double traffic = 3;     // Current traffic rate in RPS
+}
+
+// DiagramEdge represents a connection between nodes
+message DiagramEdge {
+  string from_id = 1;
+  string to_id = 2;
+  string from_method = 3;  // Source method name (for flow edges)
+  string to_method = 4;    // Target method name (for flow edges)
+  string label = 5;
+  double order = 6;        // Execution order (supports decimals for conditional paths)
+  string condition = 7;    // Condition expression if this is a conditional path
+  double probability = 8;  // Probability of this path being taken
+  string generator_id = 9; // ID of the generator that originated this flow
+  string color = 10;       // Color for visualization (based on generator)
+}
+
+// Resource utilization information
+message UtilizationInfo {
+  string resource_name = 1;      // e.g., "pool", "disk", "queue"
+  string component_path = 2;     // e.g., "database.pool", "database.driverTable.disk"
+  double utilization = 3;        // 0.0 to 1.0
+  double capacity = 4;           // Maximum capacity
+  double current_load = 5;       // Current arrival rate
+  bool is_bottleneck = 6;        // Whether this is the bottleneck resource
+  double warning_threshold = 7;  // Utilization level for warning (e.g., 0.8)
+  double critical_threshold = 8; // Utilization level for critical (e.g., 0.95)
+}
+
+// Represents a flow edge between components
+message FlowEdge {
+  string from_component = 1;
+  string from_method = 2;
+  string to_component = 3;
+  string to_method = 4;
+  double rate = 5;
+  string condition = 6;  // Optional condition expression
+}
+
+// Current flow state
+message FlowState {
+  string strategy = 1;                       // Current strategy being used
+  map<string, double> rates = 2;            // Current component.method rates
+  map<string, double> manual_overrides = 3; // Manual rate overrides
+}
+
+// ----- Trace Data Messages -----
+
+// TraceData matches the runtime.TraceData structure
+message TraceData {
+  string system = 1;
+  string entry_point = 2;
+  repeated TraceEvent events = 3;
+}
+
+// TraceEvent matches the runtime.TraceEvent structure
+message TraceEvent {
+  string kind = 1;  // "enter", "exit", "go", "wait"
+  int64 id = 2;
+  int64 parent_id = 3;
+  double timestamp = 4;  // Virtual time in seconds
+  double duration = 5;   // Duration in seconds (for exit events)
+  string component = 6;
+  string method = 7;
+  repeated string args = 8;
+  string return_value = 9;
+  string error_message = 10;
+}
+
+// Enhanced TraceData for all-paths traversal - represents the complete execution tree
+message AllPathsTraceData {
+  string trace_id = 1;
+  // The root TraceNode always starts from the <Component>.<Method> where we are kicking off the trace from
+  TraceNode root = 2;
+}
+
+// TraceNode represents a single node in the execution tree
+message TraceNode {
+  // Name of the component and method in the form <Component>.<Method> we are starting the trace from
+  string starting_target = 1;
+  // All edges in an ordered fashion
+  repeated Edge edges = 2;
+  // Multiple groups for flexible labeling of sub-trees (loops, conditionals, etc.)
+  repeated GroupInfo groups = 3;
+}
+
+// Edge represents a transition from one node to another in the execution tree
+message Edge {
+  // Unique Edge ID across the entire Trace
+  string id = 1;
+  // The next node this edge leads to
+  TraceNode next_node = 2;
+  // Label on the edge (if any)
+  string label = 3;
+  // Async edges denote Futures being sent without a return
+  bool is_async = 4;
+  // "Reverse" edges show a "wait" on a future
+  bool is_reverse = 5;
+  // This is optional but leaving it here just in case.
+  string probability = 6;
+  // Condition information for branching
+  string condition = 7;
+  // true if this edge represents a conditional branch
+  bool is_conditional = 8;
+}
+
+// GroupInfo allows flexible grouping of edges with labels
+message GroupInfo {
+  // Starting edge index
+  int32 group_start = 1;
+  // Ending edge index (inclusive)
+  int32 group_end = 2;
+  // Generic label: "loop: 3x", "if cached", "switch: status"
+  string group_label = 3;
+  // Optional hint: "loop", "conditional", "switch" (for tooling)
+  string group_type = 4;
+}
+
+// Single parameter update
+message ParameterUpdate {
+  string path = 1;       // dot-separated path like "server.cache.HitRate"
+  string new_value = 2;  // SDL expression string
+}
+
+// Result for individual parameter update
+message ParameterUpdateResult {
+  string path = 1;
+  bool success = 2;
+  string error_message = 3;  // Set if this specific update failed
+  string old_value = 4;      // Previous value
+  string new_value = 5;      // New value that was set
+}
+
+message AggregateResult {
+  double timestamp = 1;  // Start of window (if windowed)
+  double value = 2;
+}

@@ -152,8 +152,8 @@ func (exports *Sdl_v1ServicesExports) RegisterAPI() {
 			"addGenerator": js.FuncOf(func(this js.Value, args []js.Value) any {
 				return exports.canvasViewPresenterAddGenerator(this, args)
 			}),
-			"removeGenerator": js.FuncOf(func(this js.Value, args []js.Value) any {
-				return exports.canvasViewPresenterRemoveGenerator(this, args)
+			"deleteGenerator": js.FuncOf(func(this js.Value, args []js.Value) any {
+				return exports.canvasViewPresenterDeleteGenerator(this, args)
 			}),
 			"updateGenerator": js.FuncOf(func(this js.Value, args []js.Value) any {
 				return exports.canvasViewPresenterUpdateGenerator(this, args)
@@ -173,8 +173,8 @@ func (exports *Sdl_v1ServicesExports) RegisterAPI() {
 			"addMetric": js.FuncOf(func(this js.Value, args []js.Value) any {
 				return exports.canvasViewPresenterAddMetric(this, args)
 			}),
-			"removeMetric": js.FuncOf(func(this js.Value, args []js.Value) any {
-				return exports.canvasViewPresenterRemoveMetric(this, args)
+			"deleteMetric": js.FuncOf(func(this js.Value, args []js.Value) any {
+				return exports.canvasViewPresenterDeleteMetric(this, args)
 			}),
 			"setParameter": js.FuncOf(func(this js.Value, args []js.Value) any {
 				return exports.canvasViewPresenterSetParameter(this, args)
@@ -213,16 +213,16 @@ func (exports *Sdl_v1ServicesExports) RegisterAPI() {
 // canvasServiceCreateCanvas handles the CreateCanvas method for CanvasService
 func (exports *Sdl_v1ServicesExports) canvasServiceCreateCanvas(this js.Value, args []js.Value) any {
 	if exports.CanvasService == nil {
-		return createJSResponse(false, "CanvasService not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasService not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -232,7 +232,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceCreateCanvas(this js.Value, a
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -242,7 +242,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceCreateCanvas(this js.Value, a
 	// Call service method
 	resp, err := exports.CanvasService.CreateCanvas(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -252,25 +252,25 @@ func (exports *Sdl_v1ServicesExports) canvasServiceCreateCanvas(this js.Value, a
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasServiceListCanvases handles the ListCanvases method for CanvasService
 func (exports *Sdl_v1ServicesExports) canvasServiceListCanvases(this js.Value, args []js.Value) any {
 	if exports.CanvasService == nil {
-		return createJSResponse(false, "CanvasService not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasService not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -280,7 +280,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceListCanvases(this js.Value, a
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -290,7 +290,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceListCanvases(this js.Value, a
 	// Call service method
 	resp, err := exports.CanvasService.ListCanvases(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -300,25 +300,25 @@ func (exports *Sdl_v1ServicesExports) canvasServiceListCanvases(this js.Value, a
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasServiceGetCanvas handles the GetCanvas method for CanvasService
 func (exports *Sdl_v1ServicesExports) canvasServiceGetCanvas(this js.Value, args []js.Value) any {
 	if exports.CanvasService == nil {
-		return createJSResponse(false, "CanvasService not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasService not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -328,7 +328,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceGetCanvas(this js.Value, args
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -338,7 +338,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceGetCanvas(this js.Value, args
 	// Call service method
 	resp, err := exports.CanvasService.GetCanvas(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -348,25 +348,25 @@ func (exports *Sdl_v1ServicesExports) canvasServiceGetCanvas(this js.Value, args
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasServiceLoadFile handles the LoadFile method for CanvasService
 func (exports *Sdl_v1ServicesExports) canvasServiceLoadFile(this js.Value, args []js.Value) any {
 	if exports.CanvasService == nil {
-		return createJSResponse(false, "CanvasService not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasService not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -376,7 +376,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceLoadFile(this js.Value, args 
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -386,7 +386,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceLoadFile(this js.Value, args 
 	// Call service method
 	resp, err := exports.CanvasService.LoadFile(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -396,25 +396,25 @@ func (exports *Sdl_v1ServicesExports) canvasServiceLoadFile(this js.Value, args 
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasServiceUseSystem handles the UseSystem method for CanvasService
 func (exports *Sdl_v1ServicesExports) canvasServiceUseSystem(this js.Value, args []js.Value) any {
 	if exports.CanvasService == nil {
-		return createJSResponse(false, "CanvasService not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasService not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -424,7 +424,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceUseSystem(this js.Value, args
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -434,7 +434,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceUseSystem(this js.Value, args
 	// Call service method
 	resp, err := exports.CanvasService.UseSystem(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -444,25 +444,25 @@ func (exports *Sdl_v1ServicesExports) canvasServiceUseSystem(this js.Value, args
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasServiceDeleteCanvas handles the DeleteCanvas method for CanvasService
 func (exports *Sdl_v1ServicesExports) canvasServiceDeleteCanvas(this js.Value, args []js.Value) any {
 	if exports.CanvasService == nil {
-		return createJSResponse(false, "CanvasService not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasService not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -472,7 +472,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceDeleteCanvas(this js.Value, a
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -482,7 +482,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceDeleteCanvas(this js.Value, a
 	// Call service method
 	resp, err := exports.CanvasService.DeleteCanvas(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -492,25 +492,25 @@ func (exports *Sdl_v1ServicesExports) canvasServiceDeleteCanvas(this js.Value, a
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasServiceResetCanvas handles the ResetCanvas method for CanvasService
 func (exports *Sdl_v1ServicesExports) canvasServiceResetCanvas(this js.Value, args []js.Value) any {
 	if exports.CanvasService == nil {
-		return createJSResponse(false, "CanvasService not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasService not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -520,7 +520,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceResetCanvas(this js.Value, ar
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -530,7 +530,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceResetCanvas(this js.Value, ar
 	// Call service method
 	resp, err := exports.CanvasService.ResetCanvas(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -540,25 +540,25 @@ func (exports *Sdl_v1ServicesExports) canvasServiceResetCanvas(this js.Value, ar
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasServiceAddGenerator handles the AddGenerator method for CanvasService
 func (exports *Sdl_v1ServicesExports) canvasServiceAddGenerator(this js.Value, args []js.Value) any {
 	if exports.CanvasService == nil {
-		return createJSResponse(false, "CanvasService not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasService not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -568,7 +568,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceAddGenerator(this js.Value, a
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -578,7 +578,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceAddGenerator(this js.Value, a
 	// Call service method
 	resp, err := exports.CanvasService.AddGenerator(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -588,25 +588,25 @@ func (exports *Sdl_v1ServicesExports) canvasServiceAddGenerator(this js.Value, a
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasServiceStartAllGenerators handles the StartAllGenerators method for CanvasService
 func (exports *Sdl_v1ServicesExports) canvasServiceStartAllGenerators(this js.Value, args []js.Value) any {
 	if exports.CanvasService == nil {
-		return createJSResponse(false, "CanvasService not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasService not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -616,7 +616,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceStartAllGenerators(this js.Va
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -626,7 +626,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceStartAllGenerators(this js.Va
 	// Call service method
 	resp, err := exports.CanvasService.StartAllGenerators(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -636,25 +636,25 @@ func (exports *Sdl_v1ServicesExports) canvasServiceStartAllGenerators(this js.Va
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasServiceStopAllGenerators handles the StopAllGenerators method for CanvasService
 func (exports *Sdl_v1ServicesExports) canvasServiceStopAllGenerators(this js.Value, args []js.Value) any {
 	if exports.CanvasService == nil {
-		return createJSResponse(false, "CanvasService not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasService not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -664,7 +664,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceStopAllGenerators(this js.Val
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -674,7 +674,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceStopAllGenerators(this js.Val
 	// Call service method
 	resp, err := exports.CanvasService.StopAllGenerators(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -684,25 +684,25 @@ func (exports *Sdl_v1ServicesExports) canvasServiceStopAllGenerators(this js.Val
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasServiceListGenerators handles the ListGenerators method for CanvasService
 func (exports *Sdl_v1ServicesExports) canvasServiceListGenerators(this js.Value, args []js.Value) any {
 	if exports.CanvasService == nil {
-		return createJSResponse(false, "CanvasService not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasService not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -712,7 +712,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceListGenerators(this js.Value,
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -722,7 +722,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceListGenerators(this js.Value,
 	// Call service method
 	resp, err := exports.CanvasService.ListGenerators(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -732,25 +732,25 @@ func (exports *Sdl_v1ServicesExports) canvasServiceListGenerators(this js.Value,
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasServiceGetGenerator handles the GetGenerator method for CanvasService
 func (exports *Sdl_v1ServicesExports) canvasServiceGetGenerator(this js.Value, args []js.Value) any {
 	if exports.CanvasService == nil {
-		return createJSResponse(false, "CanvasService not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasService not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -760,7 +760,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceGetGenerator(this js.Value, a
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -770,7 +770,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceGetGenerator(this js.Value, a
 	// Call service method
 	resp, err := exports.CanvasService.GetGenerator(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -780,25 +780,25 @@ func (exports *Sdl_v1ServicesExports) canvasServiceGetGenerator(this js.Value, a
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasServiceUpdateGenerator handles the UpdateGenerator method for CanvasService
 func (exports *Sdl_v1ServicesExports) canvasServiceUpdateGenerator(this js.Value, args []js.Value) any {
 	if exports.CanvasService == nil {
-		return createJSResponse(false, "CanvasService not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasService not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -808,7 +808,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceUpdateGenerator(this js.Value
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -818,7 +818,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceUpdateGenerator(this js.Value
 	// Call service method
 	resp, err := exports.CanvasService.UpdateGenerator(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -828,25 +828,25 @@ func (exports *Sdl_v1ServicesExports) canvasServiceUpdateGenerator(this js.Value
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasServiceStopGenerator handles the StopGenerator method for CanvasService
 func (exports *Sdl_v1ServicesExports) canvasServiceStopGenerator(this js.Value, args []js.Value) any {
 	if exports.CanvasService == nil {
-		return createJSResponse(false, "CanvasService not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasService not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -856,7 +856,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceStopGenerator(this js.Value, 
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -866,7 +866,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceStopGenerator(this js.Value, 
 	// Call service method
 	resp, err := exports.CanvasService.StopGenerator(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -876,25 +876,25 @@ func (exports *Sdl_v1ServicesExports) canvasServiceStopGenerator(this js.Value, 
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasServiceStartGenerator handles the StartGenerator method for CanvasService
 func (exports *Sdl_v1ServicesExports) canvasServiceStartGenerator(this js.Value, args []js.Value) any {
 	if exports.CanvasService == nil {
-		return createJSResponse(false, "CanvasService not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasService not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -904,7 +904,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceStartGenerator(this js.Value,
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -914,7 +914,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceStartGenerator(this js.Value,
 	// Call service method
 	resp, err := exports.CanvasService.StartGenerator(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -924,25 +924,25 @@ func (exports *Sdl_v1ServicesExports) canvasServiceStartGenerator(this js.Value,
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasServiceDeleteGenerator handles the DeleteGenerator method for CanvasService
 func (exports *Sdl_v1ServicesExports) canvasServiceDeleteGenerator(this js.Value, args []js.Value) any {
 	if exports.CanvasService == nil {
-		return createJSResponse(false, "CanvasService not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasService not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -952,7 +952,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceDeleteGenerator(this js.Value
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -962,7 +962,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceDeleteGenerator(this js.Value
 	// Call service method
 	resp, err := exports.CanvasService.DeleteGenerator(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -972,25 +972,25 @@ func (exports *Sdl_v1ServicesExports) canvasServiceDeleteGenerator(this js.Value
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasServiceExecuteTrace handles the ExecuteTrace method for CanvasService
 func (exports *Sdl_v1ServicesExports) canvasServiceExecuteTrace(this js.Value, args []js.Value) any {
 	if exports.CanvasService == nil {
-		return createJSResponse(false, "CanvasService not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasService not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -1000,7 +1000,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceExecuteTrace(this js.Value, a
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -1010,7 +1010,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceExecuteTrace(this js.Value, a
 	// Call service method
 	resp, err := exports.CanvasService.ExecuteTrace(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -1020,25 +1020,25 @@ func (exports *Sdl_v1ServicesExports) canvasServiceExecuteTrace(this js.Value, a
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasServiceTraceAllPaths handles the TraceAllPaths method for CanvasService
 func (exports *Sdl_v1ServicesExports) canvasServiceTraceAllPaths(this js.Value, args []js.Value) any {
 	if exports.CanvasService == nil {
-		return createJSResponse(false, "CanvasService not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasService not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -1048,7 +1048,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceTraceAllPaths(this js.Value, 
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -1058,7 +1058,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceTraceAllPaths(this js.Value, 
 	// Call service method
 	resp, err := exports.CanvasService.TraceAllPaths(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -1068,25 +1068,25 @@ func (exports *Sdl_v1ServicesExports) canvasServiceTraceAllPaths(this js.Value, 
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasServiceSetParameter handles the SetParameter method for CanvasService
 func (exports *Sdl_v1ServicesExports) canvasServiceSetParameter(this js.Value, args []js.Value) any {
 	if exports.CanvasService == nil {
-		return createJSResponse(false, "CanvasService not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasService not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -1096,7 +1096,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceSetParameter(this js.Value, a
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -1106,7 +1106,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceSetParameter(this js.Value, a
 	// Call service method
 	resp, err := exports.CanvasService.SetParameter(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -1116,25 +1116,25 @@ func (exports *Sdl_v1ServicesExports) canvasServiceSetParameter(this js.Value, a
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasServiceGetParameters handles the GetParameters method for CanvasService
 func (exports *Sdl_v1ServicesExports) canvasServiceGetParameters(this js.Value, args []js.Value) any {
 	if exports.CanvasService == nil {
-		return createJSResponse(false, "CanvasService not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasService not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -1144,7 +1144,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceGetParameters(this js.Value, 
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -1154,7 +1154,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceGetParameters(this js.Value, 
 	// Call service method
 	resp, err := exports.CanvasService.GetParameters(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -1164,25 +1164,25 @@ func (exports *Sdl_v1ServicesExports) canvasServiceGetParameters(this js.Value, 
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasServiceBatchSetParameters handles the BatchSetParameters method for CanvasService
 func (exports *Sdl_v1ServicesExports) canvasServiceBatchSetParameters(this js.Value, args []js.Value) any {
 	if exports.CanvasService == nil {
-		return createJSResponse(false, "CanvasService not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasService not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -1192,7 +1192,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceBatchSetParameters(this js.Va
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -1202,7 +1202,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceBatchSetParameters(this js.Va
 	// Call service method
 	resp, err := exports.CanvasService.BatchSetParameters(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -1212,25 +1212,25 @@ func (exports *Sdl_v1ServicesExports) canvasServiceBatchSetParameters(this js.Va
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasServiceEvaluateFlows handles the EvaluateFlows method for CanvasService
 func (exports *Sdl_v1ServicesExports) canvasServiceEvaluateFlows(this js.Value, args []js.Value) any {
 	if exports.CanvasService == nil {
-		return createJSResponse(false, "CanvasService not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasService not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -1240,7 +1240,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceEvaluateFlows(this js.Value, 
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -1250,7 +1250,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceEvaluateFlows(this js.Value, 
 	// Call service method
 	resp, err := exports.CanvasService.EvaluateFlows(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -1260,25 +1260,25 @@ func (exports *Sdl_v1ServicesExports) canvasServiceEvaluateFlows(this js.Value, 
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasServiceGetFlowState handles the GetFlowState method for CanvasService
 func (exports *Sdl_v1ServicesExports) canvasServiceGetFlowState(this js.Value, args []js.Value) any {
 	if exports.CanvasService == nil {
-		return createJSResponse(false, "CanvasService not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasService not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -1288,7 +1288,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceGetFlowState(this js.Value, a
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -1298,7 +1298,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceGetFlowState(this js.Value, a
 	// Call service method
 	resp, err := exports.CanvasService.GetFlowState(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -1308,25 +1308,25 @@ func (exports *Sdl_v1ServicesExports) canvasServiceGetFlowState(this js.Value, a
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasServiceAddMetric handles the AddMetric method for CanvasService
 func (exports *Sdl_v1ServicesExports) canvasServiceAddMetric(this js.Value, args []js.Value) any {
 	if exports.CanvasService == nil {
-		return createJSResponse(false, "CanvasService not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasService not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -1336,7 +1336,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceAddMetric(this js.Value, args
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -1346,7 +1346,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceAddMetric(this js.Value, args
 	// Call service method
 	resp, err := exports.CanvasService.AddMetric(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -1356,25 +1356,25 @@ func (exports *Sdl_v1ServicesExports) canvasServiceAddMetric(this js.Value, args
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasServiceDeleteMetric handles the DeleteMetric method for CanvasService
 func (exports *Sdl_v1ServicesExports) canvasServiceDeleteMetric(this js.Value, args []js.Value) any {
 	if exports.CanvasService == nil {
-		return createJSResponse(false, "CanvasService not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasService not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -1384,7 +1384,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceDeleteMetric(this js.Value, a
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -1394,7 +1394,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceDeleteMetric(this js.Value, a
 	// Call service method
 	resp, err := exports.CanvasService.DeleteMetric(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -1404,25 +1404,25 @@ func (exports *Sdl_v1ServicesExports) canvasServiceDeleteMetric(this js.Value, a
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasServiceListMetrics handles the ListMetrics method for CanvasService
 func (exports *Sdl_v1ServicesExports) canvasServiceListMetrics(this js.Value, args []js.Value) any {
 	if exports.CanvasService == nil {
-		return createJSResponse(false, "CanvasService not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasService not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -1432,7 +1432,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceListMetrics(this js.Value, ar
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -1442,7 +1442,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceListMetrics(this js.Value, ar
 	// Call service method
 	resp, err := exports.CanvasService.ListMetrics(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -1452,25 +1452,25 @@ func (exports *Sdl_v1ServicesExports) canvasServiceListMetrics(this js.Value, ar
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasServiceQueryMetrics handles the QueryMetrics method for CanvasService
 func (exports *Sdl_v1ServicesExports) canvasServiceQueryMetrics(this js.Value, args []js.Value) any {
 	if exports.CanvasService == nil {
-		return createJSResponse(false, "CanvasService not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasService not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -1480,7 +1480,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceQueryMetrics(this js.Value, a
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -1490,7 +1490,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceQueryMetrics(this js.Value, a
 	// Call service method
 	resp, err := exports.CanvasService.QueryMetrics(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -1500,30 +1500,30 @@ func (exports *Sdl_v1ServicesExports) canvasServiceQueryMetrics(this js.Value, a
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasServiceStreamMetrics handles the StreamMetrics method for CanvasService
 func (exports *Sdl_v1ServicesExports) canvasServiceStreamMetrics(this js.Value, args []js.Value) any {
 	if exports.CanvasService == nil {
-		return createJSResponse(false, "CanvasService not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasService not initialized", nil)
 	}
 	// Server streaming method: expect request JSON and callback function
 	if len(args) < 2 {
-		return createJSResponse(false, "Request JSON and callback function required for streaming method", nil)
+		return wasm.CreateJSResponse(false, "Request JSON and callback function required for streaming method", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	callback := args[1]
 	if callback.Type() != js.TypeFunction {
-		return createJSResponse(false, "Second argument must be a callback function", nil)
+		return wasm.CreateJSResponse(false, "Second argument must be a callback function", nil)
 	}
 
 	// Parse request
@@ -1533,7 +1533,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceStreamMetrics(this js.Value, 
 		DiscardUnknown: true,
 		AllowPartial:   true,
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Start streaming in goroutine to avoid blocking
@@ -1541,13 +1541,13 @@ func (exports *Sdl_v1ServicesExports) canvasServiceStreamMetrics(this js.Value, 
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
-		// Create a stream wrapper for server-side streaming
+		// Create a stream wrapper that implements StreamMetrics_ServerStream
 		streamWrapper := &serverStreamWrapperStreamMetrics{
 			ctx:      ctx,
 			callback: callback,
 		}
 
-		// Call the server streaming method
+		// Call the server streaming method with the correct signature
 		err := exports.CanvasService.StreamMetrics(req, streamWrapper)
 		if err != nil {
 			// Call callback with error and done=true
@@ -1560,22 +1560,22 @@ func (exports *Sdl_v1ServicesExports) canvasServiceStreamMetrics(this js.Value, 
 	}()
 
 	// Return immediately for streaming methods
-	return createJSResponse(true, "Server streaming started", nil)
+	return wasm.CreateJSResponse(true, "Server streaming started", nil)
 }
 
 // canvasServiceGetSystemDiagram handles the GetSystemDiagram method for CanvasService
 func (exports *Sdl_v1ServicesExports) canvasServiceGetSystemDiagram(this js.Value, args []js.Value) any {
 	if exports.CanvasService == nil {
-		return createJSResponse(false, "CanvasService not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasService not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -1585,7 +1585,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceGetSystemDiagram(this js.Valu
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -1595,7 +1595,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceGetSystemDiagram(this js.Valu
 	// Call service method
 	resp, err := exports.CanvasService.GetSystemDiagram(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -1605,25 +1605,25 @@ func (exports *Sdl_v1ServicesExports) canvasServiceGetSystemDiagram(this js.Valu
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasServiceGetUtilization handles the GetUtilization method for CanvasService
 func (exports *Sdl_v1ServicesExports) canvasServiceGetUtilization(this js.Value, args []js.Value) any {
 	if exports.CanvasService == nil {
-		return createJSResponse(false, "CanvasService not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasService not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -1633,7 +1633,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceGetUtilization(this js.Value,
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -1643,7 +1643,7 @@ func (exports *Sdl_v1ServicesExports) canvasServiceGetUtilization(this js.Value,
 	// Call service method
 	resp, err := exports.CanvasService.GetUtilization(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -1653,25 +1653,25 @@ func (exports *Sdl_v1ServicesExports) canvasServiceGetUtilization(this js.Value,
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // singletonInitializerServiceInitializeSingleton handles the InitializeSingleton method for SingletonInitializerService
 func (exports *Sdl_v1ServicesExports) singletonInitializerServiceInitializeSingleton(this js.Value, args []js.Value) any {
 	if exports.SingletonInitializerService == nil {
-		return createJSResponse(false, "SingletonInitializerService not initialized", nil)
+		return wasm.CreateJSResponse(false, "SingletonInitializerService not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -1681,7 +1681,7 @@ func (exports *Sdl_v1ServicesExports) singletonInitializerServiceInitializeSingl
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -1691,7 +1691,7 @@ func (exports *Sdl_v1ServicesExports) singletonInitializerServiceInitializeSingl
 	// Call service method
 	resp, err := exports.SingletonInitializerService.InitializeSingleton(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -1701,25 +1701,25 @@ func (exports *Sdl_v1ServicesExports) singletonInitializerServiceInitializeSingl
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasViewPresenterInitialize handles the Initialize method for CanvasViewPresenter
 func (exports *Sdl_v1ServicesExports) canvasViewPresenterInitialize(this js.Value, args []js.Value) any {
 	if exports.CanvasViewPresenter == nil {
-		return createJSResponse(false, "CanvasViewPresenter not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasViewPresenter not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -1729,7 +1729,7 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterInitialize(this js.Valu
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -1739,7 +1739,7 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterInitialize(this js.Valu
 	// Call service method
 	resp, err := exports.CanvasViewPresenter.Initialize(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -1749,25 +1749,25 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterInitialize(this js.Valu
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasViewPresenterClientReady handles the ClientReady method for CanvasViewPresenter
 func (exports *Sdl_v1ServicesExports) canvasViewPresenterClientReady(this js.Value, args []js.Value) any {
 	if exports.CanvasViewPresenter == nil {
-		return createJSResponse(false, "CanvasViewPresenter not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasViewPresenter not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -1777,7 +1777,7 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterClientReady(this js.Val
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -1787,7 +1787,7 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterClientReady(this js.Val
 	// Call service method
 	resp, err := exports.CanvasViewPresenter.ClientReady(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -1797,25 +1797,25 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterClientReady(this js.Val
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasViewPresenterFileSelected handles the FileSelected method for CanvasViewPresenter
 func (exports *Sdl_v1ServicesExports) canvasViewPresenterFileSelected(this js.Value, args []js.Value) any {
 	if exports.CanvasViewPresenter == nil {
-		return createJSResponse(false, "CanvasViewPresenter not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasViewPresenter not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -1825,7 +1825,7 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterFileSelected(this js.Va
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -1835,7 +1835,7 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterFileSelected(this js.Va
 	// Call service method
 	resp, err := exports.CanvasViewPresenter.FileSelected(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -1845,25 +1845,25 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterFileSelected(this js.Va
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasViewPresenterFileSaved handles the FileSaved method for CanvasViewPresenter
 func (exports *Sdl_v1ServicesExports) canvasViewPresenterFileSaved(this js.Value, args []js.Value) any {
 	if exports.CanvasViewPresenter == nil {
-		return createJSResponse(false, "CanvasViewPresenter not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasViewPresenter not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -1873,7 +1873,7 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterFileSaved(this js.Value
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -1883,7 +1883,7 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterFileSaved(this js.Value
 	// Call service method
 	resp, err := exports.CanvasViewPresenter.FileSaved(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -1893,25 +1893,25 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterFileSaved(this js.Value
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasViewPresenterUseSystem handles the UseSystem method for CanvasViewPresenter
 func (exports *Sdl_v1ServicesExports) canvasViewPresenterUseSystem(this js.Value, args []js.Value) any {
 	if exports.CanvasViewPresenter == nil {
-		return createJSResponse(false, "CanvasViewPresenter not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasViewPresenter not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -1921,7 +1921,7 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterUseSystem(this js.Value
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -1931,7 +1931,7 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterUseSystem(this js.Value
 	// Call service method
 	resp, err := exports.CanvasViewPresenter.UseSystem(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -1941,25 +1941,25 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterUseSystem(this js.Value
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasViewPresenterAddGenerator handles the AddGenerator method for CanvasViewPresenter
 func (exports *Sdl_v1ServicesExports) canvasViewPresenterAddGenerator(this js.Value, args []js.Value) any {
 	if exports.CanvasViewPresenter == nil {
-		return createJSResponse(false, "CanvasViewPresenter not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasViewPresenter not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -1969,7 +1969,7 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterAddGenerator(this js.Va
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -1979,7 +1979,7 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterAddGenerator(this js.Va
 	// Call service method
 	resp, err := exports.CanvasViewPresenter.AddGenerator(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -1989,35 +1989,35 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterAddGenerator(this js.Va
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
-// canvasViewPresenterRemoveGenerator handles the RemoveGenerator method for CanvasViewPresenter
-func (exports *Sdl_v1ServicesExports) canvasViewPresenterRemoveGenerator(this js.Value, args []js.Value) any {
+// canvasViewPresenterDeleteGenerator handles the DeleteGenerator method for CanvasViewPresenter
+func (exports *Sdl_v1ServicesExports) canvasViewPresenterDeleteGenerator(this js.Value, args []js.Value) any {
 	if exports.CanvasViewPresenter == nil {
-		return createJSResponse(false, "CanvasViewPresenter not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasViewPresenter not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
-	req := &v1models.RemoveGeneratorRequest{}
+	req := &v1models.DeleteGeneratorRequest{}
 	marshaller := wasm.GetGlobalMarshaller()
 	if err := marshaller.Unmarshal([]byte(requestJSON), req, wasm.UnmarshalOptions{
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -2025,9 +2025,9 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterRemoveGenerator(this js
 	defer cancel()
 
 	// Call service method
-	resp, err := exports.CanvasViewPresenter.RemoveGenerator(ctx, req)
+	resp, err := exports.CanvasViewPresenter.DeleteGenerator(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -2037,25 +2037,25 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterRemoveGenerator(this js
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasViewPresenterUpdateGenerator handles the UpdateGenerator method for CanvasViewPresenter
 func (exports *Sdl_v1ServicesExports) canvasViewPresenterUpdateGenerator(this js.Value, args []js.Value) any {
 	if exports.CanvasViewPresenter == nil {
-		return createJSResponse(false, "CanvasViewPresenter not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasViewPresenter not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -2065,7 +2065,7 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterUpdateGenerator(this js
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -2075,7 +2075,7 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterUpdateGenerator(this js
 	// Call service method
 	resp, err := exports.CanvasViewPresenter.UpdateGenerator(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -2085,25 +2085,25 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterUpdateGenerator(this js
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasViewPresenterStartGenerator handles the StartGenerator method for CanvasViewPresenter
 func (exports *Sdl_v1ServicesExports) canvasViewPresenterStartGenerator(this js.Value, args []js.Value) any {
 	if exports.CanvasViewPresenter == nil {
-		return createJSResponse(false, "CanvasViewPresenter not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasViewPresenter not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -2113,7 +2113,7 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterStartGenerator(this js.
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -2123,7 +2123,7 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterStartGenerator(this js.
 	// Call service method
 	resp, err := exports.CanvasViewPresenter.StartGenerator(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -2133,25 +2133,25 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterStartGenerator(this js.
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasViewPresenterStopGenerator handles the StopGenerator method for CanvasViewPresenter
 func (exports *Sdl_v1ServicesExports) canvasViewPresenterStopGenerator(this js.Value, args []js.Value) any {
 	if exports.CanvasViewPresenter == nil {
-		return createJSResponse(false, "CanvasViewPresenter not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasViewPresenter not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -2161,7 +2161,7 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterStopGenerator(this js.V
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -2171,7 +2171,7 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterStopGenerator(this js.V
 	// Call service method
 	resp, err := exports.CanvasViewPresenter.StopGenerator(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -2181,25 +2181,25 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterStopGenerator(this js.V
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasViewPresenterStartAllGenerators handles the StartAllGenerators method for CanvasViewPresenter
 func (exports *Sdl_v1ServicesExports) canvasViewPresenterStartAllGenerators(this js.Value, args []js.Value) any {
 	if exports.CanvasViewPresenter == nil {
-		return createJSResponse(false, "CanvasViewPresenter not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasViewPresenter not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -2209,7 +2209,7 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterStartAllGenerators(this
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -2219,7 +2219,7 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterStartAllGenerators(this
 	// Call service method
 	resp, err := exports.CanvasViewPresenter.StartAllGenerators(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -2229,25 +2229,25 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterStartAllGenerators(this
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasViewPresenterStopAllGenerators handles the StopAllGenerators method for CanvasViewPresenter
 func (exports *Sdl_v1ServicesExports) canvasViewPresenterStopAllGenerators(this js.Value, args []js.Value) any {
 	if exports.CanvasViewPresenter == nil {
-		return createJSResponse(false, "CanvasViewPresenter not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasViewPresenter not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -2257,7 +2257,7 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterStopAllGenerators(this 
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -2267,7 +2267,7 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterStopAllGenerators(this 
 	// Call service method
 	resp, err := exports.CanvasViewPresenter.StopAllGenerators(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -2277,25 +2277,25 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterStopAllGenerators(this 
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasViewPresenterAddMetric handles the AddMetric method for CanvasViewPresenter
 func (exports *Sdl_v1ServicesExports) canvasViewPresenterAddMetric(this js.Value, args []js.Value) any {
 	if exports.CanvasViewPresenter == nil {
-		return createJSResponse(false, "CanvasViewPresenter not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasViewPresenter not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -2305,7 +2305,7 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterAddMetric(this js.Value
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -2315,7 +2315,7 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterAddMetric(this js.Value
 	// Call service method
 	resp, err := exports.CanvasViewPresenter.AddMetric(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -2325,35 +2325,35 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterAddMetric(this js.Value
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
-// canvasViewPresenterRemoveMetric handles the RemoveMetric method for CanvasViewPresenter
-func (exports *Sdl_v1ServicesExports) canvasViewPresenterRemoveMetric(this js.Value, args []js.Value) any {
+// canvasViewPresenterDeleteMetric handles the DeleteMetric method for CanvasViewPresenter
+func (exports *Sdl_v1ServicesExports) canvasViewPresenterDeleteMetric(this js.Value, args []js.Value) any {
 	if exports.CanvasViewPresenter == nil {
-		return createJSResponse(false, "CanvasViewPresenter not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasViewPresenter not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
-	req := &v1models.RemoveMetricRequest{}
+	req := &v1models.DeleteMetricRequest{}
 	marshaller := wasm.GetGlobalMarshaller()
 	if err := marshaller.Unmarshal([]byte(requestJSON), req, wasm.UnmarshalOptions{
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -2361,9 +2361,9 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterRemoveMetric(this js.Va
 	defer cancel()
 
 	// Call service method
-	resp, err := exports.CanvasViewPresenter.RemoveMetric(ctx, req)
+	resp, err := exports.CanvasViewPresenter.DeleteMetric(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -2373,25 +2373,25 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterRemoveMetric(this js.Va
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasViewPresenterSetParameter handles the SetParameter method for CanvasViewPresenter
 func (exports *Sdl_v1ServicesExports) canvasViewPresenterSetParameter(this js.Value, args []js.Value) any {
 	if exports.CanvasViewPresenter == nil {
-		return createJSResponse(false, "CanvasViewPresenter not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasViewPresenter not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -2401,7 +2401,7 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterSetParameter(this js.Va
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -2411,7 +2411,7 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterSetParameter(this js.Va
 	// Call service method
 	resp, err := exports.CanvasViewPresenter.SetParameter(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -2421,25 +2421,25 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterSetParameter(this js.Va
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasViewPresenterEvaluateFlows handles the EvaluateFlows method for CanvasViewPresenter
 func (exports *Sdl_v1ServicesExports) canvasViewPresenterEvaluateFlows(this js.Value, args []js.Value) any {
 	if exports.CanvasViewPresenter == nil {
-		return createJSResponse(false, "CanvasViewPresenter not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasViewPresenter not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -2449,7 +2449,7 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterEvaluateFlows(this js.V
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -2459,7 +2459,7 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterEvaluateFlows(this js.V
 	// Call service method
 	resp, err := exports.CanvasViewPresenter.EvaluateFlows(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -2469,25 +2469,25 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterEvaluateFlows(this js.V
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasViewPresenterDiagramComponentClicked handles the DiagramComponentClicked method for CanvasViewPresenter
 func (exports *Sdl_v1ServicesExports) canvasViewPresenterDiagramComponentClicked(this js.Value, args []js.Value) any {
 	if exports.CanvasViewPresenter == nil {
-		return createJSResponse(false, "CanvasViewPresenter not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasViewPresenter not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -2497,7 +2497,7 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterDiagramComponentClicked
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -2507,7 +2507,7 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterDiagramComponentClicked
 	// Call service method
 	resp, err := exports.CanvasViewPresenter.DiagramComponentClicked(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -2517,25 +2517,25 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterDiagramComponentClicked
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // canvasViewPresenterDiagramComponentHovered handles the DiagramComponentHovered method for CanvasViewPresenter
 func (exports *Sdl_v1ServicesExports) canvasViewPresenterDiagramComponentHovered(this js.Value, args []js.Value) any {
 	if exports.CanvasViewPresenter == nil {
-		return createJSResponse(false, "CanvasViewPresenter not initialized", nil)
+		return wasm.CreateJSResponse(false, "CanvasViewPresenter not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -2545,7 +2545,7 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterDiagramComponentHovered
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -2555,7 +2555,7 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterDiagramComponentHovered
 	// Call service method
 	resp, err := exports.CanvasViewPresenter.DiagramComponentHovered(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -2565,25 +2565,25 @@ func (exports *Sdl_v1ServicesExports) canvasViewPresenterDiagramComponentHovered
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // systemsServiceListSystems handles the ListSystems method for SystemsService
 func (exports *Sdl_v1ServicesExports) systemsServiceListSystems(this js.Value, args []js.Value) any {
 	if exports.SystemsService == nil {
-		return createJSResponse(false, "SystemsService not initialized", nil)
+		return wasm.CreateJSResponse(false, "SystemsService not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -2593,7 +2593,7 @@ func (exports *Sdl_v1ServicesExports) systemsServiceListSystems(this js.Value, a
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -2603,7 +2603,7 @@ func (exports *Sdl_v1ServicesExports) systemsServiceListSystems(this js.Value, a
 	// Call service method
 	resp, err := exports.SystemsService.ListSystems(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -2613,25 +2613,25 @@ func (exports *Sdl_v1ServicesExports) systemsServiceListSystems(this js.Value, a
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // systemsServiceGetSystem handles the GetSystem method for SystemsService
 func (exports *Sdl_v1ServicesExports) systemsServiceGetSystem(this js.Value, args []js.Value) any {
 	if exports.SystemsService == nil {
-		return createJSResponse(false, "SystemsService not initialized", nil)
+		return wasm.CreateJSResponse(false, "SystemsService not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -2641,7 +2641,7 @@ func (exports *Sdl_v1ServicesExports) systemsServiceGetSystem(this js.Value, arg
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -2651,7 +2651,7 @@ func (exports *Sdl_v1ServicesExports) systemsServiceGetSystem(this js.Value, arg
 	// Call service method
 	resp, err := exports.SystemsService.GetSystem(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -2661,25 +2661,25 @@ func (exports *Sdl_v1ServicesExports) systemsServiceGetSystem(this js.Value, arg
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
 // systemsServiceGetSystemContent handles the GetSystemContent method for SystemsService
 func (exports *Sdl_v1ServicesExports) systemsServiceGetSystemContent(this js.Value, args []js.Value) any {
 	if exports.SystemsService == nil {
-		return createJSResponse(false, "SystemsService not initialized", nil)
+		return wasm.CreateJSResponse(false, "SystemsService not initialized", nil)
 	}
 	// Synchronous method
 	if len(args) < 1 {
-		return createJSResponse(false, "Request JSON required", nil)
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
 	}
 
 	requestJSON := args[0].String()
 	if requestJSON == "" {
-		return createJSResponse(false, "Request JSON is empty", nil)
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
 	}
 
 	// Parse request
@@ -2689,7 +2689,7 @@ func (exports *Sdl_v1ServicesExports) systemsServiceGetSystemContent(this js.Val
 		DiscardUnknown: true,
 		AllowPartial:   true, // Allow partial messages for better compatibility
 	}); err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
 	}
 
 	// Create context with timeout
@@ -2699,7 +2699,7 @@ func (exports *Sdl_v1ServicesExports) systemsServiceGetSystemContent(this js.Val
 	// Call service method
 	resp, err := exports.SystemsService.GetSystemContent(ctx, req)
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
 
 	// Marshal response with options for better TypeScript compatibility
@@ -2709,8 +2709,8 @@ func (exports *Sdl_v1ServicesExports) systemsServiceGetSystemContent(this js.Val
 		UseEnumNumbers:  false, // Use enum string values
 	})
 	if err != nil {
-		return createJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
 	}
 
-	return createJSResponse(true, "Success", json.RawMessage(responseJSON))
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }

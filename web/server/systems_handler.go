@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/panyam/sdl/web/services"
+	"github.com/panyam/sdl/services"
 	"github.com/panyam/templar"
 )
 

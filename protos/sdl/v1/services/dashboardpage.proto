@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package sdl.v1;
+
+import "wasmjs/v1/annotations.proto";
+import "sdl/v1/models/models.proto";
+import "sdl/v1/models/dashboardpage.proto";
+
+option go_package = "github.com/panyam/sdl/gen/go/sdl/v1/services";
+
+// CanvasDashboardPage is implemented by the browser/frontend.
+// The WASM presenter calls these methods to update the UI.
+service CanvasDashboardPage {
+  option (wasmjs.v1.browser_provided) = true;
+
+  // === Metrics Panel ===
+
+  // Update a single metric with new data point
+  rpc UpdateMetric(UpdateMetricRequest) returns (UpdateMetricResponse);
+
+  // Clear all metrics from display
+  rpc ClearMetrics(ClearMetricsRequest) returns (ClearMetricsResponse);
+
+  // Set the full list of available metrics
+  rpc SetMetricsList(SetMetricsListRequest) returns (SetMetricsListResponse);
+
+  // === Diagram Panel ===
+
+  // Update the system diagram
+  rpc UpdateDiagram(UpdateDiagramRequest) returns (UpdateDiagramResponse);
+
+  // Highlight specific components in the diagram
+  rpc HighlightComponents(HighlightComponentsRequest) returns (HighlightComponentsResponse);
+
+  // Clear all highlights from diagram
+  rpc ClearHighlights(ClearHighlightsRequest) returns (ClearHighlightsResponse);
+
+  // === Generator Panel ===
+
+  // Update a single generator's state
+  rpc UpdateGeneratorState(UpdateGeneratorStateRequest) returns (UpdateGeneratorStateResponse);
+
+  // Set the full list of generators
+  rpc SetGeneratorList(SetGeneratorListRequest) returns (SetGeneratorListResponse);
+
+  // === Console Panel ===
+
+  // Log a message to the console
+  rpc LogMessage(LogMessageRequest) returns (LogMessageResponse);
+
+  // Clear the console
+  rpc ClearConsole(ClearConsoleRequest) returns (ClearConsoleResponse);
+
+  // === Flow Panel ===
+
+  // Update flow rates display
+  rpc UpdateFlowRates(UpdateFlowRatesRequest) returns (UpdateFlowRatesResponse);
+
+  // Show a specific flow path
+  rpc ShowFlowPath(ShowFlowPathRequest) returns (ShowFlowPathResponse);
+
+  // Clear flow paths
+  rpc ClearFlowPaths(ClearFlowPathsRequest) returns (ClearFlowPathsResponse);
+
+  // === Utilization Panel ===
+
+  // Update utilization display
+  rpc UpdateUtilization(UpdateUtilizationRequest) returns (UpdateUtilizationResponse);
+}

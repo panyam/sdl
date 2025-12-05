@@ -1117,6 +1117,11 @@ export const AddGeneratorRequestSchema: MessageSchema = {
       id: 1,
       messageType: "sdl.v1.Generator",
     },
+    {
+      name: "applyFlows",
+      type: FieldType.BOOLEAN,
+      id: 2,
+    },
   ],
 };
 
@@ -1223,6 +1228,11 @@ export const UpdateGeneratorRequestSchema: MessageSchema = {
       id: 2,
       messageType: "google.protobuf.FieldMask",
     },
+    {
+      name: "applyFlows",
+      type: FieldType.BOOLEAN,
+      id: 3,
+    },
   ],
 };
 
@@ -1318,6 +1328,11 @@ export const DeleteGeneratorRequestSchema: MessageSchema = {
       name: "generatorId",
       type: FieldType.STRING,
       id: 2,
+    },
+    {
+      name: "applyFlows",
+      type: FieldType.BOOLEAN,
+      id: 3,
     },
   ],
 };
@@ -2508,391 +2523,6 @@ export const UpdateUtilizationResponseSchema: MessageSchema = {
 
 
 /**
- * Schema for InitializeSingletonRequest message
- */
-export const InitializeSingletonRequestSchema: MessageSchema = {
-  name: "InitializeSingletonRequest",
-  fields: [
-    {
-      name: "canvasId",
-      type: FieldType.STRING,
-      id: 1,
-    },
-    {
-      name: "canvasData",
-      type: FieldType.STRING,
-      id: 2,
-    },
-    {
-      name: "generatorsData",
-      type: FieldType.STRING,
-      id: 3,
-    },
-    {
-      name: "metricsData",
-      type: FieldType.STRING,
-      id: 4,
-    },
-  ],
-};
-
-
-/**
- * Schema for InitializeSingletonResponse message
- */
-export const InitializeSingletonResponseSchema: MessageSchema = {
-  name: "InitializeSingletonResponse",
-  fields: [
-    {
-      name: "success",
-      type: FieldType.BOOLEAN,
-      id: 1,
-    },
-    {
-      name: "error",
-      type: FieldType.STRING,
-      id: 2,
-    },
-  ],
-};
-
-
-/**
- * Schema for InitializePresenterRequest message
- */
-export const InitializePresenterRequestSchema: MessageSchema = {
-  name: "InitializePresenterRequest",
-  fields: [
-    {
-      name: "canvasId",
-      type: FieldType.STRING,
-      id: 1,
-    },
-  ],
-};
-
-
-/**
- * Schema for InitializePresenterResponse message
- */
-export const InitializePresenterResponseSchema: MessageSchema = {
-  name: "InitializePresenterResponse",
-  fields: [
-    {
-      name: "success",
-      type: FieldType.BOOLEAN,
-      id: 1,
-    },
-    {
-      name: "error",
-      type: FieldType.STRING,
-      id: 2,
-    },
-    {
-      name: "diagram",
-      type: FieldType.MESSAGE,
-      id: 3,
-      messageType: "sdl.v1.SystemDiagram",
-    },
-    {
-      name: "generators",
-      type: FieldType.MESSAGE,
-      id: 4,
-      messageType: "sdl.v1.Generator",
-      repeated: true,
-    },
-    {
-      name: "metrics",
-      type: FieldType.MESSAGE,
-      id: 5,
-      messageType: "sdl.v1.Metric",
-      repeated: true,
-    },
-  ],
-};
-
-
-/**
- * Schema for ClientReadyRequest message
- */
-export const ClientReadyRequestSchema: MessageSchema = {
-  name: "ClientReadyRequest",
-  fields: [
-    {
-      name: "canvasId",
-      type: FieldType.STRING,
-      id: 1,
-    },
-  ],
-};
-
-
-/**
- * Schema for ClientReadyResponse message
- */
-export const ClientReadyResponseSchema: MessageSchema = {
-  name: "ClientReadyResponse",
-  fields: [
-    {
-      name: "success",
-      type: FieldType.BOOLEAN,
-      id: 1,
-    },
-  ],
-};
-
-
-/**
- * Schema for FileSelectedRequest message
- */
-export const FileSelectedRequestSchema: MessageSchema = {
-  name: "FileSelectedRequest",
-  fields: [
-    {
-      name: "canvasId",
-      type: FieldType.STRING,
-      id: 1,
-    },
-    {
-      name: "filePath",
-      type: FieldType.STRING,
-      id: 2,
-    },
-  ],
-};
-
-
-/**
- * Schema for FileSelectedResponse message
- */
-export const FileSelectedResponseSchema: MessageSchema = {
-  name: "FileSelectedResponse",
-  fields: [
-    {
-      name: "success",
-      type: FieldType.BOOLEAN,
-      id: 1,
-    },
-    {
-      name: "content",
-      type: FieldType.STRING,
-      id: 2,
-    },
-    {
-      name: "error",
-      type: FieldType.STRING,
-      id: 3,
-    },
-  ],
-};
-
-
-/**
- * Schema for FileSavedRequest message
- */
-export const FileSavedRequestSchema: MessageSchema = {
-  name: "FileSavedRequest",
-  fields: [
-    {
-      name: "canvasId",
-      type: FieldType.STRING,
-      id: 1,
-    },
-    {
-      name: "filePath",
-      type: FieldType.STRING,
-      id: 2,
-    },
-    {
-      name: "content",
-      type: FieldType.STRING,
-      id: 3,
-    },
-  ],
-};
-
-
-/**
- * Schema for FileSavedResponse message
- */
-export const FileSavedResponseSchema: MessageSchema = {
-  name: "FileSavedResponse",
-  fields: [
-    {
-      name: "success",
-      type: FieldType.BOOLEAN,
-      id: 1,
-    },
-    {
-      name: "error",
-      type: FieldType.STRING,
-      id: 2,
-    },
-  ],
-};
-
-
-/**
- * Schema for DiagramComponentClickedRequest message
- */
-export const DiagramComponentClickedRequestSchema: MessageSchema = {
-  name: "DiagramComponentClickedRequest",
-  fields: [
-    {
-      name: "canvasId",
-      type: FieldType.STRING,
-      id: 1,
-    },
-    {
-      name: "componentId",
-      type: FieldType.STRING,
-      id: 2,
-    },
-    {
-      name: "methodName",
-      type: FieldType.STRING,
-      id: 3,
-    },
-  ],
-};
-
-
-/**
- * Schema for DiagramComponentClickedResponse message
- */
-export const DiagramComponentClickedResponseSchema: MessageSchema = {
-  name: "DiagramComponentClickedResponse",
-  fields: [
-    {
-      name: "success",
-      type: FieldType.BOOLEAN,
-      id: 1,
-    },
-  ],
-};
-
-
-/**
- * Schema for DiagramComponentHoveredRequest message
- */
-export const DiagramComponentHoveredRequestSchema: MessageSchema = {
-  name: "DiagramComponentHoveredRequest",
-  fields: [
-    {
-      name: "canvasId",
-      type: FieldType.STRING,
-      id: 1,
-    },
-    {
-      name: "componentId",
-      type: FieldType.STRING,
-      id: 2,
-    },
-    {
-      name: "methodName",
-      type: FieldType.STRING,
-      id: 3,
-    },
-  ],
-};
-
-
-/**
- * Schema for DiagramComponentHoveredResponse message
- */
-export const DiagramComponentHoveredResponseSchema: MessageSchema = {
-  name: "DiagramComponentHoveredResponse",
-  fields: [
-    {
-      name: "success",
-      type: FieldType.BOOLEAN,
-      id: 1,
-    },
-  ],
-};
-
-
-/**
- * Schema for RemoveGeneratorRequest message
- */
-export const RemoveGeneratorRequestSchema: MessageSchema = {
-  name: "RemoveGeneratorRequest",
-  fields: [
-    {
-      name: "canvasId",
-      type: FieldType.STRING,
-      id: 1,
-    },
-    {
-      name: "generatorId",
-      type: FieldType.STRING,
-      id: 2,
-    },
-  ],
-};
-
-
-/**
- * Schema for RemoveGeneratorResponse message
- */
-export const RemoveGeneratorResponseSchema: MessageSchema = {
-  name: "RemoveGeneratorResponse",
-  fields: [
-    {
-      name: "success",
-      type: FieldType.BOOLEAN,
-      id: 1,
-    },
-    {
-      name: "error",
-      type: FieldType.STRING,
-      id: 2,
-    },
-  ],
-};
-
-
-/**
- * Schema for RemoveMetricRequest message
- */
-export const RemoveMetricRequestSchema: MessageSchema = {
-  name: "RemoveMetricRequest",
-  fields: [
-    {
-      name: "canvasId",
-      type: FieldType.STRING,
-      id: 1,
-    },
-    {
-      name: "metricId",
-      type: FieldType.STRING,
-      id: 2,
-    },
-  ],
-};
-
-
-/**
- * Schema for RemoveMetricResponse message
- */
-export const RemoveMetricResponseSchema: MessageSchema = {
-  name: "RemoveMetricResponse",
-  fields: [
-    {
-      name: "success",
-      type: FieldType.BOOLEAN,
-      id: 1,
-    },
-    {
-      name: "error",
-      type: FieldType.STRING,
-      id: 2,
-    },
-  ],
-};
-
-
-/**
  * Schema for SystemInfo message
  */
 export const SystemInfoSchema: MessageSchema = {
@@ -3137,6 +2767,346 @@ export const GetSystemContentResponseSchema: MessageSchema = {
 };
 
 
+/**
+ * Schema for InitializeSingletonRequest message
+ */
+export const InitializeSingletonRequestSchema: MessageSchema = {
+  name: "InitializeSingletonRequest",
+  fields: [
+    {
+      name: "canvasId",
+      type: FieldType.STRING,
+      id: 1,
+    },
+    {
+      name: "sdlContent",
+      type: FieldType.STRING,
+      id: 2,
+    },
+    {
+      name: "systemName",
+      type: FieldType.STRING,
+      id: 3,
+    },
+    {
+      name: "generatorsData",
+      type: FieldType.STRING,
+      id: 4,
+    },
+    {
+      name: "metricsData",
+      type: FieldType.STRING,
+      id: 5,
+    },
+  ],
+};
+
+
+/**
+ * Schema for InitializeSingletonResponse message
+ */
+export const InitializeSingletonResponseSchema: MessageSchema = {
+  name: "InitializeSingletonResponse",
+  fields: [
+    {
+      name: "success",
+      type: FieldType.BOOLEAN,
+      id: 1,
+    },
+    {
+      name: "error",
+      type: FieldType.STRING,
+      id: 2,
+    },
+    {
+      name: "canvasId",
+      type: FieldType.STRING,
+      id: 3,
+    },
+    {
+      name: "availableSystems",
+      type: FieldType.MESSAGE,
+      id: 4,
+      messageType: "sdl.v1.SystemInfo",
+      repeated: true,
+    },
+  ],
+};
+
+
+/**
+ * Schema for InitializePresenterRequest message
+ */
+export const InitializePresenterRequestSchema: MessageSchema = {
+  name: "InitializePresenterRequest",
+  fields: [
+    {
+      name: "canvasId",
+      type: FieldType.STRING,
+      id: 1,
+    },
+  ],
+};
+
+
+/**
+ * Schema for InitializePresenterResponse message
+ */
+export const InitializePresenterResponseSchema: MessageSchema = {
+  name: "InitializePresenterResponse",
+  fields: [
+    {
+      name: "success",
+      type: FieldType.BOOLEAN,
+      id: 1,
+    },
+    {
+      name: "error",
+      type: FieldType.STRING,
+      id: 2,
+    },
+    {
+      name: "canvasId",
+      type: FieldType.STRING,
+      id: 3,
+    },
+    {
+      name: "availableSystems",
+      type: FieldType.MESSAGE,
+      id: 4,
+      messageType: "sdl.v1.SystemInfo",
+      repeated: true,
+    },
+    {
+      name: "diagram",
+      type: FieldType.MESSAGE,
+      id: 5,
+      messageType: "sdl.v1.SystemDiagram",
+    },
+    {
+      name: "generators",
+      type: FieldType.MESSAGE,
+      id: 6,
+      messageType: "sdl.v1.Generator",
+      repeated: true,
+    },
+    {
+      name: "metrics",
+      type: FieldType.MESSAGE,
+      id: 7,
+      messageType: "sdl.v1.Metric",
+      repeated: true,
+    },
+  ],
+};
+
+
+/**
+ * Schema for ClientReadyRequest message
+ */
+export const ClientReadyRequestSchema: MessageSchema = {
+  name: "ClientReadyRequest",
+  fields: [
+    {
+      name: "canvasId",
+      type: FieldType.STRING,
+      id: 1,
+    },
+  ],
+};
+
+
+/**
+ * Schema for ClientReadyResponse message
+ */
+export const ClientReadyResponseSchema: MessageSchema = {
+  name: "ClientReadyResponse",
+  fields: [
+    {
+      name: "success",
+      type: FieldType.BOOLEAN,
+      id: 1,
+    },
+    {
+      name: "canvas",
+      type: FieldType.MESSAGE,
+      id: 2,
+      messageType: "sdl.v1.Canvas",
+    },
+  ],
+};
+
+
+/**
+ * Schema for FileSelectedRequest message
+ */
+export const FileSelectedRequestSchema: MessageSchema = {
+  name: "FileSelectedRequest",
+  fields: [
+    {
+      name: "canvasId",
+      type: FieldType.STRING,
+      id: 1,
+    },
+    {
+      name: "filePath",
+      type: FieldType.STRING,
+      id: 2,
+    },
+  ],
+};
+
+
+/**
+ * Schema for FileSelectedResponse message
+ */
+export const FileSelectedResponseSchema: MessageSchema = {
+  name: "FileSelectedResponse",
+  fields: [
+    {
+      name: "success",
+      type: FieldType.BOOLEAN,
+      id: 1,
+    },
+    {
+      name: "content",
+      type: FieldType.STRING,
+      id: 2,
+    },
+    {
+      name: "error",
+      type: FieldType.STRING,
+      id: 3,
+    },
+  ],
+};
+
+
+/**
+ * Schema for FileSavedRequest message
+ */
+export const FileSavedRequestSchema: MessageSchema = {
+  name: "FileSavedRequest",
+  fields: [
+    {
+      name: "canvasId",
+      type: FieldType.STRING,
+      id: 1,
+    },
+    {
+      name: "filePath",
+      type: FieldType.STRING,
+      id: 2,
+    },
+    {
+      name: "content",
+      type: FieldType.STRING,
+      id: 3,
+    },
+  ],
+};
+
+
+/**
+ * Schema for FileSavedResponse message
+ */
+export const FileSavedResponseSchema: MessageSchema = {
+  name: "FileSavedResponse",
+  fields: [
+    {
+      name: "success",
+      type: FieldType.BOOLEAN,
+      id: 1,
+    },
+    {
+      name: "error",
+      type: FieldType.STRING,
+      id: 2,
+    },
+  ],
+};
+
+
+/**
+ * Schema for DiagramComponentClickedRequest message
+ */
+export const DiagramComponentClickedRequestSchema: MessageSchema = {
+  name: "DiagramComponentClickedRequest",
+  fields: [
+    {
+      name: "canvasId",
+      type: FieldType.STRING,
+      id: 1,
+    },
+    {
+      name: "componentName",
+      type: FieldType.STRING,
+      id: 2,
+    },
+    {
+      name: "methodName",
+      type: FieldType.STRING,
+      id: 3,
+    },
+  ],
+};
+
+
+/**
+ * Schema for DiagramComponentClickedResponse message
+ */
+export const DiagramComponentClickedResponseSchema: MessageSchema = {
+  name: "DiagramComponentClickedResponse",
+  fields: [
+    {
+      name: "success",
+      type: FieldType.BOOLEAN,
+      id: 1,
+    },
+  ],
+};
+
+
+/**
+ * Schema for DiagramComponentHoveredRequest message
+ */
+export const DiagramComponentHoveredRequestSchema: MessageSchema = {
+  name: "DiagramComponentHoveredRequest",
+  fields: [
+    {
+      name: "canvasId",
+      type: FieldType.STRING,
+      id: 1,
+    },
+    {
+      name: "componentName",
+      type: FieldType.STRING,
+      id: 2,
+    },
+    {
+      name: "methodName",
+      type: FieldType.STRING,
+      id: 3,
+    },
+  ],
+};
+
+
+/**
+ * Schema for DiagramComponentHoveredResponse message
+ */
+export const DiagramComponentHoveredResponseSchema: MessageSchema = {
+  name: "DiagramComponentHoveredResponse",
+  fields: [
+    {
+      name: "success",
+      type: FieldType.BOOLEAN,
+      id: 1,
+    },
+  ],
+};
+
+
 
 /**
  * Package-scoped schema registry for sdl.v1
@@ -3256,6 +3226,15 @@ export const sdl_v1SchemaRegistry: Record<string, MessageSchema> = {
   "sdl.v1.ClearFlowPathsResponse": ClearFlowPathsResponseSchema,
   "sdl.v1.UpdateUtilizationRequest": UpdateUtilizationRequestSchema,
   "sdl.v1.UpdateUtilizationResponse": UpdateUtilizationResponseSchema,
+  "sdl.v1.SystemInfo": SystemInfoSchema,
+  "sdl.v1.SystemProject": SystemProjectSchema,
+  "sdl.v1.SystemVersion": SystemVersionSchema,
+  "sdl.v1.ListSystemsRequest": ListSystemsRequestSchema,
+  "sdl.v1.ListSystemsResponse": ListSystemsResponseSchema,
+  "sdl.v1.GetSystemRequest": GetSystemRequestSchema,
+  "sdl.v1.GetSystemResponse": GetSystemResponseSchema,
+  "sdl.v1.GetSystemContentRequest": GetSystemContentRequestSchema,
+  "sdl.v1.GetSystemContentResponse": GetSystemContentResponseSchema,
   "sdl.v1.InitializeSingletonRequest": InitializeSingletonRequestSchema,
   "sdl.v1.InitializeSingletonResponse": InitializeSingletonResponseSchema,
   "sdl.v1.InitializePresenterRequest": InitializePresenterRequestSchema,
@@ -3270,19 +3249,6 @@ export const sdl_v1SchemaRegistry: Record<string, MessageSchema> = {
   "sdl.v1.DiagramComponentClickedResponse": DiagramComponentClickedResponseSchema,
   "sdl.v1.DiagramComponentHoveredRequest": DiagramComponentHoveredRequestSchema,
   "sdl.v1.DiagramComponentHoveredResponse": DiagramComponentHoveredResponseSchema,
-  "sdl.v1.RemoveGeneratorRequest": RemoveGeneratorRequestSchema,
-  "sdl.v1.RemoveGeneratorResponse": RemoveGeneratorResponseSchema,
-  "sdl.v1.RemoveMetricRequest": RemoveMetricRequestSchema,
-  "sdl.v1.RemoveMetricResponse": RemoveMetricResponseSchema,
-  "sdl.v1.SystemInfo": SystemInfoSchema,
-  "sdl.v1.SystemProject": SystemProjectSchema,
-  "sdl.v1.SystemVersion": SystemVersionSchema,
-  "sdl.v1.ListSystemsRequest": ListSystemsRequestSchema,
-  "sdl.v1.ListSystemsResponse": ListSystemsResponseSchema,
-  "sdl.v1.GetSystemRequest": GetSystemRequestSchema,
-  "sdl.v1.GetSystemResponse": GetSystemResponseSchema,
-  "sdl.v1.GetSystemContentRequest": GetSystemContentRequestSchema,
-  "sdl.v1.GetSystemContentResponse": GetSystemContentResponseSchema,
 };
 
 /**

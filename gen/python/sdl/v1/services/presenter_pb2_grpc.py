@@ -135,10 +135,10 @@ class CanvasViewPresenterStub(object):
                 request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.AddGeneratorRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.AddGeneratorResponse.FromString,
                 _registered_method=True)
-        self.RemoveGenerator = channel.unary_unary(
-                '/sdl.v1.CanvasViewPresenter/RemoveGenerator',
-                request_serializer=sdl_dot_v1_dot_models_dot_presenter__pb2.RemoveGeneratorRequest.SerializeToString,
-                response_deserializer=sdl_dot_v1_dot_models_dot_presenter__pb2.RemoveGeneratorResponse.FromString,
+        self.DeleteGenerator = channel.unary_unary(
+                '/sdl.v1.CanvasViewPresenter/DeleteGenerator',
+                request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.DeleteGeneratorRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.DeleteGeneratorResponse.FromString,
                 _registered_method=True)
         self.UpdateGenerator = channel.unary_unary(
                 '/sdl.v1.CanvasViewPresenter/UpdateGenerator',
@@ -170,10 +170,10 @@ class CanvasViewPresenterStub(object):
                 request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.AddMetricRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.AddMetricResponse.FromString,
                 _registered_method=True)
-        self.RemoveMetric = channel.unary_unary(
-                '/sdl.v1.CanvasViewPresenter/RemoveMetric',
-                request_serializer=sdl_dot_v1_dot_models_dot_presenter__pb2.RemoveMetricRequest.SerializeToString,
-                response_deserializer=sdl_dot_v1_dot_models_dot_presenter__pb2.RemoveMetricResponse.FromString,
+        self.DeleteMetric = channel.unary_unary(
+                '/sdl.v1.CanvasViewPresenter/DeleteMetric',
+                request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.DeleteMetricRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.DeleteMetricResponse.FromString,
                 _registered_method=True)
         self.SetParameter = channel.unary_unary(
                 '/sdl.v1.CanvasViewPresenter/SetParameter',
@@ -260,7 +260,7 @@ class CanvasViewPresenterServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def RemoveGenerator(self, request, context):
+    def DeleteGenerator(self, request, context):
         """Called when user removes a generator
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -311,7 +311,7 @@ class CanvasViewPresenterServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def RemoveMetric(self, request, context):
+    def DeleteMetric(self, request, context):
         """Called when user removes a metric
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -385,10 +385,10 @@ def add_CanvasViewPresenterServicer_to_server(servicer, server):
                     request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.AddGeneratorRequest.FromString,
                     response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.AddGeneratorResponse.SerializeToString,
             ),
-            'RemoveGenerator': grpc.unary_unary_rpc_method_handler(
-                    servicer.RemoveGenerator,
-                    request_deserializer=sdl_dot_v1_dot_models_dot_presenter__pb2.RemoveGeneratorRequest.FromString,
-                    response_serializer=sdl_dot_v1_dot_models_dot_presenter__pb2.RemoveGeneratorResponse.SerializeToString,
+            'DeleteGenerator': grpc.unary_unary_rpc_method_handler(
+                    servicer.DeleteGenerator,
+                    request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.DeleteGeneratorRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.DeleteGeneratorResponse.SerializeToString,
             ),
             'UpdateGenerator': grpc.unary_unary_rpc_method_handler(
                     servicer.UpdateGenerator,
@@ -420,10 +420,10 @@ def add_CanvasViewPresenterServicer_to_server(servicer, server):
                     request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.AddMetricRequest.FromString,
                     response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.AddMetricResponse.SerializeToString,
             ),
-            'RemoveMetric': grpc.unary_unary_rpc_method_handler(
-                    servicer.RemoveMetric,
-                    request_deserializer=sdl_dot_v1_dot_models_dot_presenter__pb2.RemoveMetricRequest.FromString,
-                    response_serializer=sdl_dot_v1_dot_models_dot_presenter__pb2.RemoveMetricResponse.SerializeToString,
+            'DeleteMetric': grpc.unary_unary_rpc_method_handler(
+                    servicer.DeleteMetric,
+                    request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.DeleteMetricRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.DeleteMetricResponse.SerializeToString,
             ),
             'SetParameter': grpc.unary_unary_rpc_method_handler(
                     servicer.SetParameter,
@@ -631,7 +631,7 @@ class CanvasViewPresenter(object):
             _registered_method=True)
 
     @staticmethod
-    def RemoveGenerator(request,
+    def DeleteGenerator(request,
             target,
             options=(),
             channel_credentials=None,
@@ -644,9 +644,9 @@ class CanvasViewPresenter(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/sdl.v1.CanvasViewPresenter/RemoveGenerator',
-            sdl_dot_v1_dot_models_dot_presenter__pb2.RemoveGeneratorRequest.SerializeToString,
-            sdl_dot_v1_dot_models_dot_presenter__pb2.RemoveGeneratorResponse.FromString,
+            '/sdl.v1.CanvasViewPresenter/DeleteGenerator',
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.DeleteGeneratorRequest.SerializeToString,
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.DeleteGeneratorResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -820,7 +820,7 @@ class CanvasViewPresenter(object):
             _registered_method=True)
 
     @staticmethod
-    def RemoveMetric(request,
+    def DeleteMetric(request,
             target,
             options=(),
             channel_credentials=None,
@@ -833,9 +833,9 @@ class CanvasViewPresenter(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/sdl.v1.CanvasViewPresenter/RemoveMetric',
-            sdl_dot_v1_dot_models_dot_presenter__pb2.RemoveMetricRequest.SerializeToString,
-            sdl_dot_v1_dot_models_dot_presenter__pb2.RemoveMetricResponse.FromString,
+            '/sdl.v1.CanvasViewPresenter/DeleteMetric',
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.DeleteMetricRequest.SerializeToString,
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.DeleteMetricResponse.FromString,
             options,
             channel_credentials,
             insecure,

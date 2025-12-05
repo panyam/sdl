@@ -59,9 +59,9 @@ const (
 	// CanvasViewPresenterAddGeneratorProcedure is the fully-qualified name of the CanvasViewPresenter's
 	// AddGenerator RPC.
 	CanvasViewPresenterAddGeneratorProcedure = "/sdl.v1.CanvasViewPresenter/AddGenerator"
-	// CanvasViewPresenterRemoveGeneratorProcedure is the fully-qualified name of the
-	// CanvasViewPresenter's RemoveGenerator RPC.
-	CanvasViewPresenterRemoveGeneratorProcedure = "/sdl.v1.CanvasViewPresenter/RemoveGenerator"
+	// CanvasViewPresenterDeleteGeneratorProcedure is the fully-qualified name of the
+	// CanvasViewPresenter's DeleteGenerator RPC.
+	CanvasViewPresenterDeleteGeneratorProcedure = "/sdl.v1.CanvasViewPresenter/DeleteGenerator"
 	// CanvasViewPresenterUpdateGeneratorProcedure is the fully-qualified name of the
 	// CanvasViewPresenter's UpdateGenerator RPC.
 	CanvasViewPresenterUpdateGeneratorProcedure = "/sdl.v1.CanvasViewPresenter/UpdateGenerator"
@@ -80,9 +80,9 @@ const (
 	// CanvasViewPresenterAddMetricProcedure is the fully-qualified name of the CanvasViewPresenter's
 	// AddMetric RPC.
 	CanvasViewPresenterAddMetricProcedure = "/sdl.v1.CanvasViewPresenter/AddMetric"
-	// CanvasViewPresenterRemoveMetricProcedure is the fully-qualified name of the CanvasViewPresenter's
-	// RemoveMetric RPC.
-	CanvasViewPresenterRemoveMetricProcedure = "/sdl.v1.CanvasViewPresenter/RemoveMetric"
+	// CanvasViewPresenterDeleteMetricProcedure is the fully-qualified name of the CanvasViewPresenter's
+	// DeleteMetric RPC.
+	CanvasViewPresenterDeleteMetricProcedure = "/sdl.v1.CanvasViewPresenter/DeleteMetric"
 	// CanvasViewPresenterSetParameterProcedure is the fully-qualified name of the CanvasViewPresenter's
 	// SetParameter RPC.
 	CanvasViewPresenterSetParameterProcedure = "/sdl.v1.CanvasViewPresenter/SetParameter"
@@ -183,7 +183,7 @@ type CanvasViewPresenterClient interface {
 	// Called when user adds a generator
 	AddGenerator(context.Context, *connect.Request[models.AddGeneratorRequest]) (*connect.Response[models.AddGeneratorResponse], error)
 	// Called when user removes a generator
-	RemoveGenerator(context.Context, *connect.Request[models.RemoveGeneratorRequest]) (*connect.Response[models.RemoveGeneratorResponse], error)
+	DeleteGenerator(context.Context, *connect.Request[models.DeleteGeneratorRequest]) (*connect.Response[models.DeleteGeneratorResponse], error)
 	// Called when user updates generator rate
 	UpdateGenerator(context.Context, *connect.Request[models.UpdateGeneratorRequest]) (*connect.Response[models.UpdateGeneratorResponse], error)
 	// Called when user starts a generator
@@ -197,7 +197,7 @@ type CanvasViewPresenterClient interface {
 	// Called when user adds a metric to track
 	AddMetric(context.Context, *connect.Request[models.AddMetricRequest]) (*connect.Response[models.AddMetricResponse], error)
 	// Called when user removes a metric
-	RemoveMetric(context.Context, *connect.Request[models.RemoveMetricRequest]) (*connect.Response[models.RemoveMetricResponse], error)
+	DeleteMetric(context.Context, *connect.Request[models.DeleteMetricRequest]) (*connect.Response[models.DeleteMetricResponse], error)
 	// Called when user changes a component parameter
 	SetParameter(context.Context, *connect.Request[models.SetParameterRequest]) (*connect.Response[models.SetParameterResponse], error)
 	// Called when user wants to evaluate flows
@@ -255,10 +255,10 @@ func NewCanvasViewPresenterClient(httpClient connect.HTTPClient, baseURL string,
 			connect.WithSchema(canvasViewPresenterMethods.ByName("AddGenerator")),
 			connect.WithClientOptions(opts...),
 		),
-		removeGenerator: connect.NewClient[models.RemoveGeneratorRequest, models.RemoveGeneratorResponse](
+		deleteGenerator: connect.NewClient[models.DeleteGeneratorRequest, models.DeleteGeneratorResponse](
 			httpClient,
-			baseURL+CanvasViewPresenterRemoveGeneratorProcedure,
-			connect.WithSchema(canvasViewPresenterMethods.ByName("RemoveGenerator")),
+			baseURL+CanvasViewPresenterDeleteGeneratorProcedure,
+			connect.WithSchema(canvasViewPresenterMethods.ByName("DeleteGenerator")),
 			connect.WithClientOptions(opts...),
 		),
 		updateGenerator: connect.NewClient[models.UpdateGeneratorRequest, models.UpdateGeneratorResponse](
@@ -297,10 +297,10 @@ func NewCanvasViewPresenterClient(httpClient connect.HTTPClient, baseURL string,
 			connect.WithSchema(canvasViewPresenterMethods.ByName("AddMetric")),
 			connect.WithClientOptions(opts...),
 		),
-		removeMetric: connect.NewClient[models.RemoveMetricRequest, models.RemoveMetricResponse](
+		deleteMetric: connect.NewClient[models.DeleteMetricRequest, models.DeleteMetricResponse](
 			httpClient,
-			baseURL+CanvasViewPresenterRemoveMetricProcedure,
-			connect.WithSchema(canvasViewPresenterMethods.ByName("RemoveMetric")),
+			baseURL+CanvasViewPresenterDeleteMetricProcedure,
+			connect.WithSchema(canvasViewPresenterMethods.ByName("DeleteMetric")),
 			connect.WithClientOptions(opts...),
 		),
 		setParameter: connect.NewClient[models.SetParameterRequest, models.SetParameterResponse](
@@ -338,14 +338,14 @@ type canvasViewPresenterClient struct {
 	fileSaved               *connect.Client[models.FileSavedRequest, models.FileSavedResponse]
 	useSystem               *connect.Client[models.UseSystemRequest, models.UseSystemResponse]
 	addGenerator            *connect.Client[models.AddGeneratorRequest, models.AddGeneratorResponse]
-	removeGenerator         *connect.Client[models.RemoveGeneratorRequest, models.RemoveGeneratorResponse]
+	deleteGenerator         *connect.Client[models.DeleteGeneratorRequest, models.DeleteGeneratorResponse]
 	updateGenerator         *connect.Client[models.UpdateGeneratorRequest, models.UpdateGeneratorResponse]
 	startGenerator          *connect.Client[models.StartGeneratorRequest, models.StartGeneratorResponse]
 	stopGenerator           *connect.Client[models.StopGeneratorRequest, models.StopGeneratorResponse]
 	startAllGenerators      *connect.Client[models.StartAllGeneratorsRequest, models.StartAllGeneratorsResponse]
 	stopAllGenerators       *connect.Client[models.StopAllGeneratorsRequest, models.StopAllGeneratorsResponse]
 	addMetric               *connect.Client[models.AddMetricRequest, models.AddMetricResponse]
-	removeMetric            *connect.Client[models.RemoveMetricRequest, models.RemoveMetricResponse]
+	deleteMetric            *connect.Client[models.DeleteMetricRequest, models.DeleteMetricResponse]
 	setParameter            *connect.Client[models.SetParameterRequest, models.SetParameterResponse]
 	evaluateFlows           *connect.Client[models.EvaluateFlowsRequest, models.EvaluateFlowsResponse]
 	diagramComponentClicked *connect.Client[models.DiagramComponentClickedRequest, models.DiagramComponentClickedResponse]
@@ -382,9 +382,9 @@ func (c *canvasViewPresenterClient) AddGenerator(ctx context.Context, req *conne
 	return c.addGenerator.CallUnary(ctx, req)
 }
 
-// RemoveGenerator calls sdl.v1.CanvasViewPresenter.RemoveGenerator.
-func (c *canvasViewPresenterClient) RemoveGenerator(ctx context.Context, req *connect.Request[models.RemoveGeneratorRequest]) (*connect.Response[models.RemoveGeneratorResponse], error) {
-	return c.removeGenerator.CallUnary(ctx, req)
+// DeleteGenerator calls sdl.v1.CanvasViewPresenter.DeleteGenerator.
+func (c *canvasViewPresenterClient) DeleteGenerator(ctx context.Context, req *connect.Request[models.DeleteGeneratorRequest]) (*connect.Response[models.DeleteGeneratorResponse], error) {
+	return c.deleteGenerator.CallUnary(ctx, req)
 }
 
 // UpdateGenerator calls sdl.v1.CanvasViewPresenter.UpdateGenerator.
@@ -417,9 +417,9 @@ func (c *canvasViewPresenterClient) AddMetric(ctx context.Context, req *connect.
 	return c.addMetric.CallUnary(ctx, req)
 }
 
-// RemoveMetric calls sdl.v1.CanvasViewPresenter.RemoveMetric.
-func (c *canvasViewPresenterClient) RemoveMetric(ctx context.Context, req *connect.Request[models.RemoveMetricRequest]) (*connect.Response[models.RemoveMetricResponse], error) {
-	return c.removeMetric.CallUnary(ctx, req)
+// DeleteMetric calls sdl.v1.CanvasViewPresenter.DeleteMetric.
+func (c *canvasViewPresenterClient) DeleteMetric(ctx context.Context, req *connect.Request[models.DeleteMetricRequest]) (*connect.Response[models.DeleteMetricResponse], error) {
+	return c.deleteMetric.CallUnary(ctx, req)
 }
 
 // SetParameter calls sdl.v1.CanvasViewPresenter.SetParameter.
@@ -457,7 +457,7 @@ type CanvasViewPresenterHandler interface {
 	// Called when user adds a generator
 	AddGenerator(context.Context, *connect.Request[models.AddGeneratorRequest]) (*connect.Response[models.AddGeneratorResponse], error)
 	// Called when user removes a generator
-	RemoveGenerator(context.Context, *connect.Request[models.RemoveGeneratorRequest]) (*connect.Response[models.RemoveGeneratorResponse], error)
+	DeleteGenerator(context.Context, *connect.Request[models.DeleteGeneratorRequest]) (*connect.Response[models.DeleteGeneratorResponse], error)
 	// Called when user updates generator rate
 	UpdateGenerator(context.Context, *connect.Request[models.UpdateGeneratorRequest]) (*connect.Response[models.UpdateGeneratorResponse], error)
 	// Called when user starts a generator
@@ -471,7 +471,7 @@ type CanvasViewPresenterHandler interface {
 	// Called when user adds a metric to track
 	AddMetric(context.Context, *connect.Request[models.AddMetricRequest]) (*connect.Response[models.AddMetricResponse], error)
 	// Called when user removes a metric
-	RemoveMetric(context.Context, *connect.Request[models.RemoveMetricRequest]) (*connect.Response[models.RemoveMetricResponse], error)
+	DeleteMetric(context.Context, *connect.Request[models.DeleteMetricRequest]) (*connect.Response[models.DeleteMetricResponse], error)
 	// Called when user changes a component parameter
 	SetParameter(context.Context, *connect.Request[models.SetParameterRequest]) (*connect.Response[models.SetParameterResponse], error)
 	// Called when user wants to evaluate flows
@@ -525,10 +525,10 @@ func NewCanvasViewPresenterHandler(svc CanvasViewPresenterHandler, opts ...conne
 		connect.WithSchema(canvasViewPresenterMethods.ByName("AddGenerator")),
 		connect.WithHandlerOptions(opts...),
 	)
-	canvasViewPresenterRemoveGeneratorHandler := connect.NewUnaryHandler(
-		CanvasViewPresenterRemoveGeneratorProcedure,
-		svc.RemoveGenerator,
-		connect.WithSchema(canvasViewPresenterMethods.ByName("RemoveGenerator")),
+	canvasViewPresenterDeleteGeneratorHandler := connect.NewUnaryHandler(
+		CanvasViewPresenterDeleteGeneratorProcedure,
+		svc.DeleteGenerator,
+		connect.WithSchema(canvasViewPresenterMethods.ByName("DeleteGenerator")),
 		connect.WithHandlerOptions(opts...),
 	)
 	canvasViewPresenterUpdateGeneratorHandler := connect.NewUnaryHandler(
@@ -567,10 +567,10 @@ func NewCanvasViewPresenterHandler(svc CanvasViewPresenterHandler, opts ...conne
 		connect.WithSchema(canvasViewPresenterMethods.ByName("AddMetric")),
 		connect.WithHandlerOptions(opts...),
 	)
-	canvasViewPresenterRemoveMetricHandler := connect.NewUnaryHandler(
-		CanvasViewPresenterRemoveMetricProcedure,
-		svc.RemoveMetric,
-		connect.WithSchema(canvasViewPresenterMethods.ByName("RemoveMetric")),
+	canvasViewPresenterDeleteMetricHandler := connect.NewUnaryHandler(
+		CanvasViewPresenterDeleteMetricProcedure,
+		svc.DeleteMetric,
+		connect.WithSchema(canvasViewPresenterMethods.ByName("DeleteMetric")),
 		connect.WithHandlerOptions(opts...),
 	)
 	canvasViewPresenterSetParameterHandler := connect.NewUnaryHandler(
@@ -611,8 +611,8 @@ func NewCanvasViewPresenterHandler(svc CanvasViewPresenterHandler, opts ...conne
 			canvasViewPresenterUseSystemHandler.ServeHTTP(w, r)
 		case CanvasViewPresenterAddGeneratorProcedure:
 			canvasViewPresenterAddGeneratorHandler.ServeHTTP(w, r)
-		case CanvasViewPresenterRemoveGeneratorProcedure:
-			canvasViewPresenterRemoveGeneratorHandler.ServeHTTP(w, r)
+		case CanvasViewPresenterDeleteGeneratorProcedure:
+			canvasViewPresenterDeleteGeneratorHandler.ServeHTTP(w, r)
 		case CanvasViewPresenterUpdateGeneratorProcedure:
 			canvasViewPresenterUpdateGeneratorHandler.ServeHTTP(w, r)
 		case CanvasViewPresenterStartGeneratorProcedure:
@@ -625,8 +625,8 @@ func NewCanvasViewPresenterHandler(svc CanvasViewPresenterHandler, opts ...conne
 			canvasViewPresenterStopAllGeneratorsHandler.ServeHTTP(w, r)
 		case CanvasViewPresenterAddMetricProcedure:
 			canvasViewPresenterAddMetricHandler.ServeHTTP(w, r)
-		case CanvasViewPresenterRemoveMetricProcedure:
-			canvasViewPresenterRemoveMetricHandler.ServeHTTP(w, r)
+		case CanvasViewPresenterDeleteMetricProcedure:
+			canvasViewPresenterDeleteMetricHandler.ServeHTTP(w, r)
 		case CanvasViewPresenterSetParameterProcedure:
 			canvasViewPresenterSetParameterHandler.ServeHTTP(w, r)
 		case CanvasViewPresenterEvaluateFlowsProcedure:
@@ -668,8 +668,8 @@ func (UnimplementedCanvasViewPresenterHandler) AddGenerator(context.Context, *co
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasViewPresenter.AddGenerator is not implemented"))
 }
 
-func (UnimplementedCanvasViewPresenterHandler) RemoveGenerator(context.Context, *connect.Request[models.RemoveGeneratorRequest]) (*connect.Response[models.RemoveGeneratorResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasViewPresenter.RemoveGenerator is not implemented"))
+func (UnimplementedCanvasViewPresenterHandler) DeleteGenerator(context.Context, *connect.Request[models.DeleteGeneratorRequest]) (*connect.Response[models.DeleteGeneratorResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasViewPresenter.DeleteGenerator is not implemented"))
 }
 
 func (UnimplementedCanvasViewPresenterHandler) UpdateGenerator(context.Context, *connect.Request[models.UpdateGeneratorRequest]) (*connect.Response[models.UpdateGeneratorResponse], error) {
@@ -696,8 +696,8 @@ func (UnimplementedCanvasViewPresenterHandler) AddMetric(context.Context, *conne
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasViewPresenter.AddMetric is not implemented"))
 }
 
-func (UnimplementedCanvasViewPresenterHandler) RemoveMetric(context.Context, *connect.Request[models.RemoveMetricRequest]) (*connect.Response[models.RemoveMetricResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasViewPresenter.RemoveMetric is not implemented"))
+func (UnimplementedCanvasViewPresenterHandler) DeleteMetric(context.Context, *connect.Request[models.DeleteMetricRequest]) (*connect.Response[models.DeleteMetricResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasViewPresenter.DeleteMetric is not implemented"))
 }
 
 func (UnimplementedCanvasViewPresenterHandler) SetParameter(context.Context, *connect.Request[models.SetParameterRequest]) (*connect.Response[models.SetParameterResponse], error) {

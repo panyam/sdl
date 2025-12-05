@@ -7,7 +7,8 @@ import (
 	"os"
 	"strings"
 
-	v1 "github.com/panyam/sdl/gen/go/sdl/v1"
+	v1 "github.com/panyam/sdl/gen/go/sdl/v1/models"
+	v1s "github.com/panyam/sdl/gen/go/sdl/v1/services"
 	"github.com/spf13/cobra"
 )
 
@@ -39,7 +40,7 @@ Prerequisites:
 		methodName := parts[1]
 
 		// Execute trace via gRPC
-		err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+		err := withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
 			req := &v1.ExecuteTraceRequest{
 				CanvasId:  canvasID,
 				Component: componentName,
@@ -89,14 +90,14 @@ func init() {
 func displayCallTree(event *v1.TraceEvent, exitMap map[int64]*v1.TraceEvent, childrenMap map[int64][]*v1.TraceEvent, depth int, pipes []bool) {
 	// Get exit event for timing info
 	exitEvent := exitMap[event.Id]
-	
+
 	// Format timing information
 	startTime := fmt.Sprintf("%7.2f", event.Timestamp*1000)
 	duration := "         " // 9 spaces to match "X.XXms" format
 	if exitEvent != nil && exitEvent.Duration > 0 {
 		duration = fmt.Sprintf("%7.2fms", exitEvent.Duration*1000)
 	}
-	
+
 	// Build the tree prefix with pipes
 	prefix := ""
 	// Don't draw pipes for the root level
@@ -109,7 +110,7 @@ func displayCallTree(event *v1.TraceEvent, exitMap map[int64]*v1.TraceEvent, chi
 				prefix += "    "
 			}
 		}
-		
+
 		// Add the branch for this level
 		if depth-1 < len(pipes) && !pipes[depth-1] {
 			prefix += "└── "
@@ -117,18 +118,18 @@ func displayCallTree(event *v1.TraceEvent, exitMap map[int64]*v1.TraceEvent, chi
 			prefix += "├── "
 		}
 	}
-	
+
 	// Format the call
 	component := event.Component
 	if component == "" {
 		component = "[native]"
 	}
-	
+
 	call := fmt.Sprintf("%s.%s", component, event.Method)
 	if len(event.Args) > 0 {
 		call += "(" + strings.Join(event.Args, ", ") + ")"
 	}
-	
+
 	// Add return value or error if present
 	if exitEvent != nil {
 		if exitEvent.ReturnValue != "" && exitEvent.ReturnValue != "null" {
@@ -138,10 +139,10 @@ func displayCallTree(event *v1.TraceEvent, exitMap map[int64]*v1.TraceEvent, chi
 			call += " ERROR: " + exitEvent.ErrorMessage
 		}
 	}
-	
+
 	// Print the line
 	fmt.Printf("%s  %s  %s%s\n", startTime, duration, prefix, call)
-	
+
 	// Display children
 	children := childrenMap[event.Id]
 	for i, child := range children {
@@ -170,7 +171,7 @@ func displayTraceOutput(trace *v1.TraceData) {
 	eventMap := make(map[int64]*v1.TraceEvent)
 	exitMap := make(map[int64]*v1.TraceEvent)
 	childrenMap := make(map[int64][]*v1.TraceEvent)
-	
+
 	// First pass: collect all enter events and build parent-child relationships
 	for _, event := range trace.Events {
 		if event.Kind == "enter" {
@@ -180,7 +181,7 @@ func displayTraceOutput(trace *v1.TraceData) {
 			}
 		}
 	}
-	
+
 	// Second pass: match exit events to their corresponding enter events
 	// We do this by looking for the most recent enter event with matching component/method
 	enterStack := []*v1.TraceEvent{}
@@ -212,7 +213,7 @@ func displayTraceOutput(trace *v1.TraceData) {
 	// Display the tree
 	fmt.Println("Time(ms)  Duration   Call")
 	fmt.Println("--------  --------   " + strings.Repeat("-", 60))
-	
+
 	for _, root := range roots {
 		displayCallTree(root, exitMap, childrenMap, 0, []bool{})
 	}
@@ -222,7 +223,7 @@ func displayTraceOutput(trace *v1.TraceData) {
 	var totalDuration float64
 	callCount := make(map[string]int)
 	totalLatency := make(map[string]float64)
-	
+
 	for _, event := range trace.Events {
 		if event.Kind == "exit" {
 			key := fmt.Sprintf("%s.%s", event.Component, event.Method)
@@ -236,7 +237,7 @@ func displayTraceOutput(trace *v1.TraceData) {
 
 	fmt.Printf("Total Duration: %.3fms\n", totalDuration*1000)
 	fmt.Printf("\nComponent Performance:\n")
-	
+
 	// Sort by component name for consistent output
 	var components []string
 	for key := range callCount {
@@ -249,13 +250,12 @@ func displayTraceOutput(trace *v1.TraceData) {
 			}
 		}
 	}
-	
+
 	for _, key := range components {
 		count := callCount[key]
 		avgLatency := totalLatency[key] / float64(count)
 		totalTime := totalLatency[key]
-		fmt.Printf("  %-30s: %3d calls, %7.3fms avg, %7.3fms total\n", 
+		fmt.Printf("  %-30s: %3d calls, %7.3fms avg, %7.3fms total\n",
 			key, count, avgLatency*1000, totalTime*1000)
 	}
 }
-

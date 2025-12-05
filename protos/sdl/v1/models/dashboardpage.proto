@@ -1,0 +1,129 @@
+syntax = "proto3";
+
+package sdl.v1;
+
+import "sdl/v1/models/models.proto";
+
+option go_package = "github.com/panyam/sdl/gen/go/sdl/v1/models";
+
+// ============================================================================
+// Metrics Panel Messages
+// ============================================================================
+
+message UpdateMetricRequest {
+  string metric_id = 1;
+  MetricPoint point = 2;
+}
+
+message UpdateMetricResponse {}
+
+message ClearMetricsRequest {}
+
+message ClearMetricsResponse {}
+
+message SetMetricsListRequest {
+  repeated Metric metrics = 1;
+}
+
+message SetMetricsListResponse {}
+
+// ============================================================================
+// Diagram Panel Messages
+// ============================================================================
+
+message UpdateDiagramRequest {
+  SystemDiagram diagram = 1;
+}
+
+message UpdateDiagramResponse {}
+
+message HighlightComponentsRequest {
+  repeated string component_ids = 1;
+  string highlight_type = 2;  // "selected", "active", "error", etc.
+  string color = 3;           // Optional color override
+}
+
+message HighlightComponentsResponse {}
+
+message ClearHighlightsRequest {
+  repeated string types = 1;  // If empty, clear all highlights
+}
+
+message ClearHighlightsResponse {}
+
+// ============================================================================
+// Generator Panel Messages
+// ============================================================================
+
+message UpdateGeneratorStateRequest {
+  string generator_id = 1;
+  bool enabled = 2;
+  double rate = 3;
+  string status = 4;  // "running", "stopped", "error"
+}
+
+message UpdateGeneratorStateResponse {}
+
+message SetGeneratorListRequest {
+  repeated Generator generators = 1;
+}
+
+message SetGeneratorListResponse {}
+
+// ============================================================================
+// Console Panel Messages
+// ============================================================================
+
+message LogMessageRequest {
+  string level = 1;    // "info", "warn", "error", "debug"
+  string message = 2;
+  string source = 3;   // Optional source identifier
+  double timestamp = 4; // Unix timestamp
+}
+
+message LogMessageResponse {}
+
+message ClearConsoleRequest {}
+
+message ClearConsoleResponse {}
+
+// ============================================================================
+// Flow Panel Messages
+// ============================================================================
+
+message UpdateFlowRatesRequest {
+  map<string, double> rates = 1;  // component.method -> rate
+  string strategy = 2;
+}
+
+message UpdateFlowRatesResponse {}
+
+message ShowFlowPathRequest {
+  repeated FlowPathSegment segments = 1;
+  string color = 2;
+  string label = 3;
+}
+
+message FlowPathSegment {
+  string from_component = 1;
+  string from_method = 2;
+  string to_component = 3;
+  string to_method = 4;
+  double rate = 5;
+}
+
+message ShowFlowPathResponse {}
+
+message ClearFlowPathsRequest {}
+
+message ClearFlowPathsResponse {}
+
+// ============================================================================
+// Utilization Panel Messages
+// ============================================================================
+
+message UpdateUtilizationRequest {
+  repeated UtilizationInfo utilizations = 1;
+}
+
+message UpdateUtilizationResponse {}

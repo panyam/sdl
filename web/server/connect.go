@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"connectrpc.com/connect"
-	v1 "github.com/panyam/sdl/gen/go/sdl/v1"
-	"github.com/panyam/sdl/web/services"
+	v1 "github.com/panyam/sdl/gen/go/sdl/v1/models"
+	"github.com/panyam/sdl/services"
 	"google.golang.org/grpc/metadata"
 )
 

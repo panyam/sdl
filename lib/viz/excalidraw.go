@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	protos "github.com/panyam/sdl/gen/go/sdl/v1"
+	protos "github.com/panyam/sdl/gen/go/sdl/v1/models"
 )
 
 // --- Excalidraw Generator ---

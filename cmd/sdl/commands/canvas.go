@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"strconv"
 
-	v1 "github.com/panyam/sdl/gen/go/sdl/v1"
+	v1 "github.com/panyam/sdl/gen/go/sdl/v1/models"
+	v1s "github.com/panyam/sdl/gen/go/sdl/v1/services"
 	"github.com/spf13/cobra"
 )
 
@@ -18,7 +19,7 @@ var loadCmd = &cobra.Command{
 	Short: "Load an SDL file into the server",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+		err := withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
 			_, err := client.LoadFile(ctx, &v1.LoadFileRequest{
 				CanvasId:    canvasID,
 				SdlFilePath: args[0],
@@ -44,7 +45,7 @@ var useCmd = &cobra.Command{
 	Short: "Select the active system",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+		err := withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
 			_, err := client.UseSystem(ctx, &v1.UseSystemRequest{
 				CanvasId:   canvasID,
 				SystemName: args[0],
@@ -66,7 +67,7 @@ var setCmd = &cobra.Command{
 	Short: "Set a parameter value",
 	Args:  cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
-		err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+		err := withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
 			resp, err := client.SetParameter(ctx, &v1.SetParameterRequest{
 				CanvasId: canvasID,
 				Path:     args[0],
@@ -95,7 +96,7 @@ var getCmd = &cobra.Command{
 	Short: "View parameter values",
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+		err := withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
 			path := ""
 			if len(args) > 0 {
 				path = args[0]
@@ -158,7 +159,7 @@ var infoCmd = &cobra.Command{
 	Use:   "info",
 	Short: "Show current canvas state",
 	Run: func(cmd *cobra.Command, args []string) {
-		err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+		err := withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
 			resp, err := client.GetCanvas(ctx, &v1.GetCanvasRequest{
 				Id: canvasID,
 			})

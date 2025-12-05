@@ -7,7 +7,8 @@ import (
 	"sort"
 	"strings"
 
-	v1 "github.com/panyam/sdl/gen/go/sdl/v1"
+	v1 "github.com/panyam/sdl/gen/go/sdl/v1/models"
+	v1s "github.com/panyam/sdl/gen/go/sdl/v1/services"
 	"github.com/spf13/cobra"
 )
 
@@ -36,35 +37,35 @@ func init() {
 	// Add flags
 	utilizationCmd.Flags().Bool("json", false, "Output as JSON")
 	utilizationCmd.Flags().Float64("threshold", 0.0, "Only show resources above this utilization threshold")
-	
+
 	// Add to root
 	AddCommand(utilizationCmd)
 }
 
 func showUtilization(components []string, jsonOutput bool, threshold float64) {
-	
-	err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+
+	err := withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
 		req := &v1.GetUtilizationRequest{
 			CanvasId:   canvasID,
 			Components: components,
 		}
-		
+
 		resp, err := client.GetUtilization(ctx, req)
 		if err != nil {
 			return err
 		}
-		
+
 		if jsonOutput {
 			// JSON output would go here
 			fmt.Println("JSON output not yet implemented")
 			return nil
 		}
-		
+
 		// Display utilization in a table
 		displayUtilizationTable(resp.Utilizations, threshold)
 		return nil
 	})
-	
+
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "❌ Error: %v\n", err)
 		os.Exit(1)
@@ -79,28 +80,28 @@ func displayUtilizationTable(utilizations []*v1.UtilizationInfo, threshold float
 			filtered = append(filtered, u)
 		}
 	}
-	
+
 	if len(filtered) == 0 {
 		fmt.Printf("No resources found with utilization above %.1f%%\n", threshold*100)
 		return
 	}
-	
+
 	// Sort by utilization (highest first)
 	sort.Slice(filtered, func(i, j int) bool {
 		return filtered[i].Utilization > filtered[j].Utilization
 	})
-	
+
 	// Print header
 	fmt.Println("\n📊 Resource Utilization Report")
 	fmt.Println(strings.Repeat("─", 80))
 	fmt.Printf("%-40s %-15s %-10s %-12s\n", "COMPONENT.RESOURCE", "TYPE", "UTIL %", "STATUS")
 	fmt.Println(strings.Repeat("─", 80))
-	
+
 	// Print each resource
 	for _, u := range filtered {
 		status := getUtilizationStatus(u.Utilization, u.WarningThreshold, u.CriticalThreshold)
 		utilPct := u.Utilization * 100
-		
+
 		// Color the utilization based on status
 		utilStr := fmt.Sprintf("%.1f%%", utilPct)
 		if u.Utilization >= u.CriticalThreshold {
@@ -108,28 +109,28 @@ func displayUtilizationTable(utilizations []*v1.UtilizationInfo, threshold float
 		} else if u.Utilization >= u.WarningThreshold {
 			utilStr = fmt.Sprintf("\033[33m%.1f%%\033[0m", utilPct) // Yellow
 		}
-		
+
 		componentPath := u.ComponentPath
 		if u.IsBottleneck {
 			componentPath = "🔥 " + componentPath
 		}
-		
+
 		fmt.Printf("%-40s %-15s %-10s %-12s\n",
 			componentPath,
 			u.ResourceName,
 			utilStr,
 			status,
 		)
-		
+
 		// Show additional details for high utilization
 		if u.Utilization >= u.WarningThreshold {
 			fmt.Printf("  └─ Load: %.2f RPS, Capacity: %.0f\n", 
 				u.CurrentLoad, u.Capacity)
 		}
 	}
-	
+
 	fmt.Println(strings.Repeat("─", 80))
-	
+
 	// Show legend
 	fmt.Println("\nLegend:")
 	fmt.Println("  🔥 = Bottleneck resource")

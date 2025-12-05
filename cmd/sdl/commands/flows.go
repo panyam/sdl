@@ -8,7 +8,8 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	protos "github.com/panyam/sdl/gen/go/sdl/v1"
+	protos "github.com/panyam/sdl/gen/go/sdl/v1/models"
+	v1s "github.com/panyam/sdl/gen/go/sdl/v1/services"
 	"github.com/panyam/sdl/lib/runtime"
 	"github.com/spf13/cobra"
 )
@@ -71,7 +72,7 @@ If no strategy is provided, uses the default (runtime) strategy.`,
 		}
 
 		// Use gRPC client to evaluate flows
-		return withCanvasClient(func(client protos.CanvasServiceClient, ctx context.Context) error {
+		return withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
 			// First, get current flow state
 			currentState, err := client.GetFlowState(context.Background(), &protos.GetFlowStateRequest{
 				CanvasId: canvasID,
@@ -180,7 +181,7 @@ updating all component arrival rates based on the analysis.`,
 			strategy = args[0]
 		}
 
-		return withCanvasClient(func(client protos.CanvasServiceClient, ctx context.Context) error {
+		return withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
 			// First, evaluate flows with the specified strategy
 			evalResp, err := client.EvaluateFlows(context.Background(), &protos.EvaluateFlowsRequest{
 				CanvasId: canvasID,

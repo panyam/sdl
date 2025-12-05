@@ -1,0 +1,338 @@
+syntax = "proto3";
+
+package sdl.v1;
+
+import "google/protobuf/field_mask.proto";
+import "sdl/v1/models/models.proto";
+
+option go_package = "github.com/panyam/sdl/gen/go/sdl/v1/models";
+
+// ============================================================================
+// Canvas CRUD Messages
+// ============================================================================
+
+message CreateCanvasRequest {
+  Canvas canvas = 1;
+}
+
+message CreateCanvasResponse {
+  Canvas canvas = 1;
+  map<string, string> field_errors = 2;
+}
+
+message ListCanvasesRequest {
+  Pagination pagination = 1;
+}
+
+message ListCanvasesResponse {
+  repeated Canvas canvases = 1;
+  PaginationResponse pagination = 2;
+}
+
+message GetCanvasRequest {
+  string id = 1;
+}
+
+message GetCanvasResponse {
+  Canvas canvas = 1;
+}
+
+message DeleteCanvasRequest {
+  string id = 1;
+}
+
+message DeleteCanvasResponse {
+}
+
+message ResetCanvasRequest {
+  string canvas_id = 1;
+}
+
+message ResetCanvasResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// ============================================================================
+// File Operations
+// ============================================================================
+
+message LoadFileRequest {
+  string canvas_id = 1;
+  string sdl_file_path = 2;
+}
+
+message LoadFileResponse {
+}
+
+message UseSystemRequest {
+  string canvas_id = 1;
+  string system_name = 2;
+}
+
+message UseSystemResponse {
+}
+
+// ============================================================================
+// Generator Messages
+// ============================================================================
+
+message AddGeneratorRequest {
+  Generator generator = 1;
+  bool apply_flows = 2;
+}
+
+message AddGeneratorResponse {
+  Generator generator = 1;
+}
+
+message ListGeneratorsRequest {
+  string canvas_id = 1;
+}
+
+message ListGeneratorsResponse {
+  repeated Generator generators = 1;
+}
+
+message GetGeneratorRequest {
+  string canvas_id = 1;
+  string generator_id = 2;
+}
+
+message GetGeneratorResponse {
+  Generator generator = 1;
+}
+
+message UpdateGeneratorRequest {
+  Generator generator = 1;
+  google.protobuf.FieldMask update_mask = 2;
+  bool apply_flows = 3;
+}
+
+message UpdateGeneratorResponse {
+  Generator generator = 1;
+}
+
+message StartGeneratorRequest {
+  string canvas_id = 1;
+  string generator_id = 2;
+}
+
+message StartGeneratorResponse {
+}
+
+message StopGeneratorRequest {
+  string canvas_id = 1;
+  string generator_id = 2;
+}
+
+message StopGeneratorResponse {
+}
+
+message DeleteGeneratorRequest {
+  string canvas_id = 1;
+  string generator_id = 2;
+  bool apply_flows = 3;
+}
+
+message DeleteGeneratorResponse {
+}
+
+message StartAllGeneratorsRequest {
+  string canvas_id = 1;
+}
+
+message StartAllGeneratorsResponse {
+  int32 total_generators = 1;
+  int32 started_count = 2;
+  int32 already_running_count = 3;
+  int32 failed_count = 4;
+  repeated string failed_ids = 5;
+}
+
+message StopAllGeneratorsRequest {
+  string canvas_id = 1;
+}
+
+message StopAllGeneratorsResponse {
+  int32 total_generators = 1;
+  int32 stopped_count = 2;
+  int32 already_stopped_count = 3;
+  int32 failed_count = 4;
+  repeated string failed_ids = 5;
+}
+
+// ============================================================================
+// Metric Messages
+// ============================================================================
+
+message AddMetricRequest {
+  Metric metric = 1;
+}
+
+message AddMetricResponse {
+  Metric metric = 1;
+}
+
+message DeleteMetricRequest {
+  string canvas_id = 1;
+  string metric_id = 2;
+}
+
+message DeleteMetricResponse {
+}
+
+message ListMetricsRequest {
+  string canvas_id = 1;
+}
+
+message ListMetricsResponse {
+  repeated Metric metrics = 1;
+}
+
+message QueryMetricsRequest {
+  string canvas_id = 1;
+  string metric_id = 2;
+  double start_time = 3;
+  double end_time = 4;
+  int32 limit = 5;
+}
+
+message QueryMetricsResponse {
+  repeated MetricPoint points = 1;
+}
+
+message AggregateMetricsRequest {
+  string canvas_id = 1;
+  string metric_id = 2;
+  double start_time = 3;
+  double end_time = 4;
+  string function = 5;
+  double window_size = 6;
+}
+
+message AggregateMetricsResponse {
+  repeated AggregateResult results = 1;
+}
+
+message StreamMetricsRequest {
+  string canvas_id = 1;
+  repeated string metric_ids = 2;
+}
+
+message StreamMetricsResponse {
+  repeated MetricUpdate updates = 1;
+}
+
+// ============================================================================
+// Trace Messages
+// ============================================================================
+
+message ExecuteTraceRequest {
+  string canvas_id = 1;
+  string component = 2;
+  string method = 3;
+}
+
+message ExecuteTraceResponse {
+  TraceData trace_data = 1;
+}
+
+message TraceAllPathsRequest {
+  string canvas_id = 1;
+  string component = 2;
+  string method = 3;
+  int32 max_depth = 4;
+}
+
+message TraceAllPathsResponse {
+  AllPathsTraceData trace_data = 1;
+}
+
+// ============================================================================
+// Parameter Messages
+// ============================================================================
+
+message SetParameterRequest {
+  string canvas_id = 1;
+  string path = 2;
+  string new_value = 3;
+}
+
+message SetParameterResponse {
+  bool success = 1;
+  string error_message = 2;
+  string new_value = 3;
+  string old_value = 4;
+}
+
+message GetParametersRequest {
+  string canvas_id = 1;
+  string path = 2;
+}
+
+message GetParametersResponse {
+  map<string, string> parameters = 1;
+}
+
+message BatchSetParametersRequest {
+  string canvas_id = 1;
+  repeated ParameterUpdate updates = 2;
+}
+
+message BatchSetParametersResponse {
+  bool success = 1;
+  string error_message = 2;
+  repeated ParameterUpdateResult results = 3;
+}
+
+// ============================================================================
+// Flow Analysis Messages
+// ============================================================================
+
+message EvaluateFlowsRequest {
+  string canvas_id = 1;
+  string strategy = 2;
+}
+
+message EvaluateFlowsResponse {
+  string strategy = 1;
+  string status = 2;
+  int32 iterations = 3;
+  repeated string warnings = 4;
+  map<string, double> component_rates = 5;
+  repeated FlowEdge flow_edges = 6;
+}
+
+message GetFlowStateRequest {
+  string canvas_id = 1;
+}
+
+message GetFlowStateResponse {
+  FlowState state = 1;
+}
+
+// ============================================================================
+// System Diagram Messages
+// ============================================================================
+
+message GetSystemDiagramRequest {
+  string canvas_id = 1;
+}
+
+message GetSystemDiagramResponse {
+  SystemDiagram diagram = 1;
+}
+
+// ============================================================================
+// Utilization Messages
+// ============================================================================
+
+message GetUtilizationRequest {
+  string canvas_id = 1;
+  repeated string components = 2;
+}
+
+message GetUtilizationResponse {
+  repeated UtilizationInfo utilizations = 1;
+}

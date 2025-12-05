@@ -504,6 +504,12 @@
             "in": "path",
             "required": true,
             "type": "string"
+          },
+          {
+            "name": "applyFlows",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -1069,6 +1075,9 @@
                       "title": "whether it is enabled or not"
                     }
                   }
+                },
+                "applyFlows": {
+                  "type": "boolean"
                 }
               }
             }
@@ -1160,6 +1169,9 @@
                 },
                 "updateMask": {
                   "type": "string"
+                },
+                "applyFlows": {
+                  "type": "boolean"
                 }
               }
             }
@@ -1579,6 +1591,9 @@
       "properties": {
         "success": {
           "type": "boolean"
+        },
+        "canvas": {
+          "$ref": "#/definitions/v1Canvas"
         }
       }
     },
@@ -2051,6 +2066,17 @@
         "error": {
           "type": "string"
         },
+        "canvasId": {
+          "type": "string"
+        },
+        "availableSystems": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1SystemInfo"
+          },
+          "title": "Available systems to choose from"
+        },
         "diagram": {
           "$ref": "#/definitions/v1SystemDiagram",
           "title": "Initial state to render"
@@ -2079,6 +2105,16 @@
         },
         "error": {
           "type": "string"
+        },
+        "canvasId": {
+          "type": "string"
+        },
+        "availableSystems": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1SystemInfo"
+          }
         }
       }
     },
@@ -2345,28 +2381,6 @@
             "type": "object",
             "$ref": "#/definitions/v1MetricPoint"
           }
-        }
-      }
-    },
-    "v1RemoveGeneratorResponse": {
-      "type": "object",
-      "properties": {
-        "success": {
-          "type": "boolean"
-        },
-        "error": {
-          "type": "string"
-        }
-      }
-    },
-    "v1RemoveMetricResponse": {
-      "type": "object",
-      "properties": {
-        "success": {
-          "type": "boolean"
-        },
-        "error": {
-          "type": "string"
         }
       }
     },

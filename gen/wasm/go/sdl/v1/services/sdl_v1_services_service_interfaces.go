@@ -64,7 +64,7 @@ type CanvasServiceServer interface {
 	/** Query raw metric data points */
 	QueryMetrics(context.Context, *v1models.QueryMetricsRequest) (*v1models.QueryMetricsResponse, error)
 	/** Stream real-time metric updates */
-	StreamMetrics(context.Context, *v1models.StreamMetricsRequest) (*v1models.StreamMetricsResponse, error)
+	StreamMetrics(*v1models.StreamMetricsRequest, StreamMetrics_ServerStream) error
 	/** Get the system diagram for visualization */
 	GetSystemDiagram(context.Context, *v1models.GetSystemDiagramRequest) (*v1models.GetSystemDiagramResponse, error)
 	/** Get resource utilization information */
@@ -91,7 +91,7 @@ type CanvasViewPresenterServer interface {
 	/** Called when user adds a generator */
 	AddGenerator(context.Context, *v1models.AddGeneratorRequest) (*v1models.AddGeneratorResponse, error)
 	/** Called when user removes a generator */
-	RemoveGenerator(context.Context, *v1models.RemoveGeneratorRequest) (*v1models.RemoveGeneratorResponse, error)
+	DeleteGenerator(context.Context, *v1models.DeleteGeneratorRequest) (*v1models.DeleteGeneratorResponse, error)
 	/** Called when user updates generator rate */
 	UpdateGenerator(context.Context, *v1models.UpdateGeneratorRequest) (*v1models.UpdateGeneratorResponse, error)
 	/** Called when user starts a generator */
@@ -105,7 +105,7 @@ type CanvasViewPresenterServer interface {
 	/** Called when user adds a metric to track */
 	AddMetric(context.Context, *v1models.AddMetricRequest) (*v1models.AddMetricResponse, error)
 	/** Called when user removes a metric */
-	RemoveMetric(context.Context, *v1models.RemoveMetricRequest) (*v1models.RemoveMetricResponse, error)
+	DeleteMetric(context.Context, *v1models.DeleteMetricRequest) (*v1models.DeleteMetricResponse, error)
 	/** Called when user changes a component parameter */
 	SetParameter(context.Context, *v1models.SetParameterRequest) (*v1models.SetParameterResponse, error)
 	/** Called when user wants to evaluate flows */
@@ -124,4 +124,12 @@ type SystemsServiceServer interface {
 	GetSystem(context.Context, *v1models.GetSystemRequest) (*v1models.GetSystemResponse, error)
 	/** GetSystemContent returns the SDL and recipe content for a system */
 	GetSystemContent(context.Context, *v1models.GetSystemContentRequest) (*v1models.GetSystemContentResponse, error)
+}
+
+// Server stream interfaces for streaming methods
+
+// StreamMetrics_ServerStream is the server stream interface for StreamMetrics
+type StreamMetrics_ServerStream interface {
+	Send(*v1models.StreamMetricsResponse) error
+	Context() context.Context
 }

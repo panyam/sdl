@@ -1,4 +1,3 @@
-// sdl/components/resourcepool.go
 package components
 
 import (

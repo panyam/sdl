@@ -15,8 +15,8 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/panyam/goutils/conc"
 	gohttp "github.com/panyam/goutils/http"
-	"github.com/panyam/sdl/loader"
-	"github.com/panyam/sdl/web/services"
+	"github.com/panyam/sdl/lib/loader"
+	"github.com/panyam/sdl/services"
 	"github.com/panyam/templar"
 )
 

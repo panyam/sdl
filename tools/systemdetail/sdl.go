@@ -8,10 +8,10 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/panyam/sdl/web/services"
-	"github.com/panyam/sdl/decl"
-	"github.com/panyam/sdl/loader"
-	"github.com/panyam/sdl/runtime"
+	"github.com/panyam/sdl/lib/decl"
+	"github.com/panyam/sdl/lib/loader"
+	"github.com/panyam/sdl/lib/runtime"
+	"github.com/panyam/sdl/services"
 )
 
 // MemoryResolver implements FileResolver for in-memory content
@@ -102,24 +102,24 @@ func (s *StdlibPrefixFS) Resolve(importerPath, importPath string, open bool) (io
 	if strings.HasPrefix(importPath, "@stdlib/") {
 		adjustedPath = strings.TrimPrefix(importPath, "@stdlib/")
 	}
-	
+
 	// Check if file exists
 	if !s.fs.Exists(adjustedPath) {
 		return nil, "", fmt.Errorf("file not found: %s", importPath)
 	}
-	
+
 	canonicalPath := importPath // Keep original path as canonical
-	
+
 	if !open {
 		return nil, canonicalPath, nil
 	}
-	
+
 	// Read the file
 	data, err := s.fs.ReadFile(adjustedPath)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to read file %s: %w", importPath, err)
 	}
-	
+
 	return io.NopCloser(strings.NewReader(string(data))), canonicalPath, nil
 }
 
@@ -127,15 +127,15 @@ func (s *StdlibPrefixFS) Resolve(importerPath, importPath string, open bool) (io
 func (t *SystemDetailTool) createStdlibFileSystem() loader.FileResolver {
 	// Create memory filesystem for @stdlib files
 	stdlibFS := loader.NewMemoryFS()
-	
+
 	// Load stdlib files from examples/stdlib directory
 	// Try multiple possible paths to find the stdlib directory
 	possiblePaths := []string{
 		"examples/stdlib",
-		"../../examples/stdlib", // From tools/systemdetail when running tests
+		"../../examples/stdlib",    // From tools/systemdetail when running tests
 		"../../../examples/stdlib", // In case of deeper nesting
 	}
-	
+
 	var stdlibDir string
 	for _, path := range possiblePaths {
 		if _, err := os.Stat(path); err == nil {
@@ -143,7 +143,7 @@ func (t *SystemDetailTool) createStdlibFileSystem() loader.FileResolver {
 			break
 		}
 	}
-	
+
 	if stdlibDir != "" {
 		if files, err := os.ReadDir(stdlibDir); err == nil {
 			for _, file := range files {
@@ -157,7 +157,7 @@ func (t *SystemDetailTool) createStdlibFileSystem() loader.FileResolver {
 			}
 		}
 	}
-	
+
 	// Wrap with prefix handling
 	return &StdlibPrefixFS{fs: stdlibFS}
 }

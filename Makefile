@@ -16,11 +16,11 @@ binary: parserbin wasmbin
 	go build -ldflags "$(LDFLAGS)" -o ${GOBIN}/sdl ./cmd/sdl/main.go
 
 parserbin:
-	cd parser && make
+	cd lib/parser && make
 
 wasmbin:
-	cd wasm && make
 	cd tools/systemdetail && make
+	cd cmd/wasm && make
 
 binlocal: parserbin wasmbin
 	go build -ldflags "$(LDFLAGS)" -o /tmp/sdl ./cmd/sdl/main.go
@@ -128,13 +128,14 @@ release:
 	@echo "2. Push tag: git push origin v$(VERSION)"
 	@echo "3. Build release: make clean && make"
 
-buf:
-	buf generate
+cleanall: clean remove-proto-symlinks
+	rm -f buf.yaml
+	rm -f buf.gen.yaml
 
 reload: buf
 
 dash:
-	cd web/frontend && npm run build
+	cd web/frontend && pnpm i && pnpm build
 
 # Development workflow: build and test dashboard
 dev-test: binary
@@ -178,3 +179,29 @@ distclean: clean
 	@echo "Removing all downloaded dependencies..."
 	go clean -modcache
 	@echo "✓ Deep clean complete"
+
+buf: ensureenv
+	buf dep update
+	buf generate
+	goimports -w `find gen | grep "\.go"`
+
+setupdev: symlink-protos
+	ln -s buf.gen.yaml.dev buf.gen.yaml
+	ln -s buf.yaml.dev buf.yaml
+
+setupprod: cleanall remove-proto-symlinks
+	ln -s buf.gen.yaml.prod buf.gen.yaml
+	ln -s buf.yaml.prod buf.yaml
+
+ensureenv:
+	@test -f buf.yaml && test -f buf.gen.yaml && echo "buf.yaml does not exist.  Run 'make setupdev' or 'make setupprod' to setup your environment..."
+
+# Create symlink to wasmjs annotations for development
+symlink-protos: remove-proto-symlinks
+	echo "Creating symlink for development..."
+	# ln -s ../../../engine/protos/turnengine protos/turnengine
+
+# Remove symlink (for switching back to production mode)
+remove-proto-symlinks:
+	echo "Removing proto symlink..."
+	# rm -Rf protos/wasmjs protos/turnengine

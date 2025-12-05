@@ -1,0 +1,111 @@
+syntax = "proto3";
+
+package sdl.v1;
+
+import "sdl/v1/models/models.proto";
+import "sdl/v1/models/systems.proto";
+
+option go_package = "github.com/panyam/sdl/gen/go/sdl/v1/models";
+
+// ============================================================================
+// Singleton Initialization Messages
+// ============================================================================
+
+message InitializeSingletonRequest {
+  string canvas_id = 1;
+  // SDL content to load initially
+  string sdl_content = 2;
+  // System name to use after loading
+  string system_name = 3;
+  // JSON-encoded generator configs
+  string generators_data = 4;
+  // JSON-encoded metric configs
+  string metrics_data = 5;
+}
+
+message InitializeSingletonResponse {
+  bool success = 1;
+  string error = 2;
+  string canvas_id = 3;
+  repeated SystemInfo available_systems = 4;
+}
+
+// ============================================================================
+// Presenter Initialization Messages
+// ============================================================================
+
+message InitializePresenterRequest {
+  string canvas_id = 1;
+}
+
+message InitializePresenterResponse {
+  bool success = 1;
+  string error = 2;
+  string canvas_id = 3;
+  // Available systems to choose from
+  repeated SystemInfo available_systems = 4;
+  // Initial state to render
+  SystemDiagram diagram = 5;
+  repeated Generator generators = 6;
+  repeated Metric metrics = 7;
+}
+
+message ClientReadyRequest {
+  string canvas_id = 1;
+}
+
+message ClientReadyResponse {
+  bool success = 1;
+  Canvas canvas = 2;
+}
+
+// ============================================================================
+// File Operation Messages
+// ============================================================================
+
+message FileSelectedRequest {
+  string canvas_id = 1;
+  string file_path = 2;
+}
+
+message FileSelectedResponse {
+  bool success = 1;
+  string content = 2;
+  string error = 3;
+}
+
+message FileSavedRequest {
+  string canvas_id = 1;
+  string file_path = 2;
+  string content = 3;
+}
+
+message FileSavedResponse {
+  bool success = 1;
+  string error = 2;
+}
+
+// ============================================================================
+// Diagram Interaction Messages
+// ============================================================================
+
+message DiagramComponentClickedRequest {
+  string canvas_id = 1;
+  string component_name = 2;
+  string method_name = 3;  // Optional - if clicking on a specific method
+}
+
+message DiagramComponentClickedResponse {
+  bool success = 1;
+}
+
+message DiagramComponentHoveredRequest {
+  string canvas_id = 1;
+  string component_name = 2;
+  string method_name = 3;
+}
+
+message DiagramComponentHoveredResponse {
+  bool success = 1;
+}
+

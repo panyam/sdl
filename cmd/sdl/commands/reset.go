@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	v1 "github.com/panyam/sdl/gen/go/sdl/v1"
+	v1 "github.com/panyam/sdl/gen/go/sdl/v1/models"
+	v1s "github.com/panyam/sdl/gen/go/sdl/v1/services"
 	"github.com/spf13/cobra"
 )
 
@@ -32,7 +33,7 @@ func init() {
 }
 
 func runReset() error {
-	return withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+	return withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
 		req := &v1.ResetCanvasRequest{
 			CanvasId: canvasID,
 		}

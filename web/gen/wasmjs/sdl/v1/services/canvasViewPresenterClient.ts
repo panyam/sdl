@@ -11,6 +11,10 @@ import {
     AddMetricResponse,
     ClientReadyRequest,
     ClientReadyResponse,
+    DeleteGeneratorRequest,
+    DeleteGeneratorResponse,
+    DeleteMetricRequest,
+    DeleteMetricResponse,
     DiagramComponentClickedRequest,
     DiagramComponentClickedResponse,
     DiagramComponentHoveredRequest,
@@ -23,10 +27,6 @@ import {
     FileSelectedResponse,
     InitializePresenterRequest,
     InitializePresenterResponse,
-    RemoveGeneratorRequest,
-    RemoveGeneratorResponse,
-    RemoveMetricRequest,
-    RemoveMetricResponse,
     SetParameterRequest,
     SetParameterResponse,
     StartAllGeneratorsRequest,
@@ -53,14 +53,14 @@ export interface CanvasViewPresenterMethods {
 	fileSaved(request: FileSavedRequest): Promise<FileSavedResponse>;
 	useSystem(request: UseSystemRequest): Promise<UseSystemResponse>;
 	addGenerator(request: AddGeneratorRequest): Promise<AddGeneratorResponse>;
-	removeGenerator(request: RemoveGeneratorRequest): Promise<RemoveGeneratorResponse>;
+	deleteGenerator(request: DeleteGeneratorRequest): Promise<DeleteGeneratorResponse>;
 	updateGenerator(request: UpdateGeneratorRequest): Promise<UpdateGeneratorResponse>;
 	startGenerator(request: StartGeneratorRequest): Promise<StartGeneratorResponse>;
 	stopGenerator(request: StopGeneratorRequest): Promise<StopGeneratorResponse>;
 	startAllGenerators(request: StartAllGeneratorsRequest): Promise<StartAllGeneratorsResponse>;
 	stopAllGenerators(request: StopAllGeneratorsRequest): Promise<StopAllGeneratorsResponse>;
 	addMetric(request: AddMetricRequest): Promise<AddMetricResponse>;
-	removeMetric(request: RemoveMetricRequest): Promise<RemoveMetricResponse>;
+	deleteMetric(request: DeleteMetricRequest): Promise<DeleteMetricResponse>;
 	setParameter(request: SetParameterRequest): Promise<SetParameterResponse>;
 	evaluateFlows(request: EvaluateFlowsRequest): Promise<EvaluateFlowsResponse>;
 	diagramComponentClicked(request: DiagramComponentClickedRequest): Promise<DiagramComponentClickedResponse>;
@@ -89,8 +89,8 @@ export class CanvasViewPresenterClient extends ServiceClient implements CanvasVi
     async addGenerator(request: AddGeneratorRequest): Promise<AddGeneratorResponse> {
         return this.callMethod('canvasViewPresenter.addGenerator', request);
     }
-    async removeGenerator(request: RemoveGeneratorRequest): Promise<RemoveGeneratorResponse> {
-        return this.callMethod('canvasViewPresenter.removeGenerator', request);
+    async deleteGenerator(request: DeleteGeneratorRequest): Promise<DeleteGeneratorResponse> {
+        return this.callMethod('canvasViewPresenter.deleteGenerator', request);
     }
     async updateGenerator(request: UpdateGeneratorRequest): Promise<UpdateGeneratorResponse> {
         return this.callMethod('canvasViewPresenter.updateGenerator', request);
@@ -110,8 +110,8 @@ export class CanvasViewPresenterClient extends ServiceClient implements CanvasVi
     async addMetric(request: AddMetricRequest): Promise<AddMetricResponse> {
         return this.callMethod('canvasViewPresenter.addMetric', request);
     }
-    async removeMetric(request: RemoveMetricRequest): Promise<RemoveMetricResponse> {
-        return this.callMethod('canvasViewPresenter.removeMetric', request);
+    async deleteMetric(request: DeleteMetricRequest): Promise<DeleteMetricResponse> {
+        return this.callMethod('canvasViewPresenter.deleteMetric', request);
     }
     async setParameter(request: SetParameterRequest): Promise<SetParameterResponse> {
         return this.callMethod('canvasViewPresenter.setParameter', request);

@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	compdecl "github.com/panyam/sdl/components/decl"
+	compdecl "github.com/panyam/sdl/lib/components/decl"
 )
 
 // TestFlowEvalWithDelaySDL tests flow evaluation with SDL files that have delays

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	v1 "github.com/panyam/sdl/gen/go/sdl/v1"
+	v1 "github.com/panyam/sdl/gen/go/sdl/v1/services"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -14,18 +14,18 @@ import (
 func getGRPCConnection() (*grpc.ClientConn, error) {
 	// Get server address - default gRPC port is 9090
 	serverAddr := "localhost:9090"
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	
-	conn, err := grpc.DialContext(ctx, serverAddr, 
+
+	conn, err := grpc.DialContext(ctx, serverAddr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithBlock(),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to gRPC server at %s: %v", serverAddr, err)
 	}
-	
+
 	return conn, nil
 }
 
@@ -35,7 +35,7 @@ func getCanvasClient() (v1.CanvasServiceClient, *grpc.ClientConn, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	
+
 	client := v1.NewCanvasServiceClient(conn)
 	return client, conn, nil
 }

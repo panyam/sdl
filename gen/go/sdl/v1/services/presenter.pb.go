@@ -38,14 +38,14 @@ const file_sdl_v1_services_presenter_proto_rawDesc = "" +
 	"\tFileSaved\x12\x18.sdl.v1.FileSavedRequest\x1a\x19.sdl.v1.FileSavedResponse\x12@\n" +
 	"\tUseSystem\x12\x18.sdl.v1.UseSystemRequest\x1a\x19.sdl.v1.UseSystemResponse\x12I\n" +
 	"\fAddGenerator\x12\x1b.sdl.v1.AddGeneratorRequest\x1a\x1c.sdl.v1.AddGeneratorResponse\x12R\n" +
-	"\x0fRemoveGenerator\x12\x1e.sdl.v1.RemoveGeneratorRequest\x1a\x1f.sdl.v1.RemoveGeneratorResponse\x12R\n" +
+	"\x0fDeleteGenerator\x12\x1e.sdl.v1.DeleteGeneratorRequest\x1a\x1f.sdl.v1.DeleteGeneratorResponse\x12R\n" +
 	"\x0fUpdateGenerator\x12\x1e.sdl.v1.UpdateGeneratorRequest\x1a\x1f.sdl.v1.UpdateGeneratorResponse\x12O\n" +
 	"\x0eStartGenerator\x12\x1d.sdl.v1.StartGeneratorRequest\x1a\x1e.sdl.v1.StartGeneratorResponse\x12L\n" +
 	"\rStopGenerator\x12\x1c.sdl.v1.StopGeneratorRequest\x1a\x1d.sdl.v1.StopGeneratorResponse\x12[\n" +
 	"\x12StartAllGenerators\x12!.sdl.v1.StartAllGeneratorsRequest\x1a\".sdl.v1.StartAllGeneratorsResponse\x12X\n" +
 	"\x11StopAllGenerators\x12 .sdl.v1.StopAllGeneratorsRequest\x1a!.sdl.v1.StopAllGeneratorsResponse\x12@\n" +
 	"\tAddMetric\x12\x18.sdl.v1.AddMetricRequest\x1a\x19.sdl.v1.AddMetricResponse\x12I\n" +
-	"\fRemoveMetric\x12\x1b.sdl.v1.RemoveMetricRequest\x1a\x1c.sdl.v1.RemoveMetricResponse\x12I\n" +
+	"\fDeleteMetric\x12\x1b.sdl.v1.DeleteMetricRequest\x1a\x1c.sdl.v1.DeleteMetricResponse\x12I\n" +
 	"\fSetParameter\x12\x1b.sdl.v1.SetParameterRequest\x1a\x1c.sdl.v1.SetParameterResponse\x12L\n" +
 	"\rEvaluateFlows\x12\x1c.sdl.v1.EvaluateFlowsRequest\x1a\x1d.sdl.v1.EvaluateFlowsResponse\x12j\n" +
 	"\x17DiagramComponentClicked\x12&.sdl.v1.DiagramComponentClickedRequest\x1a'.sdl.v1.DiagramComponentClickedResponse\x12j\n" +
@@ -61,14 +61,14 @@ var file_sdl_v1_services_presenter_proto_goTypes = []any{
 	(*models.FileSavedRequest)(nil),                // 4: sdl.v1.FileSavedRequest
 	(*models.UseSystemRequest)(nil),                // 5: sdl.v1.UseSystemRequest
 	(*models.AddGeneratorRequest)(nil),             // 6: sdl.v1.AddGeneratorRequest
-	(*models.RemoveGeneratorRequest)(nil),          // 7: sdl.v1.RemoveGeneratorRequest
+	(*models.DeleteGeneratorRequest)(nil),          // 7: sdl.v1.DeleteGeneratorRequest
 	(*models.UpdateGeneratorRequest)(nil),          // 8: sdl.v1.UpdateGeneratorRequest
 	(*models.StartGeneratorRequest)(nil),           // 9: sdl.v1.StartGeneratorRequest
 	(*models.StopGeneratorRequest)(nil),            // 10: sdl.v1.StopGeneratorRequest
 	(*models.StartAllGeneratorsRequest)(nil),       // 11: sdl.v1.StartAllGeneratorsRequest
 	(*models.StopAllGeneratorsRequest)(nil),        // 12: sdl.v1.StopAllGeneratorsRequest
 	(*models.AddMetricRequest)(nil),                // 13: sdl.v1.AddMetricRequest
-	(*models.RemoveMetricRequest)(nil),             // 14: sdl.v1.RemoveMetricRequest
+	(*models.DeleteMetricRequest)(nil),             // 14: sdl.v1.DeleteMetricRequest
 	(*models.SetParameterRequest)(nil),             // 15: sdl.v1.SetParameterRequest
 	(*models.EvaluateFlowsRequest)(nil),            // 16: sdl.v1.EvaluateFlowsRequest
 	(*models.DiagramComponentClickedRequest)(nil),  // 17: sdl.v1.DiagramComponentClickedRequest
@@ -80,14 +80,14 @@ var file_sdl_v1_services_presenter_proto_goTypes = []any{
 	(*models.FileSavedResponse)(nil),               // 23: sdl.v1.FileSavedResponse
 	(*models.UseSystemResponse)(nil),               // 24: sdl.v1.UseSystemResponse
 	(*models.AddGeneratorResponse)(nil),            // 25: sdl.v1.AddGeneratorResponse
-	(*models.RemoveGeneratorResponse)(nil),         // 26: sdl.v1.RemoveGeneratorResponse
+	(*models.DeleteGeneratorResponse)(nil),         // 26: sdl.v1.DeleteGeneratorResponse
 	(*models.UpdateGeneratorResponse)(nil),         // 27: sdl.v1.UpdateGeneratorResponse
 	(*models.StartGeneratorResponse)(nil),          // 28: sdl.v1.StartGeneratorResponse
 	(*models.StopGeneratorResponse)(nil),           // 29: sdl.v1.StopGeneratorResponse
 	(*models.StartAllGeneratorsResponse)(nil),      // 30: sdl.v1.StartAllGeneratorsResponse
 	(*models.StopAllGeneratorsResponse)(nil),       // 31: sdl.v1.StopAllGeneratorsResponse
 	(*models.AddMetricResponse)(nil),               // 32: sdl.v1.AddMetricResponse
-	(*models.RemoveMetricResponse)(nil),            // 33: sdl.v1.RemoveMetricResponse
+	(*models.DeleteMetricResponse)(nil),            // 33: sdl.v1.DeleteMetricResponse
 	(*models.SetParameterResponse)(nil),            // 34: sdl.v1.SetParameterResponse
 	(*models.EvaluateFlowsResponse)(nil),           // 35: sdl.v1.EvaluateFlowsResponse
 	(*models.DiagramComponentClickedResponse)(nil), // 36: sdl.v1.DiagramComponentClickedResponse
@@ -101,14 +101,14 @@ var file_sdl_v1_services_presenter_proto_depIdxs = []int32{
 	4,  // 4: sdl.v1.CanvasViewPresenter.FileSaved:input_type -> sdl.v1.FileSavedRequest
 	5,  // 5: sdl.v1.CanvasViewPresenter.UseSystem:input_type -> sdl.v1.UseSystemRequest
 	6,  // 6: sdl.v1.CanvasViewPresenter.AddGenerator:input_type -> sdl.v1.AddGeneratorRequest
-	7,  // 7: sdl.v1.CanvasViewPresenter.RemoveGenerator:input_type -> sdl.v1.RemoveGeneratorRequest
+	7,  // 7: sdl.v1.CanvasViewPresenter.DeleteGenerator:input_type -> sdl.v1.DeleteGeneratorRequest
 	8,  // 8: sdl.v1.CanvasViewPresenter.UpdateGenerator:input_type -> sdl.v1.UpdateGeneratorRequest
 	9,  // 9: sdl.v1.CanvasViewPresenter.StartGenerator:input_type -> sdl.v1.StartGeneratorRequest
 	10, // 10: sdl.v1.CanvasViewPresenter.StopGenerator:input_type -> sdl.v1.StopGeneratorRequest
 	11, // 11: sdl.v1.CanvasViewPresenter.StartAllGenerators:input_type -> sdl.v1.StartAllGeneratorsRequest
 	12, // 12: sdl.v1.CanvasViewPresenter.StopAllGenerators:input_type -> sdl.v1.StopAllGeneratorsRequest
 	13, // 13: sdl.v1.CanvasViewPresenter.AddMetric:input_type -> sdl.v1.AddMetricRequest
-	14, // 14: sdl.v1.CanvasViewPresenter.RemoveMetric:input_type -> sdl.v1.RemoveMetricRequest
+	14, // 14: sdl.v1.CanvasViewPresenter.DeleteMetric:input_type -> sdl.v1.DeleteMetricRequest
 	15, // 15: sdl.v1.CanvasViewPresenter.SetParameter:input_type -> sdl.v1.SetParameterRequest
 	16, // 16: sdl.v1.CanvasViewPresenter.EvaluateFlows:input_type -> sdl.v1.EvaluateFlowsRequest
 	17, // 17: sdl.v1.CanvasViewPresenter.DiagramComponentClicked:input_type -> sdl.v1.DiagramComponentClickedRequest
@@ -120,14 +120,14 @@ var file_sdl_v1_services_presenter_proto_depIdxs = []int32{
 	23, // 23: sdl.v1.CanvasViewPresenter.FileSaved:output_type -> sdl.v1.FileSavedResponse
 	24, // 24: sdl.v1.CanvasViewPresenter.UseSystem:output_type -> sdl.v1.UseSystemResponse
 	25, // 25: sdl.v1.CanvasViewPresenter.AddGenerator:output_type -> sdl.v1.AddGeneratorResponse
-	26, // 26: sdl.v1.CanvasViewPresenter.RemoveGenerator:output_type -> sdl.v1.RemoveGeneratorResponse
+	26, // 26: sdl.v1.CanvasViewPresenter.DeleteGenerator:output_type -> sdl.v1.DeleteGeneratorResponse
 	27, // 27: sdl.v1.CanvasViewPresenter.UpdateGenerator:output_type -> sdl.v1.UpdateGeneratorResponse
 	28, // 28: sdl.v1.CanvasViewPresenter.StartGenerator:output_type -> sdl.v1.StartGeneratorResponse
 	29, // 29: sdl.v1.CanvasViewPresenter.StopGenerator:output_type -> sdl.v1.StopGeneratorResponse
 	30, // 30: sdl.v1.CanvasViewPresenter.StartAllGenerators:output_type -> sdl.v1.StartAllGeneratorsResponse
 	31, // 31: sdl.v1.CanvasViewPresenter.StopAllGenerators:output_type -> sdl.v1.StopAllGeneratorsResponse
 	32, // 32: sdl.v1.CanvasViewPresenter.AddMetric:output_type -> sdl.v1.AddMetricResponse
-	33, // 33: sdl.v1.CanvasViewPresenter.RemoveMetric:output_type -> sdl.v1.RemoveMetricResponse
+	33, // 33: sdl.v1.CanvasViewPresenter.DeleteMetric:output_type -> sdl.v1.DeleteMetricResponse
 	34, // 34: sdl.v1.CanvasViewPresenter.SetParameter:output_type -> sdl.v1.SetParameterResponse
 	35, // 35: sdl.v1.CanvasViewPresenter.EvaluateFlows:output_type -> sdl.v1.EvaluateFlowsResponse
 	36, // 36: sdl.v1.CanvasViewPresenter.DiagramComponentClicked:output_type -> sdl.v1.DiagramComponentClickedResponse

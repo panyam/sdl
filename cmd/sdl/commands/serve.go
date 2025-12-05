@@ -5,8 +5,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/panyam/sdl/services"
 	"github.com/panyam/sdl/web/server"
-	"github.com/panyam/sdl/web/services"
 	"github.com/spf13/cobra"
 )
 
@@ -47,7 +47,7 @@ Example:
 	Run: func(cmd *cobra.Command, args []string) {
 		// Create shared CanvasService instance
 		canvasService := services.NewCanvasService()
-		
+
 		// Create web server with Canvas
 		log.Println("Grpc, Address: ", grpcAddress)
 		log.Println("gateway, Address: ", gatewayAddress)

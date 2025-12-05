@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	v1 "github.com/panyam/sdl/gen/go/sdl/v1"
+	v1 "github.com/panyam/sdl/gen/go/sdl/v1/models"
+	v1s "github.com/panyam/sdl/gen/go/sdl/v1/services"
 	"github.com/spf13/cobra"
 )
 
@@ -16,7 +17,7 @@ var canvasCreateCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		canvasID := args[0]
 
-		return withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+		return withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
 			// First, try to get the canvas to see if it exists
 			getResp, err := client.GetCanvas(ctx, &v1.GetCanvasRequest{
 				Id: canvasID,

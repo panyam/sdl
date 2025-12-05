@@ -23,9 +23,10 @@ _sym_db = _symbol_database.Default()
 
 
 from sdl.v1.models import models_pb2 as sdl_dot_v1_dot_models_dot_models__pb2
+from sdl.v1.models import systems_pb2 as sdl_dot_v1_dot_models_dot_systems__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1dsdl/v1/models/presenter.proto\x12\x06sdl.v1\x1a\x1asdl/v1/models/models.proto\"\xa6\x01\n\x1aInitializeSingletonRequest\x12\x1b\n\tcanvas_id\x18\x01 \x01(\tR\x08\x63\x61nvasId\x12\x1f\n\x0b\x63\x61nvas_data\x18\x02 \x01(\tR\ncanvasData\x12\'\n\x0fgenerators_data\x18\x03 \x01(\tR\x0egeneratorsData\x12!\n\x0cmetrics_data\x18\x04 \x01(\tR\x0bmetricsData\"M\n\x1bInitializeSingletonResponse\x12\x18\n\x07success\x18\x01 \x01(\x08R\x07success\x12\x14\n\x05\x65rror\x18\x02 \x01(\tR\x05\x65rror\"9\n\x1aInitializePresenterRequest\x12\x1b\n\tcanvas_id\x18\x01 \x01(\tR\x08\x63\x61nvasId\"\xdb\x01\n\x1bInitializePresenterResponse\x12\x18\n\x07success\x18\x01 \x01(\x08R\x07success\x12\x14\n\x05\x65rror\x18\x02 \x01(\tR\x05\x65rror\x12/\n\x07\x64iagram\x18\x03 \x01(\x0b\x32\x15.sdl.v1.SystemDiagramR\x07\x64iagram\x12\x31\n\ngenerators\x18\x04 \x03(\x0b\x32\x11.sdl.v1.GeneratorR\ngenerators\x12(\n\x07metrics\x18\x05 \x03(\x0b\x32\x0e.sdl.v1.MetricR\x07metrics\"1\n\x12\x43lientReadyRequest\x12\x1b\n\tcanvas_id\x18\x01 \x01(\tR\x08\x63\x61nvasId\"/\n\x13\x43lientReadyResponse\x12\x18\n\x07success\x18\x01 \x01(\x08R\x07success\"O\n\x13\x46ileSelectedRequest\x12\x1b\n\tcanvas_id\x18\x01 \x01(\tR\x08\x63\x61nvasId\x12\x1b\n\tfile_path\x18\x02 \x01(\tR\x08\x66ilePath\"`\n\x14\x46ileSelectedResponse\x12\x18\n\x07success\x18\x01 \x01(\x08R\x07success\x12\x18\n\x07\x63ontent\x18\x02 \x01(\tR\x07\x63ontent\x12\x14\n\x05\x65rror\x18\x03 \x01(\tR\x05\x65rror\"f\n\x10\x46ileSavedRequest\x12\x1b\n\tcanvas_id\x18\x01 \x01(\tR\x08\x63\x61nvasId\x12\x1b\n\tfile_path\x18\x02 \x01(\tR\x08\x66ilePath\x12\x18\n\x07\x63ontent\x18\x03 \x01(\tR\x07\x63ontent\"C\n\x11\x46ileSavedResponse\x12\x18\n\x07success\x18\x01 \x01(\x08R\x07success\x12\x14\n\x05\x65rror\x18\x02 \x01(\tR\x05\x65rror\"\x81\x01\n\x1e\x44iagramComponentClickedRequest\x12\x1b\n\tcanvas_id\x18\x01 \x01(\tR\x08\x63\x61nvasId\x12!\n\x0c\x63omponent_id\x18\x02 \x01(\tR\x0b\x63omponentId\x12\x1f\n\x0bmethod_name\x18\x03 \x01(\tR\nmethodName\";\n\x1f\x44iagramComponentClickedResponse\x12\x18\n\x07success\x18\x01 \x01(\x08R\x07success\"\x81\x01\n\x1e\x44iagramComponentHoveredRequest\x12\x1b\n\tcanvas_id\x18\x01 \x01(\tR\x08\x63\x61nvasId\x12!\n\x0c\x63omponent_id\x18\x02 \x01(\tR\x0b\x63omponentId\x12\x1f\n\x0bmethod_name\x18\x03 \x01(\tR\nmethodName\";\n\x1f\x44iagramComponentHoveredResponse\x12\x18\n\x07success\x18\x01 \x01(\x08R\x07success\"X\n\x16RemoveGeneratorRequest\x12\x1b\n\tcanvas_id\x18\x01 \x01(\tR\x08\x63\x61nvasId\x12!\n\x0cgenerator_id\x18\x02 \x01(\tR\x0bgeneratorId\"I\n\x17RemoveGeneratorResponse\x12\x18\n\x07success\x18\x01 \x01(\x08R\x07success\x12\x14\n\x05\x65rror\x18\x02 \x01(\tR\x05\x65rror\"O\n\x13RemoveMetricRequest\x12\x1b\n\tcanvas_id\x18\x01 \x01(\tR\x08\x63\x61nvasId\x12\x1b\n\tmetric_id\x18\x02 \x01(\tR\x08metricId\"F\n\x14RemoveMetricResponse\x12\x18\n\x07success\x18\x01 \x01(\x08R\x07success\x12\x14\n\x05\x65rror\x18\x02 \x01(\tR\x05\x65rrorB\x87\x01\n\ncom.sdl.v1B\x0ePresenterProtoP\x01Z0github.com/panyam/sdl/gen/go/sdl/v1/models;sdlv1\xa2\x02\x03SXX\xaa\x02\x06Sdl.V1\xca\x02\x06Sdl\\V1\xe2\x02\x12Sdl\\V1\\GPBMetadata\xea\x02\x07Sdl::V1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1dsdl/v1/models/presenter.proto\x12\x06sdl.v1\x1a\x1asdl/v1/models/models.proto\x1a\x1bsdl/v1/models/systems.proto\"\xc7\x01\n\x1aInitializeSingletonRequest\x12\x1b\n\tcanvas_id\x18\x01 \x01(\tR\x08\x63\x61nvasId\x12\x1f\n\x0bsdl_content\x18\x02 \x01(\tR\nsdlContent\x12\x1f\n\x0bsystem_name\x18\x03 \x01(\tR\nsystemName\x12\'\n\x0fgenerators_data\x18\x04 \x01(\tR\x0egeneratorsData\x12!\n\x0cmetrics_data\x18\x05 \x01(\tR\x0bmetricsData\"\xab\x01\n\x1bInitializeSingletonResponse\x12\x18\n\x07success\x18\x01 \x01(\x08R\x07success\x12\x14\n\x05\x65rror\x18\x02 \x01(\tR\x05\x65rror\x12\x1b\n\tcanvas_id\x18\x03 \x01(\tR\x08\x63\x61nvasId\x12?\n\x11\x61vailable_systems\x18\x04 \x03(\x0b\x32\x12.sdl.v1.SystemInfoR\x10\x61vailableSystems\"9\n\x1aInitializePresenterRequest\x12\x1b\n\tcanvas_id\x18\x01 \x01(\tR\x08\x63\x61nvasId\"\xb9\x02\n\x1bInitializePresenterResponse\x12\x18\n\x07success\x18\x01 \x01(\x08R\x07success\x12\x14\n\x05\x65rror\x18\x02 \x01(\tR\x05\x65rror\x12\x1b\n\tcanvas_id\x18\x03 \x01(\tR\x08\x63\x61nvasId\x12?\n\x11\x61vailable_systems\x18\x04 \x03(\x0b\x32\x12.sdl.v1.SystemInfoR\x10\x61vailableSystems\x12/\n\x07\x64iagram\x18\x05 \x01(\x0b\x32\x15.sdl.v1.SystemDiagramR\x07\x64iagram\x12\x31\n\ngenerators\x18\x06 \x03(\x0b\x32\x11.sdl.v1.GeneratorR\ngenerators\x12(\n\x07metrics\x18\x07 \x03(\x0b\x32\x0e.sdl.v1.MetricR\x07metrics\"1\n\x12\x43lientReadyRequest\x12\x1b\n\tcanvas_id\x18\x01 \x01(\tR\x08\x63\x61nvasId\"W\n\x13\x43lientReadyResponse\x12\x18\n\x07success\x18\x01 \x01(\x08R\x07success\x12&\n\x06\x63\x61nvas\x18\x02 \x01(\x0b\x32\x0e.sdl.v1.CanvasR\x06\x63\x61nvas\"O\n\x13\x46ileSelectedRequest\x12\x1b\n\tcanvas_id\x18\x01 \x01(\tR\x08\x63\x61nvasId\x12\x1b\n\tfile_path\x18\x02 \x01(\tR\x08\x66ilePath\"`\n\x14\x46ileSelectedResponse\x12\x18\n\x07success\x18\x01 \x01(\x08R\x07success\x12\x18\n\x07\x63ontent\x18\x02 \x01(\tR\x07\x63ontent\x12\x14\n\x05\x65rror\x18\x03 \x01(\tR\x05\x65rror\"f\n\x10\x46ileSavedRequest\x12\x1b\n\tcanvas_id\x18\x01 \x01(\tR\x08\x63\x61nvasId\x12\x1b\n\tfile_path\x18\x02 \x01(\tR\x08\x66ilePath\x12\x18\n\x07\x63ontent\x18\x03 \x01(\tR\x07\x63ontent\"C\n\x11\x46ileSavedResponse\x12\x18\n\x07success\x18\x01 \x01(\x08R\x07success\x12\x14\n\x05\x65rror\x18\x02 \x01(\tR\x05\x65rror\"\x85\x01\n\x1e\x44iagramComponentClickedRequest\x12\x1b\n\tcanvas_id\x18\x01 \x01(\tR\x08\x63\x61nvasId\x12%\n\x0e\x63omponent_name\x18\x02 \x01(\tR\rcomponentName\x12\x1f\n\x0bmethod_name\x18\x03 \x01(\tR\nmethodName\";\n\x1f\x44iagramComponentClickedResponse\x12\x18\n\x07success\x18\x01 \x01(\x08R\x07success\"\x85\x01\n\x1e\x44iagramComponentHoveredRequest\x12\x1b\n\tcanvas_id\x18\x01 \x01(\tR\x08\x63\x61nvasId\x12%\n\x0e\x63omponent_name\x18\x02 \x01(\tR\rcomponentName\x12\x1f\n\x0bmethod_name\x18\x03 \x01(\tR\nmethodName\";\n\x1f\x44iagramComponentHoveredResponse\x12\x18\n\x07success\x18\x01 \x01(\x08R\x07successB\x87\x01\n\ncom.sdl.v1B\x0ePresenterProtoP\x01Z0github.com/panyam/sdl/gen/go/sdl/v1/models;sdlv1\xa2\x02\x03SXX\xaa\x02\x06Sdl.V1\xca\x02\x06Sdl\\V1\xe2\x02\x12Sdl\\V1\\GPBMetadata\xea\x02\x07Sdl::V1b\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -33,40 +34,32 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'sdl.v1.models.presenter_pb2
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'\n\ncom.sdl.v1B\016PresenterProtoP\001Z0github.com/panyam/sdl/gen/go/sdl/v1/models;sdlv1\242\002\003SXX\252\002\006Sdl.V1\312\002\006Sdl\\V1\342\002\022Sdl\\V1\\GPBMetadata\352\002\007Sdl::V1'
-  _globals['_INITIALIZESINGLETONREQUEST']._serialized_start=70
-  _globals['_INITIALIZESINGLETONREQUEST']._serialized_end=236
-  _globals['_INITIALIZESINGLETONRESPONSE']._serialized_start=238
-  _globals['_INITIALIZESINGLETONRESPONSE']._serialized_end=315
-  _globals['_INITIALIZEPRESENTERREQUEST']._serialized_start=317
-  _globals['_INITIALIZEPRESENTERREQUEST']._serialized_end=374
-  _globals['_INITIALIZEPRESENTERRESPONSE']._serialized_start=377
-  _globals['_INITIALIZEPRESENTERRESPONSE']._serialized_end=596
-  _globals['_CLIENTREADYREQUEST']._serialized_start=598
-  _globals['_CLIENTREADYREQUEST']._serialized_end=647
-  _globals['_CLIENTREADYRESPONSE']._serialized_start=649
-  _globals['_CLIENTREADYRESPONSE']._serialized_end=696
-  _globals['_FILESELECTEDREQUEST']._serialized_start=698
-  _globals['_FILESELECTEDREQUEST']._serialized_end=777
-  _globals['_FILESELECTEDRESPONSE']._serialized_start=779
-  _globals['_FILESELECTEDRESPONSE']._serialized_end=875
-  _globals['_FILESAVEDREQUEST']._serialized_start=877
-  _globals['_FILESAVEDREQUEST']._serialized_end=979
-  _globals['_FILESAVEDRESPONSE']._serialized_start=981
-  _globals['_FILESAVEDRESPONSE']._serialized_end=1048
-  _globals['_DIAGRAMCOMPONENTCLICKEDREQUEST']._serialized_start=1051
-  _globals['_DIAGRAMCOMPONENTCLICKEDREQUEST']._serialized_end=1180
-  _globals['_DIAGRAMCOMPONENTCLICKEDRESPONSE']._serialized_start=1182
-  _globals['_DIAGRAMCOMPONENTCLICKEDRESPONSE']._serialized_end=1241
-  _globals['_DIAGRAMCOMPONENTHOVEREDREQUEST']._serialized_start=1244
-  _globals['_DIAGRAMCOMPONENTHOVEREDREQUEST']._serialized_end=1373
-  _globals['_DIAGRAMCOMPONENTHOVEREDRESPONSE']._serialized_start=1375
-  _globals['_DIAGRAMCOMPONENTHOVEREDRESPONSE']._serialized_end=1434
-  _globals['_REMOVEGENERATORREQUEST']._serialized_start=1436
-  _globals['_REMOVEGENERATORREQUEST']._serialized_end=1524
-  _globals['_REMOVEGENERATORRESPONSE']._serialized_start=1526
-  _globals['_REMOVEGENERATORRESPONSE']._serialized_end=1599
-  _globals['_REMOVEMETRICREQUEST']._serialized_start=1601
-  _globals['_REMOVEMETRICREQUEST']._serialized_end=1680
-  _globals['_REMOVEMETRICRESPONSE']._serialized_start=1682
-  _globals['_REMOVEMETRICRESPONSE']._serialized_end=1752
+  _globals['_INITIALIZESINGLETONREQUEST']._serialized_start=99
+  _globals['_INITIALIZESINGLETONREQUEST']._serialized_end=298
+  _globals['_INITIALIZESINGLETONRESPONSE']._serialized_start=301
+  _globals['_INITIALIZESINGLETONRESPONSE']._serialized_end=472
+  _globals['_INITIALIZEPRESENTERREQUEST']._serialized_start=474
+  _globals['_INITIALIZEPRESENTERREQUEST']._serialized_end=531
+  _globals['_INITIALIZEPRESENTERRESPONSE']._serialized_start=534
+  _globals['_INITIALIZEPRESENTERRESPONSE']._serialized_end=847
+  _globals['_CLIENTREADYREQUEST']._serialized_start=849
+  _globals['_CLIENTREADYREQUEST']._serialized_end=898
+  _globals['_CLIENTREADYRESPONSE']._serialized_start=900
+  _globals['_CLIENTREADYRESPONSE']._serialized_end=987
+  _globals['_FILESELECTEDREQUEST']._serialized_start=989
+  _globals['_FILESELECTEDREQUEST']._serialized_end=1068
+  _globals['_FILESELECTEDRESPONSE']._serialized_start=1070
+  _globals['_FILESELECTEDRESPONSE']._serialized_end=1166
+  _globals['_FILESAVEDREQUEST']._serialized_start=1168
+  _globals['_FILESAVEDREQUEST']._serialized_end=1270
+  _globals['_FILESAVEDRESPONSE']._serialized_start=1272
+  _globals['_FILESAVEDRESPONSE']._serialized_end=1339
+  _globals['_DIAGRAMCOMPONENTCLICKEDREQUEST']._serialized_start=1342
+  _globals['_DIAGRAMCOMPONENTCLICKEDREQUEST']._serialized_end=1475
+  _globals['_DIAGRAMCOMPONENTCLICKEDRESPONSE']._serialized_start=1477
+  _globals['_DIAGRAMCOMPONENTCLICKEDRESPONSE']._serialized_end=1536
+  _globals['_DIAGRAMCOMPONENTHOVEREDREQUEST']._serialized_start=1539
+  _globals['_DIAGRAMCOMPONENTHOVEREDREQUEST']._serialized_end=1672
+  _globals['_DIAGRAMCOMPONENTHOVEREDRESPONSE']._serialized_start=1674
+  _globals['_DIAGRAMCOMPONENTHOVEREDRESPONSE']._serialized_end=1733
 # @@protoc_insertion_point(module_scope)

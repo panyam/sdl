@@ -4,15 +4,17 @@
 
 import type { GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Generator, Metric, SystemDiagram } from "./models_pb";
+import type { Canvas, Generator, Metric, SystemDiagram } from "./models_pb";
 import { file_sdl_v1_models_models } from "./models_pb";
+import type { SystemInfo } from "./systems_pb";
+import { file_sdl_v1_models_systems } from "./systems_pb";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file sdl/v1/models/presenter.proto.
  */
 export const file_sdl_v1_models_presenter: GenFile = /*@__PURE__*/
-  fileDesc("Ch1zZGwvdjEvbW9kZWxzL3ByZXNlbnRlci5wcm90bxIGc2RsLnYxInMKGkluaXRpYWxpemVTaW5nbGV0b25SZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRITCgtjYW52YXNfZGF0YRgCIAEoCRIXCg9nZW5lcmF0b3JzX2RhdGEYAyABKAkSFAoMbWV0cmljc19kYXRhGAQgASgJIj0KG0luaXRpYWxpemVTaW5nbGV0b25SZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg0KBWVycm9yGAIgASgJIi8KGkluaXRpYWxpemVQcmVzZW50ZXJSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCSKtAQobSW5pdGlhbGl6ZVByZXNlbnRlclJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDQoFZXJyb3IYAiABKAkSJgoHZGlhZ3JhbRgDIAEoCzIVLnNkbC52MS5TeXN0ZW1EaWFncmFtEiUKCmdlbmVyYXRvcnMYBCADKAsyES5zZGwudjEuR2VuZXJhdG9yEh8KB21ldHJpY3MYBSADKAsyDi5zZGwudjEuTWV0cmljIicKEkNsaWVudFJlYWR5UmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkiJgoTQ2xpZW50UmVhZHlSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIIjsKE0ZpbGVTZWxlY3RlZFJlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJEhEKCWZpbGVfcGF0aBgCIAEoCSJHChRGaWxlU2VsZWN0ZWRSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg8KB2NvbnRlbnQYAiABKAkSDQoFZXJyb3IYAyABKAkiSQoQRmlsZVNhdmVkUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSEQoJZmlsZV9wYXRoGAIgASgJEg8KB2NvbnRlbnQYAyABKAkiMwoRRmlsZVNhdmVkUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBINCgVlcnJvchgCIAEoCSJeCh5EaWFncmFtQ29tcG9uZW50Q2xpY2tlZFJlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJEhQKDGNvbXBvbmVudF9pZBgCIAEoCRITCgttZXRob2RfbmFtZRgDIAEoCSIyCh9EaWFncmFtQ29tcG9uZW50Q2xpY2tlZFJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgiXgoeRGlhZ3JhbUNvbXBvbmVudEhvdmVyZWRSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRIUCgxjb21wb25lbnRfaWQYAiABKAkSEwoLbWV0aG9kX25hbWUYAyABKAkiMgofRGlhZ3JhbUNvbXBvbmVudEhvdmVyZWRSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIIkEKFlJlbW92ZUdlbmVyYXRvclJlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJEhQKDGdlbmVyYXRvcl9pZBgCIAEoCSI5ChdSZW1vdmVHZW5lcmF0b3JSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg0KBWVycm9yGAIgASgJIjsKE1JlbW92ZU1ldHJpY1JlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJEhEKCW1ldHJpY19pZBgCIAEoCSI2ChRSZW1vdmVNZXRyaWNSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg0KBWVycm9yGAIgASgJQocBCgpjb20uc2RsLnYxQg5QcmVzZW50ZXJQcm90b1ABWjBnaXRodWIuY29tL3BhbnlhbS9zZGwvZ2VuL2dvL3NkbC92MS9tb2RlbHM7c2RsdjGiAgNTWFiqAgZTZGwuVjHKAgZTZGxcVjHiAhJTZGxcVjFcR1BCTWV0YWRhdGHqAgdTZGw6OlYxYgZwcm90bzM", [file_sdl_v1_models_models]);
+  fileDesc("Ch1zZGwvdjEvbW9kZWxzL3ByZXNlbnRlci5wcm90bxIGc2RsLnYxIogBChpJbml0aWFsaXplU2luZ2xldG9uUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSEwoLc2RsX2NvbnRlbnQYAiABKAkSEwoLc3lzdGVtX25hbWUYAyABKAkSFwoPZ2VuZXJhdG9yc19kYXRhGAQgASgJEhQKDG1ldHJpY3NfZGF0YRgFIAEoCSJ/ChtJbml0aWFsaXplU2luZ2xldG9uUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBINCgVlcnJvchgCIAEoCRIRCgljYW52YXNfaWQYAyABKAkSLQoRYXZhaWxhYmxlX3N5c3RlbXMYBCADKAsyEi5zZGwudjEuU3lzdGVtSW5mbyIvChpJbml0aWFsaXplUHJlc2VudGVyUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAki7wEKG0luaXRpYWxpemVQcmVzZW50ZXJSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg0KBWVycm9yGAIgASgJEhEKCWNhbnZhc19pZBgDIAEoCRItChFhdmFpbGFibGVfc3lzdGVtcxgEIAMoCzISLnNkbC52MS5TeXN0ZW1JbmZvEiYKB2RpYWdyYW0YBSABKAsyFS5zZGwudjEuU3lzdGVtRGlhZ3JhbRIlCgpnZW5lcmF0b3JzGAYgAygLMhEuc2RsLnYxLkdlbmVyYXRvchIfCgdtZXRyaWNzGAcgAygLMg4uc2RsLnYxLk1ldHJpYyInChJDbGllbnRSZWFkeVJlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJIkYKE0NsaWVudFJlYWR5UmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIeCgZjYW52YXMYAiABKAsyDi5zZGwudjEuQ2FudmFzIjsKE0ZpbGVTZWxlY3RlZFJlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJEhEKCWZpbGVfcGF0aBgCIAEoCSJHChRGaWxlU2VsZWN0ZWRSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg8KB2NvbnRlbnQYAiABKAkSDQoFZXJyb3IYAyABKAkiSQoQRmlsZVNhdmVkUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSEQoJZmlsZV9wYXRoGAIgASgJEg8KB2NvbnRlbnQYAyABKAkiMwoRRmlsZVNhdmVkUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBINCgVlcnJvchgCIAEoCSJgCh5EaWFncmFtQ29tcG9uZW50Q2xpY2tlZFJlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJEhYKDmNvbXBvbmVudF9uYW1lGAIgASgJEhMKC21ldGhvZF9uYW1lGAMgASgJIjIKH0RpYWdyYW1Db21wb25lbnRDbGlja2VkUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCCJgCh5EaWFncmFtQ29tcG9uZW50SG92ZXJlZFJlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJEhYKDmNvbXBvbmVudF9uYW1lGAIgASgJEhMKC21ldGhvZF9uYW1lGAMgASgJIjIKH0RpYWdyYW1Db21wb25lbnRIb3ZlcmVkUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCEKHAQoKY29tLnNkbC52MUIOUHJlc2VudGVyUHJvdG9QAVowZ2l0aHViLmNvbS9wYW55YW0vc2RsL2dlbi9nby9zZGwvdjEvbW9kZWxzO3NkbHYxogIDU1hYqgIGU2RsLlYxygIGU2RsXFYx4gISU2RsXFYxXEdQQk1ldGFkYXRh6gIHU2RsOjpWMWIGcHJvdG8z", [file_sdl_v1_models_models, file_sdl_v1_models_systems]);
 
 /**
  * @generated from message sdl.v1.InitializeSingletonRequest
@@ -24,23 +26,30 @@ export type InitializeSingletonRequest = Message<"sdl.v1.InitializeSingletonRequ
   canvasId: string;
 
   /**
-   * JSON-encoded canvas data (files, system state, etc.)
+   * SDL content to load initially
    *
-   * @generated from field: string canvas_data = 2;
+   * @generated from field: string sdl_content = 2;
    */
-  canvasData: string;
+  sdlContent: string;
+
+  /**
+   * System name to use after loading
+   *
+   * @generated from field: string system_name = 3;
+   */
+  systemName: string;
 
   /**
    * JSON-encoded generator configs
    *
-   * @generated from field: string generators_data = 3;
+   * @generated from field: string generators_data = 4;
    */
   generatorsData: string;
 
   /**
    * JSON-encoded metric configs
    *
-   * @generated from field: string metrics_data = 4;
+   * @generated from field: string metrics_data = 5;
    */
   metricsData: string;
 };
@@ -65,6 +74,16 @@ export type InitializeSingletonResponse = Message<"sdl.v1.InitializeSingletonRes
    * @generated from field: string error = 2;
    */
   error: string;
+
+  /**
+   * @generated from field: string canvas_id = 3;
+   */
+  canvasId: string;
+
+  /**
+   * @generated from field: repeated sdl.v1.SystemInfo available_systems = 4;
+   */
+  availableSystems: SystemInfo[];
 };
 
 /**
@@ -106,19 +125,31 @@ export type InitializePresenterResponse = Message<"sdl.v1.InitializePresenterRes
   error: string;
 
   /**
+   * @generated from field: string canvas_id = 3;
+   */
+  canvasId: string;
+
+  /**
+   * Available systems to choose from
+   *
+   * @generated from field: repeated sdl.v1.SystemInfo available_systems = 4;
+   */
+  availableSystems: SystemInfo[];
+
+  /**
    * Initial state to render
    *
-   * @generated from field: sdl.v1.SystemDiagram diagram = 3;
+   * @generated from field: sdl.v1.SystemDiagram diagram = 5;
    */
   diagram?: SystemDiagram;
 
   /**
-   * @generated from field: repeated sdl.v1.Generator generators = 4;
+   * @generated from field: repeated sdl.v1.Generator generators = 6;
    */
   generators: Generator[];
 
   /**
-   * @generated from field: repeated sdl.v1.Metric metrics = 5;
+   * @generated from field: repeated sdl.v1.Metric metrics = 7;
    */
   metrics: Metric[];
 };
@@ -155,6 +186,11 @@ export type ClientReadyResponse = Message<"sdl.v1.ClientReadyResponse"> & {
    * @generated from field: bool success = 1;
    */
   success: boolean;
+
+  /**
+   * @generated from field: sdl.v1.Canvas canvas = 2;
+   */
+  canvas?: Canvas;
 };
 
 /**
@@ -272,9 +308,9 @@ export type DiagramComponentClickedRequest = Message<"sdl.v1.DiagramComponentCli
   canvasId: string;
 
   /**
-   * @generated from field: string component_id = 2;
+   * @generated from field: string component_name = 2;
    */
-  componentId: string;
+  componentName: string;
 
   /**
    * Optional - if clicking on a specific method
@@ -318,9 +354,9 @@ export type DiagramComponentHoveredRequest = Message<"sdl.v1.DiagramComponentHov
   canvasId: string;
 
   /**
-   * @generated from field: string component_id = 2;
+   * @generated from field: string component_name = 2;
    */
-  componentId: string;
+  componentName: string;
 
   /**
    * @generated from field: string method_name = 3;
@@ -351,92 +387,4 @@ export type DiagramComponentHoveredResponse = Message<"sdl.v1.DiagramComponentHo
  */
 export const DiagramComponentHoveredResponseSchema: GenMessage<DiagramComponentHoveredResponse> = /*@__PURE__*/
   messageDesc(file_sdl_v1_models_presenter, 13);
-
-/**
- * @generated from message sdl.v1.RemoveGeneratorRequest
- */
-export type RemoveGeneratorRequest = Message<"sdl.v1.RemoveGeneratorRequest"> & {
-  /**
-   * @generated from field: string canvas_id = 1;
-   */
-  canvasId: string;
-
-  /**
-   * @generated from field: string generator_id = 2;
-   */
-  generatorId: string;
-};
-
-/**
- * Describes the message sdl.v1.RemoveGeneratorRequest.
- * Use `create(RemoveGeneratorRequestSchema)` to create a new message.
- */
-export const RemoveGeneratorRequestSchema: GenMessage<RemoveGeneratorRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_presenter, 14);
-
-/**
- * @generated from message sdl.v1.RemoveGeneratorResponse
- */
-export type RemoveGeneratorResponse = Message<"sdl.v1.RemoveGeneratorResponse"> & {
-  /**
-   * @generated from field: bool success = 1;
-   */
-  success: boolean;
-
-  /**
-   * @generated from field: string error = 2;
-   */
-  error: string;
-};
-
-/**
- * Describes the message sdl.v1.RemoveGeneratorResponse.
- * Use `create(RemoveGeneratorResponseSchema)` to create a new message.
- */
-export const RemoveGeneratorResponseSchema: GenMessage<RemoveGeneratorResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_presenter, 15);
-
-/**
- * @generated from message sdl.v1.RemoveMetricRequest
- */
-export type RemoveMetricRequest = Message<"sdl.v1.RemoveMetricRequest"> & {
-  /**
-   * @generated from field: string canvas_id = 1;
-   */
-  canvasId: string;
-
-  /**
-   * @generated from field: string metric_id = 2;
-   */
-  metricId: string;
-};
-
-/**
- * Describes the message sdl.v1.RemoveMetricRequest.
- * Use `create(RemoveMetricRequestSchema)` to create a new message.
- */
-export const RemoveMetricRequestSchema: GenMessage<RemoveMetricRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_presenter, 16);
-
-/**
- * @generated from message sdl.v1.RemoveMetricResponse
- */
-export type RemoveMetricResponse = Message<"sdl.v1.RemoveMetricResponse"> & {
-  /**
-   * @generated from field: bool success = 1;
-   */
-  success: boolean;
-
-  /**
-   * @generated from field: string error = 2;
-   */
-  error: string;
-};
-
-/**
- * Describes the message sdl.v1.RemoveMetricResponse.
- * Use `create(RemoveMetricResponseSchema)` to create a new message.
- */
-export const RemoveMetricResponseSchema: GenMessage<RemoveMetricResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_presenter, 17);
 

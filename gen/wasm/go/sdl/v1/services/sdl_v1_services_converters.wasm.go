@@ -11,26 +11,15 @@ import (
 	"fmt"
 	"syscall/js"
 
-	// "github.com/panyam/protoc-gen-go-wasmjs/pkg/wasm"
 	wasm "github.com/panyam/protoc-gen-go-wasmjs/pkg/wasm"
 	v1models "github.com/panyam/sdl/gen/go/sdl/v1/models"
-	"google.golang.org/grpc/metadata"
 )
-
-// =============================================================================
-// Helper Functions
-// =============================================================================
-
-// createJSResponse creates a JavaScript response object
-func createJSResponse(success bool, message string, data any) any {
-	return wasm.CreateJSResponse(success, message, data)
-}
 
 // =============================================================================
 // Server Stream Wrappers
 // =============================================================================
 
-// serverStreamWrapperStreamMetrics implements the server stream interface for StreamMetrics
+// serverStreamWrapperStreamMetrics implements the StreamMetrics_ServerStream interface for StreamMetrics
 type serverStreamWrapperStreamMetrics struct {
 	ctx      context.Context
 	callback js.Value
@@ -63,15 +52,3 @@ func (s *serverStreamWrapperStreamMetrics) Send(resp *v1models.StreamMetricsResp
 func (s *serverStreamWrapperStreamMetrics) Context() context.Context {
 	return s.ctx
 }
-
-// Implement other required methods for the stream interface
-func (s *serverStreamWrapperStreamMetrics) SetHeader(metadata.MD) error  { return nil }
-func (s *serverStreamWrapperStreamMetrics) SendHeader(metadata.MD) error { return nil }
-func (s *serverStreamWrapperStreamMetrics) SetTrailer(metadata.MD)       {}
-func (s *serverStreamWrapperStreamMetrics) SendMsg(m interface{}) error {
-	if msg, ok := m.(*v1models.StreamMetricsResponse); ok {
-		return s.Send(msg)
-	}
-	return fmt.Errorf("unexpected message type")
-}
-func (s *serverStreamWrapperStreamMetrics) RecvMsg(m interface{}) error { return nil }

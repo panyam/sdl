@@ -8,7 +8,8 @@ import (
 	"strings"
 	"time"
 
-	v1 "github.com/panyam/sdl/gen/go/sdl/v1"
+	v1 "github.com/panyam/sdl/gen/go/sdl/v1/models"
+	v1s "github.com/panyam/sdl/gen/go/sdl/v1/services"
 	"github.com/spf13/cobra"
 )
 
@@ -37,9 +38,9 @@ Examples:
 		id := args[0]
 		component := args[1]
 		var methods []string
-		
+
 		metricType, _ := cmd.Flags().GetString("type")
-		
+
 		// For utilization metrics, methods are optional
 		if metricType == "utilization" {
 			if len(args) > 2 {
@@ -63,7 +64,7 @@ Examples:
 			os.Exit(1)
 		}
 
-		err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+		err := withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
 			req := &v1.AddMetricRequest{
 				Metric: &v1.Metric{
 					Id:                id,
@@ -98,7 +99,7 @@ var removeMetricCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		metricID := args[0]
 
-		err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+		err := withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
 			req := &v1.DeleteMetricRequest{
 				CanvasId: canvasID,
 				MetricId: metricID,
@@ -121,7 +122,7 @@ var listMetricsCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all available metrics",
 	Run: func(cmd *cobra.Command, args []string) {
-		err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+		err := withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
 			req := &v1.ListMetricsRequest{
 				CanvasId: canvasID,
 			}
@@ -197,7 +198,7 @@ var queryMetricsCmd = &cobra.Command{
 		endTime := time.Now()
 		startTime := endTime.Add(-duration)
 
-		err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+		err := withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
 			req := &v1.QueryMetricsRequest{
 				CanvasId:  canvasID,
 				MetricId:  metricID,

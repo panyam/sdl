@@ -32,7 +32,7 @@ SDL_LOG_LEVEL=off go test ./...
 
 #### In Runtime Package
 ```go
-import "github.com/panyam/sdl/runtime"
+import "github.com/panyam/sdl/lib/runtime"
 
 // Log at different levels
 runtime.Debug("Component %s processing at %.2f RPS", name, rate)
@@ -43,7 +43,7 @@ runtime.Error("Failed to load component: %v", err)
 
 #### In Console Package
 ```go
-import "github.com/panyam/sdl/console"
+import "github.com/panyam/sdl/lib/console"
 
 // Standard logs
 console.Debug("Generator state: %v", state)

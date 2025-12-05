@@ -7,8 +7,8 @@ import (
 	"log/slog"
 	"net"
 
-	v1 "github.com/panyam/sdl/gen/go/sdl/v1"
-	"github.com/panyam/sdl/web/services"
+	v1services "github.com/panyam/sdl/gen/go/sdl/v1/services"
+	"github.com/panyam/sdl/services"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
@@ -30,8 +30,8 @@ func (s *Server) Start(ctx context.Context, srvErr chan error, srvChan chan bool
 	)
 
 	// Register services
-	v1.RegisterCanvasServiceServer(server, canvasSvc)
-	v1.RegisterSystemsServiceServer(server, services.NewSystemsService())
+	v1services.RegisterCanvasServiceServer(server, canvasSvc)
+	v1services.RegisterSystemsServiceServer(server, services.NewSystemsService())
 
 	l, err := net.Listen("tcp", s.Address)
 	if err != nil {

@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package sdl.v1;
+
+import "sdl/v1/models/systems.proto";
+import "google/api/annotations.proto";
+
+option go_package = "github.com/panyam/sdl/gen/go/sdl/v1/services";
+
+// SystemsService manages the system examples catalog
+service SystemsService {
+  // ListSystems returns all available systems
+  rpc ListSystems(ListSystemsRequest) returns (ListSystemsResponse) {
+    option (google.api.http) = {
+      get: "/v1/systems"
+    };
+  }
+
+  // GetSystem returns a specific system with metadata
+  rpc GetSystem(GetSystemRequest) returns (GetSystemResponse) {
+    option (google.api.http) = {
+      get: "/v1/systems/{id}"
+    };
+  }
+
+  // GetSystemContent returns the SDL and recipe content for a system
+  rpc GetSystemContent(GetSystemContentRequest) returns (GetSystemContentResponse) {
+    option (google.api.http) = {
+      get: "/v1/systems/{id}/content"
+    };
+  }
+}

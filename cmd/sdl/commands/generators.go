@@ -6,7 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	v1 "github.com/panyam/sdl/gen/go/sdl/v1"
+	v1 "github.com/panyam/sdl/gen/go/sdl/v1/models"
+	v1s "github.com/panyam/sdl/gen/go/sdl/v1/services"
 	"github.com/spf13/cobra"
 )
 
@@ -47,7 +48,7 @@ var genAddCmd = &cobra.Command{
 			fmt.Printf("❌ Invalid rate '%s': must be a number\n", rateStr)
 			return
 		}
-		err = withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+		err = withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
 			_, err := client.AddGenerator(ctx, &v1.AddGeneratorRequest{
 				Generator: &v1.Generator{
 					Id:        id,
@@ -83,7 +84,7 @@ var genListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all traffic generators",
 	Run: func(cmd *cobra.Command, args []string) {
-		err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+		err := withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
 			resp, err := client.ListGenerators(ctx, &v1.ListGeneratorsRequest{
 				CanvasId: canvasID,
 			})
@@ -121,7 +122,7 @@ var genStartCmd = &cobra.Command{
 		if len(args) == 0 {
 			// Start all generators
 			var resp *v1.StartAllGeneratorsResponse
-			err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+			err := withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
 				var err error
 				resp, err = client.StartAllGenerators(ctx, &v1.StartAllGeneratorsRequest{
 					CanvasId: canvasID,
@@ -161,7 +162,7 @@ var genStartCmd = &cobra.Command{
 		} else {
 			// Start specific generators
 			for _, id := range args {
-				err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+				err := withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
 					_, err := client.StartGenerator(ctx, &v1.StartGeneratorRequest{
 						CanvasId:    canvasID,
 						GeneratorId: id,
@@ -186,7 +187,7 @@ var genStopCmd = &cobra.Command{
 		if len(args) == 0 {
 			// Stop all generators
 			var resp *v1.StopAllGeneratorsResponse
-			err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+			err := withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
 				var err error
 				resp, err = client.StopAllGenerators(ctx, &v1.StopAllGeneratorsRequest{
 					CanvasId: canvasID,
@@ -226,7 +227,7 @@ var genStopCmd = &cobra.Command{
 		} else {
 			// Stop specific generators
 			for _, id := range args {
-				err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+				err := withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
 					_, err := client.StopGenerator(ctx, &v1.StopGeneratorRequest{
 						CanvasId:    canvasID,
 						GeneratorId: id,
@@ -247,7 +248,7 @@ var genStatusCmd = &cobra.Command{
 	Use:   "status",
 	Short: "Show generator status",
 	Run: func(cmd *cobra.Command, args []string) {
-		err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+		err := withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
 			resp, err := client.GetCanvas(ctx, &v1.GetCanvasRequest{
 				Id: canvasID,
 			})
@@ -293,7 +294,7 @@ var genUpdateCmd = &cobra.Command{
 			return
 		}
 
-		err = withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+		err = withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
 			// First get the generator to validate it exists
 			resp, err := client.GetGenerator(ctx, &v1.GetGeneratorRequest{
 				CanvasId:    canvasID,
@@ -341,7 +342,7 @@ var genRemoveCmd = &cobra.Command{
 
 		removedCount := 0
 		for _, id := range args {
-			err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+			err := withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
 				_, err := client.DeleteGenerator(ctx, &v1.DeleteGeneratorRequest{
 					CanvasId:    canvasID,
 					GeneratorId: id,
@@ -358,7 +359,7 @@ var genRemoveCmd = &cobra.Command{
 
 		// Apply flows if requested and at least one generator was removed
 		if removedCount > 0 {
-			err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+			err := withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
 				return applyFlowsIfRequested(client, ctx)
 			})
 			if err != nil {
@@ -392,7 +393,7 @@ func init() {
 }
 
 // applyFlowsIfRequested evaluates and applies flows if the --apply-flows flag is set
-func applyFlowsIfRequested(client v1.CanvasServiceClient, ctx context.Context) error {
+func applyFlowsIfRequested(client v1s.CanvasServiceClient, ctx context.Context) error {
 	if !applyFlows {
 		return nil
 	}

@@ -416,6 +416,7 @@ export interface UseSystemResponse {
 
 export interface AddGeneratorRequest {
   generator?: Generator;
+  applyFlows: boolean;
 }
 
 
@@ -454,6 +455,7 @@ export interface GetGeneratorResponse {
 export interface UpdateGeneratorRequest {
   generator?: Generator;
   updateMask?: FieldMask;
+  applyFlows: boolean;
 }
 
 
@@ -491,6 +493,7 @@ export interface StopGeneratorResponse {
 export interface DeleteGeneratorRequest {
   canvasId: string;
   generatorId: string;
+  applyFlows: boolean;
 }
 
 
@@ -915,140 +918,6 @@ export interface UpdateUtilizationResponse {
 }
 
 
-
-export interface InitializeSingletonRequest {
-  canvasId: string;
-  /** JSON-encoded canvas data (files, system state, etc.) */
-  canvasData: string;
-  /** JSON-encoded generator configs */
-  generatorsData: string;
-  /** JSON-encoded metric configs */
-  metricsData: string;
-}
-
-
-
-export interface InitializeSingletonResponse {
-  success: boolean;
-  error: string;
-}
-
-
-
-export interface InitializePresenterRequest {
-  canvasId: string;
-}
-
-
-
-export interface InitializePresenterResponse {
-  success: boolean;
-  error: string;
-  /** Initial state to render */
-  diagram?: SystemDiagram;
-  generators?: Generator[];
-  metrics?: Metric[];
-}
-
-
-
-export interface ClientReadyRequest {
-  canvasId: string;
-}
-
-
-
-export interface ClientReadyResponse {
-  success: boolean;
-}
-
-
-
-export interface FileSelectedRequest {
-  canvasId: string;
-  filePath: string;
-}
-
-
-
-export interface FileSelectedResponse {
-  success: boolean;
-  content: string;
-  error: string;
-}
-
-
-
-export interface FileSavedRequest {
-  canvasId: string;
-  filePath: string;
-  content: string;
-}
-
-
-
-export interface FileSavedResponse {
-  success: boolean;
-  error: string;
-}
-
-
-
-export interface DiagramComponentClickedRequest {
-  canvasId: string;
-  componentId: string;
-  methodName: string;
-}
-
-
-
-export interface DiagramComponentClickedResponse {
-  success: boolean;
-}
-
-
-
-export interface DiagramComponentHoveredRequest {
-  canvasId: string;
-  componentId: string;
-  methodName: string;
-}
-
-
-
-export interface DiagramComponentHoveredResponse {
-  success: boolean;
-}
-
-
-
-export interface RemoveGeneratorRequest {
-  canvasId: string;
-  generatorId: string;
-}
-
-
-
-export interface RemoveGeneratorResponse {
-  success: boolean;
-  error: string;
-}
-
-
-
-export interface RemoveMetricRequest {
-  canvasId: string;
-  metricId: string;
-}
-
-
-
-export interface RemoveMetricResponse {
-  success: boolean;
-  error: string;
-}
-
-
 /**
  * SystemInfo represents a system in the catalog
  */
@@ -1127,5 +996,119 @@ export interface GetSystemContentResponse {
   sdlContent: string;
   recipeContent: string;
   readmeContent: string;
+}
+
+
+
+export interface InitializeSingletonRequest {
+  canvasId: string;
+  /** SDL content to load initially */
+  sdlContent: string;
+  /** System name to use after loading */
+  systemName: string;
+  /** JSON-encoded generator configs */
+  generatorsData: string;
+  /** JSON-encoded metric configs */
+  metricsData: string;
+}
+
+
+
+export interface InitializeSingletonResponse {
+  success: boolean;
+  error: string;
+  canvasId: string;
+  availableSystems?: SystemInfo[];
+}
+
+
+
+export interface InitializePresenterRequest {
+  canvasId: string;
+}
+
+
+
+export interface InitializePresenterResponse {
+  success: boolean;
+  error: string;
+  canvasId: string;
+  /** Available systems to choose from */
+  availableSystems?: SystemInfo[];
+  /** Initial state to render */
+  diagram?: SystemDiagram;
+  generators?: Generator[];
+  metrics?: Metric[];
+}
+
+
+
+export interface ClientReadyRequest {
+  canvasId: string;
+}
+
+
+
+export interface ClientReadyResponse {
+  success: boolean;
+  canvas?: Canvas;
+}
+
+
+
+export interface FileSelectedRequest {
+  canvasId: string;
+  filePath: string;
+}
+
+
+
+export interface FileSelectedResponse {
+  success: boolean;
+  content: string;
+  error: string;
+}
+
+
+
+export interface FileSavedRequest {
+  canvasId: string;
+  filePath: string;
+  content: string;
+}
+
+
+
+export interface FileSavedResponse {
+  success: boolean;
+  error: string;
+}
+
+
+
+export interface DiagramComponentClickedRequest {
+  canvasId: string;
+  componentName: string;
+  methodName: string;
+}
+
+
+
+export interface DiagramComponentClickedResponse {
+  success: boolean;
+}
+
+
+
+export interface DiagramComponentHoveredRequest {
+  canvasId: string;
+  componentName: string;
+  methodName: string;
+}
+
+
+
+export interface DiagramComponentHoveredResponse {
+  success: boolean;
 }
 

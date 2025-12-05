@@ -3,7 +3,7 @@ package runtime
 import (
 	"testing"
 
-	compdecl "github.com/panyam/sdl/components/decl"
+	compdecl "github.com/panyam/sdl/lib/components/decl"
 )
 
 // TestFlowPropagation tests that flow evaluation correctly propagates traffic downstream
@@ -152,7 +152,7 @@ func TestFlowPropagation(t *testing.T) {
 	t.Run("Component Name Resolution", func(t *testing.T) {
 		// Test that component names are resolved correctly
 		// This simulates the contacts.sdl scenario where we have named components
-		
+
 		// Create components with realistic names
 		mockServer := compdecl.NewMockFlowComponent("server", map[string]float64{
 			"database.Query": 0.8,

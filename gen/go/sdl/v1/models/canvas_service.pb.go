@@ -658,6 +658,7 @@ func (*UseSystemResponse) Descriptor() ([]byte, []int) {
 type AddGeneratorRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Generator     *Generator             `protobuf:"bytes,1,opt,name=generator,proto3" json:"generator,omitempty"`
+	ApplyFlows    bool                   `protobuf:"varint,2,opt,name=apply_flows,json=applyFlows,proto3" json:"apply_flows,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -697,6 +698,13 @@ func (x *AddGeneratorRequest) GetGenerator() *Generator {
 		return x.Generator
 	}
 	return nil
+}
+
+func (x *AddGeneratorRequest) GetApplyFlows() bool {
+	if x != nil {
+		return x.ApplyFlows
+	}
+	return false
 }
 
 type AddGeneratorResponse struct {
@@ -931,6 +939,7 @@ type UpdateGeneratorRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Generator     *Generator             `protobuf:"bytes,1,opt,name=generator,proto3" json:"generator,omitempty"`
 	UpdateMask    *fieldmaskpb.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
+	ApplyFlows    bool                   `protobuf:"varint,3,opt,name=apply_flows,json=applyFlows,proto3" json:"apply_flows,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -977,6 +986,13 @@ func (x *UpdateGeneratorRequest) GetUpdateMask() *fieldmaskpb.FieldMask {
 		return x.UpdateMask
 	}
 	return nil
+}
+
+func (x *UpdateGeneratorRequest) GetApplyFlows() bool {
+	if x != nil {
+		return x.ApplyFlows
+	}
+	return false
 }
 
 type UpdateGeneratorResponse struct {
@@ -1203,6 +1219,7 @@ type DeleteGeneratorRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
 	GeneratorId   string                 `protobuf:"bytes,2,opt,name=generator_id,json=generatorId,proto3" json:"generator_id,omitempty"`
+	ApplyFlows    bool                   `protobuf:"varint,3,opt,name=apply_flows,json=applyFlows,proto3" json:"apply_flows,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1249,6 +1266,13 @@ func (x *DeleteGeneratorRequest) GetGeneratorId() string {
 		return x.GeneratorId
 	}
 	return ""
+}
+
+func (x *DeleteGeneratorRequest) GetApplyFlows() bool {
+	if x != nil {
+		return x.ApplyFlows
+	}
+	return false
 }
 
 type DeleteGeneratorResponse struct {
@@ -3137,9 +3161,11 @@ const file_sdl_v1_models_canvas_service_proto_rawDesc = "" +
 	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\x12\x1f\n" +
 	"\vsystem_name\x18\x02 \x01(\tR\n" +
 	"systemName\"\x13\n" +
-	"\x11UseSystemResponse\"F\n" +
+	"\x11UseSystemResponse\"g\n" +
 	"\x13AddGeneratorRequest\x12/\n" +
-	"\tgenerator\x18\x01 \x01(\v2\x11.sdl.v1.GeneratorR\tgenerator\"G\n" +
+	"\tgenerator\x18\x01 \x01(\v2\x11.sdl.v1.GeneratorR\tgenerator\x12\x1f\n" +
+	"\vapply_flows\x18\x02 \x01(\bR\n" +
+	"applyFlows\"G\n" +
 	"\x14AddGeneratorResponse\x12/\n" +
 	"\tgenerator\x18\x01 \x01(\v2\x11.sdl.v1.GeneratorR\tgenerator\"4\n" +
 	"\x15ListGeneratorsRequest\x12\x1b\n" +
@@ -3152,11 +3178,13 @@ const file_sdl_v1_models_canvas_service_proto_rawDesc = "" +
 	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\x12!\n" +
 	"\fgenerator_id\x18\x02 \x01(\tR\vgeneratorId\"G\n" +
 	"\x14GetGeneratorResponse\x12/\n" +
-	"\tgenerator\x18\x01 \x01(\v2\x11.sdl.v1.GeneratorR\tgenerator\"\x86\x01\n" +
+	"\tgenerator\x18\x01 \x01(\v2\x11.sdl.v1.GeneratorR\tgenerator\"\xa7\x01\n" +
 	"\x16UpdateGeneratorRequest\x12/\n" +
 	"\tgenerator\x18\x01 \x01(\v2\x11.sdl.v1.GeneratorR\tgenerator\x12;\n" +
 	"\vupdate_mask\x18\x02 \x01(\v2\x1a.google.protobuf.FieldMaskR\n" +
-	"updateMask\"J\n" +
+	"updateMask\x12\x1f\n" +
+	"\vapply_flows\x18\x03 \x01(\bR\n" +
+	"applyFlows\"J\n" +
 	"\x17UpdateGeneratorResponse\x12/\n" +
 	"\tgenerator\x18\x01 \x01(\v2\x11.sdl.v1.GeneratorR\tgenerator\"W\n" +
 	"\x15StartGeneratorRequest\x12\x1b\n" +
@@ -3166,10 +3194,12 @@ const file_sdl_v1_models_canvas_service_proto_rawDesc = "" +
 	"\x14StopGeneratorRequest\x12\x1b\n" +
 	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\x12!\n" +
 	"\fgenerator_id\x18\x02 \x01(\tR\vgeneratorId\"\x17\n" +
-	"\x15StopGeneratorResponse\"X\n" +
+	"\x15StopGeneratorResponse\"y\n" +
 	"\x16DeleteGeneratorRequest\x12\x1b\n" +
 	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\x12!\n" +
-	"\fgenerator_id\x18\x02 \x01(\tR\vgeneratorId\"\x19\n" +
+	"\fgenerator_id\x18\x02 \x01(\tR\vgeneratorId\x12\x1f\n" +
+	"\vapply_flows\x18\x03 \x01(\bR\n" +
+	"applyFlows\"\x19\n" +
 	"\x17DeleteGeneratorResponse\"8\n" +
 	"\x19StartAllGeneratorsRequest\x12\x1b\n" +
 	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\"\xe2\x01\n" +

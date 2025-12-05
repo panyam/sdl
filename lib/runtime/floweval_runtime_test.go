@@ -3,7 +3,7 @@ package runtime
 import (
 	"testing"
 
-	compdecl "github.com/panyam/sdl/components/decl"
+	compdecl "github.com/panyam/sdl/lib/components/decl"
 )
 
 func TestFlowEvalRuntime(t *testing.T) {

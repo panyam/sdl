@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	v1 "github.com/panyam/sdl/gen/go/sdl/v1"
+	v1 "github.com/panyam/sdl/gen/go/sdl/v1/models"
+	v1s "github.com/panyam/sdl/gen/go/sdl/v1/services"
 	"github.com/panyam/sdl/lib/viz"
 	"github.com/spf13/cobra"
 )
@@ -21,7 +22,7 @@ This diagram is based on actual runtime instances, properly handling shared comp
 		outputFile, _ := cmd.Flags().GetString("output")
 		format, _ := cmd.Flags().GetString("format")
 
-		err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+		err := withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
 			// Get the system diagram from the canvas
 			resp, err := client.GetSystemDiagram(ctx, &v1.GetSystemDiagramRequest{
 				CanvasId: canvasID,

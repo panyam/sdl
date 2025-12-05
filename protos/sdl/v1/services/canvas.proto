@@ -1,0 +1,239 @@
+syntax = "proto3";
+
+package sdl.v1;
+
+import "sdl/v1/models/models.proto";
+import "sdl/v1/models/canvas_service.proto";
+import "google/api/annotations.proto";
+
+option go_package = "github.com/panyam/sdl/gen/go/sdl/v1/services";
+
+// Service for interacting with a canvas.
+service CanvasService {
+  // Create a new canvas sesssion.
+  rpc CreateCanvas(CreateCanvasRequest) returns (CreateCanvasResponse) {
+    option (google.api.http) = {
+      post: "/v1/canvases",
+      body: "*",
+    };
+  }
+
+  // List all canvases from a user.
+  rpc ListCanvases(ListCanvasesRequest) returns (ListCanvasesResponse) {
+    option (google.api.http) = {
+      get: "/v1/canvases"
+    };
+  }
+
+  // Get details/stats for a particular canvas
+  rpc GetCanvas(GetCanvasRequest) returns (GetCanvasResponse) {
+    option (google.api.http) = {
+      get: "/v1/canvases/{id=*}"
+    };
+  }
+
+  rpc LoadFile(LoadFileRequest) returns (LoadFileResponse) {
+    option (google.api.http) = {
+      post: "/v1/canvases/{canvas_id=*}/actions:load"
+      body: "*"
+    };
+  }
+
+  rpc UseSystem(UseSystemRequest) returns (UseSystemResponse) {
+    option (google.api.http) = {
+      post: "/v1/canvases/{canvas_id=*}/actions:use"
+      body: "*"
+    };
+  }
+
+  // Delete a particular canvas. Frees up resources used by it and all the connections
+  rpc DeleteCanvas(DeleteCanvasRequest) returns (DeleteCanvasResponse) {
+    option (google.api.http) = {
+      delete: "/v1/canvases/{id=*}"
+    };
+  }
+
+  // Reset a canvas - clears all state, generators, and metrics
+  rpc ResetCanvas(ResetCanvasRequest) returns (ResetCanvasResponse) {
+    option (google.api.http) = {
+      post: "/v1/canvases/{canvas_id}/actions:reset"
+      body: "*"
+    };
+  }
+
+  // ----- Generator Operations -----
+
+  // Adds a generator to a canvas's generator_ids list and creates the generator resource.
+  rpc AddGenerator (AddGeneratorRequest) returns (AddGeneratorResponse) {
+    option (google.api.http) = {
+      post: "/v1/canvases/{generator.canvas_id}/generators"
+      body: "*"
+    };
+  }
+
+  // Request to start all generators
+  rpc StartAllGenerators (StartAllGeneratorsRequest) returns (StartAllGeneratorsResponse) {
+    option (google.api.http) = {
+      put: "/v1/canvases/{canvas_id}/generators/actions:startall"
+      body: "*"
+    };
+  }
+
+  // Request to stop all generators
+  rpc StopAllGenerators (StopAllGeneratorsRequest) returns (StopAllGeneratorsResponse) {
+    option (google.api.http) = {
+      put: "/v1/canvases/{canvas_id}/generators/actions:stopall"
+      body: "*"
+    };
+  }
+
+  rpc ListGenerators (ListGeneratorsRequest) returns (ListGeneratorsResponse) {
+    option (google.api.http) = {
+      get: "/v1/canvases/{canvas_id}/generators"
+    };
+  }
+
+  rpc GetGenerator (GetGeneratorRequest) returns (GetGeneratorResponse) {
+    option (google.api.http) = {
+      get: "/v1/canvases/{canvas_id}/generators/{generator_id}"
+    };
+  }
+
+  // Use PATCH for partial updates to a generator
+  rpc UpdateGenerator (UpdateGeneratorRequest) returns (UpdateGeneratorResponse) {
+     option (google.api.http) = {
+       patch: "/v1/canvases/{generator.canvas_id}/generators/{generator.id}"
+       body: "*"
+     };
+  }
+
+  rpc StopGenerator (StopGeneratorRequest) returns (StopGeneratorResponse) {
+     option (google.api.http) = {
+       post: "/v1/canvases/{canvas_id}/generators/{generator_id}/actions:pause"
+       body: "*"
+     };
+  }
+
+  rpc StartGenerator (StartGeneratorRequest) returns (StartGeneratorResponse) {
+     option (google.api.http) = {
+       post: "/v1/canvases/{canvas_id}/generators/{generator_id}/actions:resume"
+       body: "*"
+     };
+  }
+
+  rpc DeleteGenerator (DeleteGeneratorRequest) returns (DeleteGeneratorResponse) {
+    option (google.api.http) = {
+      delete: "/v1/canvases/{canvas_id}/generators/{generator_id}"
+    };
+  }
+
+  // Execute a single trace for debugging/analysis
+  rpc ExecuteTrace(ExecuteTraceRequest) returns (ExecuteTraceResponse) {
+    option (google.api.http) = {
+      get: "/v1/canvases/{canvas_id}/trace/{component}/{method}"
+    };
+  }
+
+  // Execute breadth-first traversal to find all possible execution paths
+  rpc TraceAllPaths(TraceAllPathsRequest) returns (TraceAllPathsResponse) {
+    option (google.api.http) = {
+      get: "/v1/canvases/{canvas_id}/paths/{component}/{method}"
+    };
+  }
+
+  // ----- Parameter Operations -----
+
+  // Set a component parameter value
+  rpc SetParameter(SetParameterRequest) returns (SetParameterResponse) {
+    option (google.api.http) = {
+      put: "/v1/canvases/{canvas_id}/parameters/{path}"
+      body: "*"
+    };
+  }
+
+  // Get parameter values
+  rpc GetParameters(GetParametersRequest) returns (GetParametersResponse) {
+    option (google.api.http) = {
+      get: "/v1/canvases/{canvas_id}/parameters"
+    };
+  }
+
+  // Batch set multiple parameters atomically
+  rpc BatchSetParameters(BatchSetParametersRequest) returns (BatchSetParametersResponse) {
+    option (google.api.http) = {
+      put: "/v1/canvases/{canvas_id}/parameters:batch"
+      body: "*"
+    };
+  }
+
+  // ----- Flow Analysis Operations -----
+
+  // Evaluate system flows using specified strategy
+  rpc EvaluateFlows(EvaluateFlowsRequest) returns (EvaluateFlowsResponse) {
+    option (google.api.http) = {
+      get: "/v1/canvases/{canvas_id}/flows/{strategy}/eval"
+    };
+  }
+
+  // Get current flow state
+  rpc GetFlowState(GetFlowStateRequest) returns (GetFlowStateResponse) {
+    option (google.api.http) = {
+      get: "/v1/canvases/{canvas_id}/flows/current"
+    };
+  }
+
+  // ----- Metric Operations -----
+
+  // Adds a metric to live plot
+  rpc AddMetric(AddMetricRequest) returns (AddMetricResponse) {
+    option (google.api.http) = {
+      post: "/v1/canvases/{metric.canvas_id}/metrics"
+      body: "*"
+    };
+  }
+
+  // Delete a particular metric
+  rpc DeleteMetric(DeleteMetricRequest) returns (DeleteMetricResponse) {
+    option (google.api.http) = {
+      delete: "/v1/canvases/{canvas_id}/metrics/{metric_id}"
+    };
+  }
+
+  // List all available metrics
+  rpc ListMetrics(ListMetricsRequest) returns (ListMetricsResponse) {
+    option (google.api.http) = {
+      get: "/v1/canvases/{canvas_id}/metrics"
+    };
+  }
+
+  // Query raw metric data points
+  rpc QueryMetrics(QueryMetricsRequest) returns (QueryMetricsResponse) {
+    option (google.api.http) = {
+      get: "/v1/canvases/{canvas_id}/metrics/{metric_id}/query"
+    };
+  }
+
+  // Stream real-time metric updates
+  rpc StreamMetrics(StreamMetricsRequest) returns (stream StreamMetricsResponse) {
+    // Note: Server-streaming RPCs are not supported by grpc-gateway HTTP mapping
+    // This will only be available via gRPC or Connect protocol
+  }
+
+  // ----- System Diagram Operations -----
+
+  // Get the system diagram for visualization
+  rpc GetSystemDiagram(GetSystemDiagramRequest) returns (GetSystemDiagramResponse) {
+    option (google.api.http) = {
+      get: "/v1/canvases/{canvas_id}/diagram"
+    };
+  }
+
+  // ----- Utilization Operations -----
+
+  // Get resource utilization information
+  rpc GetUtilization(GetUtilizationRequest) returns (GetUtilizationResponse) {
+    option (google.api.http) = {
+      get: "/v1/canvases/{canvas_id}/utilization"
+    };
+  }
+}

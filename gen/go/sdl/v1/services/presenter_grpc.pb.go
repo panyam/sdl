@@ -133,14 +133,14 @@ const (
 	CanvasViewPresenter_FileSaved_FullMethodName               = "/sdl.v1.CanvasViewPresenter/FileSaved"
 	CanvasViewPresenter_UseSystem_FullMethodName               = "/sdl.v1.CanvasViewPresenter/UseSystem"
 	CanvasViewPresenter_AddGenerator_FullMethodName            = "/sdl.v1.CanvasViewPresenter/AddGenerator"
-	CanvasViewPresenter_RemoveGenerator_FullMethodName         = "/sdl.v1.CanvasViewPresenter/RemoveGenerator"
+	CanvasViewPresenter_DeleteGenerator_FullMethodName         = "/sdl.v1.CanvasViewPresenter/DeleteGenerator"
 	CanvasViewPresenter_UpdateGenerator_FullMethodName         = "/sdl.v1.CanvasViewPresenter/UpdateGenerator"
 	CanvasViewPresenter_StartGenerator_FullMethodName          = "/sdl.v1.CanvasViewPresenter/StartGenerator"
 	CanvasViewPresenter_StopGenerator_FullMethodName           = "/sdl.v1.CanvasViewPresenter/StopGenerator"
 	CanvasViewPresenter_StartAllGenerators_FullMethodName      = "/sdl.v1.CanvasViewPresenter/StartAllGenerators"
 	CanvasViewPresenter_StopAllGenerators_FullMethodName       = "/sdl.v1.CanvasViewPresenter/StopAllGenerators"
 	CanvasViewPresenter_AddMetric_FullMethodName               = "/sdl.v1.CanvasViewPresenter/AddMetric"
-	CanvasViewPresenter_RemoveMetric_FullMethodName            = "/sdl.v1.CanvasViewPresenter/RemoveMetric"
+	CanvasViewPresenter_DeleteMetric_FullMethodName            = "/sdl.v1.CanvasViewPresenter/DeleteMetric"
 	CanvasViewPresenter_SetParameter_FullMethodName            = "/sdl.v1.CanvasViewPresenter/SetParameter"
 	CanvasViewPresenter_EvaluateFlows_FullMethodName           = "/sdl.v1.CanvasViewPresenter/EvaluateFlows"
 	CanvasViewPresenter_DiagramComponentClicked_FullMethodName = "/sdl.v1.CanvasViewPresenter/DiagramComponentClicked"
@@ -176,7 +176,7 @@ type CanvasViewPresenterClient interface {
 	// Called when user adds a generator
 	AddGenerator(ctx context.Context, in *models.AddGeneratorRequest, opts ...grpc.CallOption) (*models.AddGeneratorResponse, error)
 	// Called when user removes a generator
-	RemoveGenerator(ctx context.Context, in *models.RemoveGeneratorRequest, opts ...grpc.CallOption) (*models.RemoveGeneratorResponse, error)
+	DeleteGenerator(ctx context.Context, in *models.DeleteGeneratorRequest, opts ...grpc.CallOption) (*models.DeleteGeneratorResponse, error)
 	// Called when user updates generator rate
 	UpdateGenerator(ctx context.Context, in *models.UpdateGeneratorRequest, opts ...grpc.CallOption) (*models.UpdateGeneratorResponse, error)
 	// Called when user starts a generator
@@ -190,7 +190,7 @@ type CanvasViewPresenterClient interface {
 	// Called when user adds a metric to track
 	AddMetric(ctx context.Context, in *models.AddMetricRequest, opts ...grpc.CallOption) (*models.AddMetricResponse, error)
 	// Called when user removes a metric
-	RemoveMetric(ctx context.Context, in *models.RemoveMetricRequest, opts ...grpc.CallOption) (*models.RemoveMetricResponse, error)
+	DeleteMetric(ctx context.Context, in *models.DeleteMetricRequest, opts ...grpc.CallOption) (*models.DeleteMetricResponse, error)
 	// Called when user changes a component parameter
 	SetParameter(ctx context.Context, in *models.SetParameterRequest, opts ...grpc.CallOption) (*models.SetParameterResponse, error)
 	// Called when user wants to evaluate flows
@@ -269,10 +269,10 @@ func (c *canvasViewPresenterClient) AddGenerator(ctx context.Context, in *models
 	return out, nil
 }
 
-func (c *canvasViewPresenterClient) RemoveGenerator(ctx context.Context, in *models.RemoveGeneratorRequest, opts ...grpc.CallOption) (*models.RemoveGeneratorResponse, error) {
+func (c *canvasViewPresenterClient) DeleteGenerator(ctx context.Context, in *models.DeleteGeneratorRequest, opts ...grpc.CallOption) (*models.DeleteGeneratorResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(models.RemoveGeneratorResponse)
-	err := c.cc.Invoke(ctx, CanvasViewPresenter_RemoveGenerator_FullMethodName, in, out, cOpts...)
+	out := new(models.DeleteGeneratorResponse)
+	err := c.cc.Invoke(ctx, CanvasViewPresenter_DeleteGenerator_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -339,10 +339,10 @@ func (c *canvasViewPresenterClient) AddMetric(ctx context.Context, in *models.Ad
 	return out, nil
 }
 
-func (c *canvasViewPresenterClient) RemoveMetric(ctx context.Context, in *models.RemoveMetricRequest, opts ...grpc.CallOption) (*models.RemoveMetricResponse, error) {
+func (c *canvasViewPresenterClient) DeleteMetric(ctx context.Context, in *models.DeleteMetricRequest, opts ...grpc.CallOption) (*models.DeleteMetricResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(models.RemoveMetricResponse)
-	err := c.cc.Invoke(ctx, CanvasViewPresenter_RemoveMetric_FullMethodName, in, out, cOpts...)
+	out := new(models.DeleteMetricResponse)
+	err := c.cc.Invoke(ctx, CanvasViewPresenter_DeleteMetric_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -418,7 +418,7 @@ type CanvasViewPresenterServer interface {
 	// Called when user adds a generator
 	AddGenerator(context.Context, *models.AddGeneratorRequest) (*models.AddGeneratorResponse, error)
 	// Called when user removes a generator
-	RemoveGenerator(context.Context, *models.RemoveGeneratorRequest) (*models.RemoveGeneratorResponse, error)
+	DeleteGenerator(context.Context, *models.DeleteGeneratorRequest) (*models.DeleteGeneratorResponse, error)
 	// Called when user updates generator rate
 	UpdateGenerator(context.Context, *models.UpdateGeneratorRequest) (*models.UpdateGeneratorResponse, error)
 	// Called when user starts a generator
@@ -432,7 +432,7 @@ type CanvasViewPresenterServer interface {
 	// Called when user adds a metric to track
 	AddMetric(context.Context, *models.AddMetricRequest) (*models.AddMetricResponse, error)
 	// Called when user removes a metric
-	RemoveMetric(context.Context, *models.RemoveMetricRequest) (*models.RemoveMetricResponse, error)
+	DeleteMetric(context.Context, *models.DeleteMetricRequest) (*models.DeleteMetricResponse, error)
 	// Called when user changes a component parameter
 	SetParameter(context.Context, *models.SetParameterRequest) (*models.SetParameterResponse, error)
 	// Called when user wants to evaluate flows
@@ -468,8 +468,8 @@ func (UnimplementedCanvasViewPresenterServer) UseSystem(context.Context, *models
 func (UnimplementedCanvasViewPresenterServer) AddGenerator(context.Context, *models.AddGeneratorRequest) (*models.AddGeneratorResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddGenerator not implemented")
 }
-func (UnimplementedCanvasViewPresenterServer) RemoveGenerator(context.Context, *models.RemoveGeneratorRequest) (*models.RemoveGeneratorResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RemoveGenerator not implemented")
+func (UnimplementedCanvasViewPresenterServer) DeleteGenerator(context.Context, *models.DeleteGeneratorRequest) (*models.DeleteGeneratorResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteGenerator not implemented")
 }
 func (UnimplementedCanvasViewPresenterServer) UpdateGenerator(context.Context, *models.UpdateGeneratorRequest) (*models.UpdateGeneratorResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateGenerator not implemented")
@@ -489,8 +489,8 @@ func (UnimplementedCanvasViewPresenterServer) StopAllGenerators(context.Context,
 func (UnimplementedCanvasViewPresenterServer) AddMetric(context.Context, *models.AddMetricRequest) (*models.AddMetricResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddMetric not implemented")
 }
-func (UnimplementedCanvasViewPresenterServer) RemoveMetric(context.Context, *models.RemoveMetricRequest) (*models.RemoveMetricResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RemoveMetric not implemented")
+func (UnimplementedCanvasViewPresenterServer) DeleteMetric(context.Context, *models.DeleteMetricRequest) (*models.DeleteMetricResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteMetric not implemented")
 }
 func (UnimplementedCanvasViewPresenterServer) SetParameter(context.Context, *models.SetParameterRequest) (*models.SetParameterResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetParameter not implemented")
@@ -632,20 +632,20 @@ func _CanvasViewPresenter_AddGenerator_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CanvasViewPresenter_RemoveGenerator_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(models.RemoveGeneratorRequest)
+func _CanvasViewPresenter_DeleteGenerator_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(models.DeleteGeneratorRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CanvasViewPresenterServer).RemoveGenerator(ctx, in)
+		return srv.(CanvasViewPresenterServer).DeleteGenerator(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CanvasViewPresenter_RemoveGenerator_FullMethodName,
+		FullMethod: CanvasViewPresenter_DeleteGenerator_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CanvasViewPresenterServer).RemoveGenerator(ctx, req.(*models.RemoveGeneratorRequest))
+		return srv.(CanvasViewPresenterServer).DeleteGenerator(ctx, req.(*models.DeleteGeneratorRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -758,20 +758,20 @@ func _CanvasViewPresenter_AddMetric_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CanvasViewPresenter_RemoveMetric_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(models.RemoveMetricRequest)
+func _CanvasViewPresenter_DeleteMetric_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(models.DeleteMetricRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CanvasViewPresenterServer).RemoveMetric(ctx, in)
+		return srv.(CanvasViewPresenterServer).DeleteMetric(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CanvasViewPresenter_RemoveMetric_FullMethodName,
+		FullMethod: CanvasViewPresenter_DeleteMetric_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CanvasViewPresenterServer).RemoveMetric(ctx, req.(*models.RemoveMetricRequest))
+		return srv.(CanvasViewPresenterServer).DeleteMetric(ctx, req.(*models.DeleteMetricRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -880,8 +880,8 @@ var CanvasViewPresenter_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CanvasViewPresenter_AddGenerator_Handler,
 		},
 		{
-			MethodName: "RemoveGenerator",
-			Handler:    _CanvasViewPresenter_RemoveGenerator_Handler,
+			MethodName: "DeleteGenerator",
+			Handler:    _CanvasViewPresenter_DeleteGenerator_Handler,
 		},
 		{
 			MethodName: "UpdateGenerator",
@@ -908,8 +908,8 @@ var CanvasViewPresenter_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CanvasViewPresenter_AddMetric_Handler,
 		},
 		{
-			MethodName: "RemoveMetric",
-			Handler:    _CanvasViewPresenter_RemoveMetric_Handler,
+			MethodName: "DeleteMetric",
+			Handler:    _CanvasViewPresenter_DeleteMetric_Handler,
 		},
 		{
 			MethodName: "SetParameter",

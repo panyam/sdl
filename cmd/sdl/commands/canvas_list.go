@@ -4,17 +4,18 @@ import (
 	"context"
 	"fmt"
 
-	v1 "github.com/panyam/sdl/gen/go/sdl/v1"
+	v1 "github.com/panyam/sdl/gen/go/sdl/v1/models"
+	v1s "github.com/panyam/sdl/gen/go/sdl/v1/services"
 	"github.com/spf13/cobra"
 )
 
 var canvasListCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List all canvases",
-	Long:  `List all available canvases in the SDL server.`,
+	Use:     "list",
+	Short:   "List all canvases",
+	Long:    `List all available canvases in the SDL server.`,
 	Aliases: []string{"ls"},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+		return withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
 			resp, err := client.ListCanvases(ctx, &v1.ListCanvasesRequest{})
 			if err != nil {
 				return fmt.Errorf("failed to list canvases: %w", err)

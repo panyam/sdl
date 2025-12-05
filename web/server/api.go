@@ -7,9 +7,9 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	gfn "github.com/panyam/goutils/fn"
-	v1 "github.com/panyam/sdl/gen/go/sdl/v1"
-	"github.com/panyam/sdl/gen/go/sdl/v1/v1connect"
-	"github.com/panyam/sdl/web/services"
+	v1s "github.com/panyam/sdl/gen/go/sdl/v1/services"
+	v1connect "github.com/panyam/sdl/gen/go/sdl/v1/services/sdlv1connect"
+	"github.com/panyam/sdl/services"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
@@ -115,13 +115,13 @@ func (web *SDLApi) createSvcMux(grpc_addr string) (*runtime.ServeMux, error) {
 	ctx := context.Background()
 
 	// Register existing services
-	err := v1.RegisterCanvasServiceHandlerFromEndpoint(ctx, svcMux, grpc_addr, opts)
+	err := v1s.RegisterCanvasServiceHandlerFromEndpoint(ctx, svcMux, grpc_addr, opts)
 	if err != nil {
 		log.Fatal("Unable to register canvas service: ", err)
 		return nil, err
 	}
 
-	err = v1.RegisterSystemsServiceHandlerFromEndpoint(ctx, svcMux, grpc_addr, opts)
+	err = v1s.RegisterSystemsServiceHandlerFromEndpoint(ctx, svcMux, grpc_addr, opts)
 	if err != nil {
 		log.Fatal("Unable to register systems service: ", err)
 		return nil, err

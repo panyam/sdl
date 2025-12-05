@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/felixge/httpsnoop"
-	"github.com/panyam/sdl/web/services"
+	"github.com/panyam/sdl/services"
 )
 
 type WebAppServer struct {

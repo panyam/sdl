@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	v1 "github.com/panyam/sdl/gen/go/sdl/v1"
+	v1 "github.com/panyam/sdl/gen/go/sdl/v1/models"
+	v1s "github.com/panyam/sdl/gen/go/sdl/v1/services"
 	"github.com/spf13/cobra"
 )
 
@@ -22,8 +23,8 @@ This is useful for starting fresh without restarting the server.`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		canvasID := args[0]
-		
-		return withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+
+		return withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
 			req := &v1.ResetCanvasRequest{
 				CanvasId: canvasID,
 			}

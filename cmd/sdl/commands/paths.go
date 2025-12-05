@@ -7,7 +7,8 @@ import (
 	"os"
 	"strings"
 
-	v1 "github.com/panyam/sdl/gen/go/sdl/v1"
+	v1 "github.com/panyam/sdl/gen/go/sdl/v1/models"
+	v1s "github.com/panyam/sdl/gen/go/sdl/v1/services"
 	"github.com/spf13/cobra"
 )
 
@@ -43,7 +44,7 @@ Prerequisites:
 		methodName := parts[1]
 
 		// Execute path traversal via gRPC
-		err := withCanvasClient(func(client v1.CanvasServiceClient, ctx context.Context) error {
+		err := withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
 			req := &v1.TraceAllPathsRequest{
 				CanvasId:  canvasID,
 				Component: componentName,
@@ -107,7 +108,7 @@ func displayAllPathsOutput(traceData *v1.AllPathsTraceData) {
 	pathCount := countAllPaths(traceData.Root)
 	fmt.Printf("\n=== Summary ===\n")
 	fmt.Printf("Total unique execution paths: %d\n", pathCount)
-	
+
 	if len(traceData.Root.Groups) > 0 {
 		fmt.Printf("Branch points: %d\n", len(traceData.Root.Groups))
 	}
@@ -130,7 +131,7 @@ func displayTraceNode(node *v1.TraceNode, depth int, pipes []bool) {
 				prefix += "    "
 			}
 		}
-		
+
 		// Add the branch for this level
 		if depth-1 < len(pipes) && !pipes[depth-1] {
 			prefix += "└── "
@@ -158,7 +159,7 @@ func displayTraceNode(node *v1.TraceNode, depth int, pipes []bool) {
 	// Display edges
 	for i, edge := range node.Edges {
 		isLast := i == len(node.Edges)-1
-		
+
 		// Build edge label with conditions
 		edgeLabel := edge.Label
 		if edge.IsConditional && edge.Condition != "" {
@@ -183,7 +184,7 @@ func displayTraceNode(node *v1.TraceNode, depth int, pipes []bool) {
 				edgePrefix += "    "
 			}
 		}
-		
+
 		if isLast {
 			edgePrefix += "└─→ "
 		} else {
@@ -199,7 +200,7 @@ func displayTraceNode(node *v1.TraceNode, depth int, pipes []bool) {
 		} else {
 			newPipes = append(newPipes, false)
 		}
-		
+
 		if edge.NextNode != nil {
 			displayTraceNode(edge.NextNode, depth+1, newPipes)
 		}

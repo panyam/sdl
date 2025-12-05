@@ -1,0 +1,99 @@
+syntax = "proto3";
+
+package sdl.v1;
+
+import "sdl/v1/models/models.proto";
+import "sdl/v1/models/presenter.proto";
+import "sdl/v1/models/canvas_service.proto";
+import "google/api/annotations.proto";
+
+option go_package = "github.com/panyam/sdl/gen/go/sdl/v1/services";
+
+// SingletonInitializerService initializes the WASM singleton with data
+// This is called once when the page loads to bootstrap the WASM module
+service SingletonInitializerService {
+  rpc InitializeSingleton(InitializeSingletonRequest) returns (InitializeSingletonResponse);
+}
+
+// CanvasViewPresenter is the P in Model-View-Presenter.
+//
+// The frontend/views are kept as dumb as possible - they react to commands
+// and state changes but don't handle complex UI logic. They present user
+// interactions to this Presenter which handles the logic between the view
+// and the backend (Canvas/runtime).
+//
+// This also helps with:
+// - Mocking views for testing
+// - Different view implementations (web, CLI, remote)
+// - Changing presenters for different looks/feels
+service CanvasViewPresenter {
+  // === Initialization ===
+
+  // Called when the dashboard is first loaded
+  rpc Initialize(InitializePresenterRequest) returns (InitializePresenterResponse);
+
+  // Called by browser after UI is fully ready for updates
+  rpc ClientReady(ClientReadyRequest) returns (ClientReadyResponse);
+
+  // === File Operations ===
+
+  // Called when user selects a file in the explorer
+  rpc FileSelected(FileSelectedRequest) returns (FileSelectedResponse);
+
+  // Called when user saves a file
+  rpc FileSaved(FileSavedRequest) returns (FileSavedResponse);
+
+  // === System Operations ===
+
+  // Called when user wants to load/use a system
+  rpc UseSystem(UseSystemRequest) returns (UseSystemResponse);
+
+  // === Generator Operations ===
+
+  // Called when user adds a generator
+  rpc AddGenerator(AddGeneratorRequest) returns (AddGeneratorResponse);
+
+  // Called when user removes a generator
+  rpc DeleteGenerator(DeleteGeneratorRequest) returns (DeleteGeneratorResponse);
+
+  // Called when user updates generator rate
+  rpc UpdateGenerator(UpdateGeneratorRequest) returns (UpdateGeneratorResponse);
+
+  // Called when user starts a generator
+  rpc StartGenerator(StartGeneratorRequest) returns (StartGeneratorResponse);
+
+  // Called when user stops a generator
+  rpc StopGenerator(StopGeneratorRequest) returns (StopGeneratorResponse);
+
+  // Called when user starts all generators
+  rpc StartAllGenerators(StartAllGeneratorsRequest) returns (StartAllGeneratorsResponse);
+
+  // Called when user stops all generators
+  rpc StopAllGenerators(StopAllGeneratorsRequest) returns (StopAllGeneratorsResponse);
+
+  // === Metric Operations ===
+
+  // Called when user adds a metric to track
+  rpc AddMetric(AddMetricRequest) returns (AddMetricResponse);
+
+  // Called when user removes a metric
+  rpc DeleteMetric(DeleteMetricRequest) returns (DeleteMetricResponse);
+
+  // === Parameter Operations ===
+
+  // Called when user changes a component parameter
+  rpc SetParameter(SetParameterRequest) returns (SetParameterResponse);
+
+  // === Flow Operations ===
+
+  // Called when user wants to evaluate flows
+  rpc EvaluateFlows(EvaluateFlowsRequest) returns (EvaluateFlowsResponse);
+
+  // === Diagram Interactions ===
+
+  // Called when user clicks on a component in the diagram
+  rpc DiagramComponentClicked(DiagramComponentClickedRequest) returns (DiagramComponentClickedResponse);
+
+  // Called when user hovers over a component
+  rpc DiagramComponentHovered(DiagramComponentHoveredRequest) returns (DiagramComponentHoveredResponse);
+}

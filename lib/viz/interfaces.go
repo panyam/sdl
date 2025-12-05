@@ -2,7 +2,7 @@
 package viz
 
 import (
-	protos "github.com/panyam/sdl/gen/go/sdl/v1"
+	protos "github.com/panyam/sdl/gen/go/sdl/v1/models"
 	"github.com/panyam/sdl/lib/runtime"
 )
 
