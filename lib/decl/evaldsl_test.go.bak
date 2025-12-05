@@ -1,0 +1,716 @@
+package decl
+
+import (
+	"fmt"
+	"testing"
+
+	"github.com/panyam/sdl/lib/core" // For core types
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+// --- Test Helpers ---
+
+// Assumed Parse function (replace with actual import/call)
+func Parse(input string) (*FileDecl, error) {
+	// In a real scenario, this would call your parser library
+	// For now, return a dummy or error if you don't have the parser integrated yet
+	fmt.Printf("--- Parsing DSL ---\n%s\n------\n", input)
+	// return nil, fmt.Errorf("parser not implemented yet")
+	// Placeholder: Replace with actual parser call
+	// If you have a placeholder parser that builds the AST manually based on input, use that.
+	// Otherwise, you might need to skip these tests until the parser is ready.
+	parser := NewParser()
+	return parser.Parse(input) // Assuming your parser struct and method
+}
+
+// Helper function to parse, load, find a node, and eval
+func evalDSL(t *testing.T, dsl string, vm *VM, frame *Frame, nodeFinder func(*FileDecl) (Node, error)) (Value, error) {
+	t.Helper()
+	fileAST, err := Parse(dsl)
+	require.NoError(t, err, "DSL parsing failed")
+	require.NotNil(t, fileAST, "Parser returned nil FileDecl")
+
+	// Load definitions into VM (replace with actual loading mechanism)
+	// vm.LoadFile(fileAST)
+	vm.Entry = fileAST
+	err = fileAST.Resolve() // Manually resolve after parsing
+	require.NoError(t, err, "Resolving FileDecl failed")
+
+	targetNode, err := nodeFinder(fileAST)
+	require.NoError(t, err, "Failed to find target node in parsed AST")
+	require.NotNil(t, targetNode, "Node finder returned nil node")
+
+	// fmt.Printf("Evaluating node: %T\n", targetNode) // Debug which node is being evaluated
+	return Eval(targetNode, frame, vm)
+}
+
+// Node Finder: Finds the expression within the first 'analyze Result = ...' block
+func findAnalyzeResultExpr(file *FileDecl) (Node, error) {
+	if len(file.Declarations) == 0 {
+		return nil, fmt.Errorf("no declarations found in file")
+	}
+	sysDecl, ok := file.Declarations[0].(*SystemDecl)
+	if !ok || len(sysDecl.Body) == 0 {
+		return nil, fmt.Errorf("expected a SystemDecl with body as the first declaration")
+	}
+	for _, item := range sysDecl.Body {
+		if analyzeDecl, ok := item.(*AnalyzeDecl); ok && analyzeDecl.Name.Name == "Result" {
+			return analyzeDecl.Target, nil // Return the expression part
+		}
+	}
+	return nil, fmt.Errorf("analyze block named 'Result' not found")
+}
+
+// Node Finder: Finds a specific statement within a component method's body
+func findMethodStmt(file *FileDecl, compName, methodName string, stmtIndex int) (Node, error) {
+	compDecl, err := file.GetComponent(compName)
+	if err != nil {
+		return nil, err
+	}
+	if compDecl == nil {
+		return nil, fmt.Errorf("component '%s' not found", compName)
+	}
+	methodDecl, err := compDecl.GetMethod(methodName)
+	if err != nil {
+		return nil, err
+	}
+	if methodDecl == nil {
+		return nil, fmt.Errorf("method '%s' not found in component '%s'", methodName, compName)
+	}
+	if methodDecl.Body == nil || stmtIndex >= len(methodDecl.Body.Statements) {
+		return nil, fmt.Errorf("statement index %d out of bounds for method '%s.%s'", stmtIndex, compName, methodName)
+	}
+	return methodDecl.Body.Statements[stmtIndex], nil
+}
+
+// Node Finder: Finds a specific declaration (e.g., SystemDecl) by name
+func findDeclaration(file *FileDecl, declName string) (Node, error) {
+	for _, decl := range file.Declarations {
+		switch d := decl.(type) {
+		case *SystemDecl:
+			if d.NameNode.Name == declName {
+				return d, nil
+			}
+		case *ComponentDecl:
+			if d.NameNode.Name == declName {
+				return d, nil
+			}
+			// Add other top-level declaration types if needed
+		}
+	}
+	return nil, fmt.Errorf("declaration '%s' not found", declName)
+}
+
+// --- Assertion helpers remain the same ---
+// (assertValueInt, assertLeafBool, assertNilNode, assertComponentRuntime, assertBinaryOpNode etc.)
+
+// --- Refactored Tests ---
+
+func TestEvalLiteral_Parsed(t *testing.T) {
+	vm, frame := setupTestVM()
+
+	dsl := `
+        system TestLiteralSystem {
+            analyze Result = 123;
+        }
+    `
+	resInt, errInt := evalDSL(t, dsl, vm, frame, findAnalyzeResultExpr)
+	require.NoError(t, errInt)
+	assertValueInt(t, resInt, 123) // Assertion checks OpNode structure
+	t.Logf("Eval(Parsed 123): %s", resInt)
+
+	dslBool := `
+        system TestLiteralSystem {
+            analyze Result = true;
+        }
+    `
+	resBool, errBool := evalDSL(t, dslBool, vm, frame, findAnalyzeResultExpr)
+	require.NoError(t, errBool)
+	assertLeafBool(t, resBool, true) // Assertion checks OpNode structure
+	t.Logf("Eval(Parsed true): %s", resBool)
+
+	// TODO: Test STRING, FLOAT, DURATION literals similarly
+}
+
+func TestEvalIdentifier_Parsed(t *testing.T) {
+	vm, frame := setupTestVM()
+
+	// Setup frame *manually* because `let` is tested separately.
+	// `Eval` itself doesn't modify the passed frame directly for locals,
+	// only the child frames it creates. `evalLetStmt` modifies its frame.
+	expectedNode, _ := NewValue(OpNodeType, &LeafNode{State: createNilState()}) // Example node stored in Frame
+	frame.Set("myVar", expectedNode)
+
+	// Test Found
+	dslFound := `
+        system TestIdentSystem {
+            // This analyze block uses 'myVar' which MUST exist in the initial frame passed to Eval
+            analyze Result = myVar;
+        }
+    `
+	resFound, errFound := evalDSL(t, dslFound, vm, frame, findAnalyzeResultExpr)
+	require.NoError(t, errFound)
+	assert.Same(t, expectedNode.Value.(OpNode), resFound.Value.(OpNode), "Identifier lookup returned wrong node")
+	t.Logf("Eval(Parsed myVar): %s", resFound)
+
+	// Test Not Found
+	dslNotFound := `
+        system TestIdentSystem {
+            analyze Result = noVar; // This should fail lookup
+        }
+    `
+	_, errNotFound := evalDSL(t, dslNotFound, vm, frame, findAnalyzeResultExpr)
+	require.Error(t, errNotFound)
+	assert.ErrorIs(t, errNotFound, ErrNotFound)
+	t.Logf("Eval(Parsed noVar): %s", errNotFound)
+}
+
+func TestEvalLetStmt_Parsed(t *testing.T) {
+	vm, frame := setupTestVM()
+
+	// Evaluate a block containing the let statement
+	dsl := `
+        component TestComp {
+            method Run() {
+                let x = 5;
+                // We need another statement to observe the effect in the frame
+                // Let's use a dummy expression statement
+                x; // Reference x to ensure it's used/resolvable later if needed
+            }
+        }
+        system TestLetSystem {
+            instance tc: TestComp;
+            // Analyze the method containing the let
+            analyze Test = tc.Run();
+        }
+    `
+	// We need to evaluate the whole system or the method call to test `let`'s effect
+	// Let's evaluate the method call via analyze block.
+	// The result of the *analyze* block will be the OpNode for `x`.
+
+	// We need to find the ComponentDecl, then the MethodDecl, then the LetStmt
+	stmtFinder := func(f *FileDecl) (Node, error) {
+		return findMethodStmt(f, "TestComp", "Run", 0) // Find the 'let' statement (index 0)
+	}
+	// Eval the 'let' statement itself
+	resLet, errLet := evalDSL(t, dsl, vm, frame, stmtFinder)
+	require.NoError(t, errLet)
+	assert.Equal(t, resLet.Type.Tag, ValueTypeNil) // Let statement itself returns Nil
+
+	// How to check the frame state *after* the let statement?
+	// Eval creates a new Frame for the block. The original `frame` is not modified.
+	// We need to evaluate an expression *using* the let variable within the same block/method scope.
+
+	// Let's re-evaluate, targeting the expression *after* the let
+	exprFinder := func(f *FileDecl) (Node, error) {
+		methodDecl, err := f.GetComponent("TestComp").GetMethod("Run")
+		if err != nil {
+			return nil, err
+		}
+		// Get the expression statement `x;`
+		exprStmt, ok := methodDecl.Body.Statements[1].(*ExprStmt)
+		if !ok {
+			return nil, fmt.Errorf("expected ExprStmt at index 1")
+		}
+		return exprStmt.Expression, nil // Evaluate the identifier 'x'
+	}
+
+	// Need a frame where 'let x = 5' has already executed.
+	// This requires evaluating the block/method containing the let.
+	// Let's evaluate the whole method call via the analyze block.
+	analyzeFinder := func(f *FileDecl) (Node, error) {
+		sys, ok := f.Declarations[1].(*SystemDecl) // Assuming system is second
+		if !ok {
+			return nil, fmt.Errorf("cannot find system")
+		}
+		return sys.Body[1], nil // Return the AnalyzeDecl node
+	}
+
+	// Evaluate the 'analyze' block. This will run the method.
+	// The setupTestVM needs to handle native components if the method uses them.
+	// Here, the method is simple.
+	analyzeResult, errAnalyze := evalDSL(t, dsl, vm, frame, analyzeFinder)
+	require.NoError(t, errAnalyze)
+
+	// The result of `tc.Run()` is the result of the last expression `x;`
+	// which should resolve to the OpNode for `5`.
+	assertValueInt(t, analyzeResult, 5)
+	t.Logf("Result of analyze tc.Run() [containing let x=5; x;]: %s", analyzeResult)
+
+	// It's hard to directly inspect the intermediate frame state with this setup.
+	// The primary check is that the variable was usable in subsequent expressions.
+}
+
+func TestEvalBlockStmt_Parsed(t *testing.T) {
+	vm, frame := setupTestVM()
+
+	// DSL for a block to evaluate directly (within a dummy method/analyze)
+	dsl := `
+        component TestComp {
+            method Run() {
+                { // Inner block starts here
+                    let a = 1; // Not returned
+                    let b = 2; // Not returned
+                    a + b;     // This expression's OpNode should be returned
+                } // Inner block ends here
+            }
+        }
+         system TestBlockSystem {
+            instance tc: TestComp;
+            analyze Result = tc.Run();
+        }
+    `
+	// We evaluate the analyze block, which calls the method containing the block
+	analyzeFinder := func(f *FileDecl) (Node, error) {
+		sys, ok := f.Declarations[1].(*SystemDecl)
+		if !ok {
+			return nil, fmt.Errorf("cannot find system")
+		}
+		return sys.Body[1], nil // Return the AnalyzeDecl
+	}
+
+	resBlock, errBlock := evalDSL(t, dsl, vm, frame, analyzeFinder)
+	require.NoError(t, errBlock)
+
+	// Expect the result to be the BinaryOpNode for 'a + b'
+	binOpNode := assertBinaryOpNode(t, resBlock, "+")
+	// Check operands (which resolved within the block's scope)
+	assertValueInt(t, binOpNode.Left, 1)  // 'a' resolved to 1
+	assertValueInt(t, binOpNode.Right, 2) // 'b' resolved to 2
+
+	t.Logf("Eval(Parsed {let a=1; let b=2; a+b;}): %s", resBlock)
+
+	// Test empty block
+	dslEmpty := `component C{method M(){{}}} system S{instance i:C; analyze R=i.M();}`
+	resEmpty, errEmpty := evalDSL(t, dslEmpty, vm, frame, analyzeFinder) // Use standard analyze finder
+	require.NoError(t, errEmpty)
+	assert.Equal(t, resEmpty.Type.Tag, ValueTypeNil) // Empty block evaluates to Nil
+	t.Logf("Eval(Parsed {{}}): %s", resEmpty)
+
+	// Test block returning single literal
+	dslSingle := `component C{method M(){{ 101; }}} system S{instance i:C; analyze R=i.M();}`
+	resSingle, errSingle := evalDSL(t, dslSingle, vm, frame, analyzeFinder)
+	require.NoError(t, errSingle)
+	assertValueInt(t, resSingle, 101)
+	t.Logf("Eval(Parsed {{ 101; }}): %s", resSingle)
+
+	// Test block returning sequence (multiple expressions)
+	dslSeq := `component C{method M(){{ "a"; true; }}} system S{instance i:C; analyze R=i.M();}`
+	resSeq, errSeq := evalDSL(t, dslSeq, vm, frame, analyzeFinder)
+	require.NoError(t, errSeq)
+	seqNode, okSeq := resSeq.Value.(*SequenceNode)
+	require.True(t, okSeq, "Expected *SequenceNode, got %T", resSeq)
+	require.Len(t, seqNode.Steps, 2)
+	// TODO: Need assertLeafStringValue helper
+	// assertLeafStringValue(t, seqNode.Steps[0], "a")
+	assertLeafBool(t, seqNode.Steps[1], true)
+	t.Logf("Eval(Parsed {{ \"a\"; true; }}): %s", resSeq)
+
+}
+
+func TestEvalBinaryExpr_Parsed(t *testing.T) {
+	vm, frame := setupTestVM()
+
+	// Wrap expressions in analyze blocks for evaluation
+	dslAdd := `system T{analyze Result = 1 + 2;}`
+	resAdd, errAdd := evalDSL(t, dslAdd, vm, frame, findAnalyzeResultExpr)
+	require.NoError(t, errAdd)
+	binOpAdd := assertBinaryOpNode(t, resAdd, "+")
+	assertValueInt(t, binOpAdd.Left, 1)
+	assertValueInt(t, binOpAdd.Right, 2)
+	t.Logf("Eval(Parsed 1 + 2): %s", resAdd)
+
+	dslAnd := `system T{analyze Result = true && false;}`
+	resAnd, errAnd := evalDSL(t, dslAnd, vm, frame, findAnalyzeResultExpr)
+	require.NoError(t, errAnd)
+	binOpAnd := assertBinaryOpNode(t, resAnd, "&&")
+	assertLeafBool(t, binOpAnd.Left, true)
+	assertLeafBool(t, binOpAnd.Right, false)
+	t.Logf("Eval(Parsed true && false): %s", resAnd)
+
+	dslGt := `system T{analyze Result = 10 > 5;}`
+	resGt, errGt := evalDSL(t, dslGt, vm, frame, findAnalyzeResultExpr)
+	require.NoError(t, errGt)
+	binOpGt := assertBinaryOpNode(t, resGt, ">")
+	assertValueInt(t, binOpGt.Left, 10)
+	assertValueInt(t, binOpGt.Right, 5)
+	t.Logf("Eval(Parsed 10 > 5): %s", resGt)
+
+	// Nested expression
+	dslNested := `system T{analyze Result = (1 + 2) * 3;}`
+	resNested, errNested := evalDSL(t, dslNested, vm, frame, findAnalyzeResultExpr)
+	require.NoError(t, errNested)
+	outerMul := assertBinaryOpNode(t, resNested, "*")
+	assertValueInt(t, outerMul.Right, 3)
+	innerAdd := assertBinaryOpNode(t, outerMul.Left, "+")
+	assertValueInt(t, innerAdd.Left, 1)
+	assertValueInt(t, innerAdd.Right, 2)
+	t.Logf("Eval(Parsed (1 + 2) * 3): %s", resNested)
+
+	// Expression with variables (needs component/method context)
+	dslWithVar := `
+        component C {
+            method M() {
+                let x = 20;
+                x * 3; // Return OpNode for this
+            }
+        }
+        system S { instance i:C; analyze Result=i.M(); }
+    `
+	resWithVar, errWithVar := evalDSL(t, dslWithVar, vm, frame, findAnalyzeResultExpr) // Analyze finder gets result of M()
+	require.NoError(t, errWithVar)
+	binOpMul := assertBinaryOpNode(t, resWithVar, "*")
+	assertValueInt(t, binOpMul.Left, 20) // Eval should resolve 'x'
+	assertValueInt(t, binOpMul.Right, 3)
+	t.Logf("Eval(Parsed {let x=20; x*3;}): %s", resWithVar)
+}
+
+func TestEvalIfStmt_Parsed(t *testing.T) {
+	vm, frame := setupTestVM()
+
+	// Basic If-Then
+	dslIfThen := `
+        component C{method M(){ if true { 1; } }}
+        system S{instance i:C; analyze Result=i.M();}
+    `
+	resIfThen, errIfThen := evalDSL(t, dslIfThen, vm, frame, findAnalyzeResultExpr)
+	require.NoError(t, errIfThen)
+	ifNode1 := assertIfChoiceNode(t, resIfThen) // New helper
+	assertLeafBool(t, ifNode1.Condition, true)
+	assertValueInt(t, ifNode1.Then, 1)
+	assert.Nil(t, ifNode1.Else) // No else branch node
+	t.Logf("Eval(Parsed if true { 1 }): %s", resIfThen)
+
+	// If-Then-Else
+	dslIfElse := `
+        component C{method M(){ if 5 < 3 { 10; } else { 20; } }}
+        system S{instance i:C; analyze Result=i.M();}
+    `
+	resIfElse, errIfElse := evalDSL(t, dslIfElse, vm, frame, findAnalyzeResultExpr)
+	require.NoError(t, errIfElse)
+	ifNode2 := assertIfChoiceNode(t, resIfElse)
+	condBinOp := assertBinaryOpNode(t, ifNode2.Condition, "<")
+	assertValueInt(t, condBinOp.Left, 5)
+	assertValueInt(t, condBinOp.Right, 3)
+	assertValueInt(t, ifNode2.Then, 10)
+	assertValueInt(t, ifNode2.Else, 20)
+	t.Logf("Eval(Parsed if 5 < 3 { 10 } else { 20 }): %s", resIfElse)
+
+	// If with sequence in branches
+	dslComplexIf := `
+        component C {
+            method M() {
+                let x = 5;
+                if x == 5 {
+                    let y = 1;
+                    y + 1; // This is the result of 'then'
+                } else {
+                    99;    // This is the result of 'else'
+                }
+            }
+        }
+        system S { instance i:C; analyze Result=i.M(); }
+    `
+	resComplexIf, errComplexIf := evalDSL(t, dslComplexIf, vm, frame, findAnalyzeResultExpr)
+	require.NoError(t, errComplexIf)
+	ifNode3 := assertIfChoiceNode(t, resComplexIf)
+	// Check condition (x == 5)
+	condBinOp3 := assertBinaryOpNode(t, ifNode3.Condition, "==")
+	assertValueInt(t, condBinOp3.Left, 5) // x resolved
+	assertValueInt(t, condBinOp3.Right, 5)
+	// Check then branch result (y + 1)
+	thenBinOp := assertBinaryOpNode(t, ifNode3.Then, "+")
+	assertValueInt(t, thenBinOp.Left, 1) // y resolved
+	assertValueInt(t, thenBinOp.Right, 1)
+	// Check else branch result
+	assertValueInt(t, ifNode3.Else, 99)
+	t.Logf("Eval(Parsed complex if): %s", resComplexIf)
+}
+
+// --- Refined TestEvalInstanceDecl Tests ---
+
+// Helper to find an instance declaration node within a system
+func findInstanceDecl(file *FileDecl, sysName, instName string) (*InstanceDecl, error) {
+	sysDeclNode, err := findDeclaration(file, sysName)
+	if err != nil {
+		return nil, err
+	}
+	sysDecl, ok := sysDeclNode.(*SystemDecl)
+	if !ok {
+		return nil, fmt.Errorf("declaration '%s' is not a SystemDecl", sysName)
+	}
+	for _, item := range sysDecl.Body {
+		if instDecl, ok := item.(*InstanceDecl); ok && instDecl.NameNode.Name == instName {
+			return instDecl, nil
+		}
+	}
+	return nil, fmt.Errorf("instance '%s' not found in system '%s'", instName, sysName)
+}
+
+func TestEvalInstanceDecl_NativeComponent_Parsed(t *testing.T) {
+	vm, frame := setupTestVM()
+
+	dsl := `
+        // Native component definition (minimal, VM links to Go via registry)
+        component MockDisk {
+            param ProfileName: string;
+            param ReadLatency: float; // Use float for Go float64
+        }
+
+        system MySysNative {
+            instance d1: MockDisk = {
+                ProfileName = "HDD";
+                ReadLatency = 123.0; // Use float literal
+            };
+        }
+    `
+	// Register the Go constructor *before* evaluation
+	vm.RegisterNativeComponent("MockDisk", NewMockDiskComponent)
+
+	// Evaluate the SystemDecl to trigger instantiation
+	sysFinder := func(f *FileDecl) (Node, error) { return findDeclaration(f, "MySysNative") }
+	_, errEval := evalDSL(t, dsl, vm, frame, sysFinder)
+	require.NoError(t, errEval, "System evaluation failed")
+
+	// Verify frame state - expecting NativeComponent
+	runtimeInstance := assertComponentRuntime(t, frame, "d1", "MockDisk") // Use existing helper
+	adapter, okAdapter := runtimeInstance.(*NativeComponent)
+	require.True(t, okAdapter, "Instance 'd1' should be wrapped in NativeComponent")
+	mockDiskInstance, okCast := adapter.GoInstance.(*MockDisk)
+	require.True(t, okCast, "Adapter GoInstance is not *MockDisk")
+	assert.Equal(t, "d1", mockDiskInstance.InstanceName)
+	assert.Equal(t, "HDD", mockDiskInstance.ProfileName)
+	assert.Equal(t, 123.0, mockDiskInstance.ReadLatency) // Check float value
+
+	t.Logf("(Native Parsed) Frame after system eval: %s", frame)
+}
+
+func TestEvalInstanceDecl_DSLComponent_Parsed(t *testing.T) {
+	vm, frame := setupTestVM()
+
+	dsl := `
+        component ConsoleLogger {
+            param Level: string = "INFO";
+            // No methods needed for this test
+        }
+        component MyServiceDSL {
+            param ServiceName: string; // Required param
+            uses logger: ConsoleLogger;
+        }
+        system DSLOnlySys {
+            instance log1: ConsoleLogger; // Uses default Level
+            instance svc1: MyServiceDSL = {
+                ServiceName = "PrimaryService";
+                logger = log1; // Dependency assignment
+            };
+        }
+    `
+	// Evaluate the SystemDecl
+	sysFinder := func(f *FileDecl) (Node, error) { return findDeclaration(f, "DSLOnlySys") }
+	_, errEval := evalDSL(t, dsl, vm, frame, sysFinder)
+	require.NoError(t, errEval, "System evaluation failed")
+
+	// Verify frame state
+	logRuntime := assertComponentRuntime(t, frame, "log1", "ConsoleLogger")
+	dslLogInstance, okLogCast := logRuntime.(*UDComponent)
+	require.True(t, okLogCast)
+	assertValueString(t, dslLogInstance.Params["Level"], "INFO") // Use new helper
+
+	svcRuntime := assertComponentRuntime(t, frame, "svc1", "MyServiceDSL")
+	dslSvcInstance, okSvcCast := svcRuntime.(*UDComponent)
+	require.True(t, okSvcCast)
+	assertValueString(t, dslSvcInstance.Params["ServiceName"], "PrimaryService")
+	require.Contains(t, dslSvcInstance.Dependencies, "logger")
+	assert.Same(t, logRuntime, dslSvcInstance.Dependencies["logger"])
+
+	t.Logf("(DSLOnly Parsed) Frame: %s", frame)
+
+	// --- Test Error: Missing Required Param ---
+	dslMissing := `
+        component MyServiceDSL { param ServiceName: string; uses logger: ConsoleLogger; } // Assume ConsoleLogger defined
+        system MissingParamSys {
+            // instance log1: ConsoleLogger; // Assume log1 exists from previous eval if frame persists, else need it here
+            instance svcMissing: MyServiceDSL = {
+                // Missing ServiceName = ...
+                logger = log1; // Need log1 in frame for this to not fail first
+            };
+        }
+    `
+	// Setup frame with log1 for this error case
+	vmErr, frameErr := setupTestVM()
+	evalDSL(t, `component ConsoleLogger{param L:string="I";} system S {instance log1:ConsoleLogger;}`, vmErr, frameErr, func(f *FileDecl) (Node, error) { return findDeclaration(f, "S") }) // Instantiate log1
+
+	sysFinderMissing := func(f *FileDecl) (Node, error) { return findDeclaration(f, "MissingParamSys") }
+	_, errMissing := evalDSL(t, dslMissing, vmErr, frameErr, sysFinderMissing)
+	require.Error(t, errMissing)
+	// Error message comes from CreateInstance -> UDComponent.ValidateParams
+	assert.Contains(t, errMissing.Error(), "missing required parameter 'ServiceName' for DSL component")
+	t.Logf("(DSLOnly Parsed) Eval(missing param): %s", errMissing)
+}
+
+func TestEvalInstanceDecl_DependencyInjection_Parsed(t *testing.T) {
+	vm, frame := setupTestVM()
+
+	dsl := `
+        component MyDisk { // Defined in DSL
+            param ProfileName: string;
+        }
+        component MySvc { // Defined in DSL
+            uses db: MyDisk;
+            param Timeout: int;
+        }
+        system DepSys {
+            instance theDbInstance: MyDisk = { ProfileName = "SSD"; }; // Instantiated via Native Constructor
+            instance theSvcInstance: MySvc = {                       // Instantiated via Native Constructor
+                db = theDbInstance;                                  // Dependency injected here
+                Timeout = 500;
+            };
+        }
+    `
+	// Register Go constructors linked to the DSL type names
+	vm.RegisterNativeComponent("MyDisk", NewMockDiskComponent)
+	vm.RegisterNativeComponent("MySvc", NewMockSvcComponent)
+
+	// Evaluate System
+	sysFinder := func(f *FileDecl) (Node, error) { return findDeclaration(f, "DepSys") }
+	_, errEval := evalDSL(t, dsl, vm, frame, sysFinder)
+	require.NoError(t, errEval)
+
+	// Verify frame state
+	dbRuntime := assertComponentRuntime(t, frame, "theDbInstance", "MyDisk")
+	dbAdapter, _ := dbRuntime.(*NativeComponent)
+	mockDisk, okDisk := dbAdapter.GoInstance.(*MockDisk)
+	require.True(t, okDisk)
+	assert.Equal(t, "SSD", mockDisk.ProfileName)
+
+	svcRuntime := assertComponentRuntime(t, frame, "theSvcInstance", "MySvc")
+	svcAdapter, _ := svcRuntime.(*NativeComponent)
+	mockSvc, okSvc := svcAdapter.GoInstance.(*MockSvc)
+	require.True(t, okSvc)
+	require.NotNil(t, mockSvc.DB)
+	injectedDisk, okInject := mockSvc.DB.(*MockDisk)
+	require.True(t, okInject)
+	assert.Same(t, mockDisk, injectedDisk)
+	assert.Equal(t, int64(500), mockSvc.Timeout)
+
+	t.Logf("(DepInject Parsed) Frame: %s", frame)
+
+	// --- Error condition tests ---
+	// Test error: Missing dependency override
+	dslMissingDep := `
+        component MyDisk {param P:string;}
+        component MySvc {uses db:MyDisk; param T:int;}
+        system MissingDepSys {
+            instance svcMissingDep: MySvc = { Timeout = 1; }; // Missing 'db ='
+        }
+    `
+	_, errMissingDep := evalDSL(t, dslMissingDep, vm, frame, func(f *FileDecl) (Node, error) { return findDeclaration(f, "MissingDepSys") })
+	require.Error(t, errMissingDep)
+	assert.Contains(t, errMissingDep.Error(), "missing required dependency 'db' for DSL component")
+	t.Logf("(DepInject Parsed) Eval(missing dep): %s", errMissingDep)
+
+	// Test error: Dependency not found in frame
+	dslDepNotFound := `
+        component MyDisk {param P:string;}
+        component MySvc {uses db:MyDisk; param T:int;}
+        system DepNotFoundSys {
+            instance svcDepNotFound: MySvc = {
+                db = nonExistentDb; // This identifier lookup will fail
+                Timeout = 1;
+            };
+        }
+    `
+	_, errDepNotFound := evalDSL(t, dslDepNotFound, vm, frame, func(f *FileDecl) (Node, error) { return findDeclaration(f, "DepNotFoundSys") })
+	require.Error(t, errDepNotFound)
+	assert.ErrorIs(t, errDepNotFound, ErrNotFound) // Identifier eval fails
+	assert.Contains(t, errDepNotFound.Error(), "nonExistentDb")
+	t.Logf("(DepInject Parsed) Eval(dep not found): %s", errDepNotFound)
+
+	// Test error: Unknown override target
+	dslUnknownOverride := `
+        component MyDisk {param P:string;}
+        component MySvc {uses db:MyDisk; param T:int;}
+        system UnknownOverrideSys {
+            // instance theDbInstance: MyDisk; // Assume 'theDbInstance' exists in frame from previous test if needed
+            instance svcUnknownOverride: MySvc = {
+                db = theDbInstance;
+                Timeout = 1;
+                NonExistentParam = 99; // This should fail
+            };
+        }
+    `
+	// Need theDbInstance in frame for this test case
+	_, errUnknownOverride := evalDSL(t, dslUnknownOverride, vm, frame, func(f *FileDecl) (Node, error) { return findDeclaration(f, "UnknownOverrideSys") })
+	require.Error(t, errUnknownOverride)
+	assert.Contains(t, errUnknownOverride.Error(), "unknown override target 'NonExistentParam'")
+	t.Logf("(DepInject Parsed) Eval(unknown override): %s", errUnknownOverride)
+}
+
+func TestEvalCallExpr_DSLMethod_Parsed(t *testing.T) {
+	vm, frame := setupTestVM()
+
+	dsl := `
+        // Assume NativeDep component definition exists and is registered with a mock constructor
+        component NativeDep { /* ... */ }
+
+        component MyDslComp {
+            param Rate: int = 10;
+            uses native: NativeDep;
+
+            method Process(Multiplier: int) { // Returns OpNode for temp + 5
+                let temp = Multiplier * self.Rate;
+                // let nativeVal = native.GetValue(); // If native had GetValue
+                temp + 5;
+            }
+        }
+        system TestCallSystem {
+            instance depInst: NativeDep; // Instantiated via native constructor
+            instance dslInst: MyDslComp = { // Instantiated as UDComponent
+                native = depInst;
+                Rate = 20; // Override default
+            };
+            analyze MethodCallResult = dslInst.Process(5); // Target for evaluation
+        }
+    `
+	// Register NativeDep constructor
+	vm.RegisterNativeComponent("NativeDep", func(instanceName string) (ComponentRuntime, error) {
+		// Dummy native instance for dependency injection
+		return &NativeComponent{InstanceName: instanceName}, nil
+	})
+
+	// Evaluate the analyze block
+	resCall, errCall := evalDSL(t, dsl, vm, frame, findAnalyzeResultExpr)
+	require.NoError(t, errCall)
+
+	// --- Assert the Resulting OpNode Structure ---
+	// Expecting: BinaryOpNode(+) [BinaryOpNode(*)[Leaf(5), Leaf(20)], Leaf(5)]
+	addNode := assertBinaryOpNode(t, resCall, "+")
+	assertValueInt(t, addNode.Right, 5)
+	mulNode := assertBinaryOpNode(t, addNode.Left, "*")
+	assertValueInt(t, mulNode.Left, 5)   // Arg Multiplier
+	assertValueInt(t, mulNode.Right, 20) // Param self.Rate
+
+	t.Logf("Parsed DSL Method Call Result OpNode: %s", resCall)
+}
+
+// --- New Helper Assertions ---
+
+// Helper to assert leaf string value
+func assertValueString(t *testing.T, node Value, expectedVal string) {
+	t.Helper()
+	valOutcome, ok := node.Value.(*core.Outcomes[string])
+	require.True(t, ok, "Expected ValueOutcome *core.Outcomes[string], got %T", node.Value)
+	require.Equal(t, 1, valOutcome.Len(), "Expected 1 bucket in ValueOutcome")
+	assert.Equal(t, 1.0, valOutcome.Buckets[0].Weight, "ValueOutcome bucket weight")
+	assert.Equal(t, expectedVal, valOutcome.Buckets[0].Value, "ValueOutcome bucket value")
+	// TODO: Check zero latency?
+}
+
+// Helper assertion for IfChoiceNode structure
+func assertIfChoiceNode(t *testing.T, node Value) *IfChoiceNode {
+	t.Helper()
+	ifNode, ok := node.Value.(*IfChoiceNode)
+	require.True(t, ok, "Expected *IfChoiceNode, got %T", node.Value)
+	return ifNode
+}
