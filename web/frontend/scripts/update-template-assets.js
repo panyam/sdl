@@ -12,7 +12,7 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Paths
-const distIndexPath = path.join(__dirname, '../../dist/frontend/index.html');
+const distIndexPath = path.join(__dirname, '../../dist/index.html');
 const templatePath = path.join(__dirname, '../../templates/base.html');
 const wasmDistPath = path.join(__dirname, '../../dist/wasm');
 const wasmConfigPath = path.join(__dirname, '../../dist/wasm-modules.json');
@@ -68,7 +68,7 @@ function discoverWasmModules() {
       const name = path.basename(file, '.wasm');
       return {
         name,
-        path: `/dist/wasm/${file}`,
+        path: `/wasm/${file}`,
         size: fs.statSync(path.join(wasmDistPath, file)).size
       };
     });

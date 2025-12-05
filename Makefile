@@ -178,18 +178,3 @@ distclean: clean
 	@echo "Removing all downloaded dependencies..."
 	go clean -modcache
 	@echo "✓ Deep clean complete"
-
-sdlfiles:
-	@find . | grep -v "\.git" | grep -v "\.sh" | grep -v "\..decl" | grep -v attic | grep -v prompt | grep -v vscode | grep -v dsl | grep -v _test.go | grep -v "\.bak" | grep -v debug | grep -v "\.output" | grep -v "\.svg" | grep -v "\.png" | grep -v parser.go | grep -v CLAUDE | grep -v node_modules | grep -v "\.\/sdl" | grep -v package | grep -v playwright-report | grep -v test-results | grep -v dist | grep -v sdl
-
-sdlprompt:
-	source ~/personal/.shhelpers && files_for_llm `make sdlfiles`
-
-parserfiles:
-	@find . |  grep -v "\.git" | grep -v "\.bak" | grep -e "decl" -e "parser" | grep -v ll | grep -v y.output | grep -v parser.go  | grep -v debug | grep -v "\.output"
-
-parserprompt:
-	source ~/personal/.shhelpers && files_for_llm `make parserfiles`
-
-newchatprompt:
-	cat prompts/STARTER.prompt && make sdlprompt

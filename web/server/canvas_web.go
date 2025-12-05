@@ -63,7 +63,7 @@ func NewWebServer(grpcAddress string, canvasService *services.CanvasService) *We
 	}
 
 	// Initialize template engine
-	templateGroup, err := SetupTemplates("console/templates")
+	templateGroup, err := SetupTemplates("web/templates")
 	if err != nil {
 		log.Printf("Failed to setup templates: %v", err)
 	}

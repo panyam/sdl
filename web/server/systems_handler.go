@@ -114,7 +114,7 @@ func (h *SystemsHandler) handleSystemDetails(w http.ResponseWriter, r *http.Requ
 		// For system details page, always include SystemDetailTool
 		wasmModules = append(wasmModules, WasmModule{
 			Name: "systemdetail",
-			Path: "/dist/wasm/systemdetail.wasm",
+			Path: "/wasm/systemdetail.wasm",
 		})
 	}
 

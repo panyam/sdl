@@ -5,8 +5,8 @@ export default defineConfig({
     port: 3000,
   },
   build: {
-    outDir: '../dist/frontend',
-    emptyOutDir: true,
+    outDir: '../dist',
+    emptyOutDir: false,  // Don't delete wasm files
     sourcemap: true,
   },
 })
