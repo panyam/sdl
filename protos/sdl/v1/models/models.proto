@@ -41,17 +41,34 @@ message Canvas {
   // Unique ID for the canvas
   string id = 3;
 
-  // Active system being observed
-  string active_system = 4;
+  // Human-readable name for the canvas
+  string name = 4;
 
-  // Files that have been loaded so far
-  repeated string loaded_files = 5;
+  // Description of what this canvas is for
+  string description = 5;
+
+  // The currently active system (from the systems defined in system_contents)
+  string active_system = 6;
+
+  // Contents of the .sdl file that defines one or more systems
+  string system_contents = 7;
+
+  // Recipe files for various scenarios (name -> contents map)
+  map<string, string> recipes = 8;
 
   // Registered generators for this canvas
-  repeated Generator generators = 6;
+  repeated Generator generators = 9;
 
   // Registered live metrics for this canvas
-  repeated Metric metrics = 7;
+  repeated Metric metrics = 10;
+}
+
+message File {
+  // Path relative to the canvas root
+  string path = 1;
+
+  // Contents of the file
+  string contents = 2;
 }
 
 message Generator {

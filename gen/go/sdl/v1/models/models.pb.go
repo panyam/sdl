@@ -167,14 +167,20 @@ type Canvas struct {
 	UpdatedAt *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	// Unique ID for the canvas
 	Id string `protobuf:"bytes,3,opt,name=id,proto3" json:"id,omitempty"`
-	// Active system being observed
-	ActiveSystem string `protobuf:"bytes,4,opt,name=active_system,json=activeSystem,proto3" json:"active_system,omitempty"`
-	// Files that have been loaded so far
-	LoadedFiles []string `protobuf:"bytes,5,rep,name=loaded_files,json=loadedFiles,proto3" json:"loaded_files,omitempty"`
+	// Human-readable name for the canvas
+	Name string `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"`
+	// Description of what this canvas is for
+	Description string `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
+	// The currently active system (from the systems defined in system_contents)
+	ActiveSystem string `protobuf:"bytes,6,opt,name=active_system,json=activeSystem,proto3" json:"active_system,omitempty"`
+	// Contents of the .sdl file that defines one or more systems
+	SystemContents string `protobuf:"bytes,7,opt,name=system_contents,json=systemContents,proto3" json:"system_contents,omitempty"`
+	// Recipe files for various scenarios (name -> contents map)
+	Recipes map[string]string `protobuf:"bytes,8,rep,name=recipes,proto3" json:"recipes,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// Registered generators for this canvas
-	Generators []*Generator `protobuf:"bytes,6,rep,name=generators,proto3" json:"generators,omitempty"`
+	Generators []*Generator `protobuf:"bytes,9,rep,name=generators,proto3" json:"generators,omitempty"`
 	// Registered live metrics for this canvas
-	Metrics       []*Metric `protobuf:"bytes,7,rep,name=metrics,proto3" json:"metrics,omitempty"`
+	Metrics       []*Metric `protobuf:"bytes,10,rep,name=metrics,proto3" json:"metrics,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -230,6 +236,20 @@ func (x *Canvas) GetId() string {
 	return ""
 }
 
+func (x *Canvas) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Canvas) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
 func (x *Canvas) GetActiveSystem() string {
 	if x != nil {
 		return x.ActiveSystem
@@ -237,9 +257,16 @@ func (x *Canvas) GetActiveSystem() string {
 	return ""
 }
 
-func (x *Canvas) GetLoadedFiles() []string {
+func (x *Canvas) GetSystemContents() string {
 	if x != nil {
-		return x.LoadedFiles
+		return x.SystemContents
+	}
+	return ""
+}
+
+func (x *Canvas) GetRecipes() map[string]string {
+	if x != nil {
+		return x.Recipes
 	}
 	return nil
 }
@@ -256,6 +283,60 @@ func (x *Canvas) GetMetrics() []*Metric {
 		return x.Metrics
 	}
 	return nil
+}
+
+type File struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Path relative to the canvas root
+	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	// Contents of the file
+	Contents      string `protobuf:"bytes,2,opt,name=contents,proto3" json:"contents,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *File) Reset() {
+	*x = File{}
+	mi := &file_sdl_v1_models_models_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *File) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*File) ProtoMessage() {}
+
+func (x *File) ProtoReflect() protoreflect.Message {
+	mi := &file_sdl_v1_models_models_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use File.ProtoReflect.Descriptor instead.
+func (*File) Descriptor() ([]byte, []int) {
+	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *File) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *File) GetContents() string {
+	if x != nil {
+		return x.Contents
+	}
+	return ""
 }
 
 type Generator struct {
@@ -285,7 +366,7 @@ type Generator struct {
 
 func (x *Generator) Reset() {
 	*x = Generator{}
-	mi := &file_sdl_v1_models_models_proto_msgTypes[3]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -297,7 +378,7 @@ func (x *Generator) String() string {
 func (*Generator) ProtoMessage() {}
 
 func (x *Generator) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_models_models_proto_msgTypes[3]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -310,7 +391,7 @@ func (x *Generator) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Generator.ProtoReflect.Descriptor instead.
 func (*Generator) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{3}
+	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Generator) GetCreatedAt() *timestamppb.Timestamp {
@@ -419,7 +500,7 @@ type Metric struct {
 
 func (x *Metric) Reset() {
 	*x = Metric{}
-	mi := &file_sdl_v1_models_models_proto_msgTypes[4]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -431,7 +512,7 @@ func (x *Metric) String() string {
 func (*Metric) ProtoMessage() {}
 
 func (x *Metric) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_models_models_proto_msgTypes[4]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -444,7 +525,7 @@ func (x *Metric) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Metric.ProtoReflect.Descriptor instead.
 func (*Metric) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{4}
+	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Metric) GetCreatedAt() *timestamppb.Timestamp {
@@ -569,7 +650,7 @@ type MetricPoint struct {
 
 func (x *MetricPoint) Reset() {
 	*x = MetricPoint{}
-	mi := &file_sdl_v1_models_models_proto_msgTypes[5]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -581,7 +662,7 @@ func (x *MetricPoint) String() string {
 func (*MetricPoint) ProtoMessage() {}
 
 func (x *MetricPoint) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_models_models_proto_msgTypes[5]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -594,7 +675,7 @@ func (x *MetricPoint) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MetricPoint.ProtoReflect.Descriptor instead.
 func (*MetricPoint) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{5}
+	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *MetricPoint) GetTimestamp() float64 {
@@ -622,7 +703,7 @@ type MetricUpdate struct {
 
 func (x *MetricUpdate) Reset() {
 	*x = MetricUpdate{}
-	mi := &file_sdl_v1_models_models_proto_msgTypes[6]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -634,7 +715,7 @@ func (x *MetricUpdate) String() string {
 func (*MetricUpdate) ProtoMessage() {}
 
 func (x *MetricUpdate) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_models_models_proto_msgTypes[6]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -647,7 +728,7 @@ func (x *MetricUpdate) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MetricUpdate.ProtoReflect.Descriptor instead.
 func (*MetricUpdate) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{6}
+	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *MetricUpdate) GetMetricId() string {
@@ -676,7 +757,7 @@ type SystemDiagram struct {
 
 func (x *SystemDiagram) Reset() {
 	*x = SystemDiagram{}
-	mi := &file_sdl_v1_models_models_proto_msgTypes[7]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -688,7 +769,7 @@ func (x *SystemDiagram) String() string {
 func (*SystemDiagram) ProtoMessage() {}
 
 func (x *SystemDiagram) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_models_models_proto_msgTypes[7]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -701,7 +782,7 @@ func (x *SystemDiagram) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SystemDiagram.ProtoReflect.Descriptor instead.
 func (*SystemDiagram) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{7}
+	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *SystemDiagram) GetSystemName() string {
@@ -741,7 +822,7 @@ type DiagramNode struct {
 
 func (x *DiagramNode) Reset() {
 	*x = DiagramNode{}
-	mi := &file_sdl_v1_models_models_proto_msgTypes[8]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -753,7 +834,7 @@ func (x *DiagramNode) String() string {
 func (*DiagramNode) ProtoMessage() {}
 
 func (x *DiagramNode) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_models_models_proto_msgTypes[8]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -766,7 +847,7 @@ func (x *DiagramNode) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DiagramNode.ProtoReflect.Descriptor instead.
 func (*DiagramNode) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{8}
+	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *DiagramNode) GetId() string {
@@ -830,7 +911,7 @@ type MethodInfo struct {
 
 func (x *MethodInfo) Reset() {
 	*x = MethodInfo{}
-	mi := &file_sdl_v1_models_models_proto_msgTypes[9]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -842,7 +923,7 @@ func (x *MethodInfo) String() string {
 func (*MethodInfo) ProtoMessage() {}
 
 func (x *MethodInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_models_models_proto_msgTypes[9]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -855,7 +936,7 @@ func (x *MethodInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MethodInfo.ProtoReflect.Descriptor instead.
 func (*MethodInfo) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{9}
+	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *MethodInfo) GetName() string {
@@ -898,7 +979,7 @@ type DiagramEdge struct {
 
 func (x *DiagramEdge) Reset() {
 	*x = DiagramEdge{}
-	mi := &file_sdl_v1_models_models_proto_msgTypes[10]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -910,7 +991,7 @@ func (x *DiagramEdge) String() string {
 func (*DiagramEdge) ProtoMessage() {}
 
 func (x *DiagramEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_models_models_proto_msgTypes[10]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -923,7 +1004,7 @@ func (x *DiagramEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DiagramEdge.ProtoReflect.Descriptor instead.
 func (*DiagramEdge) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{10}
+	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *DiagramEdge) GetFromId() string {
@@ -1013,7 +1094,7 @@ type UtilizationInfo struct {
 
 func (x *UtilizationInfo) Reset() {
 	*x = UtilizationInfo{}
-	mi := &file_sdl_v1_models_models_proto_msgTypes[11]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1025,7 +1106,7 @@ func (x *UtilizationInfo) String() string {
 func (*UtilizationInfo) ProtoMessage() {}
 
 func (x *UtilizationInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_models_models_proto_msgTypes[11]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1038,7 +1119,7 @@ func (x *UtilizationInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UtilizationInfo.ProtoReflect.Descriptor instead.
 func (*UtilizationInfo) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{11}
+	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *UtilizationInfo) GetResourceName() string {
@@ -1112,7 +1193,7 @@ type FlowEdge struct {
 
 func (x *FlowEdge) Reset() {
 	*x = FlowEdge{}
-	mi := &file_sdl_v1_models_models_proto_msgTypes[12]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1124,7 +1205,7 @@ func (x *FlowEdge) String() string {
 func (*FlowEdge) ProtoMessage() {}
 
 func (x *FlowEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_models_models_proto_msgTypes[12]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1137,7 +1218,7 @@ func (x *FlowEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FlowEdge.ProtoReflect.Descriptor instead.
 func (*FlowEdge) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{12}
+	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *FlowEdge) GetFromComponent() string {
@@ -1194,7 +1275,7 @@ type FlowState struct {
 
 func (x *FlowState) Reset() {
 	*x = FlowState{}
-	mi := &file_sdl_v1_models_models_proto_msgTypes[13]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1206,7 +1287,7 @@ func (x *FlowState) String() string {
 func (*FlowState) ProtoMessage() {}
 
 func (x *FlowState) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_models_models_proto_msgTypes[13]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1219,7 +1300,7 @@ func (x *FlowState) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FlowState.ProtoReflect.Descriptor instead.
 func (*FlowState) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{13}
+	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *FlowState) GetStrategy() string {
@@ -1255,7 +1336,7 @@ type TraceData struct {
 
 func (x *TraceData) Reset() {
 	*x = TraceData{}
-	mi := &file_sdl_v1_models_models_proto_msgTypes[14]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1267,7 +1348,7 @@ func (x *TraceData) String() string {
 func (*TraceData) ProtoMessage() {}
 
 func (x *TraceData) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_models_models_proto_msgTypes[14]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1280,7 +1361,7 @@ func (x *TraceData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TraceData.ProtoReflect.Descriptor instead.
 func (*TraceData) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{14}
+	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *TraceData) GetSystem() string {
@@ -1323,7 +1404,7 @@ type TraceEvent struct {
 
 func (x *TraceEvent) Reset() {
 	*x = TraceEvent{}
-	mi := &file_sdl_v1_models_models_proto_msgTypes[15]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1335,7 +1416,7 @@ func (x *TraceEvent) String() string {
 func (*TraceEvent) ProtoMessage() {}
 
 func (x *TraceEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_models_models_proto_msgTypes[15]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1348,7 +1429,7 @@ func (x *TraceEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TraceEvent.ProtoReflect.Descriptor instead.
 func (*TraceEvent) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{15}
+	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *TraceEvent) GetKind() string {
@@ -1433,7 +1514,7 @@ type AllPathsTraceData struct {
 
 func (x *AllPathsTraceData) Reset() {
 	*x = AllPathsTraceData{}
-	mi := &file_sdl_v1_models_models_proto_msgTypes[16]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1445,7 +1526,7 @@ func (x *AllPathsTraceData) String() string {
 func (*AllPathsTraceData) ProtoMessage() {}
 
 func (x *AllPathsTraceData) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_models_models_proto_msgTypes[16]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1458,7 +1539,7 @@ func (x *AllPathsTraceData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AllPathsTraceData.ProtoReflect.Descriptor instead.
 func (*AllPathsTraceData) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{16}
+	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *AllPathsTraceData) GetTraceId() string {
@@ -1490,7 +1571,7 @@ type TraceNode struct {
 
 func (x *TraceNode) Reset() {
 	*x = TraceNode{}
-	mi := &file_sdl_v1_models_models_proto_msgTypes[17]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1502,7 +1583,7 @@ func (x *TraceNode) String() string {
 func (*TraceNode) ProtoMessage() {}
 
 func (x *TraceNode) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_models_models_proto_msgTypes[17]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1515,7 +1596,7 @@ func (x *TraceNode) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TraceNode.ProtoReflect.Descriptor instead.
 func (*TraceNode) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{17}
+	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *TraceNode) GetStartingTarget() string {
@@ -1564,7 +1645,7 @@ type Edge struct {
 
 func (x *Edge) Reset() {
 	*x = Edge{}
-	mi := &file_sdl_v1_models_models_proto_msgTypes[18]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1576,7 +1657,7 @@ func (x *Edge) String() string {
 func (*Edge) ProtoMessage() {}
 
 func (x *Edge) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_models_models_proto_msgTypes[18]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1589,7 +1670,7 @@ func (x *Edge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Edge.ProtoReflect.Descriptor instead.
 func (*Edge) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{18}
+	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *Edge) GetId() string {
@@ -1665,7 +1746,7 @@ type GroupInfo struct {
 
 func (x *GroupInfo) Reset() {
 	*x = GroupInfo{}
-	mi := &file_sdl_v1_models_models_proto_msgTypes[19]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1677,7 +1758,7 @@ func (x *GroupInfo) String() string {
 func (*GroupInfo) ProtoMessage() {}
 
 func (x *GroupInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_models_models_proto_msgTypes[19]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1690,7 +1771,7 @@ func (x *GroupInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GroupInfo.ProtoReflect.Descriptor instead.
 func (*GroupInfo) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{19}
+	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *GroupInfo) GetGroupStart() int32 {
@@ -1732,7 +1813,7 @@ type ParameterUpdate struct {
 
 func (x *ParameterUpdate) Reset() {
 	*x = ParameterUpdate{}
-	mi := &file_sdl_v1_models_models_proto_msgTypes[20]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1744,7 +1825,7 @@ func (x *ParameterUpdate) String() string {
 func (*ParameterUpdate) ProtoMessage() {}
 
 func (x *ParameterUpdate) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_models_models_proto_msgTypes[20]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1757,7 +1838,7 @@ func (x *ParameterUpdate) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ParameterUpdate.ProtoReflect.Descriptor instead.
 func (*ParameterUpdate) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{20}
+	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *ParameterUpdate) GetPath() string {
@@ -1788,7 +1869,7 @@ type ParameterUpdateResult struct {
 
 func (x *ParameterUpdateResult) Reset() {
 	*x = ParameterUpdateResult{}
-	mi := &file_sdl_v1_models_models_proto_msgTypes[21]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1800,7 +1881,7 @@ func (x *ParameterUpdateResult) String() string {
 func (*ParameterUpdateResult) ProtoMessage() {}
 
 func (x *ParameterUpdateResult) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_models_models_proto_msgTypes[21]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1813,7 +1894,7 @@ func (x *ParameterUpdateResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ParameterUpdateResult.ProtoReflect.Descriptor instead.
 func (*ParameterUpdateResult) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{21}
+	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *ParameterUpdateResult) GetPath() string {
@@ -1861,7 +1942,7 @@ type AggregateResult struct {
 
 func (x *AggregateResult) Reset() {
 	*x = AggregateResult{}
-	mi := &file_sdl_v1_models_models_proto_msgTypes[22]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1873,7 +1954,7 @@ func (x *AggregateResult) String() string {
 func (*AggregateResult) ProtoMessage() {}
 
 func (x *AggregateResult) ProtoReflect() protoreflect.Message {
-	mi := &file_sdl_v1_models_models_proto_msgTypes[22]
+	mi := &file_sdl_v1_models_models_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1886,7 +1967,7 @@ func (x *AggregateResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AggregateResult.ProtoReflect.Descriptor instead.
 func (*AggregateResult) Descriptor() ([]byte, []int) {
-	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{22}
+	return file_sdl_v1_models_models_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *AggregateResult) GetTimestamp() float64 {
@@ -1918,19 +1999,29 @@ const file_sdl_v1_models_models_proto_rawDesc = "" +
 	"\rnext_page_key\x18\x02 \x01(\tR\vnextPageKey\x12(\n" +
 	"\x10next_page_offset\x18\x03 \x01(\x05R\x0enextPageOffset\x12\x19\n" +
 	"\bhas_more\x18\x04 \x01(\bR\ahasMore\x12#\n" +
-	"\rtotal_results\x18\x05 \x01(\x05R\ftotalResults\"\xb3\x02\n" +
+	"\rtotal_results\x18\x05 \x01(\x05R\ftotalResults\"\xe2\x03\n" +
 	"\x06Canvas\x129\n" +
 	"\n" +
 	"created_at\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
 	"updated_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12\x0e\n" +
-	"\x02id\x18\x03 \x01(\tR\x02id\x12#\n" +
-	"\ractive_system\x18\x04 \x01(\tR\factiveSystem\x12!\n" +
-	"\floaded_files\x18\x05 \x03(\tR\vloadedFiles\x121\n" +
+	"\x02id\x18\x03 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x04 \x01(\tR\x04name\x12 \n" +
+	"\vdescription\x18\x05 \x01(\tR\vdescription\x12#\n" +
+	"\ractive_system\x18\x06 \x01(\tR\factiveSystem\x12'\n" +
+	"\x0fsystem_contents\x18\a \x01(\tR\x0esystemContents\x125\n" +
+	"\arecipes\x18\b \x03(\v2\x1b.sdl.v1.Canvas.RecipesEntryR\arecipes\x121\n" +
 	"\n" +
-	"generators\x18\x06 \x03(\v2\x11.sdl.v1.GeneratorR\n" +
+	"generators\x18\t \x03(\v2\x11.sdl.v1.GeneratorR\n" +
 	"generators\x12(\n" +
-	"\ametrics\x18\a \x03(\v2\x0e.sdl.v1.MetricR\ametrics\"\xc2\x02\n" +
+	"\ametrics\x18\n" +
+	" \x03(\v2\x0e.sdl.v1.MetricR\ametrics\x1a:\n" +
+	"\fRecipesEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"6\n" +
+	"\x04File\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1a\n" +
+	"\bcontents\x18\x02 \x01(\tR\bcontents\"\xc2\x02\n" +
 	"\tGenerator\x129\n" +
 	"\n" +
 	"created_at\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
@@ -2102,60 +2193,63 @@ func file_sdl_v1_models_models_proto_rawDescGZIP() []byte {
 	return file_sdl_v1_models_models_proto_rawDescData
 }
 
-var file_sdl_v1_models_models_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
+var file_sdl_v1_models_models_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
 var file_sdl_v1_models_models_proto_goTypes = []any{
 	(*Pagination)(nil),            // 0: sdl.v1.Pagination
 	(*PaginationResponse)(nil),    // 1: sdl.v1.PaginationResponse
 	(*Canvas)(nil),                // 2: sdl.v1.Canvas
-	(*Generator)(nil),             // 3: sdl.v1.Generator
-	(*Metric)(nil),                // 4: sdl.v1.Metric
-	(*MetricPoint)(nil),           // 5: sdl.v1.MetricPoint
-	(*MetricUpdate)(nil),          // 6: sdl.v1.MetricUpdate
-	(*SystemDiagram)(nil),         // 7: sdl.v1.SystemDiagram
-	(*DiagramNode)(nil),           // 8: sdl.v1.DiagramNode
-	(*MethodInfo)(nil),            // 9: sdl.v1.MethodInfo
-	(*DiagramEdge)(nil),           // 10: sdl.v1.DiagramEdge
-	(*UtilizationInfo)(nil),       // 11: sdl.v1.UtilizationInfo
-	(*FlowEdge)(nil),              // 12: sdl.v1.FlowEdge
-	(*FlowState)(nil),             // 13: sdl.v1.FlowState
-	(*TraceData)(nil),             // 14: sdl.v1.TraceData
-	(*TraceEvent)(nil),            // 15: sdl.v1.TraceEvent
-	(*AllPathsTraceData)(nil),     // 16: sdl.v1.AllPathsTraceData
-	(*TraceNode)(nil),             // 17: sdl.v1.TraceNode
-	(*Edge)(nil),                  // 18: sdl.v1.Edge
-	(*GroupInfo)(nil),             // 19: sdl.v1.GroupInfo
-	(*ParameterUpdate)(nil),       // 20: sdl.v1.ParameterUpdate
-	(*ParameterUpdateResult)(nil), // 21: sdl.v1.ParameterUpdateResult
-	(*AggregateResult)(nil),       // 22: sdl.v1.AggregateResult
-	nil,                           // 23: sdl.v1.FlowState.RatesEntry
-	nil,                           // 24: sdl.v1.FlowState.ManualOverridesEntry
-	(*timestamppb.Timestamp)(nil), // 25: google.protobuf.Timestamp
+	(*File)(nil),                  // 3: sdl.v1.File
+	(*Generator)(nil),             // 4: sdl.v1.Generator
+	(*Metric)(nil),                // 5: sdl.v1.Metric
+	(*MetricPoint)(nil),           // 6: sdl.v1.MetricPoint
+	(*MetricUpdate)(nil),          // 7: sdl.v1.MetricUpdate
+	(*SystemDiagram)(nil),         // 8: sdl.v1.SystemDiagram
+	(*DiagramNode)(nil),           // 9: sdl.v1.DiagramNode
+	(*MethodInfo)(nil),            // 10: sdl.v1.MethodInfo
+	(*DiagramEdge)(nil),           // 11: sdl.v1.DiagramEdge
+	(*UtilizationInfo)(nil),       // 12: sdl.v1.UtilizationInfo
+	(*FlowEdge)(nil),              // 13: sdl.v1.FlowEdge
+	(*FlowState)(nil),             // 14: sdl.v1.FlowState
+	(*TraceData)(nil),             // 15: sdl.v1.TraceData
+	(*TraceEvent)(nil),            // 16: sdl.v1.TraceEvent
+	(*AllPathsTraceData)(nil),     // 17: sdl.v1.AllPathsTraceData
+	(*TraceNode)(nil),             // 18: sdl.v1.TraceNode
+	(*Edge)(nil),                  // 19: sdl.v1.Edge
+	(*GroupInfo)(nil),             // 20: sdl.v1.GroupInfo
+	(*ParameterUpdate)(nil),       // 21: sdl.v1.ParameterUpdate
+	(*ParameterUpdateResult)(nil), // 22: sdl.v1.ParameterUpdateResult
+	(*AggregateResult)(nil),       // 23: sdl.v1.AggregateResult
+	nil,                           // 24: sdl.v1.Canvas.RecipesEntry
+	nil,                           // 25: sdl.v1.FlowState.RatesEntry
+	nil,                           // 26: sdl.v1.FlowState.ManualOverridesEntry
+	(*timestamppb.Timestamp)(nil), // 27: google.protobuf.Timestamp
 }
 var file_sdl_v1_models_models_proto_depIdxs = []int32{
-	25, // 0: sdl.v1.Canvas.created_at:type_name -> google.protobuf.Timestamp
-	25, // 1: sdl.v1.Canvas.updated_at:type_name -> google.protobuf.Timestamp
-	3,  // 2: sdl.v1.Canvas.generators:type_name -> sdl.v1.Generator
-	4,  // 3: sdl.v1.Canvas.metrics:type_name -> sdl.v1.Metric
-	25, // 4: sdl.v1.Generator.created_at:type_name -> google.protobuf.Timestamp
-	25, // 5: sdl.v1.Generator.updated_at:type_name -> google.protobuf.Timestamp
-	25, // 6: sdl.v1.Metric.created_at:type_name -> google.protobuf.Timestamp
-	25, // 7: sdl.v1.Metric.updated_at:type_name -> google.protobuf.Timestamp
-	5,  // 8: sdl.v1.MetricUpdate.point:type_name -> sdl.v1.MetricPoint
-	8,  // 9: sdl.v1.SystemDiagram.nodes:type_name -> sdl.v1.DiagramNode
-	10, // 10: sdl.v1.SystemDiagram.edges:type_name -> sdl.v1.DiagramEdge
-	9,  // 11: sdl.v1.DiagramNode.methods:type_name -> sdl.v1.MethodInfo
-	23, // 12: sdl.v1.FlowState.rates:type_name -> sdl.v1.FlowState.RatesEntry
-	24, // 13: sdl.v1.FlowState.manual_overrides:type_name -> sdl.v1.FlowState.ManualOverridesEntry
-	15, // 14: sdl.v1.TraceData.events:type_name -> sdl.v1.TraceEvent
-	17, // 15: sdl.v1.AllPathsTraceData.root:type_name -> sdl.v1.TraceNode
-	18, // 16: sdl.v1.TraceNode.edges:type_name -> sdl.v1.Edge
-	19, // 17: sdl.v1.TraceNode.groups:type_name -> sdl.v1.GroupInfo
-	17, // 18: sdl.v1.Edge.next_node:type_name -> sdl.v1.TraceNode
-	19, // [19:19] is the sub-list for method output_type
-	19, // [19:19] is the sub-list for method input_type
-	19, // [19:19] is the sub-list for extension type_name
-	19, // [19:19] is the sub-list for extension extendee
-	0,  // [0:19] is the sub-list for field type_name
+	27, // 0: sdl.v1.Canvas.created_at:type_name -> google.protobuf.Timestamp
+	27, // 1: sdl.v1.Canvas.updated_at:type_name -> google.protobuf.Timestamp
+	24, // 2: sdl.v1.Canvas.recipes:type_name -> sdl.v1.Canvas.RecipesEntry
+	4,  // 3: sdl.v1.Canvas.generators:type_name -> sdl.v1.Generator
+	5,  // 4: sdl.v1.Canvas.metrics:type_name -> sdl.v1.Metric
+	27, // 5: sdl.v1.Generator.created_at:type_name -> google.protobuf.Timestamp
+	27, // 6: sdl.v1.Generator.updated_at:type_name -> google.protobuf.Timestamp
+	27, // 7: sdl.v1.Metric.created_at:type_name -> google.protobuf.Timestamp
+	27, // 8: sdl.v1.Metric.updated_at:type_name -> google.protobuf.Timestamp
+	6,  // 9: sdl.v1.MetricUpdate.point:type_name -> sdl.v1.MetricPoint
+	9,  // 10: sdl.v1.SystemDiagram.nodes:type_name -> sdl.v1.DiagramNode
+	11, // 11: sdl.v1.SystemDiagram.edges:type_name -> sdl.v1.DiagramEdge
+	10, // 12: sdl.v1.DiagramNode.methods:type_name -> sdl.v1.MethodInfo
+	25, // 13: sdl.v1.FlowState.rates:type_name -> sdl.v1.FlowState.RatesEntry
+	26, // 14: sdl.v1.FlowState.manual_overrides:type_name -> sdl.v1.FlowState.ManualOverridesEntry
+	16, // 15: sdl.v1.TraceData.events:type_name -> sdl.v1.TraceEvent
+	18, // 16: sdl.v1.AllPathsTraceData.root:type_name -> sdl.v1.TraceNode
+	19, // 17: sdl.v1.TraceNode.edges:type_name -> sdl.v1.Edge
+	20, // 18: sdl.v1.TraceNode.groups:type_name -> sdl.v1.GroupInfo
+	18, // 19: sdl.v1.Edge.next_node:type_name -> sdl.v1.TraceNode
+	20, // [20:20] is the sub-list for method output_type
+	20, // [20:20] is the sub-list for method input_type
+	20, // [20:20] is the sub-list for extension type_name
+	20, // [20:20] is the sub-list for extension extendee
+	0,  // [0:20] is the sub-list for field type_name
 }
 
 func init() { file_sdl_v1_models_models_proto_init() }
@@ -2169,7 +2263,7 @@ func file_sdl_v1_models_models_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_sdl_v1_models_models_proto_rawDesc), len(file_sdl_v1_models_models_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   25,
+			NumMessages:   27,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

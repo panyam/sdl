@@ -107,6 +107,101 @@
         ]
       }
     },
+    "/v1/canvases/{canvas.id}": {
+      "patch": {
+        "summary": "Create a new canvas sesssion.",
+        "operationId": "CanvasService_UpdateCanvas",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateCanvasResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "canvas.id",
+            "description": "Unique ID for the canvas",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "pattern": "[^/]+"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "canvas": {
+                  "type": "object",
+                  "properties": {
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "name": {
+                      "type": "string",
+                      "title": "Human-readable name for the canvas"
+                    },
+                    "description": {
+                      "type": "string",
+                      "title": "Description of what this canvas is for"
+                    },
+                    "activeSystem": {
+                      "type": "string",
+                      "title": "The currently active system (from the systems defined in system_contents)"
+                    },
+                    "systemContents": {
+                      "type": "string",
+                      "title": "Contents of the .sdl file that defines one or more systems"
+                    },
+                    "recipes": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "title": "Recipe files for various scenarios (name -\u003e contents map)"
+                    },
+                    "generators": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "$ref": "#/definitions/v1Generator"
+                      },
+                      "title": "Registered generators for this canvas"
+                    },
+                    "metrics": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "$ref": "#/definitions/v1Metric"
+                      },
+                      "title": "Registered live metrics for this canvas"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "CanvasService"
+        ]
+      }
+    },
     "/v1/canvases/{canvasId}/actions:load": {
       "post": {
         "operationId": "CanvasService_LoadFile",
@@ -1545,16 +1640,28 @@
           "type": "string",
           "title": "Unique ID for the canvas"
         },
+        "name": {
+          "type": "string",
+          "title": "Human-readable name for the canvas"
+        },
+        "description": {
+          "type": "string",
+          "title": "Description of what this canvas is for"
+        },
         "activeSystem": {
           "type": "string",
-          "title": "Active system being observed"
+          "title": "The currently active system (from the systems defined in system_contents)"
         },
-        "loadedFiles": {
-          "type": "array",
-          "items": {
+        "systemContents": {
+          "type": "string",
+          "title": "Contents of the .sdl file that defines one or more systems"
+        },
+        "recipes": {
+          "type": "object",
+          "additionalProperties": {
             "type": "string"
           },
-          "title": "Files that have been loaded so far"
+          "title": "Recipe files for various scenarios (name -\u003e contents map)"
         },
         "generators": {
           "type": "array",
@@ -1805,6 +1912,19 @@
       "properties": {
         "traceData": {
           "$ref": "#/definitions/v1TraceData"
+        }
+      }
+    },
+    "v1File": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "title": "Path relative to the canvas root"
+        },
+        "contents": {
+          "type": "string",
+          "title": "Contents of the file"
         }
       }
     },
@@ -2704,6 +2824,29 @@
         }
       },
       "title": "TraceNode represents a single node in the execution tree"
+    },
+    "v1UpdateCanvasResponse": {
+      "type": "object",
+      "properties": {
+        "canvas": {
+          "$ref": "#/definitions/v1Canvas"
+        },
+        "updateMask": {
+          "type": "string"
+        },
+        "deletedFiles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "updatedFiles": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/v1File"
+          }
+        }
+      }
     },
     "v1UpdateDiagramResponse": {
       "type": "object"

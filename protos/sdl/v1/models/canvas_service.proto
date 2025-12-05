@@ -20,6 +20,17 @@ message CreateCanvasResponse {
   map<string, string> field_errors = 2;
 }
 
+message UpdateCanvasRequest {
+  Canvas canvas = 1;
+}
+
+message UpdateCanvasResponse {
+  Canvas canvas = 1;
+  google.protobuf.FieldMask update_mask = 2;
+  repeated string deleted_files = 3;
+  map<string, File> updated_files = 4;
+}
+
 message ListCanvasesRequest {
   Pagination pagination = 1;
 }

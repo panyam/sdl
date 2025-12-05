@@ -5,6 +5,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	protos "github.com/panyam/sdl/gen/go/sdl/v1/models"
 	"github.com/panyam/sdl/lib/core"
 	"github.com/panyam/sdl/lib/decl"
 	"github.com/panyam/sdl/lib/runtime"
@@ -29,7 +30,7 @@ const (
 // This will corresponding to each "LiveMetric" that can be plotted and will result in a series
 // of points
 type MetricSpec struct {
-	*Metric // Use native type instead of proto
+	*protos.Metric // Use proto type directly
 
 	// The system this metric spec applies to
 	System                    *runtime.SystemInstance

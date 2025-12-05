@@ -61,6 +61,8 @@ import {
     StreamMetricsResponse,
     TraceAllPathsRequest,
     TraceAllPathsResponse,
+    UpdateCanvasRequest,
+    UpdateCanvasResponse,
     UpdateGeneratorRequest,
     UpdateGeneratorResponse,
     UseSystemRequest,
@@ -72,6 +74,7 @@ import {
  */
 export interface CanvasServiceMethods {
 	createCanvas(request: CreateCanvasRequest): Promise<CreateCanvasResponse>;
+	updateCanvas(request: UpdateCanvasRequest): Promise<UpdateCanvasResponse>;
 	listCanvases(request: ListCanvasesRequest): Promise<ListCanvasesResponse>;
 	getCanvas(request: GetCanvasRequest): Promise<GetCanvasResponse>;
 	loadFile(request: LoadFileRequest): Promise<LoadFileResponse>;
@@ -109,6 +112,9 @@ export interface CanvasServiceMethods {
 export class CanvasServiceClient extends ServiceClient implements CanvasServiceMethods {
     async createCanvas(request: CreateCanvasRequest): Promise<CreateCanvasResponse> {
         return this.callMethod('canvasService.createCanvas', request);
+    }
+    async updateCanvas(request: UpdateCanvasRequest): Promise<UpdateCanvasResponse> {
+        return this.callMethod('canvasService.updateCanvas', request);
     }
     async listCanvases(request: ListCanvasesRequest): Promise<ListCanvasesResponse> {
         return this.callMethod('canvasService.listCanvases', request);

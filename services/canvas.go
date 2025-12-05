@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	protos "github.com/panyam/sdl/gen/go/sdl/v1/models"
 	"github.com/panyam/sdl/lib/core"
 	"github.com/panyam/sdl/lib/decl"
 	"github.com/panyam/sdl/lib/loader"
@@ -265,22 +266,22 @@ func (c *Canvas) AddGenerator(gen *GeneratorInfo) error {
 	gen.canvas = c
 
 	gen.System = c.activeSystem
-	if c.generators[gen.ID] != nil {
+	if c.generators[gen.Id] != nil {
 		return status.Error(codes.AlreadyExists, "Generator with name already exists")
 	}
-	c.generators[gen.ID] = gen
+	c.generators[gen.Id] = gen
 	gen.Start()
 	return c.recomputeSystemFlows()
 }
 
 // UpdateGenerator updates an existing traffic generator configuration
-func (c *Canvas) UpdateGenerator(gen *Generator) error {
+func (c *Canvas) UpdateGenerator(gen *protos.Generator) error {
 	c.generatorsLock.Lock()
 	defer c.generatorsLock.Unlock()
 
-	existing, exists := c.generators[gen.ID]
+	existing, exists := c.generators[gen.Id]
 	if !exists {
-		return status.Error(codes.NotFound, fmt.Sprintf("generator '%s' not found", gen.ID))
+		return status.Error(codes.NotFound, fmt.Sprintf("generator '%s' not found", gen.Id))
 	}
 
 	// Stop the existing generator if it's running
@@ -293,11 +294,6 @@ func (c *Canvas) UpdateGenerator(gen *Generator) error {
 	existing.Name = gen.Name
 	existing.Rate = gen.Rate
 	// existing.Enabled = gen.Enabled
-
-	// Update the proto representation with the new values
-	existing.Generator.Name = gen.Name
-	existing.Generator.Rate = gen.Rate
-	// existing.Generator.Enabled = gen.Enabled
 
 	// Restart the generator if it was running and is still enabled
 	if wasRunning /* && existing.Enabled */ {
@@ -770,7 +766,7 @@ func (c *Canvas) evaluateProposedFlowsWithStrategy(strategy string) error {
 	for _, gen := range c.generators {
 		if gen.Enabled {
 			generators = append(generators, runtime.GeneratorConfigAPI{
-				ID:        gen.ID,
+				ID:        gen.Id,
 				Component: gen.Component,
 				Method:    gen.Method,
 				Rate:      float64(gen.Rate),
@@ -1110,7 +1106,7 @@ func (c *Canvas) EvaluateFlowWithStrategy(strategy string) (*runtime.FlowAnalysi
 	for _, gen := range c.generators {
 		if gen.Enabled {
 			generators = append(generators, runtime.GeneratorConfigAPI{
-				ID:        gen.ID,
+				ID:        gen.Id,
 				Component: gen.Component,
 				Method:    gen.Method,
 				Rate:      float64(gen.Rate),

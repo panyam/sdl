@@ -84,29 +84,63 @@ export const CanvasSchema: MessageSchema = {
       id: 3,
     },
     {
-      name: "activeSystem",
+      name: "name",
       type: FieldType.STRING,
       id: 4,
     },
     {
-      name: "loadedFiles",
-      type: FieldType.REPEATED,
+      name: "description",
+      type: FieldType.STRING,
       id: 5,
-      repeated: true,
+    },
+    {
+      name: "activeSystem",
+      type: FieldType.STRING,
+      id: 6,
+    },
+    {
+      name: "systemContents",
+      type: FieldType.STRING,
+      id: 7,
+    },
+    {
+      name: "recipes",
+      type: FieldType.STRING,
+      id: 8,
     },
     {
       name: "generators",
       type: FieldType.MESSAGE,
-      id: 6,
+      id: 9,
       messageType: "sdl.v1.Generator",
       repeated: true,
     },
     {
       name: "metrics",
       type: FieldType.MESSAGE,
-      id: 7,
+      id: 10,
       messageType: "sdl.v1.Metric",
       repeated: true,
+    },
+  ],
+};
+
+
+/**
+ * Schema for File message
+ */
+export const FileSchema: MessageSchema = {
+  name: "File",
+  fields: [
+    {
+      name: "path",
+      type: FieldType.STRING,
+      id: 1,
+    },
+    {
+      name: "contents",
+      type: FieldType.STRING,
+      id: 2,
     },
   ],
 };
@@ -910,6 +944,55 @@ export const CreateCanvasResponseSchema: MessageSchema = {
       name: "fieldErrors",
       type: FieldType.STRING,
       id: 2,
+    },
+  ],
+};
+
+
+/**
+ * Schema for UpdateCanvasRequest message
+ */
+export const UpdateCanvasRequestSchema: MessageSchema = {
+  name: "UpdateCanvasRequest",
+  fields: [
+    {
+      name: "canvas",
+      type: FieldType.MESSAGE,
+      id: 1,
+      messageType: "sdl.v1.Canvas",
+    },
+  ],
+};
+
+
+/**
+ * Schema for UpdateCanvasResponse message
+ */
+export const UpdateCanvasResponseSchema: MessageSchema = {
+  name: "UpdateCanvasResponse",
+  fields: [
+    {
+      name: "canvas",
+      type: FieldType.MESSAGE,
+      id: 1,
+      messageType: "sdl.v1.Canvas",
+    },
+    {
+      name: "updateMask",
+      type: FieldType.MESSAGE,
+      id: 2,
+      messageType: "google.protobuf.FieldMask",
+    },
+    {
+      name: "deletedFiles",
+      type: FieldType.REPEATED,
+      id: 3,
+      repeated: true,
+    },
+    {
+      name: "updatedFiles",
+      type: FieldType.STRING,
+      id: 4,
     },
   ],
 };
@@ -3115,6 +3198,7 @@ export const sdl_v1SchemaRegistry: Record<string, MessageSchema> = {
   "sdl.v1.Pagination": PaginationSchema,
   "sdl.v1.PaginationResponse": PaginationResponseSchema,
   "sdl.v1.Canvas": CanvasSchema,
+  "sdl.v1.File": FileSchema,
   "sdl.v1.Generator": GeneratorSchema,
   "sdl.v1.Metric": MetricSchema,
   "sdl.v1.MetricPoint": MetricPointSchema,
@@ -3137,6 +3221,8 @@ export const sdl_v1SchemaRegistry: Record<string, MessageSchema> = {
   "sdl.v1.AggregateResult": AggregateResultSchema,
   "sdl.v1.CreateCanvasRequest": CreateCanvasRequestSchema,
   "sdl.v1.CreateCanvasResponse": CreateCanvasResponseSchema,
+  "sdl.v1.UpdateCanvasRequest": UpdateCanvasRequestSchema,
+  "sdl.v1.UpdateCanvasResponse": UpdateCanvasResponseSchema,
   "sdl.v1.ListCanvasesRequest": ListCanvasesRequestSchema,
   "sdl.v1.ListCanvasesResponse": ListCanvasesResponseSchema,
   "sdl.v1.GetCanvasRequest": GetCanvasRequestSchema,

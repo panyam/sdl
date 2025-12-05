@@ -1,0 +1,30 @@
+{{# include "base.html" #}}
+
+{{define "head"}}
+<style>
+    /* Full height for dashboard */
+    html, body, #app {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+</style>
+{{end}}
+
+{{define "content"}}
+<!-- Dashboard will be rendered by the frontend -->
+{{end}}
+
+{{define "scripts"}}
+<script>
+    // Set up page data for the frontend
+    window.sdlPageData = {
+        pageType: 'canvas-dashboard',
+        canvasId: '{{.CanvasId}}',
+        canvasName: '{{.Canvas.Name}}',
+        mode: 'server',
+        readonly: {{.ReadOnly}}
+    };
+</script>
+{{end}}

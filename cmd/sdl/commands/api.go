@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	ghttp "github.com/panyam/goutils/http"
+	ghttp "github.com/panyam/servicekit/http"
 )
 
 // Global server configuration - variables declared in root.go

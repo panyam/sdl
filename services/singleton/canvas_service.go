@@ -65,6 +65,10 @@ func (s *SingletonCanvasService) CreateCanvas(ctx context.Context, req *protos.C
 	}, nil
 }
 
+func (s *SingletonCanvasService) UpdateCanvas(ctx context.Context, req *protos.UpdateCanvasRequest) (*protos.UpdateCanvasResponse, error) {
+	return nil, nil
+}
+
 // ListCanvases returns the single canvas
 func (s *SingletonCanvasService) ListCanvases(ctx context.Context, req *protos.ListCanvasesRequest) (*protos.ListCanvasesResponse, error) {
 	s.canvasLock.RLock()
@@ -144,8 +148,7 @@ func (s *SingletonCanvasService) AddGenerator(ctx context.Context, req *protos.A
 	s.canvasLock.Lock()
 	defer s.canvasLock.Unlock()
 
-	nativeGen := services.FromProtoGenerator(req.Generator)
-	gen := &services.GeneratorInfo{Generator: nativeGen}
+	gen := &services.GeneratorInfo{Generator: req.Generator}
 	err := s.canvas.AddGenerator(gen)
 	if err != nil {
 		return nil, fmt.Errorf("failed to add generator: %w", err)
@@ -165,7 +168,7 @@ func (s *SingletonCanvasService) ListGenerators(ctx context.Context, req *protos
 	protoGens := make([]*protos.Generator, 0, len(gens))
 	for _, g := range gens {
 		if g != nil && g.Generator != nil {
-			protoGens = append(protoGens, services.ToProtoGenerator(g.Generator))
+			protoGens = append(protoGens, g.Generator)
 		}
 	}
 
@@ -185,7 +188,7 @@ func (s *SingletonCanvasService) GetGenerator(ctx context.Context, req *protos.G
 	}
 
 	return &protos.GetGeneratorResponse{
-		Generator: services.ToProtoGenerator(gen.Generator),
+		Generator: gen.Generator,
 	}, nil
 }
 
@@ -194,8 +197,7 @@ func (s *SingletonCanvasService) UpdateGenerator(ctx context.Context, req *proto
 	s.canvasLock.Lock()
 	defer s.canvasLock.Unlock()
 
-	nativeGen := services.FromProtoGenerator(req.Generator)
-	err := s.canvas.UpdateGenerator(nativeGen)
+	err := s.canvas.UpdateGenerator(req.Generator)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update generator: %w", err)
 	}
@@ -274,11 +276,11 @@ func (s *SingletonCanvasService) StopAllGenerators(ctx context.Context, req *pro
 	}
 
 	return &protos.StopAllGeneratorsResponse{
-		TotalGenerators:    int32(result.TotalGenerators),
-		StoppedCount:       int32(result.ProcessedCount),
+		TotalGenerators:     int32(result.TotalGenerators),
+		StoppedCount:        int32(result.ProcessedCount),
 		AlreadyStoppedCount: int32(result.AlreadyInStateCount),
-		FailedCount:        int32(result.FailedCount),
-		FailedIds:          result.FailedIDs,
+		FailedCount:         int32(result.FailedCount),
+		FailedIds:           result.FailedIDs,
 	}, nil
 }
 

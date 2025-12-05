@@ -13,10 +13,10 @@ import (
 	"sync"
 
 	"github.com/gorilla/websocket"
-	"github.com/panyam/goutils/conc"
-	gohttp "github.com/panyam/goutils/http"
+	conc "github.com/panyam/gocurrent"
 	"github.com/panyam/sdl/lib/loader"
 	"github.com/panyam/sdl/services"
+	gohttp "github.com/panyam/servicekit/http"
 	"github.com/panyam/templar"
 )
 

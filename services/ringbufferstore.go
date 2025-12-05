@@ -6,6 +6,8 @@ import (
 	"sort"
 	"sync"
 	"time"
+
+	protos "github.com/panyam/sdl/gen/go/sdl/v1/models"
 )
 
 // RingBufferStore implements MetricStore using in-memory ring buffers
@@ -56,16 +58,16 @@ func NewRingBufferStore(config MetricStoreConfig) (*RingBufferStore, error) {
 }
 
 // WritePoint stores a single metric point
-func (s *RingBufferStore) WritePoint(ctx context.Context, metric *Metric, point *MetricPoint) error {
+func (s *RingBufferStore) WritePoint(ctx context.Context, metric *protos.Metric, point *MetricPoint) error {
 	if s.closed {
 		return fmt.Errorf("store is closed")
 	}
 
 	s.mu.Lock()
-	rb, ok := s.buffers[metric.ID]
+	rb, ok := s.buffers[metric.Id]
 	if !ok {
 		rb = newRingBuffer(s.maxPointsPerMetric)
-		s.buffers[metric.ID] = rb
+		s.buffers[metric.Id] = rb
 	}
 	s.mu.Unlock()
 
@@ -74,16 +76,16 @@ func (s *RingBufferStore) WritePoint(ctx context.Context, metric *Metric, point 
 }
 
 // WriteBatch stores multiple metric points efficiently
-func (s *RingBufferStore) WriteBatch(ctx context.Context, metric *Metric, points []*MetricPoint) error {
+func (s *RingBufferStore) WriteBatch(ctx context.Context, metric *protos.Metric, points []*MetricPoint) error {
 	if s.closed {
 		return fmt.Errorf("store is closed")
 	}
 
 	s.mu.Lock()
-	rb, ok := s.buffers[metric.ID]
+	rb, ok := s.buffers[metric.Id]
 	if !ok {
 		rb = newRingBuffer(s.maxPointsPerMetric)
-		s.buffers[metric.ID] = rb
+		s.buffers[metric.Id] = rb
 	}
 	s.mu.Unlock()
 
@@ -94,13 +96,13 @@ func (s *RingBufferStore) WriteBatch(ctx context.Context, metric *Metric, points
 }
 
 // Query retrieves raw metric points
-func (s *RingBufferStore) Query(ctx context.Context, metric *Metric, opts QueryOptions) (QueryResult, error) {
+func (s *RingBufferStore) Query(ctx context.Context, metric *protos.Metric, opts QueryOptions) (QueryResult, error) {
 	if s.closed {
 		return QueryResult{}, fmt.Errorf("store is closed")
 	}
 
 	s.mu.RLock()
-	rb, ok := s.buffers[metric.ID]
+	rb, ok := s.buffers[metric.Id]
 	s.mu.RUnlock()
 
 	if !ok {
@@ -130,20 +132,20 @@ func (s *RingBufferStore) Query(ctx context.Context, metric *Metric, opts QueryO
 }
 
 // QueryMultiple retrieves points for multiple metrics
-func (s *RingBufferStore) QueryMultiple(ctx context.Context, metrics []*Metric, opts QueryOptions) (map[string]QueryResult, error) {
+func (s *RingBufferStore) QueryMultiple(ctx context.Context, metrics []*protos.Metric, opts QueryOptions) (map[string]QueryResult, error) {
 	results := make(map[string]QueryResult)
 	for _, metric := range metrics {
 		result, err := s.Query(ctx, metric, opts)
 		if err != nil {
 			return nil, err
 		}
-		results[metric.ID] = result
+		results[metric.Id] = result
 	}
 	return results, nil
 }
 
 // Aggregate computes aggregations over time windows
-func (s *RingBufferStore) Aggregate(ctx context.Context, metric *Metric, opts AggregateOptions) (AggregateResult, error) {
+func (s *RingBufferStore) Aggregate(ctx context.Context, metric *protos.Metric, opts AggregateOptions) (AggregateResult, error) {
 	if s.closed {
 		return AggregateResult{}, fmt.Errorf("store is closed")
 	}
@@ -252,9 +254,9 @@ func (s *RingBufferStore) Subscribe(ctx context.Context, metricIDs []string) (<-
 }
 
 // GetMetricStats returns statistics for a specific metric
-func (s *RingBufferStore) GetMetricStats(metric *Metric) MetricStats {
+func (s *RingBufferStore) GetMetricStats(metric *protos.Metric) MetricStats {
 	s.mu.RLock()
-	rb, ok := s.buffers[metric.ID]
+	rb, ok := s.buffers[metric.Id]
 	s.mu.RUnlock()
 
 	if !ok || rb == nil {

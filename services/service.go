@@ -157,7 +157,7 @@ func (s *CanvasService) ListGenerators(ctx context.Context, req *protos.ListGene
 	s.withCanvas(req.CanvasId, func(canvas *Canvas) {
 		gens := canvas.ListGenerators()
 		for _, v := range gens {
-			resp.Generators = append(resp.Generators, ToProtoGenerator(v.Generator))
+			resp.Generators = append(resp.Generators, v.Generator)
 		}
 	})
 	return
@@ -171,7 +171,7 @@ func (s *CanvasService) GetGenerator(ctx context.Context, req *protos.GetGenerat
 	err = s.withCanvas(req.CanvasId, func(canvas *Canvas) {
 		generator := canvas.GetGenerator(req.GeneratorId)
 		// Convert to proto format
-		resp.Generator = ToProtoGenerator(generator.Generator)
+		resp.Generator = generator.Generator
 	})
 
 	return
@@ -181,7 +181,7 @@ func (s *CanvasService) AddGenerator(ctx context.Context, req *protos.AddGenerat
 	slog.Info("AddGenerator Request", "req", req)
 	resp = &protos.AddGeneratorResponse{}
 	s.withCanvas(req.Generator.CanvasId, func(canvas *Canvas) {
-		nativeGen := FromProtoGenerator(req.Generator)
+		nativeGen := req.Generator
 		gen := &GeneratorInfo{Generator: nativeGen}
 		err = canvas.AddGenerator(gen)
 	})
@@ -261,7 +261,7 @@ func (s *CanvasService) UpdateGenerator(ctx context.Context, req *protos.UpdateG
 
 	err = s.withCanvas(req.Generator.CanvasId, func(canvas *Canvas) {
 		// Update the generator
-		nativeGen := FromProtoGenerator(req.Generator)
+		nativeGen := req.Generator
 		err = canvas.UpdateGenerator(nativeGen)
 		if err != nil {
 			return
@@ -276,7 +276,7 @@ func (s *CanvasService) AddMetric(ctx context.Context, req *protos.AddMetricRequ
 	slog.Info("AddMetric Request", "req", req)
 	resp = &protos.AddMetricResponse{}
 	s.withCanvas(req.Metric.CanvasId, func(canvas *Canvas) {
-		nativeMetric := FromProtoMetric(req.Metric)
+		nativeMetric := req.Metric
 		err = canvas.metricTracer.AddMetricSpec(&MetricSpec{Metric: nativeMetric})
 		resp.Metric = req.Metric
 	})
@@ -430,7 +430,7 @@ func (s *CanvasService) ListMetrics(ctx context.Context, req *protos.ListMetrics
 		metrics := canvas.metricTracer.ListMetrics()
 		protoMetrics := make([]*protos.Metric, len(metrics))
 		for i, m := range metrics {
-			protoMetrics[i] = ToProtoMetric(m)
+			protoMetrics[i] = m
 		}
 		resp.Metrics = protoMetrics
 	})

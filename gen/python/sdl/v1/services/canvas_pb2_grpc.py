@@ -20,6 +20,11 @@ class CanvasServiceStub(object):
                 request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.CreateCanvasRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.CreateCanvasResponse.FromString,
                 _registered_method=True)
+        self.UpdateCanvas = channel.unary_unary(
+                '/sdl.v1.CanvasService/UpdateCanvas',
+                request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.UpdateCanvasRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.UpdateCanvasResponse.FromString,
+                _registered_method=True)
         self.ListCanvases = channel.unary_unary(
                 '/sdl.v1.CanvasService/ListCanvases',
                 request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.ListCanvasesRequest.SerializeToString,
@@ -172,6 +177,13 @@ class CanvasServiceServicer(object):
     """
 
     def CreateCanvas(self, request, context):
+        """Create a new canvas sesssion.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def UpdateCanvas(self, request, context):
         """Create a new canvas sesssion.
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -396,6 +408,11 @@ def add_CanvasServiceServicer_to_server(servicer, server):
                     request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.CreateCanvasRequest.FromString,
                     response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.CreateCanvasResponse.SerializeToString,
             ),
+            'UpdateCanvas': grpc.unary_unary_rpc_method_handler(
+                    servicer.UpdateCanvas,
+                    request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.UpdateCanvasRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.UpdateCanvasResponse.SerializeToString,
+            ),
             'ListCanvases': grpc.unary_unary_rpc_method_handler(
                     servicer.ListCanvases,
                     request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.ListCanvasesRequest.FromString,
@@ -570,6 +587,33 @@ class CanvasService(object):
             '/sdl.v1.CanvasService/CreateCanvas',
             sdl_dot_v1_dot_models_dot_canvas__service__pb2.CreateCanvasRequest.SerializeToString,
             sdl_dot_v1_dot_models_dot_canvas__service__pb2.CreateCanvasResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def UpdateCanvas(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.CanvasService/UpdateCanvas',
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.UpdateCanvasRequest.SerializeToString,
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.UpdateCanvasResponse.FromString,
             options,
             channel_credentials,
             insecure,

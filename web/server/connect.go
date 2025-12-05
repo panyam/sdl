@@ -19,6 +19,14 @@ func NewConnectCanvasServiceAdapter(svc *services.CanvasService) *ConnectCanvasS
 	return &ConnectCanvasServiceAdapter{svc: svc}
 }
 
+func (a *ConnectCanvasServiceAdapter) UpdateCanvas(ctx context.Context, req *connect.Request[v1.UpdateCanvasRequest]) (*connect.Response[v1.UpdateCanvasResponse], error) {
+	resp, err := a.svc.UpdateCanvas(ctx, req.Msg)
+	if err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(resp), nil
+}
+
 func (a *ConnectCanvasServiceAdapter) CreateCanvas(ctx context.Context, req *connect.Request[v1.CreateCanvasRequest]) (*connect.Response[v1.CreateCanvasResponse], error) {
 	resp, err := a.svc.CreateCanvas(ctx, req.Msg)
 	if err != nil {

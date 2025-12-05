@@ -18,6 +18,14 @@ service CanvasService {
     };
   }
 
+  // Create a new canvas sesssion.
+  rpc UpdateCanvas(UpdateCanvasRequest) returns (UpdateCanvasResponse) {
+    option (google.api.http) = {
+      patch: "/v1/canvases/{canvas.id=*}",
+      body: "*",
+    };
+  }
+
   // List all canvases from a user.
   rpc ListCanvases(ListCanvasesRequest) returns (ListCanvasesResponse) {
     option (google.api.http) = {

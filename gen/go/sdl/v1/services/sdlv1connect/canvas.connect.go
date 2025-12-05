@@ -38,6 +38,9 @@ const (
 	// CanvasServiceCreateCanvasProcedure is the fully-qualified name of the CanvasService's
 	// CreateCanvas RPC.
 	CanvasServiceCreateCanvasProcedure = "/sdl.v1.CanvasService/CreateCanvas"
+	// CanvasServiceUpdateCanvasProcedure is the fully-qualified name of the CanvasService's
+	// UpdateCanvas RPC.
+	CanvasServiceUpdateCanvasProcedure = "/sdl.v1.CanvasService/UpdateCanvas"
 	// CanvasServiceListCanvasesProcedure is the fully-qualified name of the CanvasService's
 	// ListCanvases RPC.
 	CanvasServiceListCanvasesProcedure = "/sdl.v1.CanvasService/ListCanvases"
@@ -127,6 +130,8 @@ const (
 type CanvasServiceClient interface {
 	// Create a new canvas sesssion.
 	CreateCanvas(context.Context, *connect.Request[models.CreateCanvasRequest]) (*connect.Response[models.CreateCanvasResponse], error)
+	// Create a new canvas sesssion.
+	UpdateCanvas(context.Context, *connect.Request[models.UpdateCanvasRequest]) (*connect.Response[models.UpdateCanvasResponse], error)
 	// List all canvases from a user.
 	ListCanvases(context.Context, *connect.Request[models.ListCanvasesRequest]) (*connect.Response[models.ListCanvasesResponse], error)
 	// Get details/stats for a particular canvas
@@ -195,6 +200,12 @@ func NewCanvasServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			httpClient,
 			baseURL+CanvasServiceCreateCanvasProcedure,
 			connect.WithSchema(canvasServiceMethods.ByName("CreateCanvas")),
+			connect.WithClientOptions(opts...),
+		),
+		updateCanvas: connect.NewClient[models.UpdateCanvasRequest, models.UpdateCanvasResponse](
+			httpClient,
+			baseURL+CanvasServiceUpdateCanvasProcedure,
+			connect.WithSchema(canvasServiceMethods.ByName("UpdateCanvas")),
 			connect.WithClientOptions(opts...),
 		),
 		listCanvases: connect.NewClient[models.ListCanvasesRequest, models.ListCanvasesResponse](
@@ -377,6 +388,7 @@ func NewCanvasServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 // canvasServiceClient implements CanvasServiceClient.
 type canvasServiceClient struct {
 	createCanvas       *connect.Client[models.CreateCanvasRequest, models.CreateCanvasResponse]
+	updateCanvas       *connect.Client[models.UpdateCanvasRequest, models.UpdateCanvasResponse]
 	listCanvases       *connect.Client[models.ListCanvasesRequest, models.ListCanvasesResponse]
 	getCanvas          *connect.Client[models.GetCanvasRequest, models.GetCanvasResponse]
 	loadFile           *connect.Client[models.LoadFileRequest, models.LoadFileResponse]
@@ -411,6 +423,11 @@ type canvasServiceClient struct {
 // CreateCanvas calls sdl.v1.CanvasService.CreateCanvas.
 func (c *canvasServiceClient) CreateCanvas(ctx context.Context, req *connect.Request[models.CreateCanvasRequest]) (*connect.Response[models.CreateCanvasResponse], error) {
 	return c.createCanvas.CallUnary(ctx, req)
+}
+
+// UpdateCanvas calls sdl.v1.CanvasService.UpdateCanvas.
+func (c *canvasServiceClient) UpdateCanvas(ctx context.Context, req *connect.Request[models.UpdateCanvasRequest]) (*connect.Response[models.UpdateCanvasResponse], error) {
+	return c.updateCanvas.CallUnary(ctx, req)
 }
 
 // ListCanvases calls sdl.v1.CanvasService.ListCanvases.
@@ -562,6 +579,8 @@ func (c *canvasServiceClient) GetUtilization(ctx context.Context, req *connect.R
 type CanvasServiceHandler interface {
 	// Create a new canvas sesssion.
 	CreateCanvas(context.Context, *connect.Request[models.CreateCanvasRequest]) (*connect.Response[models.CreateCanvasResponse], error)
+	// Create a new canvas sesssion.
+	UpdateCanvas(context.Context, *connect.Request[models.UpdateCanvasRequest]) (*connect.Response[models.UpdateCanvasResponse], error)
 	// List all canvases from a user.
 	ListCanvases(context.Context, *connect.Request[models.ListCanvasesRequest]) (*connect.Response[models.ListCanvasesResponse], error)
 	// Get details/stats for a particular canvas
@@ -626,6 +645,12 @@ func NewCanvasServiceHandler(svc CanvasServiceHandler, opts ...connect.HandlerOp
 		CanvasServiceCreateCanvasProcedure,
 		svc.CreateCanvas,
 		connect.WithSchema(canvasServiceMethods.ByName("CreateCanvas")),
+		connect.WithHandlerOptions(opts...),
+	)
+	canvasServiceUpdateCanvasHandler := connect.NewUnaryHandler(
+		CanvasServiceUpdateCanvasProcedure,
+		svc.UpdateCanvas,
+		connect.WithSchema(canvasServiceMethods.ByName("UpdateCanvas")),
 		connect.WithHandlerOptions(opts...),
 	)
 	canvasServiceListCanvasesHandler := connect.NewUnaryHandler(
@@ -806,6 +831,8 @@ func NewCanvasServiceHandler(svc CanvasServiceHandler, opts ...connect.HandlerOp
 		switch r.URL.Path {
 		case CanvasServiceCreateCanvasProcedure:
 			canvasServiceCreateCanvasHandler.ServeHTTP(w, r)
+		case CanvasServiceUpdateCanvasProcedure:
+			canvasServiceUpdateCanvasHandler.ServeHTTP(w, r)
 		case CanvasServiceListCanvasesProcedure:
 			canvasServiceListCanvasesHandler.ServeHTTP(w, r)
 		case CanvasServiceGetCanvasProcedure:
@@ -875,6 +902,10 @@ type UnimplementedCanvasServiceHandler struct{}
 
 func (UnimplementedCanvasServiceHandler) CreateCanvas(context.Context, *connect.Request[models.CreateCanvasRequest]) (*connect.Response[models.CreateCanvasResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.CreateCanvas is not implemented"))
+}
+
+func (UnimplementedCanvasServiceHandler) UpdateCanvas(context.Context, *connect.Request[models.UpdateCanvasRequest]) (*connect.Response[models.UpdateCanvasResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasService.UpdateCanvas is not implemented"))
 }
 
 func (UnimplementedCanvasServiceHandler) ListCanvases(context.Context, *connect.Request[models.ListCanvasesRequest]) (*connect.Response[models.ListCanvasesResponse], error) {

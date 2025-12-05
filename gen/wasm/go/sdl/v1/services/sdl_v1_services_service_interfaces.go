@@ -18,6 +18,8 @@ import (
 type CanvasServiceServer interface {
 	/** Create a new canvas sesssion. */
 	CreateCanvas(context.Context, *v1models.CreateCanvasRequest) (*v1models.CreateCanvasResponse, error)
+	/** Create a new canvas sesssion. */
+	UpdateCanvas(context.Context, *v1models.UpdateCanvasRequest) (*v1models.UpdateCanvasResponse, error)
 	/** List all canvases from a user. */
 	ListCanvases(context.Context, *v1models.ListCanvasesRequest) (*v1models.ListCanvasesResponse, error)
 	/** Get details/stats for a particular canvas */

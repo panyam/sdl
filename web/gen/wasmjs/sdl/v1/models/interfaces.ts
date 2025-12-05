@@ -38,14 +38,29 @@ export interface Canvas {
   updatedAt?: Timestamp;
   /** Unique ID for the canvas */
   id: string;
-  /** Active system being observed */
+  /** Human-readable name for the canvas */
+  name: string;
+  /** Description of what this canvas is for */
+  description: string;
+  /** The currently active system (from the systems defined in system_contents) */
   activeSystem: string;
-  /** Files that have been loaded so far */
-  loadedFiles: string[];
+  /** Contents of the .sdl file that defines one or more systems */
+  systemContents: string;
+  /** Recipe files for various scenarios (name -> contents map) */
+  recipes: Record<string, string>;
   /** Registered generators for this canvas */
   generators?: Generator[];
   /** Registered live metrics for this canvas */
   metrics?: Metric[];
+}
+
+
+
+export interface File {
+  /** Path relative to the canvas root */
+  path: string;
+  /** Contents of the file */
+  contents: string;
 }
 
 
@@ -337,6 +352,21 @@ export interface CreateCanvasRequest {
 export interface CreateCanvasResponse {
   canvas?: Canvas;
   fieldErrors: Record<string, string>;
+}
+
+
+
+export interface UpdateCanvasRequest {
+  canvas?: Canvas;
+}
+
+
+
+export interface UpdateCanvasResponse {
+  canvas?: Canvas;
+  updateMask?: FieldMask;
+  deletedFiles: string[];
+  updatedFiles: Record<string, File>;
 }
 
 

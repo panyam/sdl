@@ -22,6 +22,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	CanvasService_CreateCanvas_FullMethodName       = "/sdl.v1.CanvasService/CreateCanvas"
+	CanvasService_UpdateCanvas_FullMethodName       = "/sdl.v1.CanvasService/UpdateCanvas"
 	CanvasService_ListCanvases_FullMethodName       = "/sdl.v1.CanvasService/ListCanvases"
 	CanvasService_GetCanvas_FullMethodName          = "/sdl.v1.CanvasService/GetCanvas"
 	CanvasService_LoadFile_FullMethodName           = "/sdl.v1.CanvasService/LoadFile"
@@ -61,6 +62,8 @@ const (
 type CanvasServiceClient interface {
 	// Create a new canvas sesssion.
 	CreateCanvas(ctx context.Context, in *models.CreateCanvasRequest, opts ...grpc.CallOption) (*models.CreateCanvasResponse, error)
+	// Create a new canvas sesssion.
+	UpdateCanvas(ctx context.Context, in *models.UpdateCanvasRequest, opts ...grpc.CallOption) (*models.UpdateCanvasResponse, error)
 	// List all canvases from a user.
 	ListCanvases(ctx context.Context, in *models.ListCanvasesRequest, opts ...grpc.CallOption) (*models.ListCanvasesResponse, error)
 	// Get details/stats for a particular canvas
@@ -126,6 +129,16 @@ func (c *canvasServiceClient) CreateCanvas(ctx context.Context, in *models.Creat
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(models.CreateCanvasResponse)
 	err := c.cc.Invoke(ctx, CanvasService_CreateCanvas_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *canvasServiceClient) UpdateCanvas(ctx context.Context, in *models.UpdateCanvasRequest, opts ...grpc.CallOption) (*models.UpdateCanvasResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(models.UpdateCanvasResponse)
+	err := c.cc.Invoke(ctx, CanvasService_UpdateCanvas_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -439,6 +452,8 @@ func (c *canvasServiceClient) GetUtilization(ctx context.Context, in *models.Get
 type CanvasServiceServer interface {
 	// Create a new canvas sesssion.
 	CreateCanvas(context.Context, *models.CreateCanvasRequest) (*models.CreateCanvasResponse, error)
+	// Create a new canvas sesssion.
+	UpdateCanvas(context.Context, *models.UpdateCanvasRequest) (*models.UpdateCanvasResponse, error)
 	// List all canvases from a user.
 	ListCanvases(context.Context, *models.ListCanvasesRequest) (*models.ListCanvasesResponse, error)
 	// Get details/stats for a particular canvas
@@ -501,6 +516,9 @@ type UnimplementedCanvasServiceServer struct{}
 
 func (UnimplementedCanvasServiceServer) CreateCanvas(context.Context, *models.CreateCanvasRequest) (*models.CreateCanvasResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateCanvas not implemented")
+}
+func (UnimplementedCanvasServiceServer) UpdateCanvas(context.Context, *models.UpdateCanvasRequest) (*models.UpdateCanvasResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateCanvas not implemented")
 }
 func (UnimplementedCanvasServiceServer) ListCanvases(context.Context, *models.ListCanvasesRequest) (*models.ListCanvasesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListCanvases not implemented")
@@ -623,6 +641,24 @@ func _CanvasService_CreateCanvas_Handler(srv interface{}, ctx context.Context, d
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CanvasServiceServer).CreateCanvas(ctx, req.(*models.CreateCanvasRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CanvasService_UpdateCanvas_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(models.UpdateCanvasRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CanvasServiceServer).UpdateCanvas(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CanvasService_UpdateCanvas_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CanvasServiceServer).UpdateCanvas(ctx, req.(*models.UpdateCanvasRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1152,6 +1188,10 @@ var CanvasService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateCanvas",
 			Handler:    _CanvasService_CreateCanvas_Handler,
+		},
+		{
+			MethodName: "UpdateCanvas",
+			Handler:    _CanvasService_UpdateCanvas_Handler,
 		},
 		{
 			MethodName: "ListCanvases",

@@ -40,6 +40,9 @@ func (exports *Sdl_v1ServicesExports) RegisterAPI() {
 			"createCanvas": js.FuncOf(func(this js.Value, args []js.Value) any {
 				return exports.canvasServiceCreateCanvas(this, args)
 			}),
+			"updateCanvas": js.FuncOf(func(this js.Value, args []js.Value) any {
+				return exports.canvasServiceUpdateCanvas(this, args)
+			}),
 			"listCanvases": js.FuncOf(func(this js.Value, args []js.Value) any {
 				return exports.canvasServiceListCanvases(this, args)
 			}),
@@ -241,6 +244,54 @@ func (exports *Sdl_v1ServicesExports) canvasServiceCreateCanvas(this js.Value, a
 
 	// Call service method
 	resp, err := exports.CanvasService.CreateCanvas(ctx, req)
+	if err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+	}
+
+	// Marshal response with options for better TypeScript compatibility
+	responseJSON, err := marshaller.Marshal(resp, wasm.MarshalOptions{
+		UseProtoNames:   false, // Use JSON names (camelCase) instead of proto names
+		EmitUnpopulated: true,  // Emit zero values to avoid undefined in JavaScript
+		UseEnumNumbers:  false, // Use enum string values
+	})
+	if err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+	}
+
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
+}
+
+// canvasServiceUpdateCanvas handles the UpdateCanvas method for CanvasService
+func (exports *Sdl_v1ServicesExports) canvasServiceUpdateCanvas(this js.Value, args []js.Value) any {
+	if exports.CanvasService == nil {
+		return wasm.CreateJSResponse(false, "CanvasService not initialized", nil)
+	}
+	// Synchronous method
+	if len(args) < 1 {
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
+	}
+
+	requestJSON := args[0].String()
+	if requestJSON == "" {
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
+	}
+
+	// Parse request
+	req := &v1models.UpdateCanvasRequest{}
+	marshaller := wasm.GetGlobalMarshaller()
+	if err := marshaller.Unmarshal([]byte(requestJSON), req, wasm.UnmarshalOptions{
+		DiscardUnknown: true,
+		AllowPartial:   true, // Allow partial messages for better compatibility
+	}); err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+	}
+
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Call service method
+	resp, err := exports.CanvasService.UpdateCanvas(ctx, req)
 	if err != nil {
 		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}
