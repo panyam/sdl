@@ -1,4 +1,4 @@
-{{# include "base.html" #}}
+{{# include "BasePage.html" #}}
 
 {{define "head"}}
 <style>
@@ -27,4 +27,8 @@
         readonly: {{.ReadOnly}}
     };
 </script>
+{{end}}
+
+{{define "CanvasViewerPage"}}
+{{template "BasePage" .}}
 {{end}}

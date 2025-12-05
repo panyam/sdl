@@ -1,4 +1,4 @@
-{{# include "base.html" #}}
+{{# include "BasePage.html" #}}
 
 {{define "content"}}
 <div class="min-h-screen">
@@ -136,4 +136,8 @@ function deleteCanvas(canvasId) {
         overflow: hidden;
     }
 </style>
+{{end}}
+
+{{define "CanvasListingPage"}}
+{{template "BasePage" .}}
 {{end}}

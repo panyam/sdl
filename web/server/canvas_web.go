@@ -45,15 +45,21 @@ type WebServer struct {
 	api            *SDLApi
 	wsHandler      *CanvasWSHandler
 	canvasService  *services.CanvasService
+	clientMgr      *services.ClientMgr
+	pagesHandler   *PagesHandler
 	systemsHandler *SystemsHandler
 	templateGroup  *templar.TemplateGroup
 }
 
 // NewWebServer creates a new web server instance
 func NewWebServer(grpcAddress string, canvasService *services.CanvasService) *WebServer {
+	// Create client manager for gRPC calls
+	clientMgr := services.NewClientMgr(grpcAddress)
+
 	ws := &WebServer{
 		api:           NewSDLApi(grpcAddress, canvasService),
 		canvasService: canvasService,
+		clientMgr:     clientMgr,
 	}
 
 	// Initialize WebSocket handler
@@ -68,6 +74,9 @@ func NewWebServer(grpcAddress string, canvasService *services.CanvasService) *We
 		log.Printf("Failed to setup templates: %v", err)
 	}
 	ws.templateGroup = templateGroup
+
+	// Initialize pages handler for server-rendered pages
+	ws.pagesHandler = NewPagesHandler(templateGroup, clientMgr)
 
 	// Initialize systems handler
 	ws.systemsHandler = NewSystemsHandler(templateGroup)
@@ -171,8 +180,10 @@ func (ws *WebServer) Handler() http.Handler {
 		r.Handle("/system/", ws.systemsHandler.Handler())
 	}
 
-	// Canvas-specific routes
-	r.HandleFunc("/canvases/", ws.handleCanvasRoute)
+	// Canvas pages (server-rendered)
+	if ws.pagesHandler != nil {
+		r.Handle("/canvases/", ws.pagesHandler.Handler())
+	}
 
 	// Root redirect to systems listing
 	r.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
@@ -185,43 +196,6 @@ func (ws *WebServer) Handler() http.Handler {
 	})
 
 	return r
-}
-
-// handleCanvasRoute serves the dashboard for a specific canvas
-func (ws *WebServer) handleCanvasRoute(w http.ResponseWriter, r *http.Request) {
-	// Extract canvas ID from URL path
-	path := r.URL.Path
-	prefix := "/canvases/"
-
-	if !strings.HasPrefix(path, prefix) {
-		http.NotFound(w, r)
-		return
-	}
-
-	// Remove prefix and find canvas ID
-	remaining := strings.TrimPrefix(path, prefix)
-	parts := strings.Split(remaining, "/")
-
-	if len(parts) == 0 || parts[0] == "" {
-		// Redirect /canvases/ to /canvases/default/
-		http.Redirect(w, r, "/canvases/default/", http.StatusFound)
-		return
-	}
-
-	// canvasID := parts[0] // Available if we need to use it later
-
-	// For any path under /canvases/{canvasId}/, serve the index.html
-	// This allows the frontend router to handle sub-paths
-	if strings.HasSuffix(path, "/") || len(parts) == 1 {
-		// Serve index.html for canvas root
-		http.ServeFile(w, r, "./web/dist/index.html")
-	} else if len(parts) > 1 {
-		// For assets and other files, strip the canvas prefix and serve from dist
-		// e.g., /canvases/mycanvas/assets/index.js -> /assets/index.js
-		assetPath := "/" + strings.Join(parts[1:], "/")
-		r.URL.Path = assetPath
-		http.FileServer(http.Dir("./web/dist/")).ServeHTTP(w, r)
-	}
 }
 
 // FileSystemInfo represents information about a mounted filesystem
