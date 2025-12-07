@@ -4,9 +4,9 @@ go 1.24.0
 
 require (
 	connectrpc.com/connect v1.18.1
-	github.com/felixge/httpsnoop v1.0.4
 	github.com/gorilla/websocket v1.5.3
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.0
+	github.com/panyam/goapplib v0.0.1
 	github.com/panyam/gocurrent v0.0.2
 	github.com/panyam/goutils v0.1.10
 	github.com/panyam/protoc-gen-go-wasmjs v0.0.28
@@ -22,6 +22,7 @@ require (
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
@@ -33,3 +34,5 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251014184007-4626949a642f // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/panyam/goapplib v0.0.1 => ./locallinks/goapplib

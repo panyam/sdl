@@ -69,7 +69,7 @@ plugins:
 
   # Generate TypeScript clients with new TS generator
   - local: protoc-gen-go-wasmjs-ts
-    out: ./web/gen/wasmjs
+    out: ./web/frontend/gen/wasmjs
     opt:
       - ts_export_path=.
       - js_structure=namespaced

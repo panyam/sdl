@@ -45,15 +45,17 @@ Example:
   sdl gen start load1
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		// Create shared CanvasService instance
+		// Create shared CanvasService instance for gRPC server
 		canvasService := services.NewCanvasService()
 
-		// Create web server with Canvas
+		// Create servers
 		log.Println("Grpc, Address: ", grpcAddress)
 		log.Println("gateway, Address: ", gatewayAddress)
 		app := App{Ctx: context.Background()}
 		app.AddServer(&server.Server{Address: grpcAddress, CanvasService: canvasService})
-		app.AddServer(&server.WebAppServer{GrpcAddress: grpcAddress, Address: gatewayAddress, CanvasService: canvasService})
+		app.AddServer(&server.WebAppServer{
+			WebAppServer: server.NewWebAppServerConfig(gatewayAddress, grpcAddress, true),
+		})
 		app.Start()
 		app.Done(nil)
 	},

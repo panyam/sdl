@@ -11,6 +11,9 @@ LDFLAGS := -X 'github.com/panyam/sdl/cmd/sdl/commands.Version=$(VERSION)' \
            -X 'github.com/panyam/sdl/cmd/sdl/commands.GitCommit=$(GIT_COMMIT)' \
            -X 'github.com/panyam/sdl/cmd/sdl/commands.BuildDate=$(BUILD_DATE)'
 
+serve:
+	 go run cmd/sdl/main.go serve
+
 # Build targets
 binary: parserbin wasmbin
 	go build -ldflags "$(LDFLAGS)" -o ${GOBIN}/sdl ./cmd/sdl/main.go
@@ -21,9 +24,6 @@ parserbin:
 wasmbin:
 	cd tools/systemdetail && make
 	cd cmd/wasm && make
-
-binlocal: parserbin wasmbin
-	go build -ldflags "$(LDFLAGS)" -o /tmp/sdl ./cmd/sdl/main.go
 
 # Installation targets
 .PHONY: deps check-deps install-tools install
