@@ -344,3 +344,79 @@ func (a *ConnectSystemsServiceAdapter) GetSystemContent(ctx context.Context, req
 	}
 	return connect.NewResponse(resp), nil
 }
+
+// FilesystemServiceInterface defines the interface for filesystem operations
+type FilesystemServiceInterface interface {
+	ListFilesystems(ctx context.Context, req *v1.ListFilesystemsRequest) (*v1.ListFilesystemsResponse, error)
+	ListFiles(ctx context.Context, req *v1.ListFilesRequest) (*v1.ListFilesResponse, error)
+	GetFileInfo(ctx context.Context, req *v1.GetFileInfoRequest) (*v1.GetFileInfoResponse, error)
+	ReadFile(ctx context.Context, req *v1.ReadFileRequest) (*v1.ReadFileResponse, error)
+	WriteFile(ctx context.Context, req *v1.WriteFileRequest) (*v1.WriteFileResponse, error)
+	DeleteFile(ctx context.Context, req *v1.DeleteFileRequest) (*v1.DeleteFileResponse, error)
+	CreateDirectory(ctx context.Context, req *v1.CreateDirectoryRequest) (*v1.CreateDirectoryResponse, error)
+}
+
+// ConnectFilesystemServiceAdapter adapts FilesystemService to Connect's interface
+type ConnectFilesystemServiceAdapter struct {
+	svc FilesystemServiceInterface
+}
+
+func NewConnectFilesystemServiceAdapter(svc FilesystemServiceInterface) *ConnectFilesystemServiceAdapter {
+	return &ConnectFilesystemServiceAdapter{svc: svc}
+}
+
+func (a *ConnectFilesystemServiceAdapter) ListFilesystems(ctx context.Context, req *connect.Request[v1.ListFilesystemsRequest]) (*connect.Response[v1.ListFilesystemsResponse], error) {
+	resp, err := a.svc.ListFilesystems(ctx, req.Msg)
+	if err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (a *ConnectFilesystemServiceAdapter) ListFiles(ctx context.Context, req *connect.Request[v1.ListFilesRequest]) (*connect.Response[v1.ListFilesResponse], error) {
+	resp, err := a.svc.ListFiles(ctx, req.Msg)
+	if err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (a *ConnectFilesystemServiceAdapter) GetFileInfo(ctx context.Context, req *connect.Request[v1.GetFileInfoRequest]) (*connect.Response[v1.GetFileInfoResponse], error) {
+	resp, err := a.svc.GetFileInfo(ctx, req.Msg)
+	if err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (a *ConnectFilesystemServiceAdapter) ReadFile(ctx context.Context, req *connect.Request[v1.ReadFileRequest]) (*connect.Response[v1.ReadFileResponse], error) {
+	resp, err := a.svc.ReadFile(ctx, req.Msg)
+	if err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (a *ConnectFilesystemServiceAdapter) WriteFile(ctx context.Context, req *connect.Request[v1.WriteFileRequest]) (*connect.Response[v1.WriteFileResponse], error) {
+	resp, err := a.svc.WriteFile(ctx, req.Msg)
+	if err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (a *ConnectFilesystemServiceAdapter) DeleteFile(ctx context.Context, req *connect.Request[v1.DeleteFileRequest]) (*connect.Response[v1.DeleteFileResponse], error) {
+	resp, err := a.svc.DeleteFile(ctx, req.Msg)
+	if err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (a *ConnectFilesystemServiceAdapter) CreateDirectory(ctx context.Context, req *connect.Request[v1.CreateDirectoryRequest]) (*connect.Response[v1.CreateDirectoryResponse], error) {
+	resp, err := a.svc.CreateDirectory(ctx, req.Msg)
+	if err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(resp), nil
+}

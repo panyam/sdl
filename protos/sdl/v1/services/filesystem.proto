@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package sdl.v1;
+
+import "sdl/v1/models/filesystem.proto";
+import "google/api/annotations.proto";
+
+option go_package = "github.com/panyam/sdl/gen/go/sdl/v1/services";
+
+// Service for filesystem operations
+service FilesystemService {
+  // List all available filesystems
+  rpc ListFilesystems(sdl.v1.ListFilesystemsRequest) returns (sdl.v1.ListFilesystemsResponse) {
+    option (google.api.http) = {
+      get: "/v1/filesystems"
+    };
+  }
+
+  // List files in a directory
+  rpc ListFiles(sdl.v1.ListFilesRequest) returns (sdl.v1.ListFilesResponse) {
+    option (google.api.http) = {
+      get: "/v1/filesystems/{filesystem_id}/files"
+    };
+  }
+
+  // Get file info
+  rpc GetFileInfo(sdl.v1.GetFileInfoRequest) returns (sdl.v1.GetFileInfoResponse) {
+    option (google.api.http) = {
+      get: "/v1/filesystems/{filesystem_id}/info"
+    };
+  }
+
+  // Read file content
+  rpc ReadFile(sdl.v1.ReadFileRequest) returns (sdl.v1.ReadFileResponse) {
+    option (google.api.http) = {
+      get: "/v1/filesystems/{filesystem_id}/content"
+    };
+  }
+
+  // Write file content
+  rpc WriteFile(sdl.v1.WriteFileRequest) returns (sdl.v1.WriteFileResponse) {
+    option (google.api.http) = {
+      put: "/v1/filesystems/{filesystem_id}/content"
+      body: "*"
+    };
+  }
+
+  // Delete a file
+  rpc DeleteFile(sdl.v1.DeleteFileRequest) returns (sdl.v1.DeleteFileResponse) {
+    option (google.api.http) = {
+      delete: "/v1/filesystems/{filesystem_id}/files"
+    };
+  }
+
+  // Create a directory
+  rpc CreateDirectory(sdl.v1.CreateDirectoryRequest) returns (sdl.v1.CreateDirectoryResponse) {
+    option (google.api.http) = {
+      post: "/v1/filesystems/{filesystem_id}/directories"
+      body: "*"
+    };
+  }
+}

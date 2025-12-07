@@ -1,0 +1,89 @@
+syntax = "proto3";
+
+package sdl.v1;
+
+option go_package = "github.com/panyam/sdl/gen/go/sdl/v1/models";
+
+// FileInfo represents information about a file or directory
+message FileInfo {
+  string name = 1;
+  string path = 2;
+  bool is_directory = 3;
+  int64 size = 4;
+  string mod_time = 5;
+  string mime_type = 6;
+}
+
+// FilesystemInfo represents information about a mounted filesystem
+message FilesystemInfo {
+  string id = 1;
+  string prefix = 2;
+  string type = 3;
+  bool read_only = 4;
+  string base_path = 5;
+  repeated string extensions = 6;  // Allowed file extensions
+}
+
+// --- Request/Response messages ---
+
+message ListFilesystemsRequest {}
+
+message ListFilesystemsResponse {
+  repeated FilesystemInfo filesystems = 1;
+}
+
+message ListFilesRequest {
+  string filesystem_id = 1;
+  string path = 2;
+}
+
+message ListFilesResponse {
+  repeated FileInfo files = 1;
+}
+
+message ReadFileRequest {
+  string filesystem_id = 1;
+  string path = 2;
+}
+
+message ReadFileResponse {
+  bytes content = 1;
+  FileInfo file_info = 2;
+}
+
+message WriteFileRequest {
+  string filesystem_id = 1;
+  string path = 2;
+  bytes content = 3;
+}
+
+message WriteFileResponse {
+  FileInfo file_info = 1;
+}
+
+message DeleteFileRequest {
+  string filesystem_id = 1;
+  string path = 2;
+}
+
+message DeleteFileResponse {
+  bool success = 1;
+}
+
+message CreateDirectoryRequest {
+  string filesystem_id = 1;
+  string path = 2;
+}
+
+message CreateDirectoryResponse {
+  FileInfo directory_info = 1;
+}
+
+message GetFileInfoRequest {
+  string filesystem_id = 1;
+  string path = 2;
+}
+
+message GetFileInfoResponse {
+  FileInfo file_info = 1;
+}

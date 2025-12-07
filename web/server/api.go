@@ -56,6 +56,13 @@ func NewSDLApi(grpcAddr string, canvasService *services.CanvasService) *SDLApi {
 	out.mux.Handle(systemsConnectPath, systemsConnectHandler)
 	log.Printf("Registered Systems Connect handler at: %s", systemsConnectPath)
 
+	// Add Filesystem Connect handler
+	log.Println("Adding Filesystem Connect handler...")
+	filesystemAdapter := NewConnectFilesystemServiceAdapter(services.NewFilesystemService())
+	filesystemConnectPath, filesystemConnectHandler := v1connect.NewFilesystemServiceHandler(filesystemAdapter)
+	out.mux.Handle(filesystemConnectPath, filesystemConnectHandler)
+	log.Printf("Registered Filesystem Connect handler at: %s", filesystemConnectPath)
+
 	return &out
 }
 
