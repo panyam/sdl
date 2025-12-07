@@ -1,116 +1,233 @@
-{{define "BasePage"}}
+{{/* SDL BasePage - standalone base template */}}
+{{/* Uses goapplib components where applicable */}}
+{{# include "goapplib/components/Modal.html" #}}
+{{# include "goapplib/components/Toast.html" #}}
+
+{{ define "BasePage" }}
 <!DOCTYPE html>
-<html lang="en" class="h-full">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.Title}} - SDL Canvas</title>
-    <link rel="stylesheet" href="/assets/index-CEJMF-ky.css">
-    {{block "head" .}}{{end}}
+
+    <!-- Theme initialization (before CSS to prevent flash) -->
+    <script>
+    if (localStorage.getItem('theme') === 'dark' ||
+        (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+    } else {
+        document.documentElement.classList.remove('dark');
+    }
+    </script>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="/assets/index-ChNh8Svc.css">
+
+    {{ block "ExtraHeadSection" . }}{{ end }}
 </head>
-<body class="h-full bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-mono transition-colors">
-    <!-- Theme Switcher -->
-    <div class="fixed top-4 right-4 z-50">
-        <div class="flex items-center gap-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-1 shadow-md">
-            <button data-theme="light" class="theme-btn p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title="Light mode">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                </svg>
-            </button>
-            <button data-theme="dark" class="theme-btn p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title="Dark mode">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
-                </svg>
-            </button>
-            <button data-theme="system" class="theme-btn p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" title="System theme">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                </svg>
-            </button>
+
+<body class="{{ or .BodyClass "min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200" }}">
+
+    <!-- Header -->
+    {{ block "HeaderSection" . }}
+    <header class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo and Site Name -->
+                <div class="flex items-center space-x-3">
+                    <a href="/" class="flex items-center space-x-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-indigo-600 dark:text-indigo-400" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                        </svg>
+                        <span class="font-bold text-xl text-gray-900 dark:text-white">SDL Canvas</span>
+                    </a>
+                </div>
+
+                <!-- Navigation (Desktop) -->
+                <nav class="hidden md:flex items-center space-x-1">
+                    <a href="/canvases" class="nav-link {{ if eq .ActiveTab "canvases" }}active{{ end }}">
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path>
+                        </svg>
+                        Canvases
+                    </a>
+                    <a href="/systems" class="nav-link {{ if eq .ActiveTab "systems" }}active{{ end }}">
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+                        </svg>
+                        Systems
+                    </a>
+                </nav>
+
+                <!-- Right Side Actions -->
+                <div class="flex items-center space-x-2">
+                    <!-- Theme Toggle -->
+                    <button id="theme-toggle-button"
+                            class="p-2 rounded-md text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            aria-label="Toggle theme">
+                        <span id="theme-toggle-icon" class="w-5 h-5 block">
+                            <span class="dark:hidden">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                                </svg>
+                            </span>
+                            <span class="hidden dark:inline">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                                </svg>
+                            </span>
+                        </span>
+                    </button>
+
+                    <!-- Mobile Menu Button -->
+                    <button id="mobile-menu-button" class="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
         </div>
-    </div>
-    
-    {{block "content" .}}{{end}}
-    
-    <div id="app" 
-         data-page-type="{{.PageType}}">
-    </div>
-    
-    <!-- Pass page data via script tag to avoid HTML escaping issues -->
-    <script type="application/json" id="page-data">{{.PageDataJSON}}</script>
-    
-    <!-- WASM runtime support -->
-    <script src="/wasm_exec.js"></script>
-    
-    <!-- Page-specific WASM modules -->
-    {{if .WasmModules}}
-    {{range .WasmModules}}
+
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden border-t border-gray-200 dark:border-gray-700">
+            <nav class="px-4 py-3 space-y-1">
+                <a href="/canvases" class="mobile-nav-link {{ if eq .ActiveTab "canvases" }}active{{ end }}">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path>
+                    </svg>
+                    Canvases
+                </a>
+                <a href="/systems" class="mobile-nav-link {{ if eq .ActiveTab "systems" }}active{{ end }}">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+                    </svg>
+                    Systems
+                </a>
+            </nav>
+        </div>
+    </header>
+    {{ end }}
+
+    <!-- Main Body Content -->
+    {{ block "BodySection" . }}
+    <main>
+        {{ block "content" . }}{{ end }}
+    </main>
+    {{ end }}
+
+    <!-- Footer -->
+    {{ block "FooterSection" . }}{{ end }}
+
+    <!-- App container for page-type data -->
+    <div id="app" data-page-type="{{.PageType}}"></div>
+
+    <!-- Main app script -->
+    <script type="module" src="/assets/index-ByQmUkOz.js"></script>
+
+    <!-- Theme toggle script -->
     <script>
-        // Preload WASM module: {{.Name}}
-        window.sdlWasmModules = window.sdlWasmModules || {};
-        window.sdlWasmModules['{{.Name}}'] = {
-            path: '{{.Path}}',
-            loaded: false,
-            instance: null
-        };
-    </script>
-    {{end}}
-    {{end}}
-    
-    <script type="module" src="/assets/index-C5oKO9A3.js"></script>
-    
-    <!-- Inline theme switcher script for immediate functionality -->
-    <script>
-        (function() {
-            // Initialize theme from localStorage or system preference
-            const savedTheme = localStorage.getItem('sdl-theme') || 'system';
-            
-            function applyTheme(theme) {
-                if (theme === 'dark') {
-                    document.documentElement.classList.add('dark');
-                } else {
-                    document.documentElement.classList.remove('dark');
-                }
-            }
-            
-            function setTheme(theme) {
-                localStorage.setItem('sdl-theme', theme);
-                
-                if (theme === 'system') {
-                    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                    applyTheme(prefersDark ? 'dark' : 'light');
-                } else {
-                    applyTheme(theme);
-                }
-                
-                // Update active button state
-                document.querySelectorAll('[data-theme]').forEach(btn => {
-                    btn.classList.toggle('active', btn.getAttribute('data-theme') === theme);
-                });
-            }
-            
-            // Apply initial theme
-            setTheme(savedTheme);
-            
-            // Listen for system theme changes
-            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-                if (localStorage.getItem('sdl-theme') === 'system') {
-                    applyTheme(e.matches ? 'dark' : 'light');
-                }
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggleBtn = document.getElementById('theme-toggle-button');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', function() {
+                document.documentElement.classList.toggle('dark');
+                localStorage.setItem('theme',
+                    document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+                );
             });
-            
-            // Attach click handlers
-            document.addEventListener('click', function(e) {
-                const themeBtn = e.target.closest('[data-theme]');
-                if (themeBtn) {
-                    const theme = themeBtn.getAttribute('data-theme');
-                    setTheme(theme);
-                }
+        }
+
+        // Mobile menu toggle
+        const mobileMenuBtn = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        if (mobileMenuBtn && mobileMenu) {
+            mobileMenuBtn.addEventListener('click', function() {
+                mobileMenu.classList.toggle('hidden');
             });
-        })();
+        }
+    });
     </script>
-    
-    {{block "scripts" .}}{{end}}
+
+    <!-- Page-specific scripts -->
+    {{ block "scripts" . }}{{ end }}
+
+    <!-- Extra styles -->
+    <style>
+        /* Navigation Link Styles */
+        .nav-link {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #4B5563;
+            transition: all 0.2s;
+        }
+        .dark .nav-link {
+            color: #D1D5DB;
+        }
+        .nav-link:hover {
+            background-color: #F3F4F6;
+            color: #111827;
+        }
+        .dark .nav-link:hover {
+            background-color: #374151;
+            color: #F9FAFB;
+        }
+        .nav-link.active {
+            background-color: #EEF2FF;
+            color: #4F46E5;
+        }
+        .dark .nav-link.active {
+            background-color: rgba(99, 102, 241, 0.2);
+            color: #A5B4FC;
+        }
+
+        .mobile-nav-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #4B5563;
+            transition: all 0.2s;
+        }
+        .dark .mobile-nav-link {
+            color: #D1D5DB;
+        }
+        .mobile-nav-link:hover {
+            background-color: #F3F4F6;
+        }
+        .dark .mobile-nav-link:hover {
+            background-color: #374151;
+        }
+        .mobile-nav-link.active {
+            background-color: #EEF2FF;
+            color: #4F46E5;
+        }
+        .dark .mobile-nav-link.active {
+            background-color: rgba(99, 102, 241, 0.2);
+            color: #A5B4FC;
+        }
+
+        /* View Toggle Styles */
+        .view-toggle-btn {
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            transition: all 0.2s;
+        }
+        .view-toggle-btn.active {
+            background-color: #4F46E5;
+            color: white;
+        }
+        .dark .view-toggle-btn.active {
+            background-color: #6366F1;
+        }
+    </style>
 </body>
 </html>
-{{end}}
+{{ end }}

@@ -3,8 +3,8 @@ export default {
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
-    "../console/templates/**/*.html",
-    "../console/templates/*.html"
+    "../templates/**/*.html",
+    "../templates/*.html"
   ],
   darkMode: 'class',
   theme: {

@@ -1,80 +1,177 @@
 {{# include "BasePage.html" #}}
+{{# include "canvases/CanvasGrid.html" #}}
 
 {{define "content"}}
-<div class="min-h-screen">
-    <!-- Header -->
-    <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div class="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center">
+<div>
+    <!-- Page Header Section -->
+    <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-2">My Canvases</h1>
-                    <p class="text-xl text-gray-600 dark:text-gray-400">Create and manage your SDL system simulations</p>
+                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white">My Canvases</h1>
+                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Create and manage your SDL system simulations</p>
                 </div>
-                <button onclick="createNewCanvas()" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center gap-2 font-medium">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button onclick="createNewCanvas()"
+                        class="inline-flex items-center justify-center px-5 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800 shadow-sm">
+                    <svg width="20" height="20" class="mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                     </svg>
                     New Canvas
                 </button>
             </div>
         </div>
-    </header>
+    </div>
 
-    <!-- Canvases Grid -->
-    <div class="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {{if .Canvases}}
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {{range .Canvases}}
-            <div class="canvas-card bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 hover:border-gray-300 dark:hover:border-gray-600 transition-all hover:shadow-lg">
-                <div class="flex justify-between items-start mb-4">
-                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
-                        {{if .Name}}{{.Name}}{{else}}Untitled Canvas{{end}}
-                    </h3>
-                    <div class="flex gap-2">
-                        <button onclick="deleteCanvas('{{.Id}}')" class="p-2 text-gray-400 hover:text-red-500 transition-colors" title="Delete">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+    <!-- Controls Bar -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <!-- Search Bar -->
+                <div class="relative flex-1 max-w-md w-full">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                    <input type="text"
+                           id="search-canvases"
+                           placeholder="Search canvases..."
+                           class="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm">
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <!-- Sort Dropdown -->
+                    <div class="relative">
+                        <select id="sort-canvases"
+                                class="appearance-none block w-full pl-3 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            <option value="updated">Last Modified</option>
+                            <option value="name">Name</option>
+                            <option value="created">Date Created</option>
+                        </select>
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                            <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- View Mode Toggle -->
+                    <div class="inline-flex rounded-lg border border-gray-300 dark:border-gray-600 p-1 bg-gray-50 dark:bg-gray-700" role="group">
+                        <button type="button"
+                                data-view="grid"
+                                class="view-toggle-btn px-3 py-1.5 text-sm font-medium rounded-md transition-all {{ if eq .ViewMode "grid" }}bg-indigo-600 text-white shadow-sm{{ else }}text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white{{ end }}"
+                                title="Grid view">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
+                            </svg>
+                        </button>
+                        <button type="button"
+                                data-view="list"
+                                class="view-toggle-btn px-3 py-1.5 text-sm font-medium rounded-md transition-all {{ if eq .ViewMode "list" }}bg-indigo-600 text-white shadow-sm{{ else }}text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white{{ end }}"
+                                title="List view">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
                             </svg>
                         </button>
                     </div>
                 </div>
-
-                <p class="text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
-                    {{if .Description}}{{.Description}}{{else}}No description{{end}}
-                </p>
-
-                {{if .ActiveSystem}}
-                <div class="mb-4">
-                    <span class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300 text-xs rounded">
-                        System: {{.ActiveSystem}}
-                    </span>
-                </div>
-                {{end}}
-
-                <div class="flex gap-2">
-                    <a href="/canvases/{{.Id}}/view" class="flex-1 px-4 py-2 bg-blue-600 text-white text-center rounded hover:bg-blue-700 transition-colors">
-                        View
-                    </a>
-                    <a href="/canvases/{{.Id}}/edit" class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                        Edit
-                    </a>
-                </div>
             </div>
-            {{end}}
+        </div>
+    </div>
+
+    <!-- Canvases Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        {{if .Canvases}}
+        <!-- Grid View -->
+        <div id="grid-view" class="{{ if eq .ViewMode "list" }}hidden{{ end }}">
+            {{ template "CanvasGrid" . }}
+        </div>
+
+        <!-- List View -->
+        <div id="list-view" class="{{ if ne .ViewMode "list" }}hidden{{ end }}">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead class="bg-gray-50 dark:bg-gray-700/50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Canvas</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden sm:table-cell">System</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell">Last Modified</th>
+                            <th scope="col" class="relative px-6 py-3"><span class="sr-only">Actions</span></th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        {{range .Canvases}}
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-12 w-12 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-gray-600 dark:to-gray-700 rounded-lg flex items-center justify-center">
+                                        <svg class="w-6 h-6 text-indigo-500 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="ml-4">
+                                        <a href="/canvases/{{.Id}}/view" class="text-sm font-medium text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                                            {{if .Name}}{{.Name}}{{else}}Untitled Canvas{{end}}
+                                        </a>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400 line-clamp-1">
+                                            {{if .Description}}{{.Description}}{{else}}No description{{end}}
+                                        </p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 hidden sm:table-cell">
+                                {{if .ActiveSystem}}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300">
+                                    {{.ActiveSystem}}
+                                </span>
+                                {{else}}
+                                <span class="text-sm text-gray-400 dark:text-gray-500">None</span>
+                                {{end}}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden md:table-cell">
+                                -
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <div class="flex items-center justify-end gap-2">
+                                    <a href="/canvases/{{.Id}}/view"
+                                       class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors">
+                                        View
+                                    </a>
+                                    <a href="/canvases/{{.Id}}/edit"
+                                       class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                                        Edit
+                                    </a>
+                                    <button onclick="deleteCanvas('{{.Id}}')"
+                                            class="p-1.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                                            title="Delete">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+            </div>
         </div>
         {{else}}
-        <!-- Empty state -->
-        <div class="text-center py-16">
-            <svg class="mx-auto w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-            </svg>
-            <h3 class="mt-4 text-xl font-medium text-gray-900 dark:text-white">No canvases yet</h3>
-            <p class="mt-2 text-gray-600 dark:text-gray-400">Create your first canvas to start simulating systems</p>
-            <button onclick="createNewCanvas()" class="mt-6 inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <!-- Empty State -->
+        <div class="text-center py-16 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+            <div class="mx-auto w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-gray-700 dark:to-gray-800 rounded-full flex items-center justify-center mb-6">
+                <svg class="w-12 h-12 text-indigo-500 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                </svg>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">No canvases yet</h3>
+            <p class="text-gray-600 dark:text-gray-400 mb-6 max-w-sm mx-auto">Create your first canvas to start simulating systems with SDL</p>
+            <button onclick="createNewCanvas()"
+                    class="inline-flex items-center px-5 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                 </svg>
-                Create Canvas
+                Create Your First Canvas
             </button>
         </div>
         {{end}}
@@ -84,6 +181,72 @@
 
 {{define "scripts"}}
 <script>
+// View Toggle
+document.querySelectorAll('[data-view]').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const view = this.getAttribute('data-view');
+        const gridView = document.getElementById('grid-view');
+        const listView = document.getElementById('list-view');
+
+        // Update view visibility
+        if (view === 'grid') {
+            gridView.classList.remove('hidden');
+            listView.classList.add('hidden');
+        } else {
+            gridView.classList.add('hidden');
+            listView.classList.remove('hidden');
+        }
+
+        // Update button states
+        document.querySelectorAll('[data-view]').forEach(b => {
+            if (b.getAttribute('data-view') === view) {
+                b.classList.add('bg-indigo-600', 'text-white', 'shadow-sm');
+                b.classList.remove('text-gray-600', 'dark:text-gray-300');
+            } else {
+                b.classList.remove('bg-indigo-600', 'text-white', 'shadow-sm');
+                b.classList.add('text-gray-600', 'dark:text-gray-300');
+            }
+        });
+
+        // Save preference
+        localStorage.setItem('canvas-view-mode', view);
+    });
+});
+
+// Restore view preference
+document.addEventListener('DOMContentLoaded', function() {
+    const savedView = localStorage.getItem('canvas-view-mode');
+    if (savedView) {
+        const btn = document.querySelector(`[data-view="${savedView}"]`);
+        if (btn) btn.click();
+    }
+});
+
+// Search functionality
+const searchInput = document.getElementById('search-canvases');
+if (searchInput) {
+    searchInput.addEventListener('input', function(e) {
+        const query = e.target.value.toLowerCase();
+        const cards = document.querySelectorAll('.canvas-card');
+        const rows = document.querySelectorAll('tbody tr');
+
+        // Filter grid cards
+        cards.forEach(card => {
+            const name = card.querySelector('h3 a')?.textContent.toLowerCase() || '';
+            const desc = card.querySelector('p')?.textContent.toLowerCase() || '';
+            card.style.display = (name.includes(query) || desc.includes(query)) ? '' : 'none';
+        });
+
+        // Filter table rows
+        rows.forEach(row => {
+            const name = row.querySelector('a')?.textContent.toLowerCase() || '';
+            const desc = row.querySelector('p')?.textContent.toLowerCase() || '';
+            row.style.display = (name.includes(query) || desc.includes(query)) ? '' : 'none';
+        });
+    });
+}
+
+// Canvas CRUD functions
 function createNewCanvas() {
     const name = prompt('Enter canvas name:', 'New Canvas');
     if (!name) return;
@@ -110,7 +273,7 @@ function createNewCanvas() {
 }
 
 function deleteCanvas(canvasId) {
-    if (!confirm('Are you sure you want to delete this canvas?')) {
+    if (!confirm('Are you sure you want to delete this canvas? This action cannot be undone.')) {
         return;
     }
 
@@ -128,13 +291,21 @@ function deleteCanvas(canvasId) {
     });
 }
 </script>
+
 <style>
-    .line-clamp-2 {
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
+.line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
 </style>
 {{end}}
 
