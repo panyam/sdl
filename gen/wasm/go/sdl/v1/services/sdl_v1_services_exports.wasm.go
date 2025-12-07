@@ -20,6 +20,7 @@ import (
 // Sdl_v1ServicesExports provides WASM exports for dependency injection
 type Sdl_v1ServicesExports struct {
 	CanvasService               CanvasServiceServer
+	FilesystemService           FilesystemServiceServer
 	SingletonInitializerService SingletonInitializerServiceServer
 	CanvasViewPresenter         CanvasViewPresenterServer
 	SystemsService              SystemsServiceServer
@@ -129,6 +130,29 @@ func (exports *Sdl_v1ServicesExports) RegisterAPI() {
 			}),
 			"getUtilization": js.FuncOf(func(this js.Value, args []js.Value) any {
 				return exports.canvasServiceGetUtilization(this, args)
+			}),
+		},
+		"filesystemService": map[string]interface{}{
+			"listFilesystems": js.FuncOf(func(this js.Value, args []js.Value) any {
+				return exports.filesystemServiceListFilesystems(this, args)
+			}),
+			"listFiles": js.FuncOf(func(this js.Value, args []js.Value) any {
+				return exports.filesystemServiceListFiles(this, args)
+			}),
+			"getFileInfo": js.FuncOf(func(this js.Value, args []js.Value) any {
+				return exports.filesystemServiceGetFileInfo(this, args)
+			}),
+			"readFile": js.FuncOf(func(this js.Value, args []js.Value) any {
+				return exports.filesystemServiceReadFile(this, args)
+			}),
+			"writeFile": js.FuncOf(func(this js.Value, args []js.Value) any {
+				return exports.filesystemServiceWriteFile(this, args)
+			}),
+			"deleteFile": js.FuncOf(func(this js.Value, args []js.Value) any {
+				return exports.filesystemServiceDeleteFile(this, args)
+			}),
+			"createDirectory": js.FuncOf(func(this js.Value, args []js.Value) any {
+				return exports.filesystemServiceCreateDirectory(this, args)
 			}),
 		},
 		"singletonInitializerService": map[string]interface{}{
@@ -1693,6 +1717,342 @@ func (exports *Sdl_v1ServicesExports) canvasServiceGetUtilization(this js.Value,
 
 	// Call service method
 	resp, err := exports.CanvasService.GetUtilization(ctx, req)
+	if err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+	}
+
+	// Marshal response with options for better TypeScript compatibility
+	responseJSON, err := marshaller.Marshal(resp, wasm.MarshalOptions{
+		UseProtoNames:   false, // Use JSON names (camelCase) instead of proto names
+		EmitUnpopulated: true,  // Emit zero values to avoid undefined in JavaScript
+		UseEnumNumbers:  false, // Use enum string values
+	})
+	if err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+	}
+
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
+}
+
+// filesystemServiceListFilesystems handles the ListFilesystems method for FilesystemService
+func (exports *Sdl_v1ServicesExports) filesystemServiceListFilesystems(this js.Value, args []js.Value) any {
+	if exports.FilesystemService == nil {
+		return wasm.CreateJSResponse(false, "FilesystemService not initialized", nil)
+	}
+	// Synchronous method
+	if len(args) < 1 {
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
+	}
+
+	requestJSON := args[0].String()
+	if requestJSON == "" {
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
+	}
+
+	// Parse request
+	req := &v1models.ListFilesystemsRequest{}
+	marshaller := wasm.GetGlobalMarshaller()
+	if err := marshaller.Unmarshal([]byte(requestJSON), req, wasm.UnmarshalOptions{
+		DiscardUnknown: true,
+		AllowPartial:   true, // Allow partial messages for better compatibility
+	}); err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+	}
+
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Call service method
+	resp, err := exports.FilesystemService.ListFilesystems(ctx, req)
+	if err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+	}
+
+	// Marshal response with options for better TypeScript compatibility
+	responseJSON, err := marshaller.Marshal(resp, wasm.MarshalOptions{
+		UseProtoNames:   false, // Use JSON names (camelCase) instead of proto names
+		EmitUnpopulated: true,  // Emit zero values to avoid undefined in JavaScript
+		UseEnumNumbers:  false, // Use enum string values
+	})
+	if err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+	}
+
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
+}
+
+// filesystemServiceListFiles handles the ListFiles method for FilesystemService
+func (exports *Sdl_v1ServicesExports) filesystemServiceListFiles(this js.Value, args []js.Value) any {
+	if exports.FilesystemService == nil {
+		return wasm.CreateJSResponse(false, "FilesystemService not initialized", nil)
+	}
+	// Synchronous method
+	if len(args) < 1 {
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
+	}
+
+	requestJSON := args[0].String()
+	if requestJSON == "" {
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
+	}
+
+	// Parse request
+	req := &v1models.ListFilesRequest{}
+	marshaller := wasm.GetGlobalMarshaller()
+	if err := marshaller.Unmarshal([]byte(requestJSON), req, wasm.UnmarshalOptions{
+		DiscardUnknown: true,
+		AllowPartial:   true, // Allow partial messages for better compatibility
+	}); err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+	}
+
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Call service method
+	resp, err := exports.FilesystemService.ListFiles(ctx, req)
+	if err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+	}
+
+	// Marshal response with options for better TypeScript compatibility
+	responseJSON, err := marshaller.Marshal(resp, wasm.MarshalOptions{
+		UseProtoNames:   false, // Use JSON names (camelCase) instead of proto names
+		EmitUnpopulated: true,  // Emit zero values to avoid undefined in JavaScript
+		UseEnumNumbers:  false, // Use enum string values
+	})
+	if err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+	}
+
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
+}
+
+// filesystemServiceGetFileInfo handles the GetFileInfo method for FilesystemService
+func (exports *Sdl_v1ServicesExports) filesystemServiceGetFileInfo(this js.Value, args []js.Value) any {
+	if exports.FilesystemService == nil {
+		return wasm.CreateJSResponse(false, "FilesystemService not initialized", nil)
+	}
+	// Synchronous method
+	if len(args) < 1 {
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
+	}
+
+	requestJSON := args[0].String()
+	if requestJSON == "" {
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
+	}
+
+	// Parse request
+	req := &v1models.GetFileInfoRequest{}
+	marshaller := wasm.GetGlobalMarshaller()
+	if err := marshaller.Unmarshal([]byte(requestJSON), req, wasm.UnmarshalOptions{
+		DiscardUnknown: true,
+		AllowPartial:   true, // Allow partial messages for better compatibility
+	}); err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+	}
+
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Call service method
+	resp, err := exports.FilesystemService.GetFileInfo(ctx, req)
+	if err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+	}
+
+	// Marshal response with options for better TypeScript compatibility
+	responseJSON, err := marshaller.Marshal(resp, wasm.MarshalOptions{
+		UseProtoNames:   false, // Use JSON names (camelCase) instead of proto names
+		EmitUnpopulated: true,  // Emit zero values to avoid undefined in JavaScript
+		UseEnumNumbers:  false, // Use enum string values
+	})
+	if err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+	}
+
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
+}
+
+// filesystemServiceReadFile handles the ReadFile method for FilesystemService
+func (exports *Sdl_v1ServicesExports) filesystemServiceReadFile(this js.Value, args []js.Value) any {
+	if exports.FilesystemService == nil {
+		return wasm.CreateJSResponse(false, "FilesystemService not initialized", nil)
+	}
+	// Synchronous method
+	if len(args) < 1 {
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
+	}
+
+	requestJSON := args[0].String()
+	if requestJSON == "" {
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
+	}
+
+	// Parse request
+	req := &v1models.ReadFileRequest{}
+	marshaller := wasm.GetGlobalMarshaller()
+	if err := marshaller.Unmarshal([]byte(requestJSON), req, wasm.UnmarshalOptions{
+		DiscardUnknown: true,
+		AllowPartial:   true, // Allow partial messages for better compatibility
+	}); err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+	}
+
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Call service method
+	resp, err := exports.FilesystemService.ReadFile(ctx, req)
+	if err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+	}
+
+	// Marshal response with options for better TypeScript compatibility
+	responseJSON, err := marshaller.Marshal(resp, wasm.MarshalOptions{
+		UseProtoNames:   false, // Use JSON names (camelCase) instead of proto names
+		EmitUnpopulated: true,  // Emit zero values to avoid undefined in JavaScript
+		UseEnumNumbers:  false, // Use enum string values
+	})
+	if err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+	}
+
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
+}
+
+// filesystemServiceWriteFile handles the WriteFile method for FilesystemService
+func (exports *Sdl_v1ServicesExports) filesystemServiceWriteFile(this js.Value, args []js.Value) any {
+	if exports.FilesystemService == nil {
+		return wasm.CreateJSResponse(false, "FilesystemService not initialized", nil)
+	}
+	// Synchronous method
+	if len(args) < 1 {
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
+	}
+
+	requestJSON := args[0].String()
+	if requestJSON == "" {
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
+	}
+
+	// Parse request
+	req := &v1models.WriteFileRequest{}
+	marshaller := wasm.GetGlobalMarshaller()
+	if err := marshaller.Unmarshal([]byte(requestJSON), req, wasm.UnmarshalOptions{
+		DiscardUnknown: true,
+		AllowPartial:   true, // Allow partial messages for better compatibility
+	}); err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+	}
+
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Call service method
+	resp, err := exports.FilesystemService.WriteFile(ctx, req)
+	if err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+	}
+
+	// Marshal response with options for better TypeScript compatibility
+	responseJSON, err := marshaller.Marshal(resp, wasm.MarshalOptions{
+		UseProtoNames:   false, // Use JSON names (camelCase) instead of proto names
+		EmitUnpopulated: true,  // Emit zero values to avoid undefined in JavaScript
+		UseEnumNumbers:  false, // Use enum string values
+	})
+	if err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+	}
+
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
+}
+
+// filesystemServiceDeleteFile handles the DeleteFile method for FilesystemService
+func (exports *Sdl_v1ServicesExports) filesystemServiceDeleteFile(this js.Value, args []js.Value) any {
+	if exports.FilesystemService == nil {
+		return wasm.CreateJSResponse(false, "FilesystemService not initialized", nil)
+	}
+	// Synchronous method
+	if len(args) < 1 {
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
+	}
+
+	requestJSON := args[0].String()
+	if requestJSON == "" {
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
+	}
+
+	// Parse request
+	req := &v1models.DeleteFileRequest{}
+	marshaller := wasm.GetGlobalMarshaller()
+	if err := marshaller.Unmarshal([]byte(requestJSON), req, wasm.UnmarshalOptions{
+		DiscardUnknown: true,
+		AllowPartial:   true, // Allow partial messages for better compatibility
+	}); err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+	}
+
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Call service method
+	resp, err := exports.FilesystemService.DeleteFile(ctx, req)
+	if err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+	}
+
+	// Marshal response with options for better TypeScript compatibility
+	responseJSON, err := marshaller.Marshal(resp, wasm.MarshalOptions{
+		UseProtoNames:   false, // Use JSON names (camelCase) instead of proto names
+		EmitUnpopulated: true,  // Emit zero values to avoid undefined in JavaScript
+		UseEnumNumbers:  false, // Use enum string values
+	})
+	if err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+	}
+
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
+}
+
+// filesystemServiceCreateDirectory handles the CreateDirectory method for FilesystemService
+func (exports *Sdl_v1ServicesExports) filesystemServiceCreateDirectory(this js.Value, args []js.Value) any {
+	if exports.FilesystemService == nil {
+		return wasm.CreateJSResponse(false, "FilesystemService not initialized", nil)
+	}
+	// Synchronous method
+	if len(args) < 1 {
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
+	}
+
+	requestJSON := args[0].String()
+	if requestJSON == "" {
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
+	}
+
+	// Parse request
+	req := &v1models.CreateDirectoryRequest{}
+	marshaller := wasm.GetGlobalMarshaller()
+	if err := marshaller.Unmarshal([]byte(requestJSON), req, wasm.UnmarshalOptions{
+		DiscardUnknown: true,
+		AllowPartial:   true, // Allow partial messages for better compatibility
+	}); err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+	}
+
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Call service method
+	resp, err := exports.FilesystemService.CreateDirectory(ctx, req)
 	if err != nil {
 		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}

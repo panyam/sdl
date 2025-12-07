@@ -12,6 +12,9 @@
       "name": "CanvasDashboardPage"
     },
     {
+      "name": "FilesystemService"
+    },
+    {
       "name": "SingletonInitializerService"
     },
     {
@@ -1449,6 +1452,265 @@
         ]
       }
     },
+    "/v1/filesystems": {
+      "get": {
+        "summary": "List all available filesystems",
+        "operationId": "FilesystemService_ListFilesystems",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListFilesystemsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "FilesystemService"
+        ]
+      }
+    },
+    "/v1/filesystems/{filesystemId}/content": {
+      "get": {
+        "summary": "Read file content",
+        "operationId": "FilesystemService_ReadFile",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ReadFileResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "filesystemId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "path",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "FilesystemService"
+        ]
+      },
+      "put": {
+        "summary": "Write file content",
+        "operationId": "FilesystemService_WriteFile",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1WriteFileResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "filesystemId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string"
+                },
+                "content": {
+                  "type": "string",
+                  "format": "byte"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "FilesystemService"
+        ]
+      }
+    },
+    "/v1/filesystems/{filesystemId}/directories": {
+      "post": {
+        "summary": "Create a directory",
+        "operationId": "FilesystemService_CreateDirectory",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CreateDirectoryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "filesystemId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "FilesystemService"
+        ]
+      }
+    },
+    "/v1/filesystems/{filesystemId}/files": {
+      "get": {
+        "summary": "List files in a directory",
+        "operationId": "FilesystemService_ListFiles",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListFilesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "filesystemId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "path",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "FilesystemService"
+        ]
+      },
+      "delete": {
+        "summary": "Delete a file",
+        "operationId": "FilesystemService_DeleteFile",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DeleteFileResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "filesystemId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "path",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "FilesystemService"
+        ]
+      }
+    },
+    "/v1/filesystems/{filesystemId}/info": {
+      "get": {
+        "summary": "Get file info",
+        "operationId": "FilesystemService_GetFileInfo",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetFileInfoResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "filesystemId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "path",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "FilesystemService"
+        ]
+      }
+    },
     "/v1/systems": {
       "get": {
         "summary": "ListSystems returns all available systems",
@@ -1726,8 +1988,24 @@
         }
       }
     },
+    "v1CreateDirectoryResponse": {
+      "type": "object",
+      "properties": {
+        "directoryInfo": {
+          "$ref": "#/definitions/v1FileInfo"
+        }
+      }
+    },
     "v1DeleteCanvasResponse": {
       "type": "object"
+    },
+    "v1DeleteFileResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean"
+        }
+      }
     },
     "v1DeleteGeneratorResponse": {
       "type": "object"
@@ -1928,6 +2206,31 @@
         }
       }
     },
+    "v1FileInfo": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "isDirectory": {
+          "type": "boolean"
+        },
+        "size": {
+          "type": "string",
+          "format": "int64"
+        },
+        "modTime": {
+          "type": "string"
+        },
+        "mimeType": {
+          "type": "string"
+        }
+      },
+      "title": "FileInfo represents information about a file or directory"
+    },
     "v1FileSavedResponse": {
       "type": "object",
       "properties": {
@@ -1952,6 +2255,34 @@
           "type": "string"
         }
       }
+    },
+    "v1FilesystemInfo": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "prefix": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "readOnly": {
+          "type": "boolean"
+        },
+        "basePath": {
+          "type": "string"
+        },
+        "extensions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "Allowed file extensions"
+        }
+      },
+      "title": "FilesystemInfo represents information about a mounted filesystem"
     },
     "v1FlowEdge": {
       "type": "object",
@@ -2078,6 +2409,14 @@
       "properties": {
         "canvas": {
           "$ref": "#/definitions/v1Canvas"
+        }
+      }
+    },
+    "v1GetFileInfoResponse": {
+      "type": "object",
+      "properties": {
+        "fileInfo": {
+          "$ref": "#/definitions/v1FileInfo"
         }
       }
     },
@@ -2250,6 +2589,30 @@
         },
         "pagination": {
           "$ref": "#/definitions/v1PaginationResponse"
+        }
+      }
+    },
+    "v1ListFilesResponse": {
+      "type": "object",
+      "properties": {
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1FileInfo"
+          }
+        }
+      }
+    },
+    "v1ListFilesystemsResponse": {
+      "type": "object",
+      "properties": {
+        "filesystems": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1FilesystemInfo"
+          }
         }
       }
     },
@@ -2501,6 +2864,18 @@
             "type": "object",
             "$ref": "#/definitions/v1MetricPoint"
           }
+        }
+      }
+    },
+    "v1ReadFileResponse": {
+      "type": "object",
+      "properties": {
+        "content": {
+          "type": "string",
+          "format": "byte"
+        },
+        "fileInfo": {
+          "$ref": "#/definitions/v1FileInfo"
         }
       }
     },
@@ -2916,6 +3291,14 @@
         }
       },
       "title": "Resource utilization information"
+    },
+    "v1WriteFileResponse": {
+      "type": "object",
+      "properties": {
+        "fileInfo": {
+          "$ref": "#/definitions/v1FileInfo"
+        }
+      }
     }
   }
 }

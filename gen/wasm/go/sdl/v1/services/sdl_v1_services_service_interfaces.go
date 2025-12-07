@@ -73,6 +73,24 @@ type CanvasServiceServer interface {
 	GetUtilization(context.Context, *v1models.GetUtilizationRequest) (*v1models.GetUtilizationResponse, error)
 }
 
+// FilesystemServiceServer is the server API for FilesystemService service (WASM version without gRPC embedding).
+type FilesystemServiceServer interface {
+	/** List all available filesystems */
+	ListFilesystems(context.Context, *v1models.ListFilesystemsRequest) (*v1models.ListFilesystemsResponse, error)
+	/** List files in a directory */
+	ListFiles(context.Context, *v1models.ListFilesRequest) (*v1models.ListFilesResponse, error)
+	/** Get file info */
+	GetFileInfo(context.Context, *v1models.GetFileInfoRequest) (*v1models.GetFileInfoResponse, error)
+	/** Read file content */
+	ReadFile(context.Context, *v1models.ReadFileRequest) (*v1models.ReadFileResponse, error)
+	/** Write file content */
+	WriteFile(context.Context, *v1models.WriteFileRequest) (*v1models.WriteFileResponse, error)
+	/** Delete a file */
+	DeleteFile(context.Context, *v1models.DeleteFileRequest) (*v1models.DeleteFileResponse, error)
+	/** Create a directory */
+	CreateDirectory(context.Context, *v1models.CreateDirectoryRequest) (*v1models.CreateDirectoryResponse, error)
+}
+
 // SingletonInitializerServiceServer is the server API for SingletonInitializerService service (WASM version without gRPC embedding).
 type SingletonInitializerServiceServer interface {
 	InitializeSingleton(context.Context, *v1models.InitializeSingletonRequest) (*v1models.InitializeSingletonResponse, error)
