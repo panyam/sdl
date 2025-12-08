@@ -50,7 +50,7 @@ install-tools:
 # Install Node dependencies
 install-npm:
 	@echo "Installing Node.js dependencies..."
-	cd web/frontend && npm install
+	cd web && npm install
 	@echo "✓ Node.js dependencies installed"
 
 # Install everything needed for development
@@ -135,18 +135,18 @@ cleanall: clean remove-proto-symlinks
 reload: buf
 
 dash:
-	cd web/frontend && pnpm i && pnpm build
+	cd web && pnpm i && pnpm build
 
 # Development workflow: build and test dashboard
 dev-test: binary
-	cd web/frontend && ./dev-test.sh
+	cd web && ./dev-test.sh
 
 # Quick development validation
 dev-quick: binary
-	cd web/frontend && npm run dev-quick
+	cd web && npm run dev-quick
 
 dev-screenshot: binary
-	cd web/frontend && npm run dev-screenshot
+	cd web && npm run dev-screenshot
 
 run:
 	go test
@@ -168,7 +168,7 @@ clean:
 	@echo "Cleaning build artifacts..."
 	rm -f ${GOBIN}/sdl
 	rm -rf web/dist
-	rm -rf web/frontend/node_modules
+	rm -rf web/node_modules
 	rm -rf node_modules
 	cd parser && make clean || true
 	@echo "✓ Clean complete"

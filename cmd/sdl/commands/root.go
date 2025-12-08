@@ -9,8 +9,8 @@ import (
 
 // Version variables set during build
 var (
-	Version   = "dev"  // Set by -ldflags
-	GitCommit = "none" // Set by -ldflags
+	Version   = "dev"     // Set by -ldflags
+	GitCommit = "none"    // Set by -ldflags
 	BuildDate = "unknown" // Set by -ldflags
 )
 
@@ -45,8 +45,8 @@ func Execute() {
 func init() {
 	// Global persistent flags
 	rootCmd.PersistentFlags().StringVarP(&dslFilePath, "file", "f", "", "Path to the DSL file (required by many commands)")
-	rootCmd.PersistentFlags().StringVar(&serverURL, "server", "", "SDL server URL (default: CANVAS_SERVER_URL env var or http://localhost:8080)")
-	
+	rootCmd.PersistentFlags().StringVar(&serverURL, "server", "", "SDL server URL (default: CANVAS_SERVER_URL env var or http://localhost:6060)")
+
 	// Canvas ID defaults to SDL_CANVAS_ID env var, then "default"
 	defaultCanvasID := os.Getenv("SDL_CANVAS_ID")
 	if defaultCanvasID == "" {
@@ -69,7 +69,7 @@ func DefaultGatewayAddress() string {
 	if gateway_addr != "" {
 		return gateway_addr
 	}
-	return ":8080"
+	return ":6060"
 }
 
 func DefaultServiceAddress() string {
@@ -77,5 +77,5 @@ func DefaultServiceAddress() string {
 	if port != "" {
 		return port
 	}
-	return ":9090"
+	return ":7070"
 }

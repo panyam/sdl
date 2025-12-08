@@ -193,6 +193,9 @@
                         "$ref": "#/definitions/v1Metric"
                       },
                       "title": "Registered live metrics for this canvas"
+                    },
+                    "previewUrl": {
+                      "type": "string"
                     }
                   }
                 }
@@ -1940,6 +1943,9 @@
             "$ref": "#/definitions/v1Metric"
           },
           "title": "Registered live metrics for this canvas"
+        },
+        "previewUrl": {
+          "type": "string"
         }
       }
     },

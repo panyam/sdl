@@ -60,10 +60,10 @@ func (h *SystemsHandler) handleSystemListing(w http.ResponseWriter, r *http.Requ
 	}
 
 	// Load and render template
-	templates := h.templateGroup.MustLoad("systems/listing.html", "")
+	templates := h.templateGroup.MustLoad("systems/SystemsListingPage.html", "")
 
 	// Render the template
-	if err := h.templateGroup.RenderHtmlTemplate(w, templates[0], "", data, nil); err != nil {
+	if err := h.templateGroup.RenderHtmlTemplate(w, templates[0], "SystemsListingPage", data, nil); err != nil {
 		http.Error(w, fmt.Sprintf("Failed to render page: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -131,10 +131,10 @@ func (h *SystemsHandler) handleSystemDetails(w http.ResponseWriter, r *http.Requ
 	}
 
 	// Load and render template
-	templates := h.templateGroup.MustLoad("systems/details.html", "")
+	templates := h.templateGroup.MustLoad("systems/SystemDetailsPage.html", "")
 
 	// Render the template
-	if err := h.templateGroup.RenderHtmlTemplate(w, templates[0], "", data, nil); err != nil {
+	if err := h.templateGroup.RenderHtmlTemplate(w, templates[0], "SystemDetailsPage", data, nil); err != nil {
 		http.Error(w, fmt.Sprintf("Failed to render page: %v", err), http.StatusInternalServerError)
 		return
 	}

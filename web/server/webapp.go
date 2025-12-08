@@ -225,9 +225,8 @@ func (g *CanvasesGroup) canvasActionsHandler(w http.ResponseWriter, r *http.Requ
 // CanvasListingPage displays a list of all canvases
 type CanvasListingPage struct {
 	BasePage
-	Header   Header
-	Canvases []*protos.Canvas
-	ViewMode string
+	Header      Header
+	ListingData *goal.EntityListingData[*protos.Canvas]
 }
 
 func (p *CanvasListingPage) Load(r *http.Request, w http.ResponseWriter, app *goal.App[*SdlApp]) (err error, finished bool) {
@@ -238,12 +237,6 @@ func (p *CanvasListingPage) Load(r *http.Request, w http.ResponseWriter, app *go
 	// Load header
 	p.Header.Load(r, w, app)
 
-	// Get view mode from query param, default to grid
-	p.ViewMode = r.URL.Query().Get("view")
-	if p.ViewMode == "" {
-		p.ViewMode = "grid"
-	}
-
 	// Get all canvases via gRPC
 	resp, err := app.Context.ClientMgr.GetCanvasSvcClient().ListCanvases(r.Context(), &protos.ListCanvasesRequest{})
 	if err != nil {
@@ -251,7 +244,12 @@ func (p *CanvasListingPage) Load(r *http.Request, w http.ResponseWriter, app *go
 		return err, true
 	}
 
-	p.Canvases = resp.Canvases
+	// Build listing data for EntityListing template
+	p.ListingData = goal.NewEntityListingData[*protos.Canvas]("My Canvases", "/canvases").
+		WithCreate("javascript:createNewCanvas()", "New Canvas").
+		WithDelete("/canvases")
+	p.ListingData.Items = resp.Canvases
+
 	return nil, false
 }
 

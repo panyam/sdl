@@ -61,6 +61,8 @@ message Canvas {
 
   // Registered live metrics for this canvas
   repeated Metric metrics = 10;
+
+  string preview_url = 11;
 }
 
 message File {

@@ -181,6 +181,7 @@ type Canvas struct {
 	Generators []*Generator `protobuf:"bytes,9,rep,name=generators,proto3" json:"generators,omitempty"`
 	// Registered live metrics for this canvas
 	Metrics       []*Metric `protobuf:"bytes,10,rep,name=metrics,proto3" json:"metrics,omitempty"`
+	PreviewUrl    string    `protobuf:"bytes,11,opt,name=preview_url,json=previewUrl,proto3" json:"preview_url,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -283,6 +284,13 @@ func (x *Canvas) GetMetrics() []*Metric {
 		return x.Metrics
 	}
 	return nil
+}
+
+func (x *Canvas) GetPreviewUrl() string {
+	if x != nil {
+		return x.PreviewUrl
+	}
+	return ""
 }
 
 type File struct {
@@ -1999,7 +2007,7 @@ const file_sdl_v1_models_models_proto_rawDesc = "" +
 	"\rnext_page_key\x18\x02 \x01(\tR\vnextPageKey\x12(\n" +
 	"\x10next_page_offset\x18\x03 \x01(\x05R\x0enextPageOffset\x12\x19\n" +
 	"\bhas_more\x18\x04 \x01(\bR\ahasMore\x12#\n" +
-	"\rtotal_results\x18\x05 \x01(\x05R\ftotalResults\"\xe2\x03\n" +
+	"\rtotal_results\x18\x05 \x01(\x05R\ftotalResults\"\x83\x04\n" +
 	"\x06Canvas\x129\n" +
 	"\n" +
 	"created_at\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
@@ -2015,7 +2023,9 @@ const file_sdl_v1_models_models_proto_rawDesc = "" +
 	"generators\x18\t \x03(\v2\x11.sdl.v1.GeneratorR\n" +
 	"generators\x12(\n" +
 	"\ametrics\x18\n" +
-	" \x03(\v2\x0e.sdl.v1.MetricR\ametrics\x1a:\n" +
+	" \x03(\v2\x0e.sdl.v1.MetricR\ametrics\x12\x1f\n" +
+	"\vpreview_url\x18\v \x01(\tR\n" +
+	"previewUrl\x1a:\n" +
 	"\fRecipesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"6\n" +
