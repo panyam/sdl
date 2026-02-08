@@ -205,3 +205,9 @@ symlink-protos: remove-proto-symlinks
 remove-proto-symlinks:
 	echo "Removing proto symlink..."
 	# rm -Rf protos/wasmjs protos/turnengine
+
+# Recreate symlinks to local newstack packages
+resymlink:
+	mkdir -p locallinks
+	rm -Rf locallinks/*
+	cd locallinks && ln -s ~/newstack
