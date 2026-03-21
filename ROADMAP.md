@@ -6,7 +6,7 @@ This document outlines the long-term vision and development roadmap for SDL (Sys
 
 SDL aims to become the industry standard for system design education, capacity planning, and performance modeling. Our goal is to make complex distributed systems behavior understandable and predictable through interactive simulations.
 
-## Current State (July 2025)
+## Current State (March 2026)
 
 ### Core Platform
 - **Language**: SDL modeling language with components, systems, and probabilistic outcomes
@@ -43,15 +43,21 @@ SDL aims to become the industry standard for system design education, capacity p
 - **Recipe Controls**: Singleton pattern with global toolbar integration
 - **UI Stability**: Fixed toolbar render issues preserving child components
 
-### Latest Achievements (v4.1 - December 2024)
+### Latest Achievements (v4.1 - July 2025)
 - **Minitools Architecture**: Page-specific WASM modules replacing monolithic approach
 - **SystemDetailTool**: Complete Go implementation with @stdlib import support and recipe parsing
-- **WASM Integration**: Dedicated 27MB WASM module with JavaScript bindings and TypeScript wrapper
+- **WASM Integration**: Dedicated 25MB WASM module with JavaScript bindings and TypeScript wrapper
 - **Enhanced Build System**: Multiple WASM module discovery, cataloging, and conditional loading
 - **Security Model**: Import validation preventing local imports, shell syntax protection
 - **Template Infrastructure**: SystemDetailTool serves as template for creating additional focused tools
 - **Environment Agnostic**: Same tool works across CLI, server, and WASM contexts
 - **Performance Optimization**: Lazy loading of WASM modules with cache busting for development
+
+### Dependency Modernization (v4.2 - March 2026)
+- **Go 1.25**: Upgraded from Go 1.24
+- **Removed turnengine dependency**: Storage package now sourced from goutils/storage
+- **WebSocket streamlining**: Using servicekit BaseConn/WSServe primitives instead of manual handling
+- **All dependencies at latest**: goapplib, servicekit, gocurrent, protoc-gen-go-wasmjs, grpc, etc.
 
 ## Roadmap Phases
 

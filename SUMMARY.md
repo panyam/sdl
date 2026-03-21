@@ -181,6 +181,14 @@ SDL is a language and runtime for modeling and simulating distributed system per
 - ✅ Comprehensive test suite for all functionality
 - ✅ Debug tooling for standalone testing
 
+## Dependency Modernization (March 2026)
+
+- All Go dependencies updated to latest versions (Go 1.25, grpc 1.79.3, etc.)
+- Removed `turnengine` dependency - storage functionality now in `goutils/storage`
+- WebSocket handling streamlined using servicekit's `BaseConn`/`WSServe` primitives
+- WebSocket endpoint registered at `/ws/canvas`
+- Local replace directives maintained for goapplib and templar
+
 ## Known Limitations
 - Only supports latency and count metrics (no utilization/throughput)
 - Control flow dependencies not fully represented in path analysis

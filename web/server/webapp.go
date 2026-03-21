@@ -12,6 +12,7 @@ import (
 	protos "github.com/panyam/sdl/gen/go/sdl/v1/models"
 	"github.com/panyam/sdl/services"
 	gotl "github.com/panyam/goutils/template"
+	gohttp "github.com/panyam/servicekit/http"
 )
 
 const TEMPLATES_FOLDER = "web/templates"
@@ -99,6 +100,9 @@ func (a *SdlApp) Handler() http.Handler {
 
 	// API routes
 	r.Handle("/api/", http.StripPrefix("/api", a.api.Handler()))
+
+	// WebSocket endpoint for Canvas real-time updates
+	r.HandleFunc("/ws/canvas", gohttp.WSServe(a.wsHandler, nil))
 
 	// Serve examples directory for WASM demos
 	r.Handle("/examples/", http.StripPrefix("/examples", http.FileServer(http.Dir("./examples/"))))

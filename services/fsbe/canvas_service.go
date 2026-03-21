@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/turnforge/turnengine/engine/storage"
+	"github.com/panyam/goutils/storage"
 	protos "github.com/panyam/sdl/gen/go/sdl/v1/models"
 	tspb "google.golang.org/protobuf/types/known/timestamppb"
 )

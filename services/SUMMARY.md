@@ -124,3 +124,7 @@ go test -v ./services -run TestMetric
 - **`gen/wasm/go/sdl/v1/services`**: Generated WASM service interfaces
 - **`web/`**: Frontend dashboard
 - **`protos/`**: Protocol definitions
+
+## Recent Changes (March 2026)
+
+- `fsbe/canvas_service.go`: Switched storage import from `turnforge/turnengine/engine/storage` to `goutils/storage`

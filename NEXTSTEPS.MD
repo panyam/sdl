@@ -298,19 +298,20 @@
 
 ## Immediate Next Steps
 
-### WASM SystemDetailTool Integration ⚡ HIGH PRIORITY
-- [ ] Create WASM bindings for SystemDetailTool
-- [ ] Integrate Go recipe parser with WASM module
-- [ ] Update System details page to use WASM SystemDetailTool
-- [ ] Test end-to-end recipe execution in WASM mode
-- [ ] Ensure @stdlib imports work in browser environment
+### WASM SystemDetailTool Integration ✅ COMPLETED
+- [x] Create WASM bindings for SystemDetailTool
+- [x] Integrate Go recipe parser with WASM module
+- [x] Update System details page to use WASM SystemDetailTool
+- [x] Test end-to-end recipe execution in WASM mode
+- [x] Ensure @stdlib imports work in browser environment
 
-### Recipe Execution UI Enhancement
+### Recipe Execution UX (Next Priority)
 - [ ] Show running recipe filename in toolbar alongside controls
 - [ ] Display recipe execution progress (current step / total steps)
 - [ ] Link traffic generators created by recipes to Traffic Generation panel
 - [ ] Highlight metrics from recipe execution in Live Metrics panel
 - [ ] Add recipe execution events to EventBus for better integration
+- [ ] Add keyboard shortcuts (F5=Run, F10=Step, Shift+F5=Stop)
 
 ### System Showcase Enhancements
 - [ ] Implement auto-import for standard library components
@@ -327,7 +328,6 @@
 
 ### UI/UX Improvements
 - [ ] Add visual indicator in file explorer for running recipe
-- [ ] Add keyboard shortcuts (F5=Run, F10=Step, Shift+F5=Stop)
 - [ ] Improve error display for recipe failures
 - [ ] Add breadcrumbs navigation for system details page
 
@@ -336,7 +336,18 @@
 - ~~Recipe controls disappearing on file switch~~ ✅ RESOLVED
 - Need to decide on bundled examples strategy
 - TinyGo compatibility unknowns
-- Binary size targets for free tier (current: 28.6MB)
+- Binary size targets for free tier (current: 25-29MB)
+
+## Recent Session (March 2025)
+
+### Dependency Updates
+- Updated all Go dependencies to latest versions
+- Go 1.24.0 -> 1.25.0, goapplib v0.0.4 -> v0.0.34, servicekit v0.0.2 -> v0.0.6
+- gocurrent v0.0.2 -> v0.0.11, protoc-gen-go-wasmjs v0.0.28 -> v0.0.33
+- grpc v1.78.0 -> v1.79.3, grpc-gateway v2.27.3 -> v2.28.0
+- Removed turnengine dependency (storage moved to goutils/storage)
+- Streamlined WebSocket handling to use servicekit BaseConn/WSServe primitives
+- Registered WebSocket endpoint at /ws/canvas
 
 ## Notes
 - Focus on developer experience for WASM mode

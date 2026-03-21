@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/gorilla/websocket"
-	conc "github.com/panyam/gocurrent"
 	gohttp "github.com/panyam/servicekit/http"
 )
 
@@ -17,7 +15,7 @@ type CanvasWSMessage struct {
 	Data interface{} `json:"data,omitempty"`
 }
 
-// CanvasWSConn implements the goutils WebSocket connection interface
+// CanvasWSConn implements the servicekit WebSocket connection interface
 type CanvasWSConn struct {
 	gohttp.JSONConn
 	handler *CanvasWSHandler
@@ -30,77 +28,38 @@ type CanvasWSHandler struct {
 	mu      sync.RWMutex
 }
 
-// WebSocket connection lifecycle methods
-func (c *CanvasWSConn) OnStart(conn *websocket.Conn) error {
-	// First, initialize the embedded JSONConn
-	if err := c.JSONConn.OnStart(conn); err != nil {
-		return err
-	}
-
-	c.id = fmt.Sprintf("conn_%s", conn.RemoteAddr().String())
-
-	c.handler.mu.Lock()
-	c.handler.clients[c.id] = c
-	c.handler.mu.Unlock()
-
-	log.Printf("WebSocket client connected: %s", c.id)
-
-	// Send initial connection message
-	message := CanvasWSMessage{
-		Type: "connected",
-		Data: map[string]interface{}{
-			"status": "connected",
-			"server": "SDL Canvas API",
-			"id":     c.id,
-		},
-	}
-
-	// Now the Writer should be properly initialized
-	c.Writer.Send(conc.Message[any]{Value: message})
-	return nil
-}
-
-func (c *CanvasWSConn) OnClose() {
-	// Clean up our client tracking
-	c.handler.mu.Lock()
-	delete(c.handler.clients, c.id)
-	c.handler.mu.Unlock()
-
-	log.Printf("WebSocket client disconnected: %s", c.id)
-
-	// Call the embedded JSONConn's OnClose
-	c.JSONConn.OnClose()
-}
-
-func (c *CanvasWSConn) OnTimeout() bool {
-	log.Printf("WebSocket connection timeout: %s", c.id)
-	return true // Close the connection on timeout
-}
-
 func (c *CanvasWSConn) HandleMessage(msgData any) error {
-	message, ok := msgData.(CanvasWSMessage)
+	message, ok := msgData.(map[string]interface{})
 	if !ok {
 		return fmt.Errorf("invalid message type")
 	}
 
-	log.Printf("Received WebSocket message: %s from %s", message.Type, c.id)
+	msgType, _ := message["type"].(string)
+	log.Printf("Received WebSocket message: %s from %s", msgType, c.ConnId())
 
-	// Handle different message types
-	switch message.Type {
+	switch msgType {
 	case "ping":
-		c.Writer.Send(conc.Message[any]{Value: CanvasWSMessage{Type: "pong", Data: message.Data}})
+		c.SendOutput(CanvasWSMessage{Type: "pong", Data: message["data"]})
 	default:
-		log.Printf("Unknown WebSocket message type: %s", message.Type)
+		log.Printf("Unknown WebSocket message type: %s", msgType)
 	}
 
 	return nil
 }
 
-// WebSocket handler interface implementation
+// Validate implements WSHandler - creates a new connection for each upgrade
 func (h *CanvasWSHandler) Validate(w http.ResponseWriter, r *http.Request) (out *CanvasWSConn, isValid bool) {
-	// Allow all connections for now - can add authentication here
 	conn := &CanvasWSConn{
+		JSONConn: gohttp.JSONConn{
+			Codec:   &gohttp.JSONCodec{},
+			NameStr: "CanvasWS",
+		},
 		handler: h,
 	}
+
+	h.mu.Lock()
+	h.clients[conn.ConnId()] = conn
+	h.mu.Unlock()
+
 	return conn, true
 }
