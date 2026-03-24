@@ -1,7 +1,8 @@
 
 # Default target
 .PHONY: all test
-all: binary
+# Build order: parser → WASM (into dist/wasm/) → dash (discovers WASM, updates hashes) → binary → run
+all: parserbin wasmbin dash binary run
 
 # Version information
 VERSION := $(shell cat VERSION)
@@ -15,7 +16,7 @@ run:
 	 go run cmd/sdl/main.go serve
 
 # Build targets
-binary: parserbin wasmbin
+binary:
 	go build -ldflags "$(LDFLAGS)" -o ${GOBIN}/sdl ./cmd/sdl/main.go
 
 parserbin:
