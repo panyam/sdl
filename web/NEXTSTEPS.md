@@ -36,9 +36,16 @@
 - Replaced update-template-assets.js with Vite manifest + viteJS/viteCSS template functions
 - Proto stays `Canvas` — workspace is UI naming only
 
-## Current: Phase 3 — Unified Landing Page (Issue #8)
-- Single listing: examples + user workspaces
-- "Fork" button creates workspace from example
+### Phase 3: Unified Landing Page (Issue #8, PR #14)
+- Single page at `/workspaces/` with Examples section + My Workspaces section
+- Example cards have "Open" button that auto-creates workspace if needed (reuses on repeat)
+- Fork handler uses example ID as canvas ID for idempotent creation
+- Fixed Canvas name/description not being passed through CreateCanvas
+- Old SystemsListingPage.html and system-listing-handlers.ts moved to attic
+- `/systems`, `/system/*` redirect to `/workspaces/`
+- 9 Phase 3 verification tests
+
+## Next Phases
 
 ### Phase 4: Multi-Design UI (Issue #9)
 - Design selector within workspace (uber-mvp, uber-v2, uber-modern)
