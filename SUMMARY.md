@@ -181,6 +181,14 @@ SDL is a language and runtime for modeling and simulating distributed system per
 - ✅ Comprehensive test suite for all functionality
 - ✅ Debug tooling for standalone testing
 
+## Project Structure Cleanup (March 2026)
+
+- Moved all buf config files (buf.yaml.dev, buf.yaml.prod, buf.gen.yaml.dev, buf.gen.yaml.prod, buf.lock) into `protos/` directory
+- `protos/` now has its own Makefile with buf, setupdev, setupprod targets (matching lilbattle pattern)
+- Top-level Makefile delegates buf-related targets to `protos/`
+- Output paths in buf.gen.yaml use `../` prefix since buf runs from within `protos/`
+- Module path in buf.yaml changed from `protos` to `.` since config is now inside the directory
+
 ## Dependency Modernization (March 2026)
 
 - All Go dependencies updated to latest versions (Go 1.25, grpc 1.79.3, etc.)

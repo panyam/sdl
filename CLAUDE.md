@@ -49,7 +49,7 @@ Builds for frontend, wasm, backend are all running continuously and can be queri
 
 ## Available commands
 
-- `buf generate`- To generate protos
+- `cd protos && make buf` - To generate protos (or `make buf` from top level)
 - `make` - To generate all binaries
 - `make dash` - To rebuild the web dashboard
 - `make serve` - To start the server (go run cmd/sdl/main.go serve)

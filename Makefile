@@ -1,6 +1,6 @@
 
 # Default target
-.PHONY: all
+.PHONY: all test
 all: binary
 
 # Version information
@@ -11,7 +11,7 @@ LDFLAGS := -X 'github.com/panyam/sdl/cmd/sdl/commands.Version=$(VERSION)' \
            -X 'github.com/panyam/sdl/cmd/sdl/commands.GitCommit=$(GIT_COMMIT)' \
            -X 'github.com/panyam/sdl/cmd/sdl/commands.BuildDate=$(BUILD_DATE)'
 
-serve:
+run:
 	 go run cmd/sdl/main.go serve
 
 # Build targets
@@ -128,9 +128,8 @@ release:
 	@echo "2. Push tag: git push origin v$(VERSION)"
 	@echo "3. Build release: make clean && make"
 
-cleanall: clean remove-proto-symlinks
-	rm -f buf.yaml
-	rm -f buf.gen.yaml
+cleanall: clean
+	cd protos && make cleanall
 
 reload: buf
 
@@ -147,9 +146,6 @@ dev-quick: binary
 
 dev-screenshot: binary
 	cd web && npm run dev-screenshot
-
-run:
-	go test
 
 test:
 	go test ./...
@@ -180,31 +176,14 @@ distclean: clean
 	go clean -modcache
 	@echo "✓ Deep clean complete"
 
-buf: ensureenv
-	buf dep update
-	buf generate
-	goimports -w `find gen | grep "\.go"`
+buf:
+	cd protos && make buf
 
-setupdev: symlink-protos
-	ln -s buf.gen.yaml.dev buf.gen.yaml
-	ln -s buf.yaml.dev buf.yaml
+setupdev:
+	cd protos && make setupdev
 
-setupprod: cleanall remove-proto-symlinks
-	ln -s buf.gen.yaml.prod buf.gen.yaml
-	ln -s buf.yaml.prod buf.yaml
-
-ensureenv:
-	@test -f buf.yaml && test -f buf.gen.yaml && echo "buf.yaml does not exist.  Run 'make setupdev' or 'make setupprod' to setup your environment..."
-
-# Create symlink to wasmjs annotations for development
-symlink-protos: remove-proto-symlinks
-	echo "Creating symlink for development..."
-	# ln -s ../../../engine/protos/turnengine protos/turnengine
-
-# Remove symlink (for switching back to production mode)
-remove-proto-symlinks:
-	echo "Removing proto symlink..."
-	# rm -Rf protos/wasmjs protos/turnengine
+setupprod:
+	cd protos && make setupprod
 
 # Recreate symlinks to local newstack packages
 resymlink:

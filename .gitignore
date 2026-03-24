@@ -12,3 +12,5 @@ test-results
 y.output
 __debug*
 web/tests/screenshots
+protos/buf.yaml
+protos/buf.gen.yaml
