@@ -20,8 +20,10 @@ import (
 )
 
 type Canvas struct {
-	id             string
-	runtime        *runtime.Runtime
+	id          string
+	name        string
+	description string
+	runtime     *runtime.Runtime
 	activeSystem   *runtime.SystemInstance
 	loadedSystems  map[string]*runtime.SystemInstance
 	generators     map[string]*GeneratorInfo

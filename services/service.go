@@ -71,6 +71,8 @@ func (s *CanvasService) CreateCanvas(ctx context.Context, req *protos.CreateCanv
 	slog.Debug("Creating Canvas: ", "id", canvasId)
 
 	canvas := NewCanvas(canvasId, nil)
+	canvas.name = canvasProto.Name
+	canvas.description = canvasProto.Description
 	s.store[canvasId] = canvas
 	resp = &protos.CreateCanvasResponse{Canvas: canvas.ToProto()}
 	return resp, nil
