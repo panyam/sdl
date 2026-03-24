@@ -4,9 +4,11 @@
 package server
 
 import (
+	"encoding/json"
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 
 	goal "github.com/panyam/goapplib"
@@ -28,6 +30,14 @@ type BasePage struct {
 	ActiveTab string
 }
 
+// ViteManifestEntry represents one entry in Vite's .vite/manifest.json
+type ViteManifestEntry struct {
+	File    string   `json:"file"`
+	CSS     []string `json:"css"`
+	IsEntry bool     `json:"isEntry"`
+	Src     string   `json:"src"`
+}
+
 // SdlApp is the pure application context.
 // It holds all app-specific state without knowing about goapplib.
 // Views access this via app.Context in goal.App[*SdlApp].
@@ -43,8 +53,31 @@ type SdlApp struct {
 	wsHandler      *CanvasWSHandler
 	systemsHandler *SystemsHandler
 
+	// Vite manifest for cache-busted asset URLs
+	ViteManifest map[string]ViteManifestEntry
+
 	mux     *http.ServeMux
 	BaseUrl string
+}
+
+// LoadViteManifest reads dist/.vite/manifest.json and populates ViteManifest.
+func (a *SdlApp) LoadViteManifest(distDir string) {
+	a.ViteManifest = make(map[string]ViteManifestEntry)
+	manifestPath := filepath.Join(distDir, ".vite", "manifest.json")
+	data, err := os.ReadFile(manifestPath)
+	if err != nil {
+		log.Printf("Warning: could not read Vite manifest at %s: %v (using fallback paths)", manifestPath, err)
+		return
+	}
+	if err := json.Unmarshal(data, &a.ViteManifest); err != nil {
+		log.Printf("Warning: invalid Vite manifest: %v", err)
+		return
+	}
+	for src, entry := range a.ViteManifest {
+		if entry.IsEntry {
+			log.Printf("[VITE] %s -> /%s (css: %v)", src, entry.File, entry.CSS)
+		}
+	}
 }
 
 // NewSdlApp creates a new SdlApp and its associated goal.App.
@@ -70,9 +103,28 @@ func NewSdlApp(grpcAddress string) (sdlApp *SdlApp, goalApp *goal.App[*SdlApp], 
 	}
 	templates.AddFuncs(goal.DefaultFuncMap())
 	templates.AddFuncs(gotl.DefaultFuncMap())
+	// Load Vite manifest for cache-busted asset URLs
+	sdlApp.LoadViteManifest("dist")
+
 	templates.AddFuncs(template.FuncMap{
 		// Ctx provides access to the SdlApp context in templates
 		"Ctx": func() *SdlApp { return sdlApp },
+		// viteJS returns the hashed JS path for a Vite entry point
+		// Usage: {{ viteJS "index.html" }} -> /assets/index-abc123.js
+		"viteJS": func(entry string) string {
+			if e, ok := sdlApp.ViteManifest[entry]; ok {
+				return "/" + e.File
+			}
+			return "/assets/index.js" // fallback
+		},
+		// viteCSS returns the hashed CSS path for a Vite entry point
+		// Usage: {{ viteCSS "index.html" }} -> /assets/index-abc123.css
+		"viteCSS": func(entry string) string {
+			if e, ok := sdlApp.ViteManifest[entry]; ok && len(e.CSS) > 0 {
+				return "/" + e.CSS[0]
+			}
+			return "/assets/index.css" // fallback
+		},
 	})
 
 	// Create goal.App wrapper

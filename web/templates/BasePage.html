@@ -173,7 +173,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- SDL-specific CSS override -->
 {{ define "SDLCSSSection" }}
-<link rel="stylesheet" href="/assets/index-B5IsJ46N.css">
+<link rel="stylesheet" href="{{ viteCSS "index.html" }}">
 {{ end }}
 
 <!-- SDL app container with page type data -->
@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- SDL main app script -->
 {{ define "SDLAppScriptSection" }}
-<script type="module" src="/assets/index-j5cn-3ts.js"></script>
+<script type="module" src="{{ viteJS "index.html" }}"></script>
 {{ end }}
 
 {{# extend "GoalBase:BasePage" "BasePage"

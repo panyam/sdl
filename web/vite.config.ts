@@ -8,5 +8,6 @@ export default defineConfig({
     outDir: '../dist',
     emptyOutDir: false,  // Don't delete wasm files
     sourcemap: true,
+    manifest: true,       // Generate .vite/manifest.json for server-side asset lookup
   },
 })
