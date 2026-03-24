@@ -58,8 +58,11 @@
                 <div class="flex gap-2">
                     <form action="/workspaces/fork" method="POST" class="flex-1">
                         <input type="hidden" name="exampleId" value="{{.ID}}">
-                        <button type="submit" class="w-full px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 transition-colors">
-                            Fork to Workspace
+                        <button type="submit" class="w-full px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 transition-colors inline-flex items-center justify-center gap-2">
+                            Open
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
                         </button>
                     </form>
                 </div>

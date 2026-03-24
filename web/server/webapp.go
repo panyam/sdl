@@ -253,7 +253,8 @@ func (g *WorkspacesGroup) createWorkspaceHandler(w http.ResponseWriter, r *http.
 	http.Redirect(w, r, "/workspaces/"+resp.Canvas.Id+"/edit", http.StatusFound)
 }
 
-// forkExampleHandler creates a new workspace pre-loaded with example system content
+// forkExampleHandler opens an example as a workspace, creating one if needed.
+// Uses the example ID as the canvas ID so repeated clicks reuse the same workspace.
 func (g *WorkspacesGroup) forkExampleHandler(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "Failed to parse form", http.StatusBadRequest)
@@ -273,13 +274,21 @@ func (g *WorkspacesGroup) forkExampleHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	// Get the default version's SDL content
-	version := system.Versions[system.DefaultVersion]
+	// Try to open existing workspace for this example
+	existing, _ := g.sdlApp.ClientMgr.GetCanvasSvcClient().GetCanvas(r.Context(), &protos.GetCanvasRequest{
+		Id: exampleId,
+	})
+	if existing != nil && existing.Canvas != nil {
+		http.Redirect(w, r, "/workspaces/"+exampleId+"/view", http.StatusFound)
+		return
+	}
 
-	// Create a new canvas with the example's SDL pre-loaded
+	// Create a new workspace with the example's SDL pre-loaded
+	version := system.Versions[system.DefaultVersion]
 	resp, err := g.sdlApp.ClientMgr.GetCanvasSvcClient().CreateCanvas(r.Context(), &protos.CreateCanvasRequest{
 		Canvas: &protos.Canvas{
-			Name:           system.Name + " (fork)",
+			Id:             exampleId,
+			Name:           system.Name,
 			Description:    system.Description,
 			SystemContents: version.SDL,
 		},
@@ -289,7 +298,7 @@ func (g *WorkspacesGroup) forkExampleHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	http.Redirect(w, r, "/workspaces/"+resp.Canvas.Id+"/edit", http.StatusFound)
+	http.Redirect(w, r, "/workspaces/"+resp.Canvas.Id+"/view", http.StatusFound)
 }
 
 // deleteWorkspaceHandler handles DELETE to remove a workspace
