@@ -1,7 +1,6 @@
 import './style.css';
 import { ThemeManager } from '@panyam/tsappkit';
 import { CanvasViewerPageDockView } from './pages/CanvasViewerPage';
-import { initializeSystemListing } from './system-listing-handlers.js';
 
 // Initialize theme from tsappkit (supplements inline script in BasePage.html)
 ThemeManager.init();
@@ -15,22 +14,15 @@ console.log(`[SDL] Page type: ${pageType}`, pageData);
 // Initialize based on page type
 switch (pageType) {
   case 'canvas-dashboard':
-    // Use LCMComponent lifecycle via loadAfterPageLoaded
+    // Workspace IDE — uses LCMComponent lifecycle from tsappkit
     CanvasViewerPageDockView.loadAfterPageLoaded('canvasViewerPage', CanvasViewerPageDockView, 'CanvasViewerPageDockView');
     break;
 
-  case 'system-listing':
-    // System listing is server-rendered, just attach event handlers
-    document.addEventListener('DOMContentLoaded', () => {
-      initializeSystemListing();
-    });
-    break;
-
-  case 'canvas-listing':
-    // Canvas listing is server-rendered, no JS initialization needed
+  case 'workspace-listing':
+  case 'workspace-create':
+    // Server-rendered pages — no JS initialization needed
     break;
 
   default:
-    // Unknown or no page type - likely a server-rendered page
     console.log(`[SDL] No JS initialization for page type: ${pageType || 'none'}`);
 }
