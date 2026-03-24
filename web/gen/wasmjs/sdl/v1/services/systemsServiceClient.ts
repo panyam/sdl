@@ -17,22 +17,22 @@ import {
  * Fully typed method signatures with TypeScript interfaces
  */
 export interface SystemsServiceMethods {
-	listSystems(request: ListSystemsRequest): Promise<ListSystemsResponse>;
-	getSystem(request: GetSystemRequest): Promise<GetSystemResponse>;
-	getSystemContent(request: GetSystemContentRequest): Promise<GetSystemContentResponse>;
+    listSystems(request: ListSystemsRequest): ListSystemsResponse;
+    getSystem(request: GetSystemRequest): GetSystemResponse;
+    getSystemContent(request: GetSystemContentRequest): GetSystemContentResponse;
 }
 /**
  * SystemsService service client implementation
  * Lightweight facade that uses shared WASM bundle
  */
 export class SystemsServiceClient extends ServiceClient implements SystemsServiceMethods {
-    async listSystems(request: ListSystemsRequest): Promise<ListSystemsResponse> {
-        return this.callMethod('systemsService.listSystems', request);
-    }
-    async getSystem(request: GetSystemRequest): Promise<GetSystemResponse> {
-        return this.callMethod('systemsService.getSystem', request);
-    }
-    async getSystemContent(request: GetSystemContentRequest): Promise<GetSystemContentResponse> {
-        return this.callMethod('systemsService.getSystemContent', request);
-    }
+        listSystems(request: ListSystemsRequest): ListSystemsResponse {
+            return this.callMethodSync('systemsService.listSystems', request);
+        }
+        getSystem(request: GetSystemRequest): GetSystemResponse {
+            return this.callMethodSync('systemsService.getSystem', request);
+        }
+        getSystemContent(request: GetSystemContentRequest): GetSystemContentResponse {
+            return this.callMethodSync('systemsService.getSystemContent', request);
+        }
 }

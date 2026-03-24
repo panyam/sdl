@@ -29,113 +29,127 @@ func NewCanvasDashboardPageClient() *CanvasDashboardPageClient {
 	}
 }
 
-// UpdateMetric calls the browser-provided UpdateMetric method
+// UpdateMetric calls the browser-provided UpdateMetric method synchronously.
+// The JavaScript implementation returns the result directly (SYNC invocation style).
 func (c *CanvasDashboardPageClient) UpdateMetric(ctx context.Context, req *v1models.UpdateMetricRequest) (*v1models.UpdateMetricResponse, error) {
-	// This is a synchronous browser method
+	// SYNC invocation style: browser method returns immediately
 	return wasm.CallBrowserService[*v1models.UpdateMetricRequest, *v1models.UpdateMetricResponse](
 		c.channel, ctx, "CanvasDashboardPage", "updateMetric", req,
 	)
 }
 
-// ClearMetrics calls the browser-provided ClearMetrics method
+// ClearMetrics calls the browser-provided ClearMetrics method synchronously.
+// The JavaScript implementation returns the result directly (SYNC invocation style).
 func (c *CanvasDashboardPageClient) ClearMetrics(ctx context.Context, req *v1models.ClearMetricsRequest) (*v1models.ClearMetricsResponse, error) {
-	// This is a synchronous browser method
+	// SYNC invocation style: browser method returns immediately
 	return wasm.CallBrowserService[*v1models.ClearMetricsRequest, *v1models.ClearMetricsResponse](
 		c.channel, ctx, "CanvasDashboardPage", "clearMetrics", req,
 	)
 }
 
-// SetMetricsList calls the browser-provided SetMetricsList method
+// SetMetricsList calls the browser-provided SetMetricsList method synchronously.
+// The JavaScript implementation returns the result directly (SYNC invocation style).
 func (c *CanvasDashboardPageClient) SetMetricsList(ctx context.Context, req *v1models.SetMetricsListRequest) (*v1models.SetMetricsListResponse, error) {
-	// This is a synchronous browser method
+	// SYNC invocation style: browser method returns immediately
 	return wasm.CallBrowserService[*v1models.SetMetricsListRequest, *v1models.SetMetricsListResponse](
 		c.channel, ctx, "CanvasDashboardPage", "setMetricsList", req,
 	)
 }
 
-// UpdateDiagram calls the browser-provided UpdateDiagram method
+// UpdateDiagram calls the browser-provided UpdateDiagram method synchronously.
+// The JavaScript implementation returns the result directly (SYNC invocation style).
 func (c *CanvasDashboardPageClient) UpdateDiagram(ctx context.Context, req *v1models.UpdateDiagramRequest) (*v1models.UpdateDiagramResponse, error) {
-	// This is a synchronous browser method
+	// SYNC invocation style: browser method returns immediately
 	return wasm.CallBrowserService[*v1models.UpdateDiagramRequest, *v1models.UpdateDiagramResponse](
 		c.channel, ctx, "CanvasDashboardPage", "updateDiagram", req,
 	)
 }
 
-// HighlightComponents calls the browser-provided HighlightComponents method
+// HighlightComponents calls the browser-provided HighlightComponents method synchronously.
+// The JavaScript implementation returns the result directly (SYNC invocation style).
 func (c *CanvasDashboardPageClient) HighlightComponents(ctx context.Context, req *v1models.HighlightComponentsRequest) (*v1models.HighlightComponentsResponse, error) {
-	// This is a synchronous browser method
+	// SYNC invocation style: browser method returns immediately
 	return wasm.CallBrowserService[*v1models.HighlightComponentsRequest, *v1models.HighlightComponentsResponse](
 		c.channel, ctx, "CanvasDashboardPage", "highlightComponents", req,
 	)
 }
 
-// ClearHighlights calls the browser-provided ClearHighlights method
+// ClearHighlights calls the browser-provided ClearHighlights method synchronously.
+// The JavaScript implementation returns the result directly (SYNC invocation style).
 func (c *CanvasDashboardPageClient) ClearHighlights(ctx context.Context, req *v1models.ClearHighlightsRequest) (*v1models.ClearHighlightsResponse, error) {
-	// This is a synchronous browser method
+	// SYNC invocation style: browser method returns immediately
 	return wasm.CallBrowserService[*v1models.ClearHighlightsRequest, *v1models.ClearHighlightsResponse](
 		c.channel, ctx, "CanvasDashboardPage", "clearHighlights", req,
 	)
 }
 
-// UpdateGeneratorState calls the browser-provided UpdateGeneratorState method
+// UpdateGeneratorState calls the browser-provided UpdateGeneratorState method synchronously.
+// The JavaScript implementation returns the result directly (SYNC invocation style).
 func (c *CanvasDashboardPageClient) UpdateGeneratorState(ctx context.Context, req *v1models.UpdateGeneratorStateRequest) (*v1models.UpdateGeneratorStateResponse, error) {
-	// This is a synchronous browser method
+	// SYNC invocation style: browser method returns immediately
 	return wasm.CallBrowserService[*v1models.UpdateGeneratorStateRequest, *v1models.UpdateGeneratorStateResponse](
 		c.channel, ctx, "CanvasDashboardPage", "updateGeneratorState", req,
 	)
 }
 
-// SetGeneratorList calls the browser-provided SetGeneratorList method
+// SetGeneratorList calls the browser-provided SetGeneratorList method synchronously.
+// The JavaScript implementation returns the result directly (SYNC invocation style).
 func (c *CanvasDashboardPageClient) SetGeneratorList(ctx context.Context, req *v1models.SetGeneratorListRequest) (*v1models.SetGeneratorListResponse, error) {
-	// This is a synchronous browser method
+	// SYNC invocation style: browser method returns immediately
 	return wasm.CallBrowserService[*v1models.SetGeneratorListRequest, *v1models.SetGeneratorListResponse](
 		c.channel, ctx, "CanvasDashboardPage", "setGeneratorList", req,
 	)
 }
 
-// LogMessage calls the browser-provided LogMessage method
+// LogMessage calls the browser-provided LogMessage method synchronously.
+// The JavaScript implementation returns the result directly (SYNC invocation style).
 func (c *CanvasDashboardPageClient) LogMessage(ctx context.Context, req *v1models.LogMessageRequest) (*v1models.LogMessageResponse, error) {
-	// This is a synchronous browser method
+	// SYNC invocation style: browser method returns immediately
 	return wasm.CallBrowserService[*v1models.LogMessageRequest, *v1models.LogMessageResponse](
 		c.channel, ctx, "CanvasDashboardPage", "logMessage", req,
 	)
 }
 
-// ClearConsole calls the browser-provided ClearConsole method
+// ClearConsole calls the browser-provided ClearConsole method synchronously.
+// The JavaScript implementation returns the result directly (SYNC invocation style).
 func (c *CanvasDashboardPageClient) ClearConsole(ctx context.Context, req *v1models.ClearConsoleRequest) (*v1models.ClearConsoleResponse, error) {
-	// This is a synchronous browser method
+	// SYNC invocation style: browser method returns immediately
 	return wasm.CallBrowserService[*v1models.ClearConsoleRequest, *v1models.ClearConsoleResponse](
 		c.channel, ctx, "CanvasDashboardPage", "clearConsole", req,
 	)
 }
 
-// UpdateFlowRates calls the browser-provided UpdateFlowRates method
+// UpdateFlowRates calls the browser-provided UpdateFlowRates method synchronously.
+// The JavaScript implementation returns the result directly (SYNC invocation style).
 func (c *CanvasDashboardPageClient) UpdateFlowRates(ctx context.Context, req *v1models.UpdateFlowRatesRequest) (*v1models.UpdateFlowRatesResponse, error) {
-	// This is a synchronous browser method
+	// SYNC invocation style: browser method returns immediately
 	return wasm.CallBrowserService[*v1models.UpdateFlowRatesRequest, *v1models.UpdateFlowRatesResponse](
 		c.channel, ctx, "CanvasDashboardPage", "updateFlowRates", req,
 	)
 }
 
-// ShowFlowPath calls the browser-provided ShowFlowPath method
+// ShowFlowPath calls the browser-provided ShowFlowPath method synchronously.
+// The JavaScript implementation returns the result directly (SYNC invocation style).
 func (c *CanvasDashboardPageClient) ShowFlowPath(ctx context.Context, req *v1models.ShowFlowPathRequest) (*v1models.ShowFlowPathResponse, error) {
-	// This is a synchronous browser method
+	// SYNC invocation style: browser method returns immediately
 	return wasm.CallBrowserService[*v1models.ShowFlowPathRequest, *v1models.ShowFlowPathResponse](
 		c.channel, ctx, "CanvasDashboardPage", "showFlowPath", req,
 	)
 }
 
-// ClearFlowPaths calls the browser-provided ClearFlowPaths method
+// ClearFlowPaths calls the browser-provided ClearFlowPaths method synchronously.
+// The JavaScript implementation returns the result directly (SYNC invocation style).
 func (c *CanvasDashboardPageClient) ClearFlowPaths(ctx context.Context, req *v1models.ClearFlowPathsRequest) (*v1models.ClearFlowPathsResponse, error) {
-	// This is a synchronous browser method
+	// SYNC invocation style: browser method returns immediately
 	return wasm.CallBrowserService[*v1models.ClearFlowPathsRequest, *v1models.ClearFlowPathsResponse](
 		c.channel, ctx, "CanvasDashboardPage", "clearFlowPaths", req,
 	)
 }
 
-// UpdateUtilization calls the browser-provided UpdateUtilization method
+// UpdateUtilization calls the browser-provided UpdateUtilization method synchronously.
+// The JavaScript implementation returns the result directly (SYNC invocation style).
 func (c *CanvasDashboardPageClient) UpdateUtilization(ctx context.Context, req *v1models.UpdateUtilizationRequest) (*v1models.UpdateUtilizationResponse, error) {
-	// This is a synchronous browser method
+	// SYNC invocation style: browser method returns immediately
 	return wasm.CallBrowserService[*v1models.UpdateUtilizationRequest, *v1models.UpdateUtilizationResponse](
 		c.channel, ctx, "CanvasDashboardPage", "updateUtilization", req,
 	)

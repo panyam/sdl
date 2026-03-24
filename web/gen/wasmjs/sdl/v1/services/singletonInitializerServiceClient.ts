@@ -13,14 +13,14 @@ import {
  * Fully typed method signatures with TypeScript interfaces
  */
 export interface SingletonInitializerServiceMethods {
-	initializeSingleton(request: InitializeSingletonRequest): Promise<InitializeSingletonResponse>;
+    initializeSingleton(request: InitializeSingletonRequest): InitializeSingletonResponse;
 }
 /**
  * SingletonInitializerService service client implementation
  * Lightweight facade that uses shared WASM bundle
  */
 export class SingletonInitializerServiceClient extends ServiceClient implements SingletonInitializerServiceMethods {
-    async initializeSingleton(request: InitializeSingletonRequest): Promise<InitializeSingletonResponse> {
-        return this.callMethod('singletonInitializerService.initializeSingleton', request);
-    }
+        initializeSingleton(request: InitializeSingletonRequest): InitializeSingletonResponse {
+            return this.callMethodSync('singletonInitializerService.initializeSingleton', request);
+        }
 }
