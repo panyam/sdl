@@ -86,10 +86,33 @@ html, body {
   }
 }
 
-/* DockView Dark Theme Enhancements */
-/* Use built-in dark theme with minimal custom enhancements */
+/* DockView Dark Theme */
+.dockview-theme-dark {
+  --dv-background-color: #111827;
+  --dv-paneview-header-background: #1f2937;
+  --dv-tab-background: #1f2937;
+  --dv-tab-color: #9ca3af;
+  --dv-activeTab-background: #374151;
+  --dv-activeTab-color: #ffffff;
+  --dv-separator-border: #374151;
+  --dv-group-header-background: #1f2937;
+  --dv-group-header-border: #374151;
+}
 
-/* Make splitters more visible for better user experience */
+/* DockView Light Theme */
+.dockview-theme-light {
+  --dv-background-color: #f9fafb;
+  --dv-paneview-header-background: #ffffff;
+  --dv-tab-background: #ffffff;
+  --dv-tab-color: #4b5563;
+  --dv-activeTab-background: #f3f4f6;
+  --dv-activeTab-color: #111827;
+  --dv-separator-border: #e5e7eb;
+  --dv-group-header-background: #ffffff;
+  --dv-group-header-border: #e5e7eb;
+}
+
+/* Make splitters more visible */
 .dockview-theme-dark .dockview-splitter {
   min-width: 10px !important;
   min-height: 10px !important;

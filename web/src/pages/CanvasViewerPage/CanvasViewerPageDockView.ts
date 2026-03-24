@@ -45,9 +45,11 @@ export class CanvasViewerPageDockView extends CanvasViewerPageBase {
             console.error('[CanvasViewerPageDockView] Failed to load Graphviz:', error);
         }
 
-        // Create DockView container
+        // Create DockView container with theme class
         const dockviewContainer = document.createElement('div');
         dockviewContainer.id = 'dockview-container';
+        const isDarkMode = document.documentElement.classList.contains('dark');
+        dockviewContainer.className = isDarkMode ? 'dockview-theme-dark' : 'dockview-theme-light';
         dockviewContainer.style.cssText = 'width: 100%; height: 100%; position: absolute; top: 0; left: 0;';
         appElement.appendChild(dockviewContainer);
 

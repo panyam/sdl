@@ -5,7 +5,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    setupFiles: ['./src/__tests__/setup.ts'],
+    setupFiles: ['./src/.__tests__/setup.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
@@ -27,7 +27,7 @@ export default defineConfig({
     alias: {
       '@': resolve(__dirname, './src'),
       '@proto': resolve(__dirname, './src/proto'),
-      'monaco-editor': resolve(__dirname, './src/__tests__/mocks/monaco-editor.ts')
+      'monaco-editor': resolve(__dirname, './src/.__tests__/mocks/monaco-editor.ts')
     }
   }
 });

@@ -23,6 +23,15 @@
 
 ### Stack Audit
 - Created 5 GitHub issues (#1-#5) for stack alignment improvements
+
+### Phase 1: Clean Foundation (Issue #6)
+- Moved dead code to `web/attic/` (dashboard.ts, system-details-page, old panels, etc.)
+- Fixed DockView theme class in CanvasViewerPageDockView (was missing)
+- Moved dockview CSS variable overrides from SystemDetailsPage into style.css
+- Fixed vitest config path (was `__tests__` should be `.__tests__`)
+- Created setup.ts fix and removed stale test files for dead code
+- Added Phase 1 verification test suite (9 tests)
+- Added `make webtest` target and pre-push hook for tests
 - Identified system/canvas duplication and consolidation path
 
 ## In Progress

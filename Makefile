@@ -150,6 +150,11 @@ dev-screenshot: binary
 test:
 	go test ./...
 
+webtest:
+	cd web && npx vitest run
+
+testall: test webtest
+
 bench:
 	cd core && go test -bench=Benchmark -benchmem
 
