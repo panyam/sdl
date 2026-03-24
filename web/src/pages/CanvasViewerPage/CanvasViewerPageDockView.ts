@@ -54,6 +54,13 @@ export class CanvasViewerPageDockView extends CanvasViewerPageBase {
         dockviewContainer.style.cssText = 'flex: 1 1 0%; min-height: 0; min-width: 0; overflow: hidden;';
         appElement.appendChild(dockviewContainer);
 
+        // Watch for theme changes and update dockview theme class
+        const observer = new MutationObserver(() => {
+            const dark = document.documentElement.classList.contains('dark');
+            dockviewContainer.className = dark ? 'dockview-theme-dark' : 'dockview-theme-light';
+        });
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
         // Initialize DockView
         const dockviewComponent = new DockviewComponent(dockviewContainer, {
             createComponent: (options) => {
