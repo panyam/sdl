@@ -28,16 +28,15 @@
 - System detail redirect shows 404 (no canvas exists for system IDs — needs Phase 3 Fork)
 - Go test suite has pre-existing failures (not from our changes)
 
-## Current: Phase 2 — Route Consolidation (Issue #7)
+### Phase 2: Route Consolidation (Issue #7, PR #13)
+- Routes unified under `/workspaces/` (listing, view, edit, create)
+- `/canvases/*` redirects to `/workspaces/*`
+- `/` redirects to `/workspaces/`
+- Nav: "Workspaces" + "Examples"
+- Replaced update-template-assets.js with Vite manifest + viteJS/viteCSS template functions
+- Proto stays `Canvas` — workspace is UI naming only
 
-Unify `/systems` and `/canvases` under `/workspaces`:
-- `/workspaces` — landing page
-- `/workspaces/{id}` — workspace IDE
-- Old routes redirect for backward compat
-
-## Next Phases
-
-### Phase 3: Unified Landing Page (Issue #8)
+## Current: Phase 3 — Unified Landing Page (Issue #8)
 - Single listing: examples + user workspaces
 - "Fork" button creates workspace from example
 
