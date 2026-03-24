@@ -45,8 +45,8 @@ type SdlApp struct {
 	// Services
 	ClientMgr *services.ClientMgr
 
-	// Canvas groups (will reference weewarApp and goalApp)
-	CanvasesGroup *CanvasesGroup
+	// Workspace group (routes at /workspaces, backed by Canvas proto)
+	WorkspacesGroup *WorkspacesGroup
 
 	// Legacy handlers (API, WebSocket, Systems) - kept for now
 	api            *SDLApi
@@ -142,8 +142,8 @@ func NewSdlApp(grpcAddress string) (sdlApp *SdlApp, goalApp *goal.App[*SdlApp], 
 	// Initialize systems handler using the same SourceLoader-backed templates
 	sdlApp.systemsHandler = NewSystemsHandler(templates)
 
-	// Create CanvasesGroup
-	sdlApp.CanvasesGroup = &CanvasesGroup{
+	// Create WorkspacesGroup
+	sdlApp.WorkspacesGroup = &WorkspacesGroup{
 		sdlApp:  sdlApp,
 		goalApp: goalApp,
 	}
@@ -164,20 +164,27 @@ func (a *SdlApp) Handler() http.Handler {
 	// Serve examples directory for WASM demos
 	r.Handle("/examples/", http.StripPrefix("/examples", http.FileServer(http.Dir("./examples/"))))
 
-	// System showcase routes (server-rendered, using old handler for now)
+	// Workspace pages (unified view — replaces old /canvases and /systems)
+	r.Handle("/workspaces/", http.StripPrefix("/workspaces", a.WorkspacesGroup.Handler()))
+
+	// System showcase routes (listing only — detail redirects to workspace)
 	if a.systemsHandler != nil {
 		r.Handle("/systems", a.systemsHandler.Handler())
 		r.Handle("/systems/", a.systemsHandler.Handler())
 		r.Handle("/system/", a.systemsHandler.Handler())
 	}
 
-	// Canvas pages (using new goapplib pattern)
-	r.Handle("/canvases/", http.StripPrefix("/canvases", a.CanvasesGroup.Handler()))
+	// Backward-compat redirects
+	r.HandleFunc("/canvases/", func(w http.ResponseWriter, req *http.Request) {
+		// /canvases/foo/view -> /workspaces/foo/view
+		newPath := "/workspaces" + req.URL.Path[len("/canvases"):]
+		http.Redirect(w, req, newPath, http.StatusFound)
+	})
 
-	// Root redirect to systems listing
+	// Root redirect to workspaces
 	r.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		if req.URL.Path == "/" {
-			http.Redirect(w, req, "/systems", http.StatusFound)
+			http.Redirect(w, req, "/workspaces/", http.StatusFound)
 			return
 		}
 		// Serve static files for other root-level paths
@@ -187,42 +194,40 @@ func (a *SdlApp) Handler() http.Handler {
 	return r
 }
 
-// CanvasesGroup implements goal.PageGroup for /canvases routes.
-type CanvasesGroup struct {
+// WorkspacesGroup implements goal.PageGroup for /workspaces routes.
+// Backed by Canvas proto — "workspace" is UI naming only.
+type WorkspacesGroup struct {
 	sdlApp  *SdlApp
 	goalApp *goal.App[*SdlApp]
 }
 
-// Handler returns the configured HTTP handler for canvas routes.
-func (g *CanvasesGroup) Handler() http.Handler {
+// Handler returns the configured HTTP handler for workspace routes.
+func (g *WorkspacesGroup) Handler() http.Handler {
 	return g.RegisterRoutes(g.goalApp)
 }
 
-// RegisterRoutes registers all canvas-related routes using goal.Register.
-func (g *CanvasesGroup) RegisterRoutes(app *goal.App[*SdlApp]) *http.ServeMux {
+// RegisterRoutes registers all workspace-related routes using goal.Register.
+func (g *WorkspacesGroup) RegisterRoutes(app *goal.App[*SdlApp]) *http.ServeMux {
 	mux := http.NewServeMux()
 
-	// Register pages using goal's generic registration
-	// Template spec format: "path/file" auto-derives block name from filename
-	goal.Register[*CanvasListingPage](app, mux, "/",
-		goal.WithTemplate("canvases/CanvasListingPage"))
-	goal.Register[*CreateCanvasPage](app, mux, "GET /new",
-		goal.WithTemplate("canvases/CreateCanvasPage"))
-	goal.Register[*CanvasViewerPage](app, mux, "GET /{canvasId}/view",
-		goal.WithTemplate("canvases/CanvasViewerPage"))
-	goal.Register[*CanvasViewerPage](app, mux, "GET /{canvasId}/edit",
-		goal.WithTemplate("canvases/CanvasViewerPage"))
+	goal.Register[*WorkspaceListingPage](app, mux, "/",
+		goal.WithTemplate("workspaces/WorkspaceListingPage"))
+	goal.Register[*CreateWorkspacePage](app, mux, "GET /new",
+		goal.WithTemplate("workspaces/CreateWorkspacePage"))
+	goal.Register[*WorkspacePage](app, mux, "GET /{workspaceId}/view",
+		goal.WithTemplate("workspaces/WorkspacePage"))
+	goal.Register[*WorkspacePage](app, mux, "GET /{workspaceId}/edit",
+		goal.WithTemplate("workspaces/WorkspacePage"))
 
 	// Custom handlers for POST/DELETE actions
-	mux.HandleFunc("POST /new", g.createCanvasHandler)
-	// Handle all methods for /{canvasId} - DELETE is handled in canvasActionsHandler
-	mux.HandleFunc("/{canvasId}", g.canvasActionsHandler)
+	mux.HandleFunc("POST /new", g.createWorkspaceHandler)
+	mux.HandleFunc("/{workspaceId}", g.workspaceActionsHandler)
 
 	return mux
 }
 
-// createCanvasHandler handles POST to create a new canvas
-func (g *CanvasesGroup) createCanvasHandler(w http.ResponseWriter, r *http.Request) {
+// createWorkspaceHandler handles POST to create a new workspace (backed by Canvas)
+func (g *WorkspacesGroup) createWorkspaceHandler(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "Failed to parse form", http.StatusBadRequest)
 		return
@@ -242,138 +247,136 @@ func (g *CanvasesGroup) createCanvasHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	http.Redirect(w, r, "/canvases/"+resp.Canvas.Id+"/edit", http.StatusFound)
+	http.Redirect(w, r, "/workspaces/"+resp.Canvas.Id+"/edit", http.StatusFound)
 }
 
-// deleteCanvasHandler handles DELETE to remove a canvas
-func (g *CanvasesGroup) deleteCanvasHandler(w http.ResponseWriter, r *http.Request) {
-	canvasId := r.PathValue("canvasId")
-	if canvasId == "" {
-		http.Error(w, "Canvas ID is required", http.StatusBadRequest)
+// deleteWorkspaceHandler handles DELETE to remove a workspace
+func (g *WorkspacesGroup) deleteWorkspaceHandler(w http.ResponseWriter, r *http.Request) {
+	workspaceId := r.PathValue("workspaceId")
+	if workspaceId == "" {
+		http.Error(w, "Workspace ID is required", http.StatusBadRequest)
 		return
 	}
 
 	_, err := g.sdlApp.ClientMgr.GetCanvasSvcClient().DeleteCanvas(r.Context(), &protos.DeleteCanvasRequest{
-		Id: canvasId,
+		Id: workspaceId,
 	})
 	if err != nil {
-		http.Error(w, "Failed to delete canvas", http.StatusInternalServerError)
+		http.Error(w, "Failed to delete workspace", http.StatusInternalServerError)
 		return
 	}
 
-	http.Redirect(w, r, "/canvases/", http.StatusFound)
+	http.Redirect(w, r, "/workspaces/", http.StatusFound)
 }
 
-// canvasActionsHandler handles default canvas actions
-func (g *CanvasesGroup) canvasActionsHandler(w http.ResponseWriter, r *http.Request) {
-	canvasId := r.PathValue("canvasId")
-	if canvasId == "" {
-		http.Error(w, "Canvas ID is required", http.StatusBadRequest)
+// workspaceActionsHandler handles default workspace actions
+func (g *WorkspacesGroup) workspaceActionsHandler(w http.ResponseWriter, r *http.Request) {
+	workspaceId := r.PathValue("workspaceId")
+	if workspaceId == "" {
+		http.Error(w, "Workspace ID is required", http.StatusBadRequest)
 		return
 	}
 
 	switch r.Method {
 	case http.MethodDelete:
-		g.deleteCanvasHandler(w, r)
+		g.deleteWorkspaceHandler(w, r)
 	default:
-		// Redirect to view
-		http.Redirect(w, r, "/canvases/"+canvasId+"/view", http.StatusFound)
+		http.Redirect(w, r, "/workspaces/"+workspaceId+"/view", http.StatusFound)
 	}
 }
 
 // Page structs - implementing goal.View[*SdlApp]
 
-// CanvasListingPage displays a list of all canvases
-type CanvasListingPage struct {
+// WorkspaceListingPage displays a list of all workspaces (backed by Canvas)
+type WorkspaceListingPage struct {
 	BasePage
 	Header      Header
 	ListingData *goal.EntityListingData[*protos.Canvas]
 }
 
-func (p *CanvasListingPage) Load(r *http.Request, w http.ResponseWriter, app *goal.App[*SdlApp]) (err error, finished bool) {
-	p.Title = "My Canvases"
-	p.PageType = "canvas-listing"
-	p.ActiveTab = "canvases"
+func (p *WorkspaceListingPage) Load(r *http.Request, w http.ResponseWriter, app *goal.App[*SdlApp]) (err error, finished bool) {
+	p.Title = "My Workspaces"
+	p.PageType = "workspace-listing"
+	p.ActiveTab = "workspaces"
 
 	// Load header
 	p.Header.Load(r, w, app)
 
-	// Get all canvases via gRPC
+	// Get all workspaces via gRPC (Canvas service)
 	resp, err := app.Context.ClientMgr.GetCanvasSvcClient().ListCanvases(r.Context(), &protos.ListCanvasesRequest{})
 	if err != nil {
-		http.Error(w, "Failed to list canvases", http.StatusInternalServerError)
+		http.Error(w, "Failed to list workspaces", http.StatusInternalServerError)
 		return err, true
 	}
 
 	// Build listing data for EntityListing template
-	p.ListingData = goal.NewEntityListingData[*protos.Canvas]("My Canvases", "/canvases/%s/view").
-		WithCreate("javascript:createNewCanvas()", "New Canvas").
-		WithDelete("/canvases/%s")
+	p.ListingData = goal.NewEntityListingData[*protos.Canvas]("My Workspaces", "/workspaces/%s/view").
+		WithCreate("javascript:createNewWorkspace()", "New Workspace").
+		WithDelete("/workspaces/%s")
 	p.ListingData.Items = resp.Canvases
 
 	return nil, false
 }
 
-// CanvasViewerPage displays the canvas dashboard for viewing/editing
-type CanvasViewerPage struct {
+// WorkspacePage displays the workspace IDE for viewing/editing
+type WorkspacePage struct {
 	BasePage
-	Header   Header
-	CanvasId string
-	Canvas   *protos.Canvas
-	ReadOnly bool
+	Header      Header
+	WorkspaceId string
+	Canvas      *protos.Canvas // proto stays Canvas
+	ReadOnly    bool
 }
 
-func (p *CanvasViewerPage) Load(r *http.Request, w http.ResponseWriter, app *goal.App[*SdlApp]) (err error, finished bool) {
-	p.CanvasId = r.PathValue("canvasId")
-	p.ActiveTab = "canvases"
+func (p *WorkspacePage) Load(r *http.Request, w http.ResponseWriter, app *goal.App[*SdlApp]) (err error, finished bool) {
+	p.WorkspaceId = r.PathValue("workspaceId")
+	p.ActiveTab = "workspaces"
 
 	// Load header
 	p.Header.Load(r, w, app)
 
-	if p.CanvasId == "" {
-		http.Error(w, "Canvas ID is required", http.StatusBadRequest)
+	if p.WorkspaceId == "" {
+		http.Error(w, "Workspace ID is required", http.StatusBadRequest)
 		return nil, true
 	}
 
 	// Determine readonly mode from URL path
 	p.ReadOnly = len(r.URL.Path) >= 4 && r.URL.Path[len(r.URL.Path)-4:] == "view"
 
-	// Get the canvas via gRPC
+	// Get the workspace via gRPC (Canvas service)
 	resp, err := app.Context.ClientMgr.GetCanvasSvcClient().GetCanvas(r.Context(), &protos.GetCanvasRequest{
-		Id: p.CanvasId,
+		Id: p.WorkspaceId,
 	})
 	if err != nil {
-		http.Error(w, "Canvas not found", http.StatusNotFound)
+		http.Error(w, "Workspace not found", http.StatusNotFound)
 		return nil, true
 	}
 
 	p.Canvas = resp.Canvas
 	if p.Canvas == nil {
-		http.Error(w, "Canvas not found", http.StatusNotFound)
+		http.Error(w, "Workspace not found", http.StatusNotFound)
 		return nil, true
 	}
 
+	p.PageType = "canvas-dashboard" // main.ts handles this page type
 	if p.ReadOnly {
 		p.Title = p.Canvas.Name
-		p.PageType = "canvas-view"
 	} else {
 		p.Title = "Edit: " + p.Canvas.Name
-		p.PageType = "canvas-edit"
 	}
 
 	return nil, false
 }
 
-// CreateCanvasPage displays the form to create a new canvas
-type CreateCanvasPage struct {
+// CreateWorkspacePage displays the form to create a new workspace
+type CreateWorkspacePage struct {
 	BasePage
 	Header Header
 }
 
-func (p *CreateCanvasPage) Load(r *http.Request, w http.ResponseWriter, app *goal.App[*SdlApp]) (err error, finished bool) {
-	p.Title = "Create Canvas"
-	p.PageType = "canvas-create"
-	p.ActiveTab = "canvases"
+func (p *CreateWorkspacePage) Load(r *http.Request, w http.ResponseWriter, app *goal.App[*SdlApp]) (err error, finished bool) {
+	p.Title = "Create Workspace"
+	p.PageType = "workspace-create"
+	p.ActiveTab = "workspaces"
 
 	// Load header
 	p.Header.Load(r, w, app)
