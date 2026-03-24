@@ -7,12 +7,14 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"path/filepath"
 
 	goal "github.com/panyam/goapplib"
 	protos "github.com/panyam/sdl/gen/go/sdl/v1/models"
 	"github.com/panyam/sdl/services"
 	gotl "github.com/panyam/goutils/template"
 	gohttp "github.com/panyam/servicekit/http"
+	tmplr "github.com/panyam/templar"
 )
 
 const TEMPLATES_FOLDER = "web/templates"
@@ -56,10 +58,17 @@ func NewSdlApp(grpcAddress string) (sdlApp *SdlApp, goalApp *goal.App[*SdlApp], 
 		ClientMgr: clientMgr,
 	}
 
-	// Setup templates with app-specific FuncMap additions
-	// goapplib templates are available via symlink at templates/goapplib/
-	templates := goal.SetupTemplates(TEMPLATES_FOLDER)
-	// Add goutils template functions (Ago, etc.)
+	// Setup templates with SourceLoader for @goapplib/ vendored dependencies
+	templates := tmplr.NewTemplateGroup()
+	configPath := filepath.Join(TEMPLATES_FOLDER, "templar.yaml")
+	sourceLoader, err := tmplr.NewSourceLoaderFromConfig(configPath)
+	if err != nil {
+		log.Printf("Warning: Could not load templar.yaml: %v. Falling back to basic loader.", err)
+		templates.Loader = tmplr.NewFileSystemLoader(TEMPLATES_FOLDER)
+	} else {
+		templates.Loader = sourceLoader
+	}
+	templates.AddFuncs(goal.DefaultFuncMap())
 	templates.AddFuncs(gotl.DefaultFuncMap())
 	templates.AddFuncs(template.FuncMap{
 		// Ctx provides access to the SdlApp context in templates
@@ -78,12 +87,8 @@ func NewSdlApp(grpcAddress string) (sdlApp *SdlApp, goalApp *goal.App[*SdlApp], 
 		clients: make(map[string]*CanvasWSConn),
 	}
 
-	// Initialize systems handler (still uses old pattern for now)
-	templateGroup, err := SetupTemplates(TEMPLATES_FOLDER)
-	if err != nil {
-		log.Printf("Failed to setup templates for systems: %v", err)
-	}
-	sdlApp.systemsHandler = NewSystemsHandler(templateGroup)
+	// Initialize systems handler using the same SourceLoader-backed templates
+	sdlApp.systemsHandler = NewSystemsHandler(templates)
 
 	// Create CanvasesGroup
 	sdlApp.CanvasesGroup = &CanvasesGroup{
@@ -249,9 +254,9 @@ func (p *CanvasListingPage) Load(r *http.Request, w http.ResponseWriter, app *go
 	}
 
 	// Build listing data for EntityListing template
-	p.ListingData = goal.NewEntityListingData[*protos.Canvas]("My Canvases", "/canvases").
+	p.ListingData = goal.NewEntityListingData[*protos.Canvas]("My Canvases", "/canvases/%s/view").
 		WithCreate("javascript:createNewCanvas()", "New Canvas").
-		WithDelete("/canvases")
+		WithDelete("/canvases/%s")
 	p.ListingData.Items = resp.Canvases
 
 	return nil, false

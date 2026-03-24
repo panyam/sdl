@@ -21,8 +21,8 @@ importers:
         specifier: ^2.23.0
         version: 2.29.0
       '@panyam/tsappkit':
-        specifier: link:../../goapplib/tsappkit
-        version: link:../../goapplib/tsappkit
+        specifier: link:~/newstack/goapplib/main/tsappkit
+        version: link:../../../newstack/goapplib/main/tsappkit
       '@protoc-gen-go-wasmjs/runtime':
         specifier: ^0.0.28
         version: 0.0.28

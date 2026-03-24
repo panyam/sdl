@@ -20,3 +20,5 @@
 - **frontend**: vanilla
 - **proto-build**: buf
 - **wasm**: yes
+- **template-vendoring**: templar (web/templates/templar.yaml, @goapplib/ prefix)
+- **tsappkit**: linked from goapplib/tsappkit

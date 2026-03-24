@@ -236,7 +236,6 @@ export class DashboardCoordinator {
       if (canvasState) {
         appStateManager.updateState({
           isConnected: true,
-          currentFile: canvasState.loadedFiles?.[0],
           currentSystem: canvasState.activeSystem,
           isLoading: false
         });

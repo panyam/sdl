@@ -9,7 +9,7 @@ require (
 	github.com/panyam/goutils v0.1.13
 	github.com/panyam/protoc-gen-go-wasmjs v0.0.33
 	github.com/panyam/servicekit v0.0.6
-	github.com/panyam/templar v0.0.31
+	github.com/panyam/templar v0.0.32
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
 	google.golang.org/genproto/googleapis/api v0.0.0-20260319201613-d00831a3d3e7
@@ -37,4 +37,4 @@ require (
 
 replace github.com/panyam/goapplib v0.0.34 => ./locallinks/newstack/goapplib/main
 
-replace github.com/panyam/templar v0.0.31 => ./locallinks/newstack/templar/main
+replace github.com/panyam/templar v0.0.32 => ./locallinks/newstack/templar/main

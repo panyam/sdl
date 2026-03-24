@@ -12,10 +12,10 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Paths
-const distIndexPath = path.join(__dirname, '../../dist/index.html');
-const templatePath = path.join(__dirname, '../../templates/BasePage.html');
-const wasmDistPath = path.join(__dirname, '../../dist/wasm');
-const wasmConfigPath = path.join(__dirname, '../../dist/wasm-modules.json');
+const distIndexPath = path.join(__dirname, '../dist/index.html');
+const templatePath = path.join(__dirname, '../templates/BasePage.html');
+const wasmDistPath = path.join(__dirname, '../dist/wasm');
+const wasmConfigPath = path.join(__dirname, '../dist/wasm-modules.json');
 
 // Read the dist index.html
 const distHtml = fs.readFileSync(distIndexPath, 'utf-8');

@@ -47,7 +47,7 @@
     "@connectrpc/connect": "^2.0.2",
     "@connectrpc/connect-web": "^2.0.2",
     "@hpcc-js/wasm": "^2.23.0",
-    "@panyam/tsappkit": "link:../../goapplib/tsappkit",
+    "@panyam/tsappkit": "link:~/newstack/goapplib/main/tsappkit",
     "@protoc-gen-go-wasmjs/runtime": "^0.0.28",
     "chart.js": "^4.4.0",
     "dockview": "^1.0.0",

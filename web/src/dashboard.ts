@@ -98,8 +98,7 @@ export class Dashboard {
       if (stateResponse != null) {
         const canvasState = stateResponse;
         
-        // Update dashboard state from Canvas state
-        this.state.currentFile = canvasState.loadedFiles?.[0]; // Use first loaded file
+        // Update dashboard state from Canvas proto
         this.state.currentSystem = canvasState.activeSystem;
         
         // If there's an active system, load its diagram

@@ -1,0 +1,16 @@
+# Templar Configuration — This file is the SOURCE OF TRUTH for template dependencies
+# Run 'templar get' to regenerate templar_modules/ from this file.
+#
+# IMPORTANT: templar_modules/ is a GENERATED directory (like node_modules/).
+# Do not copy or edit it directly. Run 'templar get' to regenerate it from this file.
+
+sources:
+  goapplib:
+    url: github.com/panyam/goapplib
+    path: templates
+    ref: main
+
+vendor_dir: ./templar_modules
+search_paths:
+  - .
+  - ./templar_modules
