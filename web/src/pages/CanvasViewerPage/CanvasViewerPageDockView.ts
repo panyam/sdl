@@ -293,7 +293,7 @@ export class CanvasViewerPageDockView extends CanvasViewerPageBase {
 
     private createDockviewComponent(options: any): { element: HTMLElement; dispose?: () => void } {
         const container = document.createElement('div');
-        container.className = 'h-full w-full overflow-auto';
+        container.className = 'h-full w-full overflow-auto bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100';
 
         switch (options.name) {
             case 'editor':
