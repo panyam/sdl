@@ -49,16 +49,15 @@ export class TabbedEditor {
     this.watchThemeChanges();
   }
 
-  /** Switch all editor instances to the correct theme when dark/light mode toggles */
+  /** Switch Monaco global theme when dark/light mode toggles */
   private watchThemeChanges(): void {
     const observer = new MutationObserver(() => {
-      for (const [, tab] of this.tabs) {
-        if (tab.editor && tab.model) {
-          const lang = tab.model.getLanguageId();
-          const theme = TabbedEditor.getThemeForLanguage(lang);
-          tab.editor.updateOptions({ theme });
-        }
-      }
+      // Monaco theme is global — use the active tab's language to pick the right variant
+      const activeTabKey = this.activeTab;
+      const activeTab = activeTabKey ? this.tabs.get(activeTabKey) : null;
+      const lang = activeTab?.model?.getLanguageId() || 'plaintext';
+      const theme = TabbedEditor.getThemeForLanguage(lang);
+      monaco.editor.setTheme(theme);
     });
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
   }
