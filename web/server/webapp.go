@@ -296,6 +296,10 @@ func (p *CanvasViewerPage) Load(r *http.Request, w http.ResponseWriter, app *goa
 	}
 
 	p.Canvas = resp.Canvas
+	if p.Canvas == nil {
+		http.Error(w, "Canvas not found", http.StatusNotFound)
+		return nil, true
+	}
 
 	if p.ReadOnly {
 		p.Title = p.Canvas.Name
