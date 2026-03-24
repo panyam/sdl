@@ -46,11 +46,12 @@ export class CanvasViewerPageDockView extends CanvasViewerPageBase {
         }
 
         // Create DockView container with theme class
+        // Uses flex fill pattern (not absolute) so it respects the header above
         const dockviewContainer = document.createElement('div');
         dockviewContainer.id = 'dockview-container';
         const isDarkMode = document.documentElement.classList.contains('dark');
         dockviewContainer.className = isDarkMode ? 'dockview-theme-dark' : 'dockview-theme-light';
-        dockviewContainer.style.cssText = 'width: 100%; height: 100%; position: absolute; top: 0; left: 0;';
+        dockviewContainer.style.cssText = 'flex: 1 1 0%; min-height: 0; min-width: 0; overflow: hidden;';
         appElement.appendChild(dockviewContainer);
 
         // Initialize DockView
