@@ -50,10 +50,21 @@ Builds for frontend, wasm, backend are all running continuously and can be queri
 ## Available commands
 
 - `cd protos && make buf` - To generate protos (or `make buf` from top level)
-- `make` - To generate all binaries
+- `make` or `make all` - Build everything (order: parser -> WASM -> dash -> binary -> run)
 - `make dash` - To rebuild the web dashboard
 - `make serve` - To start the server (go run cmd/sdl/main.go serve)
+- `make webtest` - Run web unit tests (vitest)
+- `make wasmbin` - Build WASM binaries
 - `templar get` - Fetch vendored template dependencies (run from web/templates/)
+
+## Build System Gotchas
+
+- **Build order matters**: `make all` runs parser -> wasmbin -> dash -> binary -> run. WASM must build before dash so `update-template-assets.js` can discover `.wasm` files in `dist/wasm/`.
+- **Unified dist/**: All build outputs go to `<project>/dist/` (not `web/dist/`). Vite outputs to `../dist`, WASM builds to `dist/wasm/`, server serves from `./dist/`.
+- **Asset cache busting**: `update-template-assets.js` reads `dist/index.html` to find Vite's hashed asset filenames and updates `BasePage.html`. If the template shows old assets, run `make dash` (which includes the update step).
+- **Tailwind content paths**: `web/tailwind.config.js` must scan `./templates/**/*.html` (not `../templates/`). Wrong paths cause Tailwind to purge all utility classes used in Go templates.
+- **Test directory**: Tests live in `web/src/.__tests__/` (with dot prefix). Vitest config must reference `.__tests__` not `__tests__`.
+- **Pre-push hook**: `.git/hooks/pre-push` runs web tests before push. Go tests have pre-existing failures so are not included yet.
 
 ## Template System (Templar)
 
@@ -100,10 +111,47 @@ GitHub issues created for stack alignment:
 - #4: Use ProtoJSON/TypedJSON codec for WebSocket
 - #5: Use goapplib ViewContext instead of manual maps
 
-## Architecture Direction: System/Canvas Consolidation
+## Dead Code and Attic
 
-Analysis shows both systems detail page and canvas viewer page implement the same IDE-like dockview experience with different architectures:
-- **Canvas viewer** uses the lilbattle-style MVP presenter pattern (Go presenter in WASM pushes UI updates via RPC)
-- **System details** uses a frontend-orchestrated tool pattern (TS pulls data from WASM)
-- Plan: consolidate to a single "Workspace" experience using the canvas viewer's presenter pattern
-- See GitHub issues #1-#5 for incremental steps
+- Dead/superseded code is moved to `web/attic/` (not deleted) for reference
+- Includes: dashboard.ts monolith, system-details-page, old panel system, dashboard-coordinator, app-state-manager
+- Dead tests moved to `web/attic/src/__tests__/`
+- When removing code, always move to attic especially if it existed in previously working versions
+
+## DockView Theming
+
+- Container must have `dockview-theme-dark` or `dockview-theme-light` class
+- Use MutationObserver on `document.documentElement` class changes to toggle theme
+- CSS variables defined in `web/src/style.css` (not inline in templates)
+- Panel content containers need explicit `bg-white dark:bg-gray-900` (dockview only themes chrome, not content)
+- For pages with header: use flex fill pattern (`flex: 1 1 0%; min-height: 0`) not `position: absolute` — absolute covers the header
+- See goapplib/tsappkit `BESTPRACTICES.md` for the canonical dockview pattern
+
+## Monaco Editor Theming
+
+- Monaco theme is global (`monaco.editor.setTheme()`), not per-editor
+- Define light+dark variants for custom languages: `sdl-dark`/`sdl-light`, `recipe-dark`/`recipe-light`
+- Don't hardcode `editor.background` in custom themes — inherit from `vs`/`vs-dark` base
+- Known issue: theme toggle doesn't update Monaco editors (needs investigation)
+
+## Architecture Direction: Workspace Consolidation
+
+- **Naming**: Workspace = problem domain (e.g., "Uber"), Design = one architecture (e.g., "uber-mvp")
+- **Proto stays `Canvas`** internally — only UI/routes rename to "Workspace"/"Design"
+- System details page moved to attic — `/system/{id}` redirects to `/canvases/{id}/view` (will 404 until Phase 3 adds Fork)
+- Plan file: `~/.claude/plans/quirky-exploring-kahn.md`
+
+GitHub issues for workspace consolidation:
+- #6: Phase 1 — Clean foundation (PR #12, in progress)
+- #7: Phase 2 — Route consolidation to /workspaces
+- #8: Phase 3 — Unified landing page
+- #9: Phase 4 — Multi-design UI
+- #10: Phase 5 — Module/import system (sdl.yaml)
+- #11: Phase 6 — Diagram upgrade (Vis.js)
+
+## Conference Demos
+
+- Uber architecture evolution: `examples/uber/{mvp,intermediate,modern}.{sdl,recipe}`
+- Run via CLI: `SDL_CANVAS_ID=ubermvp sh ./examples/uber/mvp.recipe`
+- Three terminals + three browser tabs for side-by-side comparison
+- Last known working commit for demo: `13a91ef` (before goapplib migration)

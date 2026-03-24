@@ -1,59 +1,54 @@
 # SDL Web Dashboard - Next Steps
 
-## Completed (March 2026 Session)
+## Completed (March 2026)
 
-### Build Fixes
-- Fixed `make dash` build: tsappkit dist/ was missing, built from source
-- Fixed `update-template-assets.js` path resolution (was `../../` should be `../`)
-- Fixed stale `loadedFiles` reference on Canvas proto (field doesn't exist)
+### Build Infrastructure
+- Fixed `make dash` build (tsappkit dist/, update-template-assets.js paths)
+- Unified dist directory — all outputs to `<project>/dist/`
+- Fixed Makefile build order: parser -> WASM -> dash -> binary -> run
+- Fixed Tailwind content paths (`./templates/` not `../templates/`)
+- Fixed vitest config path (`.__tests__` not `__tests__`)
+- Added `make webtest` target and pre-push hook
 
 ### Templar Vendoring Migration
-- Replaced stale `goapplib` symlink with proper templar vendoring
-- Created `web/templates/templar.yaml` with goapplib source config
-- Ran `templar get` to fetch templates into `templar_modules/`
-- Updated template references: `goapplib/...` -> `@goapplib/...`
-- Updated Go server to use `tmplr.NewSourceLoaderFromConfig()` instead of `goal.SetupTemplates()`
-- Systems handler now shares the same SourceLoader-backed template group
+- Replaced goapplib symlink with templar vendoring (`@goapplib/` prefix)
+- Go server uses `tmplr.NewSourceLoaderFromConfig()`
 
-### Template Fixes
-- Fixed `safeHTMLAttr` in goapplib to accept `any` (was crashing on nil values)
-- Fixed `EntityListingData` URL formats: added `%s` placeholder for canvas IDs
-- Added missing `PostBodySection` block to SystemDetailsPage and CanvasViewerPage templates
-- Fixed CanvasViewerPage template block names to match SDL BasePage mappings
+### Phase 1: Clean Foundation (Issue #6, PR #12)
+- Moved 15 dead source files + 6 dead test files to `web/attic/`
+- Fixed DockView: theme class, CSS variables in style.css, flex fill layout (not absolute)
+- Added MutationObserver for theme toggle on dockview container
+- Added light/dark theme variants for Monaco editor (sdl-light, recipe-light)
+- System details page redirects to canvas viewer (will 404 until Phase 3)
+- Nil check on Canvas response to prevent panic
+- 9 Phase 1 verification tests + 14 EventBus tests (all passing)
 
-### Stack Audit
-- Created 5 GitHub issues (#1-#5) for stack alignment improvements
-- Identified system/canvas duplication and consolidation path
+### Known Issues
+- Monaco editor theme toggle not working at runtime (global setTheme called but doesn't update)
+- System detail redirect shows 404 (no canvas exists for system IDs — needs Phase 3 Fork)
+- Go test suite has pre-existing failures (not from our changes)
 
-## In Progress
+## Current: Phase 2 — Route Consolidation (Issue #7)
 
-### Get Pages Fully Rendering
-- Systems listing page: rendering
-- System details page: needs PostBodySection fix verification
-- Canvas listing page: rendering, links now work
-- Canvas viewer page: needs PostBodySection fix verification
+Unify `/systems` and `/canvases` under `/workspaces`:
+- `/workspaces` — landing page
+- `/workspaces/{id}` — workspace IDE
+- Old routes redirect for backward compat
 
-## Next Priorities
+## Next Phases
 
-### 1. System/Canvas Consolidation Planning
-- Both use dockview + Monaco + Graphviz but with different architectures
-- Canvas viewer has the better pattern (MVP presenter via WASM, like lilbattle)
-- System details page uses frontend-orchestrated tool pattern
-- Consolidate to single "Workspace" experience
+### Phase 3: Unified Landing Page (Issue #8)
+- Single listing: examples + user workspaces
+- "Fork" button creates workspace from example
 
-### 2. Stack Alignment (GitHub Issues #1-#5)
-- #1: Systems templates to namespace/extend
-- #2: Systems listing to EntityListingData mixin
-- #3: ServiceKit OutgoingMessage
-- #4: WebSocket codec upgrade
-- #5: ViewContext for systems handler
+### Phase 4: Multi-Design UI (Issue #9)
+- Design selector within workspace (uber-mvp, uber-v2, uber-modern)
+- Backend already supports multiple systems per canvas
 
-### 3. Complete WASM Integration
-- Verify canvas viewer WASM mode works end-to-end
-- System details WASM mode with SystemDetailTool
-- Recipe execution in browser
+### Phase 5: Module/Import System (Issue #10)
+- `sdl.yaml` workspace manifest with versioned sources
+- Build on existing CompositeFS mount architecture
 
-### 4. Legacy Code Cleanup
-- Remove `dashboard.ts` monolithic controller (replaced by DashboardCoordinator)
-- Remove `dashboard-coordinator.ts` (replaced by canvas viewer presenter)
-- Clean up stale `CanvasState` interface in `types.ts`
+### Phase 6: Diagram Upgrade (Issue #11)
+- Replace Graphviz with Vis.js Network (interactive)
+- Phases 4-6 can be done in parallel

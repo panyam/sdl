@@ -69,10 +69,9 @@ func (h *SystemsHandler) handleSystemListing(w http.ResponseWriter, r *http.Requ
 	}
 }
 
-// handleSystemDetails renders the system details page
+// handleSystemDetails redirects to workspace view (system details page moved to attic)
 func (h *SystemsHandler) handleSystemDetails(w http.ResponseWriter, r *http.Request) {
-	// Extract system ID from path
-	// Path format: /system/bitly
+	// Extract system ID from path: /system/bitly
 	parts := strings.Split(r.URL.Path, "/")
 	if len(parts) < 3 {
 		http.NotFound(w, r)
@@ -80,64 +79,16 @@ func (h *SystemsHandler) handleSystemDetails(w http.ResponseWriter, r *http.Requ
 	}
 	systemID := parts[2]
 
-	// Get system from catalog
+	// Verify system exists
 	system := h.catalog.GetSystem(systemID)
 	if system == nil {
 		http.NotFound(w, r)
 		return
 	}
 
-	// Get mode from query params (default to server mode)
-	mode := "server"
-	if r.URL.Query().Get("mode") == "wasm" {
-		mode = "wasm"
-	}
-
-	// Get version (default to system's default version)
-	version := r.URL.Query().Get("version")
-	if version == "" {
-		version = system.DefaultVersion
-	}
-
-	// Get SDL and recipe content for the version
-	versionData := system.Versions[version]
-
-	// Prepare minimal page data for the client (content will be loaded via API)
-	pageData := map[string]interface{}{
-		"systemId": system.ID,
-		"mode":     mode,
-	}
-
-	// Determine WASM modules needed for this page
-	var wasmModules []WasmModule
-	if mode == "wasm" {
-		// For system details page, always include SystemDetailTool
-		wasmModules = append(wasmModules, WasmModule{
-			Name: "systemdetail",
-			Path: "/wasm/systemdetail.wasm",
-		})
-	}
-
-	// Prepare template data
-	data := map[string]interface{}{
-		"Title":        system.Name + " - SDL System",
-		"PageType":     "system-details",
-		"System":       system,
-		"SDL":          versionData.SDL,
-		"Recipe":       versionData.Recipe,
-		"Mode":         mode,
-		"WasmModules":  wasmModules,
-		"PageDataJSON": toJSON(pageData),
-	}
-
-	// Load and render template
-	templates := h.templateGroup.MustLoad("systems/SystemDetailsPage.html", "")
-
-	// Render the template
-	if err := h.templateGroup.RenderHtmlTemplate(w, templates[0], "SystemDetailsPage", data, nil); err != nil {
-		http.Error(w, fmt.Sprintf("Failed to render page: %v", err), http.StatusInternalServerError)
-		return
-	}
+	// Redirect to canvas viewer with this system's ID
+	// Phase 2 will consolidate this under /workspaces/{id}
+	http.Redirect(w, r, "/canvases/"+systemID+"/view", http.StatusFound)
 }
 
 // toJSON converts data to JSON string for template use

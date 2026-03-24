@@ -45,11 +45,21 @@ export class CanvasViewerPageDockView extends CanvasViewerPageBase {
             console.error('[CanvasViewerPageDockView] Failed to load Graphviz:', error);
         }
 
-        // Create DockView container
+        // Create DockView container with theme class
+        // Uses flex fill pattern (not absolute) so it respects the header above
         const dockviewContainer = document.createElement('div');
         dockviewContainer.id = 'dockview-container';
-        dockviewContainer.style.cssText = 'width: 100%; height: 100%; position: absolute; top: 0; left: 0;';
+        const isDarkMode = document.documentElement.classList.contains('dark');
+        dockviewContainer.className = isDarkMode ? 'dockview-theme-dark' : 'dockview-theme-light';
+        dockviewContainer.style.cssText = 'flex: 1 1 0%; min-height: 0; min-width: 0; overflow: hidden;';
         appElement.appendChild(dockviewContainer);
+
+        // Watch for theme changes and update dockview theme class
+        const observer = new MutationObserver(() => {
+            const dark = document.documentElement.classList.contains('dark');
+            dockviewContainer.className = dark ? 'dockview-theme-dark' : 'dockview-theme-light';
+        });
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
         // Initialize DockView
         const dockviewComponent = new DockviewComponent(dockviewContainer, {
@@ -291,7 +301,7 @@ export class CanvasViewerPageDockView extends CanvasViewerPageBase {
 
     private createDockviewComponent(options: any): { element: HTMLElement; dispose?: () => void } {
         const container = document.createElement('div');
-        container.className = 'h-full w-full overflow-auto';
+        container.className = 'h-full w-full overflow-auto bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100';
 
         switch (options.name) {
             case 'editor':
