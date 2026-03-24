@@ -61,7 +61,7 @@ Builds for frontend, wasm, backend are all running continuously and can be queri
 
 - **Build order matters**: `make all` runs parser -> wasmbin -> dash -> binary -> run. WASM must build before dash so `update-template-assets.js` can discover `.wasm` files in `dist/wasm/`.
 - **Unified dist/**: All build outputs go to `<project>/dist/` (not `web/dist/`). Vite outputs to `../dist`, WASM builds to `dist/wasm/`, server serves from `./dist/`.
-- **Asset cache busting**: `update-template-assets.js` reads `dist/index.html` to find Vite's hashed asset filenames and updates `BasePage.html`. If the template shows old assets, run `make dash` (which includes the update step).
+- **Asset cache busting**: Vite generates `.vite/manifest.json` in dist/. The Go server reads it at startup and provides `viteJS`/`viteCSS` template functions. No post-build script needed — templates use `{{ viteJS "index.html" }}` and `{{ viteCSS "index.html" }}`.
 - **Tailwind content paths**: `web/tailwind.config.js` must scan `./templates/**/*.html` (not `../templates/`). Wrong paths cause Tailwind to purge all utility classes used in Go templates.
 - **Test directory**: Tests live in `web/src/.__tests__/` (with dot prefix). Vitest config must reference `.__tests__` not `__tests__`.
 - **Pre-push hook**: `.git/hooks/pre-push` runs web tests before push. Go tests have pre-existing failures so are not included yet.
