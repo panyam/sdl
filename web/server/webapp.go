@@ -129,7 +129,7 @@ func (a *SdlApp) Handler() http.Handler {
 			return
 		}
 		// Serve static files for other root-level paths
-		http.FileServer(http.Dir("./web/dist/")).ServeHTTP(w, req)
+		http.FileServer(http.Dir("./dist/")).ServeHTTP(w, req)
 	})
 
 	return r

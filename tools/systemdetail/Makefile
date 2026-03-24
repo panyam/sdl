@@ -4,14 +4,14 @@
 # Build WASM binary for SystemDetailTool
 wasm:
 	@echo "Building SystemDetailTool WASM binary..."
-	@mkdir -p ../../web/dist/wasm
-	GOOS=js GOARCH=wasm go build -o ../../web/dist/wasm/systemdetail.wasm ./wasm/
-	@echo "✅ SystemDetailTool WASM binary built: ../../web/dist/wasm/systemdetail.wasm"
+	@mkdir -p ../../dist/wasm
+	GOOS=js GOARCH=wasm go build -o ../../dist/wasm/systemdetail.wasm ./wasm/
+	@echo "SystemDetailTool WASM binary built: dist/wasm/systemdetail.wasm"
 
 # Clean build artifacts
 clean:
 	@echo "Cleaning SystemDetailTool build artifacts..."
-	@rm -f ../../web/dist/wasm/systemdetail.wasm
+	@rm -f ../../dist/wasm/systemdetail.wasm
 	@echo "✅ Clean complete"
 
 # Run tests
