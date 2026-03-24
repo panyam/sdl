@@ -10,7 +10,9 @@
     {
       "name": "Bitly",
       "file": "mvp.sdl",
-      "description": "MVP URL shortener with hash index storage"
+      "description": "MVP URL shortener with hash index storage",
+      "difficulty": "beginner",
+      "tags": ["web", "database", "caching", "rest-api"]
     }
   ]
 }

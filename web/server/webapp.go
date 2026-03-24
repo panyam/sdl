@@ -140,7 +140,7 @@ func NewSdlApp(grpcAddress string) (sdlApp *SdlApp, goalApp *goal.App[*SdlApp], 
 	}
 
 	// Initialize systems handler using the same SourceLoader-backed templates
-	sdlApp.systemsHandler = NewSystemsHandler(templates)
+	sdlApp.systemsHandler = NewSystemsHandler()
 
 	// Create WorkspacesGroup
 	sdlApp.WorkspacesGroup = &WorkspacesGroup{
@@ -267,14 +267,14 @@ func (g *WorkspacesGroup) forkExampleHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	// Look up the example system
-	system := g.sdlApp.systemsHandler.catalog.GetSystem(exampleId)
-	if system == nil {
+	// Look up the example workspace
+	ws := g.sdlApp.systemsHandler.catalog.GetWorkspace(exampleId)
+	if ws == nil {
 		http.Error(w, "Example not found", http.StatusNotFound)
 		return
 	}
 
-	// Try to open existing workspace for this example
+	// Try to open existing canvas for this example
 	existing, _ := g.sdlApp.ClientMgr.GetCanvasSvcClient().GetCanvas(r.Context(), &protos.GetCanvasRequest{
 		Id: exampleId,
 	})
@@ -283,14 +283,20 @@ func (g *WorkspacesGroup) forkExampleHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	// Create a new workspace with the example's SDL pre-loaded
-	version := system.Versions[system.DefaultVersion]
+	// Combine all design SDL files into one system_contents block
+	allContents := g.sdlApp.systemsHandler.catalog.GetAllDesignContents(exampleId)
+	combined := ""
+	for _, content := range allContents {
+		combined += content + "\n\n"
+	}
+
+	// Create a new canvas with all SDL pre-loaded
 	resp, err := g.sdlApp.ClientMgr.GetCanvasSvcClient().CreateCanvas(r.Context(), &protos.CreateCanvasRequest{
 		Canvas: &protos.Canvas{
 			Id:             exampleId,
-			Name:           system.Name,
-			Description:    system.Description,
-			SystemContents: version.SDL,
+			Name:           ws.Name,
+			Description:    ws.Description,
+			SystemContents: combined,
 		},
 	})
 	if err != nil {
@@ -342,7 +348,7 @@ func (g *WorkspacesGroup) workspaceActionsHandler(w http.ResponseWriter, r *http
 type WorkspaceListingPage struct {
 	BasePage
 	Header      Header
-	Examples    []services.SystemInfo
+	Examples    []*protos.Workspace
 	ListingData *goal.EntityListingData[*protos.Canvas]
 }
 
@@ -354,9 +360,9 @@ func (p *WorkspaceListingPage) Load(r *http.Request, w http.ResponseWriter, app 
 	// Load header
 	p.Header.Load(r, w, app)
 
-	// Load examples from system catalog
+	// Load example workspaces from catalog
 	if app.Context.systemsHandler != nil {
-		p.Examples = app.Context.systemsHandler.catalog.ListSystems()
+		p.Examples = app.Context.systemsHandler.catalog.ListWorkspaces()
 	}
 
 	// Get user workspaces via gRPC (Canvas service)

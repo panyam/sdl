@@ -192,6 +192,27 @@ export const WorkspaceSchema: MessageSchema = {
       type: FieldType.STRING,
       id: 8,
     },
+    {
+      name: "dir",
+      type: FieldType.STRING,
+      id: 9,
+    },
+    {
+      name: "tags",
+      type: FieldType.REPEATED,
+      id: 10,
+      repeated: true,
+    },
+    {
+      name: "difficulty",
+      type: FieldType.STRING,
+      id: 11,
+    },
+    {
+      name: "category",
+      type: FieldType.STRING,
+      id: 12,
+    },
   ],
 };
 
@@ -221,6 +242,22 @@ export const WorkspaceDesignSchema: MessageSchema = {
       name: "description",
       type: FieldType.STRING,
       id: 4,
+    },
+    {
+      name: "tags",
+      type: FieldType.REPEATED,
+      id: 5,
+      repeated: true,
+    },
+    {
+      name: "difficulty",
+      type: FieldType.STRING,
+      id: 6,
+    },
+    {
+      name: "category",
+      type: FieldType.STRING,
+      id: 7,
     },
   ],
 };

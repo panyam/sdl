@@ -91,6 +91,14 @@ message Workspace {
 
   // Currently active design name
   string active_design = 8;
+
+  // Directory path (for file-based workspaces)
+  string dir = 9;
+
+  // Workspace-level metadata (for UI display)
+  repeated string tags = 10;
+  string difficulty = 11;
+  string category = 12;
 }
 
 // WorkspaceDesign represents one system architecture within a workspace.
@@ -107,6 +115,11 @@ message WorkspaceDesign {
 
   // Brief description
   string description = 4;
+
+  // Per-design metadata (for UI display)
+  repeated string tags = 5;
+  string difficulty = 6;     // "beginner", "intermediate", "advanced"
+  string category = 7;
 }
 
 // ImportSource declares where to resolve @name/ prefixed imports.

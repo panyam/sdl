@@ -327,7 +327,13 @@ type Workspace struct {
 	// Designs within this workspace (each is a system architecture)
 	Designs []*WorkspaceDesign `protobuf:"bytes,7,rep,name=designs,proto3" json:"designs,omitempty"`
 	// Currently active design name
-	ActiveDesign  string `protobuf:"bytes,8,opt,name=active_design,json=activeDesign,proto3" json:"active_design,omitempty"`
+	ActiveDesign string `protobuf:"bytes,8,opt,name=active_design,json=activeDesign,proto3" json:"active_design,omitempty"`
+	// Directory path (for file-based workspaces)
+	Dir string `protobuf:"bytes,9,opt,name=dir,proto3" json:"dir,omitempty"`
+	// Workspace-level metadata (for UI display)
+	Tags          []string `protobuf:"bytes,10,rep,name=tags,proto3" json:"tags,omitempty"`
+	Difficulty    string   `protobuf:"bytes,11,opt,name=difficulty,proto3" json:"difficulty,omitempty"`
+	Category      string   `protobuf:"bytes,12,opt,name=category,proto3" json:"category,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -418,6 +424,34 @@ func (x *Workspace) GetActiveDesign() string {
 	return ""
 }
 
+func (x *Workspace) GetDir() string {
+	if x != nil {
+		return x.Dir
+	}
+	return ""
+}
+
+func (x *Workspace) GetTags() []string {
+	if x != nil {
+		return x.Tags
+	}
+	return nil
+}
+
+func (x *Workspace) GetDifficulty() string {
+	if x != nil {
+		return x.Difficulty
+	}
+	return ""
+}
+
+func (x *Workspace) GetCategory() string {
+	if x != nil {
+		return x.Category
+	}
+	return ""
+}
+
 // WorkspaceDesign represents one system architecture within a workspace.
 // Maps to a `system` block in an SDL file, backed by a Canvas for runtime.
 type WorkspaceDesign struct {
@@ -429,7 +463,11 @@ type WorkspaceDesign struct {
 	// Backing Canvas ID for runtime simulation
 	CanvasId string `protobuf:"bytes,3,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
 	// Brief description
-	Description   string `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	Description string `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	// Per-design metadata (for UI display)
+	Tags          []string `protobuf:"bytes,5,rep,name=tags,proto3" json:"tags,omitempty"`
+	Difficulty    string   `protobuf:"bytes,6,opt,name=difficulty,proto3" json:"difficulty,omitempty"` // "beginner", "intermediate", "advanced"
+	Category      string   `protobuf:"bytes,7,opt,name=category,proto3" json:"category,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -488,6 +526,27 @@ func (x *WorkspaceDesign) GetCanvasId() string {
 func (x *WorkspaceDesign) GetDescription() string {
 	if x != nil {
 		return x.Description
+	}
+	return ""
+}
+
+func (x *WorkspaceDesign) GetTags() []string {
+	if x != nil {
+		return x.Tags
+	}
+	return nil
+}
+
+func (x *WorkspaceDesign) GetDifficulty() string {
+	if x != nil {
+		return x.Difficulty
+	}
+	return ""
+}
+
+func (x *WorkspaceDesign) GetCategory() string {
+	if x != nil {
+		return x.Category
 	}
 	return ""
 }
@@ -2313,7 +2372,7 @@ const file_sdl_v1_models_models_proto_rawDesc = "" +
 	"\fworkspace_id\x18\r \x01(\tR\vworkspaceId\x1a:\n" +
 	"\fRecipesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xab\x03\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x8d\x04\n" +
 	"\tWorkspace\x129\n" +
 	"\n" +
 	"created_at\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
@@ -2324,15 +2383,27 @@ const file_sdl_v1_models_models_proto_rawDesc = "" +
 	"\vdescription\x18\x05 \x01(\tR\vdescription\x128\n" +
 	"\asources\x18\x06 \x03(\v2\x1e.sdl.v1.Workspace.SourcesEntryR\asources\x121\n" +
 	"\adesigns\x18\a \x03(\v2\x17.sdl.v1.WorkspaceDesignR\adesigns\x12#\n" +
-	"\ractive_design\x18\b \x01(\tR\factiveDesign\x1aP\n" +
+	"\ractive_design\x18\b \x01(\tR\factiveDesign\x12\x10\n" +
+	"\x03dir\x18\t \x01(\tR\x03dir\x12\x12\n" +
+	"\x04tags\x18\n" +
+	" \x03(\tR\x04tags\x12\x1e\n" +
+	"\n" +
+	"difficulty\x18\v \x01(\tR\n" +
+	"difficulty\x12\x1a\n" +
+	"\bcategory\x18\f \x01(\tR\bcategory\x1aP\n" +
 	"\fSourcesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12*\n" +
-	"\x05value\x18\x02 \x01(\v2\x14.sdl.v1.ImportSourceR\x05value:\x028\x01\"x\n" +
+	"\x05value\x18\x02 \x01(\v2\x14.sdl.v1.ImportSourceR\x05value:\x028\x01\"\xc8\x01\n" +
 	"\x0fWorkspaceDesign\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
 	"\x04file\x18\x02 \x01(\tR\x04file\x12\x1b\n" +
 	"\tcanvas_id\x18\x03 \x01(\tR\bcanvasId\x12 \n" +
-	"\vdescription\x18\x04 \x01(\tR\vdescription\"x\n" +
+	"\vdescription\x18\x04 \x01(\tR\vdescription\x12\x12\n" +
+	"\x04tags\x18\x05 \x03(\tR\x04tags\x12\x1e\n" +
+	"\n" +
+	"difficulty\x18\x06 \x01(\tR\n" +
+	"difficulty\x12\x1a\n" +
+	"\bcategory\x18\a \x01(\tR\bcategory\"x\n" +
 	"\fImportSource\x12\x18\n" +
 	"\abuiltin\x18\x01 \x01(\bR\abuiltin\x12\x16\n" +
 	"\x06github\x18\x02 \x01(\tR\x06github\x12\x10\n" +

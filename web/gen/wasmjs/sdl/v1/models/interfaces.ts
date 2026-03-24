@@ -78,6 +78,12 @@ export interface Workspace {
   designs?: WorkspaceDesign[];
   /** Currently active design name */
   activeDesign: string;
+  /** Directory path (for file-based workspaces) */
+  dir: string;
+  /** Workspace-level metadata (for UI display) */
+  tags: string[];
+  difficulty: string;
+  category: string;
 }
 
 
@@ -94,6 +100,10 @@ export interface WorkspaceDesign {
   canvasId: string;
   /** Brief description */
   description: string;
+  /** Per-design metadata (for UI display) */
+  tags: string[];
+  difficulty: string;
+  category: string;
 }
 
 

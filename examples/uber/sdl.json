@@ -10,17 +10,23 @@
     {
       "name": "UberMVP",
       "file": "mvp.sdl",
-      "description": "Monolithic MVP — two friends with an app"
+      "description": "Monolithic MVP — two friends with an app",
+      "difficulty": "beginner",
+      "tags": ["monolith", "database", "rest-api"]
     },
     {
       "name": "UberIntermediate",
       "file": "intermediate.sdl",
-      "description": "Service-oriented with caching and geo-indexing"
+      "description": "Service-oriented with caching and geo-indexing",
+      "difficulty": "intermediate",
+      "tags": ["microservices", "caching", "geo-spatial", "queuing"]
     },
     {
       "name": "UberModern",
       "file": "modern.sdl",
-      "description": "Event-driven microservices with ML matching"
+      "description": "Event-driven microservices with ML matching",
+      "difficulty": "advanced",
+      "tags": ["microservices", "event-driven", "ml", "global-distribution"]
     }
   ]
 }

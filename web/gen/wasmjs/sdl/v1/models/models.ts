@@ -109,6 +109,12 @@ export class Workspace implements WorkspaceInterface {
   designs: WorkspaceDesign[] = [];
   /** Currently active design name */
   activeDesign: string = "";
+  /** Directory path (for file-based workspaces) */
+  dir: string = "";
+  /** Workspace-level metadata (for UI display) */
+  tags: string[] = [];
+  difficulty: string = "";
+  category: string = "";
 
   
 }
@@ -133,6 +139,10 @@ export class WorkspaceDesign implements WorkspaceDesignInterface {
   canvasId: string = "";
   /** Brief description */
   description: string = "";
+  /** Per-design metadata (for UI display) */
+  tags: string[] = [];
+  difficulty: string = "";
+  category: string = "";
 
   
 }
