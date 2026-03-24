@@ -167,16 +167,18 @@ func (a *SdlApp) Handler() http.Handler {
 	// Workspace pages (unified view — replaces old /canvases and /systems)
 	r.Handle("/workspaces/", http.StripPrefix("/workspaces", a.WorkspacesGroup.Handler()))
 
-	// System showcase routes (listing only — detail redirects to workspace)
-	if a.systemsHandler != nil {
-		r.Handle("/systems", a.systemsHandler.Handler())
-		r.Handle("/systems/", a.systemsHandler.Handler())
-		r.Handle("/system/", a.systemsHandler.Handler())
-	}
-
-	// Backward-compat redirects
+	// Backward-compat redirects for old routes
+	r.HandleFunc("/systems", func(w http.ResponseWriter, req *http.Request) {
+		http.Redirect(w, req, "/workspaces/", http.StatusFound)
+	})
+	r.HandleFunc("/systems/", func(w http.ResponseWriter, req *http.Request) {
+		http.Redirect(w, req, "/workspaces/", http.StatusFound)
+	})
+	r.HandleFunc("/system/", func(w http.ResponseWriter, req *http.Request) {
+		// /system/bitly -> /workspaces/ (example fork will be done from the listing)
+		http.Redirect(w, req, "/workspaces/", http.StatusFound)
+	})
 	r.HandleFunc("/canvases/", func(w http.ResponseWriter, req *http.Request) {
-		// /canvases/foo/view -> /workspaces/foo/view
 		newPath := "/workspaces" + req.URL.Path[len("/canvases"):]
 		http.Redirect(w, req, newPath, http.StatusFound)
 	})
@@ -219,8 +221,9 @@ func (g *WorkspacesGroup) RegisterRoutes(app *goal.App[*SdlApp]) *http.ServeMux 
 	goal.Register[*WorkspacePage](app, mux, "GET /{workspaceId}/edit",
 		goal.WithTemplate("workspaces/WorkspacePage"))
 
-	// Custom handlers for POST/DELETE actions
+	// Custom handlers for POST/DELETE/fork actions
 	mux.HandleFunc("POST /new", g.createWorkspaceHandler)
+	mux.HandleFunc("POST /fork", g.forkExampleHandler)
 	mux.HandleFunc("/{workspaceId}", g.workspaceActionsHandler)
 
 	return mux
@@ -248,6 +251,54 @@ func (g *WorkspacesGroup) createWorkspaceHandler(w http.ResponseWriter, r *http.
 	}
 
 	http.Redirect(w, r, "/workspaces/"+resp.Canvas.Id+"/edit", http.StatusFound)
+}
+
+// forkExampleHandler opens an example as a workspace, creating one if needed.
+// Uses the example ID as the canvas ID so repeated clicks reuse the same workspace.
+func (g *WorkspacesGroup) forkExampleHandler(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Failed to parse form", http.StatusBadRequest)
+		return
+	}
+
+	exampleId := r.FormValue("exampleId")
+	if exampleId == "" {
+		http.Error(w, "Example ID is required", http.StatusBadRequest)
+		return
+	}
+
+	// Look up the example system
+	system := g.sdlApp.systemsHandler.catalog.GetSystem(exampleId)
+	if system == nil {
+		http.Error(w, "Example not found", http.StatusNotFound)
+		return
+	}
+
+	// Try to open existing workspace for this example
+	existing, _ := g.sdlApp.ClientMgr.GetCanvasSvcClient().GetCanvas(r.Context(), &protos.GetCanvasRequest{
+		Id: exampleId,
+	})
+	if existing != nil && existing.Canvas != nil {
+		http.Redirect(w, r, "/workspaces/"+exampleId+"/view", http.StatusFound)
+		return
+	}
+
+	// Create a new workspace with the example's SDL pre-loaded
+	version := system.Versions[system.DefaultVersion]
+	resp, err := g.sdlApp.ClientMgr.GetCanvasSvcClient().CreateCanvas(r.Context(), &protos.CreateCanvasRequest{
+		Canvas: &protos.Canvas{
+			Id:             exampleId,
+			Name:           system.Name,
+			Description:    system.Description,
+			SystemContents: version.SDL,
+		},
+	})
+	if err != nil {
+		http.Error(w, "Failed to create workspace", http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/workspaces/"+resp.Canvas.Id+"/view", http.StatusFound)
 }
 
 // deleteWorkspaceHandler handles DELETE to remove a workspace
@@ -287,26 +338,32 @@ func (g *WorkspacesGroup) workspaceActionsHandler(w http.ResponseWriter, r *http
 
 // Page structs - implementing goal.View[*SdlApp]
 
-// WorkspaceListingPage displays a list of all workspaces (backed by Canvas)
+// WorkspaceListingPage displays examples + user workspaces on one page
 type WorkspaceListingPage struct {
 	BasePage
 	Header      Header
+	Examples    []services.SystemInfo
 	ListingData *goal.EntityListingData[*protos.Canvas]
 }
 
 func (p *WorkspaceListingPage) Load(r *http.Request, w http.ResponseWriter, app *goal.App[*SdlApp]) (err error, finished bool) {
-	p.Title = "My Workspaces"
+	p.Title = "Workspaces"
 	p.PageType = "workspace-listing"
 	p.ActiveTab = "workspaces"
 
 	// Load header
 	p.Header.Load(r, w, app)
 
-	// Get all workspaces via gRPC (Canvas service)
+	// Load examples from system catalog
+	if app.Context.systemsHandler != nil {
+		p.Examples = app.Context.systemsHandler.catalog.ListSystems()
+	}
+
+	// Get user workspaces via gRPC (Canvas service)
 	resp, err := app.Context.ClientMgr.GetCanvasSvcClient().ListCanvases(r.Context(), &protos.ListCanvasesRequest{})
 	if err != nil {
-		http.Error(w, "Failed to list workspaces", http.StatusInternalServerError)
-		return err, true
+		// Non-fatal — show examples even if workspace service is down
+		resp = &protos.ListCanvasesResponse{}
 	}
 
 	// Build listing data for EntityListing template
