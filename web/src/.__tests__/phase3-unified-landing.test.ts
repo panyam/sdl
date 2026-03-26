@@ -34,7 +34,7 @@ describe('Phase 3: Unified Landing Page Template', () => {
    */
   it('should have an Examples section in the template', () => {
     const content = fs.readFileSync(templatePath, 'utf-8');
-    expect(content).toContain('Example Systems');
+    expect(content).toContain('Example Workspaces');
     expect(content).toContain('.Examples');
   });
 
@@ -115,6 +115,6 @@ describe('Phase 3: Go Route Consolidation', () => {
     const content = fs.readFileSync(path.join(WEB_DIR, 'server/webapp.go'), 'utf-8');
     expect(content).toContain('forkExampleHandler');
     expect(content).toContain('Examples');
-    expect(content).toContain('SystemInfo');
+    expect(content).toContain('Workspace');
   });
 });
