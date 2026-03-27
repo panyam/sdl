@@ -100,12 +100,10 @@ func main() {
 
 	// Create singleton services
 	canvasService := singleton.NewSingletonCanvasService(fileSystem)
-	systemsService := singleton.NewSingletonSystemsService(fileSystem)
 
 	// Create presenter and wire dependencies
 	canvasPresenter := services.NewCanvasViewPresenter()
 	canvasPresenter.CanvasService = canvasService
-	canvasPresenter.SystemsService = systemsService
 
 	// Create initializer service
 	initializerService := &SingletonInitializerService{
@@ -116,7 +114,6 @@ func main() {
 	// Wire service implementations to generated WASM exports
 	exports := &wasmservices.Sdl_v1ServicesExports{
 		CanvasService:               canvasService,
-		SystemsService:              systemsService,
 		CanvasViewPresenter:         canvasPresenter,
 		SingletonInitializerService: initializerService,
 		CanvasDashboardPage:         wasmservices.NewCanvasDashboardPageClient(),

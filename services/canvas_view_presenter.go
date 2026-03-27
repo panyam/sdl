@@ -14,14 +14,13 @@ import (
 
 // CanvasViewPresenter is the P in Model-View-Presenter.
 // It orchestrates between the browser views (CanvasDashboardPage) and
-// the backend services (CanvasService, SystemsService).
+// the backend CanvasService.
 //
 // The presenter handles UI logic, dispatches to services, and calls
 // back to the browser to update the view.
 type CanvasViewPresenter struct {
 	// Service dependencies
-	CanvasService  wasmservices.CanvasServiceServer
-	SystemsService wasmservices.SystemsServiceServer
+	CanvasService wasmservices.CanvasServiceServer
 
 	// Browser-provided page client (for callbacks to browser)
 	DashboardPage *wasmservices.CanvasDashboardPageClient
@@ -48,16 +47,11 @@ func (p *CanvasViewPresenter) Initialize(ctx context.Context, req *protos.Initia
 		p.canvasID = req.CanvasId
 	}
 
-	// Get list of available systems
-	systemsResp, err := p.SystemsService.ListSystems(ctx, &protos.ListSystemsRequest{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to list systems: %w", err)
-	}
-
+	// Available systems are discovered by the browser from embedded SDL,
+	// not from a server-side list. The presenter just confirms readiness.
 	return &protos.InitializePresenterResponse{
-		Success:          true,
-		CanvasId:         p.canvasID,
-		AvailableSystems: systemsResp.Systems,
+		Success:  true,
+		CanvasId: p.canvasID,
 	}, nil
 }
 
