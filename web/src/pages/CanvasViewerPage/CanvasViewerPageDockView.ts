@@ -297,12 +297,21 @@ export class CanvasViewerPageDockView extends CanvasViewerPageBase {
     /** Called when user selects a different design from the dropdown */
     private async onDesignSelected(systemName: string): Promise<void> {
         console.log(`[CanvasViewerPageDockView] Switching to design: ${systemName}`);
+
+        // Open the SDL source in the editor
+        const textarea = document.querySelector(`textarea.sdl-design-source[data-design="${systemName}"]`) as HTMLTextAreaElement;
+        if (textarea && this.tabbedEditor) {
+            const content = textarea.value || '';
+            const filePath = `${systemName}.sdl`;
+            await this.tabbedEditor.openFile(filePath, content, this.readonly, 'designs', systemName);
+        }
+
+        // Tell presenter to switch system — pushes diagram + generator updates
         try {
             await this.canvasViewPresenterClient.useSystem({
                 canvasId: this.currentCanvasId || 'default',
                 systemName: systemName,
             });
-            // Presenter pushes diagram + generator updates via RPC callbacks
         } catch (err) {
             console.error(`[CanvasViewerPageDockView] Failed to switch design:`, err);
         }
