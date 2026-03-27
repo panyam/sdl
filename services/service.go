@@ -11,6 +11,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	protos "github.com/panyam/sdl/gen/go/sdl/v1/models"
 	protoservices "github.com/panyam/sdl/gen/go/sdl/v1/services"
@@ -70,9 +71,21 @@ func (s *CanvasService) CreateCanvas(ctx context.Context, req *protos.CreateCanv
 	}
 	slog.Debug("Creating Canvas: ", "id", canvasId)
 
-	canvas := NewCanvas(canvasId, nil)
-	canvas.name = canvasProto.Name
-	canvas.description = canvasProto.Description
+	// Set timestamps on the proto
+	canvasProto.CreatedAt = timestamppb.Now()
+	canvasProto.UpdatedAt = timestamppb.Now()
+
+	// Create canvas with the full proto (includes SystemContents if provided)
+	canvas := NewCanvas(canvasProto, nil)
+
+	// If SystemContents was provided, auto-load it into the runtime
+	if canvasProto.SystemContents != "" {
+		if err := canvas.LoadFromString(canvasProto.SystemContents); err != nil {
+			slog.Warn("Failed to auto-load system contents", "id", canvasId, "error", err)
+			// Non-fatal — canvas is still created, SDL can be loaded later
+		}
+	}
+
 	s.store[canvasId] = canvas
 	resp = &protos.CreateCanvasResponse{Canvas: canvas.ToProto()}
 	return resp, nil

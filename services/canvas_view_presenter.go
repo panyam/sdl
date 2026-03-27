@@ -6,6 +6,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	protos "github.com/panyam/sdl/gen/go/sdl/v1/models"
 	wasmservices "github.com/panyam/sdl/gen/wasm/go/sdl/v1/services"
@@ -66,7 +67,7 @@ func (p *CanvasViewPresenter) ClientReady(ctx context.Context, req *protos.Clien
 		p.canvasID = req.CanvasId
 	}
 
-	// Get current canvas state and push to browser
+	// Get current canvas state
 	canvasResp, err := p.CanvasService.GetCanvas(ctx, &protos.GetCanvasRequest{
 		Id: p.canvasID,
 	})
@@ -74,7 +75,22 @@ func (p *CanvasViewPresenter) ClientReady(ctx context.Context, req *protos.Clien
 		return nil, fmt.Errorf("failed to get canvas: %w", err)
 	}
 
-	// Update the browser with initial diagram
+	// If systems are loaded but none is active, auto-select the first one
+	canvas := canvasResp.Canvas
+	if canvas != nil && canvas.ActiveSystem == "" && len(canvas.LoadedSystemNames) > 0 {
+		firstSystem := canvas.LoadedSystemNames[0]
+		slog.Info("Auto-selecting first system", "system", firstSystem)
+		p.CanvasService.UseSystem(ctx, &protos.UseSystemRequest{
+			CanvasId:   p.canvasID,
+			SystemName: firstSystem,
+		})
+		// Re-fetch canvas after system selection
+		canvasResp, _ = p.CanvasService.GetCanvas(ctx, &protos.GetCanvasRequest{
+			Id: p.canvasID,
+		})
+	}
+
+	// Push diagram to browser
 	diagramResp, err := p.CanvasService.GetSystemDiagram(ctx, &protos.GetSystemDiagramRequest{
 		CanvasId: p.canvasID,
 	})
