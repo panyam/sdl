@@ -417,20 +417,43 @@ func (p *WorkspacePage) Load(r *http.Request, w http.ResponseWriter, app *goal.A
 	// Determine readonly mode from URL path
 	p.ReadOnly = len(r.URL.Path) >= 4 && r.URL.Path[len(r.URL.Path)-4:] == "view"
 
-	// Get the workspace via gRPC (Canvas service)
+	// Try to get existing canvas for this workspace
 	resp, err := app.Context.ClientMgr.GetCanvasSvcClient().GetCanvas(r.Context(), &protos.GetCanvasRequest{
 		Id: p.WorkspaceId,
 	})
-	if err != nil {
-		http.Error(w, "Workspace not found", http.StatusNotFound)
-		return nil, true
+	if err != nil || resp.Canvas == nil {
+		// Canvas doesn't exist — auto-create from workspace if available
+		if app.Context.WorkspaceSvc != nil {
+			wsResp, wsErr := app.Context.WorkspaceSvc.GetWorkspace(r.Context(), &protos.GetWorkspaceRequest{Id: p.WorkspaceId})
+			if wsErr == nil && wsResp.Workspace != nil {
+				// Combine all design contents for the canvas
+				contentsResp, _ := app.Context.WorkspaceSvc.GetAllDesignContents(r.Context(), &protos.GetAllDesignContentsRequest{WorkspaceId: p.WorkspaceId})
+				combined := ""
+				if contentsResp != nil {
+					for _, content := range contentsResp.Contents {
+						combined += content + "\n\n"
+					}
+				}
+				createResp, createErr := app.Context.ClientMgr.GetCanvasSvcClient().CreateCanvas(r.Context(), &protos.CreateCanvasRequest{
+					Canvas: &protos.Canvas{
+						Id:             p.WorkspaceId,
+						Name:           wsResp.Workspace.Name,
+						Description:    wsResp.Workspace.Description,
+						SystemContents: combined,
+					},
+				})
+				if createErr == nil {
+					resp = &protos.GetCanvasResponse{Canvas: createResp.Canvas}
+				}
+			}
+		}
+		if resp == nil || resp.Canvas == nil {
+			http.Error(w, "Workspace not found", http.StatusNotFound)
+			return nil, true
+		}
 	}
 
 	p.Canvas = resp.Canvas
-	if p.Canvas == nil {
-		http.Error(w, "Workspace not found", http.StatusNotFound)
-		return nil, true
-	}
 
 	p.PageType = "canvas-dashboard" // main.ts handles this page type
 	if p.ReadOnly {
