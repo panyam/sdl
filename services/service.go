@@ -75,17 +75,10 @@ func (s *CanvasService) CreateCanvas(ctx context.Context, req *protos.CreateCanv
 	canvasProto.CreatedAt = timestamppb.Now()
 	canvasProto.UpdatedAt = timestamppb.Now()
 
-	// Create canvas with the full proto (includes SystemContents if provided)
+	// Create canvas with the full proto (stores SystemContents for later use).
+	// SDL parsing happens in the WASM runtime via ScriptTagFS, not server-side —
+	// the server doesn't have import resolvers (@stdlib/, etc.)
 	canvas := NewCanvas(canvasProto, nil)
-
-	// If SystemContents was provided, auto-load it into the runtime
-	if canvasProto.SystemContents != "" {
-		if err := canvas.LoadFromString(canvasProto.SystemContents); err != nil {
-			slog.Warn("Failed to auto-load system contents", "id", canvasId, "error", err)
-			// Non-fatal — canvas is still created, SDL can be loaded later
-		}
-	}
-
 	s.store[canvasId] = canvas
 	resp = &protos.CreateCanvasResponse{Canvas: canvas.ToProto()}
 	return resp, nil
