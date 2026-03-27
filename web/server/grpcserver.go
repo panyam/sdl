@@ -31,7 +31,7 @@ func (s *Server) Start(ctx context.Context, srvErr chan error, srvChan chan bool
 
 	// Register services
 	v1services.RegisterCanvasServiceServer(server, canvasSvc)
-	v1services.RegisterSystemsServiceServer(server, services.NewSystemsService())
+	// TODO: Register WorkspaceService when ready
 
 	l, err := net.Listen("tcp", s.Address)
 	if err != nil {

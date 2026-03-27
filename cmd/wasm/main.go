@@ -177,6 +177,10 @@ func createWASMFileSystem() loader.FileSystem {
 	stdlibFS.PreloadFiles(getStdlibFiles())
 	cfs.Mount("@stdlib/", stdlibFS)
 
+	// Script tag resolver — reads SDL from embedded <script type="text/sdl"> tags
+	// These are populated by the server template with workspace design files
+	cfs.Mount("/designs/", &ScriptTagFS{})
+
 	// Support for external URLs using WASM fetch API
 	cfs.Mount("https://", &URLFetcherFS{})
 	cfs.Mount("http://", &URLFetcherFS{})

@@ -206,6 +206,64 @@ func (u *URLFetcherFS) IsReadOnly() bool {
 	return true // URLFetcherFS is read-only
 }
 
+// ScriptTagFS reads SDL content from hidden <textarea class="sdl-design-source">
+// elements in the DOM. Uses textareas instead of script tags to avoid Go template
+// HTML/JS escaping of the SDL content.
+// Files are identified by the data-design attribute.
+type ScriptTagFS struct{}
+
+func (s *ScriptTagFS) ReadFile(path string) ([]byte, error) {
+	// Strip any leading path components — we match by filename
+	name := path
+	if idx := strings.LastIndex(path, "/"); idx >= 0 {
+		name = path[idx+1:]
+	}
+	// Strip .sdl extension for matching against data-design attribute
+	designName := strings.TrimSuffix(name, ".sdl")
+
+	// Query the DOM for matching textarea
+	doc := js.Global().Get("document")
+	selector := fmt.Sprintf("textarea.sdl-design-source[data-design=\"%s\"]", designName)
+	el := doc.Call("querySelector", selector)
+
+	if el.IsNull() || el.IsUndefined() {
+		return nil, fmt.Errorf("no textarea[data-design=\"%s\"] found in DOM", designName)
+	}
+
+	// Use .value for textarea (not .textContent)
+	content := el.Get("value").String()
+	return []byte(content), nil
+}
+
+func (s *ScriptTagFS) WriteFile(path string, data []byte) error {
+	return fmt.Errorf("script tag filesystem is read-only")
+}
+
+func (s *ScriptTagFS) ListFiles(dir string) ([]string, error) {
+	doc := js.Global().Get("document")
+	elements := doc.Call("querySelectorAll", "textarea.sdl-design-source")
+	length := elements.Get("length").Int()
+
+	var files []string
+	for i := 0; i < length; i++ {
+		el := elements.Index(i)
+		design := el.Get("dataset").Get("design").String()
+		if design != "" {
+			files = append(files, design+".sdl")
+		}
+	}
+	return files, nil
+}
+
+func (s *ScriptTagFS) Exists(path string) bool {
+	_, err := s.ReadFile(path)
+	return err == nil
+}
+
+func (s *ScriptTagFS) IsReadOnly() bool {
+	return true
+}
+
 // Helper function to create default dev filesystem
 func NewDevFS() loader.FileSystem {
 	cfs := loader.NewCompositeFS()

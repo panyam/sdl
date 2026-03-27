@@ -190,7 +190,7 @@ export abstract class CanvasViewerPageBase extends BasePage implements LCMCompon
         this.singletonInitializerClient = new SingletonInitializerServiceClient(this.wasmBundle);
 
         // Get WASM path from page or use default
-        const wasmPath = (document.getElementById("wasmBundlePathField") as HTMLInputElement)?.value || '/sdl.wasm';
+        const wasmPath = (document.getElementById("wasmBundlePathField") as HTMLInputElement)?.value || '/wasm/sdl.wasm';
         await this.wasmBundle.loadWasm(wasmPath);
         await this.wasmBundle.waitUntilReady();
 

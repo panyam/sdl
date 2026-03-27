@@ -11,6 +11,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	protos "github.com/panyam/sdl/gen/go/sdl/v1/models"
 	protoservices "github.com/panyam/sdl/gen/go/sdl/v1/services"
@@ -70,9 +71,14 @@ func (s *CanvasService) CreateCanvas(ctx context.Context, req *protos.CreateCanv
 	}
 	slog.Debug("Creating Canvas: ", "id", canvasId)
 
-	canvas := NewCanvas(canvasId, nil)
-	canvas.name = canvasProto.Name
-	canvas.description = canvasProto.Description
+	// Set timestamps on the proto
+	canvasProto.CreatedAt = timestamppb.Now()
+	canvasProto.UpdatedAt = timestamppb.Now()
+
+	// Create canvas with the full proto (stores SystemContents for later use).
+	// SDL parsing happens in the WASM runtime via ScriptTagFS, not server-side —
+	// the server doesn't have import resolvers (@stdlib/, etc.)
+	canvas := NewCanvas(canvasProto, nil)
 	s.store[canvasId] = canvas
 	resp = &protos.CreateCanvasResponse{Canvas: canvas.ToProto()}
 	return resp, nil

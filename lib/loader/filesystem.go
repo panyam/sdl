@@ -61,15 +61,14 @@ func (c *CompositeFS) findFS(path string) (FileSystem, string) {
 	}
 	
 	if bestFS != nil {
-		return bestFS, path
-	}
-	
-	// Check for protocol handlers (https://, github://)
-	if strings.Contains(path, "://") {
-		protocol := strings.Split(path, "://")[0] + "://"
-		if fs, exists := c.filesystems[protocol]; exists {
-			return fs, path
+		// Strip the mount prefix so the underlying FS sees paths relative to its root.
+		// Exception: URL-based mounts (containing "://") keep the full path because
+		// their FS implementations (URLFetcherFS, GitHubFS) expect full URLs.
+		adjustedPath := path
+		if !strings.Contains(bestMatch, "://") && !strings.Contains(bestMatch, ".com/") {
+			adjustedPath = strings.TrimPrefix(path, bestMatch)
 		}
+		return bestFS, adjustedPath
 	}
 	
 	// Use fallback if available

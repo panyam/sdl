@@ -9,52 +9,53 @@
 - Fixed Tailwind content paths (`./templates/` not `../templates/`)
 - Fixed vitest config path (`.__tests__` not `__tests__`)
 - Added `make webtest` target and pre-push hook
-
-### Templar Vendoring Migration
-- Replaced goapplib symlink with templar vendoring (`@goapplib/` prefix)
-- Go server uses `tmplr.NewSourceLoaderFromConfig()`
+- Replaced update-template-assets.js with Vite manifest + viteJS/viteCSS template functions
 
 ### Phase 1: Clean Foundation (Issue #6, PR #12)
-- Moved 15 dead source files + 6 dead test files to `web/attic/`
-- Fixed DockView: theme class, CSS variables in style.css, flex fill layout (not absolute)
-- Added MutationObserver for theme toggle on dockview container
-- Added light/dark theme variants for Monaco editor (sdl-light, recipe-light)
-- System details page redirects to canvas viewer (will 404 until Phase 3)
-- Nil check on Canvas response to prevent panic
-- 9 Phase 1 verification tests + 14 EventBus tests (all passing)
-
-### Known Issues
-- Monaco editor theme toggle not working at runtime (global setTheme called but doesn't update)
-- System detail redirect shows 404 (no canvas exists for system IDs — needs Phase 3 Fork)
-- Go test suite has pre-existing failures (not from our changes)
+- Moved dead code to `web/attic/`
+- Fixed DockView theme, layout (flex fill not absolute), CSS variables
+- 9 Phase 1 verification tests
 
 ### Phase 2: Route Consolidation (Issue #7, PR #13)
-- Routes unified under `/workspaces/` (listing, view, edit, create)
-- `/canvases/*` redirects to `/workspaces/*`
-- `/` redirects to `/workspaces/`
+- Routes unified under `/workspaces/`
 - Nav: "Workspaces" + "Examples"
-- Replaced update-template-assets.js with Vite manifest + viteJS/viteCSS template functions
-- Proto stays `Canvas` — workspace is UI naming only
 
 ### Phase 3: Unified Landing Page (Issue #8, PR #14)
-- Single page at `/workspaces/` with Examples section + My Workspaces section
-- Example cards have "Open" button that auto-creates workspace if needed (reuses on repeat)
-- Fork handler uses example ID as canvas ID for idempotent creation
-- Fixed Canvas name/description not being passed through CreateCanvas
-- Old SystemsListingPage.html and system-listing-handlers.ts moved to attic
-- `/systems`, `/system/*` redirect to `/workspaces/`
-- 9 Phase 3 verification tests
+- Examples + user workspaces on one page
+- "Open" button auto-creates canvas from workspace
 
-## Next Phases
+### Phase 4+5: Workspace Proto + Manifests (Issue #9/#10, PR #15)
+- Workspace, WorkspaceDesign, ImportSource proto messages
+- sdl.json manifest format (protojson)
+- SystemCatalogService replaced by WorkspaceService (lilbattle pattern)
+- All Uber imports standardized to @stdlib/
 
-### Phase 4: Multi-Design UI (Issue #9)
-- Design selector within workspace (uber-mvp, uber-v2, uber-modern)
-- Backend already supports multiple systems per canvas
+### Phase 4+5 continued: Design Selector (Issue #16, PR #17)
+- WorkspaceService: interface + BackendWorkspaceService + inmem storage
+- Canvas struct embeds Canvas proto directly (no duplicated fields)
+- ScriptTagFS: WASM resolver that reads SDL from DOM textareas
+- CompositeFS prefix stripping fix for @stdlib/ resolution
+- Design selector dropdown in workspace toolbar
+- Auto-loads SDL from embedded textareas on page open
+- Diagram renders for selected design
 
-### Phase 5: Module/Import System (Issue #10)
-- `sdl.yaml` workspace manifest with versioned sources
-- Build on existing CompositeFS mount architecture
+### Known Issues
+- Monaco editor theme toggle not working at runtime
+- Editor panel doesn't show SDL source for selected design
+- Go test suite has pre-existing failures
+- Console/Generators/Metrics panels empty (no generators configured from UI yet)
 
-### Phase 6: Diagram Upgrade (Issue #11)
+## Next
+
+### CompilationUnit (#19, high priority)
+- Clean separation: Workspace (source) → CompilationUnit (AST) → Canvas (runtime)
+- Canvas receives compiled artifact, never touches files/imports
+- Supersedes #18 (design-canvas decoupling)
+
+### Phase 6: Diagram Upgrade (#11)
 - Replace Graphviz with Vis.js Network (interactive)
-- Phases 4-6 can be done in parallel
+
+### Remaining polish
+- Wire editor panel to show SDL source for selected design
+- Fix Monaco theme toggle
+- Add generator/metrics config from UI (make SDL declarative, no recipes needed)

@@ -22,6 +22,9 @@
     },
     {
       "name": "SystemsService"
+    },
+    {
+      "name": "WorkspaceService"
     }
   ],
   "consumes": [
@@ -1823,6 +1826,280 @@
           "SystemsService"
         ]
       }
+    },
+    "/v1/workspaces": {
+      "get": {
+        "operationId": "WorkspaceService_ListWorkspaces",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListWorkspacesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "WorkspaceService"
+        ]
+      },
+      "post": {
+        "operationId": "WorkspaceService_CreateWorkspace",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CreateWorkspaceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateWorkspaceRequest"
+            }
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/v1/workspaces/{id}": {
+      "get": {
+        "operationId": "WorkspaceService_GetWorkspace",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetWorkspaceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      },
+      "delete": {
+        "operationId": "WorkspaceService_DeleteWorkspace",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DeleteWorkspaceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace.id}": {
+      "put": {
+        "operationId": "WorkspaceService_UpdateWorkspace",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateWorkspaceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspace.id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "workspace": {
+                  "type": "object",
+                  "properties": {
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "sources": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "$ref": "#/definitions/v1ImportSource"
+                      },
+                      "title": "Import sources for module resolution (name -\u003e source config)\ne.g., \"stdlib\" -\u003e { builtin: true }, \"patterns\" -\u003e { github: \"panyam/sdl-patterns\" }"
+                    },
+                    "designs": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "$ref": "#/definitions/v1WorkspaceDesign"
+                      },
+                      "title": "Designs within this workspace (each is a system architecture)"
+                    },
+                    "activeDesign": {
+                      "type": "string",
+                      "title": "Currently active design name"
+                    },
+                    "dir": {
+                      "type": "string",
+                      "title": "Directory path (for file-based workspaces)"
+                    },
+                    "tags": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "title": "Workspace-level metadata (for UI display)"
+                    },
+                    "difficulty": {
+                      "type": "string"
+                    },
+                    "category": {
+                      "type": "string"
+                    }
+                  },
+                  "description": "Workspace is a project container holding multiple designs (system architectures).\nEach design is backed by a Canvas for runtime simulation.\nThe workspace also declares import sources for module resolution."
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/designs/contents": {
+      "get": {
+        "summary": "Get all design contents for a workspace",
+        "operationId": "WorkspaceService_GetAllDesignContents",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetAllDesignContentsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/designs/{designName}/content": {
+      "get": {
+        "summary": "Get SDL content for a single design",
+        "operationId": "WorkspaceService_GetDesignContent",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetDesignContentResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "designName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
     }
   },
   "definitions": {
@@ -2024,6 +2301,22 @@
         }
       }
     },
+    "v1CreateWorkspaceRequest": {
+      "type": "object",
+      "properties": {
+        "workspace": {
+          "$ref": "#/definitions/v1Workspace"
+        }
+      }
+    },
+    "v1CreateWorkspaceResponse": {
+      "type": "object",
+      "properties": {
+        "workspace": {
+          "$ref": "#/definitions/v1Workspace"
+        }
+      }
+    },
     "v1DeleteCanvasResponse": {
       "type": "object"
     },
@@ -2039,6 +2332,9 @@
       "type": "object"
     },
     "v1DeleteMetricResponse": {
+      "type": "object"
+    },
+    "v1DeleteWorkspaceResponse": {
       "type": "object"
     },
     "v1DiagramComponentClickedResponse": {
@@ -2432,11 +2728,34 @@
         }
       }
     },
+    "v1GetAllDesignContentsResponse": {
+      "type": "object",
+      "properties": {
+        "contents": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "design name -\u003e SDL content"
+        }
+      }
+    },
     "v1GetCanvasResponse": {
       "type": "object",
       "properties": {
         "canvas": {
           "$ref": "#/definitions/v1Canvas"
+        }
+      }
+    },
+    "v1GetDesignContentResponse": {
+      "type": "object",
+      "properties": {
+        "sdlContent": {
+          "type": "string"
+        },
+        "designName": {
+          "type": "string"
         }
       }
     },
@@ -2517,6 +2836,14 @@
         }
       }
     },
+    "v1GetWorkspaceResponse": {
+      "type": "object",
+      "properties": {
+        "workspace": {
+          "$ref": "#/definitions/v1Workspace"
+        }
+      }
+    },
     "v1GroupInfo": {
       "type": "object",
       "properties": {
@@ -2543,6 +2870,32 @@
     },
     "v1HighlightComponentsResponse": {
       "type": "object"
+    },
+    "v1ImportSource": {
+      "type": "object",
+      "properties": {
+        "builtin": {
+          "type": "boolean",
+          "title": "Built-in source (e.g., @stdlib/ — always available)"
+        },
+        "github": {
+          "type": "string",
+          "title": "GitHub repository (e.g., \"panyam/sdl-patterns\")"
+        },
+        "url": {
+          "type": "string",
+          "title": "HTTP(S) URL base"
+        },
+        "path": {
+          "type": "string",
+          "title": "Subdirectory within the source"
+        },
+        "ref": {
+          "type": "string",
+          "title": "Version/branch/tag for pinning"
+        }
+      },
+      "description": "ImportSource declares where to resolve @name/ prefixed imports.\nThe runtime configures the appropriate resolver based on context\n(CLI: disk/HTTP, WASM: memory/fetch, server: bundled/HTTP)."
     },
     "v1InitializePresenterResponse": {
       "type": "object",
@@ -2676,6 +3029,18 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1SystemInfo"
+          }
+        }
+      }
+    },
+    "v1ListWorkspacesResponse": {
+      "type": "object",
+      "properties": {
+        "workspaces": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Workspace"
           }
         }
       }
@@ -3274,6 +3639,14 @@
     "v1UpdateUtilizationResponse": {
       "type": "object"
     },
+    "v1UpdateWorkspaceResponse": {
+      "type": "object",
+      "properties": {
+        "workspace": {
+          "$ref": "#/definitions/v1Workspace"
+        }
+      }
+    },
     "v1UseSystemResponse": {
       "type": "object"
     },
@@ -3319,6 +3692,101 @@
         }
       },
       "title": "Resource utilization information"
+    },
+    "v1Workspace": {
+      "type": "object",
+      "properties": {
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "sources": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/v1ImportSource"
+          },
+          "title": "Import sources for module resolution (name -\u003e source config)\ne.g., \"stdlib\" -\u003e { builtin: true }, \"patterns\" -\u003e { github: \"panyam/sdl-patterns\" }"
+        },
+        "designs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1WorkspaceDesign"
+          },
+          "title": "Designs within this workspace (each is a system architecture)"
+        },
+        "activeDesign": {
+          "type": "string",
+          "title": "Currently active design name"
+        },
+        "dir": {
+          "type": "string",
+          "title": "Directory path (for file-based workspaces)"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "Workspace-level metadata (for UI display)"
+        },
+        "difficulty": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        }
+      },
+      "description": "Workspace is a project container holding multiple designs (system architectures).\nEach design is backed by a Canvas for runtime simulation.\nThe workspace also declares import sources for module resolution."
+    },
+    "v1WorkspaceDesign": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "title": "System name as declared in SDL (e.g., \"UberMVP\")"
+        },
+        "file": {
+          "type": "string",
+          "title": "SDL file path relative to workspace root"
+        },
+        "canvasId": {
+          "type": "string",
+          "title": "Backing Canvas ID for runtime simulation"
+        },
+        "description": {
+          "type": "string",
+          "title": "Brief description"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "Per-design metadata (for UI display)"
+        },
+        "difficulty": {
+          "type": "string",
+          "title": "\"beginner\", \"intermediate\", \"advanced\""
+        },
+        "category": {
+          "type": "string"
+        }
+      },
+      "description": "WorkspaceDesign represents one system architecture within a workspace.\nMaps to a `system` block in an SDL file, backed by a Canvas for runtime."
     },
     "v1WriteFileResponse": {
       "type": "object",

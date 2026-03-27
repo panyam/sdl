@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package sdl.v1;
+
+import "sdl/v1/models/models.proto";
+
+option go_package = "github.com/panyam/sdl/gen/go/sdl/v1/models";
+
+// ----- Workspace Service Request/Response Messages -----
+
+message CreateWorkspaceRequest {
+  Workspace workspace = 1;
+}
+
+message CreateWorkspaceResponse {
+  Workspace workspace = 1;
+}
+
+message GetWorkspaceRequest {
+  string id = 1;
+}
+
+message GetWorkspaceResponse {
+  Workspace workspace = 1;
+}
+
+message ListWorkspacesRequest {
+}
+
+message ListWorkspacesResponse {
+  repeated Workspace workspaces = 1;
+}
+
+message DeleteWorkspaceRequest {
+  string id = 1;
+}
+
+message DeleteWorkspaceResponse {
+}
+
+message UpdateWorkspaceRequest {
+  Workspace workspace = 1;
+}
+
+message UpdateWorkspaceResponse {
+  Workspace workspace = 1;
+}
+
+// Get SDL content for a specific design within a workspace
+message GetDesignContentRequest {
+  string workspace_id = 1;
+  string design_name = 2;
+}
+
+message GetDesignContentResponse {
+  string sdl_content = 1;
+  string design_name = 2;
+}
+
+// Get all design contents for a workspace
+message GetAllDesignContentsRequest {
+  string workspace_id = 1;
+}
+
+message GetAllDesignContentsResponse {
+  // design name -> SDL content
+  map<string, string> contents = 1;
+}

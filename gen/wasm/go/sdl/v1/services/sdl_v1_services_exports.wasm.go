@@ -24,6 +24,7 @@ type Sdl_v1ServicesExports struct {
 	SingletonInitializerService SingletonInitializerServiceServer
 	CanvasViewPresenter         CanvasViewPresenterServer
 	SystemsService              SystemsServiceServer
+	WorkspaceService            WorkspaceServiceServer
 
 	// Browser-provided services (clients)
 	CanvasDashboardPage *CanvasDashboardPageClient
@@ -225,6 +226,29 @@ func (exports *Sdl_v1ServicesExports) RegisterAPI() {
 			}),
 			"getSystemContent": js.FuncOf(func(this js.Value, args []js.Value) any {
 				return exports.systemsServiceGetSystemContent(this, args)
+			}),
+		},
+		"workspaceService": map[string]interface{}{
+			"createWorkspace": js.FuncOf(func(this js.Value, args []js.Value) any {
+				return exports.workspaceServiceCreateWorkspace(this, args)
+			}),
+			"getWorkspace": js.FuncOf(func(this js.Value, args []js.Value) any {
+				return exports.workspaceServiceGetWorkspace(this, args)
+			}),
+			"listWorkspaces": js.FuncOf(func(this js.Value, args []js.Value) any {
+				return exports.workspaceServiceListWorkspaces(this, args)
+			}),
+			"deleteWorkspace": js.FuncOf(func(this js.Value, args []js.Value) any {
+				return exports.workspaceServiceDeleteWorkspace(this, args)
+			}),
+			"updateWorkspace": js.FuncOf(func(this js.Value, args []js.Value) any {
+				return exports.workspaceServiceUpdateWorkspace(this, args)
+			}),
+			"getDesignContent": js.FuncOf(func(this js.Value, args []js.Value) any {
+				return exports.workspaceServiceGetDesignContent(this, args)
+			}),
+			"getAllDesignContents": js.FuncOf(func(this js.Value, args []js.Value) any {
+				return exports.workspaceServiceGetAllDesignContents(this, args)
 			}),
 		},
 	}
@@ -3109,6 +3133,342 @@ func (exports *Sdl_v1ServicesExports) systemsServiceGetSystemContent(this js.Val
 
 	// Call service method
 	resp, err := exports.SystemsService.GetSystemContent(ctx, req)
+	if err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+	}
+
+	// Marshal response with options for better TypeScript compatibility
+	responseJSON, err := marshaller.Marshal(resp, wasm.MarshalOptions{
+		UseProtoNames:   false, // Use JSON names (camelCase) instead of proto names
+		EmitUnpopulated: true,  // Emit zero values to avoid undefined in JavaScript
+		UseEnumNumbers:  false, // Use enum string values
+	})
+	if err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+	}
+
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
+}
+
+// workspaceServiceCreateWorkspace handles the CreateWorkspace method for WorkspaceService
+func (exports *Sdl_v1ServicesExports) workspaceServiceCreateWorkspace(this js.Value, args []js.Value) any {
+	if exports.WorkspaceService == nil {
+		return wasm.CreateJSResponse(false, "WorkspaceService not initialized", nil)
+	}
+	// Synchronous method
+	if len(args) < 1 {
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
+	}
+
+	requestJSON := args[0].String()
+	if requestJSON == "" {
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
+	}
+
+	// Parse request
+	req := &v1models.CreateWorkspaceRequest{}
+	marshaller := wasm.GetGlobalMarshaller()
+	if err := marshaller.Unmarshal([]byte(requestJSON), req, wasm.UnmarshalOptions{
+		DiscardUnknown: true,
+		AllowPartial:   true, // Allow partial messages for better compatibility
+	}); err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+	}
+
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Call service method
+	resp, err := exports.WorkspaceService.CreateWorkspace(ctx, req)
+	if err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+	}
+
+	// Marshal response with options for better TypeScript compatibility
+	responseJSON, err := marshaller.Marshal(resp, wasm.MarshalOptions{
+		UseProtoNames:   false, // Use JSON names (camelCase) instead of proto names
+		EmitUnpopulated: true,  // Emit zero values to avoid undefined in JavaScript
+		UseEnumNumbers:  false, // Use enum string values
+	})
+	if err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+	}
+
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
+}
+
+// workspaceServiceGetWorkspace handles the GetWorkspace method for WorkspaceService
+func (exports *Sdl_v1ServicesExports) workspaceServiceGetWorkspace(this js.Value, args []js.Value) any {
+	if exports.WorkspaceService == nil {
+		return wasm.CreateJSResponse(false, "WorkspaceService not initialized", nil)
+	}
+	// Synchronous method
+	if len(args) < 1 {
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
+	}
+
+	requestJSON := args[0].String()
+	if requestJSON == "" {
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
+	}
+
+	// Parse request
+	req := &v1models.GetWorkspaceRequest{}
+	marshaller := wasm.GetGlobalMarshaller()
+	if err := marshaller.Unmarshal([]byte(requestJSON), req, wasm.UnmarshalOptions{
+		DiscardUnknown: true,
+		AllowPartial:   true, // Allow partial messages for better compatibility
+	}); err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+	}
+
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Call service method
+	resp, err := exports.WorkspaceService.GetWorkspace(ctx, req)
+	if err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+	}
+
+	// Marshal response with options for better TypeScript compatibility
+	responseJSON, err := marshaller.Marshal(resp, wasm.MarshalOptions{
+		UseProtoNames:   false, // Use JSON names (camelCase) instead of proto names
+		EmitUnpopulated: true,  // Emit zero values to avoid undefined in JavaScript
+		UseEnumNumbers:  false, // Use enum string values
+	})
+	if err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+	}
+
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
+}
+
+// workspaceServiceListWorkspaces handles the ListWorkspaces method for WorkspaceService
+func (exports *Sdl_v1ServicesExports) workspaceServiceListWorkspaces(this js.Value, args []js.Value) any {
+	if exports.WorkspaceService == nil {
+		return wasm.CreateJSResponse(false, "WorkspaceService not initialized", nil)
+	}
+	// Synchronous method
+	if len(args) < 1 {
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
+	}
+
+	requestJSON := args[0].String()
+	if requestJSON == "" {
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
+	}
+
+	// Parse request
+	req := &v1models.ListWorkspacesRequest{}
+	marshaller := wasm.GetGlobalMarshaller()
+	if err := marshaller.Unmarshal([]byte(requestJSON), req, wasm.UnmarshalOptions{
+		DiscardUnknown: true,
+		AllowPartial:   true, // Allow partial messages for better compatibility
+	}); err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+	}
+
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Call service method
+	resp, err := exports.WorkspaceService.ListWorkspaces(ctx, req)
+	if err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+	}
+
+	// Marshal response with options for better TypeScript compatibility
+	responseJSON, err := marshaller.Marshal(resp, wasm.MarshalOptions{
+		UseProtoNames:   false, // Use JSON names (camelCase) instead of proto names
+		EmitUnpopulated: true,  // Emit zero values to avoid undefined in JavaScript
+		UseEnumNumbers:  false, // Use enum string values
+	})
+	if err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+	}
+
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
+}
+
+// workspaceServiceDeleteWorkspace handles the DeleteWorkspace method for WorkspaceService
+func (exports *Sdl_v1ServicesExports) workspaceServiceDeleteWorkspace(this js.Value, args []js.Value) any {
+	if exports.WorkspaceService == nil {
+		return wasm.CreateJSResponse(false, "WorkspaceService not initialized", nil)
+	}
+	// Synchronous method
+	if len(args) < 1 {
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
+	}
+
+	requestJSON := args[0].String()
+	if requestJSON == "" {
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
+	}
+
+	// Parse request
+	req := &v1models.DeleteWorkspaceRequest{}
+	marshaller := wasm.GetGlobalMarshaller()
+	if err := marshaller.Unmarshal([]byte(requestJSON), req, wasm.UnmarshalOptions{
+		DiscardUnknown: true,
+		AllowPartial:   true, // Allow partial messages for better compatibility
+	}); err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+	}
+
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Call service method
+	resp, err := exports.WorkspaceService.DeleteWorkspace(ctx, req)
+	if err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+	}
+
+	// Marshal response with options for better TypeScript compatibility
+	responseJSON, err := marshaller.Marshal(resp, wasm.MarshalOptions{
+		UseProtoNames:   false, // Use JSON names (camelCase) instead of proto names
+		EmitUnpopulated: true,  // Emit zero values to avoid undefined in JavaScript
+		UseEnumNumbers:  false, // Use enum string values
+	})
+	if err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+	}
+
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
+}
+
+// workspaceServiceUpdateWorkspace handles the UpdateWorkspace method for WorkspaceService
+func (exports *Sdl_v1ServicesExports) workspaceServiceUpdateWorkspace(this js.Value, args []js.Value) any {
+	if exports.WorkspaceService == nil {
+		return wasm.CreateJSResponse(false, "WorkspaceService not initialized", nil)
+	}
+	// Synchronous method
+	if len(args) < 1 {
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
+	}
+
+	requestJSON := args[0].String()
+	if requestJSON == "" {
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
+	}
+
+	// Parse request
+	req := &v1models.UpdateWorkspaceRequest{}
+	marshaller := wasm.GetGlobalMarshaller()
+	if err := marshaller.Unmarshal([]byte(requestJSON), req, wasm.UnmarshalOptions{
+		DiscardUnknown: true,
+		AllowPartial:   true, // Allow partial messages for better compatibility
+	}); err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+	}
+
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Call service method
+	resp, err := exports.WorkspaceService.UpdateWorkspace(ctx, req)
+	if err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+	}
+
+	// Marshal response with options for better TypeScript compatibility
+	responseJSON, err := marshaller.Marshal(resp, wasm.MarshalOptions{
+		UseProtoNames:   false, // Use JSON names (camelCase) instead of proto names
+		EmitUnpopulated: true,  // Emit zero values to avoid undefined in JavaScript
+		UseEnumNumbers:  false, // Use enum string values
+	})
+	if err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+	}
+
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
+}
+
+// workspaceServiceGetDesignContent handles the GetDesignContent method for WorkspaceService
+func (exports *Sdl_v1ServicesExports) workspaceServiceGetDesignContent(this js.Value, args []js.Value) any {
+	if exports.WorkspaceService == nil {
+		return wasm.CreateJSResponse(false, "WorkspaceService not initialized", nil)
+	}
+	// Synchronous method
+	if len(args) < 1 {
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
+	}
+
+	requestJSON := args[0].String()
+	if requestJSON == "" {
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
+	}
+
+	// Parse request
+	req := &v1models.GetDesignContentRequest{}
+	marshaller := wasm.GetGlobalMarshaller()
+	if err := marshaller.Unmarshal([]byte(requestJSON), req, wasm.UnmarshalOptions{
+		DiscardUnknown: true,
+		AllowPartial:   true, // Allow partial messages for better compatibility
+	}); err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+	}
+
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Call service method
+	resp, err := exports.WorkspaceService.GetDesignContent(ctx, req)
+	if err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+	}
+
+	// Marshal response with options for better TypeScript compatibility
+	responseJSON, err := marshaller.Marshal(resp, wasm.MarshalOptions{
+		UseProtoNames:   false, // Use JSON names (camelCase) instead of proto names
+		EmitUnpopulated: true,  // Emit zero values to avoid undefined in JavaScript
+		UseEnumNumbers:  false, // Use enum string values
+	})
+	if err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+	}
+
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
+}
+
+// workspaceServiceGetAllDesignContents handles the GetAllDesignContents method for WorkspaceService
+func (exports *Sdl_v1ServicesExports) workspaceServiceGetAllDesignContents(this js.Value, args []js.Value) any {
+	if exports.WorkspaceService == nil {
+		return wasm.CreateJSResponse(false, "WorkspaceService not initialized", nil)
+	}
+	// Synchronous method
+	if len(args) < 1 {
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
+	}
+
+	requestJSON := args[0].String()
+	if requestJSON == "" {
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
+	}
+
+	// Parse request
+	req := &v1models.GetAllDesignContentsRequest{}
+	marshaller := wasm.GetGlobalMarshaller()
+	if err := marshaller.Unmarshal([]byte(requestJSON), req, wasm.UnmarshalOptions{
+		DiscardUnknown: true,
+		AllowPartial:   true, // Allow partial messages for better compatibility
+	}); err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+	}
+
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Call service method
+	resp, err := exports.WorkspaceService.GetAllDesignContents(ctx, req)
 	if err != nil {
 		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}

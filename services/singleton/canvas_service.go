@@ -38,7 +38,7 @@ func (s *SingletonCanvasService) initializeCanvas(id string) {
 	fsResolver := loader.NewFileSystemResolver(s.fileSystem)
 	sdlLoader := loader.NewLoader(nil, fsResolver, 10)
 	r := runtime.NewRuntime(sdlLoader)
-	s.canvas = services.NewCanvas(id, r)
+	s.canvas = services.NewCanvas(&protos.Canvas{Id: id}, r)
 }
 
 // GetInternalCanvas returns the internal singleton canvas (for internal use)

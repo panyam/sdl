@@ -134,20 +134,55 @@ GitHub issues created for stack alignment:
 - Don't hardcode `editor.background` in custom themes — inherit from `vs`/`vs-dark` base
 - Known issue: theme toggle doesn't update Monaco editors (needs investigation)
 
+## Architecture: Workspace vs Canvas vs Design
+
+- **Workspace** = project/repo (e.g., "Uber") — source files, designs, import sources, manifest (`sdl.json`)
+- **Design** = one system architecture (e.g., "UberMVP") — a `system` block in an SDL file
+- **Canvas** = runtime/VM that executes a design — generators, metrics, flow analysis
+- Analogy: Workspace = git repo, Design = source file, Canvas = running process
+- Proto: `Workspace` (project metadata), `Canvas` (runtime state), `WorkspaceDesign` (design entry)
+- Future: `CompilationUnit` artifact between Workspace and Canvas (see #19)
+
+## WorkspaceService (lilbattle pattern)
+
+- Interface: `services/workspace_service.go` — CRUD for workspaces + design content
+- Backend: `services/backend_workspace_service.go` — wraps `WorkspaceStorageProvider`
+- In-memory storage: `services/inmem/workspace_storage.go` — seeded from examples/
+- Manifest: `services/workspace.go` — `LoadWorkspaceManifest()` parses `sdl.json` via protojson
+- Example manifests: `examples/uber/sdl.json`, `examples/bitly/sdl.json`
+- Services layer works with protos directly — no custom Go types duplicating proto fields
+
+## ScriptTagFS (SDL embedding in pages)
+
+- Server embeds SDL files in hidden `<textarea class="sdl-design-source">` elements
+- WASM `ScriptTagFS` (cmd/wasm/filesystem.go) reads from DOM via `querySelector`
+- Mounted at `/designs/` in WASM CompositeFS
+- Uses textareas not script tags — Go templates HTML-escape script tag content
+- Flow: page load → discover textareas → `fileSelected("/designs/X.sdl")` → ScriptTagFS reads DOM → parser runs
+
+## CompositeFS Prefix Stripping
+
+- `CompositeFS.findFS()` strips mount prefix before passing to underlying FS
+- `@stdlib/common.sdl` → MemoryFS receives `common.sdl`
+- Exception: URL-based mounts (`://`, `.com/`) keep full path for their FS implementations
+- This is critical for `@stdlib/` imports to resolve correctly
+
+## Import Standardization
+
+- All SDL files should use `@stdlib/common.sdl` (not relative `../common.sdl`)
+- Named source prefixes (`@name/`) preferred over relative imports
+- Relative imports not forbidden, but discouraged — makes modules harder to relocate
+
 ## Architecture Direction: Workspace Consolidation
 
-- **Naming**: Workspace = problem domain (e.g., "Uber"), Design = one architecture (e.g., "uber-mvp")
-- **Proto stays `Canvas`** internally — only UI/routes rename to "Workspace"/"Design"
-- System details page moved to attic — `/system/{id}` redirects to `/canvases/{id}/view` (will 404 until Phase 3 adds Fork)
-- Plan file: `~/.claude/plans/quirky-exploring-kahn.md`
-
-GitHub issues for workspace consolidation:
-- #6: Phase 1 — Clean foundation (PR #12, in progress)
-- #7: Phase 2 — Route consolidation to /workspaces
-- #8: Phase 3 — Unified landing page
-- #9: Phase 4 — Multi-design UI
-- #10: Phase 5 — Module/import system (sdl.yaml)
+GitHub issues (Phases 1-3 complete, 4+5 in PR #17):
+- #6: Phase 1 — Clean foundation (PR #12, merged)
+- #7: Phase 2 — Route consolidation (PR #13, merged)
+- #8: Phase 3 — Unified landing page (PR #14, merged)
+- #9/#10: Phase 4+5 — Workspace proto + manifests (PR #15, merged)
 - #11: Phase 6 — Diagram upgrade (Vis.js)
+- #16: Design selector UI (PR #17, in progress)
+- #19: CompilationUnit — clean Workspace→AST→Canvas separation (high priority, future)
 
 ## Conference Demos
 

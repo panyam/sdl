@@ -10,22 +10,24 @@ import (
 )
 
 // SystemsServiceImpl implements the SystemsService gRPC interface.
-// Now backed by workspace-based catalog instead of individual system entries.
+// Delegates to WorkspaceService for data.
 type SystemsServiceImpl struct {
-	catalog *SystemCatalogService
+	workspaceSvc WorkspaceService
 }
 
-func NewSystemsService() *SystemsServiceImpl {
-	return &SystemsServiceImpl{
-		catalog: NewSystemCatalogService(),
-	}
+func NewSystemsService(workspaceSvc WorkspaceService) *SystemsServiceImpl {
+	return &SystemsServiceImpl{workspaceSvc: workspaceSvc}
 }
 
 // ListSystems returns all designs across all workspaces as SystemInfo entries.
 func (s *SystemsServiceImpl) ListSystems(ctx context.Context, req *v1.ListSystemsRequest) (*v1.ListSystemsResponse, error) {
-	var protoSystems []*v1.SystemInfo
+	listResp, err := s.workspaceSvc.ListWorkspaces(ctx, &v1.ListWorkspacesRequest{})
+	if err != nil {
+		return nil, err
+	}
 
-	for _, ws := range s.catalog.ListWorkspaces() {
+	var protoSystems []*v1.SystemInfo
+	for _, ws := range listResp.Workspaces {
 		for _, design := range ws.Designs {
 			protoSystems = append(protoSystems, &v1.SystemInfo{
 				Id:          ws.Id + "/" + design.Name,
@@ -38,28 +40,22 @@ func (s *SystemsServiceImpl) ListSystems(ctx context.Context, req *v1.ListSystem
 		}
 	}
 
-	return &v1.ListSystemsResponse{
-		Systems: protoSystems,
-	}, nil
+	return &v1.ListSystemsResponse{Systems: protoSystems}, nil
 }
 
 // GetSystem returns a workspace by ID.
 func (s *SystemsServiceImpl) GetSystem(ctx context.Context, req *v1.GetSystemRequest) (*v1.GetSystemResponse, error) {
-	// ID format: "workspace_id" or "workspace_id/design_name"
 	parts := strings.SplitN(req.Id, "/", 2)
-	wsId := parts[0]
-
-	ws := s.catalog.GetWorkspace(wsId)
-	if ws == nil {
-		return nil, status.Errorf(codes.NotFound, "workspace %s not found", wsId)
+	wsResp, err := s.workspaceSvc.GetWorkspace(ctx, &v1.GetWorkspaceRequest{Id: parts[0]})
+	if err != nil {
+		return nil, status.Errorf(codes.NotFound, "workspace %s not found", parts[0])
 	}
 
-	// Return workspace-level info
 	return &v1.GetSystemResponse{
 		System: &v1.SystemProject{
-			Id:          ws.Id,
-			Name:        ws.Name,
-			Description: ws.Description,
+			Id:          wsResp.Workspace.Id,
+			Name:        wsResp.Workspace.Name,
+			Description: wsResp.Workspace.Description,
 		},
 	}, nil
 }
@@ -74,22 +70,24 @@ func (s *SystemsServiceImpl) GetSystemContent(ctx context.Context, req *v1.GetSy
 	}
 
 	if designName != "" {
-		content := s.catalog.GetDesignContent(wsId, designName)
-		if content == "" {
+		resp, err := s.workspaceSvc.GetDesignContent(ctx, &v1.GetDesignContentRequest{
+			WorkspaceId: wsId,
+			DesignName:  designName,
+		})
+		if err != nil {
 			return nil, status.Errorf(codes.NotFound, "design %s/%s not found", wsId, designName)
 		}
-		return &v1.GetSystemContentResponse{
-			SdlContent: content,
-		}, nil
+		return &v1.GetSystemContentResponse{SdlContent: resp.SdlContent}, nil
 	}
 
 	// No design specified — return all combined
-	allContents := s.catalog.GetAllDesignContents(wsId)
+	resp, err := s.workspaceSvc.GetAllDesignContents(ctx, &v1.GetAllDesignContentsRequest{WorkspaceId: wsId})
+	if err != nil {
+		return nil, err
+	}
 	combined := ""
-	for _, c := range allContents {
+	for _, c := range resp.Contents {
 		combined += c + "\n\n"
 	}
-	return &v1.GetSystemContentResponse{
-		SdlContent: combined,
-	}, nil
+	return &v1.GetSystemContentResponse{SdlContent: combined}, nil
 }

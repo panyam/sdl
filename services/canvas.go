@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
+	"os"
 	"maps"
 	"slices"
 	"strings"
@@ -20,10 +21,12 @@ import (
 )
 
 type Canvas struct {
-	id          string
-	name        string
-	description string
-	runtime     *runtime.Runtime
+	// Proto holds all metadata (id, name, description, system_contents, etc.)
+	// This is the source of truth for serializable state.
+	Proto *protos.Canvas
+
+	// Runtime state (not serialized to proto)
+	runtime        *runtime.Runtime
 	activeSystem   *runtime.SystemInstance
 	loadedSystems  map[string]*runtime.SystemInstance
 	generators     map[string]*GeneratorInfo
@@ -31,27 +34,30 @@ type Canvas struct {
 
 	metricTracer *MetricTracer
 
-	currentFlowScope    *runtime.FlowScope // Current flow state (applied/active)
-	proposedFlowScope   *runtime.FlowScope // Proposed flow state (being evaluated)
-	currentFlowRates    runtime.RateMap    // Current flow rates (runtime-based)
-	proposedFlowRates   runtime.RateMap    // Proposed flow rates (runtime-based)
-	currentFlowStrategy string             // Strategy used for current flow rates
-	manualRateOverrides map[string]float64 // Manual arrival rate overrides
+	currentFlowScope    *runtime.FlowScope
+	proposedFlowScope   *runtime.FlowScope
+	currentFlowRates    runtime.RateMap
+	proposedFlowRates   runtime.RateMap
+	currentFlowStrategy string
+	manualRateOverrides map[string]float64
 
-	// Simulation time tracking
 	simulationStartTime time.Time
 	simulationStarted   bool
 }
 
-// NewCanvas creates a new interactive canvas session with a custom runtime.
+// NewCanvas creates a new interactive canvas session.
 // If runtime is nil, a default runtime with no resolvers will be created.
-func NewCanvas(id string, r *runtime.Runtime) *Canvas {
+// The proto holds all metadata; runtime objects manage simulation state.
+func NewCanvas(p *protos.Canvas, r *runtime.Runtime) *Canvas {
+	if p == nil {
+		p = &protos.Canvas{}
+	}
 	if r == nil {
 		l := loader.NewLoader(nil, nil, 10)
 		r = runtime.NewRuntime(l)
 	}
 	return &Canvas{
-		id:                  id,
+		Proto:               p,
 		runtime:             r,
 		loadedSystems:       map[string]*runtime.SystemInstance{},
 		generators:          map[string]*GeneratorInfo{},
@@ -64,16 +70,36 @@ func NewCanvas(id string, r *runtime.Runtime) *Canvas {
 // into the session. If the file is already loaded, it will be re-loaded
 // and re-validated to ensure freshness.
 func (c *Canvas) Load(filePath string) error {
-	// TODO: Handle hot-reloading. For now, we load once.
 	_, err := c.runtime.LoadFile(filePath)
 	if err != nil {
 		return fmt.Errorf("error loading file '%s': %w", filePath, err)
 	}
-
-	// Invalidate flow contexts since file changed
-	// c.invalidateFlowContexts()
-
 	return nil
+}
+
+// LoadFromString parses SDL content from a string into the runtime.
+// Writes to a temp file and loads via the normal file pipeline so that
+// import resolution, validation, etc. all work as expected.
+func (c *Canvas) LoadFromString(content string) error {
+	if content == "" {
+		return nil
+	}
+
+	// Write to temp file
+	tmpFile, err := os.CreateTemp("", "sdl-workspace-*.sdl")
+	if err != nil {
+		return fmt.Errorf("failed to create temp file: %w", err)
+	}
+	defer os.Remove(tmpFile.Name())
+
+	if _, err := tmpFile.WriteString(content); err != nil {
+		tmpFile.Close()
+		return fmt.Errorf("failed to write SDL content: %w", err)
+	}
+	tmpFile.Close()
+
+	// Load through the normal pipeline
+	return c.Load(tmpFile.Name())
 }
 
 // CurrentSystem returns the currently active system

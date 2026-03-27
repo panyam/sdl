@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 
+	protos "github.com/panyam/sdl/gen/go/sdl/v1/models"
 	"github.com/panyam/sdl/lib/decl"
 	"github.com/panyam/sdl/lib/loader"
 	"github.com/panyam/sdl/lib/runtime"
@@ -183,7 +184,7 @@ func (t *SystemDetailTool) compileSDL() error {
 
 	// Create runtime and canvas
 	runtime := runtime.NewRuntime(loader)
-	canvas := services.NewCanvas(t.canvasID, runtime)
+	canvas := services.NewCanvas(&protos.Canvas{Id: t.canvasID}, runtime)
 
 	// Update tool with new runtime components
 	t.runtime = runtime
