@@ -8,7 +8,7 @@
 // - Circuit breakers and resilience patterns
 // - Real-time analytics and ML-based matching
 
-import ResourcePool, MM1Queue, MMCKQueue, Cache, HttpStatusCode, delay from "@stdlib/common.sdl"
+import ResourcePool, MM1Queue, MMCKQueue, Cache, HttpStatusCode, delay from "../common.sdl"
 
 // Define enums for more realistic return types
 enum Priority {

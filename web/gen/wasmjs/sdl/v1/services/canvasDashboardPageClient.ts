@@ -39,66 +39,66 @@ import {
  * Fully typed method signatures with TypeScript interfaces
  */
 export interface CanvasDashboardPageMethods {
-    updateMetric(request: UpdateMetricRequest): UpdateMetricResponse;
-    clearMetrics(request: ClearMetricsRequest): ClearMetricsResponse;
-    setMetricsList(request: SetMetricsListRequest): SetMetricsListResponse;
-    updateDiagram(request: UpdateDiagramRequest): UpdateDiagramResponse;
-    highlightComponents(request: HighlightComponentsRequest): HighlightComponentsResponse;
-    clearHighlights(request: ClearHighlightsRequest): ClearHighlightsResponse;
-    updateGeneratorState(request: UpdateGeneratorStateRequest): UpdateGeneratorStateResponse;
-    setGeneratorList(request: SetGeneratorListRequest): SetGeneratorListResponse;
-    logMessage(request: LogMessageRequest): LogMessageResponse;
-    clearConsole(request: ClearConsoleRequest): ClearConsoleResponse;
-    updateFlowRates(request: UpdateFlowRatesRequest): UpdateFlowRatesResponse;
-    showFlowPath(request: ShowFlowPathRequest): ShowFlowPathResponse;
-    clearFlowPaths(request: ClearFlowPathsRequest): ClearFlowPathsResponse;
-    updateUtilization(request: UpdateUtilizationRequest): UpdateUtilizationResponse;
+	updateMetric(request: UpdateMetricRequest): Promise<UpdateMetricResponse>;
+	clearMetrics(request: ClearMetricsRequest): Promise<ClearMetricsResponse>;
+	setMetricsList(request: SetMetricsListRequest): Promise<SetMetricsListResponse>;
+	updateDiagram(request: UpdateDiagramRequest): Promise<UpdateDiagramResponse>;
+	highlightComponents(request: HighlightComponentsRequest): Promise<HighlightComponentsResponse>;
+	clearHighlights(request: ClearHighlightsRequest): Promise<ClearHighlightsResponse>;
+	updateGeneratorState(request: UpdateGeneratorStateRequest): Promise<UpdateGeneratorStateResponse>;
+	setGeneratorList(request: SetGeneratorListRequest): Promise<SetGeneratorListResponse>;
+	logMessage(request: LogMessageRequest): Promise<LogMessageResponse>;
+	clearConsole(request: ClearConsoleRequest): Promise<ClearConsoleResponse>;
+	updateFlowRates(request: UpdateFlowRatesRequest): Promise<UpdateFlowRatesResponse>;
+	showFlowPath(request: ShowFlowPathRequest): Promise<ShowFlowPathResponse>;
+	clearFlowPaths(request: ClearFlowPathsRequest): Promise<ClearFlowPathsResponse>;
+	updateUtilization(request: UpdateUtilizationRequest): Promise<UpdateUtilizationResponse>;
 }
 /**
  * CanvasDashboardPage service client implementation
  * Lightweight facade that uses shared WASM bundle
  */
 export class CanvasDashboardPageClient extends ServiceClient implements CanvasDashboardPageMethods {
-        updateMetric(request: UpdateMetricRequest): UpdateMetricResponse {
-            return this.callMethodSync('canvasDashboardPage.updateMetric', request);
-        }
-        clearMetrics(request: ClearMetricsRequest): ClearMetricsResponse {
-            return this.callMethodSync('canvasDashboardPage.clearMetrics', request);
-        }
-        setMetricsList(request: SetMetricsListRequest): SetMetricsListResponse {
-            return this.callMethodSync('canvasDashboardPage.setMetricsList', request);
-        }
-        updateDiagram(request: UpdateDiagramRequest): UpdateDiagramResponse {
-            return this.callMethodSync('canvasDashboardPage.updateDiagram', request);
-        }
-        highlightComponents(request: HighlightComponentsRequest): HighlightComponentsResponse {
-            return this.callMethodSync('canvasDashboardPage.highlightComponents', request);
-        }
-        clearHighlights(request: ClearHighlightsRequest): ClearHighlightsResponse {
-            return this.callMethodSync('canvasDashboardPage.clearHighlights', request);
-        }
-        updateGeneratorState(request: UpdateGeneratorStateRequest): UpdateGeneratorStateResponse {
-            return this.callMethodSync('canvasDashboardPage.updateGeneratorState', request);
-        }
-        setGeneratorList(request: SetGeneratorListRequest): SetGeneratorListResponse {
-            return this.callMethodSync('canvasDashboardPage.setGeneratorList', request);
-        }
-        logMessage(request: LogMessageRequest): LogMessageResponse {
-            return this.callMethodSync('canvasDashboardPage.logMessage', request);
-        }
-        clearConsole(request: ClearConsoleRequest): ClearConsoleResponse {
-            return this.callMethodSync('canvasDashboardPage.clearConsole', request);
-        }
-        updateFlowRates(request: UpdateFlowRatesRequest): UpdateFlowRatesResponse {
-            return this.callMethodSync('canvasDashboardPage.updateFlowRates', request);
-        }
-        showFlowPath(request: ShowFlowPathRequest): ShowFlowPathResponse {
-            return this.callMethodSync('canvasDashboardPage.showFlowPath', request);
-        }
-        clearFlowPaths(request: ClearFlowPathsRequest): ClearFlowPathsResponse {
-            return this.callMethodSync('canvasDashboardPage.clearFlowPaths', request);
-        }
-        updateUtilization(request: UpdateUtilizationRequest): UpdateUtilizationResponse {
-            return this.callMethodSync('canvasDashboardPage.updateUtilization', request);
-        }
+    async updateMetric(request: UpdateMetricRequest): Promise<UpdateMetricResponse> {
+        return this.callMethod('canvasDashboardPage.updateMetric', request);
+    }
+    async clearMetrics(request: ClearMetricsRequest): Promise<ClearMetricsResponse> {
+        return this.callMethod('canvasDashboardPage.clearMetrics', request);
+    }
+    async setMetricsList(request: SetMetricsListRequest): Promise<SetMetricsListResponse> {
+        return this.callMethod('canvasDashboardPage.setMetricsList', request);
+    }
+    async updateDiagram(request: UpdateDiagramRequest): Promise<UpdateDiagramResponse> {
+        return this.callMethod('canvasDashboardPage.updateDiagram', request);
+    }
+    async highlightComponents(request: HighlightComponentsRequest): Promise<HighlightComponentsResponse> {
+        return this.callMethod('canvasDashboardPage.highlightComponents', request);
+    }
+    async clearHighlights(request: ClearHighlightsRequest): Promise<ClearHighlightsResponse> {
+        return this.callMethod('canvasDashboardPage.clearHighlights', request);
+    }
+    async updateGeneratorState(request: UpdateGeneratorStateRequest): Promise<UpdateGeneratorStateResponse> {
+        return this.callMethod('canvasDashboardPage.updateGeneratorState', request);
+    }
+    async setGeneratorList(request: SetGeneratorListRequest): Promise<SetGeneratorListResponse> {
+        return this.callMethod('canvasDashboardPage.setGeneratorList', request);
+    }
+    async logMessage(request: LogMessageRequest): Promise<LogMessageResponse> {
+        return this.callMethod('canvasDashboardPage.logMessage', request);
+    }
+    async clearConsole(request: ClearConsoleRequest): Promise<ClearConsoleResponse> {
+        return this.callMethod('canvasDashboardPage.clearConsole', request);
+    }
+    async updateFlowRates(request: UpdateFlowRatesRequest): Promise<UpdateFlowRatesResponse> {
+        return this.callMethod('canvasDashboardPage.updateFlowRates', request);
+    }
+    async showFlowPath(request: ShowFlowPathRequest): Promise<ShowFlowPathResponse> {
+        return this.callMethod('canvasDashboardPage.showFlowPath', request);
+    }
+    async clearFlowPaths(request: ClearFlowPathsRequest): Promise<ClearFlowPathsResponse> {
+        return this.callMethod('canvasDashboardPage.clearFlowPaths', request);
+    }
+    async updateUtilization(request: UpdateUtilizationRequest): Promise<UpdateUtilizationResponse> {
+        return this.callMethod('canvasDashboardPage.updateUtilization', request);
+    }
 }

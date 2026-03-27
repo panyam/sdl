@@ -24,8 +24,8 @@ importers:
         specifier: link:~/newstack/goapplib/main/tsappkit
         version: link:../../../newstack/goapplib/main/tsappkit
       '@protoc-gen-go-wasmjs/runtime':
-        specifier: ^0.0.33
-        version: 0.0.33
+        specifier: ^0.0.28
+        version: 0.0.28
       chart.js:
         specifier: ^4.4.0
         version: 4.5.1
@@ -362,8 +362,8 @@ packages:
   '@polka/url@1.0.0-next.29':
     resolution: {integrity: sha512-wwQAWhWSuHaag8c4q/KN/vCoeOJYshAIvMQwD4GpSb3OiZklFfvAgmj0VCBBImRpuF/aFgIRzllXlVX93Jevww==}
 
-  '@protoc-gen-go-wasmjs/runtime@0.0.33':
-    resolution: {integrity: sha512-Q9RDPJnCvzIkUEEaVxmLrJlieekiOI0ce02JEjU2XZgbZ+COIzcUZumNpb3rEZjl9nG0P4dZA1X5kL4GGnzxWg==}
+  '@protoc-gen-go-wasmjs/runtime@0.0.28':
+    resolution: {integrity: sha512-78i+nG9fXnRhxRq6ANGpEaiO4+dI7eyYaa1SZ+kpOim2RHc6sL0eIzp9WtPgIkdG//TJDRtu3vMPOO09gJl5ZA==}
     engines: {node: '>=16'}
 
   '@rollup/rollup-android-arm-eabi@4.53.3':
@@ -1668,7 +1668,7 @@ snapshots:
 
   '@polka/url@1.0.0-next.29': {}
 
-  '@protoc-gen-go-wasmjs/runtime@0.0.33': {}
+  '@protoc-gen-go-wasmjs/runtime@0.0.28': {}
 
   '@rollup/rollup-android-arm-eabi@4.53.3':
     optional: true

@@ -62,7 +62,7 @@ func (g *GeneratorInfo) Stop(wait bool) error {
 
 // Start starts a generator
 func (g *GeneratorInfo) Start() error {
-	log.Printf("Is it enabled?: %v", g.Enabled)
+	log.Printf("Is it enabled???: ", g.Enabled)
 	if g.Enabled {
 		return nil
 	}
@@ -114,7 +114,7 @@ func (g *GeneratorInfo) runSimple() {
 	for i := 0; ; i++ {
 		// Log every 10 or 20 iterations since this is low qps
 		if i%100 == 0 { // Log every 100 batches (1 second at 10ms intervals)
-			log.Printf("Low RPS Generator %s: Processed %d iterations, Stopped: %t, Rate: %f, interval: %v", g.Id, i, g.stopped.Load(), g.Rate, interval)
+			log.Printf("Low RPS Generator %s: Processed %d iterations, Stopped: %t, Rate: %f, interval: %f", g.Id, i, g.stopped.Load(), g.Rate, interval)
 		}
 		select {
 		case <-g.stopChan:
@@ -160,7 +160,7 @@ func (g *GeneratorInfo) runBatched() {
 			if batchSize > 0 {
 				batchCount++
 				if batchCount%100 == 0 { // Log every 100 batches (1 second at 10ms intervals)
-					log.Printf("Generator %s: Processed %d batches, current batch size: %d, Stopped: %v", g.Id, batchCount, batchSize, g.stopped.Load())
+					log.Printf("Generator %s: Processed %d batches, current batch size: %d, Stopped: ", g.Id, batchCount, batchSize, g.stopped.Load())
 				}
 			}
 

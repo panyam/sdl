@@ -73,137 +73,137 @@ import {
  * Fully typed method signatures with TypeScript interfaces
  */
 export interface CanvasServiceMethods {
-    createCanvas(request: CreateCanvasRequest): CreateCanvasResponse;
-    updateCanvas(request: UpdateCanvasRequest): UpdateCanvasResponse;
-    listCanvases(request: ListCanvasesRequest): ListCanvasesResponse;
-    getCanvas(request: GetCanvasRequest): GetCanvasResponse;
-    loadFile(request: LoadFileRequest): LoadFileResponse;
-    useSystem(request: UseSystemRequest): UseSystemResponse;
-    deleteCanvas(request: DeleteCanvasRequest): DeleteCanvasResponse;
-    resetCanvas(request: ResetCanvasRequest): ResetCanvasResponse;
-    addGenerator(request: AddGeneratorRequest): AddGeneratorResponse;
-    startAllGenerators(request: StartAllGeneratorsRequest): StartAllGeneratorsResponse;
-    stopAllGenerators(request: StopAllGeneratorsRequest): StopAllGeneratorsResponse;
-    listGenerators(request: ListGeneratorsRequest): ListGeneratorsResponse;
-    getGenerator(request: GetGeneratorRequest): GetGeneratorResponse;
-    updateGenerator(request: UpdateGeneratorRequest): UpdateGeneratorResponse;
-    stopGenerator(request: StopGeneratorRequest): StopGeneratorResponse;
-    startGenerator(request: StartGeneratorRequest): StartGeneratorResponse;
-    deleteGenerator(request: DeleteGeneratorRequest): DeleteGeneratorResponse;
-    executeTrace(request: ExecuteTraceRequest): ExecuteTraceResponse;
-    traceAllPaths(request: TraceAllPathsRequest): TraceAllPathsResponse;
-    setParameter(request: SetParameterRequest): SetParameterResponse;
-    getParameters(request: GetParametersRequest): GetParametersResponse;
-    batchSetParameters(request: BatchSetParametersRequest): BatchSetParametersResponse;
-    evaluateFlows(request: EvaluateFlowsRequest): EvaluateFlowsResponse;
-    getFlowState(request: GetFlowStateRequest): GetFlowStateResponse;
-    addMetric(request: AddMetricRequest): AddMetricResponse;
-    deleteMetric(request: DeleteMetricRequest): DeleteMetricResponse;
-    listMetrics(request: ListMetricsRequest): ListMetricsResponse;
-    queryMetrics(request: QueryMetricsRequest): QueryMetricsResponse;
-    streamMetrics(request: StreamMetricsRequest, callback: (response: StreamMetricsResponse | null, error: string | null, done: boolean) => boolean): void;
-    getSystemDiagram(request: GetSystemDiagramRequest): GetSystemDiagramResponse;
-    getUtilization(request: GetUtilizationRequest): GetUtilizationResponse;
+	createCanvas(request: CreateCanvasRequest): Promise<CreateCanvasResponse>;
+	updateCanvas(request: UpdateCanvasRequest): Promise<UpdateCanvasResponse>;
+	listCanvases(request: ListCanvasesRequest): Promise<ListCanvasesResponse>;
+	getCanvas(request: GetCanvasRequest): Promise<GetCanvasResponse>;
+	loadFile(request: LoadFileRequest): Promise<LoadFileResponse>;
+	useSystem(request: UseSystemRequest): Promise<UseSystemResponse>;
+	deleteCanvas(request: DeleteCanvasRequest): Promise<DeleteCanvasResponse>;
+	resetCanvas(request: ResetCanvasRequest): Promise<ResetCanvasResponse>;
+	addGenerator(request: AddGeneratorRequest): Promise<AddGeneratorResponse>;
+	startAllGenerators(request: StartAllGeneratorsRequest): Promise<StartAllGeneratorsResponse>;
+	stopAllGenerators(request: StopAllGeneratorsRequest): Promise<StopAllGeneratorsResponse>;
+	listGenerators(request: ListGeneratorsRequest): Promise<ListGeneratorsResponse>;
+	getGenerator(request: GetGeneratorRequest): Promise<GetGeneratorResponse>;
+	updateGenerator(request: UpdateGeneratorRequest): Promise<UpdateGeneratorResponse>;
+	stopGenerator(request: StopGeneratorRequest): Promise<StopGeneratorResponse>;
+	startGenerator(request: StartGeneratorRequest): Promise<StartGeneratorResponse>;
+	deleteGenerator(request: DeleteGeneratorRequest): Promise<DeleteGeneratorResponse>;
+	executeTrace(request: ExecuteTraceRequest): Promise<ExecuteTraceResponse>;
+	traceAllPaths(request: TraceAllPathsRequest): Promise<TraceAllPathsResponse>;
+	setParameter(request: SetParameterRequest): Promise<SetParameterResponse>;
+	getParameters(request: GetParametersRequest): Promise<GetParametersResponse>;
+	batchSetParameters(request: BatchSetParametersRequest): Promise<BatchSetParametersResponse>;
+	evaluateFlows(request: EvaluateFlowsRequest): Promise<EvaluateFlowsResponse>;
+	getFlowState(request: GetFlowStateRequest): Promise<GetFlowStateResponse>;
+	addMetric(request: AddMetricRequest): Promise<AddMetricResponse>;
+	deleteMetric(request: DeleteMetricRequest): Promise<DeleteMetricResponse>;
+	listMetrics(request: ListMetricsRequest): Promise<ListMetricsResponse>;
+	queryMetrics(request: QueryMetricsRequest): Promise<QueryMetricsResponse>;
+	streamMetrics(request: StreamMetricsRequest, callback: (response: StreamMetricsResponse | null, error: string | null, done: boolean) => boolean): void;
+	getSystemDiagram(request: GetSystemDiagramRequest): Promise<GetSystemDiagramResponse>;
+	getUtilization(request: GetUtilizationRequest): Promise<GetUtilizationResponse>;
 }
 /**
  * CanvasService service client implementation
  * Lightweight facade that uses shared WASM bundle
  */
 export class CanvasServiceClient extends ServiceClient implements CanvasServiceMethods {
-        createCanvas(request: CreateCanvasRequest): CreateCanvasResponse {
-            return this.callMethodSync('canvasService.createCanvas', request);
-        }
-        updateCanvas(request: UpdateCanvasRequest): UpdateCanvasResponse {
-            return this.callMethodSync('canvasService.updateCanvas', request);
-        }
-        listCanvases(request: ListCanvasesRequest): ListCanvasesResponse {
-            return this.callMethodSync('canvasService.listCanvases', request);
-        }
-        getCanvas(request: GetCanvasRequest): GetCanvasResponse {
-            return this.callMethodSync('canvasService.getCanvas', request);
-        }
-        loadFile(request: LoadFileRequest): LoadFileResponse {
-            return this.callMethodSync('canvasService.loadFile', request);
-        }
-        useSystem(request: UseSystemRequest): UseSystemResponse {
-            return this.callMethodSync('canvasService.useSystem', request);
-        }
-        deleteCanvas(request: DeleteCanvasRequest): DeleteCanvasResponse {
-            return this.callMethodSync('canvasService.deleteCanvas', request);
-        }
-        resetCanvas(request: ResetCanvasRequest): ResetCanvasResponse {
-            return this.callMethodSync('canvasService.resetCanvas', request);
-        }
-        addGenerator(request: AddGeneratorRequest): AddGeneratorResponse {
-            return this.callMethodSync('canvasService.addGenerator', request);
-        }
-        startAllGenerators(request: StartAllGeneratorsRequest): StartAllGeneratorsResponse {
-            return this.callMethodSync('canvasService.startAllGenerators', request);
-        }
-        stopAllGenerators(request: StopAllGeneratorsRequest): StopAllGeneratorsResponse {
-            return this.callMethodSync('canvasService.stopAllGenerators', request);
-        }
-        listGenerators(request: ListGeneratorsRequest): ListGeneratorsResponse {
-            return this.callMethodSync('canvasService.listGenerators', request);
-        }
-        getGenerator(request: GetGeneratorRequest): GetGeneratorResponse {
-            return this.callMethodSync('canvasService.getGenerator', request);
-        }
-        updateGenerator(request: UpdateGeneratorRequest): UpdateGeneratorResponse {
-            return this.callMethodSync('canvasService.updateGenerator', request);
-        }
-        stopGenerator(request: StopGeneratorRequest): StopGeneratorResponse {
-            return this.callMethodSync('canvasService.stopGenerator', request);
-        }
-        startGenerator(request: StartGeneratorRequest): StartGeneratorResponse {
-            return this.callMethodSync('canvasService.startGenerator', request);
-        }
-        deleteGenerator(request: DeleteGeneratorRequest): DeleteGeneratorResponse {
-            return this.callMethodSync('canvasService.deleteGenerator', request);
-        }
-        executeTrace(request: ExecuteTraceRequest): ExecuteTraceResponse {
-            return this.callMethodSync('canvasService.executeTrace', request);
-        }
-        traceAllPaths(request: TraceAllPathsRequest): TraceAllPathsResponse {
-            return this.callMethodSync('canvasService.traceAllPaths', request);
-        }
-        setParameter(request: SetParameterRequest): SetParameterResponse {
-            return this.callMethodSync('canvasService.setParameter', request);
-        }
-        getParameters(request: GetParametersRequest): GetParametersResponse {
-            return this.callMethodSync('canvasService.getParameters', request);
-        }
-        batchSetParameters(request: BatchSetParametersRequest): BatchSetParametersResponse {
-            return this.callMethodSync('canvasService.batchSetParameters', request);
-        }
-        evaluateFlows(request: EvaluateFlowsRequest): EvaluateFlowsResponse {
-            return this.callMethodSync('canvasService.evaluateFlows', request);
-        }
-        getFlowState(request: GetFlowStateRequest): GetFlowStateResponse {
-            return this.callMethodSync('canvasService.getFlowState', request);
-        }
-        addMetric(request: AddMetricRequest): AddMetricResponse {
-            return this.callMethodSync('canvasService.addMetric', request);
-        }
-        deleteMetric(request: DeleteMetricRequest): DeleteMetricResponse {
-            return this.callMethodSync('canvasService.deleteMetric', request);
-        }
-        listMetrics(request: ListMetricsRequest): ListMetricsResponse {
-            return this.callMethodSync('canvasService.listMetrics', request);
-        }
-        queryMetrics(request: QueryMetricsRequest): QueryMetricsResponse {
-            return this.callMethodSync('canvasService.queryMetrics', request);
-        }
-        streamMetrics(
-            request: StreamMetricsRequest,
-            callback: (response: StreamMetricsResponse | null, error: string | null, done: boolean) => boolean
-        ): void {
-            return this.callStreamingMethod('canvasService.streamMetrics', request, callback);
-        }
-        getSystemDiagram(request: GetSystemDiagramRequest): GetSystemDiagramResponse {
-            return this.callMethodSync('canvasService.getSystemDiagram', request);
-        }
-        getUtilization(request: GetUtilizationRequest): GetUtilizationResponse {
-            return this.callMethodSync('canvasService.getUtilization', request);
-        }
+    async createCanvas(request: CreateCanvasRequest): Promise<CreateCanvasResponse> {
+        return this.callMethod('canvasService.createCanvas', request);
+    }
+    async updateCanvas(request: UpdateCanvasRequest): Promise<UpdateCanvasResponse> {
+        return this.callMethod('canvasService.updateCanvas', request);
+    }
+    async listCanvases(request: ListCanvasesRequest): Promise<ListCanvasesResponse> {
+        return this.callMethod('canvasService.listCanvases', request);
+    }
+    async getCanvas(request: GetCanvasRequest): Promise<GetCanvasResponse> {
+        return this.callMethod('canvasService.getCanvas', request);
+    }
+    async loadFile(request: LoadFileRequest): Promise<LoadFileResponse> {
+        return this.callMethod('canvasService.loadFile', request);
+    }
+    async useSystem(request: UseSystemRequest): Promise<UseSystemResponse> {
+        return this.callMethod('canvasService.useSystem', request);
+    }
+    async deleteCanvas(request: DeleteCanvasRequest): Promise<DeleteCanvasResponse> {
+        return this.callMethod('canvasService.deleteCanvas', request);
+    }
+    async resetCanvas(request: ResetCanvasRequest): Promise<ResetCanvasResponse> {
+        return this.callMethod('canvasService.resetCanvas', request);
+    }
+    async addGenerator(request: AddGeneratorRequest): Promise<AddGeneratorResponse> {
+        return this.callMethod('canvasService.addGenerator', request);
+    }
+    async startAllGenerators(request: StartAllGeneratorsRequest): Promise<StartAllGeneratorsResponse> {
+        return this.callMethod('canvasService.startAllGenerators', request);
+    }
+    async stopAllGenerators(request: StopAllGeneratorsRequest): Promise<StopAllGeneratorsResponse> {
+        return this.callMethod('canvasService.stopAllGenerators', request);
+    }
+    async listGenerators(request: ListGeneratorsRequest): Promise<ListGeneratorsResponse> {
+        return this.callMethod('canvasService.listGenerators', request);
+    }
+    async getGenerator(request: GetGeneratorRequest): Promise<GetGeneratorResponse> {
+        return this.callMethod('canvasService.getGenerator', request);
+    }
+    async updateGenerator(request: UpdateGeneratorRequest): Promise<UpdateGeneratorResponse> {
+        return this.callMethod('canvasService.updateGenerator', request);
+    }
+    async stopGenerator(request: StopGeneratorRequest): Promise<StopGeneratorResponse> {
+        return this.callMethod('canvasService.stopGenerator', request);
+    }
+    async startGenerator(request: StartGeneratorRequest): Promise<StartGeneratorResponse> {
+        return this.callMethod('canvasService.startGenerator', request);
+    }
+    async deleteGenerator(request: DeleteGeneratorRequest): Promise<DeleteGeneratorResponse> {
+        return this.callMethod('canvasService.deleteGenerator', request);
+    }
+    async executeTrace(request: ExecuteTraceRequest): Promise<ExecuteTraceResponse> {
+        return this.callMethod('canvasService.executeTrace', request);
+    }
+    async traceAllPaths(request: TraceAllPathsRequest): Promise<TraceAllPathsResponse> {
+        return this.callMethod('canvasService.traceAllPaths', request);
+    }
+    async setParameter(request: SetParameterRequest): Promise<SetParameterResponse> {
+        return this.callMethod('canvasService.setParameter', request);
+    }
+    async getParameters(request: GetParametersRequest): Promise<GetParametersResponse> {
+        return this.callMethod('canvasService.getParameters', request);
+    }
+    async batchSetParameters(request: BatchSetParametersRequest): Promise<BatchSetParametersResponse> {
+        return this.callMethod('canvasService.batchSetParameters', request);
+    }
+    async evaluateFlows(request: EvaluateFlowsRequest): Promise<EvaluateFlowsResponse> {
+        return this.callMethod('canvasService.evaluateFlows', request);
+    }
+    async getFlowState(request: GetFlowStateRequest): Promise<GetFlowStateResponse> {
+        return this.callMethod('canvasService.getFlowState', request);
+    }
+    async addMetric(request: AddMetricRequest): Promise<AddMetricResponse> {
+        return this.callMethod('canvasService.addMetric', request);
+    }
+    async deleteMetric(request: DeleteMetricRequest): Promise<DeleteMetricResponse> {
+        return this.callMethod('canvasService.deleteMetric', request);
+    }
+    async listMetrics(request: ListMetricsRequest): Promise<ListMetricsResponse> {
+        return this.callMethod('canvasService.listMetrics', request);
+    }
+    async queryMetrics(request: QueryMetricsRequest): Promise<QueryMetricsResponse> {
+        return this.callMethod('canvasService.queryMetrics', request);
+    }
+    streamMetrics(
+        request: StreamMetricsRequest,
+        callback: (response: StreamMetricsResponse | null, error: string | null, done: boolean) => boolean
+    ): void {
+        return this.callStreamingMethod('canvasService.streamMetrics', request, callback);
+    }
+    async getSystemDiagram(request: GetSystemDiagramRequest): Promise<GetSystemDiagramResponse> {
+        return this.callMethod('canvasService.getSystemDiagram', request);
+    }
+    async getUtilization(request: GetUtilizationRequest): Promise<GetUtilizationResponse> {
+        return this.callMethod('canvasService.getUtilization', request);
+    }
 }

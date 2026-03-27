@@ -47,82 +47,82 @@ import {
  * Fully typed method signatures with TypeScript interfaces
  */
 export interface CanvasViewPresenterMethods {
-    initialize(request: InitializePresenterRequest): InitializePresenterResponse;
-    clientReady(request: ClientReadyRequest): ClientReadyResponse;
-    fileSelected(request: FileSelectedRequest): FileSelectedResponse;
-    fileSaved(request: FileSavedRequest): FileSavedResponse;
-    useSystem(request: UseSystemRequest): UseSystemResponse;
-    addGenerator(request: AddGeneratorRequest): AddGeneratorResponse;
-    deleteGenerator(request: DeleteGeneratorRequest): DeleteGeneratorResponse;
-    updateGenerator(request: UpdateGeneratorRequest): UpdateGeneratorResponse;
-    startGenerator(request: StartGeneratorRequest): StartGeneratorResponse;
-    stopGenerator(request: StopGeneratorRequest): StopGeneratorResponse;
-    startAllGenerators(request: StartAllGeneratorsRequest): StartAllGeneratorsResponse;
-    stopAllGenerators(request: StopAllGeneratorsRequest): StopAllGeneratorsResponse;
-    addMetric(request: AddMetricRequest): AddMetricResponse;
-    deleteMetric(request: DeleteMetricRequest): DeleteMetricResponse;
-    setParameter(request: SetParameterRequest): SetParameterResponse;
-    evaluateFlows(request: EvaluateFlowsRequest): EvaluateFlowsResponse;
-    diagramComponentClicked(request: DiagramComponentClickedRequest): DiagramComponentClickedResponse;
-    diagramComponentHovered(request: DiagramComponentHoveredRequest): DiagramComponentHoveredResponse;
+	initialize(request: InitializePresenterRequest): Promise<InitializePresenterResponse>;
+	clientReady(request: ClientReadyRequest): Promise<ClientReadyResponse>;
+	fileSelected(request: FileSelectedRequest): Promise<FileSelectedResponse>;
+	fileSaved(request: FileSavedRequest): Promise<FileSavedResponse>;
+	useSystem(request: UseSystemRequest): Promise<UseSystemResponse>;
+	addGenerator(request: AddGeneratorRequest): Promise<AddGeneratorResponse>;
+	deleteGenerator(request: DeleteGeneratorRequest): Promise<DeleteGeneratorResponse>;
+	updateGenerator(request: UpdateGeneratorRequest): Promise<UpdateGeneratorResponse>;
+	startGenerator(request: StartGeneratorRequest): Promise<StartGeneratorResponse>;
+	stopGenerator(request: StopGeneratorRequest): Promise<StopGeneratorResponse>;
+	startAllGenerators(request: StartAllGeneratorsRequest): Promise<StartAllGeneratorsResponse>;
+	stopAllGenerators(request: StopAllGeneratorsRequest): Promise<StopAllGeneratorsResponse>;
+	addMetric(request: AddMetricRequest): Promise<AddMetricResponse>;
+	deleteMetric(request: DeleteMetricRequest): Promise<DeleteMetricResponse>;
+	setParameter(request: SetParameterRequest): Promise<SetParameterResponse>;
+	evaluateFlows(request: EvaluateFlowsRequest): Promise<EvaluateFlowsResponse>;
+	diagramComponentClicked(request: DiagramComponentClickedRequest): Promise<DiagramComponentClickedResponse>;
+	diagramComponentHovered(request: DiagramComponentHoveredRequest): Promise<DiagramComponentHoveredResponse>;
 }
 /**
  * CanvasViewPresenter service client implementation
  * Lightweight facade that uses shared WASM bundle
  */
 export class CanvasViewPresenterClient extends ServiceClient implements CanvasViewPresenterMethods {
-        initialize(request: InitializePresenterRequest): InitializePresenterResponse {
-            return this.callMethodSync('canvasViewPresenter.initialize', request);
-        }
-        clientReady(request: ClientReadyRequest): ClientReadyResponse {
-            return this.callMethodSync('canvasViewPresenter.clientReady', request);
-        }
-        fileSelected(request: FileSelectedRequest): FileSelectedResponse {
-            return this.callMethodSync('canvasViewPresenter.fileSelected', request);
-        }
-        fileSaved(request: FileSavedRequest): FileSavedResponse {
-            return this.callMethodSync('canvasViewPresenter.fileSaved', request);
-        }
-        useSystem(request: UseSystemRequest): UseSystemResponse {
-            return this.callMethodSync('canvasViewPresenter.useSystem', request);
-        }
-        addGenerator(request: AddGeneratorRequest): AddGeneratorResponse {
-            return this.callMethodSync('canvasViewPresenter.addGenerator', request);
-        }
-        deleteGenerator(request: DeleteGeneratorRequest): DeleteGeneratorResponse {
-            return this.callMethodSync('canvasViewPresenter.deleteGenerator', request);
-        }
-        updateGenerator(request: UpdateGeneratorRequest): UpdateGeneratorResponse {
-            return this.callMethodSync('canvasViewPresenter.updateGenerator', request);
-        }
-        startGenerator(request: StartGeneratorRequest): StartGeneratorResponse {
-            return this.callMethodSync('canvasViewPresenter.startGenerator', request);
-        }
-        stopGenerator(request: StopGeneratorRequest): StopGeneratorResponse {
-            return this.callMethodSync('canvasViewPresenter.stopGenerator', request);
-        }
-        startAllGenerators(request: StartAllGeneratorsRequest): StartAllGeneratorsResponse {
-            return this.callMethodSync('canvasViewPresenter.startAllGenerators', request);
-        }
-        stopAllGenerators(request: StopAllGeneratorsRequest): StopAllGeneratorsResponse {
-            return this.callMethodSync('canvasViewPresenter.stopAllGenerators', request);
-        }
-        addMetric(request: AddMetricRequest): AddMetricResponse {
-            return this.callMethodSync('canvasViewPresenter.addMetric', request);
-        }
-        deleteMetric(request: DeleteMetricRequest): DeleteMetricResponse {
-            return this.callMethodSync('canvasViewPresenter.deleteMetric', request);
-        }
-        setParameter(request: SetParameterRequest): SetParameterResponse {
-            return this.callMethodSync('canvasViewPresenter.setParameter', request);
-        }
-        evaluateFlows(request: EvaluateFlowsRequest): EvaluateFlowsResponse {
-            return this.callMethodSync('canvasViewPresenter.evaluateFlows', request);
-        }
-        diagramComponentClicked(request: DiagramComponentClickedRequest): DiagramComponentClickedResponse {
-            return this.callMethodSync('canvasViewPresenter.diagramComponentClicked', request);
-        }
-        diagramComponentHovered(request: DiagramComponentHoveredRequest): DiagramComponentHoveredResponse {
-            return this.callMethodSync('canvasViewPresenter.diagramComponentHovered', request);
-        }
+    async initialize(request: InitializePresenterRequest): Promise<InitializePresenterResponse> {
+        return this.callMethod('canvasViewPresenter.initialize', request);
+    }
+    async clientReady(request: ClientReadyRequest): Promise<ClientReadyResponse> {
+        return this.callMethod('canvasViewPresenter.clientReady', request);
+    }
+    async fileSelected(request: FileSelectedRequest): Promise<FileSelectedResponse> {
+        return this.callMethod('canvasViewPresenter.fileSelected', request);
+    }
+    async fileSaved(request: FileSavedRequest): Promise<FileSavedResponse> {
+        return this.callMethod('canvasViewPresenter.fileSaved', request);
+    }
+    async useSystem(request: UseSystemRequest): Promise<UseSystemResponse> {
+        return this.callMethod('canvasViewPresenter.useSystem', request);
+    }
+    async addGenerator(request: AddGeneratorRequest): Promise<AddGeneratorResponse> {
+        return this.callMethod('canvasViewPresenter.addGenerator', request);
+    }
+    async deleteGenerator(request: DeleteGeneratorRequest): Promise<DeleteGeneratorResponse> {
+        return this.callMethod('canvasViewPresenter.deleteGenerator', request);
+    }
+    async updateGenerator(request: UpdateGeneratorRequest): Promise<UpdateGeneratorResponse> {
+        return this.callMethod('canvasViewPresenter.updateGenerator', request);
+    }
+    async startGenerator(request: StartGeneratorRequest): Promise<StartGeneratorResponse> {
+        return this.callMethod('canvasViewPresenter.startGenerator', request);
+    }
+    async stopGenerator(request: StopGeneratorRequest): Promise<StopGeneratorResponse> {
+        return this.callMethod('canvasViewPresenter.stopGenerator', request);
+    }
+    async startAllGenerators(request: StartAllGeneratorsRequest): Promise<StartAllGeneratorsResponse> {
+        return this.callMethod('canvasViewPresenter.startAllGenerators', request);
+    }
+    async stopAllGenerators(request: StopAllGeneratorsRequest): Promise<StopAllGeneratorsResponse> {
+        return this.callMethod('canvasViewPresenter.stopAllGenerators', request);
+    }
+    async addMetric(request: AddMetricRequest): Promise<AddMetricResponse> {
+        return this.callMethod('canvasViewPresenter.addMetric', request);
+    }
+    async deleteMetric(request: DeleteMetricRequest): Promise<DeleteMetricResponse> {
+        return this.callMethod('canvasViewPresenter.deleteMetric', request);
+    }
+    async setParameter(request: SetParameterRequest): Promise<SetParameterResponse> {
+        return this.callMethod('canvasViewPresenter.setParameter', request);
+    }
+    async evaluateFlows(request: EvaluateFlowsRequest): Promise<EvaluateFlowsResponse> {
+        return this.callMethod('canvasViewPresenter.evaluateFlows', request);
+    }
+    async diagramComponentClicked(request: DiagramComponentClickedRequest): Promise<DiagramComponentClickedResponse> {
+        return this.callMethod('canvasViewPresenter.diagramComponentClicked', request);
+    }
+    async diagramComponentHovered(request: DiagramComponentHoveredRequest): Promise<DiagramComponentHoveredResponse> {
+        return this.callMethod('canvasViewPresenter.diagramComponentHovered', request);
+    }
 }

@@ -25,38 +25,38 @@ import {
  * Fully typed method signatures with TypeScript interfaces
  */
 export interface FilesystemServiceMethods {
-    listFilesystems(request: ListFilesystemsRequest): ListFilesystemsResponse;
-    listFiles(request: ListFilesRequest): ListFilesResponse;
-    getFileInfo(request: GetFileInfoRequest): GetFileInfoResponse;
-    readFile(request: ReadFileRequest): ReadFileResponse;
-    writeFile(request: WriteFileRequest): WriteFileResponse;
-    deleteFile(request: DeleteFileRequest): DeleteFileResponse;
-    createDirectory(request: CreateDirectoryRequest): CreateDirectoryResponse;
+	listFilesystems(request: ListFilesystemsRequest): Promise<ListFilesystemsResponse>;
+	listFiles(request: ListFilesRequest): Promise<ListFilesResponse>;
+	getFileInfo(request: GetFileInfoRequest): Promise<GetFileInfoResponse>;
+	readFile(request: ReadFileRequest): Promise<ReadFileResponse>;
+	writeFile(request: WriteFileRequest): Promise<WriteFileResponse>;
+	deleteFile(request: DeleteFileRequest): Promise<DeleteFileResponse>;
+	createDirectory(request: CreateDirectoryRequest): Promise<CreateDirectoryResponse>;
 }
 /**
  * FilesystemService service client implementation
  * Lightweight facade that uses shared WASM bundle
  */
 export class FilesystemServiceClient extends ServiceClient implements FilesystemServiceMethods {
-        listFilesystems(request: ListFilesystemsRequest): ListFilesystemsResponse {
-            return this.callMethodSync('filesystemService.listFilesystems', request);
-        }
-        listFiles(request: ListFilesRequest): ListFilesResponse {
-            return this.callMethodSync('filesystemService.listFiles', request);
-        }
-        getFileInfo(request: GetFileInfoRequest): GetFileInfoResponse {
-            return this.callMethodSync('filesystemService.getFileInfo', request);
-        }
-        readFile(request: ReadFileRequest): ReadFileResponse {
-            return this.callMethodSync('filesystemService.readFile', request);
-        }
-        writeFile(request: WriteFileRequest): WriteFileResponse {
-            return this.callMethodSync('filesystemService.writeFile', request);
-        }
-        deleteFile(request: DeleteFileRequest): DeleteFileResponse {
-            return this.callMethodSync('filesystemService.deleteFile', request);
-        }
-        createDirectory(request: CreateDirectoryRequest): CreateDirectoryResponse {
-            return this.callMethodSync('filesystemService.createDirectory', request);
-        }
+    async listFilesystems(request: ListFilesystemsRequest): Promise<ListFilesystemsResponse> {
+        return this.callMethod('filesystemService.listFilesystems', request);
+    }
+    async listFiles(request: ListFilesRequest): Promise<ListFilesResponse> {
+        return this.callMethod('filesystemService.listFiles', request);
+    }
+    async getFileInfo(request: GetFileInfoRequest): Promise<GetFileInfoResponse> {
+        return this.callMethod('filesystemService.getFileInfo', request);
+    }
+    async readFile(request: ReadFileRequest): Promise<ReadFileResponse> {
+        return this.callMethod('filesystemService.readFile', request);
+    }
+    async writeFile(request: WriteFileRequest): Promise<WriteFileResponse> {
+        return this.callMethod('filesystemService.writeFile', request);
+    }
+    async deleteFile(request: DeleteFileRequest): Promise<DeleteFileResponse> {
+        return this.callMethod('filesystemService.deleteFile', request);
+    }
+    async createDirectory(request: CreateDirectoryRequest): Promise<CreateDirectoryResponse> {
+        return this.callMethod('filesystemService.createDirectory', request);
+    }
 }
