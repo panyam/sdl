@@ -18,11 +18,10 @@
 {{end}}
 
 {{define "PostBodySection"}}
-<!-- Embed SDL design files as script tags for browser-side loading -->
+<!-- Embed SDL design files for browser-side loading via ScriptTagFS.
+     Uses hidden textareas to avoid Go template HTML/JS escaping. -->
 {{range $name, $content := .DesignFiles}}
-<script type="text/sdl" data-design="{{$name}}">
-{{$content}}
-</script>
+<textarea class="sdl-design-source" data-design="{{$name}}" style="display:none">{{$content}}</textarea>
 {{end}}
 
 <script>
@@ -33,8 +32,8 @@
         canvasName: '{{.Canvas.Name}}',
         mode: 'server',
         readonly: {{.ReadOnly}},
-        // Collect design names from embedded script tags
-        designs: Array.from(document.querySelectorAll('script[type="text/sdl"]'))
+        // Collect design names from embedded textarea tags
+        designs: Array.from(document.querySelectorAll('textarea.sdl-design-source'))
             .map(el => el.dataset.design)
             .filter(Boolean)
     };

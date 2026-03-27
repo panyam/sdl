@@ -264,10 +264,10 @@ export class CanvasViewerPageDockView extends CanvasViewerPageBase {
     async activate(): Promise<void> {
         await super.activate();
 
-        // Discover embedded SDL designs from <script type="text/sdl"> tags.
+        // Discover embedded SDL designs from hidden textareas.
         // The WASM runtime's ScriptTagFS (mounted at /designs/) reads these
         // directly from the DOM — no manual filesystem writes needed.
-        const sdlScripts = document.querySelectorAll('script[type="text/sdl"]');
+        const sdlScripts = document.querySelectorAll('textarea.sdl-design-source');
         const loadedDesigns: string[] = [];
 
         for (const script of sdlScripts) {

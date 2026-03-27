@@ -206,10 +206,10 @@ func (u *URLFetcherFS) IsReadOnly() bool {
 	return true // URLFetcherFS is read-only
 }
 
-// ScriptTagFS reads SDL content from <script type="text/sdl"> tags in the DOM.
-// Files are identified by the data-design attribute on the script tag.
-// This allows the server to embed SDL files in the HTML page for instant loading
-// without additional HTTP requests or filesystem access.
+// ScriptTagFS reads SDL content from hidden <textarea class="sdl-design-source">
+// elements in the DOM. Uses textareas instead of script tags to avoid Go template
+// HTML/JS escaping of the SDL content.
+// Files are identified by the data-design attribute.
 type ScriptTagFS struct{}
 
 func (s *ScriptTagFS) ReadFile(path string) ([]byte, error) {
@@ -221,16 +221,17 @@ func (s *ScriptTagFS) ReadFile(path string) ([]byte, error) {
 	// Strip .sdl extension for matching against data-design attribute
 	designName := strings.TrimSuffix(name, ".sdl")
 
-	// Query the DOM for matching script tag
+	// Query the DOM for matching textarea
 	doc := js.Global().Get("document")
-	selector := fmt.Sprintf("script[type=\"text/sdl\"][data-design=\"%s\"]", designName)
+	selector := fmt.Sprintf("textarea.sdl-design-source[data-design=\"%s\"]", designName)
 	el := doc.Call("querySelector", selector)
 
 	if el.IsNull() || el.IsUndefined() {
-		return nil, fmt.Errorf("no <script type=\"text/sdl\" data-design=\"%s\"> found", designName)
+		return nil, fmt.Errorf("no textarea[data-design=\"%s\"] found in DOM", designName)
 	}
 
-	content := el.Get("textContent").String()
+	// Use .value for textarea (not .textContent)
+	content := el.Get("value").String()
 	return []byte(content), nil
 }
 
@@ -240,12 +241,12 @@ func (s *ScriptTagFS) WriteFile(path string, data []byte) error {
 
 func (s *ScriptTagFS) ListFiles(dir string) ([]string, error) {
 	doc := js.Global().Get("document")
-	scripts := doc.Call("querySelectorAll", "script[type=\"text/sdl\"]")
-	length := scripts.Get("length").Int()
+	elements := doc.Call("querySelectorAll", "textarea.sdl-design-source")
+	length := elements.Get("length").Int()
 
 	var files []string
 	for i := 0; i < length; i++ {
-		el := scripts.Index(i)
+		el := elements.Index(i)
 		design := el.Get("dataset").Get("design").String()
 		if design != "" {
 			files = append(files, design+".sdl")
