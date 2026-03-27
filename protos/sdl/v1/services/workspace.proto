@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package sdl.v1;
+
+import "sdl/v1/models/models.proto";
+import "sdl/v1/models/workspace_service.proto";
+import "google/api/annotations.proto";
+
+option go_package = "github.com/panyam/sdl/gen/go/sdl/v1/services";
+
+// WorkspaceService manages workspace projects.
+// Implementations: in-memory (seeded from examples), file-based, DB-backed, IndexedDB (WASM).
+service WorkspaceService {
+  rpc CreateWorkspace(CreateWorkspaceRequest) returns (CreateWorkspaceResponse) {
+    option (google.api.http) = {
+      post: "/v1/workspaces",
+      body: "*",
+    };
+  }
+
+  rpc GetWorkspace(GetWorkspaceRequest) returns (GetWorkspaceResponse) {
+    option (google.api.http) = {
+      get: "/v1/workspaces/{id}",
+    };
+  }
+
+  rpc ListWorkspaces(ListWorkspacesRequest) returns (ListWorkspacesResponse) {
+    option (google.api.http) = {
+      get: "/v1/workspaces",
+    };
+  }
+
+  rpc DeleteWorkspace(DeleteWorkspaceRequest) returns (DeleteWorkspaceResponse) {
+    option (google.api.http) = {
+      delete: "/v1/workspaces/{id}",
+    };
+  }
+
+  rpc UpdateWorkspace(UpdateWorkspaceRequest) returns (UpdateWorkspaceResponse) {
+    option (google.api.http) = {
+      put: "/v1/workspaces/{workspace.id}",
+      body: "*",
+    };
+  }
+
+  // Get SDL content for a single design
+  rpc GetDesignContent(GetDesignContentRequest) returns (GetDesignContentResponse) {
+    option (google.api.http) = {
+      get: "/v1/workspaces/{workspace_id}/designs/{design_name}/content",
+    };
+  }
+
+  // Get all design contents for a workspace
+  rpc GetAllDesignContents(GetAllDesignContentsRequest) returns (GetAllDesignContentsResponse) {
+    option (google.api.http) = {
+      get: "/v1/workspaces/{workspace_id}/designs/contents",
+    };
+  }
+}
