@@ -30,15 +30,16 @@ func (c *Canvas) ToProto() *protos.Canvas {
 	}
 
 	return &protos.Canvas{
-		CreatedAt:      timestamppb.Now(), // TODO: track actual creation time
-		UpdatedAt:      timestamppb.Now(),
-		Id:             c.id,
-		Name:           c.name,
-		Description:    c.description,
-		ActiveSystem:   activeSystem,
-		SystemContents: "", // TODO: Track system contents when loaded
-		Recipes:        map[string]string{},
-		Generators:     generators,
-		Metrics:        metrics,
+		CreatedAt:          timestamppb.Now(), // TODO: track actual creation time
+		UpdatedAt:          timestamppb.Now(),
+		Id:                 c.id,
+		Name:               c.name,
+		Description:        c.description,
+		ActiveSystem:       activeSystem,
+		SystemContents:     "", // TODO: Track system contents when loaded
+		Recipes:            map[string]string{},
+		Generators:         generators,
+		Metrics:            metrics,
+		LoadedSystemNames:  c.GetAvailableSystemNames(),
 	}
 }

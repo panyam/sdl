@@ -2,8 +2,8 @@
 // A monolithic system with a single database and direct external API calls
 // Demonstrates: No caching, synchronous operations, database bottlenecks
 
-import ResourcePool, delay from "../common.sdl"
-import SortedFile, NativeDisk as Disk from "../common.sdl"
+import ResourcePool, delay from "@stdlib/common.sdl"
+import SortedFile, NativeDisk as Disk from "@stdlib/common.sdl"
 
 // External Maps API Service (simulated)
 component MapsAPI {

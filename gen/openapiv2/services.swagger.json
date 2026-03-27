@@ -196,6 +196,17 @@
                     },
                     "previewUrl": {
                       "type": "string"
+                    },
+                    "loadedSystemNames": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "title": "Names of all systems currently loaded (from all loaded SDL files)"
+                    },
+                    "workspaceId": {
+                      "type": "string",
+                      "title": "Workspace ID this canvas belongs to (if any)"
                     }
                   }
                 }
@@ -1946,6 +1957,17 @@
         },
         "previewUrl": {
           "type": "string"
+        },
+        "loadedSystemNames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "Names of all systems currently loaded (from all loaded SDL files)"
+        },
+        "workspaceId": {
+          "type": "string",
+          "title": "Workspace ID this canvas belongs to (if any)"
         }
       }
     },

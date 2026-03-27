@@ -127,6 +127,173 @@ export const CanvasSchema: MessageSchema = {
       type: FieldType.STRING,
       id: 11,
     },
+    {
+      name: "loadedSystemNames",
+      type: FieldType.REPEATED,
+      id: 12,
+      repeated: true,
+    },
+    {
+      name: "workspaceId",
+      type: FieldType.STRING,
+      id: 13,
+    },
+  ],
+};
+
+
+/**
+ * Schema for Workspace message
+ */
+export const WorkspaceSchema: MessageSchema = {
+  name: "Workspace",
+  fields: [
+    {
+      name: "createdAt",
+      type: FieldType.MESSAGE,
+      id: 1,
+      messageType: "google.protobuf.Timestamp",
+    },
+    {
+      name: "updatedAt",
+      type: FieldType.MESSAGE,
+      id: 2,
+      messageType: "google.protobuf.Timestamp",
+    },
+    {
+      name: "id",
+      type: FieldType.STRING,
+      id: 3,
+    },
+    {
+      name: "name",
+      type: FieldType.STRING,
+      id: 4,
+    },
+    {
+      name: "description",
+      type: FieldType.STRING,
+      id: 5,
+    },
+    {
+      name: "sources",
+      type: FieldType.STRING,
+      id: 6,
+    },
+    {
+      name: "designs",
+      type: FieldType.MESSAGE,
+      id: 7,
+      messageType: "sdl.v1.WorkspaceDesign",
+      repeated: true,
+    },
+    {
+      name: "activeDesign",
+      type: FieldType.STRING,
+      id: 8,
+    },
+    {
+      name: "dir",
+      type: FieldType.STRING,
+      id: 9,
+    },
+    {
+      name: "tags",
+      type: FieldType.REPEATED,
+      id: 10,
+      repeated: true,
+    },
+    {
+      name: "difficulty",
+      type: FieldType.STRING,
+      id: 11,
+    },
+    {
+      name: "category",
+      type: FieldType.STRING,
+      id: 12,
+    },
+  ],
+};
+
+
+/**
+ * Schema for WorkspaceDesign message
+ */
+export const WorkspaceDesignSchema: MessageSchema = {
+  name: "WorkspaceDesign",
+  fields: [
+    {
+      name: "name",
+      type: FieldType.STRING,
+      id: 1,
+    },
+    {
+      name: "file",
+      type: FieldType.STRING,
+      id: 2,
+    },
+    {
+      name: "canvasId",
+      type: FieldType.STRING,
+      id: 3,
+    },
+    {
+      name: "description",
+      type: FieldType.STRING,
+      id: 4,
+    },
+    {
+      name: "tags",
+      type: FieldType.REPEATED,
+      id: 5,
+      repeated: true,
+    },
+    {
+      name: "difficulty",
+      type: FieldType.STRING,
+      id: 6,
+    },
+    {
+      name: "category",
+      type: FieldType.STRING,
+      id: 7,
+    },
+  ],
+};
+
+
+/**
+ * Schema for ImportSource message
+ */
+export const ImportSourceSchema: MessageSchema = {
+  name: "ImportSource",
+  fields: [
+    {
+      name: "builtin",
+      type: FieldType.BOOLEAN,
+      id: 1,
+    },
+    {
+      name: "github",
+      type: FieldType.STRING,
+      id: 2,
+    },
+    {
+      name: "url",
+      type: FieldType.STRING,
+      id: 3,
+    },
+    {
+      name: "path",
+      type: FieldType.STRING,
+      id: 4,
+    },
+    {
+      name: "ref",
+      type: FieldType.STRING,
+      id: 5,
+    },
   ],
 };
 
@@ -3537,6 +3704,9 @@ export const sdl_v1SchemaRegistry: Record<string, MessageSchema> = {
   "sdl.v1.Pagination": PaginationSchema,
   "sdl.v1.PaginationResponse": PaginationResponseSchema,
   "sdl.v1.Canvas": CanvasSchema,
+  "sdl.v1.Workspace": WorkspaceSchema,
+  "sdl.v1.WorkspaceDesign": WorkspaceDesignSchema,
+  "sdl.v1.ImportSource": ImportSourceSchema,
   "sdl.v1.File": FileSchema,
   "sdl.v1.Generator": GeneratorSchema,
   "sdl.v1.Metric": MetricSchema,

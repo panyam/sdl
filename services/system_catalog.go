@@ -1,184 +1,101 @@
 package services
 
 import (
+	"log"
 	"os"
 	"path/filepath"
-	"time"
+
+	protos "github.com/panyam/sdl/gen/go/sdl/v1/models"
 )
 
-// SystemInfo represents a system in the catalog
-type SystemInfo struct {
-	ID          string   `json:"id"`
-	Name        string   `json:"name"`
-	Description string   `json:"description"`
-	Category    string   `json:"category"`
-	Difficulty  string   `json:"difficulty"`
-	Tags        []string `json:"tags"`
-	Icon        string   `json:"icon,omitempty"`
-	LastUpdated string   `json:"lastUpdated"`
-}
-
-// SystemProject represents a full system project
-type SystemProject struct {
-	ID             string                   `json:"id"`
-	Name           string                   `json:"name"`
-	Description    string                   `json:"description"`
-	Category       string                   `json:"category"`
-	Difficulty     string                   `json:"difficulty"`
-	Tags           []string                 `json:"tags"`
-	Icon           string                   `json:"icon,omitempty"`
-	Versions       map[string]SystemVersion `json:"versions"`
-	DefaultVersion string                   `json:"defaultVersion"`
-	LastUpdated    string                   `json:"lastUpdated"`
-	// Internal file paths (not exposed in JSON)
-	sdlFile    string
-	recipeFile string
-}
-
-// SystemVersion represents a version of a system
-type SystemVersion struct {
-	SDL    string `json:"sdl"`
-	Recipe string `json:"recipe"`
-	Readme string `json:"readme,omitempty"`
-}
-
-// SystemCatalogService manages the system examples catalog
+// SystemCatalogService discovers example workspaces from sdl.json manifests.
+// Works entirely with Workspace protos — no custom Go types.
 type SystemCatalogService struct {
-	systems  map[string]*SystemProject
-	basePath string // Base path for examples, e.g., "examples"
+	workspaces map[string]*protos.Workspace
+	// SDL content for each design, keyed by workspace_id/design_name
+	designContents map[string]string
+	basePath       string
 }
 
-// NewSystemCatalogService creates a new system catalog service
 func NewSystemCatalogService() *SystemCatalogService {
 	service := &SystemCatalogService{
-		systems:  make(map[string]*SystemProject),
-		basePath: "examples", // Default to examples directory
+		workspaces:     make(map[string]*protos.Workspace),
+		designContents: make(map[string]string),
+		basePath:       "examples",
 	}
-	service.initializeCatalog()
+	service.discoverWorkspaces()
 	return service
 }
 
-// initializeCatalog loads the example systems
-func (s *SystemCatalogService) initializeCatalog() {
-	// Define curated systems with their file paths
-	s.addSystem(&SystemProject{
-		ID:             "bitly",
-		Name:           "Bitly URL Shortener",
-		Description:    "A scalable URL shortening service with analytics and caching",
-		Category:       "Web Services",
-		Difficulty:     "beginner",
-		Tags:           []string{"web", "database", "caching", "rest-api"},
-		Icon:           "🔗",
-		DefaultVersion: "v1",
-		sdlFile:        "bitly/mvp.sdl",
-		recipeFile:     "bitly/mvp.recipe",
-	})
-
-	s.addSystem(&SystemProject{
-		ID:             "uber-basic",
-		Name:           "Uber Ride Sharing (Basic)",
-		Description:    "Simplified ride-sharing platform with driver matching",
-		Category:       "Transportation",
-		Difficulty:     "intermediate",
-		Tags:           []string{"microservices", "real-time", "geo-spatial", "matching"},
-		Icon:           "🚗",
-		DefaultVersion: "v1",
-		sdlFile:        "uber/mvp.sdl",
-		recipeFile:     "uber/mvp.recipe",
-	})
-
-	s.addSystem(&SystemProject{
-		ID:             "uber-intermediate",
-		Name:           "Uber Ride Sharing (Intermediate)",
-		Description:    "Enhanced ride-sharing with real-time tracking and pricing",
-		Category:       "Transportation",
-		Difficulty:     "intermediate",
-		Tags:           []string{"microservices", "real-time", "geo-spatial", "matching", "pricing"},
-		Icon:           "🚕",
-		DefaultVersion: "v1",
-		sdlFile:        "uber/intermediate.sdl",
-		recipeFile:     "uber/intermediate.recipe",
-	})
-
-	s.addSystem(&SystemProject{
-		ID:             "uber-advanced",
-		Name:           "Uber Ride Sharing (Advanced)",
-		Description:    "Full ride-sharing platform with surge pricing and machine learning",
-		Category:       "Transportation",
-		Difficulty:     "advanced",
-		Tags:           []string{"microservices", "real-time", "geo-spatial", "pricing", "ml", "analytics"},
-		Icon:           "🚖",
-		DefaultVersion: "v1",
-		sdlFile:        "uber/modern.sdl",
-		recipeFile:     "uber/modern.recipe",
-	})
-
-}
-
-// addSystem adds a system to the catalog and loads its content from files
-func (s *SystemCatalogService) addSystem(project *SystemProject) {
-	// Load SDL and recipe content from files
-	sdlPath := filepath.Join(s.basePath, project.sdlFile)
-	recipePath := filepath.Join(s.basePath, project.recipeFile)
-
-	sdlContent := ""
-	recipeContent := ""
-	var lastMod time.Time
-
-	// Read SDL file
-	if sdlBytes, err := os.ReadFile(sdlPath); err == nil {
-		sdlContent = string(sdlBytes)
-		if info, err := os.Stat(sdlPath); err == nil {
-			lastMod = info.ModTime()
-		}
+// discoverWorkspaces scans basePath for directories containing sdl.json.
+func (s *SystemCatalogService) discoverWorkspaces() {
+	entries, err := os.ReadDir(s.basePath)
+	if err != nil {
+		log.Printf("Warning: could not read examples dir %s: %v", s.basePath, err)
+		return
 	}
 
-	// Read Recipe file
-	if recipeBytes, err := os.ReadFile(recipePath); err == nil {
-		recipeContent = string(recipeBytes)
-		if info, err := os.Stat(recipePath); err == nil {
-			if info.ModTime().After(lastMod) {
-				lastMod = info.ModTime()
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+
+		dir := filepath.Join(s.basePath, entry.Name())
+		manifestPath := filepath.Join(dir, "sdl.json")
+
+		ws, err := LoadWorkspaceManifest(manifestPath)
+		if err != nil {
+			continue // No manifest, skip
+		}
+
+		ws.Id = entry.Name()
+		ws.Dir = dir
+
+		// Load SDL content for each design
+		for _, design := range ws.Designs {
+			sdlPath := filepath.Join(dir, design.File)
+			if data, err := os.ReadFile(sdlPath); err == nil {
+				key := ws.Id + "/" + design.Name
+				s.designContents[key] = string(data)
 			}
 		}
-	}
 
-	// If files don't exist, use empty content and current time
-	if lastMod.IsZero() {
-		lastMod = time.Now()
+		s.workspaces[ws.Id] = ws
+		log.Printf("[CATALOG] Discovered workspace: %s (%d designs)", ws.Name, len(ws.Designs))
 	}
-
-	// Create version with file content
-	project.Versions = map[string]SystemVersion{
-		"v1": {
-			SDL:    sdlContent,
-			Recipe: recipeContent,
-		},
-	}
-	project.LastUpdated = lastMod.Format(time.RFC3339)
-
-	s.systems[project.ID] = project
 }
 
-// ListSystems returns all systems as SystemInfo
-func (s *SystemCatalogService) ListSystems() []SystemInfo {
-	var systems []SystemInfo
-	for _, project := range s.systems {
-		systems = append(systems, SystemInfo{
-			ID:          project.ID,
-			Name:        project.Name,
-			Description: project.Description,
-			Category:    project.Category,
-			Difficulty:  project.Difficulty,
-			Tags:        project.Tags,
-			Icon:        project.Icon,
-			LastUpdated: project.LastUpdated,
-		})
+// ListWorkspaces returns all discovered workspaces.
+func (s *SystemCatalogService) ListWorkspaces() []*protos.Workspace {
+	var out []*protos.Workspace
+	for _, ws := range s.workspaces {
+		out = append(out, ws)
 	}
-	return systems
+	return out
 }
 
-// GetSystem returns a specific system project
-func (s *SystemCatalogService) GetSystem(id string) *SystemProject {
-	return s.systems[id]
+// GetWorkspace returns a workspace by ID.
+func (s *SystemCatalogService) GetWorkspace(id string) *protos.Workspace {
+	return s.workspaces[id]
+}
+
+// GetDesignContent returns the SDL content for a specific design within a workspace.
+func (s *SystemCatalogService) GetDesignContent(workspaceId, designName string) string {
+	return s.designContents[workspaceId+"/"+designName]
+}
+
+// GetAllDesignContents returns all SDL content for a workspace, keyed by design name.
+func (s *SystemCatalogService) GetAllDesignContents(workspaceId string) map[string]string {
+	out := make(map[string]string)
+	ws := s.workspaces[workspaceId]
+	if ws == nil {
+		return out
+	}
+	for _, d := range ws.Designs {
+		key := workspaceId + "/" + d.Name
+		if content, ok := s.designContents[key]; ok {
+			out[d.Name] = content
+		}
+	}
+	return out
 }

@@ -26,7 +26,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file wasmjs/v1/annotations.proto.
  */
 export const file_wasmjs_v1_annotations: GenFile = /*@__PURE__*/
-  fileDesc("Cht3YXNtanMvdjEvYW5ub3RhdGlvbnMucHJvdG8SCXdhc21qcy52MSJ6Cg9TdGF0ZWZ1bE9wdGlvbnMSDwoHZW5hYmxlZBgBIAEoCBIaChJzdGF0ZV9tZXNzYWdlX3R5cGUYAiABKAkSOgoTY29uZmxpY3RfcmVzb2x1dGlvbhgDIAEoDjIdLndhc21qcy52MS5Db25mbGljdFJlc29sdXRpb24iRAoVU3RhdGVmdWxNZXRob2RPcHRpb25zEhcKD3JldHVybnNfcGF0Y2hlcxgBIAEoCBISCgpicm9hZGNhc3RzGAIgASgIIiYKEkFzeW5jTWV0aG9kT3B0aW9ucxIQCghpc19hc3luYxgBIAEoCCpYChJDb25mbGljdFJlc29sdXRpb24SFwoTQ0hBTkdFX05VTUJFUl9CQVNFRBAAEhMKD1RJTUVTVEFNUF9CQVNFRBABEhQKEExBU1RfV1JJVEVSX1dJTlMQAjpKChB3YXNtX21ldGhvZF9uYW1lEh4uZ29vZ2xlLnByb3RvYnVmLk1ldGhvZE9wdGlvbnMY0YYDIAEoCVIOd2FzbU1ldGhvZE5hbWU6UwoUd2FzbV9zZXJ2aWNlX2V4Y2x1ZGUSHy5nb29nbGUucHJvdG9idWYuU2VydmljZU9wdGlvbnMY0oYDIAEoCFISd2FzbVNlcnZpY2VFeGNsdWRlOlAKE3dhc21fbWV0aG9kX2V4Y2x1ZGUSHi5nb29nbGUucHJvdG9idWYuTWV0aG9kT3B0aW9ucxjThgMgASgIUhF3YXNtTWV0aG9kRXhjbHVkZTpNChF3YXNtX3NlcnZpY2VfbmFtZRIfLmdvb2dsZS5wcm90b2J1Zi5TZXJ2aWNlT3B0aW9ucxjUhgMgASgJUg93YXNtU2VydmljZU5hbWU6WQoIc3RhdGVmdWwSHy5nb29nbGUucHJvdG9idWYuU2VydmljZU9wdGlvbnMY1YYDIAEoCzIaLndhc21qcy52MS5TdGF0ZWZ1bE9wdGlvbnNSCHN0YXRlZnVsOmsKD3N0YXRlZnVsX21ldGhvZBIeLmdvb2dsZS5wcm90b2J1Zi5NZXRob2RPcHRpb25zGNaGAyABKAsyIC53YXNtanMudjEuU3RhdGVmdWxNZXRob2RPcHRpb25zUg5zdGF0ZWZ1bE1ldGhvZDpiCgxhc3luY19tZXRob2QSHi5nb29nbGUucHJvdG9idWYuTWV0aG9kT3B0aW9ucxjXhgMgASgLMh0ud2FzbWpzLnYxLkFzeW5jTWV0aG9kT3B0aW9uc1ILYXN5bmNNZXRob2Q6TAoQYnJvd3Nlcl9wcm92aWRlZBIfLmdvb2dsZS5wcm90b2J1Zi5TZXJ2aWNlT3B0aW9ucxjYhgMgASgIUg9icm93c2VyUHJvdmlkZWQ6PQoKdHNfZmFjdG9yeRIcLmdvb2dsZS5wcm90b2J1Zi5GaWxlT3B0aW9ucxjZhgMgASgIUgl0c0ZhY3RvcnlCP1o9Z2l0aHViLmNvbS9wYW55YW0vcHJvdG9jLWdlbi1nby13YXNtanMvcHJvdG8vZ2VuL2dvL3dhc21qcy92MWIGcHJvdG8z", [file_google_protobuf_descriptor]);
+  fileDesc("Cht3YXNtanMvdjEvYW5ub3RhdGlvbnMucHJvdG8SCXdhc21qcy52MSJ6Cg9TdGF0ZWZ1bE9wdGlvbnMSDwoHZW5hYmxlZBgBIAEoCBIaChJzdGF0ZV9tZXNzYWdlX3R5cGUYAiABKAkSOgoTY29uZmxpY3RfcmVzb2x1dGlvbhgDIAEoDjIdLndhc21qcy52MS5Db25mbGljdFJlc29sdXRpb24iRAoVU3RhdGVmdWxNZXRob2RPcHRpb25zEhcKD3JldHVybnNfcGF0Y2hlcxgBIAEoCBISCgpicm9hZGNhc3RzGAIgASgIIiYKEkFzeW5jTWV0aG9kT3B0aW9ucxIQCghpc19hc3luYxgBIAEoCCpYChJDb25mbGljdFJlc29sdXRpb24SFwoTQ0hBTkdFX05VTUJFUl9CQVNFRBAAEhMKD1RJTUVTVEFNUF9CQVNFRBABEhQKEExBU1RfV1JJVEVSX1dJTlMQAippCg9JbnZvY2F0aW9uU3R5bGUSGQoVSU5WT0NBVElPTl9TVFlMRV9TWU5DEAASHAoYSU5WT0NBVElPTl9TVFlMRV9QUk9NSVNFEAESHQoZSU5WT0NBVElPTl9TVFlMRV9DQUxMQkFDSxACOkoKEHdhc21fbWV0aG9kX25hbWUSHi5nb29nbGUucHJvdG9idWYuTWV0aG9kT3B0aW9ucxjRhgMgASgJUg53YXNtTWV0aG9kTmFtZTpTChR3YXNtX3NlcnZpY2VfZXhjbHVkZRIfLmdvb2dsZS5wcm90b2J1Zi5TZXJ2aWNlT3B0aW9ucxjShgMgASgIUhJ3YXNtU2VydmljZUV4Y2x1ZGU6UAoTd2FzbV9tZXRob2RfZXhjbHVkZRIeLmdvb2dsZS5wcm90b2J1Zi5NZXRob2RPcHRpb25zGNOGAyABKAhSEXdhc21NZXRob2RFeGNsdWRlOk0KEXdhc21fc2VydmljZV9uYW1lEh8uZ29vZ2xlLnByb3RvYnVmLlNlcnZpY2VPcHRpb25zGNSGAyABKAlSD3dhc21TZXJ2aWNlTmFtZTpZCghzdGF0ZWZ1bBIfLmdvb2dsZS5wcm90b2J1Zi5TZXJ2aWNlT3B0aW9ucxjVhgMgASgLMhoud2FzbWpzLnYxLlN0YXRlZnVsT3B0aW9uc1IIc3RhdGVmdWw6awoPc3RhdGVmdWxfbWV0aG9kEh4uZ29vZ2xlLnByb3RvYnVmLk1ldGhvZE9wdGlvbnMY1oYDIAEoCzIgLndhc21qcy52MS5TdGF0ZWZ1bE1ldGhvZE9wdGlvbnNSDnN0YXRlZnVsTWV0aG9kOmcKEGludm9jYXRpb25fc3R5bGUSHi5nb29nbGUucHJvdG9idWYuTWV0aG9kT3B0aW9ucxjahgMgASgOMhoud2FzbWpzLnYxLkludm9jYXRpb25TdHlsZVIPaW52b2NhdGlvblN0eWxlOmIKDGFzeW5jX21ldGhvZBIeLmdvb2dsZS5wcm90b2J1Zi5NZXRob2RPcHRpb25zGNeGAyABKAsyHS53YXNtanMudjEuQXN5bmNNZXRob2RPcHRpb25zUgthc3luY01ldGhvZDpMChBicm93c2VyX3Byb3ZpZGVkEh8uZ29vZ2xlLnByb3RvYnVmLlNlcnZpY2VPcHRpb25zGNiGAyABKAhSD2Jyb3dzZXJQcm92aWRlZDo9Cgp0c19mYWN0b3J5EhwuZ29vZ2xlLnByb3RvYnVmLkZpbGVPcHRpb25zGNmGAyABKAhSCXRzRmFjdG9yeUI/Wj1naXRodWIuY29tL3BhbnlhbS9wcm90b2MtZ2VuLWdvLXdhc21qcy9wcm90by9nZW4vZ28vd2FzbWpzL3YxYgZwcm90bzM", [file_google_protobuf_descriptor]);
 
 /**
  * Configuration for stateful services
@@ -94,12 +94,14 @@ export const StatefulMethodOptionsSchema: GenMessage<StatefulMethodOptions> = /*
 
 /**
  * Configuration for async methods
+ * DEPRECATED: Use invocation_style instead.
  *
  * @generated from message wasmjs.v1.AsyncMethodOptions
  */
 export type AsyncMethodOptions = Message<"wasmjs.v1.AsyncMethodOptions"> & {
   /**
    * Whether this method should be generated as async with callback parameter
+   * Maps to INVOCATION_STYLE_CALLBACK when true.
    *
    * @generated from field: bool is_async = 1;
    */
@@ -148,6 +150,49 @@ export const ConflictResolutionSchema: GenEnum<ConflictResolution> = /*@__PURE__
   enumDesc(file_wasmjs_v1_annotations, 0);
 
 /**
+ * InvocationStyle specifies how a method should be invoked across the JS/WASM boundary.
+ * This determines the method signature and execution model.
+ *
+ * @generated from enum wasmjs.v1.InvocationStyle
+ */
+export enum InvocationStyle {
+  /**
+   * SYNC: Method returns value directly. Executes on the JS thread.
+   * Use for simple methods that don't call browser APIs returning Promises.
+   * JS signature: method(request): Response
+   * WARNING: Will deadlock if the method calls browser APIs that return Promises!
+   *
+   * @generated from enum value: INVOCATION_STYLE_SYNC = 0;
+   */
+  SYNC = 0,
+
+  /**
+   * PROMISE: Method returns a JavaScript Promise. Executes in a goroutine.
+   * Safe for methods that call browser APIs (fetch, IndexedDB, etc.).
+   * JS signature: method(request): Promise<Response>
+   * JS can use async/await: const resp = await service.method(req);
+   *
+   * @generated from enum value: INVOCATION_STYLE_PROMISE = 1;
+   */
+  PROMISE = 1,
+
+  /**
+   * CALLBACK: Method takes a callback parameter. Executes in a goroutine.
+   * Safe for methods that call browser APIs. Legacy pattern - prefer PROMISE.
+   * JS signature: method(request, callback: (response, error?) => void): void
+   *
+   * @generated from enum value: INVOCATION_STYLE_CALLBACK = 2;
+   */
+  CALLBACK = 2,
+}
+
+/**
+ * Describes the enum wasmjs.v1.InvocationStyle.
+ */
+export const InvocationStyleSchema: GenEnum<InvocationStyle> = /*@__PURE__*/
+  enumDesc(file_wasmjs_v1_annotations, 1);
+
+/**
  * @generated from extension: string wasm_method_name = 50001;
  */
 export const wasm_method_name: GenExtension<MethodOptions, string> = /*@__PURE__*/
@@ -184,20 +229,26 @@ export const stateful_method: GenExtension<MethodOptions, StatefulMethodOptions>
   extDesc(file_wasmjs_v1_annotations, 5);
 
 /**
+ * @generated from extension: wasmjs.v1.InvocationStyle invocation_style = 50010;
+ */
+export const invocation_style: GenExtension<MethodOptions, InvocationStyle> = /*@__PURE__*/
+  extDesc(file_wasmjs_v1_annotations, 6);
+
+/**
  * @generated from extension: wasmjs.v1.AsyncMethodOptions async_method = 50007;
  */
 export const async_method: GenExtension<MethodOptions, AsyncMethodOptions> = /*@__PURE__*/
-  extDesc(file_wasmjs_v1_annotations, 6);
+  extDesc(file_wasmjs_v1_annotations, 7);
 
 /**
  * @generated from extension: bool browser_provided = 50008;
  */
 export const browser_provided: GenExtension<ServiceOptions, boolean> = /*@__PURE__*/
-  extDesc(file_wasmjs_v1_annotations, 7);
+  extDesc(file_wasmjs_v1_annotations, 8);
 
 /**
  * @generated from extension: bool ts_factory = 50009;
  */
 export const ts_factory: GenExtension<FileOptions, boolean> = /*@__PURE__*/
-  extDesc(file_wasmjs_v1_annotations, 8);
+  extDesc(file_wasmjs_v1_annotations, 9);
 

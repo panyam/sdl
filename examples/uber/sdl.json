@@ -1,0 +1,32 @@
+{
+  "name": "Uber Architecture Evolution",
+  "description": "Three stages of Uber's architecture: MVP monolith, intermediate services, and modern microservices",
+  "sources": {
+    "stdlib": {
+      "builtin": true
+    }
+  },
+  "designs": [
+    {
+      "name": "UberMVP",
+      "file": "mvp.sdl",
+      "description": "Monolithic MVP — two friends with an app",
+      "difficulty": "beginner",
+      "tags": ["monolith", "database", "rest-api"]
+    },
+    {
+      "name": "UberIntermediate",
+      "file": "intermediate.sdl",
+      "description": "Service-oriented with caching and geo-indexing",
+      "difficulty": "intermediate",
+      "tags": ["microservices", "caching", "geo-spatial", "queuing"]
+    },
+    {
+      "name": "UberModern",
+      "file": "modern.sdl",
+      "description": "Event-driven microservices with ML matching",
+      "difficulty": "advanced",
+      "tags": ["microservices", "event-driven", "ml", "global-distribution"]
+    }
+  ]
+}
