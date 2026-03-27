@@ -3696,6 +3696,223 @@ export const DiagramComponentHoveredResponseSchema: MessageSchema = {
 };
 
 
+/**
+ * Schema for CreateWorkspaceRequest message
+ */
+export const CreateWorkspaceRequestSchema: MessageSchema = {
+  name: "CreateWorkspaceRequest",
+  fields: [
+    {
+      name: "workspace",
+      type: FieldType.MESSAGE,
+      id: 1,
+      messageType: "sdl.v1.Workspace",
+    },
+  ],
+};
+
+
+/**
+ * Schema for CreateWorkspaceResponse message
+ */
+export const CreateWorkspaceResponseSchema: MessageSchema = {
+  name: "CreateWorkspaceResponse",
+  fields: [
+    {
+      name: "workspace",
+      type: FieldType.MESSAGE,
+      id: 1,
+      messageType: "sdl.v1.Workspace",
+    },
+  ],
+};
+
+
+/**
+ * Schema for GetWorkspaceRequest message
+ */
+export const GetWorkspaceRequestSchema: MessageSchema = {
+  name: "GetWorkspaceRequest",
+  fields: [
+    {
+      name: "id",
+      type: FieldType.STRING,
+      id: 1,
+    },
+  ],
+};
+
+
+/**
+ * Schema for GetWorkspaceResponse message
+ */
+export const GetWorkspaceResponseSchema: MessageSchema = {
+  name: "GetWorkspaceResponse",
+  fields: [
+    {
+      name: "workspace",
+      type: FieldType.MESSAGE,
+      id: 1,
+      messageType: "sdl.v1.Workspace",
+    },
+  ],
+};
+
+
+/**
+ * Schema for ListWorkspacesRequest message
+ */
+export const ListWorkspacesRequestSchema: MessageSchema = {
+  name: "ListWorkspacesRequest",
+  fields: [
+  ],
+};
+
+
+/**
+ * Schema for ListWorkspacesResponse message
+ */
+export const ListWorkspacesResponseSchema: MessageSchema = {
+  name: "ListWorkspacesResponse",
+  fields: [
+    {
+      name: "workspaces",
+      type: FieldType.MESSAGE,
+      id: 1,
+      messageType: "sdl.v1.Workspace",
+      repeated: true,
+    },
+  ],
+};
+
+
+/**
+ * Schema for DeleteWorkspaceRequest message
+ */
+export const DeleteWorkspaceRequestSchema: MessageSchema = {
+  name: "DeleteWorkspaceRequest",
+  fields: [
+    {
+      name: "id",
+      type: FieldType.STRING,
+      id: 1,
+    },
+  ],
+};
+
+
+/**
+ * Schema for DeleteWorkspaceResponse message
+ */
+export const DeleteWorkspaceResponseSchema: MessageSchema = {
+  name: "DeleteWorkspaceResponse",
+  fields: [
+  ],
+};
+
+
+/**
+ * Schema for UpdateWorkspaceRequest message
+ */
+export const UpdateWorkspaceRequestSchema: MessageSchema = {
+  name: "UpdateWorkspaceRequest",
+  fields: [
+    {
+      name: "workspace",
+      type: FieldType.MESSAGE,
+      id: 1,
+      messageType: "sdl.v1.Workspace",
+    },
+  ],
+};
+
+
+/**
+ * Schema for UpdateWorkspaceResponse message
+ */
+export const UpdateWorkspaceResponseSchema: MessageSchema = {
+  name: "UpdateWorkspaceResponse",
+  fields: [
+    {
+      name: "workspace",
+      type: FieldType.MESSAGE,
+      id: 1,
+      messageType: "sdl.v1.Workspace",
+    },
+  ],
+};
+
+
+/**
+ * Schema for GetDesignContentRequest message
+ */
+export const GetDesignContentRequestSchema: MessageSchema = {
+  name: "GetDesignContentRequest",
+  fields: [
+    {
+      name: "workspaceId",
+      type: FieldType.STRING,
+      id: 1,
+    },
+    {
+      name: "designName",
+      type: FieldType.STRING,
+      id: 2,
+    },
+  ],
+};
+
+
+/**
+ * Schema for GetDesignContentResponse message
+ */
+export const GetDesignContentResponseSchema: MessageSchema = {
+  name: "GetDesignContentResponse",
+  fields: [
+    {
+      name: "sdlContent",
+      type: FieldType.STRING,
+      id: 1,
+    },
+    {
+      name: "designName",
+      type: FieldType.STRING,
+      id: 2,
+    },
+  ],
+};
+
+
+/**
+ * Schema for GetAllDesignContentsRequest message
+ */
+export const GetAllDesignContentsRequestSchema: MessageSchema = {
+  name: "GetAllDesignContentsRequest",
+  fields: [
+    {
+      name: "workspaceId",
+      type: FieldType.STRING,
+      id: 1,
+    },
+  ],
+};
+
+
+/**
+ * Schema for GetAllDesignContentsResponse message
+ */
+export const GetAllDesignContentsResponseSchema: MessageSchema = {
+  name: "GetAllDesignContentsResponse",
+  fields: [
+    {
+      name: "contents",
+      type: FieldType.STRING,
+      id: 1,
+    },
+  ],
+};
+
+
 
 /**
  * Package-scoped schema registry for sdl.v1
@@ -3860,6 +4077,20 @@ export const sdl_v1SchemaRegistry: Record<string, MessageSchema> = {
   "sdl.v1.DiagramComponentClickedResponse": DiagramComponentClickedResponseSchema,
   "sdl.v1.DiagramComponentHoveredRequest": DiagramComponentHoveredRequestSchema,
   "sdl.v1.DiagramComponentHoveredResponse": DiagramComponentHoveredResponseSchema,
+  "sdl.v1.CreateWorkspaceRequest": CreateWorkspaceRequestSchema,
+  "sdl.v1.CreateWorkspaceResponse": CreateWorkspaceResponseSchema,
+  "sdl.v1.GetWorkspaceRequest": GetWorkspaceRequestSchema,
+  "sdl.v1.GetWorkspaceResponse": GetWorkspaceResponseSchema,
+  "sdl.v1.ListWorkspacesRequest": ListWorkspacesRequestSchema,
+  "sdl.v1.ListWorkspacesResponse": ListWorkspacesResponseSchema,
+  "sdl.v1.DeleteWorkspaceRequest": DeleteWorkspaceRequestSchema,
+  "sdl.v1.DeleteWorkspaceResponse": DeleteWorkspaceResponseSchema,
+  "sdl.v1.UpdateWorkspaceRequest": UpdateWorkspaceRequestSchema,
+  "sdl.v1.UpdateWorkspaceResponse": UpdateWorkspaceResponseSchema,
+  "sdl.v1.GetDesignContentRequest": GetDesignContentRequestSchema,
+  "sdl.v1.GetDesignContentResponse": GetDesignContentResponseSchema,
+  "sdl.v1.GetAllDesignContentsRequest": GetAllDesignContentsRequestSchema,
+  "sdl.v1.GetAllDesignContentsResponse": GetAllDesignContentsResponseSchema,
 };
 
 /**

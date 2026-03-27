@@ -146,6 +146,19 @@ type SystemsServiceServer interface {
 	GetSystemContent(context.Context, *v1models.GetSystemContentRequest) (*v1models.GetSystemContentResponse, error)
 }
 
+// WorkspaceServiceServer is the server API for WorkspaceService service (WASM version without gRPC embedding).
+type WorkspaceServiceServer interface {
+	CreateWorkspace(context.Context, *v1models.CreateWorkspaceRequest) (*v1models.CreateWorkspaceResponse, error)
+	GetWorkspace(context.Context, *v1models.GetWorkspaceRequest) (*v1models.GetWorkspaceResponse, error)
+	ListWorkspaces(context.Context, *v1models.ListWorkspacesRequest) (*v1models.ListWorkspacesResponse, error)
+	DeleteWorkspace(context.Context, *v1models.DeleteWorkspaceRequest) (*v1models.DeleteWorkspaceResponse, error)
+	UpdateWorkspace(context.Context, *v1models.UpdateWorkspaceRequest) (*v1models.UpdateWorkspaceResponse, error)
+	/** Get SDL content for a single design */
+	GetDesignContent(context.Context, *v1models.GetDesignContentRequest) (*v1models.GetDesignContentResponse, error)
+	/** Get all design contents for a workspace */
+	GetAllDesignContents(context.Context, *v1models.GetAllDesignContentsRequest) (*v1models.GetAllDesignContentsResponse, error)
+}
+
 // Server stream interfaces for streaming methods
 
 // StreamMetrics_ServerStream is the server stream interface for StreamMetrics

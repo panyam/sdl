@@ -14,6 +14,7 @@ import (
 	goal "github.com/panyam/goapplib"
 	protos "github.com/panyam/sdl/gen/go/sdl/v1/models"
 	"github.com/panyam/sdl/services"
+	"github.com/panyam/sdl/services/inmem"
 	gotl "github.com/panyam/goutils/template"
 	gohttp "github.com/panyam/servicekit/http"
 	tmplr "github.com/panyam/templar"
@@ -48,10 +49,12 @@ type SdlApp struct {
 	// Workspace group (routes at /workspaces, backed by Canvas proto)
 	WorkspacesGroup *WorkspacesGroup
 
-	// Legacy handlers (API, WebSocket, Systems) - kept for now
-	api            *SDLApi
-	wsHandler      *CanvasWSHandler
-	systemsHandler *SystemsHandler
+	// Legacy handlers
+	api       *SDLApi
+	wsHandler *CanvasWSHandler
+
+	// Workspace service — manages workspace protos and design content
+	WorkspaceSvc services.WorkspaceService
 
 	// Vite manifest for cache-busted asset URLs
 	ViteManifest map[string]ViteManifestEntry
@@ -139,8 +142,10 @@ func NewSdlApp(grpcAddress string) (sdlApp *SdlApp, goalApp *goal.App[*SdlApp], 
 		clients: make(map[string]*CanvasWSConn),
 	}
 
-	// Initialize systems handler using the same SourceLoader-backed templates
-	sdlApp.systemsHandler = NewSystemsHandler()
+	// Initialize workspace service (in-memory, seeded from examples/)
+	wsStorage := inmem.NewWorkspaceStorage()
+	wsStorage.SeedFromExamples("examples")
+	sdlApp.WorkspaceSvc = services.NewBackendWorkspaceService(wsStorage)
 
 	// Create WorkspacesGroup
 	sdlApp.WorkspacesGroup = &WorkspacesGroup{
@@ -268,11 +273,12 @@ func (g *WorkspacesGroup) forkExampleHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	// Look up the example workspace
-	ws := g.sdlApp.systemsHandler.catalog.GetWorkspace(exampleId)
-	if ws == nil {
+	wsResp, err := g.sdlApp.WorkspaceSvc.GetWorkspace(r.Context(), &protos.GetWorkspaceRequest{Id: exampleId})
+	if err != nil || wsResp.Workspace == nil {
 		http.Error(w, "Example not found", http.StatusNotFound)
 		return
 	}
+	ws := wsResp.Workspace
 
 	// Try to open existing canvas for this example
 	existing, _ := g.sdlApp.ClientMgr.GetCanvasSvcClient().GetCanvas(r.Context(), &protos.GetCanvasRequest{
@@ -284,7 +290,8 @@ func (g *WorkspacesGroup) forkExampleHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	// Combine all design SDL files into one system_contents block
-	allContents := g.sdlApp.systemsHandler.catalog.GetAllDesignContents(exampleId)
+	contentsResp, _ := g.sdlApp.WorkspaceSvc.GetAllDesignContents(r.Context(), &protos.GetAllDesignContentsRequest{WorkspaceId: exampleId})
+	allContents := contentsResp.GetContents()
 	combined := ""
 	for _, content := range allContents {
 		combined += content + "\n\n"
@@ -360,9 +367,12 @@ func (p *WorkspaceListingPage) Load(r *http.Request, w http.ResponseWriter, app 
 	// Load header
 	p.Header.Load(r, w, app)
 
-	// Load example workspaces from catalog
-	if app.Context.systemsHandler != nil {
-		p.Examples = app.Context.systemsHandler.catalog.ListWorkspaces()
+	// Load example workspaces
+	if app.Context.WorkspaceSvc != nil {
+		listResp, err := app.Context.WorkspaceSvc.ListWorkspaces(r.Context(), &protos.ListWorkspacesRequest{})
+		if err == nil {
+			p.Examples = listResp.Workspaces
+		}
 	}
 
 	// Get user workspaces via gRPC (Canvas service)
@@ -388,6 +398,8 @@ type WorkspacePage struct {
 	WorkspaceId string
 	Canvas      *protos.Canvas // proto stays Canvas
 	ReadOnly    bool
+	// SDL file contents for embedding in <script> tags (filename -> content)
+	DesignFiles map[string]string
 }
 
 func (p *WorkspacePage) Load(r *http.Request, w http.ResponseWriter, app *goal.App[*SdlApp]) (err error, finished bool) {
@@ -425,6 +437,14 @@ func (p *WorkspacePage) Load(r *http.Request, w http.ResponseWriter, app *goal.A
 		p.Title = p.Canvas.Name
 	} else {
 		p.Title = "Edit: " + p.Canvas.Name
+	}
+
+	// Load design files from workspace service for embedding in script tags
+	if app.Context.WorkspaceSvc != nil {
+		contentsResp, err := app.Context.WorkspaceSvc.GetAllDesignContents(r.Context(), &protos.GetAllDesignContentsRequest{WorkspaceId: p.WorkspaceId})
+		if err == nil {
+			p.DesignFiles = contentsResp.Contents
+		}
 	}
 
 	return nil, false

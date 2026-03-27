@@ -1330,3 +1330,92 @@ export interface DiagramComponentHoveredResponse {
   success: boolean;
 }
 
+
+
+export interface CreateWorkspaceRequest {
+  workspace?: Workspace;
+}
+
+
+
+export interface CreateWorkspaceResponse {
+  workspace?: Workspace;
+}
+
+
+
+export interface GetWorkspaceRequest {
+  id: string;
+}
+
+
+
+export interface GetWorkspaceResponse {
+  workspace?: Workspace;
+}
+
+
+
+export interface ListWorkspacesRequest {
+}
+
+
+
+export interface ListWorkspacesResponse {
+  workspaces?: Workspace[];
+}
+
+
+
+export interface DeleteWorkspaceRequest {
+  id: string;
+}
+
+
+
+export interface DeleteWorkspaceResponse {
+}
+
+
+
+export interface UpdateWorkspaceRequest {
+  workspace?: Workspace;
+}
+
+
+
+export interface UpdateWorkspaceResponse {
+  workspace?: Workspace;
+}
+
+
+/**
+ * Get SDL content for a specific design within a workspace
+ */
+export interface GetDesignContentRequest {
+  workspaceId: string;
+  designName: string;
+}
+
+
+
+export interface GetDesignContentResponse {
+  sdlContent: string;
+  designName: string;
+}
+
+
+/**
+ * Get all design contents for a workspace
+ */
+export interface GetAllDesignContentsRequest {
+  workspaceId: string;
+}
+
+
+
+export interface GetAllDesignContentsResponse {
+  /** design name -> SDL content */
+  contents: Record<string, string>;
+}
+

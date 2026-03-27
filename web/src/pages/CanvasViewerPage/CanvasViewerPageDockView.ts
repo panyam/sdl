@@ -5,6 +5,7 @@ import { CanvasViewerPageBase, PanelId } from './CanvasViewerPageBase';
 import { SystemDiagram, Generator, Metric } from '../../../gen/wasmjs/sdl/v1/models/interfaces';
 import { TabbedEditor } from '../../components/tabbed-editor';
 import { ConsolePanel } from '../../components/console-panel';
+import { DesignSelector } from '../../components/design-selector';
 
 /**
  * DockView-based implementation of CanvasViewerPage
@@ -19,6 +20,7 @@ export class CanvasViewerPageDockView extends CanvasViewerPageBase {
     // Panel components
     private tabbedEditor: TabbedEditor | null = null;
     private consolePanel: ConsolePanel | null = null;
+    private designSelector: DesignSelector | null = null;
 
     // Panel containers
     private diagramContainer: HTMLElement | null = null;
@@ -44,6 +46,17 @@ export class CanvasViewerPageDockView extends CanvasViewerPageBase {
         } catch (error) {
             console.error('[CanvasViewerPageDockView] Failed to load Graphviz:', error);
         }
+
+        // Create workspace toolbar with design selector
+        const toolbar = document.createElement('div');
+        toolbar.className = 'flex items-center gap-3 px-4 py-2 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700';
+        toolbar.id = 'workspace-toolbar';
+
+        this.designSelector = new DesignSelector(toolbar, (systemName) => {
+            this.onDesignSelected(systemName);
+        });
+
+        appElement.appendChild(toolbar);
 
         // Create DockView container with theme class
         // Uses flex fill pattern (not absolute) so it respects the header above
@@ -240,6 +253,45 @@ export class CanvasViewerPageDockView extends CanvasViewerPageBase {
     protected clearConsolePanel(): void {
         if (this.consolePanel) {
             this.consolePanel.clear();
+        }
+    }
+
+    // =========================================================================
+    // Design Selector
+    // =========================================================================
+
+    /** Override activate to populate design selector after presenter initializes */
+    async activate(): Promise<void> {
+        await super.activate();
+
+        // After presenter init + ClientReady, the canvas has loaded systems.
+        // Call ClientReady to get the canvas with loaded_system_names.
+        try {
+            const response = await this.canvasViewPresenterClient.clientReady({
+                canvasId: this.currentCanvasId || 'default',
+            });
+            if (response.canvas && this.designSelector) {
+                const designs = response.canvas.loadedSystemNames || [];
+                const active = response.canvas.activeSystem || '';
+                this.designSelector.setDesigns(designs, active);
+                console.log(`[CanvasViewerPageDockView] Designs loaded: ${designs.join(', ')} (active: ${active})`);
+            }
+        } catch (err) {
+            console.error('[CanvasViewerPageDockView] Failed to get canvas state:', err);
+        }
+    }
+
+    /** Called when user selects a different design from the dropdown */
+    private async onDesignSelected(systemName: string): Promise<void> {
+        console.log(`[CanvasViewerPageDockView] Switching to design: ${systemName}`);
+        try {
+            await this.canvasViewPresenterClient.useSystem({
+                canvasId: this.currentCanvasId || 'default',
+                systemName: systemName,
+            });
+            // Presenter pushes diagram + generator updates via RPC callbacks
+        } catch (err) {
+            console.error(`[CanvasViewerPageDockView] Failed to switch design:`, err);
         }
     }
 

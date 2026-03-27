@@ -49,12 +49,7 @@ func NewSDLApi(grpcAddr string, canvasService *services.CanvasService) *SDLApi {
 		log.Println("No CanvasService provided, skipping Connect handler")
 	}
 
-	// Add Systems Connect handler
-	log.Println("Adding Systems Connect handler...")
-	systemsAdapter := NewConnectSystemsServiceAdapter(services.NewSystemsService())
-	systemsConnectPath, systemsConnectHandler := v1connect.NewSystemsServiceHandler(systemsAdapter)
-	out.mux.Handle(systemsConnectPath, systemsConnectHandler)
-	log.Printf("Registered Systems Connect handler at: %s", systemsConnectPath)
+	// TODO: Add WorkspaceService Connect handler when needed
 
 	// Add Filesystem Connect handler
 	log.Println("Adding Filesystem Connect handler...")
@@ -128,10 +123,7 @@ func (web *SDLApi) createSvcMux(grpc_addr string) (*runtime.ServeMux, error) {
 		return nil, err
 	}
 
-	err = v1s.RegisterSystemsServiceHandlerFromEndpoint(ctx, svcMux, grpc_addr, opts)
-	if err != nil {
-		log.Fatal("Unable to register systems service: ", err)
-		return nil, err
-	}
-	return svcMux, nil // Return nil error on success
+	// TODO: Register WorkspaceService gateway when ready
+
+	return svcMux, nil
 }
