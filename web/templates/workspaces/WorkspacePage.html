@@ -18,6 +18,13 @@
 {{end}}
 
 {{define "PostBodySection"}}
+<!-- Embed SDL design files as script tags for browser-side loading -->
+{{range $name, $content := .DesignFiles}}
+<script type="text/sdl" data-design="{{$name}}">
+{{$content}}
+</script>
+{{end}}
+
 <script>
     // Set up page data for the frontend
     window.sdlPageData = {
@@ -25,7 +32,11 @@
         canvasId: '{{.WorkspaceId}}',
         canvasName: '{{.Canvas.Name}}',
         mode: 'server',
-        readonly: {{.ReadOnly}}
+        readonly: {{.ReadOnly}},
+        // Collect design names from embedded script tags
+        designs: Array.from(document.querySelectorAll('script[type="text/sdl"]'))
+            .map(el => el.dataset.design)
+            .filter(Boolean)
     };
 </script>
 {{end}}

@@ -260,24 +260,37 @@ export class CanvasViewerPageDockView extends CanvasViewerPageBase {
     // Design Selector
     // =========================================================================
 
-    /** Override activate to populate design selector after presenter initializes */
+    /** Override activate to load embedded SDL designs and populate selector */
     async activate(): Promise<void> {
         await super.activate();
 
-        // After presenter init + ClientReady, the canvas has loaded systems.
-        // Call ClientReady to get the canvas with loaded_system_names.
-        try {
-            const response = await this.canvasViewPresenterClient.clientReady({
-                canvasId: this.currentCanvasId || 'default',
-            });
-            if (response.canvas && this.designSelector) {
-                const designs = response.canvas.loadedSystemNames || [];
-                const active = response.canvas.activeSystem || '';
-                this.designSelector.setDesigns(designs, active);
-                console.log(`[CanvasViewerPageDockView] Designs loaded: ${designs.join(', ')} (active: ${active})`);
+        // Discover embedded SDL designs from <script type="text/sdl"> tags.
+        // The WASM runtime's ScriptTagFS (mounted at /designs/) reads these
+        // directly from the DOM — no manual filesystem writes needed.
+        const sdlScripts = document.querySelectorAll('script[type="text/sdl"]');
+        const loadedDesigns: string[] = [];
+
+        for (const script of sdlScripts) {
+            const designName = (script as HTMLElement).dataset.design || '';
+            if (!designName) continue;
+
+            // Tell presenter to load via /designs/ mount → ScriptTagFS reads the DOM
+            try {
+                await this.canvasViewPresenterClient.fileSelected({
+                    canvasId: this.currentCanvasId || 'default',
+                    filePath: `/designs/${designName}.sdl`,
+                });
+                loadedDesigns.push(designName);
+                console.log(`[CanvasViewerPageDockView] Loaded design: ${designName}`);
+            } catch (err) {
+                console.warn(`[CanvasViewerPageDockView] Failed to load ${designName}:`, err);
             }
-        } catch (err) {
-            console.error('[CanvasViewerPageDockView] Failed to get canvas state:', err);
+        }
+
+        // Populate design selector and auto-select first
+        if (this.designSelector && loadedDesigns.length > 0) {
+            this.designSelector.setDesigns(loadedDesigns);
+            await this.onDesignSelected(loadedDesigns[0]);
         }
     }
 
