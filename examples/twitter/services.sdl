@@ -3,14 +3,17 @@
 import WaitAll, WaitAny, HttpStatusCode, delay, log from "../common.sdl"
 import Database from "./dbs.sdl"
 
-system Twitter {
-  use tdb Database
-  use ts TweetService(TweetsDB = tdb)
+component TwitterArch {
+  uses tdb Database()
+  uses ts TweetService(TweetsDB = tdb)
 
-  use fdb Database
-  use fs FollowsService(FollowsDB = fdb)
+  uses fdb Database()
+  uses fs FollowsService(FollowsDB = fdb)
 
-  use tls TimelineService(TweetsSvc = ts, FollowsSvc = fs)
+  uses tls TimelineService(TweetsSvc = ts, FollowsSvc = fs)
+}
+
+system Twitter(arch TwitterArch) {
 }
 
 component TweetService {

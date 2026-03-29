@@ -1,0 +1,27 @@
+// Test fixture for the unified component/system model (issue #23).
+// Components handle ALL composition via 'uses'. Systems declare typed
+// parameters referencing component instances and contain only simulation config.
+// Self-contained: no @stdlib imports needed.
+
+component SimpleDB {
+    method Query() Bool {
+        return true
+    }
+}
+
+component SimpleServer {
+    uses db SimpleDB()
+
+    method HandleRequest() Bool {
+        return self.db.Query()
+    }
+}
+
+// Top-level architecture component: composes server and all its dependencies.
+component SimpleApp {
+    uses server SimpleServer()
+}
+
+// System declaration: takes a component parameter.
+system SimpleAppTest(app SimpleApp) {
+}

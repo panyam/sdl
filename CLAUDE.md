@@ -40,12 +40,20 @@ Builds for frontend, wasm, backend are all running continuously and can be queri
 - When you checkpoint update all relevant .md files with our latest understanding, statuses and progress in the current session and then commit.
 
 ## SDL System Declaration Notes
-- In SDL system declaration you can declare the components in any order. There are no "set" statements. You pass the dependencies in the constructor of a "use" keyword.  For example:
-```system Twitter {
-    use app AppServer(db = database)
-    use db Database
-}```
-- Here the AppServer component has a "db" dependency that is set by the "database" component declared in the next line.
+- Systems declare typed parameters referencing component types. Components handle all composition via `uses`. The `use` keyword has been removed from the language.
+- Example:
+```
+component TwitterArch {
+    uses app AppServer(db = database)
+    uses database Database()
+}
+
+system Twitter(arch TwitterArch) {
+}
+```
+- Here `TwitterArch` is a component that composes `AppServer` and `Database`. The system takes it as a parameter.
+- `uses x Foo()` (with empty parens) creates a default instance. `uses x Foo(dep = y)` wires dependencies.
+- `uses x Foo` (no parens) means the dependency must be provided by a parent component.
 
 ## Available commands
 

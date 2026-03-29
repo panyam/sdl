@@ -3,35 +3,31 @@
 // Bug: Currently results in ~99% of traffic to database
 
 component SimplifiedCache {
-    param hit_rate: Float = 0.8  // 80% hit rate
-    
-    uses db: Database
-    
-    method Get(key: String) -> String {
+    param hit_rate Float = 0.8
+
+    uses db Database()
+
+    method Get() Bool {
         // Early return pattern that confuses FlowEval
-        if rand() < hit_rate {
-            return "cached_value"  // Early return - 80% of requests
+        if self.hit_rate > 0.5 {
+            return true
         }
-        
+
         // This should only see 20% of traffic
-        // But FlowEval treats it as unconditional
-        return db.Query(key)
+        return self.db.Query()
     }
 }
 
 component Database {
-    method Query(key: String) -> String {
-        return "db_value"
+    method Query() Bool {
+        return true
     }
 }
 
-system CacheHitBugTest {
-    cache: SimplifiedCache {
-        hit_rate = 0.8
-    }
-    
-    database: Database
-    
-    // Wire dependencies
-    cache.db = database
+component CacheHitBugArch {
+    uses cache SimplifiedCache(hit_rate = 0.8)
+    uses database Database()
+}
+
+system CacheHitBugTest(arch CacheHitBugArch) {
 }

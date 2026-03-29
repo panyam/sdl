@@ -60,6 +60,9 @@ type FlowContext struct {
 	// Native component instances for FlowAnalyzable interface
 	NativeComponents map[string]components.FlowAnalyzable // component name -> FlowAnalyzable instance
 
+	// Resolved component declarations by type name (for parameter-based system lookup)
+	ResolvedComponents map[string]*ComponentDecl
+
 	// Cycle handling configuration
 	MaxRetries           int      // Limit exponential growth (recommended: 50)
 	ConvergenceThreshold float64  // Fixed-point iteration threshold (recommended: 0.01)
@@ -435,29 +438,23 @@ func (fc *FlowContext) isInCallStack(callKey string) bool {
 	return false
 }
 
-// getMethodDecl finds a method declaration in the system using pre-resolved component declarations
+// getMethodDecl finds a method declaration in the system using system parameters
 func (fc *FlowContext) getMethodDecl(component, method string) *MethodDecl {
 	if fc.System == nil {
 		return nil
 	}
 
-	// Find the component in the system body
-	for _, bodyItem := range fc.System.Body {
-		if instance, ok := bodyItem.(*InstanceDecl); ok {
-			if instance.Name.Value == component {
-				// Use the pre-resolved component declaration from type inference
-				if instance.ResolvedComponentDecl != nil {
-					methods, err := instance.ResolvedComponentDecl.Methods()
-					if err == nil {
-						for _, methodDecl := range methods {
-							if methodDecl.Name.Value == method {
-								return methodDecl
-							}
-						}
+	// Find the component in the system parameters
+	for _, param := range fc.System.Parameters {
+		if param.Name.Value == component {
+			// Look up the component type and find the method
+			compName := param.TypeDecl.Name
+			if compDecl, ok := fc.ResolvedComponents[compName]; ok {
+				methods, err := compDecl.Methods()
+				if err == nil {
+					if methodDecl, found := methods[method]; found {
+						return methodDecl
 					}
-				} else {
-					log.Printf("FlowEval: ResolvedComponentDecl not set for instance %s (component type %s) - was type inference run?",
-						instance.Name.Value, instance.ComponentName.Value)
 				}
 			}
 		}
@@ -700,34 +697,10 @@ func (fc *FlowContext) parseCallTarget(target string) (component, method string)
 	return "", ""
 }
 
-// resolveDependencyToInstance resolves a dependency name to the actual instance name in the system
+// resolveDependencyToInstance resolves a dependency name to the actual instance name.
+// In the unified model, components self-compose via 'uses' — the dependency name
+// within a component IS the resolved instance name. No system-level override mapping needed.
 func (fc *FlowContext) resolveDependencyToInstance(dependencyName string) string {
-	if fc.System == nil || fc.CurrentComponent == "" {
-		return dependencyName // Cannot resolve without context
-	}
-
-	// Find the current component's instance declaration in the system
-	for _, bodyItem := range fc.System.Body {
-		if instance, ok := bodyItem.(*InstanceDecl); ok {
-			if instance.Name.Value == fc.CurrentComponent {
-				// Look through the instance overrides to find dependency mapping
-				for _, assignment := range instance.Overrides {
-					if assignment.Var.Value == dependencyName {
-						// Found the mapping: dependencyName = actualInstanceName
-						if targetIdent, ok := assignment.Value.(*IdentifierExpr); ok {
-							log.Printf("FlowEval: Resolved dependency '%s' in component '%s' to instance '%s'",
-								dependencyName, fc.CurrentComponent, targetIdent.Value)
-							return targetIdent.Value
-						}
-					}
-				}
-			}
-		}
-	}
-
-	// No mapping found, return the dependency name as-is
-	log.Printf("FlowEval: No dependency mapping found for '%s' in component '%s', using as-is",
-		dependencyName, fc.CurrentComponent)
 	return dependencyName
 }
 

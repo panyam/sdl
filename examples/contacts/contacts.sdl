@@ -71,9 +71,12 @@ component ContactAppServer {
 }
 
 // Complete contacts lookup system with explicit cache
-system ContactsSystem {
-    use server ContactAppServer(db = database, cache = contactCache)
-    use database ContactDatabase(index = idx)
-    use idx HashIndex
-    use contactCache Cache
+component ContactsSystemArch {
+    uses server ContactAppServer(db = database, cache = contactCache)
+    uses database ContactDatabase(index = idx)
+    uses idx HashIndex()
+    uses contactCache Cache()
+}
+
+system ContactsSystem(arch ContactsSystemArch) {
 }

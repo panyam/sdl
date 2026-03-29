@@ -693,9 +693,10 @@ component AnalyticsServiceV3 {
   }
 }
 
-system UberModern {
+// Modern Architecture - event-driven microservices with ML matching
+component UberModernArch {
   // Core services
-  use gateway APIGatewayV3(
+  uses gateway APIGatewayV3(
     userService = userService,
     locationService = locationService,
     matchingService = matchingService,
@@ -703,18 +704,21 @@ system UberModern {
     notificationService = notificationService,
     eventBus = eventBus
   )
-  
-  use userService UserServiceV3(eventBus = eventBus)
-  use locationService LocationServiceV3(eventBus = eventBus)
-  use matchingService MatchingServiceV3(
+
+  uses userService UserServiceV3(eventBus = eventBus)
+  uses locationService LocationServiceV3(eventBus = eventBus)
+  uses matchingService MatchingServiceV3(
     locationService = locationService,
     pricingService = pricingService,
     eventBus = eventBus
   )
-  use pricingService PricingServiceV3
-  use notificationService NotificationServiceV3(eventBus = eventBus)
-  use eventBus EventBus
-  
+  uses pricingService PricingServiceV3()
+  uses notificationService NotificationServiceV3(eventBus = eventBus)
+  uses eventBus EventBus()
+
   // Analytics running in background
-  use analytics AnalyticsServiceV3(eventBus = eventBus)
+  uses analytics AnalyticsServiceV3(eventBus = eventBus)
+}
+
+system UberModern(arch UberModernArch) {
 }

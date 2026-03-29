@@ -118,9 +118,11 @@ func TestWASMFileSystemScenario(t *testing.T) {
 	bundledFS := NewMemoryFS()
 	bundledFS.PreloadFiles(map[string][]byte{
 		"/examples/uber.sdl": []byte(`// Uber MVP example
-system UberMVP {
-    use api APIGateway
-    use db Database
+component UberMVPArch {
+    uses api APIGateway()
+    uses db Database()
+}
+system UberMVP(arch UberMVPArch) {
 }`),
 	})
 	cfs.Mount("/examples/", bundledFS)

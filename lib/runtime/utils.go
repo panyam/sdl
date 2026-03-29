@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"log"
+	"strings"
 	"sync"
 	"time"
 
@@ -78,6 +79,18 @@ func RunCallInBatches(system *SystemInstance, obj, method string, nbatches, batc
 	return
 }
 
+// buildMemberAccessExpr builds a nested MemberAccessExpr from a dotted path.
+// e.g., "arch.app.Shorten" → MemberAccessExpr{MemberAccessExpr{Ident("arch"), "app"}, "Shorten"}
+func buildMemberAccessExpr(parts []string) Expr {
+	if len(parts) == 1 {
+		return &IdentifierExpr{Value: parts[0]}
+	}
+	return &MemberAccessExpr{
+		Receiver: buildMemberAccessExpr(parts[:len(parts)-1]),
+		Member:   &IdentifierExpr{Value: parts[len(parts)-1]},
+	}
+}
+
 func RunTestCall(system *SystemInstance, env *Env[Value], obj, method string, ncalls int) {
 	startTime := time.Now()
 	defer func() {
@@ -85,10 +98,16 @@ func RunTestCall(system *SystemInstance, env *Env[Value], obj, method string, nc
 	}()
 	se := NewSimpleEval(system.File, nil)
 	log.Printf("Now Running %s.%s.%s:", system.System.Name.Value, obj, method)
+
+	// Build receiver expression, handling dotted paths like "arch.app"
+	objParts := strings.Split(obj, ".")
+	allParts := append(objParts, method)
+	callTarget := buildMemberAccessExpr(allParts)
+
 	for i := range ncalls {
 		var currTime core.Duration
-		ce := &CallExpr{Function: &MemberAccessExpr{Receiver: &IdentifierExpr{Value: obj}, Member: &IdentifierExpr{Value: method}}}
-		res2, ret2 := se.Eval(ce, env, &currTime) // reuse env to continue
+		ce := &CallExpr{Function: callTarget}
+		res2, ret2 := se.Eval(ce, env, &currTime)
 		if i == ncalls-1 {
 			log.Printf("Running %d, Result: %v, Ret: %v, Time: %v", i, res2, ret2, currTime)
 		}

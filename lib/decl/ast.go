@@ -131,19 +131,48 @@ func (i *ImportDecl) ImportedAs() string {
 
 // --- SystemDecl Definition ---
 
-// SystemDecl represents `system Name { ... }`
+// SystemDecl represents a system declaration with typed parameters:
+//
+//	system Name(param1: Type1, param2: Type2) { body }
+//
+// Systems declare which component instances participate in a simulation.
+// Parameters are typed references to component types. The body is reserved
+// for generator and metric declarations (future issues #24/#25).
+// The legacy syntax `system Name { ... }` (no parameters) is still supported.
 type SystemDecl struct {
 	NodeInfo
-	Name *IdentifierExpr
-	Body []SystemDeclBodyItem // InstanceDecl, AnalyzeDecl, OptionsDecl, LetStmt
+	Name       *IdentifierExpr
+	Parameters []*ParamDecl         // Typed parameters: (name: ComponentType, ...)
+	Body       []SystemDeclBodyItem // OptionsDecl, LetStmt (future: GeneratorDecl, MetricDecl)
 
-	// File declaration this Component is declared in
+	// File declaration this System is declared in
 	ParentFileDecl *FileDecl
 }
 
-func (s *SystemDecl) String() string { return fmt.Sprintf("system %s { ... }", s.Name) }
+func (s *SystemDecl) String() string {
+	if len(s.Parameters) == 0 {
+		return fmt.Sprintf("system %s { ... }", s.Name)
+	}
+	params := []string{}
+	for _, p := range s.Parameters {
+		params = append(params, fmt.Sprintf("%s %s", p.Name.Value, p.TypeDecl.Name))
+	}
+	return fmt.Sprintf("system %s(%s) { ... }", s.Name, strings.Join(params, ", "))
+}
+
 func (s *SystemDecl) PrettyPrint(cp CodePrinter) {
-	cp.Printf("system %s {\n", s.Name.Value)
+	if len(s.Parameters) > 0 {
+		cp.Printf("system %s(", s.Name.Value)
+		for i, p := range s.Parameters {
+			if i > 0 {
+				cp.Print(", ")
+			}
+			cp.Printf("%s %s", p.Name.Value, p.TypeDecl.Name)
+		}
+		cp.Print(") {\n")
+	} else {
+		cp.Printf("system %s {\n", s.Name.Value)
+	}
 	WithIndent(1, cp, func(cp CodePrinter) {
 		for _, b := range s.Body {
 			b.PrettyPrint(cp)

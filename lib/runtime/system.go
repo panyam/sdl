@@ -2,7 +2,6 @@ package runtime
 
 import (
 	"fmt"
-	"reflect"
 	"strings"
 
 	"github.com/panyam/sdl/lib/decl"
@@ -62,55 +61,37 @@ func (s *SystemInstance) FindComponent(fqn string) (out *ComponentInstance) {
 	return currentComponent
 }
 
-// A system declaration contains instantiations of components and other statemetns.
-// Specifically in initializers it is important to not be bound by order.
-// This method compiles the System into a set of statements that can be executed so that
-// all components are intantiated first and then their properties/params are set.
+// Initializer compiles the system into initialization statements.
+//
+// For parameterized systems (system Name(p1 Type1, p2 Type2) { ... }), each
+// parameter creates a component instance of the declared type. These are the
+// top-level entry points for the simulation.
+//
+// For legacy systems (system Name { ... }) with no parameters, the body may
+// contain LetStmt declarations. InstanceDecl ('use') is no longer supported.
 func (s *SystemInstance) Initializer() (blockStmt *BlockStmt, err error) {
-	// 1. a New Expression for constructing a componet
-	// 2. a set expression for setting params/dependencies in a component - this way we can avoid the two pass approach?
-	// This two passs approach needs to be repeated in every stage (eg type checking)
 	var stmts []Stmt
-	var instanceDecls []*InstanceDecl
 
-	// Pass 1 - Create all the NewExprs and add the LetStmt to our list
+	// Create component instances for each system parameter
+	for _, param := range s.System.Parameters {
+		compDecl, err := s.File.GetComponentDecl(param.TypeDecl.Name)
+		ensureNoErr(err)
+		stmts = append(stmts, &decl.SetStmt{
+			TargetExpr: param.Name,
+			Value:      NewNewExpr(compDecl),
+		})
+	}
+
+	// Process body items (LetStmt, OptionsDecl — no more InstanceDecl)
 	for _, item := range s.System.Body {
 		switch it := item.(type) {
-		case *InstanceDecl:
-			// 1. Find the component definition in this file
-			// 2. Instantiate it - it should be an expression evaluation (not overrides will be handled in pass 2)
-
-			// if it is an instance declaration, find the component type from the environment
-			// and create a new instance of the component type
-			instanceDecls = append(instanceDecls, it)
-			// Resolve the compdecl first
-			compDecl, err := s.File.GetComponentDecl(it.ComponentName.Value)
-			ensureNoErr(err)
-			stmts = append(stmts, &decl.SetStmt{
-				TargetExpr: it.Name,
-				Value:      NewNewExpr(compDecl),
-			})
 		case *LetStmt:
-			// Add this as is
 			stmts = append(stmts, it)
 		default:
-			Error("Invalid type: %v %v", it, reflect.TypeOf(it))
-			// i.Errorf(item.Pos(), "type inference for system body item type %T not implemented yet", item)
+			Error("Invalid system body item type: %T", it)
 		}
 	}
 
-	// Pass 2 - Add SetExpr statements to enable the overrides
-	for _, it := range instanceDecls {
-		for _, assign := range it.Overrides {
-			stmts = append(stmts, &decl.SetStmt{
-				TargetExpr: &MemberAccessExpr{
-					Receiver: it.Name,
-					Member:   assign.Var,
-				},
-				Value: assign.Value,
-			})
-		}
-	}
 	return &BlockStmt{Statements: stmts}, nil
 }
 
@@ -121,8 +102,9 @@ type InitStmt struct {
 	CompInst *ComponentInstance // this should be From.CompInst.Attrib.  If From == nil then this is a System level component
 }
 
-// Goes through all components and gets uninitialized components so user knows what/how to set them
-// This is usually called after the Initializer expression is called but before any other expressions are called.
+// GetUninitializedComponents walks system parameters and their dependency
+// trees to find any uninitialized components. Called after initialization
+// to detect missing wiring.
 func (s *SystemInstance) GetUninitializedComponents(env *Env[Value]) (items []*InitStmt) {
 	var visit func(i *InitStmt)
 	visit = func(i *InitStmt) {
@@ -147,25 +129,21 @@ func (s *SystemInstance) GetUninitializedComponents(env *Env[Value]) (items []*I
 		}
 	}
 
-	for _, item := range s.System.Body {
-		it, ok := item.(*InstanceDecl)
-		if !ok {
-			continue
-		}
-
-		compValue, ok := env.Get(it.Name.Value)
+	// Walk system parameters instead of Body InstanceDecls
+	for _, param := range s.System.Parameters {
+		compValue, ok := env.Get(param.Name.Value)
 		if !ok {
 			items = append(items, &InitStmt{
-				Pos:    item.Pos(),
-				Attrib: it.Name.Value,
+				Pos:    param.Pos(),
+				Attrib: param.Name.Value,
 			})
 			continue
 		}
 
 		compInst := compValue.Value.(*ComponentInstance)
 		visit(&InitStmt{
-			Pos:      item.Pos(),
-			Attrib:   it.Name.Value,
+			Pos:      param.Pos(),
+			Attrib:   param.Name.Value,
 			CompInst: compInst,
 		})
 	}

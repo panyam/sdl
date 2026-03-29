@@ -1085,14 +1085,11 @@ func (c *Canvas) rateMapToStringMap(rateMap runtime.RateMap) map[string]float64 
 	// Build a reverse map from component instance to variable name
 	instanceToName := make(map[*runtime.ComponentInstance]string)
 	if c.activeSystem != nil && c.activeSystem.System != nil {
-		// Look through the system declaration to find instance names
-		for _, item := range c.activeSystem.System.Body {
-			if instDecl, ok := item.(*decl.InstanceDecl); ok {
-				instanceName := instDecl.Name.Value
-				// Try to find the actual component instance
-				if comp := c.activeSystem.FindComponent(instanceName); comp != nil {
-					instanceToName[comp] = instanceName
-				}
+		// Look through system parameters for top-level component names
+		for _, param := range c.activeSystem.System.Parameters {
+			instanceName := param.Name.Value
+			if comp := c.activeSystem.FindComponent(instanceName); comp != nil {
+				instanceToName[comp] = instanceName
 			}
 		}
 	}

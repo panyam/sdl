@@ -65,11 +65,14 @@ component Database {
 import Cache from "../common.sdl"
 
 // System wiring
-system CascadingDelayDemo {
-    use cache Cache(HitRate = 0.8)  // 80% hit rate
-    use db Database
-    use backend Backend(database = db, cache = cache)
-    use api APIGateway(backend = backend)
+component CascadingDelayDemoArch {
+    uses cache Cache(HitRate = 0.8)  // 80% hit rate
+    uses db Database()
+    uses backend Backend(database = db, cache = cache)
+    uses api APIGateway(backend = backend)
+}
+
+system CascadingDelayDemo(arch CascadingDelayDemoArch) {
 }
 
 // Delay cascade analysis:

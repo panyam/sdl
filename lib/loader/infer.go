@@ -137,7 +137,7 @@ func (i *Inference) EvalForComponent(compDecl *ComponentDecl, rootScope *TypeSco
 			return false
 		}
 		instanceType := ComponentType(compDefinition)
-		rootScope.env.Set(usesDecl.Name.Value, compDefinition) // Store InstanceDecl node in env by its name
+		rootScope.env.Set(usesDecl.Name.Value, compDefinition)
 		usesDecl.Name.SetInferredType(instanceType)
 		usesDecl.ResolvedComponent = compDefinition
 	}
@@ -977,26 +977,28 @@ func (i *Inference) EvalForBlockStmt(block *BlockStmt, parentScope *TypeScope) (
 
 func (i *Inference) EvalForSystemDecl(systemDecl *SystemDecl, nodeScope *TypeScope) (returnType *Type, ok bool) {
 	ok = true
-	// Pass 1 - Infer types for all components and instances in the system declaration
-	var instanceDecls []*InstanceDecl
+
+	// Resolve system parameters: each parameter is a typed component reference
+	for _, param := range systemDecl.Parameters {
+		if param.TypeDecl == nil {
+			return nil, i.Errorf(param.Pos(), "system parameter '%s' has no type", param.Name.Value)
+		}
+		compTypeNode, foundCompType := nodeScope.env.Get(param.TypeDecl.Name)
+		if !foundCompType {
+			return nil, i.Errorf(param.Pos(), "component type '%s' not found for system parameter '%s'", param.TypeDecl.Name, param.Name.Value)
+		}
+		compDefinition, ok2 := compTypeNode.(*ComponentDecl)
+		if !ok2 {
+			return nil, i.Errorf(param.Pos(), "type '%s' for system parameter '%s' is not a component declaration (got %T)", param.TypeDecl.Name, param.Name.Value, compTypeNode)
+		}
+		instanceType := ComponentType(compDefinition)
+		nodeScope.env.Set(param.Name.Value, compDefinition)
+		param.Name.SetInferredType(instanceType)
+	}
+
+	// Process body items (LetStmt, OptionsDecl — no more InstanceDecl)
 	for _, item := range systemDecl.Body {
 		switch it := item.(type) {
-		case *InstanceDecl:
-			compTypeNode, foundCompType := nodeScope.env.Get(it.ComponentName.Value)
-			if !foundCompType {
-				return nil, i.Errorf(it.ComponentName.Pos(), "component type '%s' not found for instance '%s'", it.ComponentName.Value, it.Name.Value)
-			}
-			compDefinition, ok2 := compTypeNode.(*ComponentDecl)
-			ok = ok && ok2
-			if !ok2 {
-				return nil, i.Errorf(it.ComponentName.Pos(), "identifier '%s' used as component type for instance '%s' is not a component declaration (got %T)", it.ComponentName.Value, it.Name.Value, compTypeNode)
-			}
-			instanceType := ComponentType(compDefinition)
-			nodeScope.env.Set(it.Name.Value, it) // Store InstanceDecl node in env by its name
-			it.Name.SetInferredType(instanceType)
-			// Store resolved component declaration for efficient FlowEval lookup
-			it.ResolvedComponentDecl = compDefinition
-			instanceDecls = append(instanceDecls, it)
 		case *LetStmt:
 			_, ok2 := i.EvalForLetStmt(it, nodeScope)
 			ok = ok && ok2
@@ -1010,85 +1012,7 @@ func (i *Inference) EvalForSystemDecl(systemDecl *SystemDecl, nodeScope *TypeSco
 				ok = ok && ok2
 			}
 		default:
-			// i.Errorf(item.Pos(), "type inference for system body item type %T not implemented yet", item)
-		}
-	}
-
-	if !ok {
-		return
-	}
-
-	// Pass 2 - Infer types for all instances and their overrides
-	for _, it := range instanceDecls {
-		for _, assign := range it.Overrides {
-			valType, ok2 := i.EvalForExprType(assign.Value, nodeScope)
-			if !ok2 {
-				ok = false
-				continue
-			} else if valType == nil {
-				continue
-			}
-
-			compTypeNode, _ := nodeScope.env.Get(it.ComponentName.Value) // no need to check ok here, it was checked in Pass 1
-			compDefinition, _ := compTypeNode.(*ComponentDecl)
-
-			paramDecl, _ := compDefinition.GetParam(assign.Var.Value)
-			usesDecl, _ := compDefinition.GetDependency(assign.Var.Value)
-
-			if paramDecl != nil {
-				if paramDecl.TypeDecl == nil {
-					i.Errorf(paramDecl.Pos(), "param '%s' of component '%s' has no type", paramDecl.Name.Value, compDefinition.Name.Value)
-					continue
-				}
-				expectedType := nodeScope.ResolveType(paramDecl.TypeDecl) // Resolve TypeDecl in the current system scope
-				if expectedType == nil {
-					i.Errorf(paramDecl.TypeDecl.Pos(), "param '%s' of component '%s' has an unresolved TypeDecl '%s'", paramDecl.Name.Value, compDefinition.Name.Value, paramDecl.TypeDecl.Name)
-					continue
-				}
-				if !valType.Equals(expectedType) {
-					if !(valType.Equals(IntType) && expectedType.Equals(FloatType)) {
-						i.Errorf(assign.Value.Pos(), "type mismatch for override param '%s' in instance '%s': expected %s, got %s", assign.Var.Value, it.Name.Value, expectedType.String(), valType.String())
-					}
-				}
-			} else if usesDecl != nil {
-				var assignedInstanceType *Type
-				if assignedIdent, isIdent := assign.Value.(*IdentifierExpr); isIdent {
-					assignedNodeFromEnv, foundInstance := nodeScope.env.Get(assignedIdent.Value)
-					if foundInstance {
-						if assignedInstDecl, isInst := assignedNodeFromEnv.(*InstanceDecl); isInst {
-							// The type of an instance is its component type.
-							// Retrieve the ComponentDecl for the assigned instance's component type.
-							compTypeOfAssignedInstance, foundComp := nodeScope.env.Get(assignedInstDecl.ComponentName.Value)
-							if foundComp {
-								if actualCompDecl, isActualComp := compTypeOfAssignedInstance.(*ComponentDecl); isActualComp {
-									assignedInstanceType = ComponentType(actualCompDecl)
-								} else {
-									i.Errorf(assign.Value.Pos(), "assigned instance '%s' for dependency '%s' has non-component type %T for its ComponentName ('%s')", assignedIdent.Value, assign.Var.Value, compTypeOfAssignedInstance, assignedInstDecl.ComponentName.Value)
-								}
-							} else {
-								i.Errorf(assign.Value.Pos(), "could not find component type '%s' for assigned instance '%s' (dependency '%s')", assignedInstDecl.ComponentName.Value, assignedIdent.Value, assign.Var.Value)
-							}
-						} else {
-							i.Errorf(assign.Value.Pos(), "assigned value '%s' for dependency '%s' is not an instance declaration (got %T)", assignedIdent.Value, assign.Var.Value, assignedNodeFromEnv)
-						}
-					} else {
-						i.Errorf(assign.Value.Pos(), "assigned instance identifier '%s' for dependency '%s' not found in system scope", assignedIdent.Value, assign.Var.Value)
-					}
-				}
-
-				expectedDepComp := usesDecl.ComponentName
-				if assignedInstanceType != nil {
-					assignedCompDecl := assignedInstanceType.Info.(*ComponentDecl)
-					if assignedCompDecl.Name.Value != expectedDepComp.Value {
-						i.Errorf(assign.Value.Pos(), "type mismatch for override dependency '%s' in instance '%s': expected instance of component type %s, got instance of %s", assign.Var.Value, it.Name.Value, expectedDepComp.Value, assignedCompDecl.Name.Value)
-					}
-				} else if valType.Tag != decl.TypeTagComponent || valType.Info.(*ComponentDecl).Name.Value != expectedDepComp.Value {
-					// This fallback is if assigned value was not an identifier resolving to an InstanceDecl
-					i.Errorf(assign.Value.Pos(), "type mismatch for override dependency '%s' in instance '%s': expected component type %s, got %s (and value was not a known instance of the correct type)", assign.Var.Value, it.Name.Value, expectedDepComp.Value, valType.String())
-				}
-			} else {
-				i.Errorf(assign.Var.Pos(), "override target '%s' in instance '%s' is not a known parameter or dependency of component '%s'", assign.Var.Value, it.Name.Value, compDefinition.Name.Value)
-			}
+			// Future: GeneratorDecl, MetricDecl
 		}
 	}
 	return

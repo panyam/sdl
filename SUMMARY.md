@@ -9,6 +9,7 @@ SDL is a language and runtime for modeling and simulating distributed system per
 - Supports latency modeling, capacity constraints, error rates, and traffic distribution
 - Import system for modular definitions
 - Not a real programming language - focused on performance modeling
+- **Component/System unification (March 2026)**: Components handle all composition via `uses`. Systems declare typed parameters and are reserved for simulation config (generators, metrics). The `use` keyword has been removed.
 
 ### 2. **Parser & Compiler**
 - YACC-based parser (`parser/`)

@@ -136,10 +136,13 @@ component VideoService {
 }
 
 // Complete Netflix-style system
-system NetflixSystem {
-    use videoService VideoService(loadBalancer = loadBalancer, cdn = cdn, database = database, encoder = encoder)
-    use loadBalancer LoadBalancer
-    use cdn CDN
-    use database VideoDatabase
-    use encoder VideoEncoder
+component NetflixSystemArch {
+    uses videoService VideoService(loadBalancer = loadBalancer, cdn = cdn, database = database, encoder = encoder)
+    uses loadBalancer LoadBalancer()
+    uses cdn CDN()
+    uses database VideoDatabase()
+    uses encoder VideoEncoder()
+}
+
+system NetflixSystem(arch NetflixSystemArch) {
 }
