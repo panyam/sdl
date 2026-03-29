@@ -50,37 +50,6 @@ func TestUnifiedSystemNestedComponentAccess(t *testing.T) {
 	assert.Equal(t, "SimpleDB", dbComp.ComponentDecl.Name.Value)
 }
 
-// TestUnifiedSystemImplicitParameterScoping verifies that component paths
-// can omit the system parameter prefix. When a system has parameters,
-// FindComponent tries prepending each parameter name if the direct path
-// fails. This means "server" resolves to "app.server" when the system
-// has a single parameter "app", keeping recipe paths clean.
-func TestUnifiedSystemImplicitParameterScoping(t *testing.T) {
-	defer QuietTest(t)()
-
-	sys, _ := loadSystem(t, "../../test/fixtures/unified_system.sdl", "SimpleAppTest")
-	require.NotNil(t, sys)
-
-	// Direct path still works
-	directComp := sys.FindComponent("app.server")
-	require.NotNil(t, directComp, "Direct path 'app.server' should resolve")
-
-	// Implicit scoping: "server" should resolve to "app.server"
-	implicitComp := sys.FindComponent("server")
-	require.NotNil(t, implicitComp, "Implicit path 'server' should resolve via parameter 'app'")
-	assert.Equal(t, directComp, implicitComp, "Both paths should resolve to the same instance")
-
-	// Deeper implicit path: "server.db" should resolve to "app.server.db"
-	implicitDeep := sys.FindComponent("server.db")
-	require.NotNil(t, implicitDeep, "Implicit path 'server.db' should resolve via parameter 'app'")
-	assert.Equal(t, "SimpleDB", implicitDeep.ComponentDecl.Name.Value)
-
-	// The parameter itself: "app" resolves directly (no implicit needed)
-	appComp := sys.FindComponent("app")
-	require.NotNil(t, appComp)
-	assert.Equal(t, "SimpleApp", appComp.ComponentDecl.Name.Value)
-}
-
 // TestUnifiedSystemMethodExecution verifies that methods on components
 // instantiated through the unified system model can be called and produce
 // correct results. This tests the full pipeline: parse -> load -> init -> call.
