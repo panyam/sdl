@@ -176,6 +176,24 @@ SDL aims to become the industry standard for system design education, capacity p
 - Incremental compilation for faster iteration
 - Memory optimization for million-component systems
 
+### DSL Refactor: Component/System Unification (Q2 2026)
+
+Tracked in issues #23-#30. Core insight: systems and components are the same concept at different levels. Systems should only describe simulation (generators, metrics), not architecture.
+
+**Foundation:**
+- #23: Unify component/system — components handle all composition, `use` keyword removed, system syntax becomes `system Name(param: Type)`
+- #24: Declarative generators in SDL system blocks (rate-based, batch, chained)
+- #25: Declarative metrics in SDL system blocks (method-call and gauge-based)
+- #26: Recipe simplification — recipes become dynamic overrides on declarative baselines
+- #30: Migrate all examples and merge recipes into unified SDL
+
+**Gauges (stateful resources):**
+- #27: Gauge Level 1 — weighted acquire/release, modeled as weighted semaphores (no DES)
+- #28: Gauge Level 2 — accumulating gauges via rate equations (no DES)
+- #29: Gauge Level 3 — DES runtime for feedback loops (exploratory, same AST, different runtime)
+
+Dependency order: #23 → #24/#25 → #26/#30 → #27 → #28 → #29
+
 ### Language Evolution
 - Type inference improvements
 - Module system for component libraries
