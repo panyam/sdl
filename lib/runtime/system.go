@@ -30,15 +30,40 @@ func (s *SystemInstance) GetSystemName() string {
 	return ""
 }
 
-// Finds a nested component a.b.c starting at the root of a system
+// FindComponent resolves a dotted path like "a.b.c" to a nested ComponentInstance.
+//
+// Resolution order:
+//  1. Try the path directly in the system environment (exact match).
+//  2. If not found, try prepending each system parameter name. This provides
+//     implicit scoping so that "webserver.RequestRide" resolves to
+//     "arch.webserver.RequestRide" when the system has a single parameter "arch".
+//     For multi-parameter systems, each parameter is tried in declaration order.
 func (s *SystemInstance) FindComponent(fqn string) (out *ComponentInstance) {
+	// Try exact path first
+	if comp := s.findComponentExact(fqn); comp != nil {
+		return comp
+	}
+
+	// Implicit parameter scoping: try prepending each system parameter name
+	if s.System != nil {
+		for _, param := range s.System.Parameters {
+			prefixed := param.Name.Value + "." + fqn
+			if comp := s.findComponentExact(prefixed); comp != nil {
+				return comp
+			}
+		}
+	}
+
+	return nil
+}
+
+// findComponentExact resolves a dotted path without implicit scoping.
+func (s *SystemInstance) findComponentExact(fqn string) (out *ComponentInstance) {
 	parts := strings.Split(fqn, ".")
 
-	// Start from the system's environment
 	currentEnv := s.Env
 	var currentComponent *ComponentInstance
 
-	// Navigate through nested components
 	for i, part := range parts {
 		value, ok := currentEnv.Get(part)
 		if !ok {
@@ -52,7 +77,6 @@ func (s *SystemInstance) FindComponent(fqn string) (out *ComponentInstance) {
 
 		currentComponent = comp
 
-		// If this is not the last part, move to the component's environment
 		if i < len(parts)-1 {
 			currentEnv = comp.Env
 		}
