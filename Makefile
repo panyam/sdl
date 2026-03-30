@@ -23,7 +23,6 @@ parserbin:
 	cd lib/parser && make
 
 wasmbin:
-	cd tools/systemdetail && make
 	cd cmd/wasm && make
 
 # Installation targets
