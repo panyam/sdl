@@ -14,3 +14,5 @@ __debug*
 web/tests/screenshots
 protos/buf.yaml
 protos/buf.gen.yaml
+coverage.out
+coverage.html
