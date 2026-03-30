@@ -79,13 +79,15 @@ func (s *SystemInstance) Initializer() (blockStmt *BlockStmt, err error) {
 		})
 	}
 
-	// Process body items (LetStmt, OptionsDecl — no more InstanceDecl)
+	// Process body items — ExprStmt (generator/metric calls) are handled by Canvas,
+	// not by the eval engine. Skip them here.
 	for _, item := range s.System.Body {
-		switch it := item.(type) {
-		case *LetStmt:
-			stmts = append(stmts, it)
+		switch item.(type) {
+		case *ExprStmt:
+			// generator(...), metric(...) calls — processed by Canvas.Use(), not here
+			continue
 		default:
-			Error("Invalid system body item type: %T", it)
+			Error("Invalid system body item type: %T", item)
 		}
 	}
 

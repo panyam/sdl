@@ -188,6 +188,33 @@ type SystemDeclBodyItem interface {
 	systemBodyItemNode()
 }
 
+// SplitMemberAccessTarget walks a MemberAccessExpr tree and splits off the rightmost
+// member as the method name, with everything else joined as the component path.
+// For "arch.webserver.RequestRide", returns ("arch.webserver", "RequestRide").
+func SplitMemberAccessTarget(expr Expr) (componentPath string, methodName string) {
+	switch e := expr.(type) {
+	case *MemberAccessExpr:
+		methodName = e.Member.Value
+		componentPath = MemberAccessToString(e.Receiver)
+	default:
+		// Shouldn't happen for well-formed generator targets
+		methodName = fmt.Sprintf("%s", expr)
+	}
+	return
+}
+
+// MemberAccessToString converts a MemberAccessExpr chain to a dotted string.
+func MemberAccessToString(expr Expr) string {
+	switch e := expr.(type) {
+	case *IdentifierExpr:
+		return e.Value
+	case *MemberAccessExpr:
+		return MemberAccessToString(e.Receiver) + "." + e.Member.Value
+	default:
+		return fmt.Sprintf("%s", expr)
+	}
+}
+
 // InstanceDecl represents `instanceName ComponentType ( overrides );`
 type InstanceDecl struct {
 	NodeInfo
