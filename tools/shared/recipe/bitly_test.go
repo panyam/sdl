@@ -1,13 +1,22 @@
 package recipe
 
 import (
-	"io/ioutil"
+	"os"
+	"path/filepath"
+	"runtime"
 	"testing"
 )
 
+func projectRoot() string {
+	_, filename, _, _ := runtime.Caller(0)
+	// tools/shared/recipe/ -> project root is 3 levels up
+	return filepath.Join(filepath.Dir(filename), "..", "..", "..")
+}
+
 func TestParseRealBitlyRecipe(t *testing.T) {
 	// Read the real Bitly recipe file
-	content, err := ioutil.ReadFile("/Users/sri/personal/golang/sdl/examples/bitly/mvp.recipe")
+	recipePath := filepath.Join(projectRoot(), "examples", "bitly", "mvp.recipe")
+	content, err := os.ReadFile(recipePath)
 	if err != nil {
 		t.Fatalf("Failed to read Bitly recipe: %v", err)
 	}

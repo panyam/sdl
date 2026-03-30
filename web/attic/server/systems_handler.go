@@ -3,7 +3,7 @@ package server
 import (
 	"encoding/json"
 
-	"github.com/panyam/sdl/services"
+	"github.com/panyam/sdl/web/attic/services"
 )
 
 // SystemsHandler holds the system catalog for workspace discovery.

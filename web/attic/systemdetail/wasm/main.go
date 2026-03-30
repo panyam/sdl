@@ -1,10 +1,12 @@
+//go:build ignore
+
 package main
 
 import (
 	"encoding/json"
 	"syscall/js"
 
-	"github.com/panyam/sdl/tools/systemdetail"
+	"github.com/panyam/sdl/web/attic/systemdetail"
 )
 
 var (

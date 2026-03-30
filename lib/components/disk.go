@@ -55,18 +55,33 @@ type Disk struct {
 	WriteOutcomes *Outcomes[sc.AccessResult]
 }
 
-// Init initializes a Disk based on the ProfileName.
-// Defaults to SSD if profileName is empty or unrecognized.
+// Init initializes a Disk with default SSD profile.
 func (d *Disk) Init() {
 	d.ReadOutcomes = ssdReadOutcomes
 	d.WriteOutcomes = ssdWriteOutcomes
 }
 
-// NewDisk creates and initializes a new Disk component with the specified profile.
-// Defaults to SSD if profileName is empty or unrecognized.
-func NewDisk() *Disk {
+// SetProfile sets the disk's performance profile.
+// Supported profiles: "SSD" (default), "HDD".
+func (d *Disk) SetProfile(profile string) {
+	switch profile {
+	case "HDD":
+		d.ReadOutcomes = hddReadOutcomes
+		d.WriteOutcomes = hddWriteOutcomes
+	default:
+		d.ReadOutcomes = ssdReadOutcomes
+		d.WriteOutcomes = ssdWriteOutcomes
+	}
+}
+
+// NewDisk creates and initializes a new Disk component.
+// Optional profileName: "SSD" (default) or "HDD".
+func NewDisk(profileName ...string) *Disk {
 	d := &Disk{}
 	d.Init()
+	if len(profileName) > 0 {
+		d.SetProfile(profileName[0])
+	}
 	return d
 }
 

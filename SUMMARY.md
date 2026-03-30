@@ -200,11 +200,17 @@ SDL is a language and runtime for modeling and simulating distributed system per
 
 ## Test Suite Status (March 2026)
 
-- Fixed Value type system tests (`lib/decl`): type name casing, String format, nil handling, Deref safety
-- Fixed runtime test paths after `lib/` directory move (`../examples/` → `../../examples/`)
-- Updated runtime tests for component/system unification: `sys.FindComponent("arch.X")` pattern
-- Improved flow solver convergence: 30 iterations, reduced damping factor
-- Pre-existing failures in `lib/components` (disk profiles) and `lib/core` (distribution edge case)
+All Go test packages pass (`go test ./...`). Fixes applied:
+- Value type system (`lib/decl`): type name casing, String format, nil handling, Deref safety
+- Runtime test paths after `lib/` directory move (`../examples/` → `../../examples/`)
+- Runtime tests updated for component/system unification: `sys.FindComponent("arch.X")` pattern
+- Flow solver convergence: 30 iterations, reduced damping factor
+- Disk component: added `NewDisk("HDD")` profile support, `DiskWithContention("HDD")` with MM1Queue
+- Distribution edge case: preserved failureRate when no percentile points given
+- SystemDetailTool tests: updated SDL to use component/system unification syntax
+- Recipe test: fixed hardcoded absolute path to use runtime.Caller-based resolution
+- Broken attic/WASM test files tagged with `//go:build ignore`
+- Stale import paths fixed (`tools/systemdetail` → `web/attic/systemdetail`)
 
 ## Known Limitations
 - Only supports latency and count metrics (no utilization/throughput)

@@ -77,7 +77,7 @@ var setCmd = &cobra.Command{
 				return err
 			}
 			if !resp.Success {
-				return fmt.Errorf(resp.ErrorMessage)
+				return fmt.Errorf("%s", resp.ErrorMessage)
 			}
 			return nil
 		})

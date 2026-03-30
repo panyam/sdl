@@ -72,7 +72,7 @@ system Twitter(arch TwitterArch) {
 - **Asset cache busting**: Vite generates `.vite/manifest.json` in dist/. The Go server reads it at startup and provides `viteJS`/`viteCSS` template functions. No post-build script needed — templates use `{{ viteJS "index.html" }}` and `{{ viteCSS "index.html" }}`.
 - **Tailwind content paths**: `web/tailwind.config.js` must scan `./templates/**/*.html` (not `../templates/`). Wrong paths cause Tailwind to purge all utility classes used in Go templates.
 - **Test directory**: Tests live in `web/src/.__tests__/` (with dot prefix). Vitest config must reference `.__tests__` not `__tests__`.
-- **Pre-push hook**: `.git/hooks/pre-push` runs web tests before push. Go tests have pre-existing failures so are not included yet.
+- **Pre-push hook**: `.git/hooks/pre-push` runs web tests before push. All Go tests now pass (`go test ./...`).
 
 ## Template System (Templar)
 
@@ -124,12 +124,12 @@ Pages that include BasePage.html must define: `BodySection`, `PostBodySection`, 
 - Parameters: 30 max iterations, 0.01 convergence threshold, 0.3 damping factor (runtime) / 0.7 update rate (string-based)
 - Known limitation: flow evaluator doesn't apply native component outcomes (e.g., cache hit rate) to branch weighting in if/else
 
-## Test Status (lib/)
+## Test Status
 
-- `lib/decl`, `lib/runtime`, `lib/parser`, `lib/loader` — all passing
-- `lib/components` — pre-existing failures (HDD/SSD disk profile differentiation)
-- `lib/core` — pre-existing failure (distribution edge case)
+- All Go test packages pass: `go test ./...` should be fully green
 - Runtime tests use `sys.FindComponent("arch.X")` to access components inside system parameters
+- `Disk` supports profiles via `NewDisk("HDD")` — default is SSD. `DiskWithContention` similarly: `NewDiskWithContention("HDD")`
+- `WrappedComponent` interface requires `Init()` with no args — use `SetProfile()` for post-init configuration
 
 ## Stack Audit (March 2026)
 
@@ -146,6 +146,9 @@ GitHub issues created for stack alignment:
 - Includes: dashboard.ts monolith, system-details-page, old panel system, dashboard-coordinator, app-state-manager
 - Dead tests moved to `web/attic/src/__tests__/`
 - When removing code, always move to attic especially if it existed in previously working versions
+- Attic Go files that fail to compile in test mode use `//go:build ignore` to exclude from `go test ./...`
+- WASM-only files (`syscall/js`) also use `//go:build ignore` since they can't compile on native platforms
+- `systemdetail` package lives at `web/attic/systemdetail/` (moved from `tools/systemdetail/`)
 
 ## DockView Theming
 

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	v1 "github.com/panyam/sdl/gen/go/sdl/v1/models"
+	svc "github.com/panyam/sdl/services"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -12,10 +13,10 @@ import (
 // SystemsServiceImpl implements the SystemsService gRPC interface.
 // Delegates to WorkspaceService for data.
 type SystemsServiceImpl struct {
-	workspaceSvc WorkspaceService
+	workspaceSvc svc.WorkspaceService
 }
 
-func NewSystemsService(workspaceSvc WorkspaceService) *SystemsServiceImpl {
+func NewSystemsService(workspaceSvc svc.WorkspaceService) *SystemsServiceImpl {
 	return &SystemsServiceImpl{workspaceSvc: workspaceSvc}
 }
 
