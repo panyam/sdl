@@ -352,11 +352,18 @@
 - Improved flow solver convergence (30 iterations, 0.3 damping)
 - Skipped cascading delays test pending native component outcome branch weighting
 
-### DSL Refactor: Issues #24 and #25 (In Progress)
-- #24: Declarative generators — `generator name path.Method 100rps [duration 30s]`
-- #25: Declarative metrics — `metric name path.Method type [agg] [window Xs]`
-- Both require: grammar additions, AST structs, lexer keywords, runtime/Canvas integration
-- Foundation work (#23 component/system unification) is merged
+### DSL Refactor: #23, #24, #25, #26 Complete
+- #23: Component/system unification — merged, closed
+- #24: Declarative generators — `generator("name", target, rate(N))` — merged
+- #25: Declarative metrics — `metric("name", target, "type", "agg", window)` — merged
+- #26: Recipe simplification — static setup moved to SDL, recipes trimmed to dynamic scenarios
+- Both generator() and metric() are plain function calls (not keywords), validated at compile time
+- `rate(count, interval)` type for flexible rate specification
+- `GeneratorSpec`/`MetricSpec` on `SystemDecl`, `Generator`/`Metric` runtime types on `SystemInstance`
+- Canvas.Use() auto-creates generators and metrics from system declarations
+- All example SDL files updated with generators and metrics
+- Created issues: #34 (SystemService API), #35 (@stdlib loader)
+- Recipe files are now optional demo scripts — SDL is the source of truth
 
 ## Recent Session (March 2025)
 

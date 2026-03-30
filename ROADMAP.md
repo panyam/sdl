@@ -183,8 +183,10 @@ Tracked in issues #23-#30. Core insight: systems and components are the same con
 **Foundation:**
 - #23: Unify component/system — components handle all composition, `use` keyword removed, system syntax becomes `system Name(param Type)` **(merged)**
 - #24: Declarative generators in SDL system blocks — `generator("name", target, rate(N))` **(merged)**
-- #25: Declarative metrics in SDL system blocks — `metric("name", target, "type", "agg", window)` **(in progress)**
-- #26: Recipe simplification — recipes become dynamic overrides on declarative baselines
+- #25: Declarative metrics in SDL system blocks — `metric("name", target, "type", "agg", window)` **(merged)**
+- #26: Recipe simplification — recipes trimmed to dynamic scenarios only **(merged)**
+- #34: SystemService API — replace Canvas indirection **(planned)**
+- #35: @stdlib native loader resolution **(planned)**
 - #30: Migrate all examples and merge recipes into unified SDL
 
 **Gauges (stateful resources):**

@@ -34,7 +34,10 @@ Builds for frontend, wasm, backend are all running continuously and can be queri
 - For the ROADMAP.md always use the top-level ./ROADMAP.md so we have a global view of the roadmap instead of being fragemented in various folders.
 
 ## SDL Demo Guidelines
-- Make sure when you create SDL demos they are not as markdown but as .recipe files that are executable with pause points that print out what is going to be come next before the SDL command is executed.
+- System definitions in `.sdl` files are the source of truth for simulations (generators, metrics)
+- Recipe files (`.recipe`) are optional CLI demo scripts for dynamic scenarios (rate changes, failure injection, narration)
+- Recipes are NOT needed for the dashboard — users interact with generators/metrics directly in the UI
+- The CLI (`sdl gen update`, `sdl set`, etc.) remains useful for interactive/scripted control
 
 ## Session Workflow Memories
 - When you checkpoint update all relevant .md files with our latest understanding, statuses and progress in the current session and then commit.
