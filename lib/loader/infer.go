@@ -996,24 +996,130 @@ func (i *Inference) EvalForSystemDecl(systemDecl *SystemDecl, nodeScope *TypeSco
 		param.Name.SetInferredType(instanceType)
 	}
 
-	// Process body items (LetStmt, OptionsDecl — no more InstanceDecl)
+	// Process body items — only ExprStmt (generator/metric calls) allowed
 	for _, item := range systemDecl.Body {
 		switch it := item.(type) {
-		case *LetStmt:
-			_, ok2 := i.EvalForLetStmt(it, nodeScope)
-			ok = ok && ok2
-		case *SetStmt:
-			_, ok2 := i.EvalForSetStmt(it, nodeScope)
-			ok = ok && ok2
-		case *OptionsDecl:
-			if it.Body != nil {
-				optionsScope := nodeScope.Push()
-				_, ok2 := i.EvalForBlockStmt(it.Body, optionsScope)
-				ok = ok && ok2
+		case *ExprStmt:
+			callExpr, isCall := it.Expression.(*CallExpr)
+			if !isCall {
+				i.Errorf(it.Pos(), "system body only allows function calls (generator, metric), got %T", it.Expression)
+				ok = false
+				continue
+			}
+			funcIdent, isIdent := callExpr.Function.(*IdentifierExpr)
+			if !isIdent {
+				i.Errorf(it.Pos(), "system body call must be a simple name (generator, metric), got %T", callExpr.Function)
+				ok = false
+				continue
+			}
+			switch funcIdent.Value {
+			case "generator":
+				spec, err := resolveGeneratorCall(callExpr)
+				if err != nil {
+					i.Errorf(callExpr.Pos(), "invalid generator() call: %s", err.Error())
+					ok = false
+				} else {
+					spec.NodeInfo = it.NodeInfo
+					systemDecl.Generators = append(systemDecl.Generators, spec)
+				}
+			case "metric":
+				// TODO: #25 — resolve metric calls
+			default:
+				i.Errorf(it.Pos(), "unknown system body function '%s' (expected generator or metric)", funcIdent.Value)
+				ok = false
 			}
 		default:
-			// Future: GeneratorDecl, MetricDecl
+			i.Errorf(item.Pos(), "invalid system body item type: %T", item)
+			ok = false
 		}
 	}
 	return
+}
+
+// resolveGeneratorCall validates and extracts a GeneratorSpec from a generator(...) CallExpr.
+//
+// Supported forms:
+//
+//	generator("name", target.path.Method, rate(count))
+//	generator("name", target.path.Method, rate(count, interval))
+//	generator("name", target.path.Method, rate(count), duration)
+//	generator("name", target.path.Method, rate(count, interval), duration)
+func resolveGeneratorCall(call *CallExpr) (*GeneratorSpec, error) {
+	args := call.ArgList
+	if len(args) < 3 || len(args) > 4 {
+		return nil, fmt.Errorf("expected 3-4 arguments (name, target, rate [, duration]), got %d", len(args))
+	}
+
+	spec := &GeneratorSpec{
+		RateInterval: 1.0, // default: per second
+	}
+
+	// Arg 1: name (string literal)
+	nameLit, ok := args[0].(*LiteralExpr)
+	if !ok {
+		return nil, fmt.Errorf("first argument (name) must be a string literal, got %T", args[0])
+	}
+	nameStr, err := nameLit.Value.GetString()
+	if err != nil {
+		return nil, fmt.Errorf("first argument (name) must be a string, got %s", nameLit.Value.Type.String())
+	}
+	spec.Name = nameStr
+
+	// Arg 2: target (MemberAccessExpr — e.g., arch.webserver.RequestRide)
+	spec.ComponentPath, spec.MethodName = SplitMemberAccessTarget(args[1])
+	if spec.ComponentPath == "" || spec.MethodName == "" {
+		return nil, fmt.Errorf("second argument (target) must be a dotted path like arch.component.Method, got %s", args[1])
+	}
+
+	// Arg 3: rate(...) call
+	rateCall, ok := args[2].(*CallExpr)
+	if !ok {
+		return nil, fmt.Errorf("third argument must be rate(count) or rate(count, interval), got %T", args[2])
+	}
+	rateFuncIdent, ok := rateCall.Function.(*IdentifierExpr)
+	if !ok || rateFuncIdent.Value != "rate" {
+		return nil, fmt.Errorf("third argument must be rate(...), got %s", rateCall.Function)
+	}
+	if len(rateCall.ArgList) < 1 || len(rateCall.ArgList) > 2 {
+		return nil, fmt.Errorf("rate() expects 1-2 arguments (count [, interval]), got %d", len(rateCall.ArgList))
+	}
+
+	// rate count (first arg)
+	spec.Rate, err = extractNumericValue(rateCall.ArgList[0])
+	if err != nil {
+		return nil, fmt.Errorf("rate count: %w", err)
+	}
+
+	// rate interval (optional second arg — duration literal)
+	if len(rateCall.ArgList) == 2 {
+		spec.RateInterval, err = extractNumericValue(rateCall.ArgList[1])
+		if err != nil {
+			return nil, fmt.Errorf("rate interval: %w", err)
+		}
+	}
+
+	// Arg 4: optional duration
+	if len(args) == 4 {
+		spec.Duration, err = extractNumericValue(args[3])
+		if err != nil {
+			return nil, fmt.Errorf("duration: %w", err)
+		}
+	}
+
+	return spec, nil
+}
+
+// extractNumericValue gets a float64 from a LiteralExpr (int or float or duration).
+func extractNumericValue(expr Expr) (float64, error) {
+	lit, ok := expr.(*LiteralExpr)
+	if !ok {
+		return 0, fmt.Errorf("expected numeric literal, got %T", expr)
+	}
+	if val, err := lit.Value.GetFloat(); err == nil {
+		return val, nil
+	}
+	if val, err := lit.Value.GetInt(); err == nil {
+		return float64(val), nil
+	}
+	return 0, fmt.Errorf("expected numeric value, got %s", lit.Value.Type.String())
 }

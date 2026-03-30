@@ -143,10 +143,25 @@ type SystemDecl struct {
 	NodeInfo
 	Name       *IdentifierExpr
 	Parameters []*ParamDecl         // Typed parameters: (name: ComponentType, ...)
-	Body       []SystemDeclBodyItem // OptionsDecl, LetStmt (future: GeneratorDecl, MetricDecl)
+	Body       []SystemDeclBodyItem // ExprStmt (generator/metric calls)
+
+	// Resolved during inference from generator(...) calls in Body
+	Generators []*GeneratorSpec
 
 	// File declaration this System is declared in
 	ParentFileDecl *FileDecl
+}
+
+// GeneratorSpec is the resolved form of a generator(...) call in a system body.
+// Populated during the inference phase so errors are caught at compile time.
+type GeneratorSpec struct {
+	NodeInfo
+	Name          string  // Generator identifier
+	ComponentPath string  // Dot-separated component path (e.g., "arch.webserver")
+	MethodName    string  // Target method name (e.g., "RequestRide")
+	Rate          float64 // Calls per interval
+	RateInterval  float64 // Interval in seconds (default 1.0 = per second)
+	Duration      float64 // Duration in seconds (0 = forever)
 }
 
 func (s *SystemDecl) String() string {

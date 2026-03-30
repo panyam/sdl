@@ -67,12 +67,12 @@ func (f *FileInstance) NewSystem(systemName string, init bool) (*SystemInstance,
 	sysInst := NewSystemInstance(f, system)
 	var currTime core.Duration
 	if init {
-
-		// Initialize the system
+		// Initialize the system — wire components
 		se := NewSimpleEval(f, nil)
 		env := f.Env().Push() // Create new environment for system
 		se.EvalInitSystem(sysInst, env, &currTime)
 		sysInst.Env = env
+		sysInst.ResolveGenerators()
 	}
 	return sysInst, currTime
 }

@@ -45,6 +45,9 @@ type WaitExpr = decl.WaitExpr
 type AssignmentStmt = decl.AssignmentStmt
 type OptionsDecl = decl.OptionsDecl
 type ImportDecl = decl.ImportDecl
+type GeneratorSpec = decl.GeneratorSpec
+
+var SplitMemberAccessTarget = decl.SplitMemberAccessTarget
 
 // Slices for lists
 type ComponentDeclBodyItem = decl.ComponentDeclBodyItem
