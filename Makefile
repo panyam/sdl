@@ -150,6 +150,11 @@ dev-screenshot: binary
 test:
 	go test ./...
 
+cover:
+	go test -count=1 -coverprofile=coverage.out ./lib/... ./services/ || true
+	@go tool cover -func=coverage.out | tail -1
+	@echo "Full report: go tool cover -html=coverage.out"
+
 webtest:
 	cd web && npx vitest run
 

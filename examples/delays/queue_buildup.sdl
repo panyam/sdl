@@ -24,6 +24,8 @@ component QueueBuildupDemoArch {
 }
 
 system QueueBuildupDemo(arch QueueBuildupDemoArch) {
+    generator("traffic", arch.processor.Process, rate(50))
+    metric("process_latency", arch.processor.Process, "latency", "p95", 1s)
 }
 
 // Test scenarios:

@@ -73,6 +73,9 @@ component CascadingDelayDemoArch {
 }
 
 system CascadingDelayDemo(arch CascadingDelayDemoArch) {
+    generator("traffic", arch.api.HandleRequest, rate(100))
+    metric("api_latency", arch.api.HandleRequest, "latency", "p95", 1s)
+    metric("db_latency", arch.db.Query, "latency", "p95", 1s)
 }
 
 // Delay cascade analysis:

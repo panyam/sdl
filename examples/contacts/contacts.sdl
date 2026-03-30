@@ -79,4 +79,7 @@ component ContactsSystemArch {
 }
 
 system ContactsSystem(arch ContactsSystemArch) {
+    generator("lookups", arch.server.Lookup, rate(10))
+    generator("inserts", arch.server.Insert, rate(1))
+    metric("lookup_latency", arch.server.Lookup, "latency", "p95", 1s)
 }
