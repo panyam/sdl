@@ -126,7 +126,10 @@ component UberMVPArch {
 }
 
 // MVP System - Everything in one place
+// Baseline generators define steady-state traffic. Recipes override for demo scenarios.
 system UberMVP(arch UberMVPArch) {
+    generator("baseline", arch.webserver.RequestRide, rate(5))
+    generator("drivers", arch.webserver.UpdateLocation, rate(10))
 }
 
 // Demo Narrative:

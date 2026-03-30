@@ -721,4 +721,6 @@ component UberModernArch {
 }
 
 system UberModern(arch UberModernArch) {
+    generator("baseline", arch.gateway.RequestRide, rate(100))
+    generator("drivers", arch.gateway.UpdateDriverLocation, rate(1000))
 }

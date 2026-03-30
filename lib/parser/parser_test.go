@@ -160,17 +160,7 @@ func TestParseDeclarations(t *testing.T) {
 		assertPosition(t, decl.Values[2], 24, 31)
 	})
 
-	t.Run("Options", func(t *testing.T) {
-		input := `options { let x = 1 }` // Options body uses StmtList
-		ast := parseString(t, input)
-		decl := firstDecl(t, ast).(*OptionsDecl)
-		assertPosition(t, decl, 0, 20)
-		require.NotNil(t, decl.Body)
-		assertPosition(t, decl.Body, 8, 20) // Position of the block itself
-		require.Len(t, decl.Body.Statements, 1)
-		_, ok := decl.Body.Statements[0].(*LetStmt)
-		assert.True(t, ok)
-	})
+	// OptionsDecl test removed — options syntax removed from grammar (unused)
 
 	t.Run("MultipleDeclarations", func(t *testing.T) {
 		input := `
@@ -338,17 +328,24 @@ func TestParseComponent(t *testing.T) {
 // works for backward compatibility. Instance declarations ('use') are no longer
 // valid inside systems — see TestParseSystemRejectsUse.
 func TestParseSystemLegacy(t *testing.T) {
-	t.Run("SystemLet", func(t *testing.T) {
-		// Let statements are still valid in system bodies.
-		input := `system S { let x = 100 }`
+	t.Run("SystemGeneratorCall", func(t *testing.T) {
+		// System bodies now only contain expression statements (generator/metric calls).
+		input := `system S { generator("rides", server.Handle, rate(100)) }`
 		ast := parseString(t, input)
 		sys := firstDecl(t, ast).(*SystemDecl)
-		assertPosition(t, sys, 0, 23)
 		require.Len(t, sys.Body, 1)
-		let := sys.Body[0].(*LetStmt)
-		assertPosition(t, let, 11, 22)
-		assertIdentifier(t, let.Variables[0], "x")
-		assertLiteralWithValue(t, let.Value, IntType, int64(100))
+		exprStmt, ok := sys.Body[0].(*ExprStmt)
+		require.True(t, ok)
+		callExpr, ok := exprStmt.Expression.(*CallExpr)
+		require.True(t, ok)
+		assert.Equal(t, "generator", callExpr.Function.(*IdentifierExpr).Value)
+	})
+
+	t.Run("LetInSystemNowFails", func(t *testing.T) {
+		// Let statements are no longer valid in system bodies.
+		input := `system S { let x = 100 }`
+		_, err := parseStringWithError(t, input)
+		require.Error(t, err)
 	})
 
 	t.Run("EmptySystem", func(t *testing.T) {
@@ -564,9 +561,8 @@ func TestParseSystemWithParameters(t *testing.T) {
 	})
 
 	t.Run("ParametersWithBody", func(t *testing.T) {
-		// A system with parameters and a let statement in the body.
-		// The body can still contain LetStmt and OptionsDecl.
-		input := `system S(uber UberMVP) { let x = 100 }`
+		// System body now contains only expression statements (generator/metric calls).
+		input := `system S(uber UberMVP) { generator("rides", uber.webserver.RequestRide, rate(100)) }`
 		ast := parseString(t, input)
 		sys := firstDecl(t, ast).(*SystemDecl)
 		assert.Equal(t, "S", sys.Name.Value)
@@ -574,8 +570,11 @@ func TestParseSystemWithParameters(t *testing.T) {
 		assert.Equal(t, "uber", sys.Parameters[0].Name.Value)
 		assert.Equal(t, "UberMVP", sys.Parameters[0].TypeDecl.Name)
 		require.Len(t, sys.Body, 1)
-		_, ok := sys.Body[0].(*LetStmt)
+		exprStmt, ok := sys.Body[0].(*ExprStmt)
 		assert.True(t, ok)
+		callExpr, ok := exprStmt.Expression.(*CallExpr)
+		assert.True(t, ok)
+		assert.Equal(t, "generator", callExpr.Function.(*IdentifierExpr).Value)
 	})
 
 	t.Run("NoParensStillWorks", func(t *testing.T) {

@@ -62,7 +62,7 @@ func yyerrok(lexer SDLLexer) {
     goExpr         *GoExpr
     forStmt         *ForStmt
     assignStmt     *AssignmentStmt
-    optionsDecl    *OptionsDecl
+    // optionsDecl removed
     enumDecl       *EnumDecl
     importDecl     *ImportDecl
     waitExpr *WaitExpr
@@ -127,7 +127,7 @@ func yyerrok(lexer SDLLexer) {
 %type <compBodyItem> NativeComponentBodyItem 
 %type <compBodyItemList> NativeComponentBodyItemList NativeComponentBodyItemOptList
 %type <sysBodyItemList>  SystemBodyItemOptList 
-%type <optionsDecl>  OptionsDecl
+// OptionsDecl type removed
 %type <enumDecl>     EnumDecl
 %type <identList>    CommaIdentifierList 
 %type <importDecl>   ImportItem
@@ -213,31 +213,10 @@ TopLevelDeclaration:
         $3.IsNative = true
         $$ = $3
     }
-    | OptionsDecl   { $$ = $1 }
     | EnumDecl      { $$ = $1 }
     ;
 
-OptionsDecl:
-    OPTIONS LBRACE StmtList RBRACE { // OPTIONS ($1) LBRACE ($2) StmtList ($3) RBRACE ($4)
-        // Assume OPTIONS token itself doesn't carry complex NodeInfo from lexer for this example.
-        // Span from LBRACE to RBRACE for body. If StmtList is empty, Body.NodeInfo might be tricky.
-/*
-        bodyStart := $2.(Node).Pos() // Position of LBRACE (assuming lexer returns it as Node)
-        bodyEnd := $4.(Node).Pos()   // Position of RBRACE (actually its start, use .End() for full span)
-        if len($3) > 0 { // If StmtList is not empty
-            bodyStart = $3[0].Pos()
-            bodyEnd = $3[len($3)-1].End()
-        }
-*/
-        $$ = &OptionsDecl{
-            NodeInfo: NewNodeInfo($1.(Node).Pos(), $4.(Node).End()), // Pos of OPTIONS, End of RBRACE
-            Body: &BlockStmt{
-                 NodeInfo: NewNodeInfo($2.(Node).Pos(), $4.(Node).End()),
-                 Statements: $3,
-             },
-         }
-    }
-    ;
+// OptionsDecl removed — was never used in practice.
 
 ComponentDecl:
     NATIVE COMPONENT IDENTIFIER LBRACE NativeComponentBodyItemOptList RBRACE { // COMPONENT($1) ... RBRACE($5)
@@ -500,14 +479,11 @@ SystemBodyItemOptList:
     ;
 
 SystemBodyItem:
-            // InstanceDecl removed: composition now lives in components via 'uses'
-            // | AnalyzeDecl { $$=$1 }
-              OptionsDecl { $$=$1 }
-            | LetStmt { $$=$1 }
+            // System bodies contain only function-call expressions:
+            // generator(...), metric(...), etc.
+            // OptionsDecl and LetStmt removed — no longer needed after component/system unification.
+              ExprStmt { $$=$1 }
             ;
-
-// InstanceDecl removed: 'use' keyword no longer valid in system blocks.
-// All composition now handled by 'uses' inside component declarations.
 
 AssignListOpt:
       /* empty */  { $$ = []*AssignmentStmt{} }

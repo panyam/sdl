@@ -77,6 +77,8 @@ component UberIntermediateArch {
 }
 
 system UberIntermediate(arch UberIntermediateArch) {
+    generator("baseline", arch.gateway.RequestRide, rate(20))
+    generator("drivers", arch.gateway.UpdateDriverLocation, rate(50))
 }
 
 component UserService {

@@ -100,7 +100,8 @@ type ExprStmt struct {
 	Expression Expr
 }
 
-func (e *ExprStmt) String() string { return e.Expression.String() + ";" }
+func (e *ExprStmt) systemBodyItemNode() {} // Allow in system blocks (generator, metric calls)
+func (e *ExprStmt) String() string        { return e.Expression.String() + ";" }
 
 func (e *ExprStmt) PrettyPrint(cp CodePrinter) {
 	cp.Print(e.String())

@@ -14,12 +14,32 @@ type SystemInstance struct {
 
 	// Holds the component instances and parameters
 	Env *Env[Value]
+
+	// Generators created from GeneratorSpec declarations during system init.
+	// Canvas.Use() reads these to wire up execution machinery.
+	Generators []*Generator
 }
 
 // Initializes a new runtime System instance and its root environment
 func NewSystemInstance(file *FileInstance, system *SystemDecl) *SystemInstance {
 	sysinst := &SystemInstance{File: file, System: system}
 	return sysinst
+}
+
+// ResolveGenerators creates runtime Generator instances from compiled GeneratorSpecs
+// and resolves their component/method targets against the initialized environment.
+func (s *SystemInstance) ResolveGenerators() {
+	if s.System == nil {
+		return
+	}
+	for _, spec := range s.System.Generators {
+		gen := NewGeneratorFromSpec(spec)
+		gen.ResolvedComponent = s.FindComponent(gen.ComponentPath)
+		if gen.ResolvedComponent != nil {
+			gen.ResolvedMethod, _ = gen.ResolvedComponent.ComponentDecl.GetMethod(gen.MethodName)
+		}
+		s.Generators = append(s.Generators, gen)
+	}
 }
 
 // GetSystemName returns the name of the system
@@ -79,13 +99,15 @@ func (s *SystemInstance) Initializer() (blockStmt *BlockStmt, err error) {
 		})
 	}
 
-	// Process body items (LetStmt, OptionsDecl — no more InstanceDecl)
+	// Process body items — ExprStmt (generator/metric calls) are handled by Canvas,
+	// not by the eval engine. Skip them here.
 	for _, item := range s.System.Body {
-		switch it := item.(type) {
-		case *LetStmt:
-			stmts = append(stmts, it)
+		switch item.(type) {
+		case *ExprStmt:
+			// generator(...), metric(...) calls — processed by Canvas.Use(), not here
+			continue
 		default:
-			Error("Invalid system body item type: %T", it)
+			Error("Invalid system body item type: %T", item)
 		}
 	}
 

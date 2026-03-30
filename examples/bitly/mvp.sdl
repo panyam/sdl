@@ -60,4 +60,5 @@ component BitlyArch {
 }
 
 system Bitly(arch BitlyArch) {
+    generator("baseline", arch.app.Shorten, rate(5))
 }

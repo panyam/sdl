@@ -143,10 +143,25 @@ type SystemDecl struct {
 	NodeInfo
 	Name       *IdentifierExpr
 	Parameters []*ParamDecl         // Typed parameters: (name: ComponentType, ...)
-	Body       []SystemDeclBodyItem // OptionsDecl, LetStmt (future: GeneratorDecl, MetricDecl)
+	Body       []SystemDeclBodyItem // ExprStmt (generator/metric calls)
+
+	// Resolved during inference from generator(...) calls in Body
+	Generators []*GeneratorSpec
 
 	// File declaration this System is declared in
 	ParentFileDecl *FileDecl
+}
+
+// GeneratorSpec is the resolved form of a generator(...) call in a system body.
+// Populated during the inference phase so errors are caught at compile time.
+type GeneratorSpec struct {
+	NodeInfo
+	Name          string  // Generator identifier
+	ComponentPath string  // Dot-separated component path (e.g., "arch.webserver")
+	MethodName    string  // Target method name (e.g., "RequestRide")
+	Rate          float64 // Calls per interval
+	RateInterval  float64 // Interval in seconds (default 1.0 = per second)
+	Duration      float64 // Duration in seconds (0 = forever)
 }
 
 func (s *SystemDecl) String() string {
@@ -186,6 +201,33 @@ func (s *SystemDecl) PrettyPrint(cp CodePrinter) {
 type SystemDeclBodyItem interface {
 	Node
 	systemBodyItemNode()
+}
+
+// SplitMemberAccessTarget walks a MemberAccessExpr tree and splits off the rightmost
+// member as the method name, with everything else joined as the component path.
+// For "arch.webserver.RequestRide", returns ("arch.webserver", "RequestRide").
+func SplitMemberAccessTarget(expr Expr) (componentPath string, methodName string) {
+	switch e := expr.(type) {
+	case *MemberAccessExpr:
+		methodName = e.Member.Value
+		componentPath = MemberAccessToString(e.Receiver)
+	default:
+		// Shouldn't happen for well-formed generator targets
+		methodName = fmt.Sprintf("%s", expr)
+	}
+	return
+}
+
+// MemberAccessToString converts a MemberAccessExpr chain to a dotted string.
+func MemberAccessToString(expr Expr) string {
+	switch e := expr.(type) {
+	case *IdentifierExpr:
+		return e.Value
+	case *MemberAccessExpr:
+		return MemberAccessToString(e.Receiver) + "." + e.Member.Value
+	default:
+		return fmt.Sprintf("%s", expr)
+	}
 }
 
 // InstanceDecl represents `instanceName ComponentType ( overrides );`
