@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	protos "github.com/panyam/sdl/gen/go/sdl/v1/models"
+	svc "github.com/panyam/sdl/services"
 )
 
 // SystemCatalogService discovers example workspaces from sdl.json manifests.
@@ -43,7 +44,7 @@ func (s *SystemCatalogService) discoverWorkspaces() {
 		dir := filepath.Join(s.basePath, entry.Name())
 		manifestPath := filepath.Join(dir, "sdl.json")
 
-		ws, err := LoadWorkspaceManifest(manifestPath)
+		ws, err := svc.LoadWorkspaceManifest(manifestPath)
 		if err != nil {
 			continue // No manifest, skip
 		}

@@ -20,27 +20,45 @@ type DiskWithContention struct {
 	arrivalRates map[string]float64
 }
 
-// Init initializes a DiskWithContention based on the ProfileName.
+// Init initializes a DiskWithContention with SSD profile.
 func (d *DiskWithContention) Init() {
-	// Initialize base disk
-	d.baseDisk = NewDisk()
+	d.initWithProfile("SSD")
+}
+
+func (d *DiskWithContention) initWithProfile(profile string) {
+	d.baseDisk = NewDisk(profile)
 	d.arrivalRates = make(map[string]float64)
 
-	// Configure contention model - for now always use ResourcePool
-	// In the future, this could be configurable
-	d.pool = &ResourcePool{
-		Name:        "disk-pool",
-		Size:        32,     // SSDs can handle multiple parallel I/Os
-		ArrivalRate: 1e-9,   // Will be updated via SetArrivalRate
-		AvgHoldTime: 0.0005, // 0.5ms average (from SSD profile)
+	switch profile {
+	case "HDD":
+		// HDD uses serialized access via MM1Queue
+		d.queue = &MM1Queue{
+			Name:           "disk-queue",
+			ArrivalRate:    1e-9, // Will be updated via SetArrivalRate
+			AvgServiceTime: 0.008, // 8ms per I/O (from HDD profile)
+		}
+		d.queue.Init()
+	default:
+		// SSD uses parallel I/O via ResourcePool
+		d.pool = &ResourcePool{
+			Name:        "disk-pool",
+			Size:        32,     // SSDs can handle multiple parallel I/Os
+			ArrivalRate: 1e-9,   // Will be updated via SetArrivalRate
+			AvgHoldTime: 0.0005, // 0.5ms average (from SSD profile)
+		}
+		d.pool.Init()
 	}
-	d.pool.Init()
 }
 
 // NewDiskWithContention creates a contention-aware disk component.
-func NewDiskWithContention() *DiskWithContention {
+// Optional profileName: "SSD" (default) or "HDD".
+func NewDiskWithContention(profileName ...string) *DiskWithContention {
 	d := &DiskWithContention{}
-	d.Init()
+	profile := "SSD"
+	if len(profileName) > 0 {
+		profile = profileName[0]
+	}
+	d.initWithProfile(profile)
 	return d
 }
 

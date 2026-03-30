@@ -10,14 +10,17 @@ import (
 const testBitlySDL = `
 component AppServer {
 	param RetryCount = 3
-	
+
 	method Shorten() String {
 		return "ok"
 	}
 }
 
-system Bitly {
-	use app AppServer
+component BitlyArch {
+	uses app AppServer()
+}
+
+system Bitly(arch BitlyArch) {
 }
 `
 
@@ -26,7 +29,6 @@ const testSDLWithLocalImports = `
 import Database from "./db.sdl"
 
 system TestSystem {
-	use db Database
 }
 `
 
@@ -35,7 +37,6 @@ const testSDLWithStdlibImports = `
 import Cache from "@stdlib/cache.sdl"
 
 system TestSystem {
-	use cache Cache
 }
 `
 
@@ -247,7 +248,7 @@ import Cache, HashIndex, HttpStatusCode from "@stdlib/common.sdl";
 component TestServer {
   uses cache Cache()
   uses index HashIndex()
-  
+
   method Process() HttpStatusCode {
     if cache.Read() {
       return HttpStatusCode.Ok
@@ -256,8 +257,11 @@ component TestServer {
   }
 }
 
-system TestSystem {
-  use server TestServer
+component TestSystemArch {
+  uses server TestServer()
+}
+
+system TestSystem(arch TestSystemArch) {
 }
 `
 
@@ -290,8 +294,11 @@ component SimpleServer {
   }
 }
 
-system WebSystem {
-  use server SimpleServer
+component WebSystemArch {
+  uses server SimpleServer()
+}
+
+system WebSystem(arch WebSystemArch) {
 }
 `
 

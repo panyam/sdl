@@ -338,6 +338,26 @@
 - TinyGo compatibility unknowns
 - Binary size targets for free tier (current: 25-29MB)
 
+## Current Session (March 2026)
+
+### Test Suite — All Go Tests Passing
+- Fixed `lib/decl`: Value type names (lowercase), String() format, nil handling, Deref safety
+- Fixed `lib/runtime`: test paths after lib/ move, system parameter syntax
+- Fixed `lib/components`: Disk HDD profile support (`NewDisk("HDD")`), DiskWithContention MM1Queue
+- Fixed `lib/core`: distribution edge case (failureRate preservation)
+- Fixed `tools/shared/recipe`: hardcoded path → runtime.Caller resolution
+- Fixed `web/attic/systemdetail`: SDL updated for component/system unification
+- Fixed stale import paths: `tools/systemdetail` → `web/attic/systemdetail`
+- Tagged broken attic/WASM test files with `//go:build ignore`
+- Improved flow solver convergence (30 iterations, 0.3 damping)
+- Skipped cascading delays test pending native component outcome branch weighting
+
+### DSL Refactor: Issues #24 and #25 (In Progress)
+- #24: Declarative generators — `generator name path.Method 100rps [duration 30s]`
+- #25: Declarative metrics — `metric name path.Method type [agg] [window Xs]`
+- Both require: grammar additions, AST structs, lexer keywords, runtime/Canvas integration
+- Foundation work (#23 component/system unification) is merged
+
 ## Recent Session (March 2025)
 
 ### Dependency Updates

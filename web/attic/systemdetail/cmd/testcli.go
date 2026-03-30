@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/panyam/sdl/tools/shared/recipe"
-	"github.com/panyam/sdl/tools/systemdetail"
+	"github.com/panyam/sdl/web/attic/systemdetail"
 )
 
 func main() {

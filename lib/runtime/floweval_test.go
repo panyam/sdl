@@ -87,7 +87,7 @@ func TestFlowEvalIntegration(t *testing.T) {
 
 	// Load the contacts system
 	l := loader.NewLoader(nil, nil, 10)
-	fileStatus, err := l.LoadFile("../examples/contacts/contacts.sdl", "", 0)
+	fileStatus, err := l.LoadFile("../../examples/contacts/contacts.sdl", "", 0)
 	if err != nil {
 		t.Fatalf("Failed to load contacts.sdl: %v", err)
 	}
@@ -117,15 +117,10 @@ func TestFlowEvalIntegration(t *testing.T) {
 	}
 	context := NewFlowContext(systemDecl, parameters)
 
-	// For now, we'll test the basic structure
-	// TODO: Once we have proper component declaration access, we can test actual flow evaluation
-
-	t.Logf("Successfully loaded ContactsSystem with %d body items", len(systemDecl.Body))
-	for _, bodyItem := range systemDecl.Body {
-		if instance, ok := bodyItem.(*InstanceDecl); ok {
-			t.Logf("Instance: %s of type %s", instance.Name.Value, instance.ComponentName.Value)
-		}
-	}
+	// With the component/system unification, system body is now empty
+	// (components are declared in the arch parameter component)
+	t.Logf("Successfully loaded ContactsSystem with %d body items and %d parameters",
+		len(systemDecl.Body), len(systemDecl.Parameters))
 
 	// Test basic FlowEval call (this will fail gracefully due to missing component declarations)
 	flows := FlowEval("server", "HandleLookup", 10.0, context)

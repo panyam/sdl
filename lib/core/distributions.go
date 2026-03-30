@@ -83,9 +83,8 @@ func NewDistributionFromPercentiles(
 	} else if len(percentiles) == 0 {
 		// Have success probability but NO data points to define latency.
 		// Cannot generate success buckets. Log and proceed to only generate failures.
+		// Keep the original failureRate so failure bucket weights are correct.
 		log.Printf("WARN: NewDistributionFromPercentiles called with no percentile points but success probability > 0. Cannot generate success distribution.")
-		// Effectively treat as 100% failure for generation purposes if no points given
-		failureRate = 1.0
 		totalSuccessProb = 0.0
 	} else {
 		// Add boundary points if missing
@@ -150,8 +149,6 @@ func NewDistributionFromPercentiles(
 	}
 
 	// --- Add Success Buckets ---
-	// Recalculate based on potentially modified failureRate
-	totalSuccessProb = 1.0 - failureRate
 	if totalSuccessProb <= 1e-9 {
 		// No success probability OR not enough points to interpolate (points includes added bounds)
 		return out

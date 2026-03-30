@@ -217,7 +217,7 @@ func TestFlowEvalComparison(t *testing.T) {
 func TestContactsSystemComparison(t *testing.T) {
 	// Load the contacts system
 	l := loader.NewLoader(nil, nil, 10)
-	fileStatus, err := l.LoadFile("../examples/contacts/contacts.sdl", "", 0)
+	fileStatus, err := l.LoadFile("../../examples/contacts/contacts.sdl", "", 0)
 	if err != nil {
 		t.Fatalf("Failed to load contacts.sdl: %v", err)
 	}

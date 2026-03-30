@@ -61,11 +61,12 @@ component Database {
     }
 }
 
-system Bitly {
-    // Order of dependencies does not matter  They will be bound later
-    // This allows cyclical links
-    use app AppServer ( db = db )
-    use db Database
+component BitlyArch {
+    uses app AppServer ( db = db )
+    uses db Database()
+}
+
+system Bitly(arch BitlyArch) {
 }
 `
 

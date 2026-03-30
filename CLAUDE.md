@@ -40,12 +40,20 @@ Builds for frontend, wasm, backend are all running continuously and can be queri
 - When you checkpoint update all relevant .md files with our latest understanding, statuses and progress in the current session and then commit.
 
 ## SDL System Declaration Notes
-- In SDL system declaration you can declare the components in any order. There are no "set" statements. You pass the dependencies in the constructor of a "use" keyword.  For example:
-```system Twitter {
-    use app AppServer(db = database)
-    use db Database
-}```
-- Here the AppServer component has a "db" dependency that is set by the "database" component declared in the next line.
+- Systems declare typed parameters referencing component types. Components handle all composition via `uses`. The `use` keyword has been removed from the language.
+- Example:
+```
+component TwitterArch {
+    uses app AppServer(db = database)
+    uses database Database()
+}
+
+system Twitter(arch TwitterArch) {
+}
+```
+- Here `TwitterArch` is a component that composes `AppServer` and `Database`. The system takes it as a parameter.
+- `uses x Foo()` (with empty parens) creates a default instance. `uses x Foo(dep = y)` wires dependencies.
+- `uses x Foo` (no parens) means the dependency must be provided by a parent component.
 
 ## Available commands
 
@@ -64,7 +72,7 @@ Builds for frontend, wasm, backend are all running continuously and can be queri
 - **Asset cache busting**: Vite generates `.vite/manifest.json` in dist/. The Go server reads it at startup and provides `viteJS`/`viteCSS` template functions. No post-build script needed — templates use `{{ viteJS "index.html" }}` and `{{ viteCSS "index.html" }}`.
 - **Tailwind content paths**: `web/tailwind.config.js` must scan `./templates/**/*.html` (not `../templates/`). Wrong paths cause Tailwind to purge all utility classes used in Go templates.
 - **Test directory**: Tests live in `web/src/.__tests__/` (with dot prefix). Vitest config must reference `.__tests__` not `__tests__`.
-- **Pre-push hook**: `.git/hooks/pre-push` runs web tests before push. Go tests have pre-existing failures so are not included yet.
+- **Pre-push hook**: `.git/hooks/pre-push` runs web tests before push. All Go tests now pass (`go test ./...`).
 
 ## Template System (Templar)
 
@@ -102,6 +110,27 @@ Pages that include BasePage.html must define: `BodySection`, `PostBodySection`, 
 - URL format strings must contain `%s` placeholder for the entity ID
 - Example: `/canvases/%s/view` not `/canvases`
 
+## Value Type System (lib/decl)
+
+- Type names are lowercase: `"bool"`, `"int"`, `"float"`, `"string"`, `"nil"`
+- `Value.String()` format: `RV(type: value)` — e.g., `RV(int: 10)`
+- List type string uses brackets: `List[int]`, `Outcomes[string]`
+- `NilType` is a `SimpleType` (tag `TypeTagSimple`), not `TypeTagNil` — check with `r.Type == NilType`, not `r.Type.Tag == TypeTagNil`
+- `Value.Deref()` returns `(r, error)` not `(nil, error)` for nil values — prevents nil pointer panics in callers
+
+## Flow Solver Convergence
+
+- Both string-based and runtime-based solvers use fixed-point iteration with damping
+- Parameters: 30 max iterations, 0.01 convergence threshold, 0.3 damping factor (runtime) / 0.7 update rate (string-based)
+- Known limitation: flow evaluator doesn't apply native component outcomes (e.g., cache hit rate) to branch weighting in if/else
+
+## Test Status
+
+- All Go test packages pass: `go test ./...` should be fully green
+- Runtime tests use `sys.FindComponent("arch.X")` to access components inside system parameters
+- `Disk` supports profiles via `NewDisk("HDD")` — default is SSD. `DiskWithContention` similarly: `NewDiskWithContention("HDD")`
+- `WrappedComponent` interface requires `Init()` with no args — use `SetProfile()` for post-init configuration
+
 ## Stack Audit (March 2026)
 
 GitHub issues created for stack alignment:
@@ -117,6 +146,9 @@ GitHub issues created for stack alignment:
 - Includes: dashboard.ts monolith, system-details-page, old panel system, dashboard-coordinator, app-state-manager
 - Dead tests moved to `web/attic/src/__tests__/`
 - When removing code, always move to attic especially if it existed in previously working versions
+- Attic Go files that fail to compile in test mode use `//go:build ignore` to exclude from `go test ./...`
+- WASM-only files (`syscall/js`) also use `//go:build ignore` since they can't compile on native platforms
+- `systemdetail` package lives at `web/attic/systemdetail/` (moved from `tools/systemdetail/`)
 
 ## DockView Theming
 

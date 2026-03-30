@@ -39,7 +39,7 @@ func TestDiskWithContention(t *testing.T) {
 	})
 
 	t.Run("HDD with serialized I/O", func(t *testing.T) {
-		disk := NewDiskWithContention()
+		disk := NewDiskWithContention("HDD")
 
 		// Set arrival rates
 		disk.SetArrivalRate("Read", 50.0)  // 50 RPS for reads

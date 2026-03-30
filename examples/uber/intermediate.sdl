@@ -62,17 +62,21 @@ component Database {
   }
 }
 
-system UberIntermediate {
-  use gateway APIGateway(
+// Intermediate Architecture - service boundaries with caching
+component UberIntermediateArch {
+  uses gateway APIGateway(
     userService = userService,
     driverService = driverService,
     matchingService = matchingService,
     notificationService = notificationService
   )
-  use userService UserService
-  use driverService DriverService
-  use matchingService MatchingService(driverService = driverService)
-  use notificationService NotificationService
+  uses userService UserService()
+  uses driverService DriverService()
+  uses matchingService MatchingService(driverService = driverService)
+  uses notificationService NotificationService()
+}
+
+system UberIntermediate(arch UberIntermediateArch) {
 }
 
 component UserService {

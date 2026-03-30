@@ -85,6 +85,9 @@ component DiskWithCapacity {
 }
 
 // A simple system that uses our capacity-aware disk.
-system TestCapacitySystem {
-    use MyDisk DiskWithCapacity
+component TestCapacitySystemArch {
+    uses MyDisk DiskWithCapacity()
+}
+
+system TestCapacitySystem(arch TestCapacitySystemArch) {
 }

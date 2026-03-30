@@ -39,7 +39,7 @@ func TestDiskInit_ExplicitProfiles(t *testing.T) {
 	}
 
 	// Test explicit HDD initialization
-	hdd := NewDisk()
+	hdd := NewDisk("HDD")
 	if hdd.ReadOutcomes != hddReadOutcomes || hdd.WriteOutcomes != hddWriteOutcomes {
 		t.Error("HDD disk does not point to correct predefined outcomes")
 	}
@@ -47,7 +47,7 @@ func TestDiskInit_ExplicitProfiles(t *testing.T) {
 
 func TestDisk_PerformanceMetrics(t *testing.T) {
 	ssd := NewDisk()
-	hdd := NewDisk()
+	hdd := NewDisk("HDD")
 
 	// --- Analyze SSD Read ---
 	ssdReadOutcomes := ssd.Read()

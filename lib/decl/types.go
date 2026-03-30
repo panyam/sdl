@@ -36,11 +36,11 @@ type Type struct {
 var (
 	// Use singletons for basic types for efficiency
 	VoidType  = &Type{Tag: TypeTagVoid}
-	NilType   = SimpleType("Nil")
-	BoolType  = SimpleType("Bool")
-	IntType   = SimpleType("Int")
-	FloatType = SimpleType("Float")
-	StrType   = SimpleType("String")
+	NilType   = SimpleType("nil")
+	BoolType  = SimpleType("bool")
+	IntType   = SimpleType("int")
+	FloatType = SimpleType("float")
+	StrType   = SimpleType("string")
 )
 
 func SimpleType(name string) *Type {
@@ -155,7 +155,7 @@ func (t *Type) String() string {
 	} else if t.Tag == TypeTagTuple {
 		return fmt.Sprintf("Tuple(%s)", gfn.Map(t.Info.([]*Type), func(t *Type) string { return t.String() }))
 	} else if t.Tag == TypeTagList {
-		return fmt.Sprintf("List(%s)", t.Info.(*Type).String())
+		return fmt.Sprintf("List[%s]", t.Info.(*Type).String())
 	} else if t.Tag == TypeTagEnum {
 		enumDecl := t.Info.(*EnumDecl)
 		return enumDecl.String()
@@ -163,6 +163,7 @@ func (t *Type) String() string {
 		return fmt.Sprintf("Component(%s)", t.Info.(*ComponentDecl).Name.Value)
 	} else if t.Tag == TypeTagMethod {
 	} else if t.Tag == TypeTagOutcomes {
+		return fmt.Sprintf("Outcomes[%s]", t.Info.(*Type).String())
 	} else if t.Tag == TypeTagRef {
 		rti := t.Info.(*RefTypeInfo)
 		return fmt.Sprintf("Ref(Component(%s).Param(%s))", rti.Component.Name, rti.ParamType)

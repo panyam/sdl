@@ -167,7 +167,7 @@ func (r *Runtime) NewSystem(systemName string) (sysInst *SystemInstance, err err
 	log.Println("File Instances: ", r.fileInstances)
 	for _, finst := range r.fileInstances {
 		sysDecl, _ := finst.Decl.GetSystem(systemName)
-		slog.Debug("Decl: ", finst.Decl.FullPath, systemName, sysDecl)
+		slog.Debug("Decl", "path", finst.Decl.FullPath, "system", systemName, "found", sysDecl != nil)
 		if sysDecl == nil {
 			continue
 		}

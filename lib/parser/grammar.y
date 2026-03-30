@@ -45,7 +45,7 @@ func yyerrok(lexer SDLLexer) {
     paramDecl   *ParamDecl
     usesDecl    *UsesDecl
     methodDef   *MethodDecl
-    instanceDecl *InstanceDecl
+    // instanceDecl removed: InstanceDecl no longer in grammar
     analyzeDecl *AnalyzeDecl
     expectBlock *ExpectationsDecl
     expectStmt  *ExpectStmt
@@ -147,7 +147,7 @@ func yyerrok(lexer SDLLexer) {
 %type <typeDeclList>     TypeDeclList
 %type <usesDecl>     UsesDecl
 %type <methodDef>    MethodDecl MethodSigDecl
-%type <instanceDecl> InstanceDecl
+// InstanceDecl type removed from grammar
 %type <forStmt>   ForStmt
 %type <assignStmt>   Assignment
 %type <assignList>   AssignList  AssignListOpt
@@ -462,8 +462,19 @@ MethodParamDecl:    // thse dont need "param" unlike param decls in components
     ;
 
 // --- System ---
+// Systems support two forms:
+//   system Name(param1: Type, param2: Type) { body }  -- parameterized (new)
+//   system Name { body }                               -- legacy (no parameters)
 SystemDecl:
-    SYSTEM IDENTIFIER LBRACE SystemBodyItemOptList RBRACE { // SYSTEM($1) ... RBRACE($5)
+    SYSTEM IDENTIFIER LPAREN MethodParamListOpt RPAREN LBRACE SystemBodyItemOptList RBRACE {
+        $$ = &SystemDecl{
+             NodeInfo: NewNodeInfo($1.(Node).Pos(), $8.(Node).End()),
+             Name: $2,
+             Parameters: $4,
+             Body: $7,
+        }
+    }
+    | SYSTEM IDENTIFIER LBRACE SystemBodyItemOptList RBRACE {
         $$ = &SystemDecl{
              NodeInfo: NewNodeInfo($1.(Node).Pos(), $5.(Node).End()),
              Name: $2,
@@ -489,30 +500,14 @@ SystemBodyItemOptList:
     ;
 
 SystemBodyItem:
-              InstanceDecl { $$=$1 }
+            // InstanceDecl removed: composition now lives in components via 'uses'
             // | AnalyzeDecl { $$=$1 }
-            | OptionsDecl { $$=$1 }
+              OptionsDecl { $$=$1 }
             | LetStmt { $$=$1 }
             ;
 
-InstanceDecl:
-    USE IDENTIFIER IDENTIFIER { // IDENTIFIER($1) ... 
-         $$ = &InstanceDecl{
-             NodeInfo: NewNodeInfo($1.(Node).Pos(), $3.End()),
-             Name: $2,
-             ComponentName: $3,
-             Overrides: []*AssignmentStmt{},
-         }
-    }
-    | USE IDENTIFIER IDENTIFIER LPAREN AssignListOpt RPAREN { // IDENTIFIER($1) ... 
-        $$ = &InstanceDecl{
-             NodeInfo: NewNodeInfo($1.(Node).Pos(), $6.End()),
-             Name: $2,
-             ComponentName: $3,
-             Overrides: $5,
-         }
-    }
-    ;
+// InstanceDecl removed: 'use' keyword no longer valid in system blocks.
+// All composition now handled by 'uses' inside component declarations.
 
 AssignListOpt:
       /* empty */  { $$ = []*AssignmentStmt{} }

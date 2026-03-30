@@ -117,16 +117,8 @@ func (ts *TypeScope) Get(name string) (*Type, bool) {
 				return nil, false
 			}
 			return n.InferredType(), true
-		case *InstanceDecl:
-			if ts.env != nil {
-				compDeclNode, compFound := ts.env.Get(n.ComponentName.Value)
-				if compFound {
-					if compDecl, ok := compDeclNode.(*ComponentDecl); ok {
-						return ComponentType(compDecl), true
-					}
-				}
-			}
-			return nil, false
+		// InstanceDecl case removed: systems no longer use 'use' declarations.
+		// System parameters resolve via ComponentDecl directly.
 		case *MethodDecl:
 			if ts.env != nil {
 				methodDeclNode, methodFound := ts.env.Get(n.Name.Value)

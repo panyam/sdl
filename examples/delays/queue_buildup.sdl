@@ -19,8 +19,11 @@ component SlowProcessor {
 }
 
 // System that sends traffic to the slow processor
-system QueueBuildupDemo {
-    use processor SlowProcessor
+component QueueBuildupDemoArch {
+    uses processor SlowProcessor()
+}
+
+system QueueBuildupDemo(arch QueueBuildupDemoArch) {
 }
 
 // Test scenarios:

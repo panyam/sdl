@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/panyam/sdl/tools/systemdetail"
+	"github.com/panyam/sdl/web/attic/systemdetail"
 )
 
 func main() {

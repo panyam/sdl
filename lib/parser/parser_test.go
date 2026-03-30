@@ -238,17 +238,18 @@ func TestParseComponentParams(t *testing.T) {
 // Need updates similar to TestParseComponentParams to use assertLiteralWithValue
 // when checking default values or literal expressions within the structures.
 
-// Example: Update for InstanceDecl override literal
-func TestParseSystemInstancesWithLiteralOverride(t *testing.T) {
-	input := `system S { use i1 D ( p = 5 ) }` // Override p with int literal 5
+// TestParseUsesWithLiteralOverride verifies that 'uses' declarations in
+// components support literal overrides. This replaces the old test for
+// 'use' in system blocks — override syntax is now component-level only.
+func TestParseUsesWithLiteralOverride(t *testing.T) {
+	input := `component C { uses i1 D ( p = 5 ) }` // Override p with int literal 5
 	ast := parseString(t, input)
-	sys := firstDecl(t, ast).(*SystemDecl)
-	require.Len(t, sys.Body, 1)
-	inst := sys.Body[0].(*InstanceDecl)
-	require.Len(t, inst.Overrides, 1)
-	assign := inst.Overrides[0]
+	comp := firstDecl(t, ast).(*ComponentDecl)
+	require.Len(t, comp.Body, 1)
+	uses := comp.Body[0].(*UsesDecl)
+	require.Len(t, uses.Overrides, 1)
+	assign := uses.Overrides[0]
 	assert.Equal(t, "p", assign.Var.Value)
-	// Assert the assigned value is a LiteralExpr containing an Int RuntimeValue
 	assertLiteralWithValue(t, assign.Value, IntType, int64(5))
 }
 
@@ -333,62 +334,13 @@ func TestParseComponent(t *testing.T) {
 	})
 }
 
-func TestParseSystem(t *testing.T) {
-	t.Run("InstanceSimple", func(t *testing.T) {
-		input := `system S { use i1 MyComp }` // Removed ; based on grammar
-		ast := parseString(t, input)
-		sys := firstDecl(t, ast).(*SystemDecl)
-		assertPosition(t, sys, 0, 23)
-		require.Len(t, sys.Body, 1)
-		inst := sys.Body[0].(*InstanceDecl)
-		assertPosition(t, inst, 11, 22)
-		assertIdentifier(t, inst.Name, "i1")
-		assertIdentifier(t, inst.ComponentName, "MyComp")
-		assert.Empty(t, inst.Overrides)
-	})
-
-	t.Run("InstanceWithOverrides", func(t *testing.T) {
-		input := `system S { use i2 D ( p1 = 5, p2 = "a" ) }` // Removed ; based on grammar
-		ast := parseString(t, input)
-		sys := firstDecl(t, ast).(*SystemDecl)
-		assertPosition(t, sys, 0, 40)
-		require.Len(t, sys.Body, 1)
-		inst := sys.Body[0].(*InstanceDecl)
-		assertPosition(t, inst, 11, 38)
-		assertIdentifier(t, inst.Name, "i2")
-		assertIdentifier(t, inst.ComponentName, "D")
-		require.Len(t, inst.Overrides, 2)
-		assert.Equal(t, "p1", inst.Overrides[0].Var.Value)
-		assertLiteralWithValue(t, inst.Overrides[0].Value, IntType, int64(5))
-		assert.Equal(t, "p2", inst.Overrides[1].Var.Value)
-		assertLiteralWithValue(t, inst.Overrides[1].Value, StrType, "a")
-	})
-
-	/*
-		t.Run("Analyze", func(t *testing.T) {
-			input := `system S { analyze Test = c.Run() expect { 30 < 10 } }` // Removed ;
-			// Indices: system(0)...{(11) analyze(13)...Test(21) = c.Run()(25)...expect(34)...{(41)...result.P99(43) < 56 10ms(58)...}(62) }(64)
-			ast := parseString(t, input)
-			sys := firstDecl(t, ast).(*SystemDecl)
-			assertPosition(t, sys, 0, 64)
-			require.Len(t, sys.Body, 1)
-			an := sys.Body[0].(*AnalyzeDecl)
-			assertPosition(t, an, 13, 63)
-			assertIdentifier(t, an.Name, "Test")
-			require.NotNil(t, an.Target)
-			assertIdentifier(t, an.Target.Function.(*MemberAccessExpr).Member, "Run")
-			require.NotNil(t, an.Expectations)
-			assertPosition(t, an.Expectations, 34, 63)
-			require.Len(t, an.Expectations.Expects, 1)
-			ex := an.Expectations.Expects[0]
-			assertPosition(t, ex, 43, 61) // From result.P99 to 10ms
-			assert.Equal(t, "<", ex.Operator)
-			// TODO: More detailed checks on expect target/threshold expressions
-		})
-	*/
-
+// TestParseSystemLegacy tests the non-parameterized system syntax that still
+// works for backward compatibility. Instance declarations ('use') are no longer
+// valid inside systems — see TestParseSystemRejectsUse.
+func TestParseSystemLegacy(t *testing.T) {
 	t.Run("SystemLet", func(t *testing.T) {
-		input := `system S { let x = 100 }` // Removed ;
+		// Let statements are still valid in system bodies.
+		input := `system S { let x = 100 }`
 		ast := parseString(t, input)
 		sys := firstDecl(t, ast).(*SystemDecl)
 		assertPosition(t, sys, 0, 23)
@@ -397,6 +349,15 @@ func TestParseSystem(t *testing.T) {
 		assertPosition(t, let, 11, 22)
 		assertIdentifier(t, let.Variables[0], "x")
 		assertLiteralWithValue(t, let.Value, IntType, int64(100))
+	})
+
+	t.Run("EmptySystem", func(t *testing.T) {
+		// Empty systems are valid — used as a placeholder before adding generators.
+		input := `system S {}`
+		ast := parseString(t, input)
+		sys := firstDecl(t, ast).(*SystemDecl)
+		assert.Equal(t, "S", sys.Name.Value)
+		assert.Empty(t, sys.Body)
 	})
 }
 
@@ -556,6 +517,96 @@ func TestParseExpressions(t *testing.T) {
 		assertPosition(t, expr.ArgList[1].(Node), 42, 47) // `"two"`
 	})
 
+}
+
+// TestParseSystemWithParameters tests the new parameterized system syntax:
+//   system Name(param1: Type1, param2: Type2) { }
+// Systems no longer contain 'use' instance declarations. Instead, they declare
+// typed parameters that reference component types. The system body is reserved
+// for future generator/metric declarations.
+func TestParseSystemWithParameters(t *testing.T) {
+	t.Run("SingleParameter", func(t *testing.T) {
+		// A system with a single typed parameter referencing a component type.
+		// Uses 'name Type' syntax consistent with method parameter declarations.
+		input := `system S(p1 MyComp) {}`
+		ast := parseString(t, input)
+		sys := firstDecl(t, ast).(*SystemDecl)
+		assert.Equal(t, "S", sys.Name.Value)
+		require.Len(t, sys.Parameters, 1)
+		assert.Equal(t, "p1", sys.Parameters[0].Name.Value)
+		assert.Equal(t, "MyComp", sys.Parameters[0].TypeDecl.Name)
+		assert.Empty(t, sys.Body)
+	})
+
+	t.Run("MultipleParameters", func(t *testing.T) {
+		// A system with multiple typed parameters, allowing side-by-side
+		// comparison of different component instances in a single simulation.
+		input := `system S(us UberRegion, eu UberRegion) {}`
+		ast := parseString(t, input)
+		sys := firstDecl(t, ast).(*SystemDecl)
+		assert.Equal(t, "S", sys.Name.Value)
+		require.Len(t, sys.Parameters, 2)
+		assert.Equal(t, "us", sys.Parameters[0].Name.Value)
+		assert.Equal(t, "UberRegion", sys.Parameters[0].TypeDecl.Name)
+		assert.Equal(t, "eu", sys.Parameters[1].Name.Value)
+		assert.Equal(t, "UberRegion", sys.Parameters[1].TypeDecl.Name)
+		assert.Empty(t, sys.Body)
+	})
+
+	t.Run("EmptyParameters", func(t *testing.T) {
+		// A system with empty parameter list — valid but unusual.
+		input := `system S() {}`
+		ast := parseString(t, input)
+		sys := firstDecl(t, ast).(*SystemDecl)
+		assert.Equal(t, "S", sys.Name.Value)
+		require.Empty(t, sys.Parameters)
+		assert.Empty(t, sys.Body)
+	})
+
+	t.Run("ParametersWithBody", func(t *testing.T) {
+		// A system with parameters and a let statement in the body.
+		// The body can still contain LetStmt and OptionsDecl.
+		input := `system S(uber UberMVP) { let x = 100 }`
+		ast := parseString(t, input)
+		sys := firstDecl(t, ast).(*SystemDecl)
+		assert.Equal(t, "S", sys.Name.Value)
+		require.Len(t, sys.Parameters, 1)
+		assert.Equal(t, "uber", sys.Parameters[0].Name.Value)
+		assert.Equal(t, "UberMVP", sys.Parameters[0].TypeDecl.Name)
+		require.Len(t, sys.Body, 1)
+		_, ok := sys.Body[0].(*LetStmt)
+		assert.True(t, ok)
+	})
+
+	t.Run("NoParensStillWorks", func(t *testing.T) {
+		// A system without parentheses — the legacy empty system syntax.
+		// Still valid for backward compatibility during transition.
+		input := `system S {}`
+		ast := parseString(t, input)
+		sys := firstDecl(t, ast).(*SystemDecl)
+		assert.Equal(t, "S", sys.Name.Value)
+		assert.Nil(t, sys.Parameters)
+		assert.Empty(t, sys.Body)
+	})
+}
+
+// TestParseSystemRejectsUse verifies that the 'use' keyword is no longer
+// accepted inside system blocks. After the component/system unification,
+// all composition is handled by 'uses' inside component declarations.
+func TestParseSystemRejectsUse(t *testing.T) {
+	t.Run("UseInSystemFails", func(t *testing.T) {
+		// The old system syntax with 'use' instance declarations should fail parsing.
+		input := `system S { use i1 MyComp }`
+		_, err := parseStringWithError(t, input)
+		require.Error(t, err)
+	})
+
+	t.Run("UseWithOverridesInSystemFails", func(t *testing.T) {
+		// The old system syntax with overrides should also fail.
+		input := `system S { use i1 MyComp(p = 5) }`
+		_, err := parseStringWithError(t, input)
+		require.Error(t, err)
+	})
 }
 
 // Add/Keep TestParseErrors from previous example

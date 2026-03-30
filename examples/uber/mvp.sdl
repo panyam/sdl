@@ -118,11 +118,15 @@ component UberWebServer {
     }
 }
 
+// MVP Architecture - wires everything together
+component UberMVPArch {
+    uses webserver UberWebServer(db = database, maps = mapsService)
+    uses database PostgresDatabase()
+    uses mapsService MapsAPI()
+}
+
 // MVP System - Everything in one place
-system UberMVP {
-    use webserver UberWebServer(db = database, maps = mapsService)
-    use database PostgresDatabase
-    use mapsService MapsAPI
+system UberMVP(arch UberMVPArch) {
 }
 
 // Demo Narrative:
