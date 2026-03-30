@@ -1,0 +1,28 @@
+// Test fixture for declarative generators in system blocks (issue #24).
+
+component SimpleDB {
+    method Query() Bool {
+        return true
+    }
+}
+
+component SimpleServer {
+    uses db SimpleDB()
+
+    method HandleRequest() Bool {
+        return self.db.Query()
+    }
+
+    method HealthCheck() Bool {
+        return true
+    }
+}
+
+component SimpleApp {
+    uses server SimpleServer()
+}
+
+system SimpleAppLoadTest(app SimpleApp) {
+    generator("traffic", app.server.HandleRequest, rate(100))
+    generator("health", app.server.HealthCheck, rate(1, 5s))
+}

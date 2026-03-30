@@ -135,6 +135,52 @@ func (c *Canvas) Use(systemName string) error {
 	// Initialize flow contexts for the new system
 	c.initializeFlowContexts()
 
+	// Auto-create generators declared in the system block
+	if err := c.createDeclaredGenerators(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// createDeclaredGenerators creates GeneratorInfo instances from the active system's
+// resolved Generator declarations and registers them with the canvas.
+func (c *Canvas) createDeclaredGenerators() error {
+	if c.activeSystem == nil {
+		return nil
+	}
+	for _, gen := range c.activeSystem.Generators {
+		genInfo := &GeneratorInfo{
+			Generator: &protos.Generator{
+				Id:        gen.Name,
+				Name:      gen.Name,
+				Component: gen.ComponentPath,
+				Method:    gen.MethodName,
+				Rate:      gen.RPS(),
+				Duration:  gen.Duration,
+				Enabled:   true,
+			},
+		}
+		// Use pre-resolved references from the runtime Generator
+		genInfo.resolvedComponentInstance = gen.ResolvedComponent
+		genInfo.resolvedMethodDecl = gen.ResolvedMethod
+		genInfo.System = c.activeSystem
+		genInfo.canvas = c
+
+		c.generatorsLock.Lock()
+		if c.generators[gen.Name] != nil {
+			c.generatorsLock.Unlock()
+			continue // skip duplicates on re-Use()
+		}
+		c.generators[gen.Name] = genInfo
+		c.generatorsLock.Unlock()
+
+		genInfo.Start()
+	}
+	// Recompute flows once after all generators are added
+	if len(c.activeSystem.Generators) > 0 {
+		return c.recomputeSystemFlows()
+	}
 	return nil
 }
 
