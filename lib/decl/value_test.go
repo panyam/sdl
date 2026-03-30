@@ -3,20 +3,21 @@ package decl
 import (
 	"testing"
 
+	"github.com/panyam/sdl/lib/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestValueTypeString(t *testing.T) {
-	assert.Equal(t, "Nil", NilType.String())
-	assert.Equal(t, "Bool", BoolType.String())
-	assert.Equal(t, "Int", IntType.String())
-	assert.Equal(t, "Float", FloatType.String())
-	assert.Equal(t, "String", StrType.String())
-	assert.Equal(t, "List[Int]", ListType(IntType).String())
-	assert.Equal(t, "Outcomes[String]", OutcomesType(StrType).String())
-	assert.Equal(t, "List[List[Bool]]", ListType(ListType(BoolType)).String())
-	assert.Equal(t, "Outcomes[List[Int]]", OutcomesType(ListType(IntType)).String())
+	assert.Equal(t, "nil", NilType.String())
+	assert.Equal(t, "bool", BoolType.String())
+	assert.Equal(t, "int", IntType.String())
+	assert.Equal(t, "float", FloatType.String())
+	assert.Equal(t, "string", StrType.String())
+	assert.Equal(t, "List[int]", ListType(IntType).String())
+	assert.Equal(t, "Outcomes[string]", OutcomesType(StrType).String())
+	assert.Equal(t, "List[List[bool]]", ListType(ListType(BoolType)).String())
+	assert.Equal(t, "Outcomes[List[int]]", OutcomesType(ListType(IntType)).String())
 }
 
 func TestValueTypeEquals(t *testing.T) {
@@ -90,7 +91,7 @@ func TestValueSet(t *testing.T) {
 	err = rvInt.Set("abc") // Incorrect
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "expected int, got string")
-	assert.Equal(t, 123, rvInt.Value) // Value should not change on error
+	assert.Equal(t, int64(123), rvInt.Value) // Value should not change on error
 	err = rvInt.Set(nil)              // Incorrect
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "cannot set nil value")
@@ -190,7 +191,7 @@ func TestValueGetters(t *testing.T) {
 
 	rvOutcomes, _ := NewValue(OutcomesType(BoolType))
 	elemB, _ := NewValue(BoolType, false)
-	outcomesVal := []Value{elemB}
+	outcomesVal := &core.Outcomes[Value]{Buckets: []core.Bucket[Value]{{Value: elemB, Weight: 1.0}}}
 	_ = rvOutcomes.Set(outcomesVal)
 
 	rvEmptyList, _ := NewValue(ListType(FloatType))

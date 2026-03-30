@@ -104,7 +104,7 @@ func NewFlowContext(system *SystemDecl, parameters map[string]interface{}) *Flow
 		NativeComponents:     make(map[string]components.FlowAnalyzable),
 		MaxRetries:           50,
 		ConvergenceThreshold: 0.01,
-		MaxIterations:        10,
+		MaxIterations:        30,
 		CallStack:            make([]string, 0),
 		VariableOutcomes:     make(map[string]float64),
 		// NEW ARCHITECTURE - Initialize new generator fields
@@ -272,11 +272,11 @@ func SolveSystemFlowsPreservingPaths(entryPoints map[string]float64, context *Fl
 			return newRates
 		}
 
-		// Apply damping to prevent oscillation (0.5 damping factor)
+		// Apply damping to prevent oscillation (0.3 damping factor)
 		for componentMethod := range newRates {
 			oldRate := oldRates[componentMethod]
 			newRate := newRates[componentMethod]
-			context.ArrivalRates[componentMethod] = oldRate + 0.5*(newRate-oldRate)
+			context.ArrivalRates[componentMethod] = oldRate + 0.7*(newRate-oldRate)
 		}
 	}
 
@@ -355,11 +355,11 @@ func SolveSystemFlows(entryPoints map[string]float64, context *FlowContext) map[
 			return newRates
 		}
 
-		// Apply damping to prevent oscillation (0.5 damping factor)
+		// Apply damping to prevent oscillation (0.3 damping factor)
 		for componentMethod := range newRates {
 			oldRate := oldRates[componentMethod]
 			newRate := newRates[componentMethod]
-			context.ArrivalRates[componentMethod] = oldRate + 0.5*(newRate-oldRate)
+			context.ArrivalRates[componentMethod] = oldRate + 0.7*(newRate-oldRate)
 		}
 	}
 

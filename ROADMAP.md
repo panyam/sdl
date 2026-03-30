@@ -181,9 +181,9 @@ SDL aims to become the industry standard for system design education, capacity p
 Tracked in issues #23-#30. Core insight: systems and components are the same concept at different levels. Systems should only describe simulation (generators, metrics), not architecture.
 
 **Foundation:**
-- #23: Unify component/system — components handle all composition, `use` keyword removed, system syntax becomes `system Name(param Type)` **(PR in progress)**
-- #24: Declarative generators in SDL system blocks (rate-based, batch, chained)
-- #25: Declarative metrics in SDL system blocks (method-call and gauge-based)
+- #23: Unify component/system — components handle all composition, `use` keyword removed, system syntax becomes `system Name(param Type)` **(merged)**
+- #24: Declarative generators in SDL system blocks — `generator name path.Method 100rps [duration 30s]` **(in progress)**
+- #25: Declarative metrics in SDL system blocks — `metric name path.Method type [agg] [window Xs] [where ...]` **(in progress)**
 - #26: Recipe simplification — recipes become dynamic overrides on declarative baselines
 - #30: Migrate all examples and merge recipes into unified SDL
 

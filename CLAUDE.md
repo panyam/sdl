@@ -110,6 +110,27 @@ Pages that include BasePage.html must define: `BodySection`, `PostBodySection`, 
 - URL format strings must contain `%s` placeholder for the entity ID
 - Example: `/canvases/%s/view` not `/canvases`
 
+## Value Type System (lib/decl)
+
+- Type names are lowercase: `"bool"`, `"int"`, `"float"`, `"string"`, `"nil"`
+- `Value.String()` format: `RV(type: value)` — e.g., `RV(int: 10)`
+- List type string uses brackets: `List[int]`, `Outcomes[string]`
+- `NilType` is a `SimpleType` (tag `TypeTagSimple`), not `TypeTagNil` — check with `r.Type == NilType`, not `r.Type.Tag == TypeTagNil`
+- `Value.Deref()` returns `(r, error)` not `(nil, error)` for nil values — prevents nil pointer panics in callers
+
+## Flow Solver Convergence
+
+- Both string-based and runtime-based solvers use fixed-point iteration with damping
+- Parameters: 30 max iterations, 0.01 convergence threshold, 0.3 damping factor (runtime) / 0.7 update rate (string-based)
+- Known limitation: flow evaluator doesn't apply native component outcomes (e.g., cache hit rate) to branch weighting in if/else
+
+## Test Status (lib/)
+
+- `lib/decl`, `lib/runtime`, `lib/parser`, `lib/loader` — all passing
+- `lib/components` — pre-existing failures (HDD/SSD disk profile differentiation)
+- `lib/core` — pre-existing failure (distribution edge case)
+- Runtime tests use `sys.FindComponent("arch.X")` to access components inside system parameters
+
 ## Stack Audit (March 2026)
 
 GitHub issues created for stack alignment:

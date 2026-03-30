@@ -2,6 +2,7 @@ package decl
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/panyam/sdl/lib/core"
 )
@@ -62,7 +63,7 @@ func (r *Value) Set(v any) error {
 		return fmt.Errorf("internal error: Value has nil type")
 	}
 	if v == nil {
-		if r.Type.Tag == TypeTagNil {
+		if r.Type == NilType {
 			r.Value = nil
 			return nil
 		} else {
@@ -96,7 +97,7 @@ func (r *Value) Set(v any) error {
 			r.Value = int64(intVal)
 		} else {
 			// Could check for uint types if needed
-			return fmt.Errorf("type mismatch: expected int64, got %T", v)
+			return fmt.Errorf("type mismatch: expected int, got %T", v)
 		}
 		return nil
 
@@ -232,15 +233,20 @@ func (r *Value) Set(v any) error {
 
 // String representation of the runtime value
 func (r *Value) String() string {
-	if r.IsNil() {
+	if r.Type == nil {
 		return "<nil>"
 	}
-	valStr := fmt.Sprintf("%v", r.Value)
-	typeName := "<nil type>"
-	if r.Type != nil {
-		typeName = r.Type.String()
+	var valStr string
+	if vals, ok := r.Value.([]Value); ok {
+		parts := make([]string, len(vals))
+		for i, v := range vals {
+			parts[i] = v.String()
+		}
+		valStr = "[" + strings.Join(parts, ", ") + "]"
+	} else {
+		valStr = fmt.Sprintf("%v", r.Value)
 	}
-	return fmt.Sprintf("Val(%s: %s)", typeName, valStr)
+	return fmt.Sprintf("RV(%s: %s)", r.Type.String(), valStr)
 }
 
 // --- Custom getter methods
@@ -286,7 +292,7 @@ func (r *Value) OutcomesVal() *core.Outcomes[Value] {
 
 func (r *Value) GetInt() (int64, error) {
 	r, err := r.Deref()
-	if r.IsNil() || r.Type == nil {
+	if r.Type == nil {
 		return 0, fmt.Errorf("cannot get Int from nil Value")
 	}
 	if r.Type != IntType {
@@ -304,7 +310,7 @@ func (r *Value) GetInt() (int64, error) {
 
 func (r *Value) GetBool() (bool, error) {
 	r, err := r.Deref()
-	if r.IsNil() || r.Type == nil {
+	if r.Type == nil {
 		return false, fmt.Errorf("cannot get Bool from nil Value")
 	}
 	if r.Type != BoolType {
@@ -322,7 +328,7 @@ func (r *Value) GetBool() (bool, error) {
 
 func (r *Value) GetFloat() (float64, error) {
 	r, err := r.Deref()
-	if r.IsNil() || r.Type == nil {
+	if r.Type == nil {
 		return 0.0, fmt.Errorf("cannot get Float from nil Value")
 	}
 	if r.Type != FloatType {
@@ -340,7 +346,7 @@ func (r *Value) GetFloat() (float64, error) {
 
 func (r *Value) GetString() (string, error) {
 	r, err := r.Deref()
-	if r.IsNil() || r.Type == nil {
+	if r.Type == nil {
 		return "", fmt.Errorf("cannot get String from nil Value")
 	}
 	if r.Type != StrType {
@@ -360,7 +366,7 @@ func (r *Value) GetString() (string, error) {
 
 func (r *Value) GetList() ([]Value, error) {
 	r, err := r.Deref()
-	if r.IsNil() || r.Type == nil {
+	if r.Type == nil {
 		return nil, fmt.Errorf("cannot get List from nil Value")
 	}
 	if r.Type.Tag != TypeTagList {
@@ -379,7 +385,7 @@ func (r *Value) GetList() ([]Value, error) {
 
 func (r *Value) GetTuple() ([]Value, error) {
 	r, err := r.Deref()
-	if r.IsNil() || r.Type == nil {
+	if r.Type == nil {
 		return nil, fmt.Errorf("cannot get Tuple from nil Value")
 	}
 	if r.Type.Tag != TypeTagTuple {
@@ -398,7 +404,7 @@ func (r *Value) GetTuple() ([]Value, error) {
 
 func (r *Value) GetOutcomes() (*core.Outcomes[Value], error) {
 	r, err := r.Deref()
-	if r.IsNil() || r.Type == nil {
+	if r.Type == nil {
 		return nil, fmt.Errorf("cannot get Outcomes from nil Value")
 	}
 	if r.Type.Tag != TypeTagOutcomes {
@@ -416,8 +422,8 @@ func (r *Value) GetOutcomes() (*core.Outcomes[Value], error) {
 }
 
 func (r *Value) Deref() (*Value, error) {
-	if r.IsNil() || r.Type == nil {
-		return nil, fmt.Errorf("cannot Deref from nil Value")
+	if r.Type == nil || r.Value == nil {
+		return r, fmt.Errorf("cannot Deref from nil Value")
 	}
 	if r.Type.Tag != TypeTagRef {
 		return r, nil

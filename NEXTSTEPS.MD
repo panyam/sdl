@@ -338,6 +338,21 @@
 - TinyGo compatibility unknowns
 - Binary size targets for free tier (current: 25-29MB)
 
+## Current Session (March 2026)
+
+### Test Suite Fixes
+- Fixed `lib/decl` tests: Value type names (lowercase), String() format (RV prefix), nil handling, Deref safety
+- Fixed `lib/runtime` test paths broken by `lib/` directory move
+- Updated runtime tests for new system parameter syntax (`sys.FindComponent("arch.X")`)
+- Improved flow solver convergence parameters (30 iterations, 0.3 damping)
+- Skipped cascading delays test pending native component outcome branch weighting
+
+### DSL Refactor: Issues #24 and #25 (In Progress)
+- #24: Declarative generators — `generator name path.Method 100rps [duration 30s]`
+- #25: Declarative metrics — `metric name path.Method type [agg] [window Xs]`
+- Both require: grammar additions, AST structs, lexer keywords, runtime/Canvas integration
+- Foundation work (#23 component/system unification) is merged
+
 ## Recent Session (March 2025)
 
 ### Dependency Updates

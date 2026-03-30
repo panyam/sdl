@@ -198,7 +198,16 @@ SDL is a language and runtime for modeling and simulating distributed system per
 - WebSocket endpoint registered at `/ws/canvas`
 - Local replace directives maintained for goapplib and templar
 
+## Test Suite Status (March 2026)
+
+- Fixed Value type system tests (`lib/decl`): type name casing, String format, nil handling, Deref safety
+- Fixed runtime test paths after `lib/` directory move (`../examples/` → `../../examples/`)
+- Updated runtime tests for component/system unification: `sys.FindComponent("arch.X")` pattern
+- Improved flow solver convergence: 30 iterations, reduced damping factor
+- Pre-existing failures in `lib/components` (disk profiles) and `lib/core` (distribution edge case)
+
 ## Known Limitations
 - Only supports latency and count metrics (no utilization/throughput)
 - Control flow dependencies not fully represented in path analysis
 - No binary operators in SDL (use native functions instead)
+- Flow evaluator doesn't apply native component outcomes to if/else branch weighting
