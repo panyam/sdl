@@ -723,4 +723,7 @@ component UberModernArch {
 system UberModern(arch UberModernArch) {
     generator("baseline", arch.gateway.RequestRide, rate(100))
     generator("drivers", arch.gateway.UpdateDriverLocation, rate(1000))
+    metric("request_latency", arch.gateway.RequestRide, "latency", "p90", 1s)
+    metric("location_lookup", arch.locationService.FindNearbyDrivers, "latency", "p90", 1s)
+    metric("notification_send", arch.notificationService.SendNotification, "latency", "p90", 1s)
 }

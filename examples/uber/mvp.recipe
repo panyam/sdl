@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
 # Uber MVP Demo Script
-# Shows the evolution from a simple monolithic system to a distributed architecture
+# Generators and metrics are declared in mvp.sdl — this recipe handles dynamic scenarios.
+#
+# SDL system block provides:
+#   generator("baseline", arch.webserver.RequestRide, rate(5))
+#   generator("drivers", arch.webserver.UpdateLocation, rate(10))
+#   metric("request_latency", arch.webserver.RequestRide, "latency", "p90", 1s)
+#   metric("maps_latency", arch.mapsService.CalculateRoute, "latency", "p90", 1s)
+#   metric("db_query", arch.database.FindNearestDriver, "latency", "p90", 1s)
 
-# Reset SDL before loading the demo
 export SDL_CANVAS_ID=default
 
 sdl canvas create $SDL_CANVAS_ID
@@ -16,107 +22,30 @@ function execWithConfirm() {
   echo "    >    $cmd $args"
   echo ""
   echo "$msg ... Press enter to continue"
-  if [ "$START_PROMPTING" == "true" ];
-  then
+  if [ "$START_PROMPTING" == "true" ]; then
     read
   fi
   $cmd $args
 }
 
 echo "=== Uber MVP Demo - 'Two friends with an app' ==="
-echo "We'll start with how Uber might have looked in the early days - a simple monolithic application."
 execWithConfirm "Loading the MVP system" sdl load examples/uber/mvp.sdl
 execWithConfirm "Activate the UberMVP system" sdl use UberMVP
 
-# Load the MVP system
+# Generators and metrics are auto-created from SDL on Use()
 
-echo ""
-echo "=== Setting up metrics ==="
-echo "Let's set up metrics to monitor our system performance."
-echo "We'll track request latency, database query time, Maps API calls, and resource utilization."
-echo ""
-
-# Add all metrics
-execWithConfirm "Adding request latency metric" sdl metrics add request_latency webserver RequestRide --type latency --window=1 --aggregation=p90
-execWithConfirm "Adding Maps API latency metric" sdl metrics add maps_latency mapsService CalculateRoute  --type latency --window=1 --aggregation=p90
-execWithConfirm "Adding database query time metric" sdl metrics add db_query database FindNearestDriver  --type latency --window=1 --aggregation=p90
-execWithConfirm "Adding utilization metric for db" sdl metrics add db_utilization database --type utilization --window 1
-# Note: Pool utilization metrics not supported yet - only latency and count
-# execWithConfirm "Adding database pool utilization metric" sdl metrics add db_pool database pool utilization
-# execWithConfirm "Adding server pool utilization metric" sdl metrics add server_pool webserver pool utilization
-
-echo ""
 echo "=== Setting Pool Parameters ==="
-echo "First, let's configure the resource pools with realistic hold times..."
-# Database connections held for average of all operations
-# FindNearestDriver: full scan time, CreateRide: 50ms, UpdateLocation: Find + 10ms
-# The scan time will vary based on number of records
 execWithConfirm "Setting database pool hold time" sdl set database.pool.AvgHoldTime 0.15
-# Maps API calls take 100ms
 execWithConfirm "Setting maps API hold time" sdl set mapsService.pool.AvgHoldTime 0.1
 
-
 echo ""
-echo "=== Baseline Traffic (5 RPS) ==="
-echo "Let's start with normal traffic - 5 requests per second."
-echo "The system should handle this, but notice the latency..."
-echo ""
-
-# Start baseline traffic
-execWithConfirm "Creating baseline generator (5 RPS) with automatic flow calculation" sdl gen add baseline webserver.RequestRide 5 --apply-flows
-# execWithConfirm "Starting baseline traffic" sdl gen start baseline
-
-# sdl canvas diagram
-
-# This marks when we will start prompting before running commands
-export START_PROMPTING=true
-
-echo ""
-echo "=== Database Performance Demo ==="
-echo "Let's see how the database performs with different numbers of drivers..."
-echo ""
-# execWithConfirm "Check current scan time with 10k drivers" sdl run database.driverTable.Scan
-
-echo ""
-echo "Now let's simulate growth - more drivers in the system..."
-execWithConfirm "Increase to 50k drivers" sdl set database.driverTable.NumRecords 50000
-# execWithConfirm "Check scan time with 50k drivers" sdl run database.driverTable.Scan
-
-echo ""
-echo "Let's reset back to 10k for our demo..."
-execWithConfirm "Reset to 10k drivers" sdl set database.driverTable.NumRecords 10000
-
-# Note: Arrival rates are now automatically calculated and applied with --apply-flows
-
-echo ""
-echo "=== Observing Baseline Performance ==="
-echo "Notice:"
-echo "- Latency is 350-400ms per request (quite high!)"
-echo "- Database query takes 200ms (full table scan)"
-echo "- Every request hits the Maps API (100ms)"
-echo "- But it works! All requests succeed"
-echo ""
-echo "Press enter to add driver location updates..."
+echo "=== Baseline Traffic ==="
+echo "Traffic running at 5 RPS rides + 10 RPS driver updates (from SDL)"
+echo "Press enter to continue..."
 read
 
-# Add background driver updates
-execWithConfirm "Creating driver location update generator (10 RPS) with automatic flow calculation..." sdl gen add drivers webserver.UpdateLocation 10 --apply-flows
-execWithConfirm "Starting driver updates..." sdl gen start drivers
-
-# Note: Arrival rates are automatically calculated and applied with --apply-flows
-
-echo ""
 echo "=== Morning Rush Hour (20 RPS) ==="
-echo "Now let's simulate morning rush hour with 20 requests per second."
-echo "Watch what happens to our tiny connection pool..."
-echo ""
-echo "Press enter to simulate morning rush..."
-read
-
-# Increase load by updating the baseline generator rate
-execWithConfirm "Updating baseline generator to 20 RPS for morning rush..." sdl gen update baseline 20 --apply-flows
-
-# Note: Arrival rates are automatically calculated and applied with --apply-flows
+execWithConfirm "Updating baseline to 20 RPS" sdl gen update baseline 20 --apply-flows
 
 echo ""
 echo "=== System Under Stress ==="
@@ -124,100 +53,45 @@ echo "Observe:"
 echo "- Database queries taking longer (connection pool contention)"
 echo "- Latency spikes to 500-600ms"
 echo "- Some requests start failing"
-echo "- We're finding the same drivers repeatedly (no cache!)"
-echo ""
-echo "Press enter to simulate a surge event..."
+echo "Press enter to simulate surge..."
 read
 
-# Simulate surge by updating baseline generator to very high rate
-execWithConfirm "Updating baseline generator to 50 RPS for surge event..." sdl gen update baseline 50 --apply-flows
-
-# Note: Arrival rates are automatically calculated and applied with --apply-flows
+echo "=== Surge Event (50 RPS) ==="
+execWithConfirm "Updating baseline to 50 RPS" sdl gen update baseline 50 --apply-flows
 
 echo ""
-echo "=== System Breakdown - New Year's Eve! ==="
-echo "The system is now completely overwhelmed!"
-echo "Notice:"
+echo "=== System Breakdown ==="
 echo "- Massive failure rate (>50%)"
-echo "- Database completely overwhelmed (3 connections!)"
-echo "- Every failed request still took 200ms+ of DB time"
-echo "- This is when your VP of Engineering gets paged!"
-echo ""
-echo "Press enter to stop the chaos..."
+echo "- Database completely overwhelmed"
+echo "Press enter to stop..."
 read
 
-# Return to normal traffic levels
-execWithConfirm "Reducing baseline generator back to 5 RPS..." sdl gen update baseline 5 --apply-flows
-execWithConfirm "Stopping driver updates..." sdl gen stop drivers --apply-flows
-
-# Note: Arrival rates are automatically recalculated when generators are stopped
+echo "=== Recovery ==="
+execWithConfirm "Reducing to 5 RPS" sdl gen update baseline 5 --apply-flows
+execWithConfirm "Stopping driver updates" sdl gen stop drivers --apply-flows
 
 echo ""
-echo "=== Key Problems Identified ==="
-echo "1. No Caching - Same queries repeated constantly"
-echo "2. No Indexes - 200ms full table scan for every driver search"
-echo "3. Tiny Connection Pool - Only 3 connections!"
-echo "4. Synchronous Everything - Maps API blocks requests"
-echo "5. No Fault Isolation - One slow query affects everyone"
-echo ""
-echo "Press enter to see what happens if Maps API fails..."
+echo "=== Disaster: Maps API Outage ==="
+echo "Press enter to simulate slow Maps API..."
 read
 
+execWithConfirm "Making Maps API slow (2s latency)" sdl set mapsService.pool.AcquireLatency 2000ms
+execWithConfirm "Restarting baseline traffic" sdl gen start baseline --apply-flows
+
 echo ""
-echo "=== Disaster Scenario: Maps API Outage ==="
-echo "Let's simulate the Maps API being slow or down..."
-echo ""
-echo "Press enter to modify Maps API latency..."
+echo "With Maps API slow, everything grinds to a halt!"
+echo "Press enter to restore..."
 read
 
-# Make Maps API very slow
-execWithConfirm "Making Maps API very slow (2 second latency)..." sdl set mapsService.pool.AcquireLatency 2000ms
-
-# Restart baseline traffic
-execWithConfirm "Restarting baseline traffic to see the impact..." sdl gen start baseline --apply-flows
+execWithConfirm "Restoring Maps API" sdl set mapsService.pool.AcquireLatency 10ms
+execWithConfirm "Stopping all generators" sdl gen stop --all
 
 echo ""
-echo "=== Complete System Failure ==="
-echo "With Maps API slow, the entire system grinds to a halt!"
-echo "This is why we need:"
-echo "- Circuit breakers"
-echo "- Timeouts"
-echo "- Asynchronous operations"
-echo "- Service isolation"
+echo "=== Key Problems ==="
+echo "1. No Caching"
+echo "2. No Indexes (full table scan)"
+echo "3. Tiny Connection Pool"
+echo "4. Synchronous Everything"
+echo "5. No Fault Isolation"
 echo ""
-echo "Press enter to restore normal operations..."
-read
-
-# Restore Maps API
-execWithConfirm "Restoring Maps API to normal latency..." sdl set mapsService.pool.AcquireLatency 10ms
-execWithConfirm "Stopping baseline traffic..." sdl gen stop baseline --apply-flows
-
-echo ""
-echo "=== Cost Analysis ==="
-echo "Fun fact: This MVP setup would cost approximately:"
-echo "- 1x t2.small EC2 instance: $20/month"
-echo "- 1x RDS t2.small (3 connections): $30/month"
-echo "- Total: ~$50/month"
-echo ""
-echo "It actually works for hundreds of users!"
-echo "But not for millions..."
-echo ""
-echo "Press enter to clean up..."
-read
-
-# Clean up
-execWithConfirm "Stopping all generators..." sdl gen stop --all
-
-echo ""
-echo "=== Next Steps ==="
-echo "In the intermediate version, we'll add:"
-echo "- Redis cache for hot data"
-echo "- Service boundaries (User, Driver, Matching services)"
-echo "- Basic geo-indexing"
-echo "- Connection pooling"
-echo "- Asynchronous notifications"
-echo ""
-echo "The journey from MVP to scale is about evolution, not revolution!"
-echo ""
-echo "Demo complete. Press enter to exit..."
-read
+echo "Demo complete."

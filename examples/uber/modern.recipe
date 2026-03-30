@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 # Uber Modern Microservices Architecture Demo Script
-# Shows a globally distributed, event-driven architecture
+# Generators and metrics are declared in modern.sdl — this recipe handles dynamic scenarios.
+#
+# SDL system block provides:
+#   generator("baseline", arch.gateway.RequestRide, rate(100))
+#   generator("drivers", arch.gateway.UpdateDriverLocation, rate(1000))
+#   metric("request_latency", ...), metric("location_lookup", ...), metric("notification_send", ...)
 
-# Setup canvas for modern demo
 export SDL_CANVAS_ID=default
 
 sdl canvas create $SDL_CANVAS_ID
@@ -16,241 +20,78 @@ function execWithConfirm() {
   echo "    >    $cmd $args"
   echo ""
   echo "$msg ... Press enter to continue"
-  if [ "$START_PROMPTING" == "true" ];
-  then
+  if [ "$START_PROMPTING" == "true" ]; then
     read
   fi
   $cmd $args
 }
 
 echo "=== Uber Modern Architecture Demo ==="
-echo "Welcome to the future - a globally distributed, event-driven architecture"
-echo "capable of handling millions of requests per second."
+echo "Event-driven, globally distributed architecture."
 execWithConfirm "Loading the modern system" sdl load examples/uber/modern.sdl
 execWithConfirm "Activate the UberModern system" sdl use UberModern
 
-# Start baseline traffic - what used to stress the MVP
-execWithConfirm "Creating baseline generator (20 RPS)" sdl gen add baseline gateway.RequestRide 20
-execWithConfirm "Starting baseline traffic" sdl gen start baseline
+# Generators and metrics auto-created from SDL on Use()
 
 echo ""
-echo "=== Revolutionary Architecture Changes ==="
+echo "=== Architecture ==="
 echo "1. Event-driven with Kafka-like event bus"
-echo "2. Microservices with dedicated databases (no shared state)"
-echo "3. ML-powered matching with feature store"
+echo "2. Microservices with dedicated databases"
+echo "3. ML-powered matching"
 echo "4. Real-time analytics with stream processing"
-echo "5. Multi-channel notifications with priority queues"
-echo "6. Circuit breakers and rate limiting"
-echo "7. CQRS pattern with read replicas"
+echo "5. Circuit breakers and rate limiting"
 echo ""
-echo "Press enter to set up comprehensive metrics..."
+echo "Baseline: 100 RPS rides + 1000 RPS driver updates (from SDL)"
+echo "Press enter to continue..."
 read
 
 START_PROMPTING=true
 
-# Core metrics
-execWithConfirm "Adding request latency" sdl metrics add request_latency gateway.RequestRide latency
-execWithConfirm "Adding match quality (ML score)" sdl metrics add match_quality gateway.matchingService.FindOptimalMatch latency
-# Using latency metrics instead of utilization/throughput
-execWithConfirm "Adding location lookup latency" sdl metrics add location_lookup gateway.locationService.FindNearbyDrivers latency
-execWithConfirm "Adding event publish latency" sdl metrics add event_publish gateway.eventBus.Publish latency
-execWithConfirm "Adding notification send latency" sdl metrics add notification_send gateway.notificationService.SendNotification latency
-# Note: Rate limiter drops would need count metric on failures
-
-echo ""
-echo "=== Normal Operations (100 RPS) ==="
-echo "Let's start with normal load - 100 RPS"
-echo "This was enough to break our MVP, but is nothing for this architecture..."
-echo ""
-echo "Press enter to start normal traffic..."
-read
-
-# Start normal traffic
-execWithConfirm "Creating normal traffic generator (100 RPS)" sdl gen add normal gateway.RequestRide 100 --apply-flows
-execWithConfirm "Starting normal traffic" sdl gen start normal --apply-flows
-
-echo ""
-echo "=== Observing Modern Performance ==="
-echo "Notice the incredible improvements:"
-echo "- Request latency under 50ms (was 350ms in MVP)"
-echo "- ML matching finding optimal drivers"
-echo "- 95% location cache hit rate"
-echo "- Events flowing through the system"
-echo "- Zero stress on any component"
-echo ""
-echo "Press enter to add realistic driver updates..."
-read
-
-# Add driver location updates - much higher volume
-execWithConfirm "Creating driver fleet updates (1000 RPS)" sdl gen add drivers gateway.UpdateDriverLocation 1000 --apply-flows
-execWithConfirm "Starting driver updates" sdl gen start drivers --apply-flows
-
-echo ""
-echo "=== Handling Fleet-Scale Updates ==="
-echo "1000 drivers updating location every second!"
-echo "Notice:"
-echo "- Location service barely affected (1ms latency)"
-echo "- Geo cache handling the load perfectly"
-echo "- Time-series DB batching writes efficiently"
-echo "- Main request flow completely isolated"
-echo ""
-echo "Press enter to simulate peak hours..."
-read
-
-# Peak traffic - 1000 RPS
-execWithConfirm "Creating peak traffic (900 RPS additional)" sdl gen add peak gateway.RequestRide 900 --apply-flows
-execWithConfirm "Starting peak traffic" sdl gen start peak --apply-flows
-
-echo ""
 echo "=== Peak Hours (1000 RPS) ==="
-echo "We're now at 1000 RPS - 50x the MVP breaking point!"
-echo "Observe:"
-echo "- Still maintaining <60ms latency"
-echo "- ML model cached and scoring drivers efficiently"
-echo "- Event bus handling thousands of events/second"
-echo "- Notification priority queue managing load"
-echo "- All components handling load efficiently"
+execWithConfirm "Adding peak traffic (900 RPS additional)" sdl gen add peak gateway.RequestRide 900 --apply-flows
+execWithConfirm "Starting peak" sdl gen start peak --apply-flows
+
 echo ""
-echo "Press enter to simulate a regional surge..."
+echo "1000 RPS - 50x MVP breaking point! Still <60ms latency."
+echo "Press enter for surge..."
 read
 
-# Surge event - 2000 RPS
-execWithConfirm "Creating surge traffic (1000 RPS additional)" sdl gen add surge gateway.RequestRide 1000 --apply-flows
-execWithConfirm "Starting surge event" sdl gen start surge --apply-flows
+echo "=== Regional Surge (2000 RPS) ==="
+execWithConfirm "Adding surge (1000 RPS additional)" sdl gen add surge gateway.RequestRide 1000 --apply-flows
+execWithConfirm "Starting surge" sdl gen start surge --apply-flows
 
 echo ""
-echo "=== Regional Surge Event (2000 RPS) ==="
-echo "Major event just ended - 2000 requests per second!"
-echo "The system handles it gracefully:"
-echo "- Latency still under 80ms"
-echo "- Rate limiter protecting from abuse"
-echo "- Some users seeing 'rate limit' messages (by design)"
-echo "- Analytics tracking surge patterns in real-time"
-echo ""
-echo "Press enter to demonstrate resilience..."
+echo "2000 RPS handled gracefully. Rate limiter protecting from abuse."
+echo "Press enter for resilience demo..."
 read
 
+echo "=== Resilience: Read Replica Failure ==="
+execWithConfirm "Increasing read replica latency" sdl set gateway.userService.readDB.pool.AcquireLatency 500ms
+
 echo ""
-echo "=== Resilience Demonstration ==="
-echo "Let's simulate a partial outage..."
-echo ""
-echo "Press enter to fail the user service read replicas..."
+echo "Circuit breaker: fails fast, serves from cache, partial degradation."
+echo "Press enter to restore..."
 read
 
-# Simulate read replica failure
-execWithConfirm "Increasing read replica latency (simulating issues)" sdl set gateway.userService.readDB.pool.AcquireLatency 500ms
+execWithConfirm "Restoring read replica" sdl set gateway.userService.readDB.pool.AcquireLatency 1ms
+
+echo "=== Extreme Scale (5000 RPS) ==="
+execWithConfirm "Stopping surge" sdl gen stop surge --apply-flows
+execWithConfirm "Stopping peak" sdl gen stop peak --apply-flows
+execWithConfirm "Adding extreme (5000 RPS)" sdl gen add extreme gateway.RequestRide 5000 --apply-flows
+execWithConfirm "Starting extreme" sdl gen start extreme --apply-flows
 
 echo ""
-echo "=== Circuit Breaker in Action ==="
-echo "Notice what happens:"
-echo "- Circuit breaker detects slow responses"
-echo "- Automatically fails fast instead of waiting"
-echo "- System serves from cache when possible"
-echo "- Partial degradation, not complete failure!"
-echo ""
-echo "Press enter to restore service..."
-read
-
-# Restore service
-execWithConfirm "Restoring read replica performance" sdl set gateway.userService.readDB.pool.AcquireLatency 1ms
-
-echo ""
-echo "=== Multi-Channel Notifications ==="
-echo "The notification system handles multiple channels:"
-echo "- Push notifications (50ms latency)"
-echo "- SMS for high-priority (200ms latency)"
-echo "- Email for receipts (not shown)"
-echo "All processed through priority queue!"
-echo ""
-echo "Press enter to see extreme scale..."
-read
-
-# Stop previous load
-execWithConfirm "Stopping surge traffic" sdl gen stop surge --apply-flows
-execWithConfirm "Stopping peak traffic" sdl gen stop peak --apply-flows
-
-# Extreme load test
-execWithConfirm "Creating extreme load (5000 RPS)" sdl gen add extreme gateway.RequestRide 5000 --apply-flows
-execWithConfirm "Starting extreme load test" sdl gen start extreme --apply-flows
-
-echo ""
-echo "=== Extreme Scale Test (5000 RPS) ==="
-echo "This is 250x the load that broke our MVP!"
-echo "Finally seeing some limits:"
-echo "- Gateway pool starting to queue"
-echo "- Rate limiter dropping excess requests"
-echo "- But latency still under 150ms for accepted requests"
-echo "- System degrading gracefully, not crashing"
-echo ""
-echo "Press enter to examine costs..."
-read
-
-# Clean up extreme load
-execWithConfirm "Stopping extreme load" sdl gen stop extreme --apply-flows
-execWithConfirm "Returning to normal traffic" sdl gen start normal
-
-echo ""
-echo "=== Cost Analysis ==="
-echo "This architecture requires significant investment:"
-echo ""
-echo "Per Region (3 regions globally):"
-echo "- 20x c5.2xlarge instances (services): $2,500/month"
-echo "- RDS Aurora clusters: $1,000/month"
-echo "- ElastiCache Redis clusters: $500/month"
-echo "- Kafka/Kinesis: $800/month"
-echo "- CloudWatch/monitoring: $300/month"
-echo ""
-echo "Total per region: ~$5,100/month"
-echo "Global total: ~$15,300/month"
-echo ""
-echo "But this handles:"
-echo "- 5 million rides per day"
-echo "- 100,000 concurrent drivers"
-echo "- Sub-100ms global latency"
-echo "- 99.99% availability"
-echo ""
-echo "Press enter to see analytics capabilities..."
-read
-
-echo ""
-echo "=== Real-Time Analytics ==="
-echo "The analytics service provides insights like:"
-echo "- Live surge detection and pricing"
-echo "- Driver utilization optimization"
-echo "- Demand prediction by area"
-echo "- Route optimization based on traffic"
-echo "- Fraud detection in real-time"
-echo ""
-echo "All processed through stream processing!"
-echo ""
+echo "250x MVP load! Gateway queuing, rate limiter active, but <150ms for accepted requests."
 echo "Press enter to clean up..."
 read
 
-# Final cleanup
-execWithConfirm "Stopping all generators" sdl gen stop --all
+execWithConfirm "Stopping all" sdl gen stop --all
 
 echo ""
-echo "=== Architecture Evolution Summary ==="
+echo "=== Evolution Summary ==="
+echo "MVP:          20 RPS,   350ms, $50/mo"
+echo "Intermediate: 300 RPS,  150ms, $205/mo"
+echo "Modern:       5000 RPS, 50ms,  $15,300/mo"
 echo ""
-echo "MVP (Monolith):"
-echo "- 20 RPS max"
-echo "- 350ms latency"
-echo "- $50/month"
-echo "- Single point of failure"
-echo ""
-echo "Intermediate (Service-Oriented):"
-echo "- 300 RPS max"
-echo "- 150ms latency"
-echo "- $205/month"
-echo "- Partial resilience"
-echo ""
-echo "Modern (Microservices + Events):"
-echo "- 5000+ RPS"
-echo "- 50ms latency"
-echo "- $15,300/month"
-echo "- Full resilience and global scale"
-echo ""
-echo "The journey from startup to scale!"
-echo ""
-echo "Demo complete. Press enter to exit..."
-read
+echo "Demo complete."

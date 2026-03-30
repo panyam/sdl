@@ -79,6 +79,9 @@ component UberIntermediateArch {
 system UberIntermediate(arch UberIntermediateArch) {
     generator("baseline", arch.gateway.RequestRide, rate(20))
     generator("drivers", arch.gateway.UpdateDriverLocation, rate(50))
+    metric("request_latency", arch.gateway.RequestRide, "latency", "p90", 1s)
+    metric("driver_query", arch.driverService.FindNearbyDrivers, "latency", "p90", 1s)
+    metric("notification_latency", arch.notificationService.NotifyDriver, "latency", "p90", 1s)
 }
 
 component UserService {
