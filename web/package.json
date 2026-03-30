@@ -45,7 +45,7 @@
     "@bufbuild/protobuf": "^2.5.2",
     "@connectrpc/connect": "^2.0.2",
     "@connectrpc/connect-web": "^2.0.2",
-    "@hpcc-js/wasm": "^2.23.0",
+    "@hpcc-js/wasm-graphviz": "^1.21.2",
     "@panyam/tsappkit": "link:~/newstack/goapplib/main/tsappkit",
     "@protoc-gen-go-wasmjs/runtime": "^0.0.33",
     "chart.js": "^4.4.0",

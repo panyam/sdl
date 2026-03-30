@@ -1,6 +1,6 @@
 import { LCMComponent } from '@panyam/tsappkit';
 import { DockviewApi, DockviewComponent } from 'dockview-core';
-import { Graphviz } from "@hpcc-js/wasm";
+import { Graphviz } from "@hpcc-js/wasm-graphviz";
 import { CanvasViewerPageBase, PanelId } from './CanvasViewerPageBase';
 import { SystemDiagram, Generator, Metric } from '../../../gen/wasmjs/sdl/v1/models/interfaces';
 import { TabbedEditor } from '../../components/tabbed-editor';
