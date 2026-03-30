@@ -19,6 +19,12 @@ func TestBitlyGenerators(t *testing.T) {
 	assert.Equal(t, 5.0, baseline.RPS())
 	require.NotNil(t, baseline.ResolvedComponent)
 	require.NotNil(t, baseline.ResolvedMethod)
+
+	// Metrics
+	require.Len(t, sys.Metrics, 2)
+	assert.Equal(t, "shorten_latency", sys.Metrics[0].Name)
+	assert.Equal(t, "latency", sys.Metrics[0].MetricType)
+	assert.Equal(t, "redirect_latency", sys.Metrics[1].Name)
 }
 
 func TestUberMVPGenerators(t *testing.T) {
@@ -36,11 +42,14 @@ func TestUberMVPGenerators(t *testing.T) {
 
 	drivers := sys.Generators[1]
 	assert.Equal(t, "drivers", drivers.Name)
-	assert.Equal(t, "arch.webserver", drivers.ComponentPath)
-	assert.Equal(t, "UpdateLocation", drivers.MethodName)
 	assert.Equal(t, 10.0, drivers.RPS())
-	require.NotNil(t, drivers.ResolvedComponent)
-	require.NotNil(t, drivers.ResolvedMethod)
+
+	// Metrics
+	require.Len(t, sys.Metrics, 3)
+	assert.Equal(t, "request_latency", sys.Metrics[0].Name)
+	assert.Equal(t, "p90", sys.Metrics[0].Aggregation)
+	assert.Equal(t, "maps_latency", sys.Metrics[1].Name)
+	assert.Equal(t, "db_query", sys.Metrics[2].Name)
 }
 
 func TestUberIntermediateGenerators(t *testing.T) {

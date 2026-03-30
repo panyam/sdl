@@ -1,13 +1,16 @@
 package runtime
 
 import (
+	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
 
 	"github.com/panyam/sdl/lib/core"
 	"github.com/panyam/sdl/lib/loader"
+	"github.com/stretchr/testify/require"
 )
 
 // projectRoot returns the SDL project root by walking up from this source file.
@@ -42,6 +45,52 @@ func newTestLoader() *loader.Loader {
 		fsResolver:      loader.NewFileSystemResolver(cfs),
 	}
 	return loader.NewLoader(nil, resolver, 10)
+}
+
+// parseAndLoad parses inline SDL content, loads the first system, and returns it.
+// Useful for testing SDL syntax without creating fixture files.
+func parseAndLoad(t *testing.T, sdlContent string) *SystemInstance {
+	t.Helper()
+	sys, err := parseAndLoadSystem(sdlContent)
+	require.NoError(t, err)
+	require.NotNil(t, sys)
+	return sys
+}
+
+// parseAndLoadWithError parses inline SDL and returns any error from loading.
+func parseAndLoadWithError(t *testing.T, sdlContent string) (*SystemInstance, error) {
+	t.Helper()
+	return parseAndLoadSystem(sdlContent)
+}
+
+func parseAndLoadSystem(sdlContent string) (*SystemInstance, error) {
+	l := newTestLoader()
+	// Write content to temp file
+	tmpFile := filepath.Join(os.TempDir(), "test_sdl_"+fmt.Sprintf("%d", os.Getpid())+".sdl")
+	if err := os.WriteFile(tmpFile, []byte(sdlContent), 0644); err != nil {
+		return nil, err
+	}
+	defer os.Remove(tmpFile)
+
+	rt := NewRuntime(l)
+	fileInst, err := rt.LoadFile(tmpFile)
+	if err != nil {
+		return nil, err
+	}
+	if fileInst == nil {
+		return nil, fmt.Errorf("failed to load SDL content")
+	}
+
+	// Find the first system
+	systems, err := fileInst.Decl.GetSystems()
+	if err != nil || len(systems) == 0 {
+		return nil, fmt.Errorf("no systems found")
+	}
+	for name := range systems {
+		sys, _ := fileInst.NewSystem(name, true)
+		return sys, nil
+	}
+	return nil, fmt.Errorf("no systems found")
 }
 
 // loadSystem is a test helper that loads an SDL file and initializes a system.

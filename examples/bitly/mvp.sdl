@@ -61,4 +61,6 @@ component BitlyArch {
 
 system Bitly(arch BitlyArch) {
     generator("baseline", arch.app.Shorten, rate(5))
+    metric("shorten_latency", arch.app.Shorten, "latency", "p90", 1s)
+    metric("redirect_latency", arch.app.Redirect, "latency", "p90", 1s)
 }

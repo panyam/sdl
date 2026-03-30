@@ -49,11 +49,18 @@ component TwitterArch {
 }
 
 system Twitter(arch TwitterArch) {
+    generator("baseline", arch.app.GetTimeline, rate(100))
+    metric("timeline_latency", arch.app.GetTimeline, "latency", "p95", 5s)
 }
 ```
 - Here `TwitterArch` is a component that composes `AppServer` and `Database`. The system takes it as a parameter.
 - `uses x Foo()` (with empty parens) creates a default instance. `uses x Foo(dep = y)` wires dependencies.
 - `uses x Foo` (no parens) means the dependency must be provided by a parent component.
+- System body only accepts function-call expressions: `generator(...)` and `metric(...)`.
+- `generator("name", target.Method, rate(count [, interval]) [, duration])` — declares traffic generators
+- `metric("name", target.Method, "type", "aggregation", window)` — declares metrics
+- `rate(100)` = 100/s, `rate(1, 5s)` = 1 every 5s. Metric types: "latency", "count", "utilization"
+- Both are regular function calls (not keywords) — validated at compile time during inference
 
 ## Available commands
 

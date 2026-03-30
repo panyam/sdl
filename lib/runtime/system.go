@@ -18,6 +18,10 @@ type SystemInstance struct {
 	// Generators created from GeneratorSpec declarations during system init.
 	// Canvas.Use() reads these to wire up execution machinery.
 	Generators []*Generator
+
+	// Metrics created from MetricSpec declarations during system init.
+	// Canvas.Use() reads these to wire up collection machinery.
+	Metrics []*Metric
 }
 
 // Initializes a new runtime System instance and its root environment
@@ -39,6 +43,22 @@ func (s *SystemInstance) ResolveGenerators() {
 			gen.ResolvedMethod, _ = gen.ResolvedComponent.ComponentDecl.GetMethod(gen.MethodName)
 		}
 		s.Generators = append(s.Generators, gen)
+	}
+}
+
+// ResolveMetrics creates runtime Metric instances from compiled MetricSpecs
+// and resolves their component/method targets against the initialized environment.
+func (s *SystemInstance) ResolveMetrics() {
+	if s.System == nil {
+		return
+	}
+	for _, spec := range s.System.Metrics {
+		m := NewMetricFromSpec(spec)
+		m.ResolvedComponent = s.FindComponent(m.ComponentPath)
+		if m.ResolvedComponent != nil && m.MethodName != "" {
+			m.ResolvedMethod, _ = m.ResolvedComponent.ComponentDecl.GetMethod(m.MethodName)
+		}
+		s.Metrics = append(s.Metrics, m)
 	}
 }
 

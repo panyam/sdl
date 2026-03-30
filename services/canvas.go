@@ -135,8 +135,11 @@ func (c *Canvas) Use(systemName string) error {
 	// Initialize flow contexts for the new system
 	c.initializeFlowContexts()
 
-	// Auto-create generators declared in the system block
+	// Auto-create generators and metrics declared in the system block
 	if err := c.createDeclaredGenerators(); err != nil {
+		return err
+	}
+	if err := c.createDeclaredMetrics(); err != nil {
 		return err
 	}
 
@@ -180,6 +183,36 @@ func (c *Canvas) createDeclaredGenerators() error {
 	// Recompute flows once after all generators are added
 	if len(c.activeSystem.Generators) > 0 {
 		return c.recomputeSystemFlows()
+	}
+	return nil
+}
+
+// createDeclaredMetrics creates MetricSpec instances from the active system's
+// resolved Metric declarations and registers them with the metric tracer.
+func (c *Canvas) createDeclaredMetrics() error {
+	if c.activeSystem == nil || c.metricTracer == nil {
+		return nil
+	}
+	for _, m := range c.activeSystem.Metrics {
+		methods := []string{}
+		if m.MethodName != "" {
+			methods = []string{m.MethodName}
+		}
+		metricSpec := &MetricSpec{
+			Metric: &protos.Metric{
+				Id:                m.Name,
+				Name:              m.Name,
+				Component:         m.ComponentPath,
+				Methods:           methods,
+				MetricType:        m.MetricType,
+				Aggregation:       m.Aggregation,
+				AggregationWindow: m.Window,
+				Enabled:           true,
+			},
+		}
+		if err := c.metricTracer.AddMetricSpec(metricSpec); err != nil {
+			log.Printf("Warning: failed to create declared metric '%s': %v", m.Name, err)
+		}
 	}
 	return nil
 }

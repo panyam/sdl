@@ -130,6 +130,9 @@ component UberMVPArch {
 system UberMVP(arch UberMVPArch) {
     generator("baseline", arch.webserver.RequestRide, rate(5))
     generator("drivers", arch.webserver.UpdateLocation, rate(10))
+    metric("request_latency", arch.webserver.RequestRide, "latency", "p90", 1s)
+    metric("maps_latency", arch.mapsService.CalculateRoute, "latency", "p90", 1s)
+    metric("db_query", arch.database.FindNearestDriver, "latency", "p90", 1s)
 }
 
 // Demo Narrative:

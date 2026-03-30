@@ -73,6 +73,7 @@ func (f *FileInstance) NewSystem(systemName string, init bool) (*SystemInstance,
 		se.EvalInitSystem(sysInst, env, &currTime)
 		sysInst.Env = env
 		sysInst.ResolveGenerators()
+		sysInst.ResolveMetrics()
 	}
 	return sysInst, currTime
 }

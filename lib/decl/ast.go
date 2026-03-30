@@ -148,6 +148,9 @@ type SystemDecl struct {
 	// Resolved during inference from generator(...) calls in Body
 	Generators []*GeneratorSpec
 
+	// Resolved during inference from metric(...) calls in Body
+	Metrics []*MetricSpec
+
 	// File declaration this System is declared in
 	ParentFileDecl *FileDecl
 }
@@ -201,6 +204,18 @@ func (s *SystemDecl) PrettyPrint(cp CodePrinter) {
 type SystemDeclBodyItem interface {
 	Node
 	systemBodyItemNode()
+}
+
+// MetricSpec is the resolved form of a metric(...) call in a system body.
+// Populated during the inference phase so errors are caught at compile time.
+type MetricSpec struct {
+	NodeInfo
+	Name          string  // Metric identifier (e.g., "request_latency")
+	ComponentPath string  // Dot-separated component path (e.g., "arch.webserver")
+	MethodName    string  // Target method name (e.g., "RequestRide"), empty for utilization
+	MetricType    string  // "count", "latency", "utilization"
+	Aggregation   string  // "sum", "avg", "min", "max", "p50", "p90", "p95", "p99"
+	Window        float64 // Aggregation window in seconds (default 10.0)
 }
 
 // SplitMemberAccessTarget walks a MemberAccessExpr tree and splits off the rightmost
