@@ -1023,7 +1023,14 @@ func (i *Inference) EvalForSystemDecl(systemDecl *SystemDecl, nodeScope *TypeSco
 					systemDecl.Generators = append(systemDecl.Generators, spec)
 				}
 			case "metric":
-				// TODO: #25 — resolve metric calls
+				spec, err := resolveMetricCall(callExpr)
+				if err != nil {
+					i.Errorf(callExpr.Pos(), "invalid metric() call: %s", err.Error())
+					ok = false
+				} else {
+					spec.NodeInfo = it.NodeInfo
+					systemDecl.Metrics = append(systemDecl.Metrics, spec)
+				}
 			default:
 				i.Errorf(it.Pos(), "unknown system body function '%s' (expected generator or metric)", funcIdent.Value)
 				ok = false
@@ -1122,4 +1129,94 @@ func extractNumericValue(expr Expr) (float64, error) {
 		return float64(val), nil
 	}
 	return 0, fmt.Errorf("expected numeric value, got %s", lit.Value.Type.String())
+}
+
+// resolveMetricCall validates and extracts a MetricSpec from a metric(...) CallExpr.
+//
+// Supported forms:
+//
+//	metric("name", target.path.Method, "type", "aggregation", window)
+//	metric("name", target.path.Method, "type", "aggregation")  // default window 10s
+//	metric("name", target.path.Method, "type")                 // default aggregation + window
+func resolveMetricCall(call *CallExpr) (*MetricSpec, error) {
+	args := call.ArgList
+	if len(args) < 3 || len(args) > 5 {
+		return nil, fmt.Errorf("expected 3-5 arguments (name, target, type [, aggregation [, window]]), got %d", len(args))
+	}
+
+	spec := &MetricSpec{
+		Window: 10.0, // default window: 10 seconds
+	}
+
+	// Arg 1: name (string literal)
+	nameLit, ok := args[0].(*LiteralExpr)
+	if !ok {
+		return nil, fmt.Errorf("first argument (name) must be a string literal, got %T", args[0])
+	}
+	nameStr, err := nameLit.Value.GetString()
+	if err != nil {
+		return nil, fmt.Errorf("first argument (name) must be a string, got %s", nameLit.Value.Type.String())
+	}
+	spec.Name = nameStr
+
+	// Arg 2: target (MemberAccessExpr — e.g., arch.webserver.RequestRide)
+	spec.ComponentPath, spec.MethodName = SplitMemberAccessTarget(args[1])
+	if spec.ComponentPath == "" {
+		return nil, fmt.Errorf("second argument (target) must be a dotted path, got %s", args[1])
+	}
+
+	// Arg 3: metric type (string literal — "count", "latency", "utilization")
+	typeLit, ok := args[2].(*LiteralExpr)
+	if !ok {
+		return nil, fmt.Errorf("third argument (type) must be a string literal, got %T", args[2])
+	}
+	typeStr, err := typeLit.Value.GetString()
+	if err != nil {
+		return nil, fmt.Errorf("third argument (type) must be a string, got %s", typeLit.Value.Type.String())
+	}
+	validTypes := map[string]bool{"count": true, "latency": true, "utilization": true}
+	if !validTypes[typeStr] {
+		return nil, fmt.Errorf("invalid metric type %q (expected count, latency, or utilization)", typeStr)
+	}
+	spec.MetricType = typeStr
+
+	// Set default aggregation based on type
+	switch typeStr {
+	case "latency":
+		spec.Aggregation = "avg"
+	case "count":
+		spec.Aggregation = "sum"
+	case "utilization":
+		spec.Aggregation = "avg"
+	}
+
+	// Arg 4: optional aggregation (string literal)
+	if len(args) >= 4 {
+		aggLit, ok := args[3].(*LiteralExpr)
+		if !ok {
+			return nil, fmt.Errorf("fourth argument (aggregation) must be a string literal, got %T", args[3])
+		}
+		aggStr, err := aggLit.Value.GetString()
+		if err != nil {
+			return nil, fmt.Errorf("fourth argument (aggregation) must be a string, got %s", aggLit.Value.Type.String())
+		}
+		validAggs := map[string]bool{
+			"sum": true, "avg": true, "min": true, "max": true, "count": true,
+			"p50": true, "p90": true, "p95": true, "p99": true,
+		}
+		if !validAggs[aggStr] {
+			return nil, fmt.Errorf("invalid aggregation %q", aggStr)
+		}
+		spec.Aggregation = aggStr
+	}
+
+	// Arg 5: optional window (duration literal)
+	if len(args) == 5 {
+		spec.Window, err = extractNumericValue(args[4])
+		if err != nil {
+			return nil, fmt.Errorf("window: %w", err)
+		}
+	}
+
+	return spec, nil
 }

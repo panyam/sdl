@@ -1,0 +1,30 @@
+// Test fixture for declarative metrics in system blocks (issue #25).
+
+component SimpleDB {
+    method Query() Bool {
+        return true
+    }
+}
+
+component SimpleServer {
+    uses db SimpleDB()
+
+    method HandleRequest() Bool {
+        return self.db.Query()
+    }
+
+    method HealthCheck() Bool {
+        return true
+    }
+}
+
+component SimpleApp {
+    uses server SimpleServer()
+}
+
+system SimpleAppTest(app SimpleApp) {
+    generator("traffic", app.server.HandleRequest, rate(100))
+    metric("request_latency", app.server.HandleRequest, "latency", "p95", 5s)
+    metric("throughput", app.server.HandleRequest, "count", "sum", 5s)
+    metric("health_latency", app.server.HealthCheck, "latency", "avg")
+}

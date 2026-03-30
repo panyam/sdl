@@ -46,6 +46,7 @@ type AssignmentStmt = decl.AssignmentStmt
 type OptionsDecl = decl.OptionsDecl
 type ImportDecl = decl.ImportDecl
 type GeneratorSpec = decl.GeneratorSpec
+type MetricSpec = decl.MetricSpec
 
 var SplitMemberAccessTarget = decl.SplitMemberAccessTarget
 
