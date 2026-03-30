@@ -145,4 +145,8 @@ component NetflixSystemArch {
 }
 
 system NetflixSystem(arch NetflixSystemArch) {
+    generator("streaming", arch.videoService.StreamVideo, rate(100))
+    generator("uploads", arch.videoService.UploadVideo, rate(5))
+    metric("stream_latency", arch.videoService.StreamVideo, "latency", "p95", 1s)
+    metric("cdn_latency", arch.cdn.ServeVideo, "latency", "p95", 1s)
 }

@@ -90,4 +90,8 @@ component TestCapacitySystemArch {
 }
 
 system TestCapacitySystem(arch TestCapacitySystemArch) {
+    generator("reads", arch.MyDisk.Read, rate(100))
+    generator("writes", arch.MyDisk.Write, rate(10))
+    metric("read_latency", arch.MyDisk.Read, "latency", "p99", 1s)
+    metric("write_latency", arch.MyDisk.Write, "latency", "p99", 1s)
 }
