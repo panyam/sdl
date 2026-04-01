@@ -4,12 +4,21 @@ package sdl.v1;
 
 import "sdl/v1/models/models.proto";
 import "sdl/v1/models/workspace_service.proto";
+import "sdl/v1/models/canvas_service.proto";
 import "google/api/annotations.proto";
 
 option go_package = "github.com/panyam/sdl/gen/go/sdl/v1/services";
 
-// WorkspaceService manages workspace projects.
-// Implementations: in-memory (seeded from examples), file-based, DB-backed, IndexedDB (WASM).
+// WorkspaceService is the unified entry point for workspace operations.
+// Combines CRUD (create/get/list workspaces) with runtime/simulation
+// (load files, manage generators/metrics, evaluate flows).
+//
+// Follows the lilbattle GamesService pattern: one service covering
+// both metadata and gameplay operations.
+//
+// Implementations:
+//   - devenvbe.WorkspaceService — local mode, wraps DevEnv
+//   - connectclient.WorkspaceClient — remote mode, wraps gRPC client
 service WorkspaceService {
   rpc CreateWorkspace(CreateWorkspaceRequest) returns (CreateWorkspaceResponse) {
     option (google.api.http) = {
@@ -56,4 +65,37 @@ service WorkspaceService {
       get: "/v1/workspaces/{workspace_id}/designs/contents",
     };
   }
+
+  // =========================================================================
+  // Runtime / Simulation Operations
+  // =========================================================================
+
+  // Load an SDL file into the workspace
+  rpc LoadFile(LoadFileRequest) returns (LoadFileResponse);
+
+  // Select the active system for simulation
+  rpc UseSystem(UseSystemRequest) returns (UseSystemResponse);
+
+  // Generator management
+  rpc AddGenerator(AddGeneratorRequest) returns (AddGeneratorResponse);
+  rpc UpdateGenerator(UpdateGeneratorRequest) returns (UpdateGeneratorResponse);
+  rpc DeleteGenerator(DeleteGeneratorRequest) returns (DeleteGeneratorResponse);
+  rpc ListGenerators(ListGeneratorsRequest) returns (ListGeneratorsResponse);
+  rpc StartGenerator(StartGeneratorRequest) returns (StartGeneratorResponse);
+  rpc StopGenerator(StopGeneratorRequest) returns (StopGeneratorResponse);
+  rpc StartAllGenerators(StartAllGeneratorsRequest) returns (StartAllGeneratorsResponse);
+  rpc StopAllGenerators(StopAllGeneratorsRequest) returns (StopAllGeneratorsResponse);
+
+  // Metric management
+  rpc AddMetric(AddMetricRequest) returns (AddMetricResponse);
+  rpc DeleteMetric(DeleteMetricRequest) returns (DeleteMetricResponse);
+  rpc ListMetrics(ListMetricsRequest) returns (ListMetricsResponse);
+
+  // Parameters
+  rpc SetParameter(SetParameterRequest) returns (SetParameterResponse);
+  rpc GetParameters(GetParametersRequest) returns (GetParametersResponse);
+
+  // Diagram and flow analysis
+  rpc GetSystemDiagram(GetSystemDiagramRequest) returns (GetSystemDiagramResponse);
+  rpc EvaluateFlows(EvaluateFlowsRequest) returns (EvaluateFlowsResponse);
 }

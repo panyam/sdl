@@ -28,14 +28,39 @@ const (
 	WorkspaceService_UpdateWorkspace_FullMethodName      = "/sdl.v1.WorkspaceService/UpdateWorkspace"
 	WorkspaceService_GetDesignContent_FullMethodName     = "/sdl.v1.WorkspaceService/GetDesignContent"
 	WorkspaceService_GetAllDesignContents_FullMethodName = "/sdl.v1.WorkspaceService/GetAllDesignContents"
+	WorkspaceService_LoadFile_FullMethodName             = "/sdl.v1.WorkspaceService/LoadFile"
+	WorkspaceService_UseSystem_FullMethodName            = "/sdl.v1.WorkspaceService/UseSystem"
+	WorkspaceService_AddGenerator_FullMethodName         = "/sdl.v1.WorkspaceService/AddGenerator"
+	WorkspaceService_UpdateGenerator_FullMethodName      = "/sdl.v1.WorkspaceService/UpdateGenerator"
+	WorkspaceService_DeleteGenerator_FullMethodName      = "/sdl.v1.WorkspaceService/DeleteGenerator"
+	WorkspaceService_ListGenerators_FullMethodName       = "/sdl.v1.WorkspaceService/ListGenerators"
+	WorkspaceService_StartGenerator_FullMethodName       = "/sdl.v1.WorkspaceService/StartGenerator"
+	WorkspaceService_StopGenerator_FullMethodName        = "/sdl.v1.WorkspaceService/StopGenerator"
+	WorkspaceService_StartAllGenerators_FullMethodName   = "/sdl.v1.WorkspaceService/StartAllGenerators"
+	WorkspaceService_StopAllGenerators_FullMethodName    = "/sdl.v1.WorkspaceService/StopAllGenerators"
+	WorkspaceService_AddMetric_FullMethodName            = "/sdl.v1.WorkspaceService/AddMetric"
+	WorkspaceService_DeleteMetric_FullMethodName         = "/sdl.v1.WorkspaceService/DeleteMetric"
+	WorkspaceService_ListMetrics_FullMethodName          = "/sdl.v1.WorkspaceService/ListMetrics"
+	WorkspaceService_SetParameter_FullMethodName         = "/sdl.v1.WorkspaceService/SetParameter"
+	WorkspaceService_GetParameters_FullMethodName        = "/sdl.v1.WorkspaceService/GetParameters"
+	WorkspaceService_GetSystemDiagram_FullMethodName     = "/sdl.v1.WorkspaceService/GetSystemDiagram"
+	WorkspaceService_EvaluateFlows_FullMethodName        = "/sdl.v1.WorkspaceService/EvaluateFlows"
 )
 
 // WorkspaceServiceClient is the client API for WorkspaceService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// WorkspaceService manages workspace projects.
-// Implementations: in-memory (seeded from examples), file-based, DB-backed, IndexedDB (WASM).
+// WorkspaceService is the unified entry point for workspace operations.
+// Combines CRUD (create/get/list workspaces) with runtime/simulation
+// (load files, manage generators/metrics, evaluate flows).
+//
+// Follows the lilbattle GamesService pattern: one service covering
+// both metadata and gameplay operations.
+//
+// Implementations:
+//   - devenvbe.WorkspaceService — local mode, wraps DevEnv
+//   - connectclient.WorkspaceClient — remote mode, wraps gRPC client
 type WorkspaceServiceClient interface {
 	CreateWorkspace(ctx context.Context, in *models.CreateWorkspaceRequest, opts ...grpc.CallOption) (*models.CreateWorkspaceResponse, error)
 	GetWorkspace(ctx context.Context, in *models.GetWorkspaceRequest, opts ...grpc.CallOption) (*models.GetWorkspaceResponse, error)
@@ -46,6 +71,29 @@ type WorkspaceServiceClient interface {
 	GetDesignContent(ctx context.Context, in *models.GetDesignContentRequest, opts ...grpc.CallOption) (*models.GetDesignContentResponse, error)
 	// Get all design contents for a workspace
 	GetAllDesignContents(ctx context.Context, in *models.GetAllDesignContentsRequest, opts ...grpc.CallOption) (*models.GetAllDesignContentsResponse, error)
+	// Load an SDL file into the workspace
+	LoadFile(ctx context.Context, in *models.LoadFileRequest, opts ...grpc.CallOption) (*models.LoadFileResponse, error)
+	// Select the active system for simulation
+	UseSystem(ctx context.Context, in *models.UseSystemRequest, opts ...grpc.CallOption) (*models.UseSystemResponse, error)
+	// Generator management
+	AddGenerator(ctx context.Context, in *models.AddGeneratorRequest, opts ...grpc.CallOption) (*models.AddGeneratorResponse, error)
+	UpdateGenerator(ctx context.Context, in *models.UpdateGeneratorRequest, opts ...grpc.CallOption) (*models.UpdateGeneratorResponse, error)
+	DeleteGenerator(ctx context.Context, in *models.DeleteGeneratorRequest, opts ...grpc.CallOption) (*models.DeleteGeneratorResponse, error)
+	ListGenerators(ctx context.Context, in *models.ListGeneratorsRequest, opts ...grpc.CallOption) (*models.ListGeneratorsResponse, error)
+	StartGenerator(ctx context.Context, in *models.StartGeneratorRequest, opts ...grpc.CallOption) (*models.StartGeneratorResponse, error)
+	StopGenerator(ctx context.Context, in *models.StopGeneratorRequest, opts ...grpc.CallOption) (*models.StopGeneratorResponse, error)
+	StartAllGenerators(ctx context.Context, in *models.StartAllGeneratorsRequest, opts ...grpc.CallOption) (*models.StartAllGeneratorsResponse, error)
+	StopAllGenerators(ctx context.Context, in *models.StopAllGeneratorsRequest, opts ...grpc.CallOption) (*models.StopAllGeneratorsResponse, error)
+	// Metric management
+	AddMetric(ctx context.Context, in *models.AddMetricRequest, opts ...grpc.CallOption) (*models.AddMetricResponse, error)
+	DeleteMetric(ctx context.Context, in *models.DeleteMetricRequest, opts ...grpc.CallOption) (*models.DeleteMetricResponse, error)
+	ListMetrics(ctx context.Context, in *models.ListMetricsRequest, opts ...grpc.CallOption) (*models.ListMetricsResponse, error)
+	// Parameters
+	SetParameter(ctx context.Context, in *models.SetParameterRequest, opts ...grpc.CallOption) (*models.SetParameterResponse, error)
+	GetParameters(ctx context.Context, in *models.GetParametersRequest, opts ...grpc.CallOption) (*models.GetParametersResponse, error)
+	// Diagram and flow analysis
+	GetSystemDiagram(ctx context.Context, in *models.GetSystemDiagramRequest, opts ...grpc.CallOption) (*models.GetSystemDiagramResponse, error)
+	EvaluateFlows(ctx context.Context, in *models.EvaluateFlowsRequest, opts ...grpc.CallOption) (*models.EvaluateFlowsResponse, error)
 }
 
 type workspaceServiceClient struct {
@@ -126,12 +174,190 @@ func (c *workspaceServiceClient) GetAllDesignContents(ctx context.Context, in *m
 	return out, nil
 }
 
+func (c *workspaceServiceClient) LoadFile(ctx context.Context, in *models.LoadFileRequest, opts ...grpc.CallOption) (*models.LoadFileResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(models.LoadFileResponse)
+	err := c.cc.Invoke(ctx, WorkspaceService_LoadFile_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workspaceServiceClient) UseSystem(ctx context.Context, in *models.UseSystemRequest, opts ...grpc.CallOption) (*models.UseSystemResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(models.UseSystemResponse)
+	err := c.cc.Invoke(ctx, WorkspaceService_UseSystem_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workspaceServiceClient) AddGenerator(ctx context.Context, in *models.AddGeneratorRequest, opts ...grpc.CallOption) (*models.AddGeneratorResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(models.AddGeneratorResponse)
+	err := c.cc.Invoke(ctx, WorkspaceService_AddGenerator_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workspaceServiceClient) UpdateGenerator(ctx context.Context, in *models.UpdateGeneratorRequest, opts ...grpc.CallOption) (*models.UpdateGeneratorResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(models.UpdateGeneratorResponse)
+	err := c.cc.Invoke(ctx, WorkspaceService_UpdateGenerator_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workspaceServiceClient) DeleteGenerator(ctx context.Context, in *models.DeleteGeneratorRequest, opts ...grpc.CallOption) (*models.DeleteGeneratorResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(models.DeleteGeneratorResponse)
+	err := c.cc.Invoke(ctx, WorkspaceService_DeleteGenerator_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workspaceServiceClient) ListGenerators(ctx context.Context, in *models.ListGeneratorsRequest, opts ...grpc.CallOption) (*models.ListGeneratorsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(models.ListGeneratorsResponse)
+	err := c.cc.Invoke(ctx, WorkspaceService_ListGenerators_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workspaceServiceClient) StartGenerator(ctx context.Context, in *models.StartGeneratorRequest, opts ...grpc.CallOption) (*models.StartGeneratorResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(models.StartGeneratorResponse)
+	err := c.cc.Invoke(ctx, WorkspaceService_StartGenerator_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workspaceServiceClient) StopGenerator(ctx context.Context, in *models.StopGeneratorRequest, opts ...grpc.CallOption) (*models.StopGeneratorResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(models.StopGeneratorResponse)
+	err := c.cc.Invoke(ctx, WorkspaceService_StopGenerator_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workspaceServiceClient) StartAllGenerators(ctx context.Context, in *models.StartAllGeneratorsRequest, opts ...grpc.CallOption) (*models.StartAllGeneratorsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(models.StartAllGeneratorsResponse)
+	err := c.cc.Invoke(ctx, WorkspaceService_StartAllGenerators_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workspaceServiceClient) StopAllGenerators(ctx context.Context, in *models.StopAllGeneratorsRequest, opts ...grpc.CallOption) (*models.StopAllGeneratorsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(models.StopAllGeneratorsResponse)
+	err := c.cc.Invoke(ctx, WorkspaceService_StopAllGenerators_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workspaceServiceClient) AddMetric(ctx context.Context, in *models.AddMetricRequest, opts ...grpc.CallOption) (*models.AddMetricResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(models.AddMetricResponse)
+	err := c.cc.Invoke(ctx, WorkspaceService_AddMetric_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workspaceServiceClient) DeleteMetric(ctx context.Context, in *models.DeleteMetricRequest, opts ...grpc.CallOption) (*models.DeleteMetricResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(models.DeleteMetricResponse)
+	err := c.cc.Invoke(ctx, WorkspaceService_DeleteMetric_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workspaceServiceClient) ListMetrics(ctx context.Context, in *models.ListMetricsRequest, opts ...grpc.CallOption) (*models.ListMetricsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(models.ListMetricsResponse)
+	err := c.cc.Invoke(ctx, WorkspaceService_ListMetrics_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workspaceServiceClient) SetParameter(ctx context.Context, in *models.SetParameterRequest, opts ...grpc.CallOption) (*models.SetParameterResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(models.SetParameterResponse)
+	err := c.cc.Invoke(ctx, WorkspaceService_SetParameter_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workspaceServiceClient) GetParameters(ctx context.Context, in *models.GetParametersRequest, opts ...grpc.CallOption) (*models.GetParametersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(models.GetParametersResponse)
+	err := c.cc.Invoke(ctx, WorkspaceService_GetParameters_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workspaceServiceClient) GetSystemDiagram(ctx context.Context, in *models.GetSystemDiagramRequest, opts ...grpc.CallOption) (*models.GetSystemDiagramResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(models.GetSystemDiagramResponse)
+	err := c.cc.Invoke(ctx, WorkspaceService_GetSystemDiagram_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workspaceServiceClient) EvaluateFlows(ctx context.Context, in *models.EvaluateFlowsRequest, opts ...grpc.CallOption) (*models.EvaluateFlowsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(models.EvaluateFlowsResponse)
+	err := c.cc.Invoke(ctx, WorkspaceService_EvaluateFlows_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WorkspaceServiceServer is the server API for WorkspaceService service.
 // All implementations should embed UnimplementedWorkspaceServiceServer
 // for forward compatibility.
 //
-// WorkspaceService manages workspace projects.
-// Implementations: in-memory (seeded from examples), file-based, DB-backed, IndexedDB (WASM).
+// WorkspaceService is the unified entry point for workspace operations.
+// Combines CRUD (create/get/list workspaces) with runtime/simulation
+// (load files, manage generators/metrics, evaluate flows).
+//
+// Follows the lilbattle GamesService pattern: one service covering
+// both metadata and gameplay operations.
+//
+// Implementations:
+//   - devenvbe.WorkspaceService — local mode, wraps DevEnv
+//   - connectclient.WorkspaceClient — remote mode, wraps gRPC client
 type WorkspaceServiceServer interface {
 	CreateWorkspace(context.Context, *models.CreateWorkspaceRequest) (*models.CreateWorkspaceResponse, error)
 	GetWorkspace(context.Context, *models.GetWorkspaceRequest) (*models.GetWorkspaceResponse, error)
@@ -142,6 +368,29 @@ type WorkspaceServiceServer interface {
 	GetDesignContent(context.Context, *models.GetDesignContentRequest) (*models.GetDesignContentResponse, error)
 	// Get all design contents for a workspace
 	GetAllDesignContents(context.Context, *models.GetAllDesignContentsRequest) (*models.GetAllDesignContentsResponse, error)
+	// Load an SDL file into the workspace
+	LoadFile(context.Context, *models.LoadFileRequest) (*models.LoadFileResponse, error)
+	// Select the active system for simulation
+	UseSystem(context.Context, *models.UseSystemRequest) (*models.UseSystemResponse, error)
+	// Generator management
+	AddGenerator(context.Context, *models.AddGeneratorRequest) (*models.AddGeneratorResponse, error)
+	UpdateGenerator(context.Context, *models.UpdateGeneratorRequest) (*models.UpdateGeneratorResponse, error)
+	DeleteGenerator(context.Context, *models.DeleteGeneratorRequest) (*models.DeleteGeneratorResponse, error)
+	ListGenerators(context.Context, *models.ListGeneratorsRequest) (*models.ListGeneratorsResponse, error)
+	StartGenerator(context.Context, *models.StartGeneratorRequest) (*models.StartGeneratorResponse, error)
+	StopGenerator(context.Context, *models.StopGeneratorRequest) (*models.StopGeneratorResponse, error)
+	StartAllGenerators(context.Context, *models.StartAllGeneratorsRequest) (*models.StartAllGeneratorsResponse, error)
+	StopAllGenerators(context.Context, *models.StopAllGeneratorsRequest) (*models.StopAllGeneratorsResponse, error)
+	// Metric management
+	AddMetric(context.Context, *models.AddMetricRequest) (*models.AddMetricResponse, error)
+	DeleteMetric(context.Context, *models.DeleteMetricRequest) (*models.DeleteMetricResponse, error)
+	ListMetrics(context.Context, *models.ListMetricsRequest) (*models.ListMetricsResponse, error)
+	// Parameters
+	SetParameter(context.Context, *models.SetParameterRequest) (*models.SetParameterResponse, error)
+	GetParameters(context.Context, *models.GetParametersRequest) (*models.GetParametersResponse, error)
+	// Diagram and flow analysis
+	GetSystemDiagram(context.Context, *models.GetSystemDiagramRequest) (*models.GetSystemDiagramResponse, error)
+	EvaluateFlows(context.Context, *models.EvaluateFlowsRequest) (*models.EvaluateFlowsResponse, error)
 }
 
 // UnimplementedWorkspaceServiceServer should be embedded to have
@@ -171,6 +420,57 @@ func (UnimplementedWorkspaceServiceServer) GetDesignContent(context.Context, *mo
 }
 func (UnimplementedWorkspaceServiceServer) GetAllDesignContents(context.Context, *models.GetAllDesignContentsRequest) (*models.GetAllDesignContentsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAllDesignContents not implemented")
+}
+func (UnimplementedWorkspaceServiceServer) LoadFile(context.Context, *models.LoadFileRequest) (*models.LoadFileResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LoadFile not implemented")
+}
+func (UnimplementedWorkspaceServiceServer) UseSystem(context.Context, *models.UseSystemRequest) (*models.UseSystemResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UseSystem not implemented")
+}
+func (UnimplementedWorkspaceServiceServer) AddGenerator(context.Context, *models.AddGeneratorRequest) (*models.AddGeneratorResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddGenerator not implemented")
+}
+func (UnimplementedWorkspaceServiceServer) UpdateGenerator(context.Context, *models.UpdateGeneratorRequest) (*models.UpdateGeneratorResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateGenerator not implemented")
+}
+func (UnimplementedWorkspaceServiceServer) DeleteGenerator(context.Context, *models.DeleteGeneratorRequest) (*models.DeleteGeneratorResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteGenerator not implemented")
+}
+func (UnimplementedWorkspaceServiceServer) ListGenerators(context.Context, *models.ListGeneratorsRequest) (*models.ListGeneratorsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListGenerators not implemented")
+}
+func (UnimplementedWorkspaceServiceServer) StartGenerator(context.Context, *models.StartGeneratorRequest) (*models.StartGeneratorResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StartGenerator not implemented")
+}
+func (UnimplementedWorkspaceServiceServer) StopGenerator(context.Context, *models.StopGeneratorRequest) (*models.StopGeneratorResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StopGenerator not implemented")
+}
+func (UnimplementedWorkspaceServiceServer) StartAllGenerators(context.Context, *models.StartAllGeneratorsRequest) (*models.StartAllGeneratorsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StartAllGenerators not implemented")
+}
+func (UnimplementedWorkspaceServiceServer) StopAllGenerators(context.Context, *models.StopAllGeneratorsRequest) (*models.StopAllGeneratorsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StopAllGenerators not implemented")
+}
+func (UnimplementedWorkspaceServiceServer) AddMetric(context.Context, *models.AddMetricRequest) (*models.AddMetricResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddMetric not implemented")
+}
+func (UnimplementedWorkspaceServiceServer) DeleteMetric(context.Context, *models.DeleteMetricRequest) (*models.DeleteMetricResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteMetric not implemented")
+}
+func (UnimplementedWorkspaceServiceServer) ListMetrics(context.Context, *models.ListMetricsRequest) (*models.ListMetricsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListMetrics not implemented")
+}
+func (UnimplementedWorkspaceServiceServer) SetParameter(context.Context, *models.SetParameterRequest) (*models.SetParameterResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetParameter not implemented")
+}
+func (UnimplementedWorkspaceServiceServer) GetParameters(context.Context, *models.GetParametersRequest) (*models.GetParametersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetParameters not implemented")
+}
+func (UnimplementedWorkspaceServiceServer) GetSystemDiagram(context.Context, *models.GetSystemDiagramRequest) (*models.GetSystemDiagramResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSystemDiagram not implemented")
+}
+func (UnimplementedWorkspaceServiceServer) EvaluateFlows(context.Context, *models.EvaluateFlowsRequest) (*models.EvaluateFlowsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EvaluateFlows not implemented")
 }
 func (UnimplementedWorkspaceServiceServer) testEmbeddedByValue() {}
 
@@ -318,6 +618,312 @@ func _WorkspaceService_GetAllDesignContents_Handler(srv interface{}, ctx context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WorkspaceService_LoadFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(models.LoadFileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkspaceServiceServer).LoadFile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkspaceService_LoadFile_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkspaceServiceServer).LoadFile(ctx, req.(*models.LoadFileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkspaceService_UseSystem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(models.UseSystemRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkspaceServiceServer).UseSystem(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkspaceService_UseSystem_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkspaceServiceServer).UseSystem(ctx, req.(*models.UseSystemRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkspaceService_AddGenerator_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(models.AddGeneratorRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkspaceServiceServer).AddGenerator(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkspaceService_AddGenerator_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkspaceServiceServer).AddGenerator(ctx, req.(*models.AddGeneratorRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkspaceService_UpdateGenerator_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(models.UpdateGeneratorRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkspaceServiceServer).UpdateGenerator(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkspaceService_UpdateGenerator_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkspaceServiceServer).UpdateGenerator(ctx, req.(*models.UpdateGeneratorRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkspaceService_DeleteGenerator_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(models.DeleteGeneratorRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkspaceServiceServer).DeleteGenerator(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkspaceService_DeleteGenerator_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkspaceServiceServer).DeleteGenerator(ctx, req.(*models.DeleteGeneratorRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkspaceService_ListGenerators_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(models.ListGeneratorsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkspaceServiceServer).ListGenerators(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkspaceService_ListGenerators_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkspaceServiceServer).ListGenerators(ctx, req.(*models.ListGeneratorsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkspaceService_StartGenerator_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(models.StartGeneratorRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkspaceServiceServer).StartGenerator(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkspaceService_StartGenerator_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkspaceServiceServer).StartGenerator(ctx, req.(*models.StartGeneratorRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkspaceService_StopGenerator_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(models.StopGeneratorRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkspaceServiceServer).StopGenerator(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkspaceService_StopGenerator_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkspaceServiceServer).StopGenerator(ctx, req.(*models.StopGeneratorRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkspaceService_StartAllGenerators_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(models.StartAllGeneratorsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkspaceServiceServer).StartAllGenerators(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkspaceService_StartAllGenerators_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkspaceServiceServer).StartAllGenerators(ctx, req.(*models.StartAllGeneratorsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkspaceService_StopAllGenerators_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(models.StopAllGeneratorsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkspaceServiceServer).StopAllGenerators(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkspaceService_StopAllGenerators_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkspaceServiceServer).StopAllGenerators(ctx, req.(*models.StopAllGeneratorsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkspaceService_AddMetric_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(models.AddMetricRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkspaceServiceServer).AddMetric(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkspaceService_AddMetric_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkspaceServiceServer).AddMetric(ctx, req.(*models.AddMetricRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkspaceService_DeleteMetric_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(models.DeleteMetricRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkspaceServiceServer).DeleteMetric(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkspaceService_DeleteMetric_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkspaceServiceServer).DeleteMetric(ctx, req.(*models.DeleteMetricRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkspaceService_ListMetrics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(models.ListMetricsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkspaceServiceServer).ListMetrics(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkspaceService_ListMetrics_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkspaceServiceServer).ListMetrics(ctx, req.(*models.ListMetricsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkspaceService_SetParameter_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(models.SetParameterRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkspaceServiceServer).SetParameter(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkspaceService_SetParameter_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkspaceServiceServer).SetParameter(ctx, req.(*models.SetParameterRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkspaceService_GetParameters_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(models.GetParametersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkspaceServiceServer).GetParameters(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkspaceService_GetParameters_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkspaceServiceServer).GetParameters(ctx, req.(*models.GetParametersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkspaceService_GetSystemDiagram_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(models.GetSystemDiagramRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkspaceServiceServer).GetSystemDiagram(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkspaceService_GetSystemDiagram_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkspaceServiceServer).GetSystemDiagram(ctx, req.(*models.GetSystemDiagramRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkspaceService_EvaluateFlows_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(models.EvaluateFlowsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkspaceServiceServer).EvaluateFlows(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkspaceService_EvaluateFlows_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkspaceServiceServer).EvaluateFlows(ctx, req.(*models.EvaluateFlowsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // WorkspaceService_ServiceDesc is the grpc.ServiceDesc for WorkspaceService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -352,6 +958,74 @@ var WorkspaceService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetAllDesignContents",
 			Handler:    _WorkspaceService_GetAllDesignContents_Handler,
+		},
+		{
+			MethodName: "LoadFile",
+			Handler:    _WorkspaceService_LoadFile_Handler,
+		},
+		{
+			MethodName: "UseSystem",
+			Handler:    _WorkspaceService_UseSystem_Handler,
+		},
+		{
+			MethodName: "AddGenerator",
+			Handler:    _WorkspaceService_AddGenerator_Handler,
+		},
+		{
+			MethodName: "UpdateGenerator",
+			Handler:    _WorkspaceService_UpdateGenerator_Handler,
+		},
+		{
+			MethodName: "DeleteGenerator",
+			Handler:    _WorkspaceService_DeleteGenerator_Handler,
+		},
+		{
+			MethodName: "ListGenerators",
+			Handler:    _WorkspaceService_ListGenerators_Handler,
+		},
+		{
+			MethodName: "StartGenerator",
+			Handler:    _WorkspaceService_StartGenerator_Handler,
+		},
+		{
+			MethodName: "StopGenerator",
+			Handler:    _WorkspaceService_StopGenerator_Handler,
+		},
+		{
+			MethodName: "StartAllGenerators",
+			Handler:    _WorkspaceService_StartAllGenerators_Handler,
+		},
+		{
+			MethodName: "StopAllGenerators",
+			Handler:    _WorkspaceService_StopAllGenerators_Handler,
+		},
+		{
+			MethodName: "AddMetric",
+			Handler:    _WorkspaceService_AddMetric_Handler,
+		},
+		{
+			MethodName: "DeleteMetric",
+			Handler:    _WorkspaceService_DeleteMetric_Handler,
+		},
+		{
+			MethodName: "ListMetrics",
+			Handler:    _WorkspaceService_ListMetrics_Handler,
+		},
+		{
+			MethodName: "SetParameter",
+			Handler:    _WorkspaceService_SetParameter_Handler,
+		},
+		{
+			MethodName: "GetParameters",
+			Handler:    _WorkspaceService_GetParameters_Handler,
+		},
+		{
+			MethodName: "GetSystemDiagram",
+			Handler:    _WorkspaceService_GetSystemDiagram_Handler,
+		},
+		{
+			MethodName: "EvaluateFlows",
+			Handler:    _WorkspaceService_EvaluateFlows_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

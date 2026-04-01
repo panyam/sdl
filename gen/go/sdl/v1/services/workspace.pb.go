@@ -27,7 +27,7 @@ var File_sdl_v1_services_workspace_proto protoreflect.FileDescriptor
 
 const file_sdl_v1_services_workspace_proto_rawDesc = "" +
 	"\n" +
-	"\x1fsdl/v1/services/workspace.proto\x12\x06sdl.v1\x1a\x1asdl/v1/models/models.proto\x1a%sdl/v1/models/workspace_service.proto\x1a\x1cgoogle/api/annotations.proto2\xfa\x06\n" +
+	"\x1fsdl/v1/services/workspace.proto\x12\x06sdl.v1\x1a\x1asdl/v1/models/models.proto\x1a%sdl/v1/models/workspace_service.proto\x1a\"sdl/v1/models/canvas_service.proto\x1a\x1cgoogle/api/annotations.proto2\xa8\x11\n" +
 	"\x10WorkspaceService\x12m\n" +
 	"\x0fCreateWorkspace\x12\x1e.sdl.v1.CreateWorkspaceRequest\x1a\x1f.sdl.v1.CreateWorkspaceResponse\"\x19\x82\xd3\xe4\x93\x02\x13:\x01*\"\x0e/v1/workspaces\x12f\n" +
 	"\fGetWorkspace\x12\x1b.sdl.v1.GetWorkspaceRequest\x1a\x1c.sdl.v1.GetWorkspaceResponse\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/v1/workspaces/{id}\x12g\n" +
@@ -35,7 +35,24 @@ const file_sdl_v1_services_workspace_proto_rawDesc = "" +
 	"\x0fDeleteWorkspace\x12\x1e.sdl.v1.DeleteWorkspaceRequest\x1a\x1f.sdl.v1.DeleteWorkspaceResponse\"\x1b\x82\xd3\xe4\x93\x02\x15*\x13/v1/workspaces/{id}\x12|\n" +
 	"\x0fUpdateWorkspace\x12\x1e.sdl.v1.UpdateWorkspaceRequest\x1a\x1f.sdl.v1.UpdateWorkspaceResponse\"(\x82\xd3\xe4\x93\x02\":\x01*\x1a\x1d/v1/workspaces/{workspace.id}\x12\x9a\x01\n" +
 	"\x10GetDesignContent\x12\x1f.sdl.v1.GetDesignContentRequest\x1a .sdl.v1.GetDesignContentResponse\"C\x82\xd3\xe4\x93\x02=\x12;/v1/workspaces/{workspace_id}/designs/{design_name}/content\x12\x99\x01\n" +
-	"\x14GetAllDesignContents\x12#.sdl.v1.GetAllDesignContentsRequest\x1a$.sdl.v1.GetAllDesignContentsResponse\"6\x82\xd3\xe4\x93\x020\x12./v1/workspaces/{workspace_id}/designs/contentsB\x89\x01\n" +
+	"\x14GetAllDesignContents\x12#.sdl.v1.GetAllDesignContentsRequest\x1a$.sdl.v1.GetAllDesignContentsResponse\"6\x82\xd3\xe4\x93\x020\x12./v1/workspaces/{workspace_id}/designs/contents\x12=\n" +
+	"\bLoadFile\x12\x17.sdl.v1.LoadFileRequest\x1a\x18.sdl.v1.LoadFileResponse\x12@\n" +
+	"\tUseSystem\x12\x18.sdl.v1.UseSystemRequest\x1a\x19.sdl.v1.UseSystemResponse\x12I\n" +
+	"\fAddGenerator\x12\x1b.sdl.v1.AddGeneratorRequest\x1a\x1c.sdl.v1.AddGeneratorResponse\x12R\n" +
+	"\x0fUpdateGenerator\x12\x1e.sdl.v1.UpdateGeneratorRequest\x1a\x1f.sdl.v1.UpdateGeneratorResponse\x12R\n" +
+	"\x0fDeleteGenerator\x12\x1e.sdl.v1.DeleteGeneratorRequest\x1a\x1f.sdl.v1.DeleteGeneratorResponse\x12O\n" +
+	"\x0eListGenerators\x12\x1d.sdl.v1.ListGeneratorsRequest\x1a\x1e.sdl.v1.ListGeneratorsResponse\x12O\n" +
+	"\x0eStartGenerator\x12\x1d.sdl.v1.StartGeneratorRequest\x1a\x1e.sdl.v1.StartGeneratorResponse\x12L\n" +
+	"\rStopGenerator\x12\x1c.sdl.v1.StopGeneratorRequest\x1a\x1d.sdl.v1.StopGeneratorResponse\x12[\n" +
+	"\x12StartAllGenerators\x12!.sdl.v1.StartAllGeneratorsRequest\x1a\".sdl.v1.StartAllGeneratorsResponse\x12X\n" +
+	"\x11StopAllGenerators\x12 .sdl.v1.StopAllGeneratorsRequest\x1a!.sdl.v1.StopAllGeneratorsResponse\x12@\n" +
+	"\tAddMetric\x12\x18.sdl.v1.AddMetricRequest\x1a\x19.sdl.v1.AddMetricResponse\x12I\n" +
+	"\fDeleteMetric\x12\x1b.sdl.v1.DeleteMetricRequest\x1a\x1c.sdl.v1.DeleteMetricResponse\x12F\n" +
+	"\vListMetrics\x12\x1a.sdl.v1.ListMetricsRequest\x1a\x1b.sdl.v1.ListMetricsResponse\x12I\n" +
+	"\fSetParameter\x12\x1b.sdl.v1.SetParameterRequest\x1a\x1c.sdl.v1.SetParameterResponse\x12L\n" +
+	"\rGetParameters\x12\x1c.sdl.v1.GetParametersRequest\x1a\x1d.sdl.v1.GetParametersResponse\x12U\n" +
+	"\x10GetSystemDiagram\x12\x1f.sdl.v1.GetSystemDiagramRequest\x1a .sdl.v1.GetSystemDiagramResponse\x12L\n" +
+	"\rEvaluateFlows\x12\x1c.sdl.v1.EvaluateFlowsRequest\x1a\x1d.sdl.v1.EvaluateFlowsResponseB\x89\x01\n" +
 	"\n" +
 	"com.sdl.v1B\x0eWorkspaceProtoP\x01Z2github.com/panyam/sdl/gen/go/sdl/v1/services;sdlv1\xa2\x02\x03SXX\xaa\x02\x06Sdl.V1\xca\x02\x06Sdl\\V1\xe2\x02\x12Sdl\\V1\\GPBMetadata\xea\x02\aSdl::V1b\x06proto3"
 
@@ -47,13 +64,47 @@ var file_sdl_v1_services_workspace_proto_goTypes = []any{
 	(*models.UpdateWorkspaceRequest)(nil),       // 4: sdl.v1.UpdateWorkspaceRequest
 	(*models.GetDesignContentRequest)(nil),      // 5: sdl.v1.GetDesignContentRequest
 	(*models.GetAllDesignContentsRequest)(nil),  // 6: sdl.v1.GetAllDesignContentsRequest
-	(*models.CreateWorkspaceResponse)(nil),      // 7: sdl.v1.CreateWorkspaceResponse
-	(*models.GetWorkspaceResponse)(nil),         // 8: sdl.v1.GetWorkspaceResponse
-	(*models.ListWorkspacesResponse)(nil),       // 9: sdl.v1.ListWorkspacesResponse
-	(*models.DeleteWorkspaceResponse)(nil),      // 10: sdl.v1.DeleteWorkspaceResponse
-	(*models.UpdateWorkspaceResponse)(nil),      // 11: sdl.v1.UpdateWorkspaceResponse
-	(*models.GetDesignContentResponse)(nil),     // 12: sdl.v1.GetDesignContentResponse
-	(*models.GetAllDesignContentsResponse)(nil), // 13: sdl.v1.GetAllDesignContentsResponse
+	(*models.LoadFileRequest)(nil),              // 7: sdl.v1.LoadFileRequest
+	(*models.UseSystemRequest)(nil),             // 8: sdl.v1.UseSystemRequest
+	(*models.AddGeneratorRequest)(nil),          // 9: sdl.v1.AddGeneratorRequest
+	(*models.UpdateGeneratorRequest)(nil),       // 10: sdl.v1.UpdateGeneratorRequest
+	(*models.DeleteGeneratorRequest)(nil),       // 11: sdl.v1.DeleteGeneratorRequest
+	(*models.ListGeneratorsRequest)(nil),        // 12: sdl.v1.ListGeneratorsRequest
+	(*models.StartGeneratorRequest)(nil),        // 13: sdl.v1.StartGeneratorRequest
+	(*models.StopGeneratorRequest)(nil),         // 14: sdl.v1.StopGeneratorRequest
+	(*models.StartAllGeneratorsRequest)(nil),    // 15: sdl.v1.StartAllGeneratorsRequest
+	(*models.StopAllGeneratorsRequest)(nil),     // 16: sdl.v1.StopAllGeneratorsRequest
+	(*models.AddMetricRequest)(nil),             // 17: sdl.v1.AddMetricRequest
+	(*models.DeleteMetricRequest)(nil),          // 18: sdl.v1.DeleteMetricRequest
+	(*models.ListMetricsRequest)(nil),           // 19: sdl.v1.ListMetricsRequest
+	(*models.SetParameterRequest)(nil),          // 20: sdl.v1.SetParameterRequest
+	(*models.GetParametersRequest)(nil),         // 21: sdl.v1.GetParametersRequest
+	(*models.GetSystemDiagramRequest)(nil),      // 22: sdl.v1.GetSystemDiagramRequest
+	(*models.EvaluateFlowsRequest)(nil),         // 23: sdl.v1.EvaluateFlowsRequest
+	(*models.CreateWorkspaceResponse)(nil),      // 24: sdl.v1.CreateWorkspaceResponse
+	(*models.GetWorkspaceResponse)(nil),         // 25: sdl.v1.GetWorkspaceResponse
+	(*models.ListWorkspacesResponse)(nil),       // 26: sdl.v1.ListWorkspacesResponse
+	(*models.DeleteWorkspaceResponse)(nil),      // 27: sdl.v1.DeleteWorkspaceResponse
+	(*models.UpdateWorkspaceResponse)(nil),      // 28: sdl.v1.UpdateWorkspaceResponse
+	(*models.GetDesignContentResponse)(nil),     // 29: sdl.v1.GetDesignContentResponse
+	(*models.GetAllDesignContentsResponse)(nil), // 30: sdl.v1.GetAllDesignContentsResponse
+	(*models.LoadFileResponse)(nil),             // 31: sdl.v1.LoadFileResponse
+	(*models.UseSystemResponse)(nil),            // 32: sdl.v1.UseSystemResponse
+	(*models.AddGeneratorResponse)(nil),         // 33: sdl.v1.AddGeneratorResponse
+	(*models.UpdateGeneratorResponse)(nil),      // 34: sdl.v1.UpdateGeneratorResponse
+	(*models.DeleteGeneratorResponse)(nil),      // 35: sdl.v1.DeleteGeneratorResponse
+	(*models.ListGeneratorsResponse)(nil),       // 36: sdl.v1.ListGeneratorsResponse
+	(*models.StartGeneratorResponse)(nil),       // 37: sdl.v1.StartGeneratorResponse
+	(*models.StopGeneratorResponse)(nil),        // 38: sdl.v1.StopGeneratorResponse
+	(*models.StartAllGeneratorsResponse)(nil),   // 39: sdl.v1.StartAllGeneratorsResponse
+	(*models.StopAllGeneratorsResponse)(nil),    // 40: sdl.v1.StopAllGeneratorsResponse
+	(*models.AddMetricResponse)(nil),            // 41: sdl.v1.AddMetricResponse
+	(*models.DeleteMetricResponse)(nil),         // 42: sdl.v1.DeleteMetricResponse
+	(*models.ListMetricsResponse)(nil),          // 43: sdl.v1.ListMetricsResponse
+	(*models.SetParameterResponse)(nil),         // 44: sdl.v1.SetParameterResponse
+	(*models.GetParametersResponse)(nil),        // 45: sdl.v1.GetParametersResponse
+	(*models.GetSystemDiagramResponse)(nil),     // 46: sdl.v1.GetSystemDiagramResponse
+	(*models.EvaluateFlowsResponse)(nil),        // 47: sdl.v1.EvaluateFlowsResponse
 }
 var file_sdl_v1_services_workspace_proto_depIdxs = []int32{
 	0,  // 0: sdl.v1.WorkspaceService.CreateWorkspace:input_type -> sdl.v1.CreateWorkspaceRequest
@@ -63,15 +114,49 @@ var file_sdl_v1_services_workspace_proto_depIdxs = []int32{
 	4,  // 4: sdl.v1.WorkspaceService.UpdateWorkspace:input_type -> sdl.v1.UpdateWorkspaceRequest
 	5,  // 5: sdl.v1.WorkspaceService.GetDesignContent:input_type -> sdl.v1.GetDesignContentRequest
 	6,  // 6: sdl.v1.WorkspaceService.GetAllDesignContents:input_type -> sdl.v1.GetAllDesignContentsRequest
-	7,  // 7: sdl.v1.WorkspaceService.CreateWorkspace:output_type -> sdl.v1.CreateWorkspaceResponse
-	8,  // 8: sdl.v1.WorkspaceService.GetWorkspace:output_type -> sdl.v1.GetWorkspaceResponse
-	9,  // 9: sdl.v1.WorkspaceService.ListWorkspaces:output_type -> sdl.v1.ListWorkspacesResponse
-	10, // 10: sdl.v1.WorkspaceService.DeleteWorkspace:output_type -> sdl.v1.DeleteWorkspaceResponse
-	11, // 11: sdl.v1.WorkspaceService.UpdateWorkspace:output_type -> sdl.v1.UpdateWorkspaceResponse
-	12, // 12: sdl.v1.WorkspaceService.GetDesignContent:output_type -> sdl.v1.GetDesignContentResponse
-	13, // 13: sdl.v1.WorkspaceService.GetAllDesignContents:output_type -> sdl.v1.GetAllDesignContentsResponse
-	7,  // [7:14] is the sub-list for method output_type
-	0,  // [0:7] is the sub-list for method input_type
+	7,  // 7: sdl.v1.WorkspaceService.LoadFile:input_type -> sdl.v1.LoadFileRequest
+	8,  // 8: sdl.v1.WorkspaceService.UseSystem:input_type -> sdl.v1.UseSystemRequest
+	9,  // 9: sdl.v1.WorkspaceService.AddGenerator:input_type -> sdl.v1.AddGeneratorRequest
+	10, // 10: sdl.v1.WorkspaceService.UpdateGenerator:input_type -> sdl.v1.UpdateGeneratorRequest
+	11, // 11: sdl.v1.WorkspaceService.DeleteGenerator:input_type -> sdl.v1.DeleteGeneratorRequest
+	12, // 12: sdl.v1.WorkspaceService.ListGenerators:input_type -> sdl.v1.ListGeneratorsRequest
+	13, // 13: sdl.v1.WorkspaceService.StartGenerator:input_type -> sdl.v1.StartGeneratorRequest
+	14, // 14: sdl.v1.WorkspaceService.StopGenerator:input_type -> sdl.v1.StopGeneratorRequest
+	15, // 15: sdl.v1.WorkspaceService.StartAllGenerators:input_type -> sdl.v1.StartAllGeneratorsRequest
+	16, // 16: sdl.v1.WorkspaceService.StopAllGenerators:input_type -> sdl.v1.StopAllGeneratorsRequest
+	17, // 17: sdl.v1.WorkspaceService.AddMetric:input_type -> sdl.v1.AddMetricRequest
+	18, // 18: sdl.v1.WorkspaceService.DeleteMetric:input_type -> sdl.v1.DeleteMetricRequest
+	19, // 19: sdl.v1.WorkspaceService.ListMetrics:input_type -> sdl.v1.ListMetricsRequest
+	20, // 20: sdl.v1.WorkspaceService.SetParameter:input_type -> sdl.v1.SetParameterRequest
+	21, // 21: sdl.v1.WorkspaceService.GetParameters:input_type -> sdl.v1.GetParametersRequest
+	22, // 22: sdl.v1.WorkspaceService.GetSystemDiagram:input_type -> sdl.v1.GetSystemDiagramRequest
+	23, // 23: sdl.v1.WorkspaceService.EvaluateFlows:input_type -> sdl.v1.EvaluateFlowsRequest
+	24, // 24: sdl.v1.WorkspaceService.CreateWorkspace:output_type -> sdl.v1.CreateWorkspaceResponse
+	25, // 25: sdl.v1.WorkspaceService.GetWorkspace:output_type -> sdl.v1.GetWorkspaceResponse
+	26, // 26: sdl.v1.WorkspaceService.ListWorkspaces:output_type -> sdl.v1.ListWorkspacesResponse
+	27, // 27: sdl.v1.WorkspaceService.DeleteWorkspace:output_type -> sdl.v1.DeleteWorkspaceResponse
+	28, // 28: sdl.v1.WorkspaceService.UpdateWorkspace:output_type -> sdl.v1.UpdateWorkspaceResponse
+	29, // 29: sdl.v1.WorkspaceService.GetDesignContent:output_type -> sdl.v1.GetDesignContentResponse
+	30, // 30: sdl.v1.WorkspaceService.GetAllDesignContents:output_type -> sdl.v1.GetAllDesignContentsResponse
+	31, // 31: sdl.v1.WorkspaceService.LoadFile:output_type -> sdl.v1.LoadFileResponse
+	32, // 32: sdl.v1.WorkspaceService.UseSystem:output_type -> sdl.v1.UseSystemResponse
+	33, // 33: sdl.v1.WorkspaceService.AddGenerator:output_type -> sdl.v1.AddGeneratorResponse
+	34, // 34: sdl.v1.WorkspaceService.UpdateGenerator:output_type -> sdl.v1.UpdateGeneratorResponse
+	35, // 35: sdl.v1.WorkspaceService.DeleteGenerator:output_type -> sdl.v1.DeleteGeneratorResponse
+	36, // 36: sdl.v1.WorkspaceService.ListGenerators:output_type -> sdl.v1.ListGeneratorsResponse
+	37, // 37: sdl.v1.WorkspaceService.StartGenerator:output_type -> sdl.v1.StartGeneratorResponse
+	38, // 38: sdl.v1.WorkspaceService.StopGenerator:output_type -> sdl.v1.StopGeneratorResponse
+	39, // 39: sdl.v1.WorkspaceService.StartAllGenerators:output_type -> sdl.v1.StartAllGeneratorsResponse
+	40, // 40: sdl.v1.WorkspaceService.StopAllGenerators:output_type -> sdl.v1.StopAllGeneratorsResponse
+	41, // 41: sdl.v1.WorkspaceService.AddMetric:output_type -> sdl.v1.AddMetricResponse
+	42, // 42: sdl.v1.WorkspaceService.DeleteMetric:output_type -> sdl.v1.DeleteMetricResponse
+	43, // 43: sdl.v1.WorkspaceService.ListMetrics:output_type -> sdl.v1.ListMetricsResponse
+	44, // 44: sdl.v1.WorkspaceService.SetParameter:output_type -> sdl.v1.SetParameterResponse
+	45, // 45: sdl.v1.WorkspaceService.GetParameters:output_type -> sdl.v1.GetParametersResponse
+	46, // 46: sdl.v1.WorkspaceService.GetSystemDiagram:output_type -> sdl.v1.GetSystemDiagramResponse
+	47, // 47: sdl.v1.WorkspaceService.EvaluateFlows:output_type -> sdl.v1.EvaluateFlowsResponse
+	24, // [24:48] is the sub-list for method output_type
+	0,  // [0:24] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name

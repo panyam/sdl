@@ -6,14 +6,16 @@ import (
 	"strconv"
 
 	protos "github.com/panyam/sdl/gen/go/sdl/v1/models"
+	protoservices "github.com/panyam/sdl/gen/go/sdl/v1/services"
 	"github.com/panyam/sdl/lib/loader"
 	"github.com/panyam/sdl/services"
 )
 
-// WorkspaceService implements services.WorkspaceRuntime by wrapping a DevEnv.
+// WorkspaceService implements the generated WorkspaceServiceServer by wrapping DevEnv.
 // This is the local-mode backend — no server needed. Follows the lilbattle
 // fsbe.GamesService pattern where a backend wraps a local storage/runtime.
 type WorkspaceService struct {
+	protoservices.UnimplementedWorkspaceServiceServer
 	DevEnv *services.DevEnv
 }
 
