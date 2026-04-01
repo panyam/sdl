@@ -94,8 +94,8 @@ func main() {
 
 	// Create browser page forwarder (DevEnvPageHandler -> DevEnvPageClient)
 	devEnvPageClient := wasmservices.NewDevEnvPageClient()
-	pageForwarder := NewDevEnvPageForwarder(devEnvPageClient)
-	devEnv.SetPage(pageForwarder)
+	browserPage := NewBrowserDevEnvPage(devEnvPageClient)
+	devEnv.SetPage(browserPage)
 
 	// Create presenter (CanvasViewPresenterServer -> DevEnv)
 	devEnvPresenter := services.NewDevEnvPresenter(devEnv)
@@ -110,7 +110,6 @@ func main() {
 	exports := &wasmservices.Sdl_v1ServicesExports{
 		CanvasViewPresenter:         devEnvPresenter,
 		SingletonInitializerService: initializerService,
-		CanvasDashboardPage:         wasmservices.NewCanvasDashboardPageClient(),
 		DevEnvPage:                  devEnvPageClient,
 	}
 

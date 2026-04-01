@@ -168,9 +168,16 @@
 - [x] CONSTRAINTS.md created with panel interface and no-Canvas rules
 - [x] All tests pass: Go (13 DevEnv + existing), WASM build, web tests (32)
 
-### Remaining (Future Phases)
-- [ ] CLI commands migrated to DevEnv API
-- [ ] Remove CanvasDashboardPage methods from WorkspaceViewerPageBase (fully replaced by DevEnvPage)
+### Completed (Phase 3 — Cleanup)
+- [x] Removed 14 dead CanvasDashboardPage methods from WorkspaceViewerPageBase
+- [x] Removed CanvasDashboardPageMethods interface and CanvasServiceClient imports
+- [x] Removed CanvasDashboardPage client from WASM exports
+- [x] Renamed DevEnvPageForwarder to BrowserDevEnvPage (lilbattle convention)
+- [x] Added 6 cleanup verification tests
+- [x] Issue #34 complete
+
+### Related future work
+- [ ] CLI commands migrated to DevEnv API (requires server to use DevEnv internally)
 - [ ] CompilationUnit artifact between Workspace and Canvas (#19)
 
 ## Completed Recently
