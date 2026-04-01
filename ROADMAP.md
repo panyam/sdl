@@ -186,6 +186,7 @@ Tracked in issues #23-#30. Core insight: systems and components are the same con
 - #25: Declarative metrics in SDL system blocks — `metric("name", target, "type", "agg", window)` **(merged)**
 - #26: Recipe simplification — recipes trimmed to dynamic scenarios only **(merged)**
 - #34: DevEnv architecture — typed panels, Canvas retirement, WASM bridge evaluation **(complete)**
+- #40: CLI migration to WorkspaceService + profile management **(in progress)**
 - #35: @stdlib native loader resolution **(planned)**
 - #30: Migrate all examples and merge recipes into unified SDL
 

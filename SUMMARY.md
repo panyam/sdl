@@ -46,15 +46,28 @@ DevEnv replaces Canvas + CanvasViewPresenter as the single simulation coordinato
 - `DevEnv` struct — constructed with `loader.FileResolver`, owns Runtime, manages generators/metrics/flows, pushes to attached page handler via `SetPage()`.
 - `BuildSystemDiagram()` — standalone function (extracted from Canvas) used by both Canvas and DevEnv.
 
+### WorkspaceService (lilbattle service pattern)
+The service layer follows lilbattle's GamesService pattern with proto-typed interfaces and pluggable backends:
+- `WorkspaceService` = `WorkspaceCRUD` + `WorkspaceRuntime` (composed interfaces)
+- `devenvbe.WorkspaceService` — local mode, wraps DevEnv (no server needed)
+- `connectclient.WorkspaceClient` — remote mode, wraps gRPC with auth support
+- Backend selection follows lilbattle: profile/env determines local vs remote
+
 ### WASM pipeline (Phase 2)
-The WASM pipeline now uses DevEnv directly:
-- `DevEnvPresenter` (services/) implements `CanvasViewPresenterServer`, delegates to DevEnv
-- `DevEnvPageForwarder` (cmd/wasm/browser.go) implements `DevEnvPageHandler`, forwards to browser via `DevEnvPageClient`
+The WASM pipeline uses DevEnv directly:
+- `DevEnvPresenter` (services/, WASM-tagged) implements `CanvasViewPresenterServer`, delegates to DevEnv
+- `BrowserDevEnvPage` (cmd/wasm/browser.go) implements `DevEnvPageHandler`, forwards to browser via `DevEnvPageClient`
 - `WorkspaceViewerPageBase` (web/src/) implements `DevEnvPageMethods` with CRUD-by-name for generators/metrics
 - Old `CanvasViewPresenter` and `SingletonCanvasService` moved to attic
 
+### CLI migration (#40, in progress)
+- CLI will use `WorkspaceRuntime` interface — local (devenvbe) or remote (connectclient)
+- Profile management at `~/.config/sdl/` (like lilbattle's `~/.config/lilbattle/`)
+- `GetWorkspaceContext()` per-command (like lilbattle's `GetGameContext()`)
+- `ConsoleDevEnvPage` for terminal output (like lilbattle's CLI formatters)
+
 ### Canvas coexistence
-Canvas remains for server-mode gRPC paths. It implements `SimulationContext` and delegates diagram building to `BuildSystemDiagram()`. CLI migration to DevEnv is planned for a future phase.
+Canvas remains for server-mode gRPC paths. It implements `SimulationContext` and delegates diagram building to `BuildSystemDiagram()`. New code should use DevEnv (#34 constraint).
 
 ## Recent Architectural Changes (June 2025)
 

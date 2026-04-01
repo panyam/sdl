@@ -176,23 +176,12 @@ GitHub issues created for stack alignment:
 - Don't hardcode `editor.background` in custom themes — inherit from `vs`/`vs-dark` base
 - Known issue: theme toggle doesn't update Monaco editors (needs investigation)
 
-## Architecture: Workspace vs Canvas vs Design
+## Service Layer Conventions
 
-- **Workspace** = project/repo (e.g., "Uber") — source files, designs, import sources, manifest (`sdl.json`)
-- **Design** = one system architecture (e.g., "UberMVP") — a `system` block in an SDL file
-- **Canvas** = runtime/VM that executes a design — generators, metrics, flow analysis
-- Analogy: Workspace = git repo, Design = source file, Canvas = running process
-- Proto: `Workspace` (project metadata), `Canvas` (runtime state), `WorkspaceDesign` (design entry)
-- Future: `CompilationUnit` artifact between Workspace and Canvas (see #19)
-
-## WorkspaceService (lilbattle pattern)
-
-- Interface: `services/workspace_service.go` — CRUD for workspaces + design content
-- Backend: `services/backend_workspace_service.go` — wraps `WorkspaceStorageProvider`
-- In-memory storage: `services/inmem/workspace_storage.go` — seeded from examples/
-- Manifest: `services/workspace.go` — `LoadWorkspaceManifest()` parses `sdl.json` via protojson
-- Example manifests: `examples/uber/sdl.json`, `examples/bitly/sdl.json`
-- Services layer works with protos directly — no custom Go types duplicating proto fields
+- Follow lilbattle naming: backends in `devenvbe/`, `connectclient/`, `inmem/` sub-packages
+- Services use proto request/response types (like lilbattle's GamesService)
+- New code should use DevEnv, not Canvas (see CONSTRAINTS.md)
+- See SUMMARY.md for architecture details
 
 ## ScriptTagFS (SDL embedding in pages)
 
