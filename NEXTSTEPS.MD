@@ -158,11 +158,19 @@
 - [x] Added services tests to CI/CD pipeline
 - [x] Canvas continues working unchanged (no breaking changes)
 
+### Completed (Phase 2)
+- [x] DevEnvPresenter — implements CanvasViewPresenterServer, delegates to DevEnv
+- [x] DevEnvPageForwarder — implements DevEnvPageHandler, forwards to DevEnvPageClient (in cmd/wasm/browser.go)
+- [x] WASM main.go rewired to DevEnv pipeline (no more SingletonCanvasService)
+- [x] TypeScript DevEnvPage handlers with CRUD-by-name for generators/metrics
+- [x] CanvasViewerPage renamed to WorkspaceViewerPage
+- [x] Old CanvasViewPresenter and SingletonCanvasService moved to attic
+- [x] CONSTRAINTS.md created with panel interface and no-Canvas rules
+- [x] All tests pass: Go (13 DevEnv + existing), WASM build, web tests (32)
+
 ### Remaining (Future Phases)
-- [ ] WASM DevEnvPresenter wrapping DevEnv (replaces CanvasViewPresenter)
 - [ ] CLI commands migrated to DevEnv API
-- [ ] TypeScript DevEnvPage implementation for browser panels
-- [ ] Canvas and CanvasViewPresenter deprecated
+- [ ] Remove CanvasDashboardPage methods from WorkspaceViewerPageBase (fully replaced by DevEnvPage)
 - [ ] CompilationUnit artifact between Workspace and Canvas (#19)
 
 ## Completed Recently

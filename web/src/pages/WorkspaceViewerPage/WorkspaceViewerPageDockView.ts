@@ -1,19 +1,19 @@
 import { LCMComponent } from '@panyam/tsappkit';
 import { DockviewApi, DockviewComponent } from 'dockview-core';
 import { Graphviz } from "@hpcc-js/wasm-graphviz";
-import { CanvasViewerPageBase, PanelId } from './CanvasViewerPageBase';
+import { WorkspaceViewerPageBase, PanelId } from './WorkspaceViewerPageBase';
 import { SystemDiagram, Generator, Metric } from '../../../gen/wasmjs/sdl/v1/models/interfaces';
 import { TabbedEditor } from '../../components/tabbed-editor';
 import { ConsolePanel } from '../../components/console-panel';
 import { DesignSelector } from '../../components/design-selector';
 
 /**
- * DockView-based implementation of CanvasViewerPage
+ * DockView-based implementation of WorkspaceViewerPage
  *
  * This provides a flexible, resizable panel layout using DockView
  * with the SDL editor, diagram, console, and other panels.
  */
-export class CanvasViewerPageDockView extends CanvasViewerPageBase {
+export class WorkspaceViewerPageDockView extends WorkspaceViewerPageBase {
     private dockview: DockviewApi | null = null;
     private graphviz: any = null;
 
@@ -42,9 +42,9 @@ export class CanvasViewerPageDockView extends CanvasViewerPageBase {
         // Initialize Graphviz for diagram rendering
         try {
             this.graphviz = await Graphviz.load();
-            console.log('[CanvasViewerPageDockView] Graphviz loaded');
+            console.log('[WorkspaceViewerPageDockView] Graphviz loaded');
         } catch (error) {
-            console.error('[CanvasViewerPageDockView] Failed to load Graphviz:', error);
+            console.error('[WorkspaceViewerPageDockView] Failed to load Graphviz:', error);
         }
 
         // Create workspace toolbar with design selector
@@ -140,7 +140,7 @@ export class CanvasViewerPageDockView extends CanvasViewerPageBase {
             // Add click handlers to nodes
             this.attachDiagramClickHandlers();
         } catch (error) {
-            console.error('[CanvasViewerPageDockView] Failed to render diagram:', error);
+            console.error('[WorkspaceViewerPageDockView] Failed to render diagram:', error);
             this.diagramContainer.innerHTML = `<div class="p-4 text-red-500">Failed to render diagram: ${error}</div>`;
         }
     }
@@ -281,9 +281,9 @@ export class CanvasViewerPageDockView extends CanvasViewerPageBase {
                     filePath: `/designs/${designName}.sdl`,
                 });
                 loadedDesigns.push(designName);
-                console.log(`[CanvasViewerPageDockView] Loaded design: ${designName}`);
+                console.log(`[WorkspaceViewerPageDockView] Loaded design: ${designName}`);
             } catch (err) {
-                console.warn(`[CanvasViewerPageDockView] Failed to load ${designName}:`, err);
+                console.warn(`[WorkspaceViewerPageDockView] Failed to load ${designName}:`, err);
             }
         }
 
@@ -296,7 +296,7 @@ export class CanvasViewerPageDockView extends CanvasViewerPageBase {
 
     /** Called when user selects a different design from the dropdown */
     private async onDesignSelected(systemName: string): Promise<void> {
-        console.log(`[CanvasViewerPageDockView] Switching to design: ${systemName}`);
+        console.log(`[WorkspaceViewerPageDockView] Switching to design: ${systemName}`);
 
         // Open the SDL source in the editor
         const textarea = document.querySelector(`textarea.sdl-design-source[data-design="${systemName}"]`) as HTMLTextAreaElement;
@@ -313,7 +313,7 @@ export class CanvasViewerPageDockView extends CanvasViewerPageBase {
                 systemName: systemName,
             });
         } catch (err) {
-            console.error(`[CanvasViewerPageDockView] Failed to switch design:`, err);
+            console.error(`[WorkspaceViewerPageDockView] Failed to switch design:`, err);
         }
     }
 

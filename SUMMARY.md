@@ -46,8 +46,15 @@ DevEnv replaces Canvas + CanvasViewPresenter as the single simulation coordinato
 - `DevEnv` struct — constructed with `loader.FileResolver`, owns Runtime, manages generators/metrics/flows, pushes to attached page handler via `SetPage()`.
 - `BuildSystemDiagram()` — standalone function (extracted from Canvas) used by both Canvas and DevEnv.
 
+### WASM pipeline (Phase 2)
+The WASM pipeline now uses DevEnv directly:
+- `DevEnvPresenter` (services/) implements `CanvasViewPresenterServer`, delegates to DevEnv
+- `DevEnvPageForwarder` (cmd/wasm/browser.go) implements `DevEnvPageHandler`, forwards to browser via `DevEnvPageClient`
+- `WorkspaceViewerPageBase` (web/src/) implements `DevEnvPageMethods` with CRUD-by-name for generators/metrics
+- Old `CanvasViewPresenter` and `SingletonCanvasService` moved to attic
+
 ### Canvas coexistence
-Canvas continues working unchanged. It now implements `SimulationContext` and delegates diagram building to `BuildSystemDiagram()`. Migration of CLI, WASM presenter, and CanvasService to DevEnv is planned for future phases.
+Canvas remains for server-mode gRPC paths. It implements `SimulationContext` and delegates diagram building to `BuildSystemDiagram()`. CLI migration to DevEnv is planned for a future phase.
 
 ## Recent Architectural Changes (June 2025)
 

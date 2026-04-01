@@ -18,7 +18,6 @@ import (
 	wasmservices "github.com/panyam/sdl/gen/wasm/go/sdl/v1/services"
 	"github.com/panyam/sdl/lib/loader"
 	"github.com/panyam/sdl/services"
-	"github.com/panyam/sdl/services/singleton"
 )
 
 // Embed stdlib SDL files
@@ -34,17 +33,16 @@ func init() {
 	fileSystem = createWASMFileSystem()
 }
 
-// SingletonInitializerService bootstraps the WASM singleton with initial data
+// SingletonInitializerService bootstraps the WASM singleton with initial data.
+// Uses DevEnv directly instead of the old Canvas/SingletonCanvasService pipeline.
 type SingletonInitializerService struct {
-	CanvasService     *singleton.SingletonCanvasService
-	CanvasPresenter   *services.CanvasViewPresenter
-	InitialSDLContent string
+	DevEnv    *services.DevEnv
+	Presenter *services.DevEnvPresenter
 }
 
 func (s *SingletonInitializerService) InitializeSingleton(ctx context.Context, req *protos.InitializeSingletonRequest) (*protos.InitializeSingletonResponse, error) {
 	// Load initial SDL content if provided
 	if req.SdlContent != "" {
-		// Write to memory filesystem and load
 		err := fileSystem.WriteFile("/workspace/init.sdl", []byte(req.SdlContent))
 		if err != nil {
 			return &protos.InitializeSingletonResponse{
@@ -53,11 +51,7 @@ func (s *SingletonInitializerService) InitializeSingleton(ctx context.Context, r
 			}, nil
 		}
 
-		_, err = s.CanvasService.LoadFile(ctx, &protos.LoadFileRequest{
-			CanvasId:    "default",
-			SdlFilePath: "/workspace/init.sdl",
-		})
-		if err != nil {
+		if err := s.DevEnv.LoadFile("/workspace/init.sdl"); err != nil {
 			return &protos.InitializeSingletonResponse{
 				Success: false,
 				Error:   fmt.Sprintf("failed to load initial SDL: %v", err),
@@ -67,11 +61,7 @@ func (s *SingletonInitializerService) InitializeSingleton(ctx context.Context, r
 
 	// Use the specified system if provided
 	if req.SystemName != "" {
-		_, err := s.CanvasService.UseSystem(ctx, &protos.UseSystemRequest{
-			CanvasId:   "default",
-			SystemName: req.SystemName,
-		})
-		if err != nil {
+		if err := s.DevEnv.Use(req.SystemName); err != nil {
 			return &protos.InitializeSingletonResponse{
 				Success: false,
 				Error:   fmt.Sprintf("failed to use system: %v", err),
@@ -80,7 +70,7 @@ func (s *SingletonInitializerService) InitializeSingleton(ctx context.Context, r
 	}
 
 	// Initialize the presenter
-	initResp, err := s.CanvasPresenter.Initialize(ctx, &protos.InitializePresenterRequest{})
+	initResp, err := s.Presenter.Initialize(ctx, &protos.InitializePresenterRequest{})
 	if err != nil {
 		return &protos.InitializeSingletonResponse{
 			Success: false,
@@ -98,29 +88,31 @@ func (s *SingletonInitializerService) InitializeSingleton(ctx context.Context, r
 func main() {
 	fmt.Println("SDL WASM module loading...")
 
-	// Create singleton services
-	canvasService := singleton.NewSingletonCanvasService(fileSystem)
+	// Create DevEnv with filesystem resolver
+	fsResolver := loader.NewFileSystemResolver(fileSystem)
+	devEnv := services.NewDevEnv(fsResolver)
 
-	// Create presenter and wire dependencies
-	canvasPresenter := services.NewCanvasViewPresenter()
-	canvasPresenter.CanvasService = canvasService
+	// Create browser page forwarder (DevEnvPageHandler -> DevEnvPageClient)
+	devEnvPageClient := wasmservices.NewDevEnvPageClient()
+	pageForwarder := NewDevEnvPageForwarder(devEnvPageClient)
+	devEnv.SetPage(pageForwarder)
+
+	// Create presenter (CanvasViewPresenterServer -> DevEnv)
+	devEnvPresenter := services.NewDevEnvPresenter(devEnv)
 
 	// Create initializer service
 	initializerService := &SingletonInitializerService{
-		CanvasService:   canvasService,
-		CanvasPresenter: canvasPresenter,
+		DevEnv:    devEnv,
+		Presenter: devEnvPresenter,
 	}
 
 	// Wire service implementations to generated WASM exports
 	exports := &wasmservices.Sdl_v1ServicesExports{
-		CanvasService:               canvasService,
-		CanvasViewPresenter:         canvasPresenter,
+		CanvasViewPresenter:         devEnvPresenter,
 		SingletonInitializerService: initializerService,
 		CanvasDashboardPage:         wasmservices.NewCanvasDashboardPageClient(),
+		DevEnvPage:                  devEnvPageClient,
 	}
-
-	// Wire the dashboard page client to the presenter for callbacks
-	canvasPresenter.DashboardPage = exports.CanvasDashboardPage
 
 	// Register the JavaScript API using generated exports
 	exports.RegisterAPI()
