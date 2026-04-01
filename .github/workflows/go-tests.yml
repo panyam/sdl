@@ -32,3 +32,6 @@ jobs:
 
       - name: Runtime tests
         run: go test ./lib/runtime/ -run "TestUnifiedSystem|TestFlowEvalBasic|TestFlowEvalComparison|TestFlowEvalRuntime|TestSolveSystemFlowsRuntime|TestCacheHitRate" -count=1 -timeout 60s
+
+      - name: Services tests
+        run: go test ./services/ -count=1 -timeout 60s

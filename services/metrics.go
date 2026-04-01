@@ -40,8 +40,8 @@ type MetricSpec struct {
 	stopChan                  chan bool
 	eventChan                 chan *runtime.TraceEvent
 	idCounter                 atomic.Int64
-	store                     MetricStore // Reference to metric store
-	canvas                    *Canvas     // Reference to canvas for simulation time
+	store                     MetricStore          // Reference to metric store
+	simCtx                    SimulationContext    // Reference to simulation context (Canvas or DevEnv)
 }
 
 // Handles the next trace event.  Returns true if event accepted, false otherwise
@@ -155,8 +155,8 @@ func (ms *MetricSpec) run() {
 
 				// Set window start time if this is the first event
 				if len(currentWindow) == 0 {
-					if ms.canvas != nil && ms.canvas.simulationStarted {
-						currentWindowStart = ms.canvas.simulationStartTime.Add(time.Duration(evt.Timestamp * float64(time.Second)))
+					if ms.simCtx != nil && ms.simCtx.IsSimulationStarted() {
+						currentWindowStart = ms.simCtx.GetSimulationStartTime().Add(time.Duration(evt.Timestamp * float64(time.Second)))
 					} else {
 						currentWindowStart = time.Now()
 					}
@@ -318,10 +318,10 @@ func (ms *MetricSpec) collectUtilizationMetrics(ctx context.Context) {
 
 		// Create metric point
 		var timestamp time.Time
-		if ms.canvas != nil && ms.canvas.simulationStarted {
+		if ms.simCtx != nil && ms.simCtx.IsSimulationStarted() {
 			// Use simulation time if available
-			simTime := ms.canvas.GetSimulationTime()
-			timestamp = ms.canvas.simulationStartTime.Add(time.Duration(simTime * float64(time.Second)))
+			simTime := ms.simCtx.GetSimulationTime()
+			timestamp = ms.simCtx.GetSimulationStartTime().Add(time.Duration(simTime * float64(time.Second)))
 		} else {
 			timestamp = time.Now()
 		}

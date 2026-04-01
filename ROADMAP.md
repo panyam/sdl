@@ -185,7 +185,7 @@ Tracked in issues #23-#30. Core insight: systems and components are the same con
 - #24: Declarative generators in SDL system blocks — `generator("name", target, rate(N))` **(merged)**
 - #25: Declarative metrics in SDL system blocks — `metric("name", target, "type", "agg", window)` **(merged)**
 - #26: Recipe simplification — recipes trimmed to dynamic scenarios only **(merged)**
-- #34: SystemService API — replace Canvas indirection **(planned)**
+- #34: DevEnv architecture — typed panels, Canvas retirement, WASM bridge evaluation **(Phase 1 in progress: SimulationContext, DevEnvPageHandler, DevEnv struct)**
 - #35: @stdlib native loader resolution **(planned)**
 - #30: Migrate all examples and merge recipes into unified SDL
 

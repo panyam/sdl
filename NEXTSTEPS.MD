@@ -145,6 +145,26 @@
 - [ ] Add simulation progress API
 - [ ] Memory usage optimization
 
+## Current: Issue #34 DevEnv Architecture (Phase 1)
+
+### Completed (Phase 1)
+- [x] SimulationContext interface — decouples GeneratorInfo/MetricSpec from Canvas
+- [x] DevEnvPageHandler Go interface — mirrors DevEnvPage proto service
+- [x] DevEnvPage proto service definition (browser_provided) with per-name CRUD
+- [x] Extracted diagram building logic into reusable standalone functions
+- [x] DevEnv struct with full API (LoadFile, Use, generators, metrics, flows, panels)
+- [x] 13-test verification suite covering lifecycle, panel notifications, system switching
+- [x] Fixed nil map bug in Runtime.AvailableSystems()
+- [x] Added services tests to CI/CD pipeline
+- [x] Canvas continues working unchanged (no breaking changes)
+
+### Remaining (Future Phases)
+- [ ] WASM DevEnvPresenter wrapping DevEnv (replaces CanvasViewPresenter)
+- [ ] CLI commands migrated to DevEnv API
+- [ ] TypeScript DevEnvPage implementation for browser panels
+- [ ] Canvas and CanvasViewPresenter deprecated
+- [ ] CompilationUnit artifact between Workspace and Canvas (#19)
+
 ## Completed Recently
 - ✅ Created FileSystem abstraction in loader package
 - ✅ Designed WASM module structure

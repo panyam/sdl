@@ -19,7 +19,7 @@ type GeneratorInfo struct {
 
 	stopped                   atomic.Bool
 	stopChan                  chan bool
-	canvas                    *Canvas // Reference to parent canvas
+	simCtx                    SimulationContext // Reference to simulation context (Canvas or DevEnv)
 	System                    *sdlruntime.SystemInstance
 	resolvedComponentInstance *sdlruntime.ComponentInstance // Resolved from Component name
 	resolvedMethodDecl        *sdlruntime.MethodDecl        // Resolved method declaration
@@ -215,7 +215,7 @@ func (g *GeneratorInfo) getNextVirtualTime() core.Duration {
 // executeAtVirtualTime executes a single eval at the given virtual time
 func (g *GeneratorInfo) executeAtVirtualTime(virtualTime core.Duration) {
 	// Create evaluator with tracer - ok to panic if nil as it shouldnt be
-	eval := sdlruntime.NewSimpleEval(g.System.File, g.canvas.metricTracer)
+	eval := sdlruntime.NewSimpleEval(g.System.File, g.simCtx.GetTracer())
 
 	// New environment for isolation
 	env := g.System.Env.Push()

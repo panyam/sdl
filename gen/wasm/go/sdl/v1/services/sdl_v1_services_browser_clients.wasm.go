@@ -154,3 +154,96 @@ func (c *CanvasDashboardPageClient) UpdateUtilization(ctx context.Context, req *
 		c.channel, ctx, "CanvasDashboardPage", "updateUtilization", req,
 	)
 }
+
+// DevEnvPageClient is a client for the browser-provided DevEnvPage service
+type DevEnvPageClient struct {
+	channel *wasm.BrowserServiceChannel
+}
+
+// NewDevEnvPageClient creates a new client for the browser-provided DevEnvPage service
+func NewDevEnvPageClient() *DevEnvPageClient {
+	return &DevEnvPageClient{
+		channel: wasm.GetBrowserChannel(),
+	}
+}
+
+// OnSystemChanged calls the browser-provided OnSystemChanged method synchronously.
+// The JavaScript implementation returns the result directly (SYNC invocation style).
+func (c *DevEnvPageClient) OnSystemChanged(ctx context.Context, req *v1models.DevEnvSystemChangedRequest) (*v1models.DevEnvSystemChangedResponse, error) {
+	// SYNC invocation style: browser method returns immediately
+	return wasm.CallBrowserService[*v1models.DevEnvSystemChangedRequest, *v1models.DevEnvSystemChangedResponse](
+		c.channel, ctx, "DevEnvPage", "onSystemChanged", req,
+	)
+}
+
+// OnAvailableSystemsChanged calls the browser-provided OnAvailableSystemsChanged method synchronously.
+// The JavaScript implementation returns the result directly (SYNC invocation style).
+func (c *DevEnvPageClient) OnAvailableSystemsChanged(ctx context.Context, req *v1models.DevEnvAvailableSystemsRequest) (*v1models.DevEnvAvailableSystemsResponse, error) {
+	// SYNC invocation style: browser method returns immediately
+	return wasm.CallBrowserService[*v1models.DevEnvAvailableSystemsRequest, *v1models.DevEnvAvailableSystemsResponse](
+		c.channel, ctx, "DevEnvPage", "onAvailableSystemsChanged", req,
+	)
+}
+
+// UpdateDiagram calls the browser-provided UpdateDiagram method synchronously.
+// The JavaScript implementation returns the result directly (SYNC invocation style).
+func (c *DevEnvPageClient) UpdateDiagram(ctx context.Context, req *v1models.UpdateDiagramRequest) (*v1models.UpdateDiagramResponse, error) {
+	// SYNC invocation style: browser method returns immediately
+	return wasm.CallBrowserService[*v1models.UpdateDiagramRequest, *v1models.UpdateDiagramResponse](
+		c.channel, ctx, "DevEnvPage", "updateDiagram", req,
+	)
+}
+
+// UpdateGenerator calls the browser-provided UpdateGenerator method synchronously.
+// The JavaScript implementation returns the result directly (SYNC invocation style).
+func (c *DevEnvPageClient) UpdateGenerator(ctx context.Context, req *v1models.DevEnvUpdateGeneratorRequest) (*v1models.DevEnvUpdateGeneratorResponse, error) {
+	// SYNC invocation style: browser method returns immediately
+	return wasm.CallBrowserService[*v1models.DevEnvUpdateGeneratorRequest, *v1models.DevEnvUpdateGeneratorResponse](
+		c.channel, ctx, "DevEnvPage", "updateGenerator", req,
+	)
+}
+
+// RemoveGenerator calls the browser-provided RemoveGenerator method synchronously.
+// The JavaScript implementation returns the result directly (SYNC invocation style).
+func (c *DevEnvPageClient) RemoveGenerator(ctx context.Context, req *v1models.DevEnvRemoveGeneratorRequest) (*v1models.DevEnvRemoveGeneratorResponse, error) {
+	// SYNC invocation style: browser method returns immediately
+	return wasm.CallBrowserService[*v1models.DevEnvRemoveGeneratorRequest, *v1models.DevEnvRemoveGeneratorResponse](
+		c.channel, ctx, "DevEnvPage", "removeGenerator", req,
+	)
+}
+
+// UpdateMetric calls the browser-provided UpdateMetric method synchronously.
+// The JavaScript implementation returns the result directly (SYNC invocation style).
+func (c *DevEnvPageClient) UpdateMetric(ctx context.Context, req *v1models.DevEnvUpdateMetricRequest) (*v1models.DevEnvUpdateMetricResponse, error) {
+	// SYNC invocation style: browser method returns immediately
+	return wasm.CallBrowserService[*v1models.DevEnvUpdateMetricRequest, *v1models.DevEnvUpdateMetricResponse](
+		c.channel, ctx, "DevEnvPage", "updateMetric", req,
+	)
+}
+
+// RemoveMetric calls the browser-provided RemoveMetric method synchronously.
+// The JavaScript implementation returns the result directly (SYNC invocation style).
+func (c *DevEnvPageClient) RemoveMetric(ctx context.Context, req *v1models.DevEnvRemoveMetricRequest) (*v1models.DevEnvRemoveMetricResponse, error) {
+	// SYNC invocation style: browser method returns immediately
+	return wasm.CallBrowserService[*v1models.DevEnvRemoveMetricRequest, *v1models.DevEnvRemoveMetricResponse](
+		c.channel, ctx, "DevEnvPage", "removeMetric", req,
+	)
+}
+
+// UpdateFlowRates calls the browser-provided UpdateFlowRates method synchronously.
+// The JavaScript implementation returns the result directly (SYNC invocation style).
+func (c *DevEnvPageClient) UpdateFlowRates(ctx context.Context, req *v1models.UpdateFlowRatesRequest) (*v1models.UpdateFlowRatesResponse, error) {
+	// SYNC invocation style: browser method returns immediately
+	return wasm.CallBrowserService[*v1models.UpdateFlowRatesRequest, *v1models.UpdateFlowRatesResponse](
+		c.channel, ctx, "DevEnvPage", "updateFlowRates", req,
+	)
+}
+
+// LogMessage calls the browser-provided LogMessage method synchronously.
+// The JavaScript implementation returns the result directly (SYNC invocation style).
+func (c *DevEnvPageClient) LogMessage(ctx context.Context, req *v1models.LogMessageRequest) (*v1models.LogMessageResponse, error) {
+	// SYNC invocation style: browser method returns immediately
+	return wasm.CallBrowserService[*v1models.LogMessageRequest, *v1models.LogMessageResponse](
+		c.channel, ctx, "DevEnvPage", "logMessage", req,
+	)
+}

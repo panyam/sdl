@@ -36,6 +36,19 @@ SDL is a language and runtime for modeling and simulating distributed system per
 - Metrics configuration
 - Flow evaluation and automatic rate calculation
 
+## DevEnv Architecture (March 2026, #34 Phase 1)
+
+DevEnv replaces Canvas + CanvasViewPresenter as the single simulation coordinator. Canvas was a pass-through to SystemInstance; DevEnv owns the Runtime directly and pushes typed updates to a pluggable page handler.
+
+### Key types (services/ package)
+- `SimulationContext` interface — abstracts what GeneratorInfo/MetricSpec need from their orchestrator (tracer, simulation time). Both Canvas and DevEnv implement it.
+- `DevEnvPageHandler` interface — typed panel contract with CRUD-by-name for generators/metrics. Mirrors the `DevEnvPage` proto service (`browser_provided = true`).
+- `DevEnv` struct — constructed with `loader.FileResolver`, owns Runtime, manages generators/metrics/flows, pushes to attached page handler via `SetPage()`.
+- `BuildSystemDiagram()` — standalone function (extracted from Canvas) used by both Canvas and DevEnv.
+
+### Canvas coexistence
+Canvas continues working unchanged. It now implements `SimulationContext` and delegates diagram building to `BuildSystemDiagram()`. Migration of CLI, WASM presenter, and CanvasService to DevEnv is planned for future phases.
+
 ## Recent Architectural Changes (June 2025)
 
 ### gRPC Migration

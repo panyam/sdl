@@ -28,6 +28,7 @@ type Sdl_v1ServicesExports struct {
 
 	// Browser-provided services (clients)
 	CanvasDashboardPage *CanvasDashboardPageClient
+	DevEnvPage          *DevEnvPageClient
 }
 
 // RegisterAPI registers the services with the JavaScript global namespace
