@@ -54,7 +54,7 @@ type SdlApp struct {
 	wsHandler *CanvasWSHandler
 
 	// Workspace service — manages workspace protos and design content
-	WorkspaceSvc services.WorkspaceService
+	WorkspaceSvc services.WorkspaceCRUD
 
 	// Vite manifest for cache-busted asset URLs
 	ViteManifest map[string]ViteManifestEntry

@@ -112,6 +112,33 @@ func (d *DevEnv) ActiveSystem() *runtime.SystemInstance {
 	return d.activeSystem
 }
 
+// GetActiveSystemName returns the name of the active system, or empty string.
+func (d *DevEnv) GetActiveSystemName() string {
+	if d.activeSystem == nil || d.activeSystem.System == nil {
+		return ""
+	}
+	return d.activeSystem.System.Name.Value
+}
+
+// ListGenerators returns proto Generator copies for all registered generators.
+func (d *DevEnv) ListGenerators() []*protos.Generator {
+	d.generatorsLock.RLock()
+	defer d.generatorsLock.RUnlock()
+	result := make([]*protos.Generator, 0, len(d.generators))
+	for _, gen := range d.generators {
+		result = append(result, gen.Generator)
+	}
+	return result
+}
+
+// ListMetrics returns proto Metric copies for all tracked metrics.
+func (d *DevEnv) ListMetrics() []*protos.Metric {
+	if d.metricTracer == nil {
+		return nil
+	}
+	return d.metricTracer.ListMetrics()
+}
+
 // Use activates a system by name. Creates the SystemInstance if needed,
 // wires up declared generators and metrics, and notifies the page handler.
 func (d *DevEnv) Use(systemName string) error {
