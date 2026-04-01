@@ -145,6 +145,34 @@
 - [ ] Add simulation progress API
 - [ ] Memory usage optimization
 
+## Current: Issue #34 DevEnv Architecture (Phase 1)
+
+### Completed (Phase 1)
+- [x] SimulationContext interface — decouples GeneratorInfo/MetricSpec from Canvas
+- [x] DevEnvPageHandler Go interface — mirrors DevEnvPage proto service
+- [x] DevEnvPage proto service definition (browser_provided) with per-name CRUD
+- [x] Extracted diagram building logic into reusable standalone functions
+- [x] DevEnv struct with full API (LoadFile, Use, generators, metrics, flows, panels)
+- [x] 13-test verification suite covering lifecycle, panel notifications, system switching
+- [x] Fixed nil map bug in Runtime.AvailableSystems()
+- [x] Added services tests to CI/CD pipeline
+- [x] Canvas continues working unchanged (no breaking changes)
+
+### Completed (Phase 2)
+- [x] DevEnvPresenter — implements CanvasViewPresenterServer, delegates to DevEnv
+- [x] DevEnvPageForwarder — implements DevEnvPageHandler, forwards to DevEnvPageClient (in cmd/wasm/browser.go)
+- [x] WASM main.go rewired to DevEnv pipeline (no more SingletonCanvasService)
+- [x] TypeScript DevEnvPage handlers with CRUD-by-name for generators/metrics
+- [x] CanvasViewerPage renamed to WorkspaceViewerPage
+- [x] Old CanvasViewPresenter and SingletonCanvasService moved to attic
+- [x] CONSTRAINTS.md created with panel interface and no-Canvas rules
+- [x] All tests pass: Go (13 DevEnv + existing), WASM build, web tests (32)
+
+### Remaining (Future Phases)
+- [ ] CLI commands migrated to DevEnv API
+- [ ] Remove CanvasDashboardPage methods from WorkspaceViewerPageBase (fully replaced by DevEnvPage)
+- [ ] CompilationUnit artifact between Workspace and Canvas (#19)
+
 ## Completed Recently
 - ✅ Created FileSystem abstraction in loader package
 - ✅ Designed WASM module structure

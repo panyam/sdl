@@ -6,7 +6,7 @@
  * - Active code has no stale imports referencing moved files
  * - The main entry point (main.ts) only references active page types
  * - DockView theme class is applied to the container
- * - The CanvasViewerPage template sets window.sdlPageData
+ * - The WorkspaceViewerPage template sets window.sdlPageData
  */
 
 import { describe, it, expect } from 'vitest';
@@ -117,25 +117,25 @@ describe('Phase 1: Main Entry Point', () => {
   });
 
   /**
-   * Verifies that main.ts imports the active CanvasViewerPage component
+   * Verifies that main.ts imports the active WorkspaceViewerPage component
    * which is the target architecture for the workspace IDE.
    */
-  it('should import CanvasViewerPageDockView', () => {
+  it('should import WorkspaceViewerPageDockView', () => {
     const mainPath = path.join(SRC_DIR, 'main.ts');
     const content = fs.readFileSync(mainPath, 'utf-8');
 
-    expect(content).toContain('CanvasViewerPageDockView');
+    expect(content).toContain('WorkspaceViewerPageDockView');
   });
 });
 
 describe('Phase 1: DockView Theme', () => {
   /**
-   * Verifies that the CanvasViewerPageDockView applies a dockview theme class
+   * Verifies that the WorkspaceViewerPageDockView applies a dockview theme class
    * to the container element. Without this, dockview panels render unstyled.
    * Reference: system-details-page.ts (now in attic) had this correctly.
    */
-  it('should apply dockview theme class in CanvasViewerPageDockView', () => {
-    const dockviewPath = path.join(SRC_DIR, 'pages/CanvasViewerPage/CanvasViewerPageDockView.ts');
+  it('should apply dockview theme class in WorkspaceViewerPageDockView', () => {
+    const dockviewPath = path.join(SRC_DIR, 'pages/WorkspaceViewerPage/WorkspaceViewerPageDockView.ts');
     const content = fs.readFileSync(dockviewPath, 'utf-8');
 
     expect(content).toContain('dockview-theme-dark');
@@ -160,12 +160,12 @@ describe('Phase 1: DockView Theme', () => {
 
 describe('Phase 1: Template Integrity', () => {
   /**
-   * Verifies that the CanvasViewerPage template sets window.sdlPageData
+   * Verifies that the WorkspaceViewerPage template sets window.sdlPageData
    * in the PostBodySection block. This is required for main.ts to detect
    * the page type and initialize the correct JavaScript component.
    */
-  it('should set window.sdlPageData in CanvasViewerPage template', () => {
-    const templatePath = path.join(WEB_DIR, 'templates/canvases/CanvasViewerPage.html');
+  it('should set window.sdlPageData in WorkspaceViewerPage template', () => {
+    const templatePath = path.join(WEB_DIR, 'templates/canvases/WorkspaceViewerPage.html');
     const content = fs.readFileSync(templatePath, 'utf-8');
 
     expect(content).toContain('window.sdlPageData');

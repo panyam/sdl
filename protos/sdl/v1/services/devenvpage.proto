@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package sdl.v1;
+
+import "wasmjs/v1/annotations.proto";
+import "sdl/v1/models/models.proto";
+import "sdl/v1/models/dashboardpage.proto";
+import "sdl/v1/models/devenvpage.proto";
+
+option go_package = "github.com/panyam/sdl/gen/go/sdl/v1/services";
+
+// DevEnvPage is implemented by the browser/frontend for DevEnv-based UIs.
+// The DevEnv pushes typed updates to this service when simulation state changes.
+// Follows the same browser_provided pattern as CanvasDashboardPage.
+service DevEnvPage {
+  option (wasmjs.v1.browser_provided) = true;
+
+  // === System Panel ===
+
+  // Notify that the active system has changed
+  rpc OnSystemChanged(DevEnvSystemChangedRequest) returns (DevEnvSystemChangedResponse);
+
+  // Notify that the list of available systems has changed
+  rpc OnAvailableSystemsChanged(DevEnvAvailableSystemsRequest) returns (DevEnvAvailableSystemsResponse);
+
+  // === Diagram Panel ===
+
+  // Update the system diagram (reuses existing message)
+  rpc UpdateDiagram(UpdateDiagramRequest) returns (UpdateDiagramResponse);
+
+  // === Generator Panel (CRUD by name) ===
+
+  // Upsert a generator by name
+  rpc UpdateGenerator(DevEnvUpdateGeneratorRequest) returns (DevEnvUpdateGeneratorResponse);
+
+  // Remove a generator by name
+  rpc RemoveGenerator(DevEnvRemoveGeneratorRequest) returns (DevEnvRemoveGeneratorResponse);
+
+  // === Metric Panel (CRUD by name) ===
+
+  // Upsert a metric by name
+  rpc UpdateMetric(DevEnvUpdateMetricRequest) returns (DevEnvUpdateMetricResponse);
+
+  // Remove a metric by name
+  rpc RemoveMetric(DevEnvRemoveMetricRequest) returns (DevEnvRemoveMetricResponse);
+
+  // === Flow Panel ===
+
+  // Update flow rates display (reuses existing message)
+  rpc UpdateFlowRates(UpdateFlowRatesRequest) returns (UpdateFlowRatesResponse);
+
+  // === Console Panel ===
+
+  // Log a message to the console (reuses existing message)
+  rpc LogMessage(LogMessageRequest) returns (LogMessageResponse);
+}

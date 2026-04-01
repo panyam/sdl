@@ -1,6 +1,6 @@
 import './style.css';
 import { ThemeManager } from '@panyam/tsappkit';
-import { CanvasViewerPageDockView } from './pages/CanvasViewerPage';
+import { WorkspaceViewerPageDockView } from './pages/WorkspaceViewerPage';
 
 // Initialize theme from tsappkit (supplements inline script in BasePage.html)
 ThemeManager.init();
@@ -15,7 +15,7 @@ console.log(`[SDL] Page type: ${pageType}`, pageData);
 switch (pageType) {
   case 'canvas-dashboard':
     // Workspace IDE — uses LCMComponent lifecycle from tsappkit
-    CanvasViewerPageDockView.loadAfterPageLoaded('canvasViewerPage', CanvasViewerPageDockView, 'CanvasViewerPageDockView');
+    WorkspaceViewerPageDockView.loadAfterPageLoaded('canvasViewerPage', WorkspaceViewerPageDockView, 'WorkspaceViewerPageDockView');
     break;
 
   case 'workspace-listing':

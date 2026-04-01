@@ -1019,6 +1019,76 @@ export interface UpdateUtilizationResponse {
 }
 
 
+
+export interface DevEnvSystemChangedRequest {
+  systemName: string;
+  /** Full list of available systems after the change */
+  availableSystems: string[];
+}
+
+
+
+export interface DevEnvSystemChangedResponse {
+}
+
+
+
+export interface DevEnvAvailableSystemsRequest {
+  systemNames: string[];
+}
+
+
+
+export interface DevEnvAvailableSystemsResponse {
+}
+
+
+
+export interface DevEnvUpdateGeneratorRequest {
+  name: string;
+  generator?: Generator;
+}
+
+
+
+export interface DevEnvUpdateGeneratorResponse {
+}
+
+
+
+export interface DevEnvRemoveGeneratorRequest {
+  name: string;
+}
+
+
+
+export interface DevEnvRemoveGeneratorResponse {
+}
+
+
+
+export interface DevEnvUpdateMetricRequest {
+  name: string;
+  metric?: Metric;
+}
+
+
+
+export interface DevEnvUpdateMetricResponse {
+}
+
+
+
+export interface DevEnvRemoveMetricRequest {
+  name: string;
+}
+
+
+
+export interface DevEnvRemoveMetricResponse {
+}
+
+
 /**
  * FileInfo represents information about a file or directory
  */

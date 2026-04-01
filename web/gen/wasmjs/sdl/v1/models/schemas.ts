@@ -2778,6 +2778,175 @@ export const UpdateUtilizationResponseSchema: MessageSchema = {
 
 
 /**
+ * Schema for DevEnvSystemChangedRequest message
+ */
+export const DevEnvSystemChangedRequestSchema: MessageSchema = {
+  name: "DevEnvSystemChangedRequest",
+  fields: [
+    {
+      name: "systemName",
+      type: FieldType.STRING,
+      id: 1,
+    },
+    {
+      name: "availableSystems",
+      type: FieldType.REPEATED,
+      id: 2,
+      repeated: true,
+    },
+  ],
+};
+
+
+/**
+ * Schema for DevEnvSystemChangedResponse message
+ */
+export const DevEnvSystemChangedResponseSchema: MessageSchema = {
+  name: "DevEnvSystemChangedResponse",
+  fields: [
+  ],
+};
+
+
+/**
+ * Schema for DevEnvAvailableSystemsRequest message
+ */
+export const DevEnvAvailableSystemsRequestSchema: MessageSchema = {
+  name: "DevEnvAvailableSystemsRequest",
+  fields: [
+    {
+      name: "systemNames",
+      type: FieldType.REPEATED,
+      id: 1,
+      repeated: true,
+    },
+  ],
+};
+
+
+/**
+ * Schema for DevEnvAvailableSystemsResponse message
+ */
+export const DevEnvAvailableSystemsResponseSchema: MessageSchema = {
+  name: "DevEnvAvailableSystemsResponse",
+  fields: [
+  ],
+};
+
+
+/**
+ * Schema for DevEnvUpdateGeneratorRequest message
+ */
+export const DevEnvUpdateGeneratorRequestSchema: MessageSchema = {
+  name: "DevEnvUpdateGeneratorRequest",
+  fields: [
+    {
+      name: "name",
+      type: FieldType.STRING,
+      id: 1,
+    },
+    {
+      name: "generator",
+      type: FieldType.MESSAGE,
+      id: 2,
+      messageType: "sdl.v1.Generator",
+    },
+  ],
+};
+
+
+/**
+ * Schema for DevEnvUpdateGeneratorResponse message
+ */
+export const DevEnvUpdateGeneratorResponseSchema: MessageSchema = {
+  name: "DevEnvUpdateGeneratorResponse",
+  fields: [
+  ],
+};
+
+
+/**
+ * Schema for DevEnvRemoveGeneratorRequest message
+ */
+export const DevEnvRemoveGeneratorRequestSchema: MessageSchema = {
+  name: "DevEnvRemoveGeneratorRequest",
+  fields: [
+    {
+      name: "name",
+      type: FieldType.STRING,
+      id: 1,
+    },
+  ],
+};
+
+
+/**
+ * Schema for DevEnvRemoveGeneratorResponse message
+ */
+export const DevEnvRemoveGeneratorResponseSchema: MessageSchema = {
+  name: "DevEnvRemoveGeneratorResponse",
+  fields: [
+  ],
+};
+
+
+/**
+ * Schema for DevEnvUpdateMetricRequest message
+ */
+export const DevEnvUpdateMetricRequestSchema: MessageSchema = {
+  name: "DevEnvUpdateMetricRequest",
+  fields: [
+    {
+      name: "name",
+      type: FieldType.STRING,
+      id: 1,
+    },
+    {
+      name: "metric",
+      type: FieldType.MESSAGE,
+      id: 2,
+      messageType: "sdl.v1.Metric",
+    },
+  ],
+};
+
+
+/**
+ * Schema for DevEnvUpdateMetricResponse message
+ */
+export const DevEnvUpdateMetricResponseSchema: MessageSchema = {
+  name: "DevEnvUpdateMetricResponse",
+  fields: [
+  ],
+};
+
+
+/**
+ * Schema for DevEnvRemoveMetricRequest message
+ */
+export const DevEnvRemoveMetricRequestSchema: MessageSchema = {
+  name: "DevEnvRemoveMetricRequest",
+  fields: [
+    {
+      name: "name",
+      type: FieldType.STRING,
+      id: 1,
+    },
+  ],
+};
+
+
+/**
+ * Schema for DevEnvRemoveMetricResponse message
+ */
+export const DevEnvRemoveMetricResponseSchema: MessageSchema = {
+  name: "DevEnvRemoveMetricResponse",
+  fields: [
+  ],
+};
+
+
+/**
  * Schema for FileInfo message
  */
 export const FileInfoSchema: MessageSchema = {
@@ -4038,6 +4207,18 @@ export const sdl_v1SchemaRegistry: Record<string, MessageSchema> = {
   "sdl.v1.ClearFlowPathsResponse": ClearFlowPathsResponseSchema,
   "sdl.v1.UpdateUtilizationRequest": UpdateUtilizationRequestSchema,
   "sdl.v1.UpdateUtilizationResponse": UpdateUtilizationResponseSchema,
+  "sdl.v1.DevEnvSystemChangedRequest": DevEnvSystemChangedRequestSchema,
+  "sdl.v1.DevEnvSystemChangedResponse": DevEnvSystemChangedResponseSchema,
+  "sdl.v1.DevEnvAvailableSystemsRequest": DevEnvAvailableSystemsRequestSchema,
+  "sdl.v1.DevEnvAvailableSystemsResponse": DevEnvAvailableSystemsResponseSchema,
+  "sdl.v1.DevEnvUpdateGeneratorRequest": DevEnvUpdateGeneratorRequestSchema,
+  "sdl.v1.DevEnvUpdateGeneratorResponse": DevEnvUpdateGeneratorResponseSchema,
+  "sdl.v1.DevEnvRemoveGeneratorRequest": DevEnvRemoveGeneratorRequestSchema,
+  "sdl.v1.DevEnvRemoveGeneratorResponse": DevEnvRemoveGeneratorResponseSchema,
+  "sdl.v1.DevEnvUpdateMetricRequest": DevEnvUpdateMetricRequestSchema,
+  "sdl.v1.DevEnvUpdateMetricResponse": DevEnvUpdateMetricResponseSchema,
+  "sdl.v1.DevEnvRemoveMetricRequest": DevEnvRemoveMetricRequestSchema,
+  "sdl.v1.DevEnvRemoveMetricResponse": DevEnvRemoveMetricResponseSchema,
   "sdl.v1.FileInfo": FileInfoSchema,
   "sdl.v1.FilesystemInfo": FilesystemInfoSchema,
   "sdl.v1.ListFilesystemsRequest": ListFilesystemsRequestSchema,

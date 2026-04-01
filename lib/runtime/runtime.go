@@ -153,6 +153,7 @@ func (r *Runtime) SetParam(system *SystemInstance, paramPath string, newValue de
 
 // Get all available system declarations across all file instnces as a map
 func (r *Runtime) AvailableSystems() (out map[string]*SystemDecl) {
+	out = make(map[string]*SystemDecl)
 	for _, finst := range r.fileInstances {
 		sysDecls, _ := finst.Decl.GetSystems()
 		for name, sysDecl := range sysDecls {

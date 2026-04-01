@@ -2,6 +2,7 @@ import { BasePage, LCMComponent } from '@panyam/tsappkit';
 import SdlBundle from '../../../gen/wasmjs';
 import { CanvasServiceClient } from '../../../gen/wasmjs/sdl/v1/services/canvasServiceClient';
 import { CanvasDashboardPageMethods } from '../../../gen/wasmjs/sdl/v1/services/canvasDashboardPageClient';
+import { DevEnvPageMethods } from '../../../gen/wasmjs/sdl/v1/services/devEnvPageClient';
 import { CanvasViewPresenterClient } from '../../../gen/wasmjs/sdl/v1/services/canvasViewPresenterClient';
 import { SingletonInitializerServiceClient } from '../../../gen/wasmjs/sdl/v1/services/singletonInitializerServiceClient';
 import {
@@ -19,6 +20,12 @@ import {
     ShowFlowPathRequest, ShowFlowPathResponse,
     ClearFlowPathsRequest, ClearFlowPathsResponse,
     UpdateUtilizationRequest, UpdateUtilizationResponse,
+    DevEnvSystemChangedRequest, DevEnvSystemChangedResponse,
+    DevEnvAvailableSystemsRequest, DevEnvAvailableSystemsResponse,
+    DevEnvUpdateGeneratorRequest, DevEnvUpdateGeneratorResponse,
+    DevEnvRemoveGeneratorRequest, DevEnvRemoveGeneratorResponse,
+    DevEnvUpdateMetricRequest, DevEnvUpdateMetricResponse,
+    DevEnvRemoveMetricRequest, DevEnvRemoveMetricResponse,
     SystemDiagram,
     Generator,
     Metric,
@@ -37,7 +44,7 @@ export type PanelId = 'diagram' | 'editor' | 'console' | 'generators' | 'metrics
  *
  * Implements CanvasDashboardPageMethods to receive callbacks from the WASM presenter.
  */
-export abstract class CanvasViewerPageBase extends BasePage implements LCMComponent, CanvasDashboardPageMethods {
+export abstract class WorkspaceViewerPageBase extends BasePage implements LCMComponent, CanvasDashboardPageMethods, DevEnvPageMethods {
     // =========================================================================
     // Protected Fields - Available to child classes
     // =========================================================================
@@ -138,7 +145,7 @@ export abstract class CanvasViewerPageBase extends BasePage implements LCMCompon
         this.currentCanvasId = pageData.canvasId || 'default';
         this.readonly = pageData.readonly || false;
 
-        console.log(`[CanvasViewerPage] Initializing canvas: ${this.currentCanvasId} (readonly: ${this.readonly})`);
+        console.log(`[WorkspaceViewerPage] Initializing canvas: ${this.currentCanvasId} (readonly: ${this.readonly})`);
 
         // Initialize layout system (DockView/Grid)
         await this.initializeLayout();
@@ -168,12 +175,12 @@ export abstract class CanvasViewerPageBase extends BasePage implements LCMCompon
         this.bindCanvasEvents();
 
         // Register this page as browser service for WASM callbacks
-        this.wasmBundle.registerBrowserService('CanvasDashboardPage', this);
+        this.wasmBundle.registerBrowserService('DevEnvPage', this);
 
         // Initialize the presenter
         await this.initializePresenter();
 
-        console.log('[CanvasViewerPage] Activated and ready');
+        console.log('[WorkspaceViewerPage] Activated and ready');
     }
 
     // =========================================================================
@@ -194,7 +201,7 @@ export abstract class CanvasViewerPageBase extends BasePage implements LCMCompon
         await this.wasmBundle.loadWasm(wasmPath);
         await this.wasmBundle.waitUntilReady();
 
-        console.log('[CanvasViewerPage] WASM bundle loaded');
+        console.log('[WorkspaceViewerPage] WASM bundle loaded');
     }
 
     /**
@@ -210,7 +217,7 @@ export abstract class CanvasViewerPageBase extends BasePage implements LCMCompon
             throw new Error(`Presenter initialization failed: ${response.error}`);
         }
 
-        console.log('[CanvasViewerPage] Presenter initialized:', response);
+        console.log('[WorkspaceViewerPage] Presenter initialized:', response);
     }
 
     /**
@@ -242,7 +249,7 @@ export abstract class CanvasViewerPageBase extends BasePage implements LCMCompon
      */
     protected async handleSave(): Promise<void> {
         // To be implemented by child classes
-        console.log('[CanvasViewerPage] Save requested');
+        console.log('[WorkspaceViewerPage] Save requested');
     }
 
     /**
@@ -283,27 +290,27 @@ export abstract class CanvasViewerPageBase extends BasePage implements LCMCompon
     // =========================================================================
 
     async updateMetric(request: UpdateMetricRequest): Promise<UpdateMetricResponse> {
-        console.log('[CanvasViewerPage] updateMetric:', request);
+        console.log('[WorkspaceViewerPage] updateMetric:', request);
         // Update specific metric - child class handles rendering
         return {};
     }
 
     async clearMetrics(_: ClearMetricsRequest): Promise<ClearMetricsResponse> {
-        console.log('[CanvasViewerPage] clearMetrics');
+        console.log('[WorkspaceViewerPage] clearMetrics');
         this.currentMetrics = [];
         this.renderMetrics([]);
         return {};
     }
 
     async setMetricsList(request: SetMetricsListRequest): Promise<SetMetricsListResponse> {
-        console.log('[CanvasViewerPage] setMetricsList:', request.metrics?.length || 0, 'metrics');
+        console.log('[WorkspaceViewerPage] setMetricsList:', request.metrics?.length || 0, 'metrics');
         this.currentMetrics = request.metrics || [];
         this.renderMetrics(this.currentMetrics);
         return {};
     }
 
     async updateDiagram(request: UpdateDiagramRequest): Promise<UpdateDiagramResponse> {
-        console.log('[CanvasViewerPage] updateDiagram');
+        console.log('[WorkspaceViewerPage] updateDiagram');
         if (request.diagram) {
             this.currentDiagram = request.diagram;
             this.renderDiagram(request.diagram);
@@ -312,19 +319,19 @@ export abstract class CanvasViewerPageBase extends BasePage implements LCMCompon
     }
 
     async highlightComponents(request: HighlightComponentsRequest): Promise<HighlightComponentsResponse> {
-        console.log('[CanvasViewerPage] highlightComponents:', request.componentIds);
+        console.log('[WorkspaceViewerPage] highlightComponents:', request.componentIds);
         this.highlightDiagramComponents(request.componentIds || []);
         return {};
     }
 
     async clearHighlights(_: ClearHighlightsRequest): Promise<ClearHighlightsResponse> {
-        console.log('[CanvasViewerPage] clearHighlights');
+        console.log('[WorkspaceViewerPage] clearHighlights');
         this.clearDiagramHighlights();
         return {};
     }
 
     async updateGeneratorState(request: UpdateGeneratorStateRequest): Promise<UpdateGeneratorStateResponse> {
-        console.log('[CanvasViewerPage] updateGeneratorState:', request.generatorId, request.status);
+        console.log('[WorkspaceViewerPage] updateGeneratorState:', request.generatorId, request.status);
         // Update specific generator state
         const idx = this.currentGenerators.findIndex(g => g.id === request.generatorId);
         if (idx >= 0) {
@@ -339,46 +346,108 @@ export abstract class CanvasViewerPageBase extends BasePage implements LCMCompon
     }
 
     async setGeneratorList(request: SetGeneratorListRequest): Promise<SetGeneratorListResponse> {
-        console.log('[CanvasViewerPage] setGeneratorList:', request.generators?.length || 0, 'generators');
+        console.log('[WorkspaceViewerPage] setGeneratorList:', request.generators?.length || 0, 'generators');
         this.currentGenerators = request.generators || [];
         this.renderGenerators(this.currentGenerators);
         return {};
     }
 
     async logMessage(request: LogMessageRequest): Promise<LogMessageResponse> {
-        console.log('[CanvasViewerPage] logMessage:', request.level, request.message);
+        console.log('[WorkspaceViewerPage] logMessage:', request.level, request.message);
         this.logToConsole(request.level || 'info', request.message || '');
         return {};
     }
 
     async clearConsole(_: ClearConsoleRequest): Promise<ClearConsoleResponse> {
-        console.log('[CanvasViewerPage] clearConsole');
+        console.log('[WorkspaceViewerPage] clearConsole');
         this.clearConsolePanel();
         return {};
     }
 
     async updateFlowRates(request: UpdateFlowRatesRequest): Promise<UpdateFlowRatesResponse> {
-        console.log('[CanvasViewerPage] updateFlowRates:', request.strategy);
+        console.log('[WorkspaceViewerPage] updateFlowRates:', request.strategy);
         this.flowRates = request.rates || {};
         this.renderFlowRates(this.flowRates);
         return {};
     }
 
     async showFlowPath(_: ShowFlowPathRequest): Promise<ShowFlowPathResponse> {
-        console.log('[CanvasViewerPage] showFlowPath');
+        console.log('[WorkspaceViewerPage] showFlowPath');
         // Child class can implement flow path visualization
         return {};
     }
 
     async clearFlowPaths(_: ClearFlowPathsRequest): Promise<ClearFlowPathsResponse> {
-        console.log('[CanvasViewerPage] clearFlowPaths');
+        console.log('[WorkspaceViewerPage] clearFlowPaths');
         // Child class can implement
         return {};
     }
 
     async updateUtilization(_: UpdateUtilizationRequest): Promise<UpdateUtilizationResponse> {
-        console.log('[CanvasViewerPage] updateUtilization');
+        console.log('[WorkspaceViewerPage] updateUtilization');
         // Child class can implement utilization display
         return {};
     }
+
+    // =========================================================================
+    // DevEnvPageMethods Interface - Browser RPC Methods
+    // Called by DevEnv (via DevEnvPageForwarder) to push state updates
+    // CRUD-by-name pattern for generators and metrics
+    // =========================================================================
+
+    onSystemChanged(request: DevEnvSystemChangedRequest): DevEnvSystemChangedResponse {
+        console.log('[WorkspaceViewerPage] onSystemChanged:', request.systemName);
+        return {};
+    }
+
+    onAvailableSystemsChanged(request: DevEnvAvailableSystemsRequest): DevEnvAvailableSystemsResponse {
+        console.log('[WorkspaceViewerPage] onAvailableSystemsChanged:', request.systemNames);
+        return {};
+    }
+
+    // Note: updateDiagram is shared with CanvasDashboardPageMethods (already implemented above)
+
+    updateGenerator(request: DevEnvUpdateGeneratorRequest): DevEnvUpdateGeneratorResponse {
+        console.log('[WorkspaceViewerPage] updateGenerator:', request.name);
+        if (request.generator) {
+            const idx = this.currentGenerators.findIndex(g => g.name === request.name);
+            if (idx >= 0) {
+                this.currentGenerators[idx] = request.generator;
+            } else {
+                this.currentGenerators.push(request.generator);
+            }
+            this.renderGenerators(this.currentGenerators);
+        }
+        return {};
+    }
+
+    removeGenerator(request: DevEnvRemoveGeneratorRequest): DevEnvRemoveGeneratorResponse {
+        console.log('[WorkspaceViewerPage] removeGenerator:', request.name);
+        this.currentGenerators = this.currentGenerators.filter(g => g.name !== request.name);
+        this.renderGenerators(this.currentGenerators);
+        return {};
+    }
+
+    updateMetric(request: DevEnvUpdateMetricRequest): DevEnvUpdateMetricResponse {
+        console.log('[WorkspaceViewerPage] updateMetric:', request.name);
+        if (request.metric) {
+            const idx = this.currentMetrics.findIndex(m => m.name === request.name);
+            if (idx >= 0) {
+                this.currentMetrics[idx] = request.metric;
+            } else {
+                this.currentMetrics.push(request.metric);
+            }
+            this.renderMetrics(this.currentMetrics);
+        }
+        return {};
+    }
+
+    removeMetric(request: DevEnvRemoveMetricRequest): DevEnvRemoveMetricResponse {
+        console.log('[WorkspaceViewerPage] removeMetric:', request.name);
+        this.currentMetrics = this.currentMetrics.filter(m => m.name !== request.name);
+        this.renderMetrics(this.currentMetrics);
+        return {};
+    }
+
+    // Note: updateFlowRates and logMessage are shared with CanvasDashboardPageMethods (already implemented above)
 }

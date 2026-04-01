@@ -12,6 +12,9 @@
       "name": "CanvasDashboardPage"
     },
     {
+      "name": "DevEnvPage"
+    },
+    {
       "name": "FilesystemService"
     },
     {
@@ -2335,6 +2338,24 @@
       "type": "object"
     },
     "v1DeleteWorkspaceResponse": {
+      "type": "object"
+    },
+    "v1DevEnvAvailableSystemsResponse": {
+      "type": "object"
+    },
+    "v1DevEnvRemoveGeneratorResponse": {
+      "type": "object"
+    },
+    "v1DevEnvRemoveMetricResponse": {
+      "type": "object"
+    },
+    "v1DevEnvSystemChangedResponse": {
+      "type": "object"
+    },
+    "v1DevEnvUpdateGeneratorResponse": {
+      "type": "object"
+    },
+    "v1DevEnvUpdateMetricResponse": {
       "type": "object"
     },
     "v1DiagramComponentClickedResponse": {
