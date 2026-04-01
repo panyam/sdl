@@ -37,7 +37,7 @@ func init() {
 // Uses DevEnv directly instead of the old Canvas/SingletonCanvasService pipeline.
 type SingletonInitializerService struct {
 	DevEnv    *services.DevEnv
-	Presenter *services.DevEnvPresenter
+	Presenter *services.WorkspacePresenter
 }
 
 func (s *SingletonInitializerService) InitializeSingleton(ctx context.Context, req *protos.InitializeSingletonRequest) (*protos.InitializeSingletonResponse, error) {
@@ -92,13 +92,13 @@ func main() {
 	fsResolver := loader.NewFileSystemResolver(fileSystem)
 	devEnv := services.NewDevEnv(fsResolver)
 
-	// Create browser page forwarder (DevEnvPageHandler -> DevEnvPageClient)
+	// Create browser page forwarder (WorkspacePage -> DevEnvPageClient)
 	devEnvPageClient := wasmservices.NewDevEnvPageClient()
-	browserPage := NewBrowserDevEnvPage(devEnvPageClient)
+	browserPage := NewBrowserWorkspacePage(devEnvPageClient)
 	devEnv.SetPage(browserPage)
 
 	// Create presenter (CanvasViewPresenterServer -> DevEnv)
-	devEnvPresenter := services.NewDevEnvPresenter(devEnv)
+	devEnvPresenter := services.NewWorkspacePresenter(devEnv)
 
 	// Create initializer service
 	initializerService := &SingletonInitializerService{

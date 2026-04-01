@@ -12,19 +12,19 @@ import (
 	"github.com/panyam/sdl/services"
 )
 
-// BrowserDevEnvPage implements DevEnvPageHandler by forwarding calls to the
+// BrowserWorkspacePage implements WorkspacePage by forwarding calls to the
 // generated DevEnvPageClient (WASM browser channel). Follows the lilbattle
 // Browser*Panel convention where browser-specific WASM types live in
 // cmd/wasm/browser.go and service-layer code uses Go interfaces.
-type BrowserDevEnvPage struct {
+type BrowserWorkspacePage struct {
 	DevEnvPage *wasmservices.DevEnvPageClient
 }
 
-func NewBrowserDevEnvPage(devEnvPage *wasmservices.DevEnvPageClient) *BrowserDevEnvPage {
-	return &BrowserDevEnvPage{DevEnvPage: devEnvPage}
+func NewBrowserWorkspacePage(devEnvPage *wasmservices.DevEnvPageClient) *BrowserWorkspacePage {
+	return &BrowserWorkspacePage{DevEnvPage: devEnvPage}
 }
 
-func (f *BrowserDevEnvPage) OnSystemChanged(systemName string, availableSystems []string) {
+func (f *BrowserWorkspacePage) OnSystemChanged(systemName string, availableSystems []string) {
 	if f.DevEnvPage == nil {
 		return
 	}
@@ -33,11 +33,11 @@ func (f *BrowserDevEnvPage) OnSystemChanged(systemName string, availableSystems 
 		AvailableSystems: availableSystems,
 	})
 	if err != nil {
-		log.Printf("BrowserDevEnvPage: OnSystemChanged error: %v", err)
+		log.Printf("BrowserWorkspacePage: OnSystemChanged error: %v", err)
 	}
 }
 
-func (f *BrowserDevEnvPage) OnAvailableSystemsChanged(systemNames []string) {
+func (f *BrowserWorkspacePage) OnAvailableSystemsChanged(systemNames []string) {
 	if f.DevEnvPage == nil {
 		return
 	}
@@ -45,11 +45,11 @@ func (f *BrowserDevEnvPage) OnAvailableSystemsChanged(systemNames []string) {
 		SystemNames: systemNames,
 	})
 	if err != nil {
-		log.Printf("BrowserDevEnvPage: OnAvailableSystemsChanged error: %v", err)
+		log.Printf("BrowserWorkspacePage: OnAvailableSystemsChanged error: %v", err)
 	}
 }
 
-func (f *BrowserDevEnvPage) UpdateDiagram(diagram *services.SystemDiagram) {
+func (f *BrowserWorkspacePage) UpdateDiagram(diagram *services.SystemDiagram) {
 	if f.DevEnvPage == nil {
 		return
 	}
@@ -57,11 +57,11 @@ func (f *BrowserDevEnvPage) UpdateDiagram(diagram *services.SystemDiagram) {
 		Diagram: services.ToProtoSystemDiagram(diagram),
 	})
 	if err != nil {
-		log.Printf("BrowserDevEnvPage: UpdateDiagram error: %v", err)
+		log.Printf("BrowserWorkspacePage: UpdateDiagram error: %v", err)
 	}
 }
 
-func (f *BrowserDevEnvPage) UpdateGenerator(name string, generator *protos.Generator) {
+func (f *BrowserWorkspacePage) UpdateGenerator(name string, generator *protos.Generator) {
 	if f.DevEnvPage == nil {
 		return
 	}
@@ -70,11 +70,11 @@ func (f *BrowserDevEnvPage) UpdateGenerator(name string, generator *protos.Gener
 		Generator: generator,
 	})
 	if err != nil {
-		log.Printf("BrowserDevEnvPage: UpdateGenerator error: %v", err)
+		log.Printf("BrowserWorkspacePage: UpdateGenerator error: %v", err)
 	}
 }
 
-func (f *BrowserDevEnvPage) RemoveGenerator(name string) {
+func (f *BrowserWorkspacePage) RemoveGenerator(name string) {
 	if f.DevEnvPage == nil {
 		return
 	}
@@ -82,11 +82,11 @@ func (f *BrowserDevEnvPage) RemoveGenerator(name string) {
 		Name: name,
 	})
 	if err != nil {
-		log.Printf("BrowserDevEnvPage: RemoveGenerator error: %v", err)
+		log.Printf("BrowserWorkspacePage: RemoveGenerator error: %v", err)
 	}
 }
 
-func (f *BrowserDevEnvPage) UpdateMetric(name string, metric *protos.Metric) {
+func (f *BrowserWorkspacePage) UpdateMetric(name string, metric *protos.Metric) {
 	if f.DevEnvPage == nil {
 		return
 	}
@@ -95,11 +95,11 @@ func (f *BrowserDevEnvPage) UpdateMetric(name string, metric *protos.Metric) {
 		Metric: metric,
 	})
 	if err != nil {
-		log.Printf("BrowserDevEnvPage: UpdateMetric error: %v", err)
+		log.Printf("BrowserWorkspacePage: UpdateMetric error: %v", err)
 	}
 }
 
-func (f *BrowserDevEnvPage) RemoveMetric(name string) {
+func (f *BrowserWorkspacePage) RemoveMetric(name string) {
 	if f.DevEnvPage == nil {
 		return
 	}
@@ -107,11 +107,11 @@ func (f *BrowserDevEnvPage) RemoveMetric(name string) {
 		Name: name,
 	})
 	if err != nil {
-		log.Printf("BrowserDevEnvPage: RemoveMetric error: %v", err)
+		log.Printf("BrowserWorkspacePage: RemoveMetric error: %v", err)
 	}
 }
 
-func (f *BrowserDevEnvPage) UpdateFlowRates(rates map[string]float64, strategy string) {
+func (f *BrowserWorkspacePage) UpdateFlowRates(rates map[string]float64, strategy string) {
 	if f.DevEnvPage == nil {
 		return
 	}
@@ -120,11 +120,11 @@ func (f *BrowserDevEnvPage) UpdateFlowRates(rates map[string]float64, strategy s
 		Strategy: strategy,
 	})
 	if err != nil {
-		log.Printf("BrowserDevEnvPage: UpdateFlowRates error: %v", err)
+		log.Printf("BrowserWorkspacePage: UpdateFlowRates error: %v", err)
 	}
 }
 
-func (f *BrowserDevEnvPage) LogMessage(level string, message string, source string) {
+func (f *BrowserWorkspacePage) LogMessage(level string, message string, source string) {
 	if f.DevEnvPage == nil {
 		return
 	}
@@ -134,6 +134,6 @@ func (f *BrowserDevEnvPage) LogMessage(level string, message string, source stri
 		Source:  source,
 	})
 	if err != nil {
-		log.Printf("BrowserDevEnvPage: LogMessage error: %v", err)
+		log.Printf("BrowserWorkspacePage: LogMessage error: %v", err)
 	}
 }

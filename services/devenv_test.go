@@ -3,10 +3,8 @@ package services
 import (
 	"path/filepath"
 	"runtime"
-	"sync"
 	"testing"
 
-	protos "github.com/panyam/sdl/gen/go/sdl/v1/models"
 	"github.com/panyam/sdl/lib/loader"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,118 +14,6 @@ import (
 func testFixturePath(name string) string {
 	_, filename, _, _ := runtime.Caller(0)
 	return filepath.Join(filepath.Dir(filename), "..", "test", "fixtures", name)
-}
-
-// mockDevEnvPage records all calls from DevEnv for test assertions.
-type mockDevEnvPage struct {
-	mu sync.Mutex
-
-	// System panel
-	systemChangedCalls []struct {
-		SystemName       string
-		AvailableSystems []string
-	}
-	availableSystemsCalls [][]string
-
-	// Diagram panel
-	diagramCalls []*SystemDiagram
-
-	// Generator panel
-	updateGeneratorCalls []struct {
-		Name      string
-		Generator *protos.Generator
-	}
-	removeGeneratorCalls []string
-
-	// Metric panel
-	updateMetricCalls []struct {
-		Name   string
-		Metric *protos.Metric
-	}
-	removeMetricCalls []string
-
-	// Flow panel
-	flowRatesCalls []struct {
-		Rates    map[string]float64
-		Strategy string
-	}
-
-	// Console panel
-	logCalls []struct {
-		Level, Message, Source string
-	}
-}
-
-func newMockDevEnvPage() *mockDevEnvPage {
-	return &mockDevEnvPage{}
-}
-
-func (m *mockDevEnvPage) OnSystemChanged(systemName string, availableSystems []string) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.systemChangedCalls = append(m.systemChangedCalls, struct {
-		SystemName       string
-		AvailableSystems []string
-	}{systemName, availableSystems})
-}
-
-func (m *mockDevEnvPage) OnAvailableSystemsChanged(systemNames []string) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.availableSystemsCalls = append(m.availableSystemsCalls, systemNames)
-}
-
-func (m *mockDevEnvPage) UpdateDiagram(diagram *SystemDiagram) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.diagramCalls = append(m.diagramCalls, diagram)
-}
-
-func (m *mockDevEnvPage) UpdateGenerator(name string, generator *protos.Generator) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.updateGeneratorCalls = append(m.updateGeneratorCalls, struct {
-		Name      string
-		Generator *protos.Generator
-	}{name, generator})
-}
-
-func (m *mockDevEnvPage) RemoveGenerator(name string) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.removeGeneratorCalls = append(m.removeGeneratorCalls, name)
-}
-
-func (m *mockDevEnvPage) UpdateMetric(name string, metric *protos.Metric) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.updateMetricCalls = append(m.updateMetricCalls, struct {
-		Name   string
-		Metric *protos.Metric
-	}{name, metric})
-}
-
-func (m *mockDevEnvPage) RemoveMetric(name string) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.removeMetricCalls = append(m.removeMetricCalls, name)
-}
-
-func (m *mockDevEnvPage) UpdateFlowRates(rates map[string]float64, strategy string) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.flowRatesCalls = append(m.flowRatesCalls, struct {
-		Rates    map[string]float64
-		Strategy string
-	}{rates, strategy})
-}
-
-func (m *mockDevEnvPage) LogMessage(level string, message string, source string) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.logCalls = append(m.logCalls, struct {
-		Level, Message, Source string
-	}{level, message, source})
 }
 
 // newTestDevEnv creates a DevEnv with a default file resolver for test fixtures.
@@ -159,18 +45,17 @@ func TestDevEnvLoadAndDiscoverSystems(t *testing.T) {
 }
 
 // TestDevEnvLoadNotifiesPage verifies that loading a file triggers
-// OnAvailableSystemsChanged on the attached page handler, so the UI
+// OnAvailableSystemsChanged on the attached workspace page, so the UI
 // can update its system selector.
 func TestDevEnvLoadNotifiesPage(t *testing.T) {
 	dev := newTestDevEnv()
-	page := newMockDevEnvPage()
+	page := NewConsoleWorkspacePage(false)
 	dev.SetPage(page)
 
 	err := dev.LoadFile(testFixturePath("system_with_generators.sdl"))
 	require.NoError(t, err)
 
-	assert.Len(t, page.availableSystemsCalls, 1)
-	assert.Contains(t, page.availableSystemsCalls[0], "SimpleAppLoadTest")
+	assert.Contains(t, page.AvailableSystems, "SimpleAppLoadTest")
 }
 
 // TestDevEnvUseSystem verifies that Use() activates a system by name,
@@ -198,15 +83,14 @@ func TestDevEnvUseSystemNotFound(t *testing.T) {
 }
 
 // TestDevEnvPanelNotificationsOnUse verifies that when Use() activates a system,
-// the page handler receives a full state push:
-// - OnSystemChanged with the system name and available systems
+// the workspace page receives a full state push:
+// - OnSystemChanged with the system name
 // - UpdateDiagram with the system topology
 // - UpdateGenerator for each declared generator (from system block)
-// - UpdateMetric for each declared metric (from system block)
 // This ensures late-joining UIs get a complete state snapshot.
 func TestDevEnvPanelNotificationsOnUse(t *testing.T) {
 	dev := newTestDevEnv()
-	page := newMockDevEnvPage()
+	page := NewConsoleWorkspacePage(false)
 	dev.SetPage(page)
 
 	err := dev.LoadFile(testFixturePath("system_with_generators.sdl"))
@@ -215,30 +99,25 @@ func TestDevEnvPanelNotificationsOnUse(t *testing.T) {
 	err = dev.Use("SimpleAppLoadTest")
 	require.NoError(t, err)
 
-	// System changed notification
-	require.Len(t, page.systemChangedCalls, 1)
-	assert.Equal(t, "SimpleAppLoadTest", page.systemChangedCalls[0].SystemName)
+	// System changed
+	assert.Equal(t, "SimpleAppLoadTest", page.ActiveSystem)
 
-	// Diagram notification
-	require.Len(t, page.diagramCalls, 1)
-	assert.Equal(t, "SimpleAppLoadTest", page.diagramCalls[0].SystemName)
+	// Diagram pushed
+	require.NotNil(t, page.Diagram)
+	assert.Equal(t, "SimpleAppLoadTest", page.Diagram.SystemName)
 
-	// Generator notifications: fixture declares "traffic" and "health"
-	assert.GreaterOrEqual(t, len(page.updateGeneratorCalls), 2)
-	genNames := make(map[string]bool)
-	for _, call := range page.updateGeneratorCalls {
-		genNames[call.Name] = true
-	}
-	assert.True(t, genNames["traffic"], "expected 'traffic' generator notification")
-	assert.True(t, genNames["health"], "expected 'health' generator notification")
+	// Generators: fixture declares "traffic" and "health"
+	assert.Len(t, page.Generators, 2)
+	assert.Contains(t, page.Generators, "traffic")
+	assert.Contains(t, page.Generators, "health")
 }
 
 // TestDevEnvMetricsNotificationsOnUse verifies that when Use() activates a system
-// with declared metrics, the page handler receives UpdateMetric for each one.
+// with declared metrics, the workspace page receives UpdateMetric for each one.
 // Uses the system_with_metrics.sdl fixture which declares 3 metrics.
 func TestDevEnvMetricsNotificationsOnUse(t *testing.T) {
 	dev := newTestDevEnv()
-	page := newMockDevEnvPage()
+	page := NewConsoleWorkspacePage(false)
 	dev.SetPage(page)
 
 	err := dev.LoadFile(testFixturePath("system_with_metrics.sdl"))
@@ -248,24 +127,20 @@ func TestDevEnvMetricsNotificationsOnUse(t *testing.T) {
 	require.NoError(t, err)
 
 	// Fixture declares 3 metrics: request_latency, throughput, health_latency
-	assert.GreaterOrEqual(t, len(page.updateMetricCalls), 3)
-	metricNames := make(map[string]bool)
-	for _, call := range page.updateMetricCalls {
-		metricNames[call.Name] = true
-	}
-	assert.True(t, metricNames["request_latency"])
-	assert.True(t, metricNames["throughput"])
-	assert.True(t, metricNames["health_latency"])
+	assert.Len(t, page.Metrics, 3)
+	assert.Contains(t, page.Metrics, "request_latency")
+	assert.Contains(t, page.Metrics, "throughput")
+	assert.Contains(t, page.Metrics, "health_latency")
 }
 
 // TestDevEnvGeneratorLifecycle verifies the full generator lifecycle:
-// 1. Use() auto-creates declared generators (not started yet in DevEnv)
-// 2. Generators can be looked up by name
-// 3. RemoveGenerator removes and notifies page
+// 1. Use() auto-creates declared generators
+// 2. Generators appear in the page's recorded state
+// 3. RemoveGenerator removes from page state
 // This tests the CRUD operations on generators from the DevEnv API.
 func TestDevEnvGeneratorLifecycle(t *testing.T) {
 	dev := newTestDevEnv()
-	page := newMockDevEnvPage()
+	page := NewConsoleWorkspacePage(false)
 	dev.SetPage(page)
 
 	err := dev.LoadFile(testFixturePath("system_with_generators.sdl"))
@@ -273,28 +148,19 @@ func TestDevEnvGeneratorLifecycle(t *testing.T) {
 	err = dev.Use("SimpleAppLoadTest")
 	require.NoError(t, err)
 
-	// Generators should exist
-	dev.generatorsLock.RLock()
-	assert.Len(t, dev.generators, 2)
-	_, hasTraffic := dev.generators["traffic"]
-	_, hasHealth := dev.generators["health"]
-	dev.generatorsLock.RUnlock()
-	assert.True(t, hasTraffic)
-	assert.True(t, hasHealth)
+	// Generators should exist in page state
+	assert.Len(t, page.Generators, 2)
+	assert.Contains(t, page.Generators, "traffic")
+	assert.Contains(t, page.Generators, "health")
 
 	// Remove one generator
-	initialUpdateCalls := len(page.updateGeneratorCalls)
 	err = dev.RemoveGenerator("traffic")
 	require.NoError(t, err)
 
-	// Verify removal
-	dev.generatorsLock.RLock()
-	assert.Len(t, dev.generators, 1)
-	dev.generatorsLock.RUnlock()
-
-	// Page should have been notified of removal
-	assert.Len(t, page.removeGeneratorCalls, 1)
-	assert.Equal(t, "traffic", page.removeGeneratorCalls[0])
+	// Page should reflect removal
+	assert.Len(t, page.Generators, 1)
+	assert.NotContains(t, page.Generators, "traffic")
+	assert.Contains(t, page.Generators, "health")
 
 	// Removing non-existent should error
 	err = dev.RemoveGenerator("traffic")
@@ -303,16 +169,16 @@ func TestDevEnvGeneratorLifecycle(t *testing.T) {
 	// Update rate on remaining generator
 	err = dev.UpdateGenerator("health", 5.0)
 	require.NoError(t, err)
-	assert.Greater(t, len(page.updateGeneratorCalls), initialUpdateCalls)
+	assert.Equal(t, float64(5.0), page.Generators["health"].Rate)
 }
 
 // TestDevEnvMetricLifecycle verifies manual metric add/remove operations:
-// 1. After Use(), declared metrics exist in the tracer
-// 2. RemoveMetric removes by ID and notifies page
+// 1. After Use(), declared metrics appear in page state
+// 2. RemoveMetric removes from page state
 // This tests the CRUD operations on metrics from the DevEnv API.
 func TestDevEnvMetricLifecycle(t *testing.T) {
 	dev := newTestDevEnv()
-	page := newMockDevEnvPage()
+	page := NewConsoleWorkspacePage(false)
 	dev.SetPage(page)
 
 	err := dev.LoadFile(testFixturePath("system_with_metrics.sdl"))
@@ -320,22 +186,16 @@ func TestDevEnvMetricLifecycle(t *testing.T) {
 	err = dev.Use("SimpleAppTest")
 	require.NoError(t, err)
 
-	// Metrics should be in the tracer
-	require.NotNil(t, dev.metricTracer)
-	specs := dev.metricTracer.ListMetricSpec()
-	assert.Len(t, specs, 3)
+	// Metrics should be in page state
+	assert.Len(t, page.Metrics, 3)
 
 	// Remove one metric
 	err = dev.RemoveMetric("request_latency")
 	require.NoError(t, err)
 
-	// Verify removal
-	specs = dev.metricTracer.ListMetricSpec()
-	assert.Len(t, specs, 2)
-
-	// Page should have been notified
-	assert.Len(t, page.removeMetricCalls, 1)
-	assert.Equal(t, "request_latency", page.removeMetricCalls[0])
+	// Page should reflect removal
+	assert.Len(t, page.Metrics, 2)
+	assert.NotContains(t, page.Metrics, "request_latency")
 }
 
 // TestDevEnvSystemSwitch verifies that switching between systems via Use()
@@ -343,7 +203,7 @@ func TestDevEnvMetricLifecycle(t *testing.T) {
 // Generators from the old system should be cleared, and new ones created.
 func TestDevEnvSystemSwitch(t *testing.T) {
 	dev := newTestDevEnv()
-	page := newMockDevEnvPage()
+	page := NewConsoleWorkspacePage(false)
 	dev.SetPage(page)
 
 	// Load both fixtures (they define different systems)
@@ -355,27 +215,23 @@ func TestDevEnvSystemSwitch(t *testing.T) {
 	// Use first system
 	err = dev.Use("SimpleAppLoadTest")
 	require.NoError(t, err)
-	assert.Len(t, page.systemChangedCalls, 1)
+	assert.Equal(t, "SimpleAppLoadTest", page.ActiveSystem)
 
 	// Use second system
 	err = dev.Use("SimpleAppTest")
 	require.NoError(t, err)
-	assert.Len(t, page.systemChangedCalls, 2)
-	assert.Equal(t, "SimpleAppTest", page.systemChangedCalls[1].SystemName)
+	assert.Equal(t, "SimpleAppTest", page.ActiveSystem)
 
 	// Generators should be from the new system (SimpleAppTest has "traffic" only)
-	dev.generatorsLock.RLock()
-	genCount := len(dev.generators)
-	dev.generatorsLock.RUnlock()
-	assert.Equal(t, 1, genCount, "SimpleAppTest declares 1 generator")
+	assert.Len(t, page.Generators, 1, "SimpleAppTest declares 1 generator")
 }
 
 // TestDevEnvDetachPage verifies that after ClearPage(), no more notifications
-// are sent to the previously attached page handler. This prevents stale
+// are sent to the previously attached workspace page. This prevents stale
 // references and ensures clean page lifecycle management.
 func TestDevEnvDetachPage(t *testing.T) {
 	dev := newTestDevEnv()
-	page := newMockDevEnvPage()
+	page := NewConsoleWorkspacePage(false)
 	dev.SetPage(page)
 
 	err := dev.LoadFile(testFixturePath("system_with_generators.sdl"))
@@ -388,8 +244,8 @@ func TestDevEnvDetachPage(t *testing.T) {
 	require.NoError(t, err)
 
 	// No notifications should have been sent after detach
-	assert.Empty(t, page.systemChangedCalls)
-	assert.Empty(t, page.diagramCalls)
+	assert.Empty(t, page.ActiveSystem)
+	assert.Nil(t, page.Diagram)
 }
 
 // TestDevEnvGetSystemDiagram verifies that GetSystemDiagram returns a valid

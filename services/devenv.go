@@ -18,7 +18,7 @@ import (
 
 // DevEnv is the primary simulation coordinator, replacing Canvas + CanvasViewPresenter.
 // It is constructed with a FileResolver, owns a Runtime internally, and pushes typed
-// updates to an attached DevEnvPageHandler.
+// updates to an attached WorkspacePage.
 type DevEnv struct {
 	runtime       *runtime.Runtime
 	activeSystem  *runtime.SystemInstance
@@ -42,7 +42,7 @@ type DevEnv struct {
 	simulationStarted   bool
 
 	// Page handler (single panel endpoint, like CanvasDashboardPage)
-	page     DevEnvPageHandler
+	page     WorkspacePage
 	pageLock sync.RWMutex
 }
 
@@ -67,8 +67,8 @@ func (d *DevEnv) GetSimulationTime() float64           { return 0 } // TODO: vir
 
 // Page handler management
 
-// SetPage attaches a DevEnvPageHandler that will receive all panel updates.
-func (d *DevEnv) SetPage(page DevEnvPageHandler) {
+// SetPage attaches a WorkspacePage that will receive all panel updates.
+func (d *DevEnv) SetPage(page WorkspacePage) {
 	d.pageLock.Lock()
 	defer d.pageLock.Unlock()
 	d.page = page
@@ -81,7 +81,7 @@ func (d *DevEnv) ClearPage() {
 	d.page = nil
 }
 
-func (d *DevEnv) getPage() DevEnvPageHandler {
+func (d *DevEnv) getPage() WorkspacePage {
 	d.pageLock.RLock()
 	defer d.pageLock.RUnlock()
 	return d.page

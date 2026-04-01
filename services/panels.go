@@ -4,11 +4,10 @@ import (
 	protos "github.com/panyam/sdl/gen/go/sdl/v1/models"
 )
 
-// DevEnvPageHandler is the Go interface that mirrors the DevEnvPage proto service.
-// DevEnv pushes typed updates through this interface when simulation state changes.
-// In WASM mode, the browser-generated client adapts to this interface.
-// In tests, a mock implementation records calls for assertions.
-type DevEnvPageHandler interface {
+// WorkspacePage is the Go interface that mirrors the WorkspacePage proto service.
+// The WorkspacePresenter pushes typed updates through this interface when state changes.
+// Implementations: BrowserWorkspacePage (WASM), ConsoleWorkspacePage (CLI), mock (tests).
+type WorkspacePage interface {
 	// System panel: active system has changed
 	OnSystemChanged(systemName string, availableSystems []string)
 

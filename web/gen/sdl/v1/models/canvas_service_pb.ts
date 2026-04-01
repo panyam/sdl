@@ -6,7 +6,7 @@ import type { GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
 import type { FieldMask } from "@bufbuild/protobuf/wkt";
 import { file_google_protobuf_field_mask } from "@bufbuild/protobuf/wkt";
-import type { AggregateResult, AllPathsTraceData, Canvas, File, FlowEdge, FlowState, Generator, Metric, MetricPoint, MetricUpdate, Pagination, PaginationResponse, ParameterUpdate, ParameterUpdateResult, SystemDiagram, TraceData, UtilizationInfo } from "./models_pb";
+import type { AggregateResult, AllPathsTraceData, FlowEdge, FlowState, Generator, Metric, MetricPoint, MetricUpdate, ParameterUpdate, ParameterUpdateResult, SystemDiagram, TraceData, UtilizationInfo } from "./models_pb";
 import { file_sdl_v1_models_models } from "./models_pb";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -14,237 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file sdl/v1/models/canvas_service.proto.
  */
 export const file_sdl_v1_models_canvas_service: GenFile = /*@__PURE__*/
-  fileDesc("CiJzZGwvdjEvbW9kZWxzL2NhbnZhc19zZXJ2aWNlLnByb3RvEgZzZGwudjEiNQoTQ3JlYXRlQ2FudmFzUmVxdWVzdBIeCgZjYW52YXMYASABKAsyDi5zZGwudjEuQ2FudmFzIq8BChRDcmVhdGVDYW52YXNSZXNwb25zZRIeCgZjYW52YXMYASABKAsyDi5zZGwudjEuQ2FudmFzEkMKDGZpZWxkX2Vycm9ycxgCIAMoCzItLnNkbC52MS5DcmVhdGVDYW52YXNSZXNwb25zZS5GaWVsZEVycm9yc0VudHJ5GjIKEEZpZWxkRXJyb3JzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASI1ChNVcGRhdGVDYW52YXNSZXF1ZXN0Eh4KBmNhbnZhcxgBIAEoCzIOLnNkbC52MS5DYW52YXMiiAIKFFVwZGF0ZUNhbnZhc1Jlc3BvbnNlEh4KBmNhbnZhcxgBIAEoCzIOLnNkbC52MS5DYW52YXMSLwoLdXBkYXRlX21hc2sYAiABKAsyGi5nb29nbGUucHJvdG9idWYuRmllbGRNYXNrEhUKDWRlbGV0ZWRfZmlsZXMYAyADKAkSRQoNdXBkYXRlZF9maWxlcxgEIAMoCzIuLnNkbC52MS5VcGRhdGVDYW52YXNSZXNwb25zZS5VcGRhdGVkRmlsZXNFbnRyeRpBChFVcGRhdGVkRmlsZXNFbnRyeRILCgNrZXkYASABKAkSGwoFdmFsdWUYAiABKAsyDC5zZGwudjEuRmlsZToCOAEiPQoTTGlzdENhbnZhc2VzUmVxdWVzdBImCgpwYWdpbmF0aW9uGAEgASgLMhIuc2RsLnYxLlBhZ2luYXRpb24iaAoUTGlzdENhbnZhc2VzUmVzcG9uc2USIAoIY2FudmFzZXMYASADKAsyDi5zZGwudjEuQ2FudmFzEi4KCnBhZ2luYXRpb24YAiABKAsyGi5zZGwudjEuUGFnaW5hdGlvblJlc3BvbnNlIh4KEEdldENhbnZhc1JlcXVlc3QSCgoCaWQYASABKAkiMwoRR2V0Q2FudmFzUmVzcG9uc2USHgoGY2FudmFzGAEgASgLMg4uc2RsLnYxLkNhbnZhcyIhChNEZWxldGVDYW52YXNSZXF1ZXN0EgoKAmlkGAEgASgJIhYKFERlbGV0ZUNhbnZhc1Jlc3BvbnNlIicKElJlc2V0Q2FudmFzUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkiNwoTUmVzZXRDYW52YXNSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg8KB21lc3NhZ2UYAiABKAkiOwoPTG9hZEZpbGVSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRIVCg1zZGxfZmlsZV9wYXRoGAIgASgJIhIKEExvYWRGaWxlUmVzcG9uc2UiOgoQVXNlU3lzdGVtUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSEwoLc3lzdGVtX25hbWUYAiABKAkiEwoRVXNlU3lzdGVtUmVzcG9uc2UiUAoTQWRkR2VuZXJhdG9yUmVxdWVzdBIkCglnZW5lcmF0b3IYASABKAsyES5zZGwudjEuR2VuZXJhdG9yEhMKC2FwcGx5X2Zsb3dzGAIgASgIIjwKFEFkZEdlbmVyYXRvclJlc3BvbnNlEiQKCWdlbmVyYXRvchgBIAEoCzIRLnNkbC52MS5HZW5lcmF0b3IiKgoVTGlzdEdlbmVyYXRvcnNSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCSI/ChZMaXN0R2VuZXJhdG9yc1Jlc3BvbnNlEiUKCmdlbmVyYXRvcnMYASADKAsyES5zZGwudjEuR2VuZXJhdG9yIj4KE0dldEdlbmVyYXRvclJlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJEhQKDGdlbmVyYXRvcl9pZBgCIAEoCSI8ChRHZXRHZW5lcmF0b3JSZXNwb25zZRIkCglnZW5lcmF0b3IYASABKAsyES5zZGwudjEuR2VuZXJhdG9yIoQBChZVcGRhdGVHZW5lcmF0b3JSZXF1ZXN0EiQKCWdlbmVyYXRvchgBIAEoCzIRLnNkbC52MS5HZW5lcmF0b3ISLwoLdXBkYXRlX21hc2sYAiABKAsyGi5nb29nbGUucHJvdG9idWYuRmllbGRNYXNrEhMKC2FwcGx5X2Zsb3dzGAMgASgIIj8KF1VwZGF0ZUdlbmVyYXRvclJlc3BvbnNlEiQKCWdlbmVyYXRvchgBIAEoCzIRLnNkbC52MS5HZW5lcmF0b3IiQAoVU3RhcnRHZW5lcmF0b3JSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRIUCgxnZW5lcmF0b3JfaWQYAiABKAkiGAoWU3RhcnRHZW5lcmF0b3JSZXNwb25zZSI/ChRTdG9wR2VuZXJhdG9yUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSFAoMZ2VuZXJhdG9yX2lkGAIgASgJIhcKFVN0b3BHZW5lcmF0b3JSZXNwb25zZSJWChZEZWxldGVHZW5lcmF0b3JSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRIUCgxnZW5lcmF0b3JfaWQYAiABKAkSEwoLYXBwbHlfZmxvd3MYAyABKAgiGQoXRGVsZXRlR2VuZXJhdG9yUmVzcG9uc2UiLgoZU3RhcnRBbGxHZW5lcmF0b3JzUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkilgEKGlN0YXJ0QWxsR2VuZXJhdG9yc1Jlc3BvbnNlEhgKEHRvdGFsX2dlbmVyYXRvcnMYASABKAUSFQoNc3RhcnRlZF9jb3VudBgCIAEoBRIdChVhbHJlYWR5X3J1bm5pbmdfY291bnQYAyABKAUSFAoMZmFpbGVkX2NvdW50GAQgASgFEhIKCmZhaWxlZF9pZHMYBSADKAkiLQoYU3RvcEFsbEdlbmVyYXRvcnNSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCSKVAQoZU3RvcEFsbEdlbmVyYXRvcnNSZXNwb25zZRIYChB0b3RhbF9nZW5lcmF0b3JzGAEgASgFEhUKDXN0b3BwZWRfY291bnQYAiABKAUSHQoVYWxyZWFkeV9zdG9wcGVkX2NvdW50GAMgASgFEhQKDGZhaWxlZF9jb3VudBgEIAEoBRISCgpmYWlsZWRfaWRzGAUgAygJIjIKEEFkZE1ldHJpY1JlcXVlc3QSHgoGbWV0cmljGAEgASgLMg4uc2RsLnYxLk1ldHJpYyIzChFBZGRNZXRyaWNSZXNwb25zZRIeCgZtZXRyaWMYASABKAsyDi5zZGwudjEuTWV0cmljIjsKE0RlbGV0ZU1ldHJpY1JlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJEhEKCW1ldHJpY19pZBgCIAEoCSIWChREZWxldGVNZXRyaWNSZXNwb25zZSInChJMaXN0TWV0cmljc1JlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJIjYKE0xpc3RNZXRyaWNzUmVzcG9uc2USHwoHbWV0cmljcxgBIAMoCzIOLnNkbC52MS5NZXRyaWMicAoTUXVlcnlNZXRyaWNzUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSEQoJbWV0cmljX2lkGAIgASgJEhIKCnN0YXJ0X3RpbWUYAyABKAESEAoIZW5kX3RpbWUYBCABKAESDQoFbGltaXQYBSABKAUiOwoUUXVlcnlNZXRyaWNzUmVzcG9uc2USIwoGcG9pbnRzGAEgAygLMhMuc2RsLnYxLk1ldHJpY1BvaW50IowBChdBZ2dyZWdhdGVNZXRyaWNzUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSEQoJbWV0cmljX2lkGAIgASgJEhIKCnN0YXJ0X3RpbWUYAyABKAESEAoIZW5kX3RpbWUYBCABKAESEAoIZnVuY3Rpb24YBSABKAkSEwoLd2luZG93X3NpemUYBiABKAEiRAoYQWdncmVnYXRlTWV0cmljc1Jlc3BvbnNlEigKB3Jlc3VsdHMYASADKAsyFy5zZGwudjEuQWdncmVnYXRlUmVzdWx0Ij0KFFN0cmVhbU1ldHJpY3NSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRISCgptZXRyaWNfaWRzGAIgAygJIj4KFVN0cmVhbU1ldHJpY3NSZXNwb25zZRIlCgd1cGRhdGVzGAEgAygLMhQuc2RsLnYxLk1ldHJpY1VwZGF0ZSJLChNFeGVjdXRlVHJhY2VSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRIRCgljb21wb25lbnQYAiABKAkSDgoGbWV0aG9kGAMgASgJIj0KFEV4ZWN1dGVUcmFjZVJlc3BvbnNlEiUKCnRyYWNlX2RhdGEYASABKAsyES5zZGwudjEuVHJhY2VEYXRhIl8KFFRyYWNlQWxsUGF0aHNSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRIRCgljb21wb25lbnQYAiABKAkSDgoGbWV0aG9kGAMgASgJEhEKCW1heF9kZXB0aBgEIAEoBSJGChVUcmFjZUFsbFBhdGhzUmVzcG9uc2USLQoKdHJhY2VfZGF0YRgBIAEoCzIZLnNkbC52MS5BbGxQYXRoc1RyYWNlRGF0YSJJChNTZXRQYXJhbWV0ZXJSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRIMCgRwYXRoGAIgASgJEhEKCW5ld192YWx1ZRgDIAEoCSJkChRTZXRQYXJhbWV0ZXJSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEhUKDWVycm9yX21lc3NhZ2UYAiABKAkSEQoJbmV3X3ZhbHVlGAMgASgJEhEKCW9sZF92YWx1ZRgEIAEoCSI3ChRHZXRQYXJhbWV0ZXJzUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSDAoEcGF0aBgCIAEoCSKNAQoVR2V0UGFyYW1ldGVyc1Jlc3BvbnNlEkEKCnBhcmFtZXRlcnMYASADKAsyLS5zZGwudjEuR2V0UGFyYW1ldGVyc1Jlc3BvbnNlLlBhcmFtZXRlcnNFbnRyeRoxCg9QYXJhbWV0ZXJzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASJYChlCYXRjaFNldFBhcmFtZXRlcnNSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRIoCgd1cGRhdGVzGAIgAygLMhcuc2RsLnYxLlBhcmFtZXRlclVwZGF0ZSJ0ChpCYXRjaFNldFBhcmFtZXRlcnNSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEhUKDWVycm9yX21lc3NhZ2UYAiABKAkSLgoHcmVzdWx0cxgDIAMoCzIdLnNkbC52MS5QYXJhbWV0ZXJVcGRhdGVSZXN1bHQiOwoURXZhbHVhdGVGbG93c1JlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJEhAKCHN0cmF0ZWd5GAIgASgJIogCChVFdmFsdWF0ZUZsb3dzUmVzcG9uc2USEAoIc3RyYXRlZ3kYASABKAkSDgoGc3RhdHVzGAIgASgJEhIKCml0ZXJhdGlvbnMYAyABKAUSEAoId2FybmluZ3MYBCADKAkSSgoPY29tcG9uZW50X3JhdGVzGAUgAygLMjEuc2RsLnYxLkV2YWx1YXRlRmxvd3NSZXNwb25zZS5Db21wb25lbnRSYXRlc0VudHJ5EiQKCmZsb3dfZWRnZXMYBiADKAsyEC5zZGwudjEuRmxvd0VkZ2UaNQoTQ29tcG9uZW50UmF0ZXNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAE6AjgBIigKE0dldEZsb3dTdGF0ZVJlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJIjgKFEdldEZsb3dTdGF0ZVJlc3BvbnNlEiAKBXN0YXRlGAEgASgLMhEuc2RsLnYxLkZsb3dTdGF0ZSIsChdHZXRTeXN0ZW1EaWFncmFtUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkiQgoYR2V0U3lzdGVtRGlhZ3JhbVJlc3BvbnNlEiYKB2RpYWdyYW0YASABKAsyFS5zZGwudjEuU3lzdGVtRGlhZ3JhbSI+ChVHZXRVdGlsaXphdGlvblJlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJEhIKCmNvbXBvbmVudHMYAiADKAkiRwoWR2V0VXRpbGl6YXRpb25SZXNwb25zZRItCgx1dGlsaXphdGlvbnMYASADKAsyFy5zZGwudjEuVXRpbGl6YXRpb25JbmZvQosBCgpjb20uc2RsLnYxQhJDYW52YXNTZXJ2aWNlUHJvdG9QAVowZ2l0aHViLmNvbS9wYW55YW0vc2RsL2dlbi9nby9zZGwvdjEvbW9kZWxzO3NkbHYxogIDU1hYqgIGU2RsLlYxygIGU2RsXFYx4gISU2RsXFYxXEdQQk1ldGFkYXRh6gIHU2RsOjpWMWIGcHJvdG8z", [file_google_protobuf_field_mask, file_sdl_v1_models_models]);
-
-/**
- * @generated from message sdl.v1.CreateCanvasRequest
- */
-export type CreateCanvasRequest = Message<"sdl.v1.CreateCanvasRequest"> & {
-  /**
-   * @generated from field: sdl.v1.Canvas canvas = 1;
-   */
-  canvas?: Canvas;
-};
-
-/**
- * Describes the message sdl.v1.CreateCanvasRequest.
- * Use `create(CreateCanvasRequestSchema)` to create a new message.
- */
-export const CreateCanvasRequestSchema: GenMessage<CreateCanvasRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 0);
-
-/**
- * @generated from message sdl.v1.CreateCanvasResponse
- */
-export type CreateCanvasResponse = Message<"sdl.v1.CreateCanvasResponse"> & {
-  /**
-   * @generated from field: sdl.v1.Canvas canvas = 1;
-   */
-  canvas?: Canvas;
-
-  /**
-   * @generated from field: map<string, string> field_errors = 2;
-   */
-  fieldErrors: { [key: string]: string };
-};
-
-/**
- * Describes the message sdl.v1.CreateCanvasResponse.
- * Use `create(CreateCanvasResponseSchema)` to create a new message.
- */
-export const CreateCanvasResponseSchema: GenMessage<CreateCanvasResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 1);
-
-/**
- * @generated from message sdl.v1.UpdateCanvasRequest
- */
-export type UpdateCanvasRequest = Message<"sdl.v1.UpdateCanvasRequest"> & {
-  /**
-   * @generated from field: sdl.v1.Canvas canvas = 1;
-   */
-  canvas?: Canvas;
-};
-
-/**
- * Describes the message sdl.v1.UpdateCanvasRequest.
- * Use `create(UpdateCanvasRequestSchema)` to create a new message.
- */
-export const UpdateCanvasRequestSchema: GenMessage<UpdateCanvasRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 2);
-
-/**
- * @generated from message sdl.v1.UpdateCanvasResponse
- */
-export type UpdateCanvasResponse = Message<"sdl.v1.UpdateCanvasResponse"> & {
-  /**
-   * @generated from field: sdl.v1.Canvas canvas = 1;
-   */
-  canvas?: Canvas;
-
-  /**
-   * @generated from field: google.protobuf.FieldMask update_mask = 2;
-   */
-  updateMask?: FieldMask;
-
-  /**
-   * @generated from field: repeated string deleted_files = 3;
-   */
-  deletedFiles: string[];
-
-  /**
-   * @generated from field: map<string, sdl.v1.File> updated_files = 4;
-   */
-  updatedFiles: { [key: string]: File };
-};
-
-/**
- * Describes the message sdl.v1.UpdateCanvasResponse.
- * Use `create(UpdateCanvasResponseSchema)` to create a new message.
- */
-export const UpdateCanvasResponseSchema: GenMessage<UpdateCanvasResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 3);
-
-/**
- * @generated from message sdl.v1.ListCanvasesRequest
- */
-export type ListCanvasesRequest = Message<"sdl.v1.ListCanvasesRequest"> & {
-  /**
-   * @generated from field: sdl.v1.Pagination pagination = 1;
-   */
-  pagination?: Pagination;
-};
-
-/**
- * Describes the message sdl.v1.ListCanvasesRequest.
- * Use `create(ListCanvasesRequestSchema)` to create a new message.
- */
-export const ListCanvasesRequestSchema: GenMessage<ListCanvasesRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 4);
-
-/**
- * @generated from message sdl.v1.ListCanvasesResponse
- */
-export type ListCanvasesResponse = Message<"sdl.v1.ListCanvasesResponse"> & {
-  /**
-   * @generated from field: repeated sdl.v1.Canvas canvases = 1;
-   */
-  canvases: Canvas[];
-
-  /**
-   * @generated from field: sdl.v1.PaginationResponse pagination = 2;
-   */
-  pagination?: PaginationResponse;
-};
-
-/**
- * Describes the message sdl.v1.ListCanvasesResponse.
- * Use `create(ListCanvasesResponseSchema)` to create a new message.
- */
-export const ListCanvasesResponseSchema: GenMessage<ListCanvasesResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 5);
-
-/**
- * @generated from message sdl.v1.GetCanvasRequest
- */
-export type GetCanvasRequest = Message<"sdl.v1.GetCanvasRequest"> & {
-  /**
-   * @generated from field: string id = 1;
-   */
-  id: string;
-};
-
-/**
- * Describes the message sdl.v1.GetCanvasRequest.
- * Use `create(GetCanvasRequestSchema)` to create a new message.
- */
-export const GetCanvasRequestSchema: GenMessage<GetCanvasRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 6);
-
-/**
- * @generated from message sdl.v1.GetCanvasResponse
- */
-export type GetCanvasResponse = Message<"sdl.v1.GetCanvasResponse"> & {
-  /**
-   * @generated from field: sdl.v1.Canvas canvas = 1;
-   */
-  canvas?: Canvas;
-};
-
-/**
- * Describes the message sdl.v1.GetCanvasResponse.
- * Use `create(GetCanvasResponseSchema)` to create a new message.
- */
-export const GetCanvasResponseSchema: GenMessage<GetCanvasResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 7);
-
-/**
- * @generated from message sdl.v1.DeleteCanvasRequest
- */
-export type DeleteCanvasRequest = Message<"sdl.v1.DeleteCanvasRequest"> & {
-  /**
-   * @generated from field: string id = 1;
-   */
-  id: string;
-};
-
-/**
- * Describes the message sdl.v1.DeleteCanvasRequest.
- * Use `create(DeleteCanvasRequestSchema)` to create a new message.
- */
-export const DeleteCanvasRequestSchema: GenMessage<DeleteCanvasRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 8);
-
-/**
- * @generated from message sdl.v1.DeleteCanvasResponse
- */
-export type DeleteCanvasResponse = Message<"sdl.v1.DeleteCanvasResponse"> & {
-};
-
-/**
- * Describes the message sdl.v1.DeleteCanvasResponse.
- * Use `create(DeleteCanvasResponseSchema)` to create a new message.
- */
-export const DeleteCanvasResponseSchema: GenMessage<DeleteCanvasResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 9);
-
-/**
- * @generated from message sdl.v1.ResetCanvasRequest
- */
-export type ResetCanvasRequest = Message<"sdl.v1.ResetCanvasRequest"> & {
-  /**
-   * @generated from field: string canvas_id = 1;
-   */
-  canvasId: string;
-};
-
-/**
- * Describes the message sdl.v1.ResetCanvasRequest.
- * Use `create(ResetCanvasRequestSchema)` to create a new message.
- */
-export const ResetCanvasRequestSchema: GenMessage<ResetCanvasRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 10);
-
-/**
- * @generated from message sdl.v1.ResetCanvasResponse
- */
-export type ResetCanvasResponse = Message<"sdl.v1.ResetCanvasResponse"> & {
-  /**
-   * @generated from field: bool success = 1;
-   */
-  success: boolean;
-
-  /**
-   * @generated from field: string message = 2;
-   */
-  message: string;
-};
-
-/**
- * Describes the message sdl.v1.ResetCanvasResponse.
- * Use `create(ResetCanvasResponseSchema)` to create a new message.
- */
-export const ResetCanvasResponseSchema: GenMessage<ResetCanvasResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 11);
+  fileDesc("CiJzZGwvdjEvbW9kZWxzL2NhbnZhc19zZXJ2aWNlLnByb3RvEgZzZGwudjEiOwoPTG9hZEZpbGVSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRIVCg1zZGxfZmlsZV9wYXRoGAIgASgJIhIKEExvYWRGaWxlUmVzcG9uc2UiOgoQVXNlU3lzdGVtUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSEwoLc3lzdGVtX25hbWUYAiABKAkiEwoRVXNlU3lzdGVtUmVzcG9uc2UiUAoTQWRkR2VuZXJhdG9yUmVxdWVzdBIkCglnZW5lcmF0b3IYASABKAsyES5zZGwudjEuR2VuZXJhdG9yEhMKC2FwcGx5X2Zsb3dzGAIgASgIIjwKFEFkZEdlbmVyYXRvclJlc3BvbnNlEiQKCWdlbmVyYXRvchgBIAEoCzIRLnNkbC52MS5HZW5lcmF0b3IiKgoVTGlzdEdlbmVyYXRvcnNSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCSI/ChZMaXN0R2VuZXJhdG9yc1Jlc3BvbnNlEiUKCmdlbmVyYXRvcnMYASADKAsyES5zZGwudjEuR2VuZXJhdG9yIj4KE0dldEdlbmVyYXRvclJlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJEhQKDGdlbmVyYXRvcl9pZBgCIAEoCSI8ChRHZXRHZW5lcmF0b3JSZXNwb25zZRIkCglnZW5lcmF0b3IYASABKAsyES5zZGwudjEuR2VuZXJhdG9yIoQBChZVcGRhdGVHZW5lcmF0b3JSZXF1ZXN0EiQKCWdlbmVyYXRvchgBIAEoCzIRLnNkbC52MS5HZW5lcmF0b3ISLwoLdXBkYXRlX21hc2sYAiABKAsyGi5nb29nbGUucHJvdG9idWYuRmllbGRNYXNrEhMKC2FwcGx5X2Zsb3dzGAMgASgIIj8KF1VwZGF0ZUdlbmVyYXRvclJlc3BvbnNlEiQKCWdlbmVyYXRvchgBIAEoCzIRLnNkbC52MS5HZW5lcmF0b3IiQAoVU3RhcnRHZW5lcmF0b3JSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRIUCgxnZW5lcmF0b3JfaWQYAiABKAkiGAoWU3RhcnRHZW5lcmF0b3JSZXNwb25zZSI/ChRTdG9wR2VuZXJhdG9yUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSFAoMZ2VuZXJhdG9yX2lkGAIgASgJIhcKFVN0b3BHZW5lcmF0b3JSZXNwb25zZSJWChZEZWxldGVHZW5lcmF0b3JSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRIUCgxnZW5lcmF0b3JfaWQYAiABKAkSEwoLYXBwbHlfZmxvd3MYAyABKAgiGQoXRGVsZXRlR2VuZXJhdG9yUmVzcG9uc2UiLgoZU3RhcnRBbGxHZW5lcmF0b3JzUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkilgEKGlN0YXJ0QWxsR2VuZXJhdG9yc1Jlc3BvbnNlEhgKEHRvdGFsX2dlbmVyYXRvcnMYASABKAUSFQoNc3RhcnRlZF9jb3VudBgCIAEoBRIdChVhbHJlYWR5X3J1bm5pbmdfY291bnQYAyABKAUSFAoMZmFpbGVkX2NvdW50GAQgASgFEhIKCmZhaWxlZF9pZHMYBSADKAkiLQoYU3RvcEFsbEdlbmVyYXRvcnNSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCSKVAQoZU3RvcEFsbEdlbmVyYXRvcnNSZXNwb25zZRIYChB0b3RhbF9nZW5lcmF0b3JzGAEgASgFEhUKDXN0b3BwZWRfY291bnQYAiABKAUSHQoVYWxyZWFkeV9zdG9wcGVkX2NvdW50GAMgASgFEhQKDGZhaWxlZF9jb3VudBgEIAEoBRISCgpmYWlsZWRfaWRzGAUgAygJIjIKEEFkZE1ldHJpY1JlcXVlc3QSHgoGbWV0cmljGAEgASgLMg4uc2RsLnYxLk1ldHJpYyIzChFBZGRNZXRyaWNSZXNwb25zZRIeCgZtZXRyaWMYASABKAsyDi5zZGwudjEuTWV0cmljIjsKE0RlbGV0ZU1ldHJpY1JlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJEhEKCW1ldHJpY19pZBgCIAEoCSIWChREZWxldGVNZXRyaWNSZXNwb25zZSInChJMaXN0TWV0cmljc1JlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJIjYKE0xpc3RNZXRyaWNzUmVzcG9uc2USHwoHbWV0cmljcxgBIAMoCzIOLnNkbC52MS5NZXRyaWMicAoTUXVlcnlNZXRyaWNzUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSEQoJbWV0cmljX2lkGAIgASgJEhIKCnN0YXJ0X3RpbWUYAyABKAESEAoIZW5kX3RpbWUYBCABKAESDQoFbGltaXQYBSABKAUiOwoUUXVlcnlNZXRyaWNzUmVzcG9uc2USIwoGcG9pbnRzGAEgAygLMhMuc2RsLnYxLk1ldHJpY1BvaW50IowBChdBZ2dyZWdhdGVNZXRyaWNzUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSEQoJbWV0cmljX2lkGAIgASgJEhIKCnN0YXJ0X3RpbWUYAyABKAESEAoIZW5kX3RpbWUYBCABKAESEAoIZnVuY3Rpb24YBSABKAkSEwoLd2luZG93X3NpemUYBiABKAEiRAoYQWdncmVnYXRlTWV0cmljc1Jlc3BvbnNlEigKB3Jlc3VsdHMYASADKAsyFy5zZGwudjEuQWdncmVnYXRlUmVzdWx0Ij0KFFN0cmVhbU1ldHJpY3NSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRISCgptZXRyaWNfaWRzGAIgAygJIj4KFVN0cmVhbU1ldHJpY3NSZXNwb25zZRIlCgd1cGRhdGVzGAEgAygLMhQuc2RsLnYxLk1ldHJpY1VwZGF0ZSJLChNFeGVjdXRlVHJhY2VSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRIRCgljb21wb25lbnQYAiABKAkSDgoGbWV0aG9kGAMgASgJIj0KFEV4ZWN1dGVUcmFjZVJlc3BvbnNlEiUKCnRyYWNlX2RhdGEYASABKAsyES5zZGwudjEuVHJhY2VEYXRhIl8KFFRyYWNlQWxsUGF0aHNSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRIRCgljb21wb25lbnQYAiABKAkSDgoGbWV0aG9kGAMgASgJEhEKCW1heF9kZXB0aBgEIAEoBSJGChVUcmFjZUFsbFBhdGhzUmVzcG9uc2USLQoKdHJhY2VfZGF0YRgBIAEoCzIZLnNkbC52MS5BbGxQYXRoc1RyYWNlRGF0YSJJChNTZXRQYXJhbWV0ZXJSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRIMCgRwYXRoGAIgASgJEhEKCW5ld192YWx1ZRgDIAEoCSJkChRTZXRQYXJhbWV0ZXJSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEhUKDWVycm9yX21lc3NhZ2UYAiABKAkSEQoJbmV3X3ZhbHVlGAMgASgJEhEKCW9sZF92YWx1ZRgEIAEoCSI3ChRHZXRQYXJhbWV0ZXJzUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSDAoEcGF0aBgCIAEoCSKNAQoVR2V0UGFyYW1ldGVyc1Jlc3BvbnNlEkEKCnBhcmFtZXRlcnMYASADKAsyLS5zZGwudjEuR2V0UGFyYW1ldGVyc1Jlc3BvbnNlLlBhcmFtZXRlcnNFbnRyeRoxCg9QYXJhbWV0ZXJzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASJYChlCYXRjaFNldFBhcmFtZXRlcnNSZXF1ZXN0EhEKCWNhbnZhc19pZBgBIAEoCRIoCgd1cGRhdGVzGAIgAygLMhcuc2RsLnYxLlBhcmFtZXRlclVwZGF0ZSJ0ChpCYXRjaFNldFBhcmFtZXRlcnNSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEhUKDWVycm9yX21lc3NhZ2UYAiABKAkSLgoHcmVzdWx0cxgDIAMoCzIdLnNkbC52MS5QYXJhbWV0ZXJVcGRhdGVSZXN1bHQiOwoURXZhbHVhdGVGbG93c1JlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJEhAKCHN0cmF0ZWd5GAIgASgJIogCChVFdmFsdWF0ZUZsb3dzUmVzcG9uc2USEAoIc3RyYXRlZ3kYASABKAkSDgoGc3RhdHVzGAIgASgJEhIKCml0ZXJhdGlvbnMYAyABKAUSEAoId2FybmluZ3MYBCADKAkSSgoPY29tcG9uZW50X3JhdGVzGAUgAygLMjEuc2RsLnYxLkV2YWx1YXRlRmxvd3NSZXNwb25zZS5Db21wb25lbnRSYXRlc0VudHJ5EiQKCmZsb3dfZWRnZXMYBiADKAsyEC5zZGwudjEuRmxvd0VkZ2UaNQoTQ29tcG9uZW50UmF0ZXNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAE6AjgBIigKE0dldEZsb3dTdGF0ZVJlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJIjgKFEdldEZsb3dTdGF0ZVJlc3BvbnNlEiAKBXN0YXRlGAEgASgLMhEuc2RsLnYxLkZsb3dTdGF0ZSIsChdHZXRTeXN0ZW1EaWFncmFtUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkiQgoYR2V0U3lzdGVtRGlhZ3JhbVJlc3BvbnNlEiYKB2RpYWdyYW0YASABKAsyFS5zZGwudjEuU3lzdGVtRGlhZ3JhbSI+ChVHZXRVdGlsaXphdGlvblJlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJEhIKCmNvbXBvbmVudHMYAiADKAkiRwoWR2V0VXRpbGl6YXRpb25SZXNwb25zZRItCgx1dGlsaXphdGlvbnMYASADKAsyFy5zZGwudjEuVXRpbGl6YXRpb25JbmZvQosBCgpjb20uc2RsLnYxQhJDYW52YXNTZXJ2aWNlUHJvdG9QAVowZ2l0aHViLmNvbS9wYW55YW0vc2RsL2dlbi9nby9zZGwvdjEvbW9kZWxzO3NkbHYxogIDU1hYqgIGU2RsLlYxygIGU2RsXFYx4gISU2RsXFYxXEdQQk1ldGFkYXRh6gIHU2RsOjpWMWIGcHJvdG8z", [file_google_protobuf_field_mask, file_sdl_v1_models_models]);
 
 /**
  * @generated from message sdl.v1.LoadFileRequest
@@ -266,7 +36,7 @@ export type LoadFileRequest = Message<"sdl.v1.LoadFileRequest"> & {
  * Use `create(LoadFileRequestSchema)` to create a new message.
  */
 export const LoadFileRequestSchema: GenMessage<LoadFileRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 12);
+  messageDesc(file_sdl_v1_models_canvas_service, 0);
 
 /**
  * @generated from message sdl.v1.LoadFileResponse
@@ -279,7 +49,7 @@ export type LoadFileResponse = Message<"sdl.v1.LoadFileResponse"> & {
  * Use `create(LoadFileResponseSchema)` to create a new message.
  */
 export const LoadFileResponseSchema: GenMessage<LoadFileResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 13);
+  messageDesc(file_sdl_v1_models_canvas_service, 1);
 
 /**
  * @generated from message sdl.v1.UseSystemRequest
@@ -301,7 +71,7 @@ export type UseSystemRequest = Message<"sdl.v1.UseSystemRequest"> & {
  * Use `create(UseSystemRequestSchema)` to create a new message.
  */
 export const UseSystemRequestSchema: GenMessage<UseSystemRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 14);
+  messageDesc(file_sdl_v1_models_canvas_service, 2);
 
 /**
  * @generated from message sdl.v1.UseSystemResponse
@@ -314,7 +84,7 @@ export type UseSystemResponse = Message<"sdl.v1.UseSystemResponse"> & {
  * Use `create(UseSystemResponseSchema)` to create a new message.
  */
 export const UseSystemResponseSchema: GenMessage<UseSystemResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 15);
+  messageDesc(file_sdl_v1_models_canvas_service, 3);
 
 /**
  * @generated from message sdl.v1.AddGeneratorRequest
@@ -336,7 +106,7 @@ export type AddGeneratorRequest = Message<"sdl.v1.AddGeneratorRequest"> & {
  * Use `create(AddGeneratorRequestSchema)` to create a new message.
  */
 export const AddGeneratorRequestSchema: GenMessage<AddGeneratorRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 16);
+  messageDesc(file_sdl_v1_models_canvas_service, 4);
 
 /**
  * @generated from message sdl.v1.AddGeneratorResponse
@@ -353,7 +123,7 @@ export type AddGeneratorResponse = Message<"sdl.v1.AddGeneratorResponse"> & {
  * Use `create(AddGeneratorResponseSchema)` to create a new message.
  */
 export const AddGeneratorResponseSchema: GenMessage<AddGeneratorResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 17);
+  messageDesc(file_sdl_v1_models_canvas_service, 5);
 
 /**
  * @generated from message sdl.v1.ListGeneratorsRequest
@@ -370,7 +140,7 @@ export type ListGeneratorsRequest = Message<"sdl.v1.ListGeneratorsRequest"> & {
  * Use `create(ListGeneratorsRequestSchema)` to create a new message.
  */
 export const ListGeneratorsRequestSchema: GenMessage<ListGeneratorsRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 18);
+  messageDesc(file_sdl_v1_models_canvas_service, 6);
 
 /**
  * @generated from message sdl.v1.ListGeneratorsResponse
@@ -387,7 +157,7 @@ export type ListGeneratorsResponse = Message<"sdl.v1.ListGeneratorsResponse"> & 
  * Use `create(ListGeneratorsResponseSchema)` to create a new message.
  */
 export const ListGeneratorsResponseSchema: GenMessage<ListGeneratorsResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 19);
+  messageDesc(file_sdl_v1_models_canvas_service, 7);
 
 /**
  * @generated from message sdl.v1.GetGeneratorRequest
@@ -409,7 +179,7 @@ export type GetGeneratorRequest = Message<"sdl.v1.GetGeneratorRequest"> & {
  * Use `create(GetGeneratorRequestSchema)` to create a new message.
  */
 export const GetGeneratorRequestSchema: GenMessage<GetGeneratorRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 20);
+  messageDesc(file_sdl_v1_models_canvas_service, 8);
 
 /**
  * @generated from message sdl.v1.GetGeneratorResponse
@@ -426,7 +196,7 @@ export type GetGeneratorResponse = Message<"sdl.v1.GetGeneratorResponse"> & {
  * Use `create(GetGeneratorResponseSchema)` to create a new message.
  */
 export const GetGeneratorResponseSchema: GenMessage<GetGeneratorResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 21);
+  messageDesc(file_sdl_v1_models_canvas_service, 9);
 
 /**
  * @generated from message sdl.v1.UpdateGeneratorRequest
@@ -453,7 +223,7 @@ export type UpdateGeneratorRequest = Message<"sdl.v1.UpdateGeneratorRequest"> & 
  * Use `create(UpdateGeneratorRequestSchema)` to create a new message.
  */
 export const UpdateGeneratorRequestSchema: GenMessage<UpdateGeneratorRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 22);
+  messageDesc(file_sdl_v1_models_canvas_service, 10);
 
 /**
  * @generated from message sdl.v1.UpdateGeneratorResponse
@@ -470,7 +240,7 @@ export type UpdateGeneratorResponse = Message<"sdl.v1.UpdateGeneratorResponse"> 
  * Use `create(UpdateGeneratorResponseSchema)` to create a new message.
  */
 export const UpdateGeneratorResponseSchema: GenMessage<UpdateGeneratorResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 23);
+  messageDesc(file_sdl_v1_models_canvas_service, 11);
 
 /**
  * @generated from message sdl.v1.StartGeneratorRequest
@@ -492,7 +262,7 @@ export type StartGeneratorRequest = Message<"sdl.v1.StartGeneratorRequest"> & {
  * Use `create(StartGeneratorRequestSchema)` to create a new message.
  */
 export const StartGeneratorRequestSchema: GenMessage<StartGeneratorRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 24);
+  messageDesc(file_sdl_v1_models_canvas_service, 12);
 
 /**
  * @generated from message sdl.v1.StartGeneratorResponse
@@ -505,7 +275,7 @@ export type StartGeneratorResponse = Message<"sdl.v1.StartGeneratorResponse"> & 
  * Use `create(StartGeneratorResponseSchema)` to create a new message.
  */
 export const StartGeneratorResponseSchema: GenMessage<StartGeneratorResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 25);
+  messageDesc(file_sdl_v1_models_canvas_service, 13);
 
 /**
  * @generated from message sdl.v1.StopGeneratorRequest
@@ -527,7 +297,7 @@ export type StopGeneratorRequest = Message<"sdl.v1.StopGeneratorRequest"> & {
  * Use `create(StopGeneratorRequestSchema)` to create a new message.
  */
 export const StopGeneratorRequestSchema: GenMessage<StopGeneratorRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 26);
+  messageDesc(file_sdl_v1_models_canvas_service, 14);
 
 /**
  * @generated from message sdl.v1.StopGeneratorResponse
@@ -540,7 +310,7 @@ export type StopGeneratorResponse = Message<"sdl.v1.StopGeneratorResponse"> & {
  * Use `create(StopGeneratorResponseSchema)` to create a new message.
  */
 export const StopGeneratorResponseSchema: GenMessage<StopGeneratorResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 27);
+  messageDesc(file_sdl_v1_models_canvas_service, 15);
 
 /**
  * @generated from message sdl.v1.DeleteGeneratorRequest
@@ -567,7 +337,7 @@ export type DeleteGeneratorRequest = Message<"sdl.v1.DeleteGeneratorRequest"> & 
  * Use `create(DeleteGeneratorRequestSchema)` to create a new message.
  */
 export const DeleteGeneratorRequestSchema: GenMessage<DeleteGeneratorRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 28);
+  messageDesc(file_sdl_v1_models_canvas_service, 16);
 
 /**
  * @generated from message sdl.v1.DeleteGeneratorResponse
@@ -580,7 +350,7 @@ export type DeleteGeneratorResponse = Message<"sdl.v1.DeleteGeneratorResponse"> 
  * Use `create(DeleteGeneratorResponseSchema)` to create a new message.
  */
 export const DeleteGeneratorResponseSchema: GenMessage<DeleteGeneratorResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 29);
+  messageDesc(file_sdl_v1_models_canvas_service, 17);
 
 /**
  * @generated from message sdl.v1.StartAllGeneratorsRequest
@@ -597,7 +367,7 @@ export type StartAllGeneratorsRequest = Message<"sdl.v1.StartAllGeneratorsReques
  * Use `create(StartAllGeneratorsRequestSchema)` to create a new message.
  */
 export const StartAllGeneratorsRequestSchema: GenMessage<StartAllGeneratorsRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 30);
+  messageDesc(file_sdl_v1_models_canvas_service, 18);
 
 /**
  * @generated from message sdl.v1.StartAllGeneratorsResponse
@@ -634,7 +404,7 @@ export type StartAllGeneratorsResponse = Message<"sdl.v1.StartAllGeneratorsRespo
  * Use `create(StartAllGeneratorsResponseSchema)` to create a new message.
  */
 export const StartAllGeneratorsResponseSchema: GenMessage<StartAllGeneratorsResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 31);
+  messageDesc(file_sdl_v1_models_canvas_service, 19);
 
 /**
  * @generated from message sdl.v1.StopAllGeneratorsRequest
@@ -651,7 +421,7 @@ export type StopAllGeneratorsRequest = Message<"sdl.v1.StopAllGeneratorsRequest"
  * Use `create(StopAllGeneratorsRequestSchema)` to create a new message.
  */
 export const StopAllGeneratorsRequestSchema: GenMessage<StopAllGeneratorsRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 32);
+  messageDesc(file_sdl_v1_models_canvas_service, 20);
 
 /**
  * @generated from message sdl.v1.StopAllGeneratorsResponse
@@ -688,7 +458,7 @@ export type StopAllGeneratorsResponse = Message<"sdl.v1.StopAllGeneratorsRespons
  * Use `create(StopAllGeneratorsResponseSchema)` to create a new message.
  */
 export const StopAllGeneratorsResponseSchema: GenMessage<StopAllGeneratorsResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 33);
+  messageDesc(file_sdl_v1_models_canvas_service, 21);
 
 /**
  * @generated from message sdl.v1.AddMetricRequest
@@ -705,7 +475,7 @@ export type AddMetricRequest = Message<"sdl.v1.AddMetricRequest"> & {
  * Use `create(AddMetricRequestSchema)` to create a new message.
  */
 export const AddMetricRequestSchema: GenMessage<AddMetricRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 34);
+  messageDesc(file_sdl_v1_models_canvas_service, 22);
 
 /**
  * @generated from message sdl.v1.AddMetricResponse
@@ -722,7 +492,7 @@ export type AddMetricResponse = Message<"sdl.v1.AddMetricResponse"> & {
  * Use `create(AddMetricResponseSchema)` to create a new message.
  */
 export const AddMetricResponseSchema: GenMessage<AddMetricResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 35);
+  messageDesc(file_sdl_v1_models_canvas_service, 23);
 
 /**
  * @generated from message sdl.v1.DeleteMetricRequest
@@ -744,7 +514,7 @@ export type DeleteMetricRequest = Message<"sdl.v1.DeleteMetricRequest"> & {
  * Use `create(DeleteMetricRequestSchema)` to create a new message.
  */
 export const DeleteMetricRequestSchema: GenMessage<DeleteMetricRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 36);
+  messageDesc(file_sdl_v1_models_canvas_service, 24);
 
 /**
  * @generated from message sdl.v1.DeleteMetricResponse
@@ -757,7 +527,7 @@ export type DeleteMetricResponse = Message<"sdl.v1.DeleteMetricResponse"> & {
  * Use `create(DeleteMetricResponseSchema)` to create a new message.
  */
 export const DeleteMetricResponseSchema: GenMessage<DeleteMetricResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 37);
+  messageDesc(file_sdl_v1_models_canvas_service, 25);
 
 /**
  * @generated from message sdl.v1.ListMetricsRequest
@@ -774,7 +544,7 @@ export type ListMetricsRequest = Message<"sdl.v1.ListMetricsRequest"> & {
  * Use `create(ListMetricsRequestSchema)` to create a new message.
  */
 export const ListMetricsRequestSchema: GenMessage<ListMetricsRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 38);
+  messageDesc(file_sdl_v1_models_canvas_service, 26);
 
 /**
  * @generated from message sdl.v1.ListMetricsResponse
@@ -791,7 +561,7 @@ export type ListMetricsResponse = Message<"sdl.v1.ListMetricsResponse"> & {
  * Use `create(ListMetricsResponseSchema)` to create a new message.
  */
 export const ListMetricsResponseSchema: GenMessage<ListMetricsResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 39);
+  messageDesc(file_sdl_v1_models_canvas_service, 27);
 
 /**
  * @generated from message sdl.v1.QueryMetricsRequest
@@ -828,7 +598,7 @@ export type QueryMetricsRequest = Message<"sdl.v1.QueryMetricsRequest"> & {
  * Use `create(QueryMetricsRequestSchema)` to create a new message.
  */
 export const QueryMetricsRequestSchema: GenMessage<QueryMetricsRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 40);
+  messageDesc(file_sdl_v1_models_canvas_service, 28);
 
 /**
  * @generated from message sdl.v1.QueryMetricsResponse
@@ -845,7 +615,7 @@ export type QueryMetricsResponse = Message<"sdl.v1.QueryMetricsResponse"> & {
  * Use `create(QueryMetricsResponseSchema)` to create a new message.
  */
 export const QueryMetricsResponseSchema: GenMessage<QueryMetricsResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 41);
+  messageDesc(file_sdl_v1_models_canvas_service, 29);
 
 /**
  * @generated from message sdl.v1.AggregateMetricsRequest
@@ -887,7 +657,7 @@ export type AggregateMetricsRequest = Message<"sdl.v1.AggregateMetricsRequest"> 
  * Use `create(AggregateMetricsRequestSchema)` to create a new message.
  */
 export const AggregateMetricsRequestSchema: GenMessage<AggregateMetricsRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 42);
+  messageDesc(file_sdl_v1_models_canvas_service, 30);
 
 /**
  * @generated from message sdl.v1.AggregateMetricsResponse
@@ -904,7 +674,7 @@ export type AggregateMetricsResponse = Message<"sdl.v1.AggregateMetricsResponse"
  * Use `create(AggregateMetricsResponseSchema)` to create a new message.
  */
 export const AggregateMetricsResponseSchema: GenMessage<AggregateMetricsResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 43);
+  messageDesc(file_sdl_v1_models_canvas_service, 31);
 
 /**
  * @generated from message sdl.v1.StreamMetricsRequest
@@ -926,7 +696,7 @@ export type StreamMetricsRequest = Message<"sdl.v1.StreamMetricsRequest"> & {
  * Use `create(StreamMetricsRequestSchema)` to create a new message.
  */
 export const StreamMetricsRequestSchema: GenMessage<StreamMetricsRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 44);
+  messageDesc(file_sdl_v1_models_canvas_service, 32);
 
 /**
  * @generated from message sdl.v1.StreamMetricsResponse
@@ -943,7 +713,7 @@ export type StreamMetricsResponse = Message<"sdl.v1.StreamMetricsResponse"> & {
  * Use `create(StreamMetricsResponseSchema)` to create a new message.
  */
 export const StreamMetricsResponseSchema: GenMessage<StreamMetricsResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 45);
+  messageDesc(file_sdl_v1_models_canvas_service, 33);
 
 /**
  * @generated from message sdl.v1.ExecuteTraceRequest
@@ -970,7 +740,7 @@ export type ExecuteTraceRequest = Message<"sdl.v1.ExecuteTraceRequest"> & {
  * Use `create(ExecuteTraceRequestSchema)` to create a new message.
  */
 export const ExecuteTraceRequestSchema: GenMessage<ExecuteTraceRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 46);
+  messageDesc(file_sdl_v1_models_canvas_service, 34);
 
 /**
  * @generated from message sdl.v1.ExecuteTraceResponse
@@ -987,7 +757,7 @@ export type ExecuteTraceResponse = Message<"sdl.v1.ExecuteTraceResponse"> & {
  * Use `create(ExecuteTraceResponseSchema)` to create a new message.
  */
 export const ExecuteTraceResponseSchema: GenMessage<ExecuteTraceResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 47);
+  messageDesc(file_sdl_v1_models_canvas_service, 35);
 
 /**
  * @generated from message sdl.v1.TraceAllPathsRequest
@@ -1019,7 +789,7 @@ export type TraceAllPathsRequest = Message<"sdl.v1.TraceAllPathsRequest"> & {
  * Use `create(TraceAllPathsRequestSchema)` to create a new message.
  */
 export const TraceAllPathsRequestSchema: GenMessage<TraceAllPathsRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 48);
+  messageDesc(file_sdl_v1_models_canvas_service, 36);
 
 /**
  * @generated from message sdl.v1.TraceAllPathsResponse
@@ -1036,7 +806,7 @@ export type TraceAllPathsResponse = Message<"sdl.v1.TraceAllPathsResponse"> & {
  * Use `create(TraceAllPathsResponseSchema)` to create a new message.
  */
 export const TraceAllPathsResponseSchema: GenMessage<TraceAllPathsResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 49);
+  messageDesc(file_sdl_v1_models_canvas_service, 37);
 
 /**
  * @generated from message sdl.v1.SetParameterRequest
@@ -1063,7 +833,7 @@ export type SetParameterRequest = Message<"sdl.v1.SetParameterRequest"> & {
  * Use `create(SetParameterRequestSchema)` to create a new message.
  */
 export const SetParameterRequestSchema: GenMessage<SetParameterRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 50);
+  messageDesc(file_sdl_v1_models_canvas_service, 38);
 
 /**
  * @generated from message sdl.v1.SetParameterResponse
@@ -1095,7 +865,7 @@ export type SetParameterResponse = Message<"sdl.v1.SetParameterResponse"> & {
  * Use `create(SetParameterResponseSchema)` to create a new message.
  */
 export const SetParameterResponseSchema: GenMessage<SetParameterResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 51);
+  messageDesc(file_sdl_v1_models_canvas_service, 39);
 
 /**
  * @generated from message sdl.v1.GetParametersRequest
@@ -1117,7 +887,7 @@ export type GetParametersRequest = Message<"sdl.v1.GetParametersRequest"> & {
  * Use `create(GetParametersRequestSchema)` to create a new message.
  */
 export const GetParametersRequestSchema: GenMessage<GetParametersRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 52);
+  messageDesc(file_sdl_v1_models_canvas_service, 40);
 
 /**
  * @generated from message sdl.v1.GetParametersResponse
@@ -1134,7 +904,7 @@ export type GetParametersResponse = Message<"sdl.v1.GetParametersResponse"> & {
  * Use `create(GetParametersResponseSchema)` to create a new message.
  */
 export const GetParametersResponseSchema: GenMessage<GetParametersResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 53);
+  messageDesc(file_sdl_v1_models_canvas_service, 41);
 
 /**
  * @generated from message sdl.v1.BatchSetParametersRequest
@@ -1156,7 +926,7 @@ export type BatchSetParametersRequest = Message<"sdl.v1.BatchSetParametersReques
  * Use `create(BatchSetParametersRequestSchema)` to create a new message.
  */
 export const BatchSetParametersRequestSchema: GenMessage<BatchSetParametersRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 54);
+  messageDesc(file_sdl_v1_models_canvas_service, 42);
 
 /**
  * @generated from message sdl.v1.BatchSetParametersResponse
@@ -1183,7 +953,7 @@ export type BatchSetParametersResponse = Message<"sdl.v1.BatchSetParametersRespo
  * Use `create(BatchSetParametersResponseSchema)` to create a new message.
  */
 export const BatchSetParametersResponseSchema: GenMessage<BatchSetParametersResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 55);
+  messageDesc(file_sdl_v1_models_canvas_service, 43);
 
 /**
  * @generated from message sdl.v1.EvaluateFlowsRequest
@@ -1205,7 +975,7 @@ export type EvaluateFlowsRequest = Message<"sdl.v1.EvaluateFlowsRequest"> & {
  * Use `create(EvaluateFlowsRequestSchema)` to create a new message.
  */
 export const EvaluateFlowsRequestSchema: GenMessage<EvaluateFlowsRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 56);
+  messageDesc(file_sdl_v1_models_canvas_service, 44);
 
 /**
  * @generated from message sdl.v1.EvaluateFlowsResponse
@@ -1247,7 +1017,7 @@ export type EvaluateFlowsResponse = Message<"sdl.v1.EvaluateFlowsResponse"> & {
  * Use `create(EvaluateFlowsResponseSchema)` to create a new message.
  */
 export const EvaluateFlowsResponseSchema: GenMessage<EvaluateFlowsResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 57);
+  messageDesc(file_sdl_v1_models_canvas_service, 45);
 
 /**
  * @generated from message sdl.v1.GetFlowStateRequest
@@ -1264,7 +1034,7 @@ export type GetFlowStateRequest = Message<"sdl.v1.GetFlowStateRequest"> & {
  * Use `create(GetFlowStateRequestSchema)` to create a new message.
  */
 export const GetFlowStateRequestSchema: GenMessage<GetFlowStateRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 58);
+  messageDesc(file_sdl_v1_models_canvas_service, 46);
 
 /**
  * @generated from message sdl.v1.GetFlowStateResponse
@@ -1281,7 +1051,7 @@ export type GetFlowStateResponse = Message<"sdl.v1.GetFlowStateResponse"> & {
  * Use `create(GetFlowStateResponseSchema)` to create a new message.
  */
 export const GetFlowStateResponseSchema: GenMessage<GetFlowStateResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 59);
+  messageDesc(file_sdl_v1_models_canvas_service, 47);
 
 /**
  * @generated from message sdl.v1.GetSystemDiagramRequest
@@ -1298,7 +1068,7 @@ export type GetSystemDiagramRequest = Message<"sdl.v1.GetSystemDiagramRequest"> 
  * Use `create(GetSystemDiagramRequestSchema)` to create a new message.
  */
 export const GetSystemDiagramRequestSchema: GenMessage<GetSystemDiagramRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 60);
+  messageDesc(file_sdl_v1_models_canvas_service, 48);
 
 /**
  * @generated from message sdl.v1.GetSystemDiagramResponse
@@ -1315,7 +1085,7 @@ export type GetSystemDiagramResponse = Message<"sdl.v1.GetSystemDiagramResponse"
  * Use `create(GetSystemDiagramResponseSchema)` to create a new message.
  */
 export const GetSystemDiagramResponseSchema: GenMessage<GetSystemDiagramResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 61);
+  messageDesc(file_sdl_v1_models_canvas_service, 49);
 
 /**
  * @generated from message sdl.v1.GetUtilizationRequest
@@ -1337,7 +1107,7 @@ export type GetUtilizationRequest = Message<"sdl.v1.GetUtilizationRequest"> & {
  * Use `create(GetUtilizationRequestSchema)` to create a new message.
  */
 export const GetUtilizationRequestSchema: GenMessage<GetUtilizationRequest> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 62);
+  messageDesc(file_sdl_v1_models_canvas_service, 50);
 
 /**
  * @generated from message sdl.v1.GetUtilizationResponse
@@ -1354,5 +1124,5 @@ export type GetUtilizationResponse = Message<"sdl.v1.GetUtilizationResponse"> & 
  * Use `create(GetUtilizationResponseSchema)` to create a new message.
  */
 export const GetUtilizationResponseSchema: GenMessage<GetUtilizationResponse> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_canvas_service, 63);
+  messageDesc(file_sdl_v1_models_canvas_service, 51);
 

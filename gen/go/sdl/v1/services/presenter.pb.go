@@ -29,8 +29,8 @@ const file_sdl_v1_services_presenter_proto_rawDesc = "" +
 	"\n" +
 	"\x1fsdl/v1/services/presenter.proto\x12\x06sdl.v1\x1a\x1asdl/v1/models/models.proto\x1a\x1dsdl/v1/models/presenter.proto\x1a\"sdl/v1/models/canvas_service.proto\x1a\x1cgoogle/api/annotations.proto2}\n" +
 	"\x1bSingletonInitializerService\x12^\n" +
-	"\x13InitializeSingleton\x12\".sdl.v1.InitializeSingletonRequest\x1a#.sdl.v1.InitializeSingletonResponse2\xca\v\n" +
-	"\x13CanvasViewPresenter\x12U\n" +
+	"\x13InitializeSingleton\x12\".sdl.v1.InitializeSingletonRequest\x1a#.sdl.v1.InitializeSingletonResponse2\xc9\v\n" +
+	"\x12WorkspacePresenter\x12U\n" +
 	"\n" +
 	"Initialize\x12\".sdl.v1.InitializePresenterRequest\x1a#.sdl.v1.InitializePresenterResponse\x12F\n" +
 	"\vClientReady\x12\x1a.sdl.v1.ClientReadyRequest\x1a\x1b.sdl.v1.ClientReadyResponse\x12I\n" +
@@ -95,43 +95,43 @@ var file_sdl_v1_services_presenter_proto_goTypes = []any{
 }
 var file_sdl_v1_services_presenter_proto_depIdxs = []int32{
 	0,  // 0: sdl.v1.SingletonInitializerService.InitializeSingleton:input_type -> sdl.v1.InitializeSingletonRequest
-	1,  // 1: sdl.v1.CanvasViewPresenter.Initialize:input_type -> sdl.v1.InitializePresenterRequest
-	2,  // 2: sdl.v1.CanvasViewPresenter.ClientReady:input_type -> sdl.v1.ClientReadyRequest
-	3,  // 3: sdl.v1.CanvasViewPresenter.FileSelected:input_type -> sdl.v1.FileSelectedRequest
-	4,  // 4: sdl.v1.CanvasViewPresenter.FileSaved:input_type -> sdl.v1.FileSavedRequest
-	5,  // 5: sdl.v1.CanvasViewPresenter.UseSystem:input_type -> sdl.v1.UseSystemRequest
-	6,  // 6: sdl.v1.CanvasViewPresenter.AddGenerator:input_type -> sdl.v1.AddGeneratorRequest
-	7,  // 7: sdl.v1.CanvasViewPresenter.DeleteGenerator:input_type -> sdl.v1.DeleteGeneratorRequest
-	8,  // 8: sdl.v1.CanvasViewPresenter.UpdateGenerator:input_type -> sdl.v1.UpdateGeneratorRequest
-	9,  // 9: sdl.v1.CanvasViewPresenter.StartGenerator:input_type -> sdl.v1.StartGeneratorRequest
-	10, // 10: sdl.v1.CanvasViewPresenter.StopGenerator:input_type -> sdl.v1.StopGeneratorRequest
-	11, // 11: sdl.v1.CanvasViewPresenter.StartAllGenerators:input_type -> sdl.v1.StartAllGeneratorsRequest
-	12, // 12: sdl.v1.CanvasViewPresenter.StopAllGenerators:input_type -> sdl.v1.StopAllGeneratorsRequest
-	13, // 13: sdl.v1.CanvasViewPresenter.AddMetric:input_type -> sdl.v1.AddMetricRequest
-	14, // 14: sdl.v1.CanvasViewPresenter.DeleteMetric:input_type -> sdl.v1.DeleteMetricRequest
-	15, // 15: sdl.v1.CanvasViewPresenter.SetParameter:input_type -> sdl.v1.SetParameterRequest
-	16, // 16: sdl.v1.CanvasViewPresenter.EvaluateFlows:input_type -> sdl.v1.EvaluateFlowsRequest
-	17, // 17: sdl.v1.CanvasViewPresenter.DiagramComponentClicked:input_type -> sdl.v1.DiagramComponentClickedRequest
-	18, // 18: sdl.v1.CanvasViewPresenter.DiagramComponentHovered:input_type -> sdl.v1.DiagramComponentHoveredRequest
+	1,  // 1: sdl.v1.WorkspacePresenter.Initialize:input_type -> sdl.v1.InitializePresenterRequest
+	2,  // 2: sdl.v1.WorkspacePresenter.ClientReady:input_type -> sdl.v1.ClientReadyRequest
+	3,  // 3: sdl.v1.WorkspacePresenter.FileSelected:input_type -> sdl.v1.FileSelectedRequest
+	4,  // 4: sdl.v1.WorkspacePresenter.FileSaved:input_type -> sdl.v1.FileSavedRequest
+	5,  // 5: sdl.v1.WorkspacePresenter.UseSystem:input_type -> sdl.v1.UseSystemRequest
+	6,  // 6: sdl.v1.WorkspacePresenter.AddGenerator:input_type -> sdl.v1.AddGeneratorRequest
+	7,  // 7: sdl.v1.WorkspacePresenter.DeleteGenerator:input_type -> sdl.v1.DeleteGeneratorRequest
+	8,  // 8: sdl.v1.WorkspacePresenter.UpdateGenerator:input_type -> sdl.v1.UpdateGeneratorRequest
+	9,  // 9: sdl.v1.WorkspacePresenter.StartGenerator:input_type -> sdl.v1.StartGeneratorRequest
+	10, // 10: sdl.v1.WorkspacePresenter.StopGenerator:input_type -> sdl.v1.StopGeneratorRequest
+	11, // 11: sdl.v1.WorkspacePresenter.StartAllGenerators:input_type -> sdl.v1.StartAllGeneratorsRequest
+	12, // 12: sdl.v1.WorkspacePresenter.StopAllGenerators:input_type -> sdl.v1.StopAllGeneratorsRequest
+	13, // 13: sdl.v1.WorkspacePresenter.AddMetric:input_type -> sdl.v1.AddMetricRequest
+	14, // 14: sdl.v1.WorkspacePresenter.DeleteMetric:input_type -> sdl.v1.DeleteMetricRequest
+	15, // 15: sdl.v1.WorkspacePresenter.SetParameter:input_type -> sdl.v1.SetParameterRequest
+	16, // 16: sdl.v1.WorkspacePresenter.EvaluateFlows:input_type -> sdl.v1.EvaluateFlowsRequest
+	17, // 17: sdl.v1.WorkspacePresenter.DiagramComponentClicked:input_type -> sdl.v1.DiagramComponentClickedRequest
+	18, // 18: sdl.v1.WorkspacePresenter.DiagramComponentHovered:input_type -> sdl.v1.DiagramComponentHoveredRequest
 	19, // 19: sdl.v1.SingletonInitializerService.InitializeSingleton:output_type -> sdl.v1.InitializeSingletonResponse
-	20, // 20: sdl.v1.CanvasViewPresenter.Initialize:output_type -> sdl.v1.InitializePresenterResponse
-	21, // 21: sdl.v1.CanvasViewPresenter.ClientReady:output_type -> sdl.v1.ClientReadyResponse
-	22, // 22: sdl.v1.CanvasViewPresenter.FileSelected:output_type -> sdl.v1.FileSelectedResponse
-	23, // 23: sdl.v1.CanvasViewPresenter.FileSaved:output_type -> sdl.v1.FileSavedResponse
-	24, // 24: sdl.v1.CanvasViewPresenter.UseSystem:output_type -> sdl.v1.UseSystemResponse
-	25, // 25: sdl.v1.CanvasViewPresenter.AddGenerator:output_type -> sdl.v1.AddGeneratorResponse
-	26, // 26: sdl.v1.CanvasViewPresenter.DeleteGenerator:output_type -> sdl.v1.DeleteGeneratorResponse
-	27, // 27: sdl.v1.CanvasViewPresenter.UpdateGenerator:output_type -> sdl.v1.UpdateGeneratorResponse
-	28, // 28: sdl.v1.CanvasViewPresenter.StartGenerator:output_type -> sdl.v1.StartGeneratorResponse
-	29, // 29: sdl.v1.CanvasViewPresenter.StopGenerator:output_type -> sdl.v1.StopGeneratorResponse
-	30, // 30: sdl.v1.CanvasViewPresenter.StartAllGenerators:output_type -> sdl.v1.StartAllGeneratorsResponse
-	31, // 31: sdl.v1.CanvasViewPresenter.StopAllGenerators:output_type -> sdl.v1.StopAllGeneratorsResponse
-	32, // 32: sdl.v1.CanvasViewPresenter.AddMetric:output_type -> sdl.v1.AddMetricResponse
-	33, // 33: sdl.v1.CanvasViewPresenter.DeleteMetric:output_type -> sdl.v1.DeleteMetricResponse
-	34, // 34: sdl.v1.CanvasViewPresenter.SetParameter:output_type -> sdl.v1.SetParameterResponse
-	35, // 35: sdl.v1.CanvasViewPresenter.EvaluateFlows:output_type -> sdl.v1.EvaluateFlowsResponse
-	36, // 36: sdl.v1.CanvasViewPresenter.DiagramComponentClicked:output_type -> sdl.v1.DiagramComponentClickedResponse
-	37, // 37: sdl.v1.CanvasViewPresenter.DiagramComponentHovered:output_type -> sdl.v1.DiagramComponentHoveredResponse
+	20, // 20: sdl.v1.WorkspacePresenter.Initialize:output_type -> sdl.v1.InitializePresenterResponse
+	21, // 21: sdl.v1.WorkspacePresenter.ClientReady:output_type -> sdl.v1.ClientReadyResponse
+	22, // 22: sdl.v1.WorkspacePresenter.FileSelected:output_type -> sdl.v1.FileSelectedResponse
+	23, // 23: sdl.v1.WorkspacePresenter.FileSaved:output_type -> sdl.v1.FileSavedResponse
+	24, // 24: sdl.v1.WorkspacePresenter.UseSystem:output_type -> sdl.v1.UseSystemResponse
+	25, // 25: sdl.v1.WorkspacePresenter.AddGenerator:output_type -> sdl.v1.AddGeneratorResponse
+	26, // 26: sdl.v1.WorkspacePresenter.DeleteGenerator:output_type -> sdl.v1.DeleteGeneratorResponse
+	27, // 27: sdl.v1.WorkspacePresenter.UpdateGenerator:output_type -> sdl.v1.UpdateGeneratorResponse
+	28, // 28: sdl.v1.WorkspacePresenter.StartGenerator:output_type -> sdl.v1.StartGeneratorResponse
+	29, // 29: sdl.v1.WorkspacePresenter.StopGenerator:output_type -> sdl.v1.StopGeneratorResponse
+	30, // 30: sdl.v1.WorkspacePresenter.StartAllGenerators:output_type -> sdl.v1.StartAllGeneratorsResponse
+	31, // 31: sdl.v1.WorkspacePresenter.StopAllGenerators:output_type -> sdl.v1.StopAllGeneratorsResponse
+	32, // 32: sdl.v1.WorkspacePresenter.AddMetric:output_type -> sdl.v1.AddMetricResponse
+	33, // 33: sdl.v1.WorkspacePresenter.DeleteMetric:output_type -> sdl.v1.DeleteMetricResponse
+	34, // 34: sdl.v1.WorkspacePresenter.SetParameter:output_type -> sdl.v1.SetParameterResponse
+	35, // 35: sdl.v1.WorkspacePresenter.EvaluateFlows:output_type -> sdl.v1.EvaluateFlowsResponse
+	36, // 36: sdl.v1.WorkspacePresenter.DiagramComponentClicked:output_type -> sdl.v1.DiagramComponentClickedResponse
+	37, // 37: sdl.v1.WorkspacePresenter.DiagramComponentHovered:output_type -> sdl.v1.DiagramComponentHoveredResponse
 	19, // [19:38] is the sub-list for method output_type
 	0,  // [0:19] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name

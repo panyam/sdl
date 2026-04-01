@@ -6,10 +6,10 @@ from sdl.v1.models import dashboardpage_pb2 as sdl_dot_v1_dot_models_dot_dashboa
 from sdl.v1.models import devenvpage_pb2 as sdl_dot_v1_dot_models_dot_devenvpage__pb2
 
 
-class DevEnvPageStub(object):
-    """DevEnvPage is implemented by the browser/frontend for DevEnv-based UIs.
-    The DevEnv pushes typed updates to this service when simulation state changes.
-    Follows the same browser_provided pattern as CanvasDashboardPage.
+class WorkspacePageStub(object):
+    """WorkspacePage is the page/view interface that receives push updates from the
+    WorkspacePresenter. Implementations: BrowserWorkspacePage (WASM), ConsoleWorkspacePage (CLI).
+    The browser_provided option enables protoc-gen-go-wasmjs to generate browser bindings.
     """
 
     def __init__(self, channel):
@@ -19,56 +19,56 @@ class DevEnvPageStub(object):
             channel: A grpc.Channel.
         """
         self.OnSystemChanged = channel.unary_unary(
-                '/sdl.v1.DevEnvPage/OnSystemChanged',
+                '/sdl.v1.WorkspacePage/OnSystemChanged',
                 request_serializer=sdl_dot_v1_dot_models_dot_devenvpage__pb2.DevEnvSystemChangedRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_devenvpage__pb2.DevEnvSystemChangedResponse.FromString,
                 _registered_method=True)
         self.OnAvailableSystemsChanged = channel.unary_unary(
-                '/sdl.v1.DevEnvPage/OnAvailableSystemsChanged',
+                '/sdl.v1.WorkspacePage/OnAvailableSystemsChanged',
                 request_serializer=sdl_dot_v1_dot_models_dot_devenvpage__pb2.DevEnvAvailableSystemsRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_devenvpage__pb2.DevEnvAvailableSystemsResponse.FromString,
                 _registered_method=True)
         self.UpdateDiagram = channel.unary_unary(
-                '/sdl.v1.DevEnvPage/UpdateDiagram',
+                '/sdl.v1.WorkspacePage/UpdateDiagram',
                 request_serializer=sdl_dot_v1_dot_models_dot_dashboardpage__pb2.UpdateDiagramRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_dashboardpage__pb2.UpdateDiagramResponse.FromString,
                 _registered_method=True)
         self.UpdateGenerator = channel.unary_unary(
-                '/sdl.v1.DevEnvPage/UpdateGenerator',
+                '/sdl.v1.WorkspacePage/UpdateGenerator',
                 request_serializer=sdl_dot_v1_dot_models_dot_devenvpage__pb2.DevEnvUpdateGeneratorRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_devenvpage__pb2.DevEnvUpdateGeneratorResponse.FromString,
                 _registered_method=True)
         self.RemoveGenerator = channel.unary_unary(
-                '/sdl.v1.DevEnvPage/RemoveGenerator',
+                '/sdl.v1.WorkspacePage/RemoveGenerator',
                 request_serializer=sdl_dot_v1_dot_models_dot_devenvpage__pb2.DevEnvRemoveGeneratorRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_devenvpage__pb2.DevEnvRemoveGeneratorResponse.FromString,
                 _registered_method=True)
         self.UpdateMetric = channel.unary_unary(
-                '/sdl.v1.DevEnvPage/UpdateMetric',
+                '/sdl.v1.WorkspacePage/UpdateMetric',
                 request_serializer=sdl_dot_v1_dot_models_dot_devenvpage__pb2.DevEnvUpdateMetricRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_devenvpage__pb2.DevEnvUpdateMetricResponse.FromString,
                 _registered_method=True)
         self.RemoveMetric = channel.unary_unary(
-                '/sdl.v1.DevEnvPage/RemoveMetric',
+                '/sdl.v1.WorkspacePage/RemoveMetric',
                 request_serializer=sdl_dot_v1_dot_models_dot_devenvpage__pb2.DevEnvRemoveMetricRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_devenvpage__pb2.DevEnvRemoveMetricResponse.FromString,
                 _registered_method=True)
         self.UpdateFlowRates = channel.unary_unary(
-                '/sdl.v1.DevEnvPage/UpdateFlowRates',
+                '/sdl.v1.WorkspacePage/UpdateFlowRates',
                 request_serializer=sdl_dot_v1_dot_models_dot_dashboardpage__pb2.UpdateFlowRatesRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_dashboardpage__pb2.UpdateFlowRatesResponse.FromString,
                 _registered_method=True)
         self.LogMessage = channel.unary_unary(
-                '/sdl.v1.DevEnvPage/LogMessage',
+                '/sdl.v1.WorkspacePage/LogMessage',
                 request_serializer=sdl_dot_v1_dot_models_dot_dashboardpage__pb2.LogMessageRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_dashboardpage__pb2.LogMessageResponse.FromString,
                 _registered_method=True)
 
 
-class DevEnvPageServicer(object):
-    """DevEnvPage is implemented by the browser/frontend for DevEnv-based UIs.
-    The DevEnv pushes typed updates to this service when simulation state changes.
-    Follows the same browser_provided pattern as CanvasDashboardPage.
+class WorkspacePageServicer(object):
+    """WorkspacePage is the page/view interface that receives push updates from the
+    WorkspacePresenter. Implementations: BrowserWorkspacePage (WASM), ConsoleWorkspacePage (CLI).
+    The browser_provided option enables protoc-gen-go-wasmjs to generate browser bindings.
     """
 
     def OnSystemChanged(self, request, context):
@@ -147,7 +147,7 @@ class DevEnvPageServicer(object):
         raise NotImplementedError('Method not implemented!')
 
 
-def add_DevEnvPageServicer_to_server(servicer, server):
+def add_WorkspacePageServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'OnSystemChanged': grpc.unary_unary_rpc_method_handler(
                     servicer.OnSystemChanged,
@@ -196,16 +196,16 @@ def add_DevEnvPageServicer_to_server(servicer, server):
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'sdl.v1.DevEnvPage', rpc_method_handlers)
+            'sdl.v1.WorkspacePage', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
-    server.add_registered_method_handlers('sdl.v1.DevEnvPage', rpc_method_handlers)
+    server.add_registered_method_handlers('sdl.v1.WorkspacePage', rpc_method_handlers)
 
 
  # This class is part of an EXPERIMENTAL API.
-class DevEnvPage(object):
-    """DevEnvPage is implemented by the browser/frontend for DevEnv-based UIs.
-    The DevEnv pushes typed updates to this service when simulation state changes.
-    Follows the same browser_provided pattern as CanvasDashboardPage.
+class WorkspacePage(object):
+    """WorkspacePage is the page/view interface that receives push updates from the
+    WorkspacePresenter. Implementations: BrowserWorkspacePage (WASM), ConsoleWorkspacePage (CLI).
+    The browser_provided option enables protoc-gen-go-wasmjs to generate browser bindings.
     """
 
     @staticmethod
@@ -222,7 +222,7 @@ class DevEnvPage(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/sdl.v1.DevEnvPage/OnSystemChanged',
+            '/sdl.v1.WorkspacePage/OnSystemChanged',
             sdl_dot_v1_dot_models_dot_devenvpage__pb2.DevEnvSystemChangedRequest.SerializeToString,
             sdl_dot_v1_dot_models_dot_devenvpage__pb2.DevEnvSystemChangedResponse.FromString,
             options,
@@ -249,7 +249,7 @@ class DevEnvPage(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/sdl.v1.DevEnvPage/OnAvailableSystemsChanged',
+            '/sdl.v1.WorkspacePage/OnAvailableSystemsChanged',
             sdl_dot_v1_dot_models_dot_devenvpage__pb2.DevEnvAvailableSystemsRequest.SerializeToString,
             sdl_dot_v1_dot_models_dot_devenvpage__pb2.DevEnvAvailableSystemsResponse.FromString,
             options,
@@ -276,7 +276,7 @@ class DevEnvPage(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/sdl.v1.DevEnvPage/UpdateDiagram',
+            '/sdl.v1.WorkspacePage/UpdateDiagram',
             sdl_dot_v1_dot_models_dot_dashboardpage__pb2.UpdateDiagramRequest.SerializeToString,
             sdl_dot_v1_dot_models_dot_dashboardpage__pb2.UpdateDiagramResponse.FromString,
             options,
@@ -303,7 +303,7 @@ class DevEnvPage(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/sdl.v1.DevEnvPage/UpdateGenerator',
+            '/sdl.v1.WorkspacePage/UpdateGenerator',
             sdl_dot_v1_dot_models_dot_devenvpage__pb2.DevEnvUpdateGeneratorRequest.SerializeToString,
             sdl_dot_v1_dot_models_dot_devenvpage__pb2.DevEnvUpdateGeneratorResponse.FromString,
             options,
@@ -330,7 +330,7 @@ class DevEnvPage(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/sdl.v1.DevEnvPage/RemoveGenerator',
+            '/sdl.v1.WorkspacePage/RemoveGenerator',
             sdl_dot_v1_dot_models_dot_devenvpage__pb2.DevEnvRemoveGeneratorRequest.SerializeToString,
             sdl_dot_v1_dot_models_dot_devenvpage__pb2.DevEnvRemoveGeneratorResponse.FromString,
             options,
@@ -357,7 +357,7 @@ class DevEnvPage(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/sdl.v1.DevEnvPage/UpdateMetric',
+            '/sdl.v1.WorkspacePage/UpdateMetric',
             sdl_dot_v1_dot_models_dot_devenvpage__pb2.DevEnvUpdateMetricRequest.SerializeToString,
             sdl_dot_v1_dot_models_dot_devenvpage__pb2.DevEnvUpdateMetricResponse.FromString,
             options,
@@ -384,7 +384,7 @@ class DevEnvPage(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/sdl.v1.DevEnvPage/RemoveMetric',
+            '/sdl.v1.WorkspacePage/RemoveMetric',
             sdl_dot_v1_dot_models_dot_devenvpage__pb2.DevEnvRemoveMetricRequest.SerializeToString,
             sdl_dot_v1_dot_models_dot_devenvpage__pb2.DevEnvRemoveMetricResponse.FromString,
             options,
@@ -411,7 +411,7 @@ class DevEnvPage(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/sdl.v1.DevEnvPage/UpdateFlowRates',
+            '/sdl.v1.WorkspacePage/UpdateFlowRates',
             sdl_dot_v1_dot_models_dot_dashboardpage__pb2.UpdateFlowRatesRequest.SerializeToString,
             sdl_dot_v1_dot_models_dot_dashboardpage__pb2.UpdateFlowRatesResponse.FromString,
             options,
@@ -438,7 +438,7 @@ class DevEnvPage(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/sdl.v1.DevEnvPage/LogMessage',
+            '/sdl.v1.WorkspacePage/LogMessage',
             sdl_dot_v1_dot_models_dot_dashboardpage__pb2.LogMessageRequest.SerializeToString,
             sdl_dot_v1_dot_models_dot_dashboardpage__pb2.LogMessageResponse.FromString,
             options,

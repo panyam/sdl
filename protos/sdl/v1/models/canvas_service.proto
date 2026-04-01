@@ -1,3 +1,4 @@
+
 syntax = "proto3";
 
 package sdl.v1;
@@ -11,6 +12,7 @@ option go_package = "github.com/panyam/sdl/gen/go/sdl/v1/models";
 // Canvas CRUD Messages
 // ============================================================================
 
+/*
 message CreateCanvasRequest {
   Canvas canvas = 1;
 }
@@ -63,6 +65,7 @@ message ResetCanvasResponse {
   bool success = 1;
   string message = 2;
 }
+*/
 
 // ============================================================================
 // File Operations

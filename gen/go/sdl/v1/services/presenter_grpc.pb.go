@@ -127,42 +127,42 @@ var SingletonInitializerService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	CanvasViewPresenter_Initialize_FullMethodName              = "/sdl.v1.CanvasViewPresenter/Initialize"
-	CanvasViewPresenter_ClientReady_FullMethodName             = "/sdl.v1.CanvasViewPresenter/ClientReady"
-	CanvasViewPresenter_FileSelected_FullMethodName            = "/sdl.v1.CanvasViewPresenter/FileSelected"
-	CanvasViewPresenter_FileSaved_FullMethodName               = "/sdl.v1.CanvasViewPresenter/FileSaved"
-	CanvasViewPresenter_UseSystem_FullMethodName               = "/sdl.v1.CanvasViewPresenter/UseSystem"
-	CanvasViewPresenter_AddGenerator_FullMethodName            = "/sdl.v1.CanvasViewPresenter/AddGenerator"
-	CanvasViewPresenter_DeleteGenerator_FullMethodName         = "/sdl.v1.CanvasViewPresenter/DeleteGenerator"
-	CanvasViewPresenter_UpdateGenerator_FullMethodName         = "/sdl.v1.CanvasViewPresenter/UpdateGenerator"
-	CanvasViewPresenter_StartGenerator_FullMethodName          = "/sdl.v1.CanvasViewPresenter/StartGenerator"
-	CanvasViewPresenter_StopGenerator_FullMethodName           = "/sdl.v1.CanvasViewPresenter/StopGenerator"
-	CanvasViewPresenter_StartAllGenerators_FullMethodName      = "/sdl.v1.CanvasViewPresenter/StartAllGenerators"
-	CanvasViewPresenter_StopAllGenerators_FullMethodName       = "/sdl.v1.CanvasViewPresenter/StopAllGenerators"
-	CanvasViewPresenter_AddMetric_FullMethodName               = "/sdl.v1.CanvasViewPresenter/AddMetric"
-	CanvasViewPresenter_DeleteMetric_FullMethodName            = "/sdl.v1.CanvasViewPresenter/DeleteMetric"
-	CanvasViewPresenter_SetParameter_FullMethodName            = "/sdl.v1.CanvasViewPresenter/SetParameter"
-	CanvasViewPresenter_EvaluateFlows_FullMethodName           = "/sdl.v1.CanvasViewPresenter/EvaluateFlows"
-	CanvasViewPresenter_DiagramComponentClicked_FullMethodName = "/sdl.v1.CanvasViewPresenter/DiagramComponentClicked"
-	CanvasViewPresenter_DiagramComponentHovered_FullMethodName = "/sdl.v1.CanvasViewPresenter/DiagramComponentHovered"
+	WorkspacePresenter_Initialize_FullMethodName              = "/sdl.v1.WorkspacePresenter/Initialize"
+	WorkspacePresenter_ClientReady_FullMethodName             = "/sdl.v1.WorkspacePresenter/ClientReady"
+	WorkspacePresenter_FileSelected_FullMethodName            = "/sdl.v1.WorkspacePresenter/FileSelected"
+	WorkspacePresenter_FileSaved_FullMethodName               = "/sdl.v1.WorkspacePresenter/FileSaved"
+	WorkspacePresenter_UseSystem_FullMethodName               = "/sdl.v1.WorkspacePresenter/UseSystem"
+	WorkspacePresenter_AddGenerator_FullMethodName            = "/sdl.v1.WorkspacePresenter/AddGenerator"
+	WorkspacePresenter_DeleteGenerator_FullMethodName         = "/sdl.v1.WorkspacePresenter/DeleteGenerator"
+	WorkspacePresenter_UpdateGenerator_FullMethodName         = "/sdl.v1.WorkspacePresenter/UpdateGenerator"
+	WorkspacePresenter_StartGenerator_FullMethodName          = "/sdl.v1.WorkspacePresenter/StartGenerator"
+	WorkspacePresenter_StopGenerator_FullMethodName           = "/sdl.v1.WorkspacePresenter/StopGenerator"
+	WorkspacePresenter_StartAllGenerators_FullMethodName      = "/sdl.v1.WorkspacePresenter/StartAllGenerators"
+	WorkspacePresenter_StopAllGenerators_FullMethodName       = "/sdl.v1.WorkspacePresenter/StopAllGenerators"
+	WorkspacePresenter_AddMetric_FullMethodName               = "/sdl.v1.WorkspacePresenter/AddMetric"
+	WorkspacePresenter_DeleteMetric_FullMethodName            = "/sdl.v1.WorkspacePresenter/DeleteMetric"
+	WorkspacePresenter_SetParameter_FullMethodName            = "/sdl.v1.WorkspacePresenter/SetParameter"
+	WorkspacePresenter_EvaluateFlows_FullMethodName           = "/sdl.v1.WorkspacePresenter/EvaluateFlows"
+	WorkspacePresenter_DiagramComponentClicked_FullMethodName = "/sdl.v1.WorkspacePresenter/DiagramComponentClicked"
+	WorkspacePresenter_DiagramComponentHovered_FullMethodName = "/sdl.v1.WorkspacePresenter/DiagramComponentHovered"
 )
 
-// CanvasViewPresenterClient is the client API for CanvasViewPresenter service.
+// WorkspacePresenterClient is the client API for WorkspacePresenter service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// CanvasViewPresenter is the P in Model-View-Presenter.
+// WorkspacePresenter is the P in Model-View-Presenter.
 //
-// The frontend/views are kept as dumb as possible - they react to commands
-// and state changes but don't handle complex UI logic. They present user
-// interactions to this Presenter which handles the logic between the view
-// and the backend (Canvas/runtime).
+// The frontend/views (WorkspacePage implementations) are kept as dumb as
+// possible - they react to commands and state changes but don't handle
+// complex UI logic. They present user interactions to this Presenter which
+// handles the logic between the page and the runtime (DevEnv).
 //
 // This also helps with:
 // - Mocking views for testing
-// - Different view implementations (web, CLI, remote)
+// - Different page implementations (browser, CLI console, remote)
 // - Changing presenters for different looks/feels
-type CanvasViewPresenterClient interface {
+type WorkspacePresenterClient interface {
 	// Called when the dashboard is first loaded
 	Initialize(ctx context.Context, in *models.InitializePresenterRequest, opts ...grpc.CallOption) (*models.InitializePresenterResponse, error)
 	// Called by browser after UI is fully ready for updates
@@ -201,210 +201,210 @@ type CanvasViewPresenterClient interface {
 	DiagramComponentHovered(ctx context.Context, in *models.DiagramComponentHoveredRequest, opts ...grpc.CallOption) (*models.DiagramComponentHoveredResponse, error)
 }
 
-type canvasViewPresenterClient struct {
+type workspacePresenterClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewCanvasViewPresenterClient(cc grpc.ClientConnInterface) CanvasViewPresenterClient {
-	return &canvasViewPresenterClient{cc}
+func NewWorkspacePresenterClient(cc grpc.ClientConnInterface) WorkspacePresenterClient {
+	return &workspacePresenterClient{cc}
 }
 
-func (c *canvasViewPresenterClient) Initialize(ctx context.Context, in *models.InitializePresenterRequest, opts ...grpc.CallOption) (*models.InitializePresenterResponse, error) {
+func (c *workspacePresenterClient) Initialize(ctx context.Context, in *models.InitializePresenterRequest, opts ...grpc.CallOption) (*models.InitializePresenterResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(models.InitializePresenterResponse)
-	err := c.cc.Invoke(ctx, CanvasViewPresenter_Initialize_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, WorkspacePresenter_Initialize_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *canvasViewPresenterClient) ClientReady(ctx context.Context, in *models.ClientReadyRequest, opts ...grpc.CallOption) (*models.ClientReadyResponse, error) {
+func (c *workspacePresenterClient) ClientReady(ctx context.Context, in *models.ClientReadyRequest, opts ...grpc.CallOption) (*models.ClientReadyResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(models.ClientReadyResponse)
-	err := c.cc.Invoke(ctx, CanvasViewPresenter_ClientReady_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, WorkspacePresenter_ClientReady_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *canvasViewPresenterClient) FileSelected(ctx context.Context, in *models.FileSelectedRequest, opts ...grpc.CallOption) (*models.FileSelectedResponse, error) {
+func (c *workspacePresenterClient) FileSelected(ctx context.Context, in *models.FileSelectedRequest, opts ...grpc.CallOption) (*models.FileSelectedResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(models.FileSelectedResponse)
-	err := c.cc.Invoke(ctx, CanvasViewPresenter_FileSelected_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, WorkspacePresenter_FileSelected_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *canvasViewPresenterClient) FileSaved(ctx context.Context, in *models.FileSavedRequest, opts ...grpc.CallOption) (*models.FileSavedResponse, error) {
+func (c *workspacePresenterClient) FileSaved(ctx context.Context, in *models.FileSavedRequest, opts ...grpc.CallOption) (*models.FileSavedResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(models.FileSavedResponse)
-	err := c.cc.Invoke(ctx, CanvasViewPresenter_FileSaved_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, WorkspacePresenter_FileSaved_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *canvasViewPresenterClient) UseSystem(ctx context.Context, in *models.UseSystemRequest, opts ...grpc.CallOption) (*models.UseSystemResponse, error) {
+func (c *workspacePresenterClient) UseSystem(ctx context.Context, in *models.UseSystemRequest, opts ...grpc.CallOption) (*models.UseSystemResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(models.UseSystemResponse)
-	err := c.cc.Invoke(ctx, CanvasViewPresenter_UseSystem_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, WorkspacePresenter_UseSystem_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *canvasViewPresenterClient) AddGenerator(ctx context.Context, in *models.AddGeneratorRequest, opts ...grpc.CallOption) (*models.AddGeneratorResponse, error) {
+func (c *workspacePresenterClient) AddGenerator(ctx context.Context, in *models.AddGeneratorRequest, opts ...grpc.CallOption) (*models.AddGeneratorResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(models.AddGeneratorResponse)
-	err := c.cc.Invoke(ctx, CanvasViewPresenter_AddGenerator_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, WorkspacePresenter_AddGenerator_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *canvasViewPresenterClient) DeleteGenerator(ctx context.Context, in *models.DeleteGeneratorRequest, opts ...grpc.CallOption) (*models.DeleteGeneratorResponse, error) {
+func (c *workspacePresenterClient) DeleteGenerator(ctx context.Context, in *models.DeleteGeneratorRequest, opts ...grpc.CallOption) (*models.DeleteGeneratorResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(models.DeleteGeneratorResponse)
-	err := c.cc.Invoke(ctx, CanvasViewPresenter_DeleteGenerator_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, WorkspacePresenter_DeleteGenerator_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *canvasViewPresenterClient) UpdateGenerator(ctx context.Context, in *models.UpdateGeneratorRequest, opts ...grpc.CallOption) (*models.UpdateGeneratorResponse, error) {
+func (c *workspacePresenterClient) UpdateGenerator(ctx context.Context, in *models.UpdateGeneratorRequest, opts ...grpc.CallOption) (*models.UpdateGeneratorResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(models.UpdateGeneratorResponse)
-	err := c.cc.Invoke(ctx, CanvasViewPresenter_UpdateGenerator_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, WorkspacePresenter_UpdateGenerator_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *canvasViewPresenterClient) StartGenerator(ctx context.Context, in *models.StartGeneratorRequest, opts ...grpc.CallOption) (*models.StartGeneratorResponse, error) {
+func (c *workspacePresenterClient) StartGenerator(ctx context.Context, in *models.StartGeneratorRequest, opts ...grpc.CallOption) (*models.StartGeneratorResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(models.StartGeneratorResponse)
-	err := c.cc.Invoke(ctx, CanvasViewPresenter_StartGenerator_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, WorkspacePresenter_StartGenerator_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *canvasViewPresenterClient) StopGenerator(ctx context.Context, in *models.StopGeneratorRequest, opts ...grpc.CallOption) (*models.StopGeneratorResponse, error) {
+func (c *workspacePresenterClient) StopGenerator(ctx context.Context, in *models.StopGeneratorRequest, opts ...grpc.CallOption) (*models.StopGeneratorResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(models.StopGeneratorResponse)
-	err := c.cc.Invoke(ctx, CanvasViewPresenter_StopGenerator_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, WorkspacePresenter_StopGenerator_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *canvasViewPresenterClient) StartAllGenerators(ctx context.Context, in *models.StartAllGeneratorsRequest, opts ...grpc.CallOption) (*models.StartAllGeneratorsResponse, error) {
+func (c *workspacePresenterClient) StartAllGenerators(ctx context.Context, in *models.StartAllGeneratorsRequest, opts ...grpc.CallOption) (*models.StartAllGeneratorsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(models.StartAllGeneratorsResponse)
-	err := c.cc.Invoke(ctx, CanvasViewPresenter_StartAllGenerators_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, WorkspacePresenter_StartAllGenerators_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *canvasViewPresenterClient) StopAllGenerators(ctx context.Context, in *models.StopAllGeneratorsRequest, opts ...grpc.CallOption) (*models.StopAllGeneratorsResponse, error) {
+func (c *workspacePresenterClient) StopAllGenerators(ctx context.Context, in *models.StopAllGeneratorsRequest, opts ...grpc.CallOption) (*models.StopAllGeneratorsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(models.StopAllGeneratorsResponse)
-	err := c.cc.Invoke(ctx, CanvasViewPresenter_StopAllGenerators_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, WorkspacePresenter_StopAllGenerators_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *canvasViewPresenterClient) AddMetric(ctx context.Context, in *models.AddMetricRequest, opts ...grpc.CallOption) (*models.AddMetricResponse, error) {
+func (c *workspacePresenterClient) AddMetric(ctx context.Context, in *models.AddMetricRequest, opts ...grpc.CallOption) (*models.AddMetricResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(models.AddMetricResponse)
-	err := c.cc.Invoke(ctx, CanvasViewPresenter_AddMetric_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, WorkspacePresenter_AddMetric_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *canvasViewPresenterClient) DeleteMetric(ctx context.Context, in *models.DeleteMetricRequest, opts ...grpc.CallOption) (*models.DeleteMetricResponse, error) {
+func (c *workspacePresenterClient) DeleteMetric(ctx context.Context, in *models.DeleteMetricRequest, opts ...grpc.CallOption) (*models.DeleteMetricResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(models.DeleteMetricResponse)
-	err := c.cc.Invoke(ctx, CanvasViewPresenter_DeleteMetric_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, WorkspacePresenter_DeleteMetric_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *canvasViewPresenterClient) SetParameter(ctx context.Context, in *models.SetParameterRequest, opts ...grpc.CallOption) (*models.SetParameterResponse, error) {
+func (c *workspacePresenterClient) SetParameter(ctx context.Context, in *models.SetParameterRequest, opts ...grpc.CallOption) (*models.SetParameterResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(models.SetParameterResponse)
-	err := c.cc.Invoke(ctx, CanvasViewPresenter_SetParameter_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, WorkspacePresenter_SetParameter_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *canvasViewPresenterClient) EvaluateFlows(ctx context.Context, in *models.EvaluateFlowsRequest, opts ...grpc.CallOption) (*models.EvaluateFlowsResponse, error) {
+func (c *workspacePresenterClient) EvaluateFlows(ctx context.Context, in *models.EvaluateFlowsRequest, opts ...grpc.CallOption) (*models.EvaluateFlowsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(models.EvaluateFlowsResponse)
-	err := c.cc.Invoke(ctx, CanvasViewPresenter_EvaluateFlows_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, WorkspacePresenter_EvaluateFlows_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *canvasViewPresenterClient) DiagramComponentClicked(ctx context.Context, in *models.DiagramComponentClickedRequest, opts ...grpc.CallOption) (*models.DiagramComponentClickedResponse, error) {
+func (c *workspacePresenterClient) DiagramComponentClicked(ctx context.Context, in *models.DiagramComponentClickedRequest, opts ...grpc.CallOption) (*models.DiagramComponentClickedResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(models.DiagramComponentClickedResponse)
-	err := c.cc.Invoke(ctx, CanvasViewPresenter_DiagramComponentClicked_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, WorkspacePresenter_DiagramComponentClicked_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *canvasViewPresenterClient) DiagramComponentHovered(ctx context.Context, in *models.DiagramComponentHoveredRequest, opts ...grpc.CallOption) (*models.DiagramComponentHoveredResponse, error) {
+func (c *workspacePresenterClient) DiagramComponentHovered(ctx context.Context, in *models.DiagramComponentHoveredRequest, opts ...grpc.CallOption) (*models.DiagramComponentHoveredResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(models.DiagramComponentHoveredResponse)
-	err := c.cc.Invoke(ctx, CanvasViewPresenter_DiagramComponentHovered_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, WorkspacePresenter_DiagramComponentHovered_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// CanvasViewPresenterServer is the server API for CanvasViewPresenter service.
-// All implementations should embed UnimplementedCanvasViewPresenterServer
+// WorkspacePresenterServer is the server API for WorkspacePresenter service.
+// All implementations should embed UnimplementedWorkspacePresenterServer
 // for forward compatibility.
 //
-// CanvasViewPresenter is the P in Model-View-Presenter.
+// WorkspacePresenter is the P in Model-View-Presenter.
 //
-// The frontend/views are kept as dumb as possible - they react to commands
-// and state changes but don't handle complex UI logic. They present user
-// interactions to this Presenter which handles the logic between the view
-// and the backend (Canvas/runtime).
+// The frontend/views (WorkspacePage implementations) are kept as dumb as
+// possible - they react to commands and state changes but don't handle
+// complex UI logic. They present user interactions to this Presenter which
+// handles the logic between the page and the runtime (DevEnv).
 //
 // This also helps with:
 // - Mocking views for testing
-// - Different view implementations (web, CLI, remote)
+// - Different page implementations (browser, CLI console, remote)
 // - Changing presenters for different looks/feels
-type CanvasViewPresenterServer interface {
+type WorkspacePresenterServer interface {
 	// Called when the dashboard is first loaded
 	Initialize(context.Context, *models.InitializePresenterRequest) (*models.InitializePresenterResponse, error)
 	// Called by browser after UI is fully ready for updates
@@ -443,489 +443,489 @@ type CanvasViewPresenterServer interface {
 	DiagramComponentHovered(context.Context, *models.DiagramComponentHoveredRequest) (*models.DiagramComponentHoveredResponse, error)
 }
 
-// UnimplementedCanvasViewPresenterServer should be embedded to have
+// UnimplementedWorkspacePresenterServer should be embedded to have
 // forward compatible implementations.
 //
 // NOTE: this should be embedded by value instead of pointer to avoid a nil
 // pointer dereference when methods are called.
-type UnimplementedCanvasViewPresenterServer struct{}
+type UnimplementedWorkspacePresenterServer struct{}
 
-func (UnimplementedCanvasViewPresenterServer) Initialize(context.Context, *models.InitializePresenterRequest) (*models.InitializePresenterResponse, error) {
+func (UnimplementedWorkspacePresenterServer) Initialize(context.Context, *models.InitializePresenterRequest) (*models.InitializePresenterResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Initialize not implemented")
 }
-func (UnimplementedCanvasViewPresenterServer) ClientReady(context.Context, *models.ClientReadyRequest) (*models.ClientReadyResponse, error) {
+func (UnimplementedWorkspacePresenterServer) ClientReady(context.Context, *models.ClientReadyRequest) (*models.ClientReadyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ClientReady not implemented")
 }
-func (UnimplementedCanvasViewPresenterServer) FileSelected(context.Context, *models.FileSelectedRequest) (*models.FileSelectedResponse, error) {
+func (UnimplementedWorkspacePresenterServer) FileSelected(context.Context, *models.FileSelectedRequest) (*models.FileSelectedResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FileSelected not implemented")
 }
-func (UnimplementedCanvasViewPresenterServer) FileSaved(context.Context, *models.FileSavedRequest) (*models.FileSavedResponse, error) {
+func (UnimplementedWorkspacePresenterServer) FileSaved(context.Context, *models.FileSavedRequest) (*models.FileSavedResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FileSaved not implemented")
 }
-func (UnimplementedCanvasViewPresenterServer) UseSystem(context.Context, *models.UseSystemRequest) (*models.UseSystemResponse, error) {
+func (UnimplementedWorkspacePresenterServer) UseSystem(context.Context, *models.UseSystemRequest) (*models.UseSystemResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UseSystem not implemented")
 }
-func (UnimplementedCanvasViewPresenterServer) AddGenerator(context.Context, *models.AddGeneratorRequest) (*models.AddGeneratorResponse, error) {
+func (UnimplementedWorkspacePresenterServer) AddGenerator(context.Context, *models.AddGeneratorRequest) (*models.AddGeneratorResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddGenerator not implemented")
 }
-func (UnimplementedCanvasViewPresenterServer) DeleteGenerator(context.Context, *models.DeleteGeneratorRequest) (*models.DeleteGeneratorResponse, error) {
+func (UnimplementedWorkspacePresenterServer) DeleteGenerator(context.Context, *models.DeleteGeneratorRequest) (*models.DeleteGeneratorResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteGenerator not implemented")
 }
-func (UnimplementedCanvasViewPresenterServer) UpdateGenerator(context.Context, *models.UpdateGeneratorRequest) (*models.UpdateGeneratorResponse, error) {
+func (UnimplementedWorkspacePresenterServer) UpdateGenerator(context.Context, *models.UpdateGeneratorRequest) (*models.UpdateGeneratorResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateGenerator not implemented")
 }
-func (UnimplementedCanvasViewPresenterServer) StartGenerator(context.Context, *models.StartGeneratorRequest) (*models.StartGeneratorResponse, error) {
+func (UnimplementedWorkspacePresenterServer) StartGenerator(context.Context, *models.StartGeneratorRequest) (*models.StartGeneratorResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StartGenerator not implemented")
 }
-func (UnimplementedCanvasViewPresenterServer) StopGenerator(context.Context, *models.StopGeneratorRequest) (*models.StopGeneratorResponse, error) {
+func (UnimplementedWorkspacePresenterServer) StopGenerator(context.Context, *models.StopGeneratorRequest) (*models.StopGeneratorResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StopGenerator not implemented")
 }
-func (UnimplementedCanvasViewPresenterServer) StartAllGenerators(context.Context, *models.StartAllGeneratorsRequest) (*models.StartAllGeneratorsResponse, error) {
+func (UnimplementedWorkspacePresenterServer) StartAllGenerators(context.Context, *models.StartAllGeneratorsRequest) (*models.StartAllGeneratorsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StartAllGenerators not implemented")
 }
-func (UnimplementedCanvasViewPresenterServer) StopAllGenerators(context.Context, *models.StopAllGeneratorsRequest) (*models.StopAllGeneratorsResponse, error) {
+func (UnimplementedWorkspacePresenterServer) StopAllGenerators(context.Context, *models.StopAllGeneratorsRequest) (*models.StopAllGeneratorsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StopAllGenerators not implemented")
 }
-func (UnimplementedCanvasViewPresenterServer) AddMetric(context.Context, *models.AddMetricRequest) (*models.AddMetricResponse, error) {
+func (UnimplementedWorkspacePresenterServer) AddMetric(context.Context, *models.AddMetricRequest) (*models.AddMetricResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddMetric not implemented")
 }
-func (UnimplementedCanvasViewPresenterServer) DeleteMetric(context.Context, *models.DeleteMetricRequest) (*models.DeleteMetricResponse, error) {
+func (UnimplementedWorkspacePresenterServer) DeleteMetric(context.Context, *models.DeleteMetricRequest) (*models.DeleteMetricResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteMetric not implemented")
 }
-func (UnimplementedCanvasViewPresenterServer) SetParameter(context.Context, *models.SetParameterRequest) (*models.SetParameterResponse, error) {
+func (UnimplementedWorkspacePresenterServer) SetParameter(context.Context, *models.SetParameterRequest) (*models.SetParameterResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetParameter not implemented")
 }
-func (UnimplementedCanvasViewPresenterServer) EvaluateFlows(context.Context, *models.EvaluateFlowsRequest) (*models.EvaluateFlowsResponse, error) {
+func (UnimplementedWorkspacePresenterServer) EvaluateFlows(context.Context, *models.EvaluateFlowsRequest) (*models.EvaluateFlowsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EvaluateFlows not implemented")
 }
-func (UnimplementedCanvasViewPresenterServer) DiagramComponentClicked(context.Context, *models.DiagramComponentClickedRequest) (*models.DiagramComponentClickedResponse, error) {
+func (UnimplementedWorkspacePresenterServer) DiagramComponentClicked(context.Context, *models.DiagramComponentClickedRequest) (*models.DiagramComponentClickedResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DiagramComponentClicked not implemented")
 }
-func (UnimplementedCanvasViewPresenterServer) DiagramComponentHovered(context.Context, *models.DiagramComponentHoveredRequest) (*models.DiagramComponentHoveredResponse, error) {
+func (UnimplementedWorkspacePresenterServer) DiagramComponentHovered(context.Context, *models.DiagramComponentHoveredRequest) (*models.DiagramComponentHoveredResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DiagramComponentHovered not implemented")
 }
-func (UnimplementedCanvasViewPresenterServer) testEmbeddedByValue() {}
+func (UnimplementedWorkspacePresenterServer) testEmbeddedByValue() {}
 
-// UnsafeCanvasViewPresenterServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to CanvasViewPresenterServer will
+// UnsafeWorkspacePresenterServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to WorkspacePresenterServer will
 // result in compilation errors.
-type UnsafeCanvasViewPresenterServer interface {
-	mustEmbedUnimplementedCanvasViewPresenterServer()
+type UnsafeWorkspacePresenterServer interface {
+	mustEmbedUnimplementedWorkspacePresenterServer()
 }
 
-func RegisterCanvasViewPresenterServer(s grpc.ServiceRegistrar, srv CanvasViewPresenterServer) {
-	// If the following call pancis, it indicates UnimplementedCanvasViewPresenterServer was
+func RegisterWorkspacePresenterServer(s grpc.ServiceRegistrar, srv WorkspacePresenterServer) {
+	// If the following call pancis, it indicates UnimplementedWorkspacePresenterServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
-	s.RegisterService(&CanvasViewPresenter_ServiceDesc, srv)
+	s.RegisterService(&WorkspacePresenter_ServiceDesc, srv)
 }
 
-func _CanvasViewPresenter_Initialize_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _WorkspacePresenter_Initialize_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(models.InitializePresenterRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CanvasViewPresenterServer).Initialize(ctx, in)
+		return srv.(WorkspacePresenterServer).Initialize(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CanvasViewPresenter_Initialize_FullMethodName,
+		FullMethod: WorkspacePresenter_Initialize_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CanvasViewPresenterServer).Initialize(ctx, req.(*models.InitializePresenterRequest))
+		return srv.(WorkspacePresenterServer).Initialize(ctx, req.(*models.InitializePresenterRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CanvasViewPresenter_ClientReady_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _WorkspacePresenter_ClientReady_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(models.ClientReadyRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CanvasViewPresenterServer).ClientReady(ctx, in)
+		return srv.(WorkspacePresenterServer).ClientReady(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CanvasViewPresenter_ClientReady_FullMethodName,
+		FullMethod: WorkspacePresenter_ClientReady_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CanvasViewPresenterServer).ClientReady(ctx, req.(*models.ClientReadyRequest))
+		return srv.(WorkspacePresenterServer).ClientReady(ctx, req.(*models.ClientReadyRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CanvasViewPresenter_FileSelected_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _WorkspacePresenter_FileSelected_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(models.FileSelectedRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CanvasViewPresenterServer).FileSelected(ctx, in)
+		return srv.(WorkspacePresenterServer).FileSelected(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CanvasViewPresenter_FileSelected_FullMethodName,
+		FullMethod: WorkspacePresenter_FileSelected_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CanvasViewPresenterServer).FileSelected(ctx, req.(*models.FileSelectedRequest))
+		return srv.(WorkspacePresenterServer).FileSelected(ctx, req.(*models.FileSelectedRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CanvasViewPresenter_FileSaved_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _WorkspacePresenter_FileSaved_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(models.FileSavedRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CanvasViewPresenterServer).FileSaved(ctx, in)
+		return srv.(WorkspacePresenterServer).FileSaved(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CanvasViewPresenter_FileSaved_FullMethodName,
+		FullMethod: WorkspacePresenter_FileSaved_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CanvasViewPresenterServer).FileSaved(ctx, req.(*models.FileSavedRequest))
+		return srv.(WorkspacePresenterServer).FileSaved(ctx, req.(*models.FileSavedRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CanvasViewPresenter_UseSystem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _WorkspacePresenter_UseSystem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(models.UseSystemRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CanvasViewPresenterServer).UseSystem(ctx, in)
+		return srv.(WorkspacePresenterServer).UseSystem(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CanvasViewPresenter_UseSystem_FullMethodName,
+		FullMethod: WorkspacePresenter_UseSystem_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CanvasViewPresenterServer).UseSystem(ctx, req.(*models.UseSystemRequest))
+		return srv.(WorkspacePresenterServer).UseSystem(ctx, req.(*models.UseSystemRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CanvasViewPresenter_AddGenerator_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _WorkspacePresenter_AddGenerator_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(models.AddGeneratorRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CanvasViewPresenterServer).AddGenerator(ctx, in)
+		return srv.(WorkspacePresenterServer).AddGenerator(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CanvasViewPresenter_AddGenerator_FullMethodName,
+		FullMethod: WorkspacePresenter_AddGenerator_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CanvasViewPresenterServer).AddGenerator(ctx, req.(*models.AddGeneratorRequest))
+		return srv.(WorkspacePresenterServer).AddGenerator(ctx, req.(*models.AddGeneratorRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CanvasViewPresenter_DeleteGenerator_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _WorkspacePresenter_DeleteGenerator_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(models.DeleteGeneratorRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CanvasViewPresenterServer).DeleteGenerator(ctx, in)
+		return srv.(WorkspacePresenterServer).DeleteGenerator(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CanvasViewPresenter_DeleteGenerator_FullMethodName,
+		FullMethod: WorkspacePresenter_DeleteGenerator_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CanvasViewPresenterServer).DeleteGenerator(ctx, req.(*models.DeleteGeneratorRequest))
+		return srv.(WorkspacePresenterServer).DeleteGenerator(ctx, req.(*models.DeleteGeneratorRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CanvasViewPresenter_UpdateGenerator_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _WorkspacePresenter_UpdateGenerator_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(models.UpdateGeneratorRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CanvasViewPresenterServer).UpdateGenerator(ctx, in)
+		return srv.(WorkspacePresenterServer).UpdateGenerator(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CanvasViewPresenter_UpdateGenerator_FullMethodName,
+		FullMethod: WorkspacePresenter_UpdateGenerator_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CanvasViewPresenterServer).UpdateGenerator(ctx, req.(*models.UpdateGeneratorRequest))
+		return srv.(WorkspacePresenterServer).UpdateGenerator(ctx, req.(*models.UpdateGeneratorRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CanvasViewPresenter_StartGenerator_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _WorkspacePresenter_StartGenerator_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(models.StartGeneratorRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CanvasViewPresenterServer).StartGenerator(ctx, in)
+		return srv.(WorkspacePresenterServer).StartGenerator(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CanvasViewPresenter_StartGenerator_FullMethodName,
+		FullMethod: WorkspacePresenter_StartGenerator_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CanvasViewPresenterServer).StartGenerator(ctx, req.(*models.StartGeneratorRequest))
+		return srv.(WorkspacePresenterServer).StartGenerator(ctx, req.(*models.StartGeneratorRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CanvasViewPresenter_StopGenerator_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _WorkspacePresenter_StopGenerator_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(models.StopGeneratorRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CanvasViewPresenterServer).StopGenerator(ctx, in)
+		return srv.(WorkspacePresenterServer).StopGenerator(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CanvasViewPresenter_StopGenerator_FullMethodName,
+		FullMethod: WorkspacePresenter_StopGenerator_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CanvasViewPresenterServer).StopGenerator(ctx, req.(*models.StopGeneratorRequest))
+		return srv.(WorkspacePresenterServer).StopGenerator(ctx, req.(*models.StopGeneratorRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CanvasViewPresenter_StartAllGenerators_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _WorkspacePresenter_StartAllGenerators_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(models.StartAllGeneratorsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CanvasViewPresenterServer).StartAllGenerators(ctx, in)
+		return srv.(WorkspacePresenterServer).StartAllGenerators(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CanvasViewPresenter_StartAllGenerators_FullMethodName,
+		FullMethod: WorkspacePresenter_StartAllGenerators_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CanvasViewPresenterServer).StartAllGenerators(ctx, req.(*models.StartAllGeneratorsRequest))
+		return srv.(WorkspacePresenterServer).StartAllGenerators(ctx, req.(*models.StartAllGeneratorsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CanvasViewPresenter_StopAllGenerators_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _WorkspacePresenter_StopAllGenerators_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(models.StopAllGeneratorsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CanvasViewPresenterServer).StopAllGenerators(ctx, in)
+		return srv.(WorkspacePresenterServer).StopAllGenerators(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CanvasViewPresenter_StopAllGenerators_FullMethodName,
+		FullMethod: WorkspacePresenter_StopAllGenerators_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CanvasViewPresenterServer).StopAllGenerators(ctx, req.(*models.StopAllGeneratorsRequest))
+		return srv.(WorkspacePresenterServer).StopAllGenerators(ctx, req.(*models.StopAllGeneratorsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CanvasViewPresenter_AddMetric_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _WorkspacePresenter_AddMetric_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(models.AddMetricRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CanvasViewPresenterServer).AddMetric(ctx, in)
+		return srv.(WorkspacePresenterServer).AddMetric(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CanvasViewPresenter_AddMetric_FullMethodName,
+		FullMethod: WorkspacePresenter_AddMetric_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CanvasViewPresenterServer).AddMetric(ctx, req.(*models.AddMetricRequest))
+		return srv.(WorkspacePresenterServer).AddMetric(ctx, req.(*models.AddMetricRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CanvasViewPresenter_DeleteMetric_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _WorkspacePresenter_DeleteMetric_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(models.DeleteMetricRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CanvasViewPresenterServer).DeleteMetric(ctx, in)
+		return srv.(WorkspacePresenterServer).DeleteMetric(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CanvasViewPresenter_DeleteMetric_FullMethodName,
+		FullMethod: WorkspacePresenter_DeleteMetric_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CanvasViewPresenterServer).DeleteMetric(ctx, req.(*models.DeleteMetricRequest))
+		return srv.(WorkspacePresenterServer).DeleteMetric(ctx, req.(*models.DeleteMetricRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CanvasViewPresenter_SetParameter_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _WorkspacePresenter_SetParameter_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(models.SetParameterRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CanvasViewPresenterServer).SetParameter(ctx, in)
+		return srv.(WorkspacePresenterServer).SetParameter(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CanvasViewPresenter_SetParameter_FullMethodName,
+		FullMethod: WorkspacePresenter_SetParameter_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CanvasViewPresenterServer).SetParameter(ctx, req.(*models.SetParameterRequest))
+		return srv.(WorkspacePresenterServer).SetParameter(ctx, req.(*models.SetParameterRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CanvasViewPresenter_EvaluateFlows_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _WorkspacePresenter_EvaluateFlows_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(models.EvaluateFlowsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CanvasViewPresenterServer).EvaluateFlows(ctx, in)
+		return srv.(WorkspacePresenterServer).EvaluateFlows(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CanvasViewPresenter_EvaluateFlows_FullMethodName,
+		FullMethod: WorkspacePresenter_EvaluateFlows_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CanvasViewPresenterServer).EvaluateFlows(ctx, req.(*models.EvaluateFlowsRequest))
+		return srv.(WorkspacePresenterServer).EvaluateFlows(ctx, req.(*models.EvaluateFlowsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CanvasViewPresenter_DiagramComponentClicked_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _WorkspacePresenter_DiagramComponentClicked_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(models.DiagramComponentClickedRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CanvasViewPresenterServer).DiagramComponentClicked(ctx, in)
+		return srv.(WorkspacePresenterServer).DiagramComponentClicked(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CanvasViewPresenter_DiagramComponentClicked_FullMethodName,
+		FullMethod: WorkspacePresenter_DiagramComponentClicked_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CanvasViewPresenterServer).DiagramComponentClicked(ctx, req.(*models.DiagramComponentClickedRequest))
+		return srv.(WorkspacePresenterServer).DiagramComponentClicked(ctx, req.(*models.DiagramComponentClickedRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CanvasViewPresenter_DiagramComponentHovered_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _WorkspacePresenter_DiagramComponentHovered_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(models.DiagramComponentHoveredRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CanvasViewPresenterServer).DiagramComponentHovered(ctx, in)
+		return srv.(WorkspacePresenterServer).DiagramComponentHovered(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CanvasViewPresenter_DiagramComponentHovered_FullMethodName,
+		FullMethod: WorkspacePresenter_DiagramComponentHovered_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CanvasViewPresenterServer).DiagramComponentHovered(ctx, req.(*models.DiagramComponentHoveredRequest))
+		return srv.(WorkspacePresenterServer).DiagramComponentHovered(ctx, req.(*models.DiagramComponentHoveredRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// CanvasViewPresenter_ServiceDesc is the grpc.ServiceDesc for CanvasViewPresenter service.
+// WorkspacePresenter_ServiceDesc is the grpc.ServiceDesc for WorkspacePresenter service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var CanvasViewPresenter_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "sdl.v1.CanvasViewPresenter",
-	HandlerType: (*CanvasViewPresenterServer)(nil),
+var WorkspacePresenter_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "sdl.v1.WorkspacePresenter",
+	HandlerType: (*WorkspacePresenterServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "Initialize",
-			Handler:    _CanvasViewPresenter_Initialize_Handler,
+			Handler:    _WorkspacePresenter_Initialize_Handler,
 		},
 		{
 			MethodName: "ClientReady",
-			Handler:    _CanvasViewPresenter_ClientReady_Handler,
+			Handler:    _WorkspacePresenter_ClientReady_Handler,
 		},
 		{
 			MethodName: "FileSelected",
-			Handler:    _CanvasViewPresenter_FileSelected_Handler,
+			Handler:    _WorkspacePresenter_FileSelected_Handler,
 		},
 		{
 			MethodName: "FileSaved",
-			Handler:    _CanvasViewPresenter_FileSaved_Handler,
+			Handler:    _WorkspacePresenter_FileSaved_Handler,
 		},
 		{
 			MethodName: "UseSystem",
-			Handler:    _CanvasViewPresenter_UseSystem_Handler,
+			Handler:    _WorkspacePresenter_UseSystem_Handler,
 		},
 		{
 			MethodName: "AddGenerator",
-			Handler:    _CanvasViewPresenter_AddGenerator_Handler,
+			Handler:    _WorkspacePresenter_AddGenerator_Handler,
 		},
 		{
 			MethodName: "DeleteGenerator",
-			Handler:    _CanvasViewPresenter_DeleteGenerator_Handler,
+			Handler:    _WorkspacePresenter_DeleteGenerator_Handler,
 		},
 		{
 			MethodName: "UpdateGenerator",
-			Handler:    _CanvasViewPresenter_UpdateGenerator_Handler,
+			Handler:    _WorkspacePresenter_UpdateGenerator_Handler,
 		},
 		{
 			MethodName: "StartGenerator",
-			Handler:    _CanvasViewPresenter_StartGenerator_Handler,
+			Handler:    _WorkspacePresenter_StartGenerator_Handler,
 		},
 		{
 			MethodName: "StopGenerator",
-			Handler:    _CanvasViewPresenter_StopGenerator_Handler,
+			Handler:    _WorkspacePresenter_StopGenerator_Handler,
 		},
 		{
 			MethodName: "StartAllGenerators",
-			Handler:    _CanvasViewPresenter_StartAllGenerators_Handler,
+			Handler:    _WorkspacePresenter_StartAllGenerators_Handler,
 		},
 		{
 			MethodName: "StopAllGenerators",
-			Handler:    _CanvasViewPresenter_StopAllGenerators_Handler,
+			Handler:    _WorkspacePresenter_StopAllGenerators_Handler,
 		},
 		{
 			MethodName: "AddMetric",
-			Handler:    _CanvasViewPresenter_AddMetric_Handler,
+			Handler:    _WorkspacePresenter_AddMetric_Handler,
 		},
 		{
 			MethodName: "DeleteMetric",
-			Handler:    _CanvasViewPresenter_DeleteMetric_Handler,
+			Handler:    _WorkspacePresenter_DeleteMetric_Handler,
 		},
 		{
 			MethodName: "SetParameter",
-			Handler:    _CanvasViewPresenter_SetParameter_Handler,
+			Handler:    _WorkspacePresenter_SetParameter_Handler,
 		},
 		{
 			MethodName: "EvaluateFlows",
-			Handler:    _CanvasViewPresenter_EvaluateFlows_Handler,
+			Handler:    _WorkspacePresenter_EvaluateFlows_Handler,
 		},
 		{
 			MethodName: "DiagramComponentClicked",
-			Handler:    _CanvasViewPresenter_DiagramComponentClicked_Handler,
+			Handler:    _WorkspacePresenter_DiagramComponentClicked_Handler,
 		},
 		{
 			MethodName: "DiagramComponentHovered",
-			Handler:    _CanvasViewPresenter_DiagramComponentHovered_Handler,
+			Handler:    _WorkspacePresenter_DiagramComponentHovered_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

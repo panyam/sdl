@@ -27,9 +27,8 @@ var File_sdl_v1_services_devenvpage_proto protoreflect.FileDescriptor
 
 const file_sdl_v1_services_devenvpage_proto_rawDesc = "" +
 	"\n" +
-	" sdl/v1/services/devenvpage.proto\x12\x06sdl.v1\x1a\x1bwasmjs/v1/annotations.proto\x1a\x1asdl/v1/models/models.proto\x1a!sdl/v1/models/dashboardpage.proto\x1a\x1esdl/v1/models/devenvpage.proto2\xaf\x06\n" +
-	"\n" +
-	"DevEnvPage\x12Z\n" +
+	" sdl/v1/services/devenvpage.proto\x12\x06sdl.v1\x1a\x1bwasmjs/v1/annotations.proto\x1a\x1asdl/v1/models/models.proto\x1a!sdl/v1/models/dashboardpage.proto\x1a\x1esdl/v1/models/devenvpage.proto2\xb2\x06\n" +
+	"\rWorkspacePage\x12Z\n" +
 	"\x0fOnSystemChanged\x12\".sdl.v1.DevEnvSystemChangedRequest\x1a#.sdl.v1.DevEnvSystemChangedResponse\x12j\n" +
 	"\x19OnAvailableSystemsChanged\x12%.sdl.v1.DevEnvAvailableSystemsRequest\x1a&.sdl.v1.DevEnvAvailableSystemsResponse\x12L\n" +
 	"\rUpdateDiagram\x12\x1c.sdl.v1.UpdateDiagramRequest\x1a\x1d.sdl.v1.UpdateDiagramResponse\x12^\n" +
@@ -64,24 +63,24 @@ var file_sdl_v1_services_devenvpage_proto_goTypes = []any{
 	(*models.LogMessageResponse)(nil),             // 17: sdl.v1.LogMessageResponse
 }
 var file_sdl_v1_services_devenvpage_proto_depIdxs = []int32{
-	0,  // 0: sdl.v1.DevEnvPage.OnSystemChanged:input_type -> sdl.v1.DevEnvSystemChangedRequest
-	1,  // 1: sdl.v1.DevEnvPage.OnAvailableSystemsChanged:input_type -> sdl.v1.DevEnvAvailableSystemsRequest
-	2,  // 2: sdl.v1.DevEnvPage.UpdateDiagram:input_type -> sdl.v1.UpdateDiagramRequest
-	3,  // 3: sdl.v1.DevEnvPage.UpdateGenerator:input_type -> sdl.v1.DevEnvUpdateGeneratorRequest
-	4,  // 4: sdl.v1.DevEnvPage.RemoveGenerator:input_type -> sdl.v1.DevEnvRemoveGeneratorRequest
-	5,  // 5: sdl.v1.DevEnvPage.UpdateMetric:input_type -> sdl.v1.DevEnvUpdateMetricRequest
-	6,  // 6: sdl.v1.DevEnvPage.RemoveMetric:input_type -> sdl.v1.DevEnvRemoveMetricRequest
-	7,  // 7: sdl.v1.DevEnvPage.UpdateFlowRates:input_type -> sdl.v1.UpdateFlowRatesRequest
-	8,  // 8: sdl.v1.DevEnvPage.LogMessage:input_type -> sdl.v1.LogMessageRequest
-	9,  // 9: sdl.v1.DevEnvPage.OnSystemChanged:output_type -> sdl.v1.DevEnvSystemChangedResponse
-	10, // 10: sdl.v1.DevEnvPage.OnAvailableSystemsChanged:output_type -> sdl.v1.DevEnvAvailableSystemsResponse
-	11, // 11: sdl.v1.DevEnvPage.UpdateDiagram:output_type -> sdl.v1.UpdateDiagramResponse
-	12, // 12: sdl.v1.DevEnvPage.UpdateGenerator:output_type -> sdl.v1.DevEnvUpdateGeneratorResponse
-	13, // 13: sdl.v1.DevEnvPage.RemoveGenerator:output_type -> sdl.v1.DevEnvRemoveGeneratorResponse
-	14, // 14: sdl.v1.DevEnvPage.UpdateMetric:output_type -> sdl.v1.DevEnvUpdateMetricResponse
-	15, // 15: sdl.v1.DevEnvPage.RemoveMetric:output_type -> sdl.v1.DevEnvRemoveMetricResponse
-	16, // 16: sdl.v1.DevEnvPage.UpdateFlowRates:output_type -> sdl.v1.UpdateFlowRatesResponse
-	17, // 17: sdl.v1.DevEnvPage.LogMessage:output_type -> sdl.v1.LogMessageResponse
+	0,  // 0: sdl.v1.WorkspacePage.OnSystemChanged:input_type -> sdl.v1.DevEnvSystemChangedRequest
+	1,  // 1: sdl.v1.WorkspacePage.OnAvailableSystemsChanged:input_type -> sdl.v1.DevEnvAvailableSystemsRequest
+	2,  // 2: sdl.v1.WorkspacePage.UpdateDiagram:input_type -> sdl.v1.UpdateDiagramRequest
+	3,  // 3: sdl.v1.WorkspacePage.UpdateGenerator:input_type -> sdl.v1.DevEnvUpdateGeneratorRequest
+	4,  // 4: sdl.v1.WorkspacePage.RemoveGenerator:input_type -> sdl.v1.DevEnvRemoveGeneratorRequest
+	5,  // 5: sdl.v1.WorkspacePage.UpdateMetric:input_type -> sdl.v1.DevEnvUpdateMetricRequest
+	6,  // 6: sdl.v1.WorkspacePage.RemoveMetric:input_type -> sdl.v1.DevEnvRemoveMetricRequest
+	7,  // 7: sdl.v1.WorkspacePage.UpdateFlowRates:input_type -> sdl.v1.UpdateFlowRatesRequest
+	8,  // 8: sdl.v1.WorkspacePage.LogMessage:input_type -> sdl.v1.LogMessageRequest
+	9,  // 9: sdl.v1.WorkspacePage.OnSystemChanged:output_type -> sdl.v1.DevEnvSystemChangedResponse
+	10, // 10: sdl.v1.WorkspacePage.OnAvailableSystemsChanged:output_type -> sdl.v1.DevEnvAvailableSystemsResponse
+	11, // 11: sdl.v1.WorkspacePage.UpdateDiagram:output_type -> sdl.v1.UpdateDiagramResponse
+	12, // 12: sdl.v1.WorkspacePage.UpdateGenerator:output_type -> sdl.v1.DevEnvUpdateGeneratorResponse
+	13, // 13: sdl.v1.WorkspacePage.RemoveGenerator:output_type -> sdl.v1.DevEnvRemoveGeneratorResponse
+	14, // 14: sdl.v1.WorkspacePage.UpdateMetric:output_type -> sdl.v1.DevEnvUpdateMetricResponse
+	15, // 15: sdl.v1.WorkspacePage.RemoveMetric:output_type -> sdl.v1.DevEnvRemoveMetricResponse
+	16, // 16: sdl.v1.WorkspacePage.UpdateFlowRates:output_type -> sdl.v1.UpdateFlowRatesResponse
+	17, // 17: sdl.v1.WorkspacePage.LogMessage:output_type -> sdl.v1.LogMessageResponse
 	9,  // [9:18] is the sub-list for method output_type
 	0,  // [0:9] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name

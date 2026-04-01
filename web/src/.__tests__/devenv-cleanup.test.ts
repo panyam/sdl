@@ -88,7 +88,7 @@ describe('DevEnv Cleanup: No CanvasDashboardPage in active code', () => {
     const browserPath = path.join(CMD_WASM_DIR, 'browser.go');
     const content = fs.readFileSync(browserPath, 'utf-8');
 
-    expect(content).toContain('BrowserDevEnvPage');
+    expect(content).toContain('BrowserWorkspacePage');
     expect(content).not.toContain('DevEnvPageForwarder');
   });
 });
