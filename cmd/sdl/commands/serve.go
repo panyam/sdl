@@ -50,7 +50,7 @@ Example:
 	Run: func(cmd *cobra.Command, args []string) {
 		// Create filesystem with @stdlib/ mounted and local filesystem as fallback
 		cfs := loader.NewCompositeFS()
-		cfs.Mount("", loader.NewLocalFS("")) // fallback for relative and absolute paths
+		cfs.SetFallback(loader.NewLocalFS("")) // handles relative and absolute paths
 		stdlibPath := findStdlibPath()
 		if stdlibPath != "" {
 			cfs.Mount("@stdlib/", loader.NewLocalFS(stdlibPath))
