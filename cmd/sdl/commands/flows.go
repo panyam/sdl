@@ -1,3 +1,4 @@
+//go:build ignore
 package commands
 
 import (
@@ -72,10 +73,10 @@ If no strategy is provided, uses the default (runtime) strategy.`,
 		}
 
 		// Use gRPC client to evaluate flows
-		return withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
+		return withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
 			// First, get current flow state
 			currentState, err := client.GetFlowState(context.Background(), &protos.GetFlowStateRequest{
-				CanvasId: canvasID,
+				WorkspaceId: workspaceID,
 			})
 			if err != nil {
 				return fmt.Errorf("failed to get current flow state: %w", err)
@@ -83,7 +84,7 @@ If no strategy is provided, uses the default (runtime) strategy.`,
 
 			// Evaluate flows with the specified strategy
 			resp, err := client.EvaluateFlows(context.Background(), &protos.EvaluateFlowsRequest{
-				CanvasId: canvasID,
+				WorkspaceId: workspaceID,
 				Strategy: strategy,
 			})
 			if err != nil {
@@ -181,10 +182,10 @@ updating all component arrival rates based on the analysis.`,
 			strategy = args[0]
 		}
 
-		return withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
+		return withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
 			// First, evaluate flows with the specified strategy
 			evalResp, err := client.EvaluateFlows(context.Background(), &protos.EvaluateFlowsRequest{
-				CanvasId: canvasID,
+				WorkspaceId: workspaceID,
 				Strategy: strategy,
 			})
 			if err != nil {
@@ -218,7 +219,7 @@ updating all component arrival rates based on the analysis.`,
 
 			// Apply the rates using batch set
 			batchResp, err := client.BatchSetParameters(ctx, &protos.BatchSetParametersRequest{
-				CanvasId: canvasID,
+				WorkspaceId: workspaceID,
 				Updates:  updates,
 			})
 			if err != nil {

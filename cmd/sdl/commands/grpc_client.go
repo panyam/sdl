@@ -12,7 +12,6 @@ import (
 
 // getGRPCConnection returns a gRPC connection to the server
 func getGRPCConnection() (*grpc.ClientConn, error) {
-	// Get server address - default gRPC port is 9090
 	serverAddr := "localhost:9090"
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -29,20 +28,20 @@ func getGRPCConnection() (*grpc.ClientConn, error) {
 	return conn, nil
 }
 
-// getCanvasClient returns a Canvas service client
-func getCanvasClient() (v1.CanvasServiceClient, *grpc.ClientConn, error) {
+// getWorkspaceClient returns a WorkspaceService client
+func getWorkspaceClient() (v1.WorkspaceServiceClient, *grpc.ClientConn, error) {
 	conn, err := getGRPCConnection()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	client := v1.NewCanvasServiceClient(conn)
+	client := v1.NewWorkspaceServiceClient(conn)
 	return client, conn, nil
 }
 
-// withCanvasClient handles the common pattern of getting a client, creating context, and cleaning up
-func withCanvasClient(fn func(client v1.CanvasServiceClient, ctx context.Context) error) error {
-	client, conn, err := getCanvasClient()
+// withWorkspaceClient handles the common pattern of getting a client, creating context, and cleaning up
+func withWorkspaceClient(fn func(client v1.WorkspaceServiceClient, ctx context.Context) error) error {
+	client, conn, err := getWorkspaceClient()
 	if err != nil {
 		return fmt.Errorf("cannot connect to SDL server: %v", err)
 	}

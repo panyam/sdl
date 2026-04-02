@@ -1,7 +1,7 @@
-import { FieldMask, Timestamp } from "@bufbuild/protobuf/wkt";
+import { Timestamp } from "@bufbuild/protobuf/wkt";
 
 
-import { Pagination as PaginationInterface, PaginationResponse as PaginationResponseInterface, Canvas as CanvasInterface, Workspace as WorkspaceInterface, WorkspaceDesign as WorkspaceDesignInterface, ImportSource as ImportSourceInterface, File as FileInterface, Generator as GeneratorInterface, Metric as MetricInterface, MetricPoint as MetricPointInterface, MetricUpdate as MetricUpdateInterface, SystemDiagram as SystemDiagramInterface, DiagramNode as DiagramNodeInterface, MethodInfo as MethodInfoInterface, DiagramEdge as DiagramEdgeInterface, UtilizationInfo as UtilizationInfoInterface, FlowEdge as FlowEdgeInterface, FlowState as FlowStateInterface, TraceData as TraceDataInterface, TraceEvent as TraceEventInterface, AllPathsTraceData as AllPathsTraceDataInterface, TraceNode as TraceNodeInterface, Edge as EdgeInterface, GroupInfo as GroupInfoInterface, ParameterUpdate as ParameterUpdateInterface, ParameterUpdateResult as ParameterUpdateResultInterface, AggregateResult as AggregateResultInterface, CreateCanvasRequest as CreateCanvasRequestInterface, CreateCanvasResponse as CreateCanvasResponseInterface, UpdateCanvasRequest as UpdateCanvasRequestInterface, UpdateCanvasResponse as UpdateCanvasResponseInterface, ListCanvasesRequest as ListCanvasesRequestInterface, ListCanvasesResponse as ListCanvasesResponseInterface, GetCanvasRequest as GetCanvasRequestInterface, GetCanvasResponse as GetCanvasResponseInterface, DeleteCanvasRequest as DeleteCanvasRequestInterface, DeleteCanvasResponse as DeleteCanvasResponseInterface, ResetCanvasRequest as ResetCanvasRequestInterface, ResetCanvasResponse as ResetCanvasResponseInterface, LoadFileRequest as LoadFileRequestInterface, LoadFileResponse as LoadFileResponseInterface, UseSystemRequest as UseSystemRequestInterface, UseSystemResponse as UseSystemResponseInterface, AddGeneratorRequest as AddGeneratorRequestInterface, AddGeneratorResponse as AddGeneratorResponseInterface, ListGeneratorsRequest as ListGeneratorsRequestInterface, ListGeneratorsResponse as ListGeneratorsResponseInterface, GetGeneratorRequest as GetGeneratorRequestInterface, GetGeneratorResponse as GetGeneratorResponseInterface, UpdateGeneratorRequest as UpdateGeneratorRequestInterface, UpdateGeneratorResponse as UpdateGeneratorResponseInterface, StartGeneratorRequest as StartGeneratorRequestInterface, StartGeneratorResponse as StartGeneratorResponseInterface, StopGeneratorRequest as StopGeneratorRequestInterface, StopGeneratorResponse as StopGeneratorResponseInterface, DeleteGeneratorRequest as DeleteGeneratorRequestInterface, DeleteGeneratorResponse as DeleteGeneratorResponseInterface, StartAllGeneratorsRequest as StartAllGeneratorsRequestInterface, StartAllGeneratorsResponse as StartAllGeneratorsResponseInterface, StopAllGeneratorsRequest as StopAllGeneratorsRequestInterface, StopAllGeneratorsResponse as StopAllGeneratorsResponseInterface, AddMetricRequest as AddMetricRequestInterface, AddMetricResponse as AddMetricResponseInterface, DeleteMetricRequest as DeleteMetricRequestInterface, DeleteMetricResponse as DeleteMetricResponseInterface, ListMetricsRequest as ListMetricsRequestInterface, ListMetricsResponse as ListMetricsResponseInterface, QueryMetricsRequest as QueryMetricsRequestInterface, QueryMetricsResponse as QueryMetricsResponseInterface, AggregateMetricsRequest as AggregateMetricsRequestInterface, AggregateMetricsResponse as AggregateMetricsResponseInterface, StreamMetricsRequest as StreamMetricsRequestInterface, StreamMetricsResponse as StreamMetricsResponseInterface, ExecuteTraceRequest as ExecuteTraceRequestInterface, ExecuteTraceResponse as ExecuteTraceResponseInterface, TraceAllPathsRequest as TraceAllPathsRequestInterface, TraceAllPathsResponse as TraceAllPathsResponseInterface, SetParameterRequest as SetParameterRequestInterface, SetParameterResponse as SetParameterResponseInterface, GetParametersRequest as GetParametersRequestInterface, GetParametersResponse as GetParametersResponseInterface, BatchSetParametersRequest as BatchSetParametersRequestInterface, BatchSetParametersResponse as BatchSetParametersResponseInterface, EvaluateFlowsRequest as EvaluateFlowsRequestInterface, EvaluateFlowsResponse as EvaluateFlowsResponseInterface, GetFlowStateRequest as GetFlowStateRequestInterface, GetFlowStateResponse as GetFlowStateResponseInterface, GetSystemDiagramRequest as GetSystemDiagramRequestInterface, GetSystemDiagramResponse as GetSystemDiagramResponseInterface, GetUtilizationRequest as GetUtilizationRequestInterface, GetUtilizationResponse as GetUtilizationResponseInterface, UpdateMetricRequest as UpdateMetricRequestInterface, UpdateMetricResponse as UpdateMetricResponseInterface, ClearMetricsRequest as ClearMetricsRequestInterface, ClearMetricsResponse as ClearMetricsResponseInterface, SetMetricsListRequest as SetMetricsListRequestInterface, SetMetricsListResponse as SetMetricsListResponseInterface, UpdateDiagramRequest as UpdateDiagramRequestInterface, UpdateDiagramResponse as UpdateDiagramResponseInterface, HighlightComponentsRequest as HighlightComponentsRequestInterface, HighlightComponentsResponse as HighlightComponentsResponseInterface, ClearHighlightsRequest as ClearHighlightsRequestInterface, ClearHighlightsResponse as ClearHighlightsResponseInterface, UpdateGeneratorStateRequest as UpdateGeneratorStateRequestInterface, UpdateGeneratorStateResponse as UpdateGeneratorStateResponseInterface, SetGeneratorListRequest as SetGeneratorListRequestInterface, SetGeneratorListResponse as SetGeneratorListResponseInterface, LogMessageRequest as LogMessageRequestInterface, LogMessageResponse as LogMessageResponseInterface, ClearConsoleRequest as ClearConsoleRequestInterface, ClearConsoleResponse as ClearConsoleResponseInterface, UpdateFlowRatesRequest as UpdateFlowRatesRequestInterface, UpdateFlowRatesResponse as UpdateFlowRatesResponseInterface, ShowFlowPathRequest as ShowFlowPathRequestInterface, FlowPathSegment as FlowPathSegmentInterface, ShowFlowPathResponse as ShowFlowPathResponseInterface, ClearFlowPathsRequest as ClearFlowPathsRequestInterface, ClearFlowPathsResponse as ClearFlowPathsResponseInterface, UpdateUtilizationRequest as UpdateUtilizationRequestInterface, UpdateUtilizationResponse as UpdateUtilizationResponseInterface, DevEnvSystemChangedRequest as DevEnvSystemChangedRequestInterface, DevEnvSystemChangedResponse as DevEnvSystemChangedResponseInterface, DevEnvAvailableSystemsRequest as DevEnvAvailableSystemsRequestInterface, DevEnvAvailableSystemsResponse as DevEnvAvailableSystemsResponseInterface, DevEnvUpdateGeneratorRequest as DevEnvUpdateGeneratorRequestInterface, DevEnvUpdateGeneratorResponse as DevEnvUpdateGeneratorResponseInterface, DevEnvRemoveGeneratorRequest as DevEnvRemoveGeneratorRequestInterface, DevEnvRemoveGeneratorResponse as DevEnvRemoveGeneratorResponseInterface, DevEnvUpdateMetricRequest as DevEnvUpdateMetricRequestInterface, DevEnvUpdateMetricResponse as DevEnvUpdateMetricResponseInterface, DevEnvRemoveMetricRequest as DevEnvRemoveMetricRequestInterface, DevEnvRemoveMetricResponse as DevEnvRemoveMetricResponseInterface, FileInfo as FileInfoInterface, FilesystemInfo as FilesystemInfoInterface, ListFilesystemsRequest as ListFilesystemsRequestInterface, ListFilesystemsResponse as ListFilesystemsResponseInterface, ListFilesRequest as ListFilesRequestInterface, ListFilesResponse as ListFilesResponseInterface, ReadFileRequest as ReadFileRequestInterface, ReadFileResponse as ReadFileResponseInterface, WriteFileRequest as WriteFileRequestInterface, WriteFileResponse as WriteFileResponseInterface, DeleteFileRequest as DeleteFileRequestInterface, DeleteFileResponse as DeleteFileResponseInterface, CreateDirectoryRequest as CreateDirectoryRequestInterface, CreateDirectoryResponse as CreateDirectoryResponseInterface, GetFileInfoRequest as GetFileInfoRequestInterface, GetFileInfoResponse as GetFileInfoResponseInterface, SystemInfo as SystemInfoInterface, SystemProject as SystemProjectInterface, SystemVersion as SystemVersionInterface, ListSystemsRequest as ListSystemsRequestInterface, ListSystemsResponse as ListSystemsResponseInterface, GetSystemRequest as GetSystemRequestInterface, GetSystemResponse as GetSystemResponseInterface, GetSystemContentRequest as GetSystemContentRequestInterface, GetSystemContentResponse as GetSystemContentResponseInterface, InitializeSingletonRequest as InitializeSingletonRequestInterface, InitializeSingletonResponse as InitializeSingletonResponseInterface, InitializePresenterRequest as InitializePresenterRequestInterface, InitializePresenterResponse as InitializePresenterResponseInterface, ClientReadyRequest as ClientReadyRequestInterface, ClientReadyResponse as ClientReadyResponseInterface, FileSelectedRequest as FileSelectedRequestInterface, FileSelectedResponse as FileSelectedResponseInterface, FileSavedRequest as FileSavedRequestInterface, FileSavedResponse as FileSavedResponseInterface, DiagramComponentClickedRequest as DiagramComponentClickedRequestInterface, DiagramComponentClickedResponse as DiagramComponentClickedResponseInterface, DiagramComponentHoveredRequest as DiagramComponentHoveredRequestInterface, DiagramComponentHoveredResponse as DiagramComponentHoveredResponseInterface, CreateWorkspaceRequest as CreateWorkspaceRequestInterface, CreateWorkspaceResponse as CreateWorkspaceResponseInterface, GetWorkspaceRequest as GetWorkspaceRequestInterface, GetWorkspaceResponse as GetWorkspaceResponseInterface, ListWorkspacesRequest as ListWorkspacesRequestInterface, ListWorkspacesResponse as ListWorkspacesResponseInterface, DeleteWorkspaceRequest as DeleteWorkspaceRequestInterface, DeleteWorkspaceResponse as DeleteWorkspaceResponseInterface, UpdateWorkspaceRequest as UpdateWorkspaceRequestInterface, UpdateWorkspaceResponse as UpdateWorkspaceResponseInterface, GetDesignContentRequest as GetDesignContentRequestInterface, GetDesignContentResponse as GetDesignContentResponseInterface, GetAllDesignContentsRequest as GetAllDesignContentsRequestInterface, GetAllDesignContentsResponse as GetAllDesignContentsResponseInterface } from "./interfaces";
+import { Pagination as PaginationInterface, PaginationResponse as PaginationResponseInterface, Workspace as WorkspaceInterface, WorkspaceDesign as WorkspaceDesignInterface, ImportSource as ImportSourceInterface, File as FileInterface, Generator as GeneratorInterface, Metric as MetricInterface, MetricPoint as MetricPointInterface, MetricUpdate as MetricUpdateInterface, SystemDiagram as SystemDiagramInterface, DiagramNode as DiagramNodeInterface, MethodInfo as MethodInfoInterface, DiagramEdge as DiagramEdgeInterface, UtilizationInfo as UtilizationInfoInterface, FlowEdge as FlowEdgeInterface, FlowState as FlowStateInterface, TraceData as TraceDataInterface, TraceEvent as TraceEventInterface, AllPathsTraceData as AllPathsTraceDataInterface, TraceNode as TraceNodeInterface, Edge as EdgeInterface, GroupInfo as GroupInfoInterface, ParameterUpdate as ParameterUpdateInterface, ParameterUpdateResult as ParameterUpdateResultInterface, AggregateResult as AggregateResultInterface, LoadFileRequest as LoadFileRequestInterface, LoadFileResponse as LoadFileResponseInterface, UseSystemRequest as UseSystemRequestInterface, UseSystemResponse as UseSystemResponseInterface, AddGeneratorRequest as AddGeneratorRequestInterface, AddGeneratorResponse as AddGeneratorResponseInterface, ListGeneratorsRequest as ListGeneratorsRequestInterface, ListGeneratorsResponse as ListGeneratorsResponseInterface, GetGeneratorRequest as GetGeneratorRequestInterface, GetGeneratorResponse as GetGeneratorResponseInterface, UpdateGeneratorRequest as UpdateGeneratorRequestInterface, UpdateGeneratorResponse as UpdateGeneratorResponseInterface, StartGeneratorRequest as StartGeneratorRequestInterface, StartGeneratorResponse as StartGeneratorResponseInterface, StopGeneratorRequest as StopGeneratorRequestInterface, StopGeneratorResponse as StopGeneratorResponseInterface, DeleteGeneratorRequest as DeleteGeneratorRequestInterface, DeleteGeneratorResponse as DeleteGeneratorResponseInterface, StartAllGeneratorsRequest as StartAllGeneratorsRequestInterface, StartAllGeneratorsResponse as StartAllGeneratorsResponseInterface, StopAllGeneratorsRequest as StopAllGeneratorsRequestInterface, StopAllGeneratorsResponse as StopAllGeneratorsResponseInterface, AddMetricRequest as AddMetricRequestInterface, AddMetricResponse as AddMetricResponseInterface, DeleteMetricRequest as DeleteMetricRequestInterface, DeleteMetricResponse as DeleteMetricResponseInterface, ListMetricsRequest as ListMetricsRequestInterface, ListMetricsResponse as ListMetricsResponseInterface, QueryMetricsRequest as QueryMetricsRequestInterface, QueryMetricsResponse as QueryMetricsResponseInterface, AggregateMetricsRequest as AggregateMetricsRequestInterface, AggregateMetricsResponse as AggregateMetricsResponseInterface, StreamMetricsRequest as StreamMetricsRequestInterface, StreamMetricsResponse as StreamMetricsResponseInterface, ExecuteTraceRequest as ExecuteTraceRequestInterface, ExecuteTraceResponse as ExecuteTraceResponseInterface, TraceAllPathsRequest as TraceAllPathsRequestInterface, TraceAllPathsResponse as TraceAllPathsResponseInterface, SetParameterRequest as SetParameterRequestInterface, SetParameterResponse as SetParameterResponseInterface, GetParametersRequest as GetParametersRequestInterface, GetParametersResponse as GetParametersResponseInterface, BatchSetParametersRequest as BatchSetParametersRequestInterface, BatchSetParametersResponse as BatchSetParametersResponseInterface, EvaluateFlowsRequest as EvaluateFlowsRequestInterface, EvaluateFlowsResponse as EvaluateFlowsResponseInterface, GetFlowStateRequest as GetFlowStateRequestInterface, GetFlowStateResponse as GetFlowStateResponseInterface, GetSystemDiagramRequest as GetSystemDiagramRequestInterface, GetSystemDiagramResponse as GetSystemDiagramResponseInterface, GetUtilizationRequest as GetUtilizationRequestInterface, GetUtilizationResponse as GetUtilizationResponseInterface, UpdateMetricRequest as UpdateMetricRequestInterface, UpdateMetricResponse as UpdateMetricResponseInterface, ClearMetricsRequest as ClearMetricsRequestInterface, ClearMetricsResponse as ClearMetricsResponseInterface, SetMetricsListRequest as SetMetricsListRequestInterface, SetMetricsListResponse as SetMetricsListResponseInterface, UpdateDiagramRequest as UpdateDiagramRequestInterface, UpdateDiagramResponse as UpdateDiagramResponseInterface, HighlightComponentsRequest as HighlightComponentsRequestInterface, HighlightComponentsResponse as HighlightComponentsResponseInterface, ClearHighlightsRequest as ClearHighlightsRequestInterface, ClearHighlightsResponse as ClearHighlightsResponseInterface, UpdateGeneratorStateRequest as UpdateGeneratorStateRequestInterface, UpdateGeneratorStateResponse as UpdateGeneratorStateResponseInterface, SetGeneratorListRequest as SetGeneratorListRequestInterface, SetGeneratorListResponse as SetGeneratorListResponseInterface, LogMessageRequest as LogMessageRequestInterface, LogMessageResponse as LogMessageResponseInterface, ClearConsoleRequest as ClearConsoleRequestInterface, ClearConsoleResponse as ClearConsoleResponseInterface, UpdateFlowRatesRequest as UpdateFlowRatesRequestInterface, UpdateFlowRatesResponse as UpdateFlowRatesResponseInterface, ShowFlowPathRequest as ShowFlowPathRequestInterface, FlowPathSegment as FlowPathSegmentInterface, ShowFlowPathResponse as ShowFlowPathResponseInterface, ClearFlowPathsRequest as ClearFlowPathsRequestInterface, ClearFlowPathsResponse as ClearFlowPathsResponseInterface, UpdateUtilizationRequest as UpdateUtilizationRequestInterface, UpdateUtilizationResponse as UpdateUtilizationResponseInterface, DevEnvSystemChangedRequest as DevEnvSystemChangedRequestInterface, DevEnvSystemChangedResponse as DevEnvSystemChangedResponseInterface, DevEnvAvailableSystemsRequest as DevEnvAvailableSystemsRequestInterface, DevEnvAvailableSystemsResponse as DevEnvAvailableSystemsResponseInterface, DevEnvUpdateGeneratorRequest as DevEnvUpdateGeneratorRequestInterface, DevEnvUpdateGeneratorResponse as DevEnvUpdateGeneratorResponseInterface, DevEnvRemoveGeneratorRequest as DevEnvRemoveGeneratorRequestInterface, DevEnvRemoveGeneratorResponse as DevEnvRemoveGeneratorResponseInterface, DevEnvUpdateMetricRequest as DevEnvUpdateMetricRequestInterface, DevEnvUpdateMetricResponse as DevEnvUpdateMetricResponseInterface, DevEnvRemoveMetricRequest as DevEnvRemoveMetricRequestInterface, DevEnvRemoveMetricResponse as DevEnvRemoveMetricResponseInterface, FileInfo as FileInfoInterface, FilesystemInfo as FilesystemInfoInterface, ListFilesystemsRequest as ListFilesystemsRequestInterface, ListFilesystemsResponse as ListFilesystemsResponseInterface, ListFilesRequest as ListFilesRequestInterface, ListFilesResponse as ListFilesResponseInterface, ReadFileRequest as ReadFileRequestInterface, ReadFileResponse as ReadFileResponseInterface, WriteFileRequest as WriteFileRequestInterface, WriteFileResponse as WriteFileResponseInterface, DeleteFileRequest as DeleteFileRequestInterface, DeleteFileResponse as DeleteFileResponseInterface, CreateDirectoryRequest as CreateDirectoryRequestInterface, CreateDirectoryResponse as CreateDirectoryResponseInterface, GetFileInfoRequest as GetFileInfoRequestInterface, GetFileInfoResponse as GetFileInfoResponseInterface, SystemInfo as SystemInfoInterface, SystemProject as SystemProjectInterface, SystemVersion as SystemVersionInterface, ListSystemsRequest as ListSystemsRequestInterface, ListSystemsResponse as ListSystemsResponseInterface, GetSystemRequest as GetSystemRequestInterface, GetSystemResponse as GetSystemResponseInterface, GetSystemContentRequest as GetSystemContentRequestInterface, GetSystemContentResponse as GetSystemContentResponseInterface, InitializeSingletonRequest as InitializeSingletonRequestInterface, InitializeSingletonResponse as InitializeSingletonResponseInterface, InitializePresenterRequest as InitializePresenterRequestInterface, InitializePresenterResponse as InitializePresenterResponseInterface, ClientReadyRequest as ClientReadyRequestInterface, ClientReadyResponse as ClientReadyResponseInterface, FileSelectedRequest as FileSelectedRequestInterface, FileSelectedResponse as FileSelectedResponseInterface, FileSavedRequest as FileSavedRequestInterface, FileSavedResponse as FileSavedResponseInterface, DiagramComponentClickedRequest as DiagramComponentClickedRequestInterface, DiagramComponentClickedResponse as DiagramComponentClickedResponseInterface, DiagramComponentHoveredRequest as DiagramComponentHoveredRequestInterface, DiagramComponentHoveredResponse as DiagramComponentHoveredResponseInterface, CreateWorkspaceRequest as CreateWorkspaceRequestInterface, CreateWorkspaceResponse as CreateWorkspaceResponseInterface, GetWorkspaceRequest as GetWorkspaceRequestInterface, GetWorkspaceResponse as GetWorkspaceResponseInterface, ListWorkspacesRequest as ListWorkspacesRequestInterface, ListWorkspacesResponse as ListWorkspacesResponseInterface, DeleteWorkspaceRequest as DeleteWorkspaceRequestInterface, DeleteWorkspaceResponse as DeleteWorkspaceResponseInterface, UpdateWorkspaceRequest as UpdateWorkspaceRequestInterface, UpdateWorkspaceResponse as UpdateWorkspaceResponseInterface, GetDesignContentRequest as GetDesignContentRequestInterface, GetDesignContentResponse as GetDesignContentResponseInterface, GetAllDesignContentsRequest as GetAllDesignContentsRequestInterface, GetAllDesignContentsResponse as GetAllDesignContentsResponseInterface } from "./interfaces";
 
 
 
@@ -44,42 +44,6 @@ export class PaginationResponse implements PaginationResponseInterface {
   hasMore: boolean = false;
   /** Total number of results. */
   totalResults: number = 0;
-
-  
-}
-
-
-
-export class Canvas implements CanvasInterface {
-  /**
-   * Fully qualified message type for schema resolution
-   */
-  static readonly MESSAGE_TYPE = "sdl.v1.Canvas";
-  readonly __MESSAGE_TYPE = Canvas.MESSAGE_TYPE;
-
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
-  /** Unique ID for the canvas */
-  id: string = "";
-  /** Human-readable name for the canvas */
-  name: string = "";
-  /** Description of what this canvas is for */
-  description: string = "";
-  /** The currently active system (from the systems defined in system_contents) */
-  activeSystem: string = "";
-  /** Contents of the .sdl file that defines one or more systems */
-  systemContents: string = "";
-  /** Recipe files for various scenarios (name -> contents map) */
-  recipes: Record<string, string> = {};
-  /** Registered generators for this canvas */
-  generators: Generator[] = [];
-  /** Registered live metrics for this canvas */
-  metrics: Metric[] = [];
-  previewUrl: string = "";
-  /** Names of all systems currently loaded (from all loaded SDL files) */
-  loadedSystemNames: string[] = [];
-  /** Workspace ID this canvas belongs to (if any) */
-  workspaceId: string = "";
 
   
 }
@@ -135,8 +99,8 @@ export class WorkspaceDesign implements WorkspaceDesignInterface {
   name: string = "";
   /** SDL file path relative to workspace root */
   file: string = "";
-  /** Backing Canvas ID for runtime simulation */
-  canvasId: string = "";
+  /** Parent workspace ID */
+  workspaceId: string = "";
   /** Brief description */
   description: string = "";
   /** Per-design metadata (for UI display) */
@@ -200,24 +164,17 @@ export class Generator implements GeneratorInterface {
   static readonly MESSAGE_TYPE = "sdl.v1.Generator";
   readonly __MESSAGE_TYPE = Generator.MESSAGE_TYPE;
 
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
-  /** ID of the generator */
-  id: string = "";
-  /** Canvas this generator is sending traffic to */
-  canvasId: string = "";
-  /** A descriptive label */
+  /** Unique name within a system (e.g., "baseline", "health") */
   name: string = "";
-  /** Name of the target component to generate traffic on. This component should be defined in the System,
- eg "server" */
+  /** Target component path (e.g., "arch.webserver") */
   component: string = "";
-  /** Method in the target component to generate traffic on. */
+  /** Target method name (e.g., "HandleRequest") */
   method: string = "";
-  /** Traffic rate in RPS (>= 1).  Does not support < 1 yet */
+  /** Traffic rate in RPS */
   rate: number = 0;
-  /** Duration in seconds over which the genarator is run. 0 => For ever */
+  /** Duration in seconds (0 = forever) */
   duration: number = 0;
-  /** whether it is enabled or not */
+  /** Whether the generator is active */
   enabled: boolean = false;
 
   
@@ -232,31 +189,25 @@ export class Metric implements MetricInterface {
   static readonly MESSAGE_TYPE = "sdl.v1.Metric";
   readonly __MESSAGE_TYPE = Metric.MESSAGE_TYPE;
 
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
-  id: string = "";
-  canvasId: string = "";
-  /** A descriptive label */
+  /** Unique name within a system (e.g., "request_latency") */
   name: string = "";
-  /** Name of the target component to monitor
- eg "server" */
+  /** Target component path (e.g., "arch.webserver") */
   component: string = "";
-  /** Method in the target component to generate traffic on. */
+  /** Target method names */
   methods: string[] = [];
-  /** whether it is enabled or not */
+  /** Whether the metric is active */
   enabled: boolean = false;
-  /** Type of metric "count" or "latency" */
+  /** Type: "count", "latency", "utilization" */
   metricType: string = "";
-  /** Type of aggregation on the metric */
+  /** Aggregation function: "sum", "avg", "min", "max", "p50", "p90", "p95", "p99" */
   aggregation: string = "";
-  /** Aggregation window (in seconds) to match on */
+  /** Aggregation window in seconds */
   aggregationWindow: number = 0;
-  /** Result value to match */
+  /** Result value to match (optional filter) */
   matchResult: string = "";
-  /** The result "type" if a matching result is provided
- This will be parsed into a type declaration so we know how to treat
- the match_result value provided */
+  /** Result type for match parsing */
   matchResultType: string = "";
+  /** Statistics (populated by metric store) */
   oldestTimestamp: number = 0;
   newestTimestamp: number = 0;
   numDataPoints: number = 0;
@@ -631,179 +582,6 @@ export class AggregateResult implements AggregateResultInterface {
 
 
 
-export class CreateCanvasRequest implements CreateCanvasRequestInterface {
-  /**
-   * Fully qualified message type for schema resolution
-   */
-  static readonly MESSAGE_TYPE = "sdl.v1.CreateCanvasRequest";
-  readonly __MESSAGE_TYPE = CreateCanvasRequest.MESSAGE_TYPE;
-
-  canvas?: Canvas;
-
-  
-}
-
-
-
-export class CreateCanvasResponse implements CreateCanvasResponseInterface {
-  /**
-   * Fully qualified message type for schema resolution
-   */
-  static readonly MESSAGE_TYPE = "sdl.v1.CreateCanvasResponse";
-  readonly __MESSAGE_TYPE = CreateCanvasResponse.MESSAGE_TYPE;
-
-  canvas?: Canvas;
-  fieldErrors: Record<string, string> = {};
-
-  
-}
-
-
-
-export class UpdateCanvasRequest implements UpdateCanvasRequestInterface {
-  /**
-   * Fully qualified message type for schema resolution
-   */
-  static readonly MESSAGE_TYPE = "sdl.v1.UpdateCanvasRequest";
-  readonly __MESSAGE_TYPE = UpdateCanvasRequest.MESSAGE_TYPE;
-
-  canvas?: Canvas;
-
-  
-}
-
-
-
-export class UpdateCanvasResponse implements UpdateCanvasResponseInterface {
-  /**
-   * Fully qualified message type for schema resolution
-   */
-  static readonly MESSAGE_TYPE = "sdl.v1.UpdateCanvasResponse";
-  readonly __MESSAGE_TYPE = UpdateCanvasResponse.MESSAGE_TYPE;
-
-  canvas?: Canvas;
-  updateMask?: FieldMask;
-  deletedFiles: string[] = [];
-  updatedFiles: Record<string, File> = {};
-
-  
-}
-
-
-
-export class ListCanvasesRequest implements ListCanvasesRequestInterface {
-  /**
-   * Fully qualified message type for schema resolution
-   */
-  static readonly MESSAGE_TYPE = "sdl.v1.ListCanvasesRequest";
-  readonly __MESSAGE_TYPE = ListCanvasesRequest.MESSAGE_TYPE;
-
-  pagination?: Pagination;
-
-  
-}
-
-
-
-export class ListCanvasesResponse implements ListCanvasesResponseInterface {
-  /**
-   * Fully qualified message type for schema resolution
-   */
-  static readonly MESSAGE_TYPE = "sdl.v1.ListCanvasesResponse";
-  readonly __MESSAGE_TYPE = ListCanvasesResponse.MESSAGE_TYPE;
-
-  canvases: Canvas[] = [];
-  pagination?: PaginationResponse;
-
-  
-}
-
-
-
-export class GetCanvasRequest implements GetCanvasRequestInterface {
-  /**
-   * Fully qualified message type for schema resolution
-   */
-  static readonly MESSAGE_TYPE = "sdl.v1.GetCanvasRequest";
-  readonly __MESSAGE_TYPE = GetCanvasRequest.MESSAGE_TYPE;
-
-  id: string = "";
-
-  
-}
-
-
-
-export class GetCanvasResponse implements GetCanvasResponseInterface {
-  /**
-   * Fully qualified message type for schema resolution
-   */
-  static readonly MESSAGE_TYPE = "sdl.v1.GetCanvasResponse";
-  readonly __MESSAGE_TYPE = GetCanvasResponse.MESSAGE_TYPE;
-
-  canvas?: Canvas;
-
-  
-}
-
-
-
-export class DeleteCanvasRequest implements DeleteCanvasRequestInterface {
-  /**
-   * Fully qualified message type for schema resolution
-   */
-  static readonly MESSAGE_TYPE = "sdl.v1.DeleteCanvasRequest";
-  readonly __MESSAGE_TYPE = DeleteCanvasRequest.MESSAGE_TYPE;
-
-  id: string = "";
-
-  
-}
-
-
-
-export class DeleteCanvasResponse implements DeleteCanvasResponseInterface {
-  /**
-   * Fully qualified message type for schema resolution
-   */
-  static readonly MESSAGE_TYPE = "sdl.v1.DeleteCanvasResponse";
-  readonly __MESSAGE_TYPE = DeleteCanvasResponse.MESSAGE_TYPE;
-
-
-  
-}
-
-
-
-export class ResetCanvasRequest implements ResetCanvasRequestInterface {
-  /**
-   * Fully qualified message type for schema resolution
-   */
-  static readonly MESSAGE_TYPE = "sdl.v1.ResetCanvasRequest";
-  readonly __MESSAGE_TYPE = ResetCanvasRequest.MESSAGE_TYPE;
-
-  canvasId: string = "";
-
-  
-}
-
-
-
-export class ResetCanvasResponse implements ResetCanvasResponseInterface {
-  /**
-   * Fully qualified message type for schema resolution
-   */
-  static readonly MESSAGE_TYPE = "sdl.v1.ResetCanvasResponse";
-  readonly __MESSAGE_TYPE = ResetCanvasResponse.MESSAGE_TYPE;
-
-  success: boolean = false;
-  message: string = "";
-
-  
-}
-
-
-
 export class LoadFileRequest implements LoadFileRequestInterface {
   /**
    * Fully qualified message type for schema resolution
@@ -811,7 +589,7 @@ export class LoadFileRequest implements LoadFileRequestInterface {
   static readonly MESSAGE_TYPE = "sdl.v1.LoadFileRequest";
   readonly __MESSAGE_TYPE = LoadFileRequest.MESSAGE_TYPE;
 
-  canvasId: string = "";
+  workspaceId: string = "";
   sdlFilePath: string = "";
 
   
@@ -839,7 +617,7 @@ export class UseSystemRequest implements UseSystemRequestInterface {
   static readonly MESSAGE_TYPE = "sdl.v1.UseSystemRequest";
   readonly __MESSAGE_TYPE = UseSystemRequest.MESSAGE_TYPE;
 
-  canvasId: string = "";
+  workspaceId: string = "";
   systemName: string = "";
 
   
@@ -867,6 +645,7 @@ export class AddGeneratorRequest implements AddGeneratorRequestInterface {
   static readonly MESSAGE_TYPE = "sdl.v1.AddGeneratorRequest";
   readonly __MESSAGE_TYPE = AddGeneratorRequest.MESSAGE_TYPE;
 
+  workspaceId: string = "";
   generator?: Generator;
   applyFlows: boolean = false;
 
@@ -896,7 +675,7 @@ export class ListGeneratorsRequest implements ListGeneratorsRequestInterface {
   static readonly MESSAGE_TYPE = "sdl.v1.ListGeneratorsRequest";
   readonly __MESSAGE_TYPE = ListGeneratorsRequest.MESSAGE_TYPE;
 
-  canvasId: string = "";
+  workspaceId: string = "";
 
   
 }
@@ -924,8 +703,8 @@ export class GetGeneratorRequest implements GetGeneratorRequestInterface {
   static readonly MESSAGE_TYPE = "sdl.v1.GetGeneratorRequest";
   readonly __MESSAGE_TYPE = GetGeneratorRequest.MESSAGE_TYPE;
 
-  canvasId: string = "";
-  generatorId: string = "";
+  workspaceId: string = "";
+  generatorName: string = "";
 
   
 }
@@ -953,8 +732,8 @@ export class UpdateGeneratorRequest implements UpdateGeneratorRequestInterface {
   static readonly MESSAGE_TYPE = "sdl.v1.UpdateGeneratorRequest";
   readonly __MESSAGE_TYPE = UpdateGeneratorRequest.MESSAGE_TYPE;
 
+  workspaceId: string = "";
   generator?: Generator;
-  updateMask?: FieldMask;
   applyFlows: boolean = false;
 
   
@@ -983,8 +762,8 @@ export class StartGeneratorRequest implements StartGeneratorRequestInterface {
   static readonly MESSAGE_TYPE = "sdl.v1.StartGeneratorRequest";
   readonly __MESSAGE_TYPE = StartGeneratorRequest.MESSAGE_TYPE;
 
-  canvasId: string = "";
-  generatorId: string = "";
+  workspaceId: string = "";
+  generatorName: string = "";
 
   
 }
@@ -1011,8 +790,8 @@ export class StopGeneratorRequest implements StopGeneratorRequestInterface {
   static readonly MESSAGE_TYPE = "sdl.v1.StopGeneratorRequest";
   readonly __MESSAGE_TYPE = StopGeneratorRequest.MESSAGE_TYPE;
 
-  canvasId: string = "";
-  generatorId: string = "";
+  workspaceId: string = "";
+  generatorName: string = "";
 
   
 }
@@ -1039,8 +818,8 @@ export class DeleteGeneratorRequest implements DeleteGeneratorRequestInterface {
   static readonly MESSAGE_TYPE = "sdl.v1.DeleteGeneratorRequest";
   readonly __MESSAGE_TYPE = DeleteGeneratorRequest.MESSAGE_TYPE;
 
-  canvasId: string = "";
-  generatorId: string = "";
+  workspaceId: string = "";
+  generatorName: string = "";
   applyFlows: boolean = false;
 
   
@@ -1068,7 +847,7 @@ export class StartAllGeneratorsRequest implements StartAllGeneratorsRequestInter
   static readonly MESSAGE_TYPE = "sdl.v1.StartAllGeneratorsRequest";
   readonly __MESSAGE_TYPE = StartAllGeneratorsRequest.MESSAGE_TYPE;
 
-  canvasId: string = "";
+  workspaceId: string = "";
 
   
 }
@@ -1100,7 +879,7 @@ export class StopAllGeneratorsRequest implements StopAllGeneratorsRequestInterfa
   static readonly MESSAGE_TYPE = "sdl.v1.StopAllGeneratorsRequest";
   readonly __MESSAGE_TYPE = StopAllGeneratorsRequest.MESSAGE_TYPE;
 
-  canvasId: string = "";
+  workspaceId: string = "";
 
   
 }
@@ -1132,6 +911,7 @@ export class AddMetricRequest implements AddMetricRequestInterface {
   static readonly MESSAGE_TYPE = "sdl.v1.AddMetricRequest";
   readonly __MESSAGE_TYPE = AddMetricRequest.MESSAGE_TYPE;
 
+  workspaceId: string = "";
   metric?: Metric;
 
   
@@ -1160,8 +940,8 @@ export class DeleteMetricRequest implements DeleteMetricRequestInterface {
   static readonly MESSAGE_TYPE = "sdl.v1.DeleteMetricRequest";
   readonly __MESSAGE_TYPE = DeleteMetricRequest.MESSAGE_TYPE;
 
-  canvasId: string = "";
-  metricId: string = "";
+  workspaceId: string = "";
+  metricName: string = "";
 
   
 }
@@ -1188,7 +968,7 @@ export class ListMetricsRequest implements ListMetricsRequestInterface {
   static readonly MESSAGE_TYPE = "sdl.v1.ListMetricsRequest";
   readonly __MESSAGE_TYPE = ListMetricsRequest.MESSAGE_TYPE;
 
-  canvasId: string = "";
+  workspaceId: string = "";
 
   
 }
@@ -1216,8 +996,8 @@ export class QueryMetricsRequest implements QueryMetricsRequestInterface {
   static readonly MESSAGE_TYPE = "sdl.v1.QueryMetricsRequest";
   readonly __MESSAGE_TYPE = QueryMetricsRequest.MESSAGE_TYPE;
 
-  canvasId: string = "";
-  metricId: string = "";
+  workspaceId: string = "";
+  metricName: string = "";
   startTime: number = 0;
   endTime: number = 0;
   limit: number = 0;
@@ -1248,8 +1028,8 @@ export class AggregateMetricsRequest implements AggregateMetricsRequestInterface
   static readonly MESSAGE_TYPE = "sdl.v1.AggregateMetricsRequest";
   readonly __MESSAGE_TYPE = AggregateMetricsRequest.MESSAGE_TYPE;
 
-  canvasId: string = "";
-  metricId: string = "";
+  workspaceId: string = "";
+  metricName: string = "";
   startTime: number = 0;
   endTime: number = 0;
   function: string = "";
@@ -1281,8 +1061,8 @@ export class StreamMetricsRequest implements StreamMetricsRequestInterface {
   static readonly MESSAGE_TYPE = "sdl.v1.StreamMetricsRequest";
   readonly __MESSAGE_TYPE = StreamMetricsRequest.MESSAGE_TYPE;
 
-  canvasId: string = "";
-  metricIds: string[] = [];
+  workspaceId: string = "";
+  metricNames: string[] = [];
 
   
 }
@@ -1310,7 +1090,7 @@ export class ExecuteTraceRequest implements ExecuteTraceRequestInterface {
   static readonly MESSAGE_TYPE = "sdl.v1.ExecuteTraceRequest";
   readonly __MESSAGE_TYPE = ExecuteTraceRequest.MESSAGE_TYPE;
 
-  canvasId: string = "";
+  workspaceId: string = "";
   component: string = "";
   method: string = "";
 
@@ -1340,7 +1120,7 @@ export class TraceAllPathsRequest implements TraceAllPathsRequestInterface {
   static readonly MESSAGE_TYPE = "sdl.v1.TraceAllPathsRequest";
   readonly __MESSAGE_TYPE = TraceAllPathsRequest.MESSAGE_TYPE;
 
-  canvasId: string = "";
+  workspaceId: string = "";
   component: string = "";
   method: string = "";
   maxDepth: number = 0;
@@ -1371,7 +1151,7 @@ export class SetParameterRequest implements SetParameterRequestInterface {
   static readonly MESSAGE_TYPE = "sdl.v1.SetParameterRequest";
   readonly __MESSAGE_TYPE = SetParameterRequest.MESSAGE_TYPE;
 
-  canvasId: string = "";
+  workspaceId: string = "";
   path: string = "";
   newValue: string = "";
 
@@ -1404,7 +1184,7 @@ export class GetParametersRequest implements GetParametersRequestInterface {
   static readonly MESSAGE_TYPE = "sdl.v1.GetParametersRequest";
   readonly __MESSAGE_TYPE = GetParametersRequest.MESSAGE_TYPE;
 
-  canvasId: string = "";
+  workspaceId: string = "";
   path: string = "";
 
   
@@ -1433,7 +1213,7 @@ export class BatchSetParametersRequest implements BatchSetParametersRequestInter
   static readonly MESSAGE_TYPE = "sdl.v1.BatchSetParametersRequest";
   readonly __MESSAGE_TYPE = BatchSetParametersRequest.MESSAGE_TYPE;
 
-  canvasId: string = "";
+  workspaceId: string = "";
   updates: ParameterUpdate[] = [];
 
   
@@ -1464,7 +1244,7 @@ export class EvaluateFlowsRequest implements EvaluateFlowsRequestInterface {
   static readonly MESSAGE_TYPE = "sdl.v1.EvaluateFlowsRequest";
   readonly __MESSAGE_TYPE = EvaluateFlowsRequest.MESSAGE_TYPE;
 
-  canvasId: string = "";
+  workspaceId: string = "";
   strategy: string = "";
 
   
@@ -1498,7 +1278,7 @@ export class GetFlowStateRequest implements GetFlowStateRequestInterface {
   static readonly MESSAGE_TYPE = "sdl.v1.GetFlowStateRequest";
   readonly __MESSAGE_TYPE = GetFlowStateRequest.MESSAGE_TYPE;
 
-  canvasId: string = "";
+  workspaceId: string = "";
 
   
 }
@@ -1526,7 +1306,7 @@ export class GetSystemDiagramRequest implements GetSystemDiagramRequestInterface
   static readonly MESSAGE_TYPE = "sdl.v1.GetSystemDiagramRequest";
   readonly __MESSAGE_TYPE = GetSystemDiagramRequest.MESSAGE_TYPE;
 
-  canvasId: string = "";
+  workspaceId: string = "";
 
   
 }
@@ -1554,7 +1334,7 @@ export class GetUtilizationRequest implements GetUtilizationRequestInterface {
   static readonly MESSAGE_TYPE = "sdl.v1.GetUtilizationRequest";
   readonly __MESSAGE_TYPE = GetUtilizationRequest.MESSAGE_TYPE;
 
-  canvasId: string = "";
+  workspaceId: string = "";
   components: string[] = [];
 
   
@@ -2552,7 +2332,7 @@ export class InitializeSingletonRequest implements InitializeSingletonRequestInt
   static readonly MESSAGE_TYPE = "sdl.v1.InitializeSingletonRequest";
   readonly __MESSAGE_TYPE = InitializeSingletonRequest.MESSAGE_TYPE;
 
-  canvasId: string = "";
+  workspaceId: string = "";
   /** SDL content to load initially */
   sdlContent: string = "";
   /** System name to use after loading */
@@ -2576,7 +2356,7 @@ export class InitializeSingletonResponse implements InitializeSingletonResponseI
 
   success: boolean = false;
   error: string = "";
-  canvasId: string = "";
+  workspaceId: string = "";
   availableSystems: SystemInfo[] = [];
 
   
@@ -2591,7 +2371,7 @@ export class InitializePresenterRequest implements InitializePresenterRequestInt
   static readonly MESSAGE_TYPE = "sdl.v1.InitializePresenterRequest";
   readonly __MESSAGE_TYPE = InitializePresenterRequest.MESSAGE_TYPE;
 
-  canvasId: string = "";
+  workspaceId: string = "";
 
   
 }
@@ -2607,7 +2387,7 @@ export class InitializePresenterResponse implements InitializePresenterResponseI
 
   success: boolean = false;
   error: string = "";
-  canvasId: string = "";
+  workspaceId: string = "";
   /** Available systems to choose from */
   availableSystems: SystemInfo[] = [];
   /** Initial state to render */
@@ -2627,7 +2407,7 @@ export class ClientReadyRequest implements ClientReadyRequestInterface {
   static readonly MESSAGE_TYPE = "sdl.v1.ClientReadyRequest";
   readonly __MESSAGE_TYPE = ClientReadyRequest.MESSAGE_TYPE;
 
-  canvasId: string = "";
+  workspaceId: string = "";
 
   
 }
@@ -2642,7 +2422,7 @@ export class ClientReadyResponse implements ClientReadyResponseInterface {
   readonly __MESSAGE_TYPE = ClientReadyResponse.MESSAGE_TYPE;
 
   success: boolean = false;
-  canvas?: Canvas;
+  workspace?: Workspace;
 
   
 }
@@ -2656,7 +2436,7 @@ export class FileSelectedRequest implements FileSelectedRequestInterface {
   static readonly MESSAGE_TYPE = "sdl.v1.FileSelectedRequest";
   readonly __MESSAGE_TYPE = FileSelectedRequest.MESSAGE_TYPE;
 
-  canvasId: string = "";
+  workspaceId: string = "";
   filePath: string = "";
 
   
@@ -2687,7 +2467,7 @@ export class FileSavedRequest implements FileSavedRequestInterface {
   static readonly MESSAGE_TYPE = "sdl.v1.FileSavedRequest";
   readonly __MESSAGE_TYPE = FileSavedRequest.MESSAGE_TYPE;
 
-  canvasId: string = "";
+  workspaceId: string = "";
   filePath: string = "";
   content: string = "";
 
@@ -2718,7 +2498,7 @@ export class DiagramComponentClickedRequest implements DiagramComponentClickedRe
   static readonly MESSAGE_TYPE = "sdl.v1.DiagramComponentClickedRequest";
   readonly __MESSAGE_TYPE = DiagramComponentClickedRequest.MESSAGE_TYPE;
 
-  canvasId: string = "";
+  workspaceId: string = "";
   componentName: string = "";
   methodName: string = "";
 
@@ -2748,7 +2528,7 @@ export class DiagramComponentHoveredRequest implements DiagramComponentHoveredRe
   static readonly MESSAGE_TYPE = "sdl.v1.DiagramComponentHoveredRequest";
   readonly __MESSAGE_TYPE = DiagramComponentHoveredRequest.MESSAGE_TYPE;
 
-  canvasId: string = "";
+  workspaceId: string = "";
   componentName: string = "";
   methodName: string = "";
 

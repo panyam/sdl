@@ -7,17 +7,27 @@ import { fileDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import { file_sdl_v1_models_models } from "../models/models_pb";
 import type { CreateWorkspaceRequestSchema, CreateWorkspaceResponseSchema, DeleteWorkspaceRequestSchema, DeleteWorkspaceResponseSchema, GetAllDesignContentsRequestSchema, GetAllDesignContentsResponseSchema, GetDesignContentRequestSchema, GetDesignContentResponseSchema, GetWorkspaceRequestSchema, GetWorkspaceResponseSchema, ListWorkspacesRequestSchema, ListWorkspacesResponseSchema, UpdateWorkspaceRequestSchema, UpdateWorkspaceResponseSchema } from "../models/workspace_service_pb";
 import { file_sdl_v1_models_workspace_service } from "../models/workspace_service_pb";
+import type { AddGeneratorRequestSchema, AddGeneratorResponseSchema, AddMetricRequestSchema, AddMetricResponseSchema, DeleteGeneratorRequestSchema, DeleteGeneratorResponseSchema, DeleteMetricRequestSchema, DeleteMetricResponseSchema, EvaluateFlowsRequestSchema, EvaluateFlowsResponseSchema, GetParametersRequestSchema, GetParametersResponseSchema, GetSystemDiagramRequestSchema, GetSystemDiagramResponseSchema, ListGeneratorsRequestSchema, ListGeneratorsResponseSchema, ListMetricsRequestSchema, ListMetricsResponseSchema, LoadFileRequestSchema, LoadFileResponseSchema, SetParameterRequestSchema, SetParameterResponseSchema, StartAllGeneratorsRequestSchema, StartAllGeneratorsResponseSchema, StartGeneratorRequestSchema, StartGeneratorResponseSchema, StopAllGeneratorsRequestSchema, StopAllGeneratorsResponseSchema, StopGeneratorRequestSchema, StopGeneratorResponseSchema, UpdateGeneratorRequestSchema, UpdateGeneratorResponseSchema, UseSystemRequestSchema, UseSystemResponseSchema } from "../models/canvas_service_pb";
+import { file_sdl_v1_models_canvas_service } from "../models/canvas_service_pb";
 import { file_google_api_annotations } from "../../../google/api/annotations_pb";
 
 /**
  * Describes the file sdl/v1/services/workspace.proto.
  */
 export const file_sdl_v1_services_workspace: GenFile = /*@__PURE__*/
-  fileDesc("Ch9zZGwvdjEvc2VydmljZXMvd29ya3NwYWNlLnByb3RvEgZzZGwudjEy+gYKEFdvcmtzcGFjZVNlcnZpY2USbQoPQ3JlYXRlV29ya3NwYWNlEh4uc2RsLnYxLkNyZWF0ZVdvcmtzcGFjZVJlcXVlc3QaHy5zZGwudjEuQ3JlYXRlV29ya3NwYWNlUmVzcG9uc2UiGYLT5JMCEzoBKiIOL3YxL3dvcmtzcGFjZXMSZgoMR2V0V29ya3NwYWNlEhsuc2RsLnYxLkdldFdvcmtzcGFjZVJlcXVlc3QaHC5zZGwudjEuR2V0V29ya3NwYWNlUmVzcG9uc2UiG4LT5JMCFRITL3YxL3dvcmtzcGFjZXMve2lkfRJnCg5MaXN0V29ya3NwYWNlcxIdLnNkbC52MS5MaXN0V29ya3NwYWNlc1JlcXVlc3QaHi5zZGwudjEuTGlzdFdvcmtzcGFjZXNSZXNwb25zZSIWgtPkkwIQEg4vdjEvd29ya3NwYWNlcxJvCg9EZWxldGVXb3Jrc3BhY2USHi5zZGwudjEuRGVsZXRlV29ya3NwYWNlUmVxdWVzdBofLnNkbC52MS5EZWxldGVXb3Jrc3BhY2VSZXNwb25zZSIbgtPkkwIVKhMvdjEvd29ya3NwYWNlcy97aWR9EnwKD1VwZGF0ZVdvcmtzcGFjZRIeLnNkbC52MS5VcGRhdGVXb3Jrc3BhY2VSZXF1ZXN0Gh8uc2RsLnYxLlVwZGF0ZVdvcmtzcGFjZVJlc3BvbnNlIiiC0+STAiI6ASoaHS92MS93b3Jrc3BhY2VzL3t3b3Jrc3BhY2UuaWR9EpoBChBHZXREZXNpZ25Db250ZW50Eh8uc2RsLnYxLkdldERlc2lnbkNvbnRlbnRSZXF1ZXN0GiAuc2RsLnYxLkdldERlc2lnbkNvbnRlbnRSZXNwb25zZSJDgtPkkwI9EjsvdjEvd29ya3NwYWNlcy97d29ya3NwYWNlX2lkfS9kZXNpZ25zL3tkZXNpZ25fbmFtZX0vY29udGVudBKZAQoUR2V0QWxsRGVzaWduQ29udGVudHMSIy5zZGwudjEuR2V0QWxsRGVzaWduQ29udGVudHNSZXF1ZXN0GiQuc2RsLnYxLkdldEFsbERlc2lnbkNvbnRlbnRzUmVzcG9uc2UiNoLT5JMCMBIuL3YxL3dvcmtzcGFjZXMve3dvcmtzcGFjZV9pZH0vZGVzaWducy9jb250ZW50c0KJAQoKY29tLnNkbC52MUIOV29ya3NwYWNlUHJvdG9QAVoyZ2l0aHViLmNvbS9wYW55YW0vc2RsL2dlbi9nby9zZGwvdjEvc2VydmljZXM7c2RsdjGiAgNTWFiqAgZTZGwuVjHKAgZTZGxcVjHiAhJTZGxcVjFcR1BCTWV0YWRhdGHqAgdTZGw6OlYxYgZwcm90bzM", [file_sdl_v1_models_models, file_sdl_v1_models_workspace_service, file_google_api_annotations]);
+  fileDesc("Ch9zZGwvdjEvc2VydmljZXMvd29ya3NwYWNlLnByb3RvEgZzZGwudjEyuhkKEFdvcmtzcGFjZVNlcnZpY2USbQoPQ3JlYXRlV29ya3NwYWNlEh4uc2RsLnYxLkNyZWF0ZVdvcmtzcGFjZVJlcXVlc3QaHy5zZGwudjEuQ3JlYXRlV29ya3NwYWNlUmVzcG9uc2UiGYLT5JMCEzoBKiIOL3YxL3dvcmtzcGFjZXMSZgoMR2V0V29ya3NwYWNlEhsuc2RsLnYxLkdldFdvcmtzcGFjZVJlcXVlc3QaHC5zZGwudjEuR2V0V29ya3NwYWNlUmVzcG9uc2UiG4LT5JMCFRITL3YxL3dvcmtzcGFjZXMve2lkfRJnCg5MaXN0V29ya3NwYWNlcxIdLnNkbC52MS5MaXN0V29ya3NwYWNlc1JlcXVlc3QaHi5zZGwudjEuTGlzdFdvcmtzcGFjZXNSZXNwb25zZSIWgtPkkwIQEg4vdjEvd29ya3NwYWNlcxJvCg9EZWxldGVXb3Jrc3BhY2USHi5zZGwudjEuRGVsZXRlV29ya3NwYWNlUmVxdWVzdBofLnNkbC52MS5EZWxldGVXb3Jrc3BhY2VSZXNwb25zZSIbgtPkkwIVKhMvdjEvd29ya3NwYWNlcy97aWR9EnwKD1VwZGF0ZVdvcmtzcGFjZRIeLnNkbC52MS5VcGRhdGVXb3Jrc3BhY2VSZXF1ZXN0Gh8uc2RsLnYxLlVwZGF0ZVdvcmtzcGFjZVJlc3BvbnNlIiiC0+STAiI6ASoaHS92MS93b3Jrc3BhY2VzL3t3b3Jrc3BhY2UuaWR9EpoBChBHZXREZXNpZ25Db250ZW50Eh8uc2RsLnYxLkdldERlc2lnbkNvbnRlbnRSZXF1ZXN0GiAuc2RsLnYxLkdldERlc2lnbkNvbnRlbnRSZXNwb25zZSJDgtPkkwI9EjsvdjEvd29ya3NwYWNlcy97d29ya3NwYWNlX2lkfS9kZXNpZ25zL3tkZXNpZ25fbmFtZX0vY29udGVudBKZAQoUR2V0QWxsRGVzaWduQ29udGVudHMSIy5zZGwudjEuR2V0QWxsRGVzaWduQ29udGVudHNSZXF1ZXN0GiQuc2RsLnYxLkdldEFsbERlc2lnbkNvbnRlbnRzUmVzcG9uc2UiNoLT5JMCMBIuL3YxL3dvcmtzcGFjZXMve3dvcmtzcGFjZV9pZH0vZGVzaWducy9jb250ZW50cxJ0CghMb2FkRmlsZRIXLnNkbC52MS5Mb2FkRmlsZVJlcXVlc3QaGC5zZGwudjEuTG9hZEZpbGVSZXNwb25zZSI1gtPkkwIvOgEqIiovdjEvd29ya3NwYWNlcy97d29ya3NwYWNlX2lkfS9hY3Rpb25zOmxvYWQSdgoJVXNlU3lzdGVtEhguc2RsLnYxLlVzZVN5c3RlbVJlcXVlc3QaGS5zZGwudjEuVXNlU3lzdGVtUmVzcG9uc2UiNILT5JMCLjoBKiIpL3YxL3dvcmtzcGFjZXMve3dvcmtzcGFjZV9pZH0vYWN0aW9uczp1c2USfgoMQWRkR2VuZXJhdG9yEhsuc2RsLnYxLkFkZEdlbmVyYXRvclJlcXVlc3QaHC5zZGwudjEuQWRkR2VuZXJhdG9yUmVzcG9uc2UiM4LT5JMCLToBKiIoL3YxL3dvcmtzcGFjZXMve3dvcmtzcGFjZV9pZH0vZ2VuZXJhdG9ycxKYAQoPVXBkYXRlR2VuZXJhdG9yEh4uc2RsLnYxLlVwZGF0ZUdlbmVyYXRvclJlcXVlc3QaHy5zZGwudjEuVXBkYXRlR2VuZXJhdG9yUmVzcG9uc2UiRILT5JMCPjoBKjI5L3YxL3dvcmtzcGFjZXMve3dvcmtzcGFjZV9pZH0vZ2VuZXJhdG9ycy97Z2VuZXJhdG9yLm5hbWV9EpUBCg9EZWxldGVHZW5lcmF0b3ISHi5zZGwudjEuRGVsZXRlR2VuZXJhdG9yUmVxdWVzdBofLnNkbC52MS5EZWxldGVHZW5lcmF0b3JSZXNwb25zZSJBgtPkkwI7KjkvdjEvd29ya3NwYWNlcy97d29ya3NwYWNlX2lkfS9nZW5lcmF0b3JzL3tnZW5lcmF0b3JfbmFtZX0SgQEKDkxpc3RHZW5lcmF0b3JzEh0uc2RsLnYxLkxpc3RHZW5lcmF0b3JzUmVxdWVzdBoeLnNkbC52MS5MaXN0R2VuZXJhdG9yc1Jlc3BvbnNlIjCC0+STAioSKC92MS93b3Jrc3BhY2VzL3t3b3Jrc3BhY2VfaWR9L2dlbmVyYXRvcnMSowEKDlN0YXJ0R2VuZXJhdG9yEh0uc2RsLnYxLlN0YXJ0R2VuZXJhdG9yUmVxdWVzdBoeLnNkbC52MS5TdGFydEdlbmVyYXRvclJlc3BvbnNlIlKC0+STAkw6ASoiRy92MS93b3Jrc3BhY2VzL3t3b3Jrc3BhY2VfaWR9L2dlbmVyYXRvcnMve2dlbmVyYXRvcl9uYW1lfS9hY3Rpb25zOnN0YXJ0Ep8BCg1TdG9wR2VuZXJhdG9yEhwuc2RsLnYxLlN0b3BHZW5lcmF0b3JSZXF1ZXN0Gh0uc2RsLnYxLlN0b3BHZW5lcmF0b3JSZXNwb25zZSJRgtPkkwJLOgEqIkYvdjEvd29ya3NwYWNlcy97d29ya3NwYWNlX2lkfS9nZW5lcmF0b3JzL3tnZW5lcmF0b3JfbmFtZX0vYWN0aW9uczpzdG9wEqEBChJTdGFydEFsbEdlbmVyYXRvcnMSIS5zZGwudjEuU3RhcnRBbGxHZW5lcmF0b3JzUmVxdWVzdBoiLnNkbC52MS5TdGFydEFsbEdlbmVyYXRvcnNSZXNwb25zZSJEgtPkkwI+OgEqIjkvdjEvd29ya3NwYWNlcy97d29ya3NwYWNlX2lkfS9nZW5lcmF0b3JzL2FjdGlvbnM6c3RhcnRhbGwSnQEKEVN0b3BBbGxHZW5lcmF0b3JzEiAuc2RsLnYxLlN0b3BBbGxHZW5lcmF0b3JzUmVxdWVzdBohLnNkbC52MS5TdG9wQWxsR2VuZXJhdG9yc1Jlc3BvbnNlIkOC0+STAj06ASoiOC92MS93b3Jrc3BhY2VzL3t3b3Jrc3BhY2VfaWR9L2dlbmVyYXRvcnMvYWN0aW9uczpzdG9wYWxsEnIKCUFkZE1ldHJpYxIYLnNkbC52MS5BZGRNZXRyaWNSZXF1ZXN0Ghkuc2RsLnYxLkFkZE1ldHJpY1Jlc3BvbnNlIjCC0+STAio6ASoiJS92MS93b3Jrc3BhY2VzL3t3b3Jrc3BhY2VfaWR9L21ldHJpY3MShgEKDERlbGV0ZU1ldHJpYxIbLnNkbC52MS5EZWxldGVNZXRyaWNSZXF1ZXN0Ghwuc2RsLnYxLkRlbGV0ZU1ldHJpY1Jlc3BvbnNlIjuC0+STAjUqMy92MS93b3Jrc3BhY2VzL3t3b3Jrc3BhY2VfaWR9L21ldHJpY3Mve21ldHJpY19uYW1lfRJ1CgtMaXN0TWV0cmljcxIaLnNkbC52MS5MaXN0TWV0cmljc1JlcXVlc3QaGy5zZGwudjEuTGlzdE1ldHJpY3NSZXNwb25zZSItgtPkkwInEiUvdjEvd29ya3NwYWNlcy97d29ya3NwYWNlX2lkfS9tZXRyaWNzEoUBCgxTZXRQYXJhbWV0ZXISGy5zZGwudjEuU2V0UGFyYW1ldGVyUmVxdWVzdBocLnNkbC52MS5TZXRQYXJhbWV0ZXJSZXNwb25zZSI6gtPkkwI0OgEqGi8vdjEvd29ya3NwYWNlcy97d29ya3NwYWNlX2lkfS9wYXJhbWV0ZXJzL3twYXRofRJ+Cg1HZXRQYXJhbWV0ZXJzEhwuc2RsLnYxLkdldFBhcmFtZXRlcnNSZXF1ZXN0Gh0uc2RsLnYxLkdldFBhcmFtZXRlcnNSZXNwb25zZSIwgtPkkwIqEigvdjEvd29ya3NwYWNlcy97d29ya3NwYWNlX2lkfS9wYXJhbWV0ZXJzEokBCg1FdmFsdWF0ZUZsb3dzEhwuc2RsLnYxLkV2YWx1YXRlRmxvd3NSZXF1ZXN0Gh0uc2RsLnYxLkV2YWx1YXRlRmxvd3NSZXNwb25zZSI7gtPkkwI1EjMvdjEvd29ya3NwYWNlcy97d29ya3NwYWNlX2lkfS9mbG93cy97c3RyYXRlZ3l9L2V2YWwShAEKEEdldFN5c3RlbURpYWdyYW0SHy5zZGwudjEuR2V0U3lzdGVtRGlhZ3JhbVJlcXVlc3QaIC5zZGwudjEuR2V0U3lzdGVtRGlhZ3JhbVJlc3BvbnNlIi2C0+STAicSJS92MS93b3Jrc3BhY2VzL3t3b3Jrc3BhY2VfaWR9L2RpYWdyYW1CiQEKCmNvbS5zZGwudjFCDldvcmtzcGFjZVByb3RvUAFaMmdpdGh1Yi5jb20vcGFueWFtL3NkbC9nZW4vZ28vc2RsL3YxL3NlcnZpY2VzO3NkbHYxogIDU1hYqgIGU2RsLlYxygIGU2RsXFYx4gISU2RsXFYxXEdQQk1ldGFkYXRh6gIHU2RsOjpWMWIGcHJvdG8z", [file_sdl_v1_models_models, file_sdl_v1_models_workspace_service, file_sdl_v1_models_canvas_service, file_google_api_annotations]);
 
 /**
- * WorkspaceService manages workspace projects.
- * Implementations: in-memory (seeded from examples), file-based, DB-backed, IndexedDB (WASM).
+ * WorkspaceService is the unified entry point for workspace operations.
+ * Combines CRUD (create/get/list workspaces) with runtime/simulation
+ * (load files, manage generators/metrics, evaluate flows).
+ *
+ * Follows the lilbattle GamesService pattern: one service covering
+ * both metadata and gameplay operations.
+ *
+ * Implementations:
+ *   - devenvbe.WorkspaceService — local mode, wraps DevEnv
+ *   - connectclient.WorkspaceClient — remote mode, wraps gRPC client
  *
  * @generated from service sdl.v1.WorkspaceService
  */
@@ -81,6 +91,146 @@ export const WorkspaceService: GenService<{
     methodKind: "unary";
     input: typeof GetAllDesignContentsRequestSchema;
     output: typeof GetAllDesignContentsResponseSchema;
+  },
+  /**
+   * Load an SDL file into the workspace
+   *
+   * @generated from rpc sdl.v1.WorkspaceService.LoadFile
+   */
+  loadFile: {
+    methodKind: "unary";
+    input: typeof LoadFileRequestSchema;
+    output: typeof LoadFileResponseSchema;
+  },
+  /**
+   * Select the active system for simulation
+   *
+   * @generated from rpc sdl.v1.WorkspaceService.UseSystem
+   */
+  useSystem: {
+    methodKind: "unary";
+    input: typeof UseSystemRequestSchema;
+    output: typeof UseSystemResponseSchema;
+  },
+  /**
+   * @generated from rpc sdl.v1.WorkspaceService.AddGenerator
+   */
+  addGenerator: {
+    methodKind: "unary";
+    input: typeof AddGeneratorRequestSchema;
+    output: typeof AddGeneratorResponseSchema;
+  },
+  /**
+   * @generated from rpc sdl.v1.WorkspaceService.UpdateGenerator
+   */
+  updateGenerator: {
+    methodKind: "unary";
+    input: typeof UpdateGeneratorRequestSchema;
+    output: typeof UpdateGeneratorResponseSchema;
+  },
+  /**
+   * @generated from rpc sdl.v1.WorkspaceService.DeleteGenerator
+   */
+  deleteGenerator: {
+    methodKind: "unary";
+    input: typeof DeleteGeneratorRequestSchema;
+    output: typeof DeleteGeneratorResponseSchema;
+  },
+  /**
+   * @generated from rpc sdl.v1.WorkspaceService.ListGenerators
+   */
+  listGenerators: {
+    methodKind: "unary";
+    input: typeof ListGeneratorsRequestSchema;
+    output: typeof ListGeneratorsResponseSchema;
+  },
+  /**
+   * @generated from rpc sdl.v1.WorkspaceService.StartGenerator
+   */
+  startGenerator: {
+    methodKind: "unary";
+    input: typeof StartGeneratorRequestSchema;
+    output: typeof StartGeneratorResponseSchema;
+  },
+  /**
+   * @generated from rpc sdl.v1.WorkspaceService.StopGenerator
+   */
+  stopGenerator: {
+    methodKind: "unary";
+    input: typeof StopGeneratorRequestSchema;
+    output: typeof StopGeneratorResponseSchema;
+  },
+  /**
+   * @generated from rpc sdl.v1.WorkspaceService.StartAllGenerators
+   */
+  startAllGenerators: {
+    methodKind: "unary";
+    input: typeof StartAllGeneratorsRequestSchema;
+    output: typeof StartAllGeneratorsResponseSchema;
+  },
+  /**
+   * @generated from rpc sdl.v1.WorkspaceService.StopAllGenerators
+   */
+  stopAllGenerators: {
+    methodKind: "unary";
+    input: typeof StopAllGeneratorsRequestSchema;
+    output: typeof StopAllGeneratorsResponseSchema;
+  },
+  /**
+   * @generated from rpc sdl.v1.WorkspaceService.AddMetric
+   */
+  addMetric: {
+    methodKind: "unary";
+    input: typeof AddMetricRequestSchema;
+    output: typeof AddMetricResponseSchema;
+  },
+  /**
+   * @generated from rpc sdl.v1.WorkspaceService.DeleteMetric
+   */
+  deleteMetric: {
+    methodKind: "unary";
+    input: typeof DeleteMetricRequestSchema;
+    output: typeof DeleteMetricResponseSchema;
+  },
+  /**
+   * @generated from rpc sdl.v1.WorkspaceService.ListMetrics
+   */
+  listMetrics: {
+    methodKind: "unary";
+    input: typeof ListMetricsRequestSchema;
+    output: typeof ListMetricsResponseSchema;
+  },
+  /**
+   * @generated from rpc sdl.v1.WorkspaceService.SetParameter
+   */
+  setParameter: {
+    methodKind: "unary";
+    input: typeof SetParameterRequestSchema;
+    output: typeof SetParameterResponseSchema;
+  },
+  /**
+   * @generated from rpc sdl.v1.WorkspaceService.GetParameters
+   */
+  getParameters: {
+    methodKind: "unary";
+    input: typeof GetParametersRequestSchema;
+    output: typeof GetParametersResponseSchema;
+  },
+  /**
+   * @generated from rpc sdl.v1.WorkspaceService.EvaluateFlows
+   */
+  evaluateFlows: {
+    methodKind: "unary";
+    input: typeof EvaluateFlowsRequestSchema;
+    output: typeof EvaluateFlowsResponseSchema;
+  },
+  /**
+   * @generated from rpc sdl.v1.WorkspaceService.GetSystemDiagram
+   */
+  getSystemDiagram: {
+    methodKind: "unary";
+    input: typeof GetSystemDiagramRequestSchema;
+    output: typeof GetSystemDiagramResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_sdl_v1_services_workspace, 0);

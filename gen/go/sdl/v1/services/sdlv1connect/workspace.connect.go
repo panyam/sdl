@@ -56,6 +56,57 @@ const (
 	// WorkspaceServiceGetAllDesignContentsProcedure is the fully-qualified name of the
 	// WorkspaceService's GetAllDesignContents RPC.
 	WorkspaceServiceGetAllDesignContentsProcedure = "/sdl.v1.WorkspaceService/GetAllDesignContents"
+	// WorkspaceServiceLoadFileProcedure is the fully-qualified name of the WorkspaceService's LoadFile
+	// RPC.
+	WorkspaceServiceLoadFileProcedure = "/sdl.v1.WorkspaceService/LoadFile"
+	// WorkspaceServiceUseSystemProcedure is the fully-qualified name of the WorkspaceService's
+	// UseSystem RPC.
+	WorkspaceServiceUseSystemProcedure = "/sdl.v1.WorkspaceService/UseSystem"
+	// WorkspaceServiceAddGeneratorProcedure is the fully-qualified name of the WorkspaceService's
+	// AddGenerator RPC.
+	WorkspaceServiceAddGeneratorProcedure = "/sdl.v1.WorkspaceService/AddGenerator"
+	// WorkspaceServiceUpdateGeneratorProcedure is the fully-qualified name of the WorkspaceService's
+	// UpdateGenerator RPC.
+	WorkspaceServiceUpdateGeneratorProcedure = "/sdl.v1.WorkspaceService/UpdateGenerator"
+	// WorkspaceServiceDeleteGeneratorProcedure is the fully-qualified name of the WorkspaceService's
+	// DeleteGenerator RPC.
+	WorkspaceServiceDeleteGeneratorProcedure = "/sdl.v1.WorkspaceService/DeleteGenerator"
+	// WorkspaceServiceListGeneratorsProcedure is the fully-qualified name of the WorkspaceService's
+	// ListGenerators RPC.
+	WorkspaceServiceListGeneratorsProcedure = "/sdl.v1.WorkspaceService/ListGenerators"
+	// WorkspaceServiceStartGeneratorProcedure is the fully-qualified name of the WorkspaceService's
+	// StartGenerator RPC.
+	WorkspaceServiceStartGeneratorProcedure = "/sdl.v1.WorkspaceService/StartGenerator"
+	// WorkspaceServiceStopGeneratorProcedure is the fully-qualified name of the WorkspaceService's
+	// StopGenerator RPC.
+	WorkspaceServiceStopGeneratorProcedure = "/sdl.v1.WorkspaceService/StopGenerator"
+	// WorkspaceServiceStartAllGeneratorsProcedure is the fully-qualified name of the WorkspaceService's
+	// StartAllGenerators RPC.
+	WorkspaceServiceStartAllGeneratorsProcedure = "/sdl.v1.WorkspaceService/StartAllGenerators"
+	// WorkspaceServiceStopAllGeneratorsProcedure is the fully-qualified name of the WorkspaceService's
+	// StopAllGenerators RPC.
+	WorkspaceServiceStopAllGeneratorsProcedure = "/sdl.v1.WorkspaceService/StopAllGenerators"
+	// WorkspaceServiceAddMetricProcedure is the fully-qualified name of the WorkspaceService's
+	// AddMetric RPC.
+	WorkspaceServiceAddMetricProcedure = "/sdl.v1.WorkspaceService/AddMetric"
+	// WorkspaceServiceDeleteMetricProcedure is the fully-qualified name of the WorkspaceService's
+	// DeleteMetric RPC.
+	WorkspaceServiceDeleteMetricProcedure = "/sdl.v1.WorkspaceService/DeleteMetric"
+	// WorkspaceServiceListMetricsProcedure is the fully-qualified name of the WorkspaceService's
+	// ListMetrics RPC.
+	WorkspaceServiceListMetricsProcedure = "/sdl.v1.WorkspaceService/ListMetrics"
+	// WorkspaceServiceSetParameterProcedure is the fully-qualified name of the WorkspaceService's
+	// SetParameter RPC.
+	WorkspaceServiceSetParameterProcedure = "/sdl.v1.WorkspaceService/SetParameter"
+	// WorkspaceServiceGetParametersProcedure is the fully-qualified name of the WorkspaceService's
+	// GetParameters RPC.
+	WorkspaceServiceGetParametersProcedure = "/sdl.v1.WorkspaceService/GetParameters"
+	// WorkspaceServiceEvaluateFlowsProcedure is the fully-qualified name of the WorkspaceService's
+	// EvaluateFlows RPC.
+	WorkspaceServiceEvaluateFlowsProcedure = "/sdl.v1.WorkspaceService/EvaluateFlows"
+	// WorkspaceServiceGetSystemDiagramProcedure is the fully-qualified name of the WorkspaceService's
+	// GetSystemDiagram RPC.
+	WorkspaceServiceGetSystemDiagramProcedure = "/sdl.v1.WorkspaceService/GetSystemDiagram"
 )
 
 // WorkspaceServiceClient is a client for the sdl.v1.WorkspaceService service.
@@ -69,6 +120,25 @@ type WorkspaceServiceClient interface {
 	GetDesignContent(context.Context, *connect.Request[models.GetDesignContentRequest]) (*connect.Response[models.GetDesignContentResponse], error)
 	// Get all design contents for a workspace
 	GetAllDesignContents(context.Context, *connect.Request[models.GetAllDesignContentsRequest]) (*connect.Response[models.GetAllDesignContentsResponse], error)
+	// Load an SDL file into the workspace
+	LoadFile(context.Context, *connect.Request[models.LoadFileRequest]) (*connect.Response[models.LoadFileResponse], error)
+	// Select the active system for simulation
+	UseSystem(context.Context, *connect.Request[models.UseSystemRequest]) (*connect.Response[models.UseSystemResponse], error)
+	AddGenerator(context.Context, *connect.Request[models.AddGeneratorRequest]) (*connect.Response[models.AddGeneratorResponse], error)
+	UpdateGenerator(context.Context, *connect.Request[models.UpdateGeneratorRequest]) (*connect.Response[models.UpdateGeneratorResponse], error)
+	DeleteGenerator(context.Context, *connect.Request[models.DeleteGeneratorRequest]) (*connect.Response[models.DeleteGeneratorResponse], error)
+	ListGenerators(context.Context, *connect.Request[models.ListGeneratorsRequest]) (*connect.Response[models.ListGeneratorsResponse], error)
+	StartGenerator(context.Context, *connect.Request[models.StartGeneratorRequest]) (*connect.Response[models.StartGeneratorResponse], error)
+	StopGenerator(context.Context, *connect.Request[models.StopGeneratorRequest]) (*connect.Response[models.StopGeneratorResponse], error)
+	StartAllGenerators(context.Context, *connect.Request[models.StartAllGeneratorsRequest]) (*connect.Response[models.StartAllGeneratorsResponse], error)
+	StopAllGenerators(context.Context, *connect.Request[models.StopAllGeneratorsRequest]) (*connect.Response[models.StopAllGeneratorsResponse], error)
+	AddMetric(context.Context, *connect.Request[models.AddMetricRequest]) (*connect.Response[models.AddMetricResponse], error)
+	DeleteMetric(context.Context, *connect.Request[models.DeleteMetricRequest]) (*connect.Response[models.DeleteMetricResponse], error)
+	ListMetrics(context.Context, *connect.Request[models.ListMetricsRequest]) (*connect.Response[models.ListMetricsResponse], error)
+	SetParameter(context.Context, *connect.Request[models.SetParameterRequest]) (*connect.Response[models.SetParameterResponse], error)
+	GetParameters(context.Context, *connect.Request[models.GetParametersRequest]) (*connect.Response[models.GetParametersResponse], error)
+	EvaluateFlows(context.Context, *connect.Request[models.EvaluateFlowsRequest]) (*connect.Response[models.EvaluateFlowsResponse], error)
+	GetSystemDiagram(context.Context, *connect.Request[models.GetSystemDiagramRequest]) (*connect.Response[models.GetSystemDiagramResponse], error)
 }
 
 // NewWorkspaceServiceClient constructs a client for the sdl.v1.WorkspaceService service. By
@@ -124,6 +194,108 @@ func NewWorkspaceServiceClient(httpClient connect.HTTPClient, baseURL string, op
 			connect.WithSchema(workspaceServiceMethods.ByName("GetAllDesignContents")),
 			connect.WithClientOptions(opts...),
 		),
+		loadFile: connect.NewClient[models.LoadFileRequest, models.LoadFileResponse](
+			httpClient,
+			baseURL+WorkspaceServiceLoadFileProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("LoadFile")),
+			connect.WithClientOptions(opts...),
+		),
+		useSystem: connect.NewClient[models.UseSystemRequest, models.UseSystemResponse](
+			httpClient,
+			baseURL+WorkspaceServiceUseSystemProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("UseSystem")),
+			connect.WithClientOptions(opts...),
+		),
+		addGenerator: connect.NewClient[models.AddGeneratorRequest, models.AddGeneratorResponse](
+			httpClient,
+			baseURL+WorkspaceServiceAddGeneratorProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("AddGenerator")),
+			connect.WithClientOptions(opts...),
+		),
+		updateGenerator: connect.NewClient[models.UpdateGeneratorRequest, models.UpdateGeneratorResponse](
+			httpClient,
+			baseURL+WorkspaceServiceUpdateGeneratorProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("UpdateGenerator")),
+			connect.WithClientOptions(opts...),
+		),
+		deleteGenerator: connect.NewClient[models.DeleteGeneratorRequest, models.DeleteGeneratorResponse](
+			httpClient,
+			baseURL+WorkspaceServiceDeleteGeneratorProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("DeleteGenerator")),
+			connect.WithClientOptions(opts...),
+		),
+		listGenerators: connect.NewClient[models.ListGeneratorsRequest, models.ListGeneratorsResponse](
+			httpClient,
+			baseURL+WorkspaceServiceListGeneratorsProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("ListGenerators")),
+			connect.WithClientOptions(opts...),
+		),
+		startGenerator: connect.NewClient[models.StartGeneratorRequest, models.StartGeneratorResponse](
+			httpClient,
+			baseURL+WorkspaceServiceStartGeneratorProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("StartGenerator")),
+			connect.WithClientOptions(opts...),
+		),
+		stopGenerator: connect.NewClient[models.StopGeneratorRequest, models.StopGeneratorResponse](
+			httpClient,
+			baseURL+WorkspaceServiceStopGeneratorProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("StopGenerator")),
+			connect.WithClientOptions(opts...),
+		),
+		startAllGenerators: connect.NewClient[models.StartAllGeneratorsRequest, models.StartAllGeneratorsResponse](
+			httpClient,
+			baseURL+WorkspaceServiceStartAllGeneratorsProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("StartAllGenerators")),
+			connect.WithClientOptions(opts...),
+		),
+		stopAllGenerators: connect.NewClient[models.StopAllGeneratorsRequest, models.StopAllGeneratorsResponse](
+			httpClient,
+			baseURL+WorkspaceServiceStopAllGeneratorsProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("StopAllGenerators")),
+			connect.WithClientOptions(opts...),
+		),
+		addMetric: connect.NewClient[models.AddMetricRequest, models.AddMetricResponse](
+			httpClient,
+			baseURL+WorkspaceServiceAddMetricProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("AddMetric")),
+			connect.WithClientOptions(opts...),
+		),
+		deleteMetric: connect.NewClient[models.DeleteMetricRequest, models.DeleteMetricResponse](
+			httpClient,
+			baseURL+WorkspaceServiceDeleteMetricProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("DeleteMetric")),
+			connect.WithClientOptions(opts...),
+		),
+		listMetrics: connect.NewClient[models.ListMetricsRequest, models.ListMetricsResponse](
+			httpClient,
+			baseURL+WorkspaceServiceListMetricsProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("ListMetrics")),
+			connect.WithClientOptions(opts...),
+		),
+		setParameter: connect.NewClient[models.SetParameterRequest, models.SetParameterResponse](
+			httpClient,
+			baseURL+WorkspaceServiceSetParameterProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("SetParameter")),
+			connect.WithClientOptions(opts...),
+		),
+		getParameters: connect.NewClient[models.GetParametersRequest, models.GetParametersResponse](
+			httpClient,
+			baseURL+WorkspaceServiceGetParametersProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("GetParameters")),
+			connect.WithClientOptions(opts...),
+		),
+		evaluateFlows: connect.NewClient[models.EvaluateFlowsRequest, models.EvaluateFlowsResponse](
+			httpClient,
+			baseURL+WorkspaceServiceEvaluateFlowsProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("EvaluateFlows")),
+			connect.WithClientOptions(opts...),
+		),
+		getSystemDiagram: connect.NewClient[models.GetSystemDiagramRequest, models.GetSystemDiagramResponse](
+			httpClient,
+			baseURL+WorkspaceServiceGetSystemDiagramProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("GetSystemDiagram")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -136,6 +308,23 @@ type workspaceServiceClient struct {
 	updateWorkspace      *connect.Client[models.UpdateWorkspaceRequest, models.UpdateWorkspaceResponse]
 	getDesignContent     *connect.Client[models.GetDesignContentRequest, models.GetDesignContentResponse]
 	getAllDesignContents *connect.Client[models.GetAllDesignContentsRequest, models.GetAllDesignContentsResponse]
+	loadFile             *connect.Client[models.LoadFileRequest, models.LoadFileResponse]
+	useSystem            *connect.Client[models.UseSystemRequest, models.UseSystemResponse]
+	addGenerator         *connect.Client[models.AddGeneratorRequest, models.AddGeneratorResponse]
+	updateGenerator      *connect.Client[models.UpdateGeneratorRequest, models.UpdateGeneratorResponse]
+	deleteGenerator      *connect.Client[models.DeleteGeneratorRequest, models.DeleteGeneratorResponse]
+	listGenerators       *connect.Client[models.ListGeneratorsRequest, models.ListGeneratorsResponse]
+	startGenerator       *connect.Client[models.StartGeneratorRequest, models.StartGeneratorResponse]
+	stopGenerator        *connect.Client[models.StopGeneratorRequest, models.StopGeneratorResponse]
+	startAllGenerators   *connect.Client[models.StartAllGeneratorsRequest, models.StartAllGeneratorsResponse]
+	stopAllGenerators    *connect.Client[models.StopAllGeneratorsRequest, models.StopAllGeneratorsResponse]
+	addMetric            *connect.Client[models.AddMetricRequest, models.AddMetricResponse]
+	deleteMetric         *connect.Client[models.DeleteMetricRequest, models.DeleteMetricResponse]
+	listMetrics          *connect.Client[models.ListMetricsRequest, models.ListMetricsResponse]
+	setParameter         *connect.Client[models.SetParameterRequest, models.SetParameterResponse]
+	getParameters        *connect.Client[models.GetParametersRequest, models.GetParametersResponse]
+	evaluateFlows        *connect.Client[models.EvaluateFlowsRequest, models.EvaluateFlowsResponse]
+	getSystemDiagram     *connect.Client[models.GetSystemDiagramRequest, models.GetSystemDiagramResponse]
 }
 
 // CreateWorkspace calls sdl.v1.WorkspaceService.CreateWorkspace.
@@ -173,6 +362,91 @@ func (c *workspaceServiceClient) GetAllDesignContents(ctx context.Context, req *
 	return c.getAllDesignContents.CallUnary(ctx, req)
 }
 
+// LoadFile calls sdl.v1.WorkspaceService.LoadFile.
+func (c *workspaceServiceClient) LoadFile(ctx context.Context, req *connect.Request[models.LoadFileRequest]) (*connect.Response[models.LoadFileResponse], error) {
+	return c.loadFile.CallUnary(ctx, req)
+}
+
+// UseSystem calls sdl.v1.WorkspaceService.UseSystem.
+func (c *workspaceServiceClient) UseSystem(ctx context.Context, req *connect.Request[models.UseSystemRequest]) (*connect.Response[models.UseSystemResponse], error) {
+	return c.useSystem.CallUnary(ctx, req)
+}
+
+// AddGenerator calls sdl.v1.WorkspaceService.AddGenerator.
+func (c *workspaceServiceClient) AddGenerator(ctx context.Context, req *connect.Request[models.AddGeneratorRequest]) (*connect.Response[models.AddGeneratorResponse], error) {
+	return c.addGenerator.CallUnary(ctx, req)
+}
+
+// UpdateGenerator calls sdl.v1.WorkspaceService.UpdateGenerator.
+func (c *workspaceServiceClient) UpdateGenerator(ctx context.Context, req *connect.Request[models.UpdateGeneratorRequest]) (*connect.Response[models.UpdateGeneratorResponse], error) {
+	return c.updateGenerator.CallUnary(ctx, req)
+}
+
+// DeleteGenerator calls sdl.v1.WorkspaceService.DeleteGenerator.
+func (c *workspaceServiceClient) DeleteGenerator(ctx context.Context, req *connect.Request[models.DeleteGeneratorRequest]) (*connect.Response[models.DeleteGeneratorResponse], error) {
+	return c.deleteGenerator.CallUnary(ctx, req)
+}
+
+// ListGenerators calls sdl.v1.WorkspaceService.ListGenerators.
+func (c *workspaceServiceClient) ListGenerators(ctx context.Context, req *connect.Request[models.ListGeneratorsRequest]) (*connect.Response[models.ListGeneratorsResponse], error) {
+	return c.listGenerators.CallUnary(ctx, req)
+}
+
+// StartGenerator calls sdl.v1.WorkspaceService.StartGenerator.
+func (c *workspaceServiceClient) StartGenerator(ctx context.Context, req *connect.Request[models.StartGeneratorRequest]) (*connect.Response[models.StartGeneratorResponse], error) {
+	return c.startGenerator.CallUnary(ctx, req)
+}
+
+// StopGenerator calls sdl.v1.WorkspaceService.StopGenerator.
+func (c *workspaceServiceClient) StopGenerator(ctx context.Context, req *connect.Request[models.StopGeneratorRequest]) (*connect.Response[models.StopGeneratorResponse], error) {
+	return c.stopGenerator.CallUnary(ctx, req)
+}
+
+// StartAllGenerators calls sdl.v1.WorkspaceService.StartAllGenerators.
+func (c *workspaceServiceClient) StartAllGenerators(ctx context.Context, req *connect.Request[models.StartAllGeneratorsRequest]) (*connect.Response[models.StartAllGeneratorsResponse], error) {
+	return c.startAllGenerators.CallUnary(ctx, req)
+}
+
+// StopAllGenerators calls sdl.v1.WorkspaceService.StopAllGenerators.
+func (c *workspaceServiceClient) StopAllGenerators(ctx context.Context, req *connect.Request[models.StopAllGeneratorsRequest]) (*connect.Response[models.StopAllGeneratorsResponse], error) {
+	return c.stopAllGenerators.CallUnary(ctx, req)
+}
+
+// AddMetric calls sdl.v1.WorkspaceService.AddMetric.
+func (c *workspaceServiceClient) AddMetric(ctx context.Context, req *connect.Request[models.AddMetricRequest]) (*connect.Response[models.AddMetricResponse], error) {
+	return c.addMetric.CallUnary(ctx, req)
+}
+
+// DeleteMetric calls sdl.v1.WorkspaceService.DeleteMetric.
+func (c *workspaceServiceClient) DeleteMetric(ctx context.Context, req *connect.Request[models.DeleteMetricRequest]) (*connect.Response[models.DeleteMetricResponse], error) {
+	return c.deleteMetric.CallUnary(ctx, req)
+}
+
+// ListMetrics calls sdl.v1.WorkspaceService.ListMetrics.
+func (c *workspaceServiceClient) ListMetrics(ctx context.Context, req *connect.Request[models.ListMetricsRequest]) (*connect.Response[models.ListMetricsResponse], error) {
+	return c.listMetrics.CallUnary(ctx, req)
+}
+
+// SetParameter calls sdl.v1.WorkspaceService.SetParameter.
+func (c *workspaceServiceClient) SetParameter(ctx context.Context, req *connect.Request[models.SetParameterRequest]) (*connect.Response[models.SetParameterResponse], error) {
+	return c.setParameter.CallUnary(ctx, req)
+}
+
+// GetParameters calls sdl.v1.WorkspaceService.GetParameters.
+func (c *workspaceServiceClient) GetParameters(ctx context.Context, req *connect.Request[models.GetParametersRequest]) (*connect.Response[models.GetParametersResponse], error) {
+	return c.getParameters.CallUnary(ctx, req)
+}
+
+// EvaluateFlows calls sdl.v1.WorkspaceService.EvaluateFlows.
+func (c *workspaceServiceClient) EvaluateFlows(ctx context.Context, req *connect.Request[models.EvaluateFlowsRequest]) (*connect.Response[models.EvaluateFlowsResponse], error) {
+	return c.evaluateFlows.CallUnary(ctx, req)
+}
+
+// GetSystemDiagram calls sdl.v1.WorkspaceService.GetSystemDiagram.
+func (c *workspaceServiceClient) GetSystemDiagram(ctx context.Context, req *connect.Request[models.GetSystemDiagramRequest]) (*connect.Response[models.GetSystemDiagramResponse], error) {
+	return c.getSystemDiagram.CallUnary(ctx, req)
+}
+
 // WorkspaceServiceHandler is an implementation of the sdl.v1.WorkspaceService service.
 type WorkspaceServiceHandler interface {
 	CreateWorkspace(context.Context, *connect.Request[models.CreateWorkspaceRequest]) (*connect.Response[models.CreateWorkspaceResponse], error)
@@ -184,6 +458,25 @@ type WorkspaceServiceHandler interface {
 	GetDesignContent(context.Context, *connect.Request[models.GetDesignContentRequest]) (*connect.Response[models.GetDesignContentResponse], error)
 	// Get all design contents for a workspace
 	GetAllDesignContents(context.Context, *connect.Request[models.GetAllDesignContentsRequest]) (*connect.Response[models.GetAllDesignContentsResponse], error)
+	// Load an SDL file into the workspace
+	LoadFile(context.Context, *connect.Request[models.LoadFileRequest]) (*connect.Response[models.LoadFileResponse], error)
+	// Select the active system for simulation
+	UseSystem(context.Context, *connect.Request[models.UseSystemRequest]) (*connect.Response[models.UseSystemResponse], error)
+	AddGenerator(context.Context, *connect.Request[models.AddGeneratorRequest]) (*connect.Response[models.AddGeneratorResponse], error)
+	UpdateGenerator(context.Context, *connect.Request[models.UpdateGeneratorRequest]) (*connect.Response[models.UpdateGeneratorResponse], error)
+	DeleteGenerator(context.Context, *connect.Request[models.DeleteGeneratorRequest]) (*connect.Response[models.DeleteGeneratorResponse], error)
+	ListGenerators(context.Context, *connect.Request[models.ListGeneratorsRequest]) (*connect.Response[models.ListGeneratorsResponse], error)
+	StartGenerator(context.Context, *connect.Request[models.StartGeneratorRequest]) (*connect.Response[models.StartGeneratorResponse], error)
+	StopGenerator(context.Context, *connect.Request[models.StopGeneratorRequest]) (*connect.Response[models.StopGeneratorResponse], error)
+	StartAllGenerators(context.Context, *connect.Request[models.StartAllGeneratorsRequest]) (*connect.Response[models.StartAllGeneratorsResponse], error)
+	StopAllGenerators(context.Context, *connect.Request[models.StopAllGeneratorsRequest]) (*connect.Response[models.StopAllGeneratorsResponse], error)
+	AddMetric(context.Context, *connect.Request[models.AddMetricRequest]) (*connect.Response[models.AddMetricResponse], error)
+	DeleteMetric(context.Context, *connect.Request[models.DeleteMetricRequest]) (*connect.Response[models.DeleteMetricResponse], error)
+	ListMetrics(context.Context, *connect.Request[models.ListMetricsRequest]) (*connect.Response[models.ListMetricsResponse], error)
+	SetParameter(context.Context, *connect.Request[models.SetParameterRequest]) (*connect.Response[models.SetParameterResponse], error)
+	GetParameters(context.Context, *connect.Request[models.GetParametersRequest]) (*connect.Response[models.GetParametersResponse], error)
+	EvaluateFlows(context.Context, *connect.Request[models.EvaluateFlowsRequest]) (*connect.Response[models.EvaluateFlowsResponse], error)
+	GetSystemDiagram(context.Context, *connect.Request[models.GetSystemDiagramRequest]) (*connect.Response[models.GetSystemDiagramResponse], error)
 }
 
 // NewWorkspaceServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -235,6 +528,108 @@ func NewWorkspaceServiceHandler(svc WorkspaceServiceHandler, opts ...connect.Han
 		connect.WithSchema(workspaceServiceMethods.ByName("GetAllDesignContents")),
 		connect.WithHandlerOptions(opts...),
 	)
+	workspaceServiceLoadFileHandler := connect.NewUnaryHandler(
+		WorkspaceServiceLoadFileProcedure,
+		svc.LoadFile,
+		connect.WithSchema(workspaceServiceMethods.ByName("LoadFile")),
+		connect.WithHandlerOptions(opts...),
+	)
+	workspaceServiceUseSystemHandler := connect.NewUnaryHandler(
+		WorkspaceServiceUseSystemProcedure,
+		svc.UseSystem,
+		connect.WithSchema(workspaceServiceMethods.ByName("UseSystem")),
+		connect.WithHandlerOptions(opts...),
+	)
+	workspaceServiceAddGeneratorHandler := connect.NewUnaryHandler(
+		WorkspaceServiceAddGeneratorProcedure,
+		svc.AddGenerator,
+		connect.WithSchema(workspaceServiceMethods.ByName("AddGenerator")),
+		connect.WithHandlerOptions(opts...),
+	)
+	workspaceServiceUpdateGeneratorHandler := connect.NewUnaryHandler(
+		WorkspaceServiceUpdateGeneratorProcedure,
+		svc.UpdateGenerator,
+		connect.WithSchema(workspaceServiceMethods.ByName("UpdateGenerator")),
+		connect.WithHandlerOptions(opts...),
+	)
+	workspaceServiceDeleteGeneratorHandler := connect.NewUnaryHandler(
+		WorkspaceServiceDeleteGeneratorProcedure,
+		svc.DeleteGenerator,
+		connect.WithSchema(workspaceServiceMethods.ByName("DeleteGenerator")),
+		connect.WithHandlerOptions(opts...),
+	)
+	workspaceServiceListGeneratorsHandler := connect.NewUnaryHandler(
+		WorkspaceServiceListGeneratorsProcedure,
+		svc.ListGenerators,
+		connect.WithSchema(workspaceServiceMethods.ByName("ListGenerators")),
+		connect.WithHandlerOptions(opts...),
+	)
+	workspaceServiceStartGeneratorHandler := connect.NewUnaryHandler(
+		WorkspaceServiceStartGeneratorProcedure,
+		svc.StartGenerator,
+		connect.WithSchema(workspaceServiceMethods.ByName("StartGenerator")),
+		connect.WithHandlerOptions(opts...),
+	)
+	workspaceServiceStopGeneratorHandler := connect.NewUnaryHandler(
+		WorkspaceServiceStopGeneratorProcedure,
+		svc.StopGenerator,
+		connect.WithSchema(workspaceServiceMethods.ByName("StopGenerator")),
+		connect.WithHandlerOptions(opts...),
+	)
+	workspaceServiceStartAllGeneratorsHandler := connect.NewUnaryHandler(
+		WorkspaceServiceStartAllGeneratorsProcedure,
+		svc.StartAllGenerators,
+		connect.WithSchema(workspaceServiceMethods.ByName("StartAllGenerators")),
+		connect.WithHandlerOptions(opts...),
+	)
+	workspaceServiceStopAllGeneratorsHandler := connect.NewUnaryHandler(
+		WorkspaceServiceStopAllGeneratorsProcedure,
+		svc.StopAllGenerators,
+		connect.WithSchema(workspaceServiceMethods.ByName("StopAllGenerators")),
+		connect.WithHandlerOptions(opts...),
+	)
+	workspaceServiceAddMetricHandler := connect.NewUnaryHandler(
+		WorkspaceServiceAddMetricProcedure,
+		svc.AddMetric,
+		connect.WithSchema(workspaceServiceMethods.ByName("AddMetric")),
+		connect.WithHandlerOptions(opts...),
+	)
+	workspaceServiceDeleteMetricHandler := connect.NewUnaryHandler(
+		WorkspaceServiceDeleteMetricProcedure,
+		svc.DeleteMetric,
+		connect.WithSchema(workspaceServiceMethods.ByName("DeleteMetric")),
+		connect.WithHandlerOptions(opts...),
+	)
+	workspaceServiceListMetricsHandler := connect.NewUnaryHandler(
+		WorkspaceServiceListMetricsProcedure,
+		svc.ListMetrics,
+		connect.WithSchema(workspaceServiceMethods.ByName("ListMetrics")),
+		connect.WithHandlerOptions(opts...),
+	)
+	workspaceServiceSetParameterHandler := connect.NewUnaryHandler(
+		WorkspaceServiceSetParameterProcedure,
+		svc.SetParameter,
+		connect.WithSchema(workspaceServiceMethods.ByName("SetParameter")),
+		connect.WithHandlerOptions(opts...),
+	)
+	workspaceServiceGetParametersHandler := connect.NewUnaryHandler(
+		WorkspaceServiceGetParametersProcedure,
+		svc.GetParameters,
+		connect.WithSchema(workspaceServiceMethods.ByName("GetParameters")),
+		connect.WithHandlerOptions(opts...),
+	)
+	workspaceServiceEvaluateFlowsHandler := connect.NewUnaryHandler(
+		WorkspaceServiceEvaluateFlowsProcedure,
+		svc.EvaluateFlows,
+		connect.WithSchema(workspaceServiceMethods.ByName("EvaluateFlows")),
+		connect.WithHandlerOptions(opts...),
+	)
+	workspaceServiceGetSystemDiagramHandler := connect.NewUnaryHandler(
+		WorkspaceServiceGetSystemDiagramProcedure,
+		svc.GetSystemDiagram,
+		connect.WithSchema(workspaceServiceMethods.ByName("GetSystemDiagram")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/sdl.v1.WorkspaceService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case WorkspaceServiceCreateWorkspaceProcedure:
@@ -251,6 +646,40 @@ func NewWorkspaceServiceHandler(svc WorkspaceServiceHandler, opts ...connect.Han
 			workspaceServiceGetDesignContentHandler.ServeHTTP(w, r)
 		case WorkspaceServiceGetAllDesignContentsProcedure:
 			workspaceServiceGetAllDesignContentsHandler.ServeHTTP(w, r)
+		case WorkspaceServiceLoadFileProcedure:
+			workspaceServiceLoadFileHandler.ServeHTTP(w, r)
+		case WorkspaceServiceUseSystemProcedure:
+			workspaceServiceUseSystemHandler.ServeHTTP(w, r)
+		case WorkspaceServiceAddGeneratorProcedure:
+			workspaceServiceAddGeneratorHandler.ServeHTTP(w, r)
+		case WorkspaceServiceUpdateGeneratorProcedure:
+			workspaceServiceUpdateGeneratorHandler.ServeHTTP(w, r)
+		case WorkspaceServiceDeleteGeneratorProcedure:
+			workspaceServiceDeleteGeneratorHandler.ServeHTTP(w, r)
+		case WorkspaceServiceListGeneratorsProcedure:
+			workspaceServiceListGeneratorsHandler.ServeHTTP(w, r)
+		case WorkspaceServiceStartGeneratorProcedure:
+			workspaceServiceStartGeneratorHandler.ServeHTTP(w, r)
+		case WorkspaceServiceStopGeneratorProcedure:
+			workspaceServiceStopGeneratorHandler.ServeHTTP(w, r)
+		case WorkspaceServiceStartAllGeneratorsProcedure:
+			workspaceServiceStartAllGeneratorsHandler.ServeHTTP(w, r)
+		case WorkspaceServiceStopAllGeneratorsProcedure:
+			workspaceServiceStopAllGeneratorsHandler.ServeHTTP(w, r)
+		case WorkspaceServiceAddMetricProcedure:
+			workspaceServiceAddMetricHandler.ServeHTTP(w, r)
+		case WorkspaceServiceDeleteMetricProcedure:
+			workspaceServiceDeleteMetricHandler.ServeHTTP(w, r)
+		case WorkspaceServiceListMetricsProcedure:
+			workspaceServiceListMetricsHandler.ServeHTTP(w, r)
+		case WorkspaceServiceSetParameterProcedure:
+			workspaceServiceSetParameterHandler.ServeHTTP(w, r)
+		case WorkspaceServiceGetParametersProcedure:
+			workspaceServiceGetParametersHandler.ServeHTTP(w, r)
+		case WorkspaceServiceEvaluateFlowsProcedure:
+			workspaceServiceEvaluateFlowsHandler.ServeHTTP(w, r)
+		case WorkspaceServiceGetSystemDiagramProcedure:
+			workspaceServiceGetSystemDiagramHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -286,4 +715,72 @@ func (UnimplementedWorkspaceServiceHandler) GetDesignContent(context.Context, *c
 
 func (UnimplementedWorkspaceServiceHandler) GetAllDesignContents(context.Context, *connect.Request[models.GetAllDesignContentsRequest]) (*connect.Response[models.GetAllDesignContentsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspaceService.GetAllDesignContents is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) LoadFile(context.Context, *connect.Request[models.LoadFileRequest]) (*connect.Response[models.LoadFileResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspaceService.LoadFile is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) UseSystem(context.Context, *connect.Request[models.UseSystemRequest]) (*connect.Response[models.UseSystemResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspaceService.UseSystem is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) AddGenerator(context.Context, *connect.Request[models.AddGeneratorRequest]) (*connect.Response[models.AddGeneratorResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspaceService.AddGenerator is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) UpdateGenerator(context.Context, *connect.Request[models.UpdateGeneratorRequest]) (*connect.Response[models.UpdateGeneratorResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspaceService.UpdateGenerator is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) DeleteGenerator(context.Context, *connect.Request[models.DeleteGeneratorRequest]) (*connect.Response[models.DeleteGeneratorResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspaceService.DeleteGenerator is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) ListGenerators(context.Context, *connect.Request[models.ListGeneratorsRequest]) (*connect.Response[models.ListGeneratorsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspaceService.ListGenerators is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) StartGenerator(context.Context, *connect.Request[models.StartGeneratorRequest]) (*connect.Response[models.StartGeneratorResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspaceService.StartGenerator is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) StopGenerator(context.Context, *connect.Request[models.StopGeneratorRequest]) (*connect.Response[models.StopGeneratorResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspaceService.StopGenerator is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) StartAllGenerators(context.Context, *connect.Request[models.StartAllGeneratorsRequest]) (*connect.Response[models.StartAllGeneratorsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspaceService.StartAllGenerators is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) StopAllGenerators(context.Context, *connect.Request[models.StopAllGeneratorsRequest]) (*connect.Response[models.StopAllGeneratorsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspaceService.StopAllGenerators is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) AddMetric(context.Context, *connect.Request[models.AddMetricRequest]) (*connect.Response[models.AddMetricResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspaceService.AddMetric is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) DeleteMetric(context.Context, *connect.Request[models.DeleteMetricRequest]) (*connect.Response[models.DeleteMetricResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspaceService.DeleteMetric is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) ListMetrics(context.Context, *connect.Request[models.ListMetricsRequest]) (*connect.Response[models.ListMetricsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspaceService.ListMetrics is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) SetParameter(context.Context, *connect.Request[models.SetParameterRequest]) (*connect.Response[models.SetParameterResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspaceService.SetParameter is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) GetParameters(context.Context, *connect.Request[models.GetParametersRequest]) (*connect.Response[models.GetParametersResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspaceService.GetParameters is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) EvaluateFlows(context.Context, *connect.Request[models.EvaluateFlowsRequest]) (*connect.Response[models.EvaluateFlowsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspaceService.EvaluateFlows is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) GetSystemDiagram(context.Context, *connect.Request[models.GetSystemDiagramRequest]) (*connect.Response[models.GetSystemDiagramResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspaceService.GetSystemDiagram is not implemented"))
 }

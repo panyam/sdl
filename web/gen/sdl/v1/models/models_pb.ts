@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file sdl/v1/models/models.proto.
  */
 export const file_sdl_v1_models_models: GenFile = /*@__PURE__*/
-  fileDesc("ChpzZGwvdjEvbW9kZWxzL21vZGVscy5wcm90bxIGc2RsLnYxIkYKClBhZ2luYXRpb24SEAoIcGFnZV9rZXkYASABKAkSEwoLcGFnZV9vZmZzZXQYAiABKAUSEQoJcGFnZV9zaXplGAMgASgFIm4KElBhZ2luYXRpb25SZXNwb25zZRIVCg1uZXh0X3BhZ2Vfa2V5GAIgASgJEhgKEG5leHRfcGFnZV9vZmZzZXQYAyABKAUSEAoIaGFzX21vcmUYBCABKAgSFQoNdG90YWxfcmVzdWx0cxgFIAEoBSK1AwoGQ2FudmFzEi4KCmNyZWF0ZWRfYXQYASABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi4KCnVwZGF0ZWRfYXQYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEgoKAmlkGAMgASgJEgwKBG5hbWUYBCABKAkSEwoLZGVzY3JpcHRpb24YBSABKAkSFQoNYWN0aXZlX3N5c3RlbRgGIAEoCRIXCg9zeXN0ZW1fY29udGVudHMYByABKAkSLAoHcmVjaXBlcxgIIAMoCzIbLnNkbC52MS5DYW52YXMuUmVjaXBlc0VudHJ5EiUKCmdlbmVyYXRvcnMYCSADKAsyES5zZGwudjEuR2VuZXJhdG9yEh8KB21ldHJpY3MYCiADKAsyDi5zZGwudjEuTWV0cmljEhMKC3ByZXZpZXdfdXJsGAsgASgJEhsKE2xvYWRlZF9zeXN0ZW1fbmFtZXMYDCADKAkSFAoMd29ya3NwYWNlX2lkGA0gASgJGi4KDFJlY2lwZXNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIpMDCglXb3Jrc3BhY2USLgoKY3JlYXRlZF9hdBgBIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLgoKdXBkYXRlZF9hdBgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASCgoCaWQYAyABKAkSDAoEbmFtZRgEIAEoCRITCgtkZXNjcmlwdGlvbhgFIAEoCRIvCgdzb3VyY2VzGAYgAygLMh4uc2RsLnYxLldvcmtzcGFjZS5Tb3VyY2VzRW50cnkSKAoHZGVzaWducxgHIAMoCzIXLnNkbC52MS5Xb3Jrc3BhY2VEZXNpZ24SFQoNYWN0aXZlX2Rlc2lnbhgIIAEoCRILCgNkaXIYCSABKAkSDAoEdGFncxgKIAMoCRISCgpkaWZmaWN1bHR5GAsgASgJEhAKCGNhdGVnb3J5GAwgASgJGkQKDFNvdXJjZXNFbnRyeRILCgNrZXkYASABKAkSIwoFdmFsdWUYAiABKAsyFC5zZGwudjEuSW1wb3J0U291cmNlOgI4ASKJAQoPV29ya3NwYWNlRGVzaWduEgwKBG5hbWUYASABKAkSDAoEZmlsZRgCIAEoCRIRCgljYW52YXNfaWQYAyABKAkSEwoLZGVzY3JpcHRpb24YBCABKAkSDAoEdGFncxgFIAMoCRISCgpkaWZmaWN1bHR5GAYgASgJEhAKCGNhdGVnb3J5GAcgASgJIlcKDEltcG9ydFNvdXJjZRIPCgdidWlsdGluGAEgASgIEg4KBmdpdGh1YhgCIAEoCRILCgN1cmwYAyABKAkSDAoEcGF0aBgEIAEoCRILCgNyZWYYBSABKAkiJgoERmlsZRIMCgRwYXRoGAEgASgJEhAKCGNvbnRlbnRzGAIgASgJIuwBCglHZW5lcmF0b3ISLgoKY3JlYXRlZF9hdBgBIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLgoKdXBkYXRlZF9hdBgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASCgoCaWQYAyABKAkSEQoJY2FudmFzX2lkGAQgASgJEgwKBG5hbWUYBSABKAkSEQoJY29tcG9uZW50GAYgASgJEg4KBm1ldGhvZBgHIAEoCRIMCgRyYXRlGAggASgBEhAKCGR1cmF0aW9uGAkgASgBEg8KB2VuYWJsZWQYCiABKAgijgMKBk1ldHJpYxIuCgpjcmVhdGVkX2F0GAEgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIuCgp1cGRhdGVkX2F0GAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIKCgJpZBgDIAEoCRIRCgljYW52YXNfaWQYBCABKAkSDAoEbmFtZRgFIAEoCRIRCgljb21wb25lbnQYBiABKAkSDwoHbWV0aG9kcxgHIAMoCRIPCgdlbmFibGVkGAggASgIEhMKC21ldHJpY190eXBlGAkgASgJEhMKC2FnZ3JlZ2F0aW9uGAogASgJEhoKEmFnZ3JlZ2F0aW9uX3dpbmRvdxgLIAEoARIUCgxtYXRjaF9yZXN1bHQYDCABKAkSGQoRbWF0Y2hfcmVzdWx0X3R5cGUYDSABKAkSGAoQb2xkZXN0X3RpbWVzdGFtcBgOIAEoARIYChBuZXdlc3RfdGltZXN0YW1wGA8gASgBEhcKD251bV9kYXRhX3BvaW50cxgQIAEoAyIvCgtNZXRyaWNQb2ludBIRCgl0aW1lc3RhbXAYASABKAESDQoFdmFsdWUYAiABKAEiRQoMTWV0cmljVXBkYXRlEhEKCW1ldHJpY19pZBgBIAEoCRIiCgVwb2ludBgCIAEoCzITLnNkbC52MS5NZXRyaWNQb2ludCJsCg1TeXN0ZW1EaWFncmFtEhMKC3N5c3RlbV9uYW1lGAEgASgJEiIKBW5vZGVzGAIgAygLMhMuc2RsLnYxLkRpYWdyYW1Ob2RlEiIKBWVkZ2VzGAMgAygLMhMuc2RsLnYxLkRpYWdyYW1FZGdlIowBCgtEaWFncmFtTm9kZRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHR5cGUYAyABKAkSIwoHbWV0aG9kcxgEIAMoCzISLnNkbC52MS5NZXRob2RJbmZvEg8KB3RyYWZmaWMYBSABKAkSEQoJZnVsbF9wYXRoGAYgASgJEgwKBGljb24YByABKAkiQAoKTWV0aG9kSW5mbxIMCgRuYW1lGAEgASgJEhMKC3JldHVybl90eXBlGAIgASgJEg8KB3RyYWZmaWMYAyABKAEiwAEKC0RpYWdyYW1FZGdlEg8KB2Zyb21faWQYASABKAkSDQoFdG9faWQYAiABKAkSEwoLZnJvbV9tZXRob2QYAyABKAkSEQoJdG9fbWV0aG9kGAQgASgJEg0KBWxhYmVsGAUgASgJEg0KBW9yZGVyGAYgASgBEhEKCWNvbmRpdGlvbhgHIAEoCRITCgtwcm9iYWJpbGl0eRgIIAEoARIUCgxnZW5lcmF0b3JfaWQYCSABKAkSDQoFY29sb3IYCiABKAkiywEKD1V0aWxpemF0aW9uSW5mbxIVCg1yZXNvdXJjZV9uYW1lGAEgASgJEhYKDmNvbXBvbmVudF9wYXRoGAIgASgJEhMKC3V0aWxpemF0aW9uGAMgASgBEhAKCGNhcGFjaXR5GAQgASgBEhQKDGN1cnJlbnRfbG9hZBgFIAEoARIVCg1pc19ib3R0bGVuZWNrGAYgASgIEhkKEXdhcm5pbmdfdGhyZXNob2xkGAcgASgBEhoKEmNyaXRpY2FsX3RocmVzaG9sZBgIIAEoASKBAQoIRmxvd0VkZ2USFgoOZnJvbV9jb21wb25lbnQYASABKAkSEwoLZnJvbV9tZXRob2QYAiABKAkSFAoMdG9fY29tcG9uZW50GAMgASgJEhEKCXRvX21ldGhvZBgEIAEoCRIMCgRyYXRlGAUgASgBEhEKCWNvbmRpdGlvbhgGIAEoCSLyAQoJRmxvd1N0YXRlEhAKCHN0cmF0ZWd5GAEgASgJEisKBXJhdGVzGAIgAygLMhwuc2RsLnYxLkZsb3dTdGF0ZS5SYXRlc0VudHJ5EkAKEG1hbnVhbF9vdmVycmlkZXMYAyADKAsyJi5zZGwudjEuRmxvd1N0YXRlLk1hbnVhbE92ZXJyaWRlc0VudHJ5GiwKClJhdGVzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgBOgI4ARo2ChRNYW51YWxPdmVycmlkZXNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAE6AjgBIlQKCVRyYWNlRGF0YRIOCgZzeXN0ZW0YASABKAkSEwoLZW50cnlfcG9pbnQYAiABKAkSIgoGZXZlbnRzGAMgAygLMhIuc2RsLnYxLlRyYWNlRXZlbnQivAEKClRyYWNlRXZlbnQSDAoEa2luZBgBIAEoCRIKCgJpZBgCIAEoAxIRCglwYXJlbnRfaWQYAyABKAMSEQoJdGltZXN0YW1wGAQgASgBEhAKCGR1cmF0aW9uGAUgASgBEhEKCWNvbXBvbmVudBgGIAEoCRIOCgZtZXRob2QYByABKAkSDAoEYXJncxgIIAMoCRIUCgxyZXR1cm5fdmFsdWUYCSABKAkSFQoNZXJyb3JfbWVzc2FnZRgKIAEoCSJGChFBbGxQYXRoc1RyYWNlRGF0YRIQCgh0cmFjZV9pZBgBIAEoCRIfCgRyb290GAIgASgLMhEuc2RsLnYxLlRyYWNlTm9kZSJkCglUcmFjZU5vZGUSFwoPc3RhcnRpbmdfdGFyZ2V0GAEgASgJEhsKBWVkZ2VzGAIgAygLMgwuc2RsLnYxLkVkZ2USIQoGZ3JvdXBzGAMgAygLMhEuc2RsLnYxLkdyb3VwSW5mbyKtAQoERWRnZRIKCgJpZBgBIAEoCRIkCgluZXh0X25vZGUYAiABKAsyES5zZGwudjEuVHJhY2VOb2RlEg0KBWxhYmVsGAMgASgJEhAKCGlzX2FzeW5jGAQgASgIEhIKCmlzX3JldmVyc2UYBSABKAgSEwoLcHJvYmFiaWxpdHkYBiABKAkSEQoJY29uZGl0aW9uGAcgASgJEhYKDmlzX2NvbmRpdGlvbmFsGAggASgIIlwKCUdyb3VwSW5mbxITCgtncm91cF9zdGFydBgBIAEoBRIRCglncm91cF9lbmQYAiABKAUSEwoLZ3JvdXBfbGFiZWwYAyABKAkSEgoKZ3JvdXBfdHlwZRgEIAEoCSIyCg9QYXJhbWV0ZXJVcGRhdGUSDAoEcGF0aBgBIAEoCRIRCgluZXdfdmFsdWUYAiABKAkicwoVUGFyYW1ldGVyVXBkYXRlUmVzdWx0EgwKBHBhdGgYASABKAkSDwoHc3VjY2VzcxgCIAEoCBIVCg1lcnJvcl9tZXNzYWdlGAMgASgJEhEKCW9sZF92YWx1ZRgEIAEoCRIRCgluZXdfdmFsdWUYBSABKAkiMwoPQWdncmVnYXRlUmVzdWx0EhEKCXRpbWVzdGFtcBgBIAEoARINCgV2YWx1ZRgCIAEoAUKEAQoKY29tLnNkbC52MUILTW9kZWxzUHJvdG9QAVowZ2l0aHViLmNvbS9wYW55YW0vc2RsL2dlbi9nby9zZGwvdjEvbW9kZWxzO3NkbHYxogIDU1hYqgIGU2RsLlYxygIGU2RsXFYx4gISU2RsXFYxXEdQQk1ldGFkYXRh6gIHU2RsOjpWMWIGcHJvdG8z", [file_google_protobuf_timestamp]);
+  fileDesc("ChpzZGwvdjEvbW9kZWxzL21vZGVscy5wcm90bxIGc2RsLnYxIkYKClBhZ2luYXRpb24SEAoIcGFnZV9rZXkYASABKAkSEwoLcGFnZV9vZmZzZXQYAiABKAUSEQoJcGFnZV9zaXplGAMgASgFIm4KElBhZ2luYXRpb25SZXNwb25zZRIVCg1uZXh0X3BhZ2Vfa2V5GAIgASgJEhgKEG5leHRfcGFnZV9vZmZzZXQYAyABKAUSEAoIaGFzX21vcmUYBCABKAgSFQoNdG90YWxfcmVzdWx0cxgFIAEoBSKTAwoJV29ya3NwYWNlEi4KCmNyZWF0ZWRfYXQYASABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi4KCnVwZGF0ZWRfYXQYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEgoKAmlkGAMgASgJEgwKBG5hbWUYBCABKAkSEwoLZGVzY3JpcHRpb24YBSABKAkSLwoHc291cmNlcxgGIAMoCzIeLnNkbC52MS5Xb3Jrc3BhY2UuU291cmNlc0VudHJ5EigKB2Rlc2lnbnMYByADKAsyFy5zZGwudjEuV29ya3NwYWNlRGVzaWduEhUKDWFjdGl2ZV9kZXNpZ24YCCABKAkSCwoDZGlyGAkgASgJEgwKBHRhZ3MYCiADKAkSEgoKZGlmZmljdWx0eRgLIAEoCRIQCghjYXRlZ29yeRgMIAEoCRpECgxTb3VyY2VzRW50cnkSCwoDa2V5GAEgASgJEiMKBXZhbHVlGAIgASgLMhQuc2RsLnYxLkltcG9ydFNvdXJjZToCOAEijAEKD1dvcmtzcGFjZURlc2lnbhIMCgRuYW1lGAEgASgJEgwKBGZpbGUYAiABKAkSFAoMd29ya3NwYWNlX2lkGAMgASgJEhMKC2Rlc2NyaXB0aW9uGAQgASgJEgwKBHRhZ3MYBSADKAkSEgoKZGlmZmljdWx0eRgGIAEoCRIQCghjYXRlZ29yeRgHIAEoCSJXCgxJbXBvcnRTb3VyY2USDwoHYnVpbHRpbhgBIAEoCBIOCgZnaXRodWIYAiABKAkSCwoDdXJsGAMgASgJEgwKBHBhdGgYBCABKAkSCwoDcmVmGAUgASgJIiYKBEZpbGUSDAoEcGF0aBgBIAEoCRIQCghjb250ZW50cxgCIAEoCSJtCglHZW5lcmF0b3ISDAoEbmFtZRgFIAEoCRIRCgljb21wb25lbnQYBiABKAkSDgoGbWV0aG9kGAcgASgJEgwKBHJhdGUYCCABKAESEAoIZHVyYXRpb24YCSABKAESDwoHZW5hYmxlZBgKIAEoCCKPAgoGTWV0cmljEgwKBG5hbWUYBSABKAkSEQoJY29tcG9uZW50GAYgASgJEg8KB21ldGhvZHMYByADKAkSDwoHZW5hYmxlZBgIIAEoCBITCgttZXRyaWNfdHlwZRgJIAEoCRITCgthZ2dyZWdhdGlvbhgKIAEoCRIaChJhZ2dyZWdhdGlvbl93aW5kb3cYCyABKAESFAoMbWF0Y2hfcmVzdWx0GAwgASgJEhkKEW1hdGNoX3Jlc3VsdF90eXBlGA0gASgJEhgKEG9sZGVzdF90aW1lc3RhbXAYDiABKAESGAoQbmV3ZXN0X3RpbWVzdGFtcBgPIAEoARIXCg9udW1fZGF0YV9wb2ludHMYECABKAMiLwoLTWV0cmljUG9pbnQSEQoJdGltZXN0YW1wGAEgASgBEg0KBXZhbHVlGAIgASgBIkUKDE1ldHJpY1VwZGF0ZRIRCgltZXRyaWNfaWQYASABKAkSIgoFcG9pbnQYAiABKAsyEy5zZGwudjEuTWV0cmljUG9pbnQibAoNU3lzdGVtRGlhZ3JhbRITCgtzeXN0ZW1fbmFtZRgBIAEoCRIiCgVub2RlcxgCIAMoCzITLnNkbC52MS5EaWFncmFtTm9kZRIiCgVlZGdlcxgDIAMoCzITLnNkbC52MS5EaWFncmFtRWRnZSKMAQoLRGlhZ3JhbU5vZGUSCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIMCgR0eXBlGAMgASgJEiMKB21ldGhvZHMYBCADKAsyEi5zZGwudjEuTWV0aG9kSW5mbxIPCgd0cmFmZmljGAUgASgJEhEKCWZ1bGxfcGF0aBgGIAEoCRIMCgRpY29uGAcgASgJIkAKCk1ldGhvZEluZm8SDAoEbmFtZRgBIAEoCRITCgtyZXR1cm5fdHlwZRgCIAEoCRIPCgd0cmFmZmljGAMgASgBIsABCgtEaWFncmFtRWRnZRIPCgdmcm9tX2lkGAEgASgJEg0KBXRvX2lkGAIgASgJEhMKC2Zyb21fbWV0aG9kGAMgASgJEhEKCXRvX21ldGhvZBgEIAEoCRINCgVsYWJlbBgFIAEoCRINCgVvcmRlchgGIAEoARIRCgljb25kaXRpb24YByABKAkSEwoLcHJvYmFiaWxpdHkYCCABKAESFAoMZ2VuZXJhdG9yX2lkGAkgASgJEg0KBWNvbG9yGAogASgJIssBCg9VdGlsaXphdGlvbkluZm8SFQoNcmVzb3VyY2VfbmFtZRgBIAEoCRIWCg5jb21wb25lbnRfcGF0aBgCIAEoCRITCgt1dGlsaXphdGlvbhgDIAEoARIQCghjYXBhY2l0eRgEIAEoARIUCgxjdXJyZW50X2xvYWQYBSABKAESFQoNaXNfYm90dGxlbmVjaxgGIAEoCBIZChF3YXJuaW5nX3RocmVzaG9sZBgHIAEoARIaChJjcml0aWNhbF90aHJlc2hvbGQYCCABKAEigQEKCEZsb3dFZGdlEhYKDmZyb21fY29tcG9uZW50GAEgASgJEhMKC2Zyb21fbWV0aG9kGAIgASgJEhQKDHRvX2NvbXBvbmVudBgDIAEoCRIRCgl0b19tZXRob2QYBCABKAkSDAoEcmF0ZRgFIAEoARIRCgljb25kaXRpb24YBiABKAki8gEKCUZsb3dTdGF0ZRIQCghzdHJhdGVneRgBIAEoCRIrCgVyYXRlcxgCIAMoCzIcLnNkbC52MS5GbG93U3RhdGUuUmF0ZXNFbnRyeRJAChBtYW51YWxfb3ZlcnJpZGVzGAMgAygLMiYuc2RsLnYxLkZsb3dTdGF0ZS5NYW51YWxPdmVycmlkZXNFbnRyeRosCgpSYXRlc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoAToCOAEaNgoUTWFudWFsT3ZlcnJpZGVzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgBOgI4ASJUCglUcmFjZURhdGESDgoGc3lzdGVtGAEgASgJEhMKC2VudHJ5X3BvaW50GAIgASgJEiIKBmV2ZW50cxgDIAMoCzISLnNkbC52MS5UcmFjZUV2ZW50IrwBCgpUcmFjZUV2ZW50EgwKBGtpbmQYASABKAkSCgoCaWQYAiABKAMSEQoJcGFyZW50X2lkGAMgASgDEhEKCXRpbWVzdGFtcBgEIAEoARIQCghkdXJhdGlvbhgFIAEoARIRCgljb21wb25lbnQYBiABKAkSDgoGbWV0aG9kGAcgASgJEgwKBGFyZ3MYCCADKAkSFAoMcmV0dXJuX3ZhbHVlGAkgASgJEhUKDWVycm9yX21lc3NhZ2UYCiABKAkiRgoRQWxsUGF0aHNUcmFjZURhdGESEAoIdHJhY2VfaWQYASABKAkSHwoEcm9vdBgCIAEoCzIRLnNkbC52MS5UcmFjZU5vZGUiZAoJVHJhY2VOb2RlEhcKD3N0YXJ0aW5nX3RhcmdldBgBIAEoCRIbCgVlZGdlcxgCIAMoCzIMLnNkbC52MS5FZGdlEiEKBmdyb3VwcxgDIAMoCzIRLnNkbC52MS5Hcm91cEluZm8irQEKBEVkZ2USCgoCaWQYASABKAkSJAoJbmV4dF9ub2RlGAIgASgLMhEuc2RsLnYxLlRyYWNlTm9kZRINCgVsYWJlbBgDIAEoCRIQCghpc19hc3luYxgEIAEoCBISCgppc19yZXZlcnNlGAUgASgIEhMKC3Byb2JhYmlsaXR5GAYgASgJEhEKCWNvbmRpdGlvbhgHIAEoCRIWCg5pc19jb25kaXRpb25hbBgIIAEoCCJcCglHcm91cEluZm8SEwoLZ3JvdXBfc3RhcnQYASABKAUSEQoJZ3JvdXBfZW5kGAIgASgFEhMKC2dyb3VwX2xhYmVsGAMgASgJEhIKCmdyb3VwX3R5cGUYBCABKAkiMgoPUGFyYW1ldGVyVXBkYXRlEgwKBHBhdGgYASABKAkSEQoJbmV3X3ZhbHVlGAIgASgJInMKFVBhcmFtZXRlclVwZGF0ZVJlc3VsdBIMCgRwYXRoGAEgASgJEg8KB3N1Y2Nlc3MYAiABKAgSFQoNZXJyb3JfbWVzc2FnZRgDIAEoCRIRCglvbGRfdmFsdWUYBCABKAkSEQoJbmV3X3ZhbHVlGAUgASgJIjMKD0FnZ3JlZ2F0ZVJlc3VsdBIRCgl0aW1lc3RhbXAYASABKAESDQoFdmFsdWUYAiABKAFChAEKCmNvbS5zZGwudjFCC01vZGVsc1Byb3RvUAFaMGdpdGh1Yi5jb20vcGFueWFtL3NkbC9nZW4vZ28vc2RsL3YxL21vZGVscztzZGx2MaICA1NYWKoCBlNkbC5WMcoCBlNkbFxWMeICElNkbFxWMVxHUEJNZXRhZGF0YeoCB1NkbDo6VjFiBnByb3RvMw", [file_google_protobuf_timestamp]);
 
 /**
  * @generated from message sdl.v1.Pagination
@@ -89,103 +89,6 @@ export type PaginationResponse = Message<"sdl.v1.PaginationResponse"> & {
  */
 export const PaginationResponseSchema: GenMessage<PaginationResponse> = /*@__PURE__*/
   messageDesc(file_sdl_v1_models_models, 1);
-
-/**
- * @generated from message sdl.v1.Canvas
- */
-export type Canvas = Message<"sdl.v1.Canvas"> & {
-  /**
-   * @generated from field: google.protobuf.Timestamp created_at = 1;
-   */
-  createdAt?: Timestamp;
-
-  /**
-   * @generated from field: google.protobuf.Timestamp updated_at = 2;
-   */
-  updatedAt?: Timestamp;
-
-  /**
-   * Unique ID for the canvas
-   *
-   * @generated from field: string id = 3;
-   */
-  id: string;
-
-  /**
-   * Human-readable name for the canvas
-   *
-   * @generated from field: string name = 4;
-   */
-  name: string;
-
-  /**
-   * Description of what this canvas is for
-   *
-   * @generated from field: string description = 5;
-   */
-  description: string;
-
-  /**
-   * The currently active system (from the systems defined in system_contents)
-   *
-   * @generated from field: string active_system = 6;
-   */
-  activeSystem: string;
-
-  /**
-   * Contents of the .sdl file that defines one or more systems
-   *
-   * @generated from field: string system_contents = 7;
-   */
-  systemContents: string;
-
-  /**
-   * Recipe files for various scenarios (name -> contents map)
-   *
-   * @generated from field: map<string, string> recipes = 8;
-   */
-  recipes: { [key: string]: string };
-
-  /**
-   * Registered generators for this canvas
-   *
-   * @generated from field: repeated sdl.v1.Generator generators = 9;
-   */
-  generators: Generator[];
-
-  /**
-   * Registered live metrics for this canvas
-   *
-   * @generated from field: repeated sdl.v1.Metric metrics = 10;
-   */
-  metrics: Metric[];
-
-  /**
-   * @generated from field: string preview_url = 11;
-   */
-  previewUrl: string;
-
-  /**
-   * Names of all systems currently loaded (from all loaded SDL files)
-   *
-   * @generated from field: repeated string loaded_system_names = 12;
-   */
-  loadedSystemNames: string[];
-
-  /**
-   * Workspace ID this canvas belongs to (if any)
-   *
-   * @generated from field: string workspace_id = 13;
-   */
-  workspaceId: string;
-};
-
-/**
- * Describes the message sdl.v1.Canvas.
- * Use `create(CanvasSchema)` to create a new message.
- */
-export const CanvasSchema: GenMessage<Canvas> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_models, 2);
 
 /**
  * Workspace is a project container holding multiple designs (system architectures).
@@ -272,7 +175,7 @@ export type Workspace = Message<"sdl.v1.Workspace"> & {
  * Use `create(WorkspaceSchema)` to create a new message.
  */
 export const WorkspaceSchema: GenMessage<Workspace> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_models, 3);
+  messageDesc(file_sdl_v1_models_models, 2);
 
 /**
  * WorkspaceDesign represents one system architecture within a workspace.
@@ -296,11 +199,11 @@ export type WorkspaceDesign = Message<"sdl.v1.WorkspaceDesign"> & {
   file: string;
 
   /**
-   * Backing Canvas ID for runtime simulation
+   * Parent workspace ID
    *
-   * @generated from field: string canvas_id = 3;
+   * @generated from field: string workspace_id = 3;
    */
-  canvasId: string;
+  workspaceId: string;
 
   /**
    * Brief description
@@ -334,7 +237,7 @@ export type WorkspaceDesign = Message<"sdl.v1.WorkspaceDesign"> & {
  * Use `create(WorkspaceDesignSchema)` to create a new message.
  */
 export const WorkspaceDesignSchema: GenMessage<WorkspaceDesign> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_models, 4);
+  messageDesc(file_sdl_v1_models_models, 3);
 
 /**
  * ImportSource declares where to resolve @name/ prefixed imports.
@@ -385,7 +288,7 @@ export type ImportSource = Message<"sdl.v1.ImportSource"> & {
  * Use `create(ImportSourceSchema)` to create a new message.
  */
 export const ImportSourceSchema: GenMessage<ImportSource> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_models, 5);
+  messageDesc(file_sdl_v1_models_models, 4);
 
 /**
  * @generated from message sdl.v1.File
@@ -411,74 +314,49 @@ export type File = Message<"sdl.v1.File"> & {
  * Use `create(FileSchema)` to create a new message.
  */
 export const FileSchema: GenMessage<File> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_models, 6);
+  messageDesc(file_sdl_v1_models_models, 5);
 
 /**
  * @generated from message sdl.v1.Generator
  */
 export type Generator = Message<"sdl.v1.Generator"> & {
   /**
-   * @generated from field: google.protobuf.Timestamp created_at = 1;
-   */
-  createdAt?: Timestamp;
-
-  /**
-   * @generated from field: google.protobuf.Timestamp updated_at = 2;
-   */
-  updatedAt?: Timestamp;
-
-  /**
-   * ID of the generator
-   *
-   * @generated from field: string id = 3;
-   */
-  id: string;
-
-  /**
-   * Canvas this generator is sending traffic to
-   *
-   * @generated from field: string canvas_id = 4;
-   */
-  canvasId: string;
-
-  /**
-   * A descriptive label
+   * Unique name within a system (e.g., "baseline", "health")
    *
    * @generated from field: string name = 5;
    */
   name: string;
 
   /**
-   * Name of the target component to generate traffic on. This component should be defined in the System,
-   * eg "server"
+   * Target component path (e.g., "arch.webserver")
    *
    * @generated from field: string component = 6;
    */
   component: string;
 
   /**
-   * Method in the target component to generate traffic on.
+   * Target method name (e.g., "HandleRequest")
    *
    * @generated from field: string method = 7;
    */
   method: string;
 
   /**
-   * Traffic rate in RPS (>= 1).  Does not support < 1 yet
+   * Traffic rate in RPS
    *
    * @generated from field: double rate = 8;
    */
   rate: number;
 
   /**
-   * Duration in seconds over which the genarator is run. 0 => For ever
+   * Duration in seconds (0 = forever)
    *
    * @generated from field: double duration = 9;
    */
   duration: number;
 
   /**
-   * whether it is enabled or not
+   * Whether the generator is active
    *
    * @generated from field: bool enabled = 10;
    */
@@ -490,99 +368,78 @@ export type Generator = Message<"sdl.v1.Generator"> & {
  * Use `create(GeneratorSchema)` to create a new message.
  */
 export const GeneratorSchema: GenMessage<Generator> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_models, 7);
+  messageDesc(file_sdl_v1_models_models, 6);
 
 /**
  * @generated from message sdl.v1.Metric
  */
 export type Metric = Message<"sdl.v1.Metric"> & {
   /**
-   * @generated from field: google.protobuf.Timestamp created_at = 1;
-   */
-  createdAt?: Timestamp;
-
-  /**
-   * @generated from field: google.protobuf.Timestamp updated_at = 2;
-   */
-  updatedAt?: Timestamp;
-
-  /**
-   * @generated from field: string id = 3;
-   */
-  id: string;
-
-  /**
-   * @generated from field: string canvas_id = 4;
-   */
-  canvasId: string;
-
-  /**
-   * A descriptive label
+   * Unique name within a system (e.g., "request_latency")
    *
    * @generated from field: string name = 5;
    */
   name: string;
 
   /**
-   * Name of the target component to monitor
-   * eg "server"
+   * Target component path (e.g., "arch.webserver")
    *
    * @generated from field: string component = 6;
    */
   component: string;
 
   /**
-   * Method in the target component to generate traffic on.
+   * Target method names
    *
    * @generated from field: repeated string methods = 7;
    */
   methods: string[];
 
   /**
-   * whether it is enabled or not
+   * Whether the metric is active
    *
    * @generated from field: bool enabled = 8;
    */
   enabled: boolean;
 
   /**
-   * Type of metric "count" or "latency"
+   * Type: "count", "latency", "utilization"
    *
    * @generated from field: string metric_type = 9;
    */
   metricType: string;
 
   /**
-   * Type of aggregation on the metric
+   * Aggregation function: "sum", "avg", "min", "max", "p50", "p90", "p95", "p99"
    *
    * @generated from field: string aggregation = 10;
    */
   aggregation: string;
 
   /**
-   * Aggregation window (in seconds) to match on
+   * Aggregation window in seconds
    *
    * @generated from field: double aggregation_window = 11;
    */
   aggregationWindow: number;
 
   /**
-   * Result value to match
+   * Result value to match (optional filter)
    *
    * @generated from field: string match_result = 12;
    */
   matchResult: string;
 
   /**
-   * The result "type" if a matching result is provided
-   * This will be parsed into a type declaration so we know how to treat
-   * the match_result value provided
+   * Result type for match parsing
    *
    * @generated from field: string match_result_type = 13;
    */
   matchResultType: string;
 
   /**
+   * Statistics (populated by metric store)
+   *
    * @generated from field: double oldest_timestamp = 14;
    */
   oldestTimestamp: number;
@@ -593,8 +450,6 @@ export type Metric = Message<"sdl.v1.Metric"> & {
   newestTimestamp: number;
 
   /**
-   * Number of data points stored
-   *
    * @generated from field: int64 num_data_points = 16;
    */
   numDataPoints: bigint;
@@ -605,7 +460,7 @@ export type Metric = Message<"sdl.v1.Metric"> & {
  * Use `create(MetricSchema)` to create a new message.
  */
 export const MetricSchema: GenMessage<Metric> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_models, 8);
+  messageDesc(file_sdl_v1_models_models, 7);
 
 /**
  * @generated from message sdl.v1.MetricPoint
@@ -629,7 +484,7 @@ export type MetricPoint = Message<"sdl.v1.MetricPoint"> & {
  * Use `create(MetricPointSchema)` to create a new message.
  */
 export const MetricPointSchema: GenMessage<MetricPoint> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_models, 9);
+  messageDesc(file_sdl_v1_models_models, 8);
 
 /**
  * Individual metric update
@@ -653,7 +508,7 @@ export type MetricUpdate = Message<"sdl.v1.MetricUpdate"> & {
  * Use `create(MetricUpdateSchema)` to create a new message.
  */
 export const MetricUpdateSchema: GenMessage<MetricUpdate> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_models, 10);
+  messageDesc(file_sdl_v1_models_models, 9);
 
 /**
  * SystemDiagram represents the topology of a system
@@ -682,7 +537,7 @@ export type SystemDiagram = Message<"sdl.v1.SystemDiagram"> & {
  * Use `create(SystemDiagramSchema)` to create a new message.
  */
 export const SystemDiagramSchema: GenMessage<SystemDiagram> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_models, 11);
+  messageDesc(file_sdl_v1_models_models, 10);
 
 /**
  * DiagramNode represents a component or instance in the system
@@ -745,7 +600,7 @@ export type DiagramNode = Message<"sdl.v1.DiagramNode"> & {
  * Use `create(DiagramNodeSchema)` to create a new message.
  */
 export const DiagramNodeSchema: GenMessage<DiagramNode> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_models, 12);
+  messageDesc(file_sdl_v1_models_models, 11);
 
 /**
  * MethodInfo represents information about a component method
@@ -780,7 +635,7 @@ export type MethodInfo = Message<"sdl.v1.MethodInfo"> & {
  * Use `create(MethodInfoSchema)` to create a new message.
  */
 export const MethodInfoSchema: GenMessage<MethodInfo> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_models, 13);
+  messageDesc(file_sdl_v1_models_models, 12);
 
 /**
  * DiagramEdge represents a connection between nodes
@@ -858,7 +713,7 @@ export type DiagramEdge = Message<"sdl.v1.DiagramEdge"> & {
  * Use `create(DiagramEdgeSchema)` to create a new message.
  */
 export const DiagramEdgeSchema: GenMessage<DiagramEdge> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_models, 14);
+  messageDesc(file_sdl_v1_models_models, 13);
 
 /**
  * Resource utilization information
@@ -928,7 +783,7 @@ export type UtilizationInfo = Message<"sdl.v1.UtilizationInfo"> & {
  * Use `create(UtilizationInfoSchema)` to create a new message.
  */
 export const UtilizationInfoSchema: GenMessage<UtilizationInfo> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_models, 15);
+  messageDesc(file_sdl_v1_models_models, 14);
 
 /**
  * Represents a flow edge between components
@@ -974,7 +829,7 @@ export type FlowEdge = Message<"sdl.v1.FlowEdge"> & {
  * Use `create(FlowEdgeSchema)` to create a new message.
  */
 export const FlowEdgeSchema: GenMessage<FlowEdge> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_models, 16);
+  messageDesc(file_sdl_v1_models_models, 15);
 
 /**
  * Current flow state
@@ -1009,7 +864,7 @@ export type FlowState = Message<"sdl.v1.FlowState"> & {
  * Use `create(FlowStateSchema)` to create a new message.
  */
 export const FlowStateSchema: GenMessage<FlowState> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_models, 17);
+  messageDesc(file_sdl_v1_models_models, 16);
 
 /**
  * TraceData matches the runtime.TraceData structure
@@ -1038,7 +893,7 @@ export type TraceData = Message<"sdl.v1.TraceData"> & {
  * Use `create(TraceDataSchema)` to create a new message.
  */
 export const TraceDataSchema: GenMessage<TraceData> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_models, 18);
+  messageDesc(file_sdl_v1_models_models, 17);
 
 /**
  * TraceEvent matches the runtime.TraceEvent structure
@@ -1108,7 +963,7 @@ export type TraceEvent = Message<"sdl.v1.TraceEvent"> & {
  * Use `create(TraceEventSchema)` to create a new message.
  */
 export const TraceEventSchema: GenMessage<TraceEvent> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_models, 19);
+  messageDesc(file_sdl_v1_models_models, 18);
 
 /**
  * Enhanced TraceData for all-paths traversal - represents the complete execution tree
@@ -1134,7 +989,7 @@ export type AllPathsTraceData = Message<"sdl.v1.AllPathsTraceData"> & {
  * Use `create(AllPathsTraceDataSchema)` to create a new message.
  */
 export const AllPathsTraceDataSchema: GenMessage<AllPathsTraceData> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_models, 20);
+  messageDesc(file_sdl_v1_models_models, 19);
 
 /**
  * TraceNode represents a single node in the execution tree
@@ -1169,7 +1024,7 @@ export type TraceNode = Message<"sdl.v1.TraceNode"> & {
  * Use `create(TraceNodeSchema)` to create a new message.
  */
 export const TraceNodeSchema: GenMessage<TraceNode> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_models, 21);
+  messageDesc(file_sdl_v1_models_models, 20);
 
 /**
  * Edge represents a transition from one node to another in the execution tree
@@ -1239,7 +1094,7 @@ export type Edge = Message<"sdl.v1.Edge"> & {
  * Use `create(EdgeSchema)` to create a new message.
  */
 export const EdgeSchema: GenMessage<Edge> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_models, 22);
+  messageDesc(file_sdl_v1_models_models, 21);
 
 /**
  * GroupInfo allows flexible grouping of edges with labels
@@ -1281,7 +1136,7 @@ export type GroupInfo = Message<"sdl.v1.GroupInfo"> & {
  * Use `create(GroupInfoSchema)` to create a new message.
  */
 export const GroupInfoSchema: GenMessage<GroupInfo> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_models, 23);
+  messageDesc(file_sdl_v1_models_models, 22);
 
 /**
  * Single parameter update
@@ -1309,7 +1164,7 @@ export type ParameterUpdate = Message<"sdl.v1.ParameterUpdate"> & {
  * Use `create(ParameterUpdateSchema)` to create a new message.
  */
 export const ParameterUpdateSchema: GenMessage<ParameterUpdate> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_models, 24);
+  messageDesc(file_sdl_v1_models_models, 23);
 
 /**
  * Result for individual parameter update
@@ -1354,7 +1209,7 @@ export type ParameterUpdateResult = Message<"sdl.v1.ParameterUpdateResult"> & {
  * Use `create(ParameterUpdateResultSchema)` to create a new message.
  */
 export const ParameterUpdateResultSchema: GenMessage<ParameterUpdateResult> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_models, 25);
+  messageDesc(file_sdl_v1_models_models, 24);
 
 /**
  * @generated from message sdl.v1.AggregateResult
@@ -1378,5 +1233,5 @@ export type AggregateResult = Message<"sdl.v1.AggregateResult"> & {
  * Use `create(AggregateResultSchema)` to create a new message.
  */
 export const AggregateResultSchema: GenMessage<AggregateResult> = /*@__PURE__*/
-  messageDesc(file_sdl_v1_models_models, 26);
+  messageDesc(file_sdl_v1_models_models, 25);
 

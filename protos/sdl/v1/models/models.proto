@@ -34,6 +34,7 @@ message PaginationResponse {
   int32 total_results = 5;
 }
 
+/*
 message Canvas {
   google.protobuf.Timestamp created_at = 1;
   google.protobuf.Timestamp updated_at = 2;
@@ -70,6 +71,7 @@ message Canvas {
   // Workspace ID this canvas belongs to (if any)
   string workspace_id = 13;
 }
+*/
 
 // Workspace is a project container holding multiple designs (system architectures).
 // Each design is backed by a Canvas for runtime simulation.
@@ -110,8 +112,8 @@ message WorkspaceDesign {
   // SDL file path relative to workspace root
   string file = 2;
 
-  // Backing Canvas ID for runtime simulation
-  string canvas_id = 3;
+  // Parent workspace ID
+  string workspace_id = 3;
 
   // Brief description
   string description = 4;
@@ -151,77 +153,57 @@ message File {
 }
 
 message Generator {
-  google.protobuf.Timestamp created_at = 1;
-  google.protobuf.Timestamp updated_at = 2;
-
-  // ID of the generator
-  string id = 3;
-
-  // Canvas this generator is sending traffic to
-  string canvas_id = 4;
-
-  // A descriptive label
+  // Unique name within a system (e.g., "baseline", "health")
   string name = 5;
 
-  // Name of the target component to generate traffic on. This component should be defined in the System,
-  // eg "server"
+  // Target component path (e.g., "arch.webserver")
   string component = 6;
 
-  // Method in the target component to generate traffic on.
+  // Target method name (e.g., "HandleRequest")
   string method = 7;
 
-  // Traffic rate in RPS (>= 1).  Does not support < 1 yet
+  // Traffic rate in RPS
   double rate = 8;
 
-  // Duration in seconds over which the genarator is run. 0 => For ever
+  // Duration in seconds (0 = forever)
   double duration = 9;
 
-  // whether it is enabled or not
+  // Whether the generator is active
   bool enabled = 10;
 }
 
 message Metric {
-  google.protobuf.Timestamp created_at = 1;
-  google.protobuf.Timestamp updated_at = 2;
-
-  string id = 3;
-
-  string canvas_id = 4;
-
-  // A descriptive label
+  // Unique name within a system (e.g., "request_latency")
   string name = 5;
 
-  // Name of the target component to monitor
-  // eg "server"
+  // Target component path (e.g., "arch.webserver")
   string component = 6;
 
-  // Method in the target component to generate traffic on.
+  // Target method names
   repeated string methods = 7;
 
-  // whether it is enabled or not
+  // Whether the metric is active
   bool enabled = 8;
 
-  // Type of metric "count" or "latency"
+  // Type: "count", "latency", "utilization"
   string metric_type = 9;
 
-  // Type of aggregation on the metric
+  // Aggregation function: "sum", "avg", "min", "max", "p50", "p90", "p95", "p99"
   string aggregation = 10;
 
-  // Aggregation window (in seconds) to match on
+  // Aggregation window in seconds
   double aggregation_window = 11;
 
-  // Result value to match
+  // Result value to match (optional filter)
   string match_result = 12;
 
-  // The result "type" if a matching result is provided
-  // This will be parsed into a type declaration so we know how to treat
-  // the match_result value provided
+  // Result type for match parsing
   string match_result_type = 13;
 
-
+  // Statistics (populated by metric store)
   double oldest_timestamp = 14;
   double newest_timestamp = 15;
-  int64 num_data_points = 16;  // Number of data points stored
+  int64 num_data_points = 16;
 }
 
 message MetricPoint {

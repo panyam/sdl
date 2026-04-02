@@ -5,20 +5,54 @@ import { ServiceClient } from '@protoc-gen-go-wasmjs/runtime';
 
 // Import TypeScript types for method signatures
 import {
+    AddGeneratorRequest,
+    AddGeneratorResponse,
+    AddMetricRequest,
+    AddMetricResponse,
     CreateWorkspaceRequest,
     CreateWorkspaceResponse,
+    DeleteGeneratorRequest,
+    DeleteGeneratorResponse,
+    DeleteMetricRequest,
+    DeleteMetricResponse,
     DeleteWorkspaceRequest,
     DeleteWorkspaceResponse,
+    EvaluateFlowsRequest,
+    EvaluateFlowsResponse,
     GetAllDesignContentsRequest,
     GetAllDesignContentsResponse,
     GetDesignContentRequest,
     GetDesignContentResponse,
+    GetParametersRequest,
+    GetParametersResponse,
+    GetSystemDiagramRequest,
+    GetSystemDiagramResponse,
     GetWorkspaceRequest,
     GetWorkspaceResponse,
+    ListGeneratorsRequest,
+    ListGeneratorsResponse,
+    ListMetricsRequest,
+    ListMetricsResponse,
     ListWorkspacesRequest,
     ListWorkspacesResponse,
+    LoadFileRequest,
+    LoadFileResponse,
+    SetParameterRequest,
+    SetParameterResponse,
+    StartAllGeneratorsRequest,
+    StartAllGeneratorsResponse,
+    StartGeneratorRequest,
+    StartGeneratorResponse,
+    StopAllGeneratorsRequest,
+    StopAllGeneratorsResponse,
+    StopGeneratorRequest,
+    StopGeneratorResponse,
+    UpdateGeneratorRequest,
+    UpdateGeneratorResponse,
     UpdateWorkspaceRequest,
     UpdateWorkspaceResponse,
+    UseSystemRequest,
+    UseSystemResponse,
 } from '../models/interfaces';
 /**
  * WorkspaceService service client interface
@@ -32,6 +66,23 @@ export interface WorkspaceServiceMethods {
     updateWorkspace(request: UpdateWorkspaceRequest): UpdateWorkspaceResponse;
     getDesignContent(request: GetDesignContentRequest): GetDesignContentResponse;
     getAllDesignContents(request: GetAllDesignContentsRequest): GetAllDesignContentsResponse;
+    loadFile(request: LoadFileRequest): LoadFileResponse;
+    useSystem(request: UseSystemRequest): UseSystemResponse;
+    addGenerator(request: AddGeneratorRequest): AddGeneratorResponse;
+    updateGenerator(request: UpdateGeneratorRequest): UpdateGeneratorResponse;
+    deleteGenerator(request: DeleteGeneratorRequest): DeleteGeneratorResponse;
+    listGenerators(request: ListGeneratorsRequest): ListGeneratorsResponse;
+    startGenerator(request: StartGeneratorRequest): StartGeneratorResponse;
+    stopGenerator(request: StopGeneratorRequest): StopGeneratorResponse;
+    startAllGenerators(request: StartAllGeneratorsRequest): StartAllGeneratorsResponse;
+    stopAllGenerators(request: StopAllGeneratorsRequest): StopAllGeneratorsResponse;
+    addMetric(request: AddMetricRequest): AddMetricResponse;
+    deleteMetric(request: DeleteMetricRequest): DeleteMetricResponse;
+    listMetrics(request: ListMetricsRequest): ListMetricsResponse;
+    setParameter(request: SetParameterRequest): SetParameterResponse;
+    getParameters(request: GetParametersRequest): GetParametersResponse;
+    evaluateFlows(request: EvaluateFlowsRequest): EvaluateFlowsResponse;
+    getSystemDiagram(request: GetSystemDiagramRequest): GetSystemDiagramResponse;
 }
 /**
  * WorkspaceService service client implementation
@@ -58,5 +109,56 @@ export class WorkspaceServiceClient extends ServiceClient implements WorkspaceSe
         }
         getAllDesignContents(request: GetAllDesignContentsRequest): GetAllDesignContentsResponse {
             return this.callMethodSync('workspaceService.getAllDesignContents', request);
+        }
+        loadFile(request: LoadFileRequest): LoadFileResponse {
+            return this.callMethodSync('workspaceService.loadFile', request);
+        }
+        useSystem(request: UseSystemRequest): UseSystemResponse {
+            return this.callMethodSync('workspaceService.useSystem', request);
+        }
+        addGenerator(request: AddGeneratorRequest): AddGeneratorResponse {
+            return this.callMethodSync('workspaceService.addGenerator', request);
+        }
+        updateGenerator(request: UpdateGeneratorRequest): UpdateGeneratorResponse {
+            return this.callMethodSync('workspaceService.updateGenerator', request);
+        }
+        deleteGenerator(request: DeleteGeneratorRequest): DeleteGeneratorResponse {
+            return this.callMethodSync('workspaceService.deleteGenerator', request);
+        }
+        listGenerators(request: ListGeneratorsRequest): ListGeneratorsResponse {
+            return this.callMethodSync('workspaceService.listGenerators', request);
+        }
+        startGenerator(request: StartGeneratorRequest): StartGeneratorResponse {
+            return this.callMethodSync('workspaceService.startGenerator', request);
+        }
+        stopGenerator(request: StopGeneratorRequest): StopGeneratorResponse {
+            return this.callMethodSync('workspaceService.stopGenerator', request);
+        }
+        startAllGenerators(request: StartAllGeneratorsRequest): StartAllGeneratorsResponse {
+            return this.callMethodSync('workspaceService.startAllGenerators', request);
+        }
+        stopAllGenerators(request: StopAllGeneratorsRequest): StopAllGeneratorsResponse {
+            return this.callMethodSync('workspaceService.stopAllGenerators', request);
+        }
+        addMetric(request: AddMetricRequest): AddMetricResponse {
+            return this.callMethodSync('workspaceService.addMetric', request);
+        }
+        deleteMetric(request: DeleteMetricRequest): DeleteMetricResponse {
+            return this.callMethodSync('workspaceService.deleteMetric', request);
+        }
+        listMetrics(request: ListMetricsRequest): ListMetricsResponse {
+            return this.callMethodSync('workspaceService.listMetrics', request);
+        }
+        setParameter(request: SetParameterRequest): SetParameterResponse {
+            return this.callMethodSync('workspaceService.setParameter', request);
+        }
+        getParameters(request: GetParametersRequest): GetParametersResponse {
+            return this.callMethodSync('workspaceService.getParameters', request);
+        }
+        evaluateFlows(request: EvaluateFlowsRequest): EvaluateFlowsResponse {
+            return this.callMethodSync('workspaceService.evaluateFlows', request);
+        }
+        getSystemDiagram(request: GetSystemDiagramRequest): GetSystemDiagramResponse {
+            return this.callMethodSync('workspaceService.getSystemDiagram', request);
         }
 }

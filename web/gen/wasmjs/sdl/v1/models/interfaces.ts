@@ -1,7 +1,7 @@
 // Generated TypeScript interfaces from proto file
 // DO NOT EDIT - This file is auto-generated
 
-import { FieldMask, Timestamp } from "@bufbuild/protobuf/wkt";
+import { Timestamp } from "@bufbuild/protobuf/wkt";
 
 
 
@@ -29,34 +29,6 @@ export interface PaginationResponse {
   hasMore: boolean;
   /** Total number of results. */
   totalResults: number;
-}
-
-
-
-export interface Canvas {
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
-  /** Unique ID for the canvas */
-  id: string;
-  /** Human-readable name for the canvas */
-  name: string;
-  /** Description of what this canvas is for */
-  description: string;
-  /** The currently active system (from the systems defined in system_contents) */
-  activeSystem: string;
-  /** Contents of the .sdl file that defines one or more systems */
-  systemContents: string;
-  /** Recipe files for various scenarios (name -> contents map) */
-  recipes: Record<string, string>;
-  /** Registered generators for this canvas */
-  generators?: Generator[];
-  /** Registered live metrics for this canvas */
-  metrics?: Metric[];
-  previewUrl: string;
-  /** Names of all systems currently loaded (from all loaded SDL files) */
-  loadedSystemNames: string[];
-  /** Workspace ID this canvas belongs to (if any) */
-  workspaceId: string;
 }
 
 
@@ -96,8 +68,8 @@ export interface WorkspaceDesign {
   name: string;
   /** SDL file path relative to workspace root */
   file: string;
-  /** Backing Canvas ID for runtime simulation */
-  canvasId: string;
+  /** Parent workspace ID */
+  workspaceId: string;
   /** Brief description */
   description: string;
   /** Per-design metadata (for UI display) */
@@ -137,55 +109,42 @@ export interface File {
 
 
 export interface Generator {
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
-  /** ID of the generator */
-  id: string;
-  /** Canvas this generator is sending traffic to */
-  canvasId: string;
-  /** A descriptive label */
+  /** Unique name within a system (e.g., "baseline", "health") */
   name: string;
-  /** Name of the target component to generate traffic on. This component should be defined in the System,
- eg "server" */
+  /** Target component path (e.g., "arch.webserver") */
   component: string;
-  /** Method in the target component to generate traffic on. */
+  /** Target method name (e.g., "HandleRequest") */
   method: string;
-  /** Traffic rate in RPS (>= 1).  Does not support < 1 yet */
+  /** Traffic rate in RPS */
   rate: number;
-  /** Duration in seconds over which the genarator is run. 0 => For ever */
+  /** Duration in seconds (0 = forever) */
   duration: number;
-  /** whether it is enabled or not */
+  /** Whether the generator is active */
   enabled: boolean;
 }
 
 
 
 export interface Metric {
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
-  id: string;
-  canvasId: string;
-  /** A descriptive label */
+  /** Unique name within a system (e.g., "request_latency") */
   name: string;
-  /** Name of the target component to monitor
- eg "server" */
+  /** Target component path (e.g., "arch.webserver") */
   component: string;
-  /** Method in the target component to generate traffic on. */
+  /** Target method names */
   methods: string[];
-  /** whether it is enabled or not */
+  /** Whether the metric is active */
   enabled: boolean;
-  /** Type of metric "count" or "latency" */
+  /** Type: "count", "latency", "utilization" */
   metricType: string;
-  /** Type of aggregation on the metric */
+  /** Aggregation function: "sum", "avg", "min", "max", "p50", "p90", "p95", "p99" */
   aggregation: string;
-  /** Aggregation window (in seconds) to match on */
+  /** Aggregation window in seconds */
   aggregationWindow: number;
-  /** Result value to match */
+  /** Result value to match (optional filter) */
   matchResult: string;
-  /** The result "type" if a matching result is provided
- This will be parsed into a type declaration so we know how to treat
- the match_result value provided */
+  /** Result type for match parsing */
   matchResultType: string;
+  /** Statistics (populated by metric store) */
   oldestTimestamp: number;
   newestTimestamp: number;
   numDataPoints: number;
@@ -414,85 +373,8 @@ export interface AggregateResult {
 
 
 
-export interface CreateCanvasRequest {
-  canvas?: Canvas;
-}
-
-
-
-export interface CreateCanvasResponse {
-  canvas?: Canvas;
-  fieldErrors: Record<string, string>;
-}
-
-
-
-export interface UpdateCanvasRequest {
-  canvas?: Canvas;
-}
-
-
-
-export interface UpdateCanvasResponse {
-  canvas?: Canvas;
-  updateMask?: FieldMask;
-  deletedFiles: string[];
-  updatedFiles: Record<string, File>;
-}
-
-
-
-export interface ListCanvasesRequest {
-  pagination?: Pagination;
-}
-
-
-
-export interface ListCanvasesResponse {
-  canvases?: Canvas[];
-  pagination?: PaginationResponse;
-}
-
-
-
-export interface GetCanvasRequest {
-  id: string;
-}
-
-
-
-export interface GetCanvasResponse {
-  canvas?: Canvas;
-}
-
-
-
-export interface DeleteCanvasRequest {
-  id: string;
-}
-
-
-
-export interface DeleteCanvasResponse {
-}
-
-
-
-export interface ResetCanvasRequest {
-  canvasId: string;
-}
-
-
-
-export interface ResetCanvasResponse {
-  success: boolean;
-  message: string;
-}
-
-
-
 export interface LoadFileRequest {
-  canvasId: string;
+  workspaceId: string;
   sdlFilePath: string;
 }
 
@@ -504,7 +386,7 @@ export interface LoadFileResponse {
 
 
 export interface UseSystemRequest {
-  canvasId: string;
+  workspaceId: string;
   systemName: string;
 }
 
@@ -516,6 +398,7 @@ export interface UseSystemResponse {
 
 
 export interface AddGeneratorRequest {
+  workspaceId: string;
   generator?: Generator;
   applyFlows: boolean;
 }
@@ -529,7 +412,7 @@ export interface AddGeneratorResponse {
 
 
 export interface ListGeneratorsRequest {
-  canvasId: string;
+  workspaceId: string;
 }
 
 
@@ -541,8 +424,8 @@ export interface ListGeneratorsResponse {
 
 
 export interface GetGeneratorRequest {
-  canvasId: string;
-  generatorId: string;
+  workspaceId: string;
+  generatorName: string;
 }
 
 
@@ -554,8 +437,8 @@ export interface GetGeneratorResponse {
 
 
 export interface UpdateGeneratorRequest {
+  workspaceId: string;
   generator?: Generator;
-  updateMask?: FieldMask;
   applyFlows: boolean;
 }
 
@@ -568,8 +451,8 @@ export interface UpdateGeneratorResponse {
 
 
 export interface StartGeneratorRequest {
-  canvasId: string;
-  generatorId: string;
+  workspaceId: string;
+  generatorName: string;
 }
 
 
@@ -580,8 +463,8 @@ export interface StartGeneratorResponse {
 
 
 export interface StopGeneratorRequest {
-  canvasId: string;
-  generatorId: string;
+  workspaceId: string;
+  generatorName: string;
 }
 
 
@@ -592,8 +475,8 @@ export interface StopGeneratorResponse {
 
 
 export interface DeleteGeneratorRequest {
-  canvasId: string;
-  generatorId: string;
+  workspaceId: string;
+  generatorName: string;
   applyFlows: boolean;
 }
 
@@ -605,7 +488,7 @@ export interface DeleteGeneratorResponse {
 
 
 export interface StartAllGeneratorsRequest {
-  canvasId: string;
+  workspaceId: string;
 }
 
 
@@ -621,7 +504,7 @@ export interface StartAllGeneratorsResponse {
 
 
 export interface StopAllGeneratorsRequest {
-  canvasId: string;
+  workspaceId: string;
 }
 
 
@@ -637,6 +520,7 @@ export interface StopAllGeneratorsResponse {
 
 
 export interface AddMetricRequest {
+  workspaceId: string;
   metric?: Metric;
 }
 
@@ -649,8 +533,8 @@ export interface AddMetricResponse {
 
 
 export interface DeleteMetricRequest {
-  canvasId: string;
-  metricId: string;
+  workspaceId: string;
+  metricName: string;
 }
 
 
@@ -661,7 +545,7 @@ export interface DeleteMetricResponse {
 
 
 export interface ListMetricsRequest {
-  canvasId: string;
+  workspaceId: string;
 }
 
 
@@ -673,8 +557,8 @@ export interface ListMetricsResponse {
 
 
 export interface QueryMetricsRequest {
-  canvasId: string;
-  metricId: string;
+  workspaceId: string;
+  metricName: string;
   startTime: number;
   endTime: number;
   limit: number;
@@ -689,8 +573,8 @@ export interface QueryMetricsResponse {
 
 
 export interface AggregateMetricsRequest {
-  canvasId: string;
-  metricId: string;
+  workspaceId: string;
+  metricName: string;
   startTime: number;
   endTime: number;
   function: string;
@@ -706,8 +590,8 @@ export interface AggregateMetricsResponse {
 
 
 export interface StreamMetricsRequest {
-  canvasId: string;
-  metricIds: string[];
+  workspaceId: string;
+  metricNames: string[];
 }
 
 
@@ -719,7 +603,7 @@ export interface StreamMetricsResponse {
 
 
 export interface ExecuteTraceRequest {
-  canvasId: string;
+  workspaceId: string;
   component: string;
   method: string;
 }
@@ -733,7 +617,7 @@ export interface ExecuteTraceResponse {
 
 
 export interface TraceAllPathsRequest {
-  canvasId: string;
+  workspaceId: string;
   component: string;
   method: string;
   maxDepth: number;
@@ -748,7 +632,7 @@ export interface TraceAllPathsResponse {
 
 
 export interface SetParameterRequest {
-  canvasId: string;
+  workspaceId: string;
   path: string;
   newValue: string;
 }
@@ -765,7 +649,7 @@ export interface SetParameterResponse {
 
 
 export interface GetParametersRequest {
-  canvasId: string;
+  workspaceId: string;
   path: string;
 }
 
@@ -778,7 +662,7 @@ export interface GetParametersResponse {
 
 
 export interface BatchSetParametersRequest {
-  canvasId: string;
+  workspaceId: string;
   updates?: ParameterUpdate[];
 }
 
@@ -793,7 +677,7 @@ export interface BatchSetParametersResponse {
 
 
 export interface EvaluateFlowsRequest {
-  canvasId: string;
+  workspaceId: string;
   strategy: string;
 }
 
@@ -811,7 +695,7 @@ export interface EvaluateFlowsResponse {
 
 
 export interface GetFlowStateRequest {
-  canvasId: string;
+  workspaceId: string;
 }
 
 
@@ -823,7 +707,7 @@ export interface GetFlowStateResponse {
 
 
 export interface GetSystemDiagramRequest {
-  canvasId: string;
+  workspaceId: string;
 }
 
 
@@ -835,7 +719,7 @@ export interface GetSystemDiagramResponse {
 
 
 export interface GetUtilizationRequest {
-  canvasId: string;
+  workspaceId: string;
   components: string[];
 }
 
@@ -1289,7 +1173,7 @@ export interface GetSystemContentResponse {
 
 
 export interface InitializeSingletonRequest {
-  canvasId: string;
+  workspaceId: string;
   /** SDL content to load initially */
   sdlContent: string;
   /** System name to use after loading */
@@ -1305,14 +1189,14 @@ export interface InitializeSingletonRequest {
 export interface InitializeSingletonResponse {
   success: boolean;
   error: string;
-  canvasId: string;
+  workspaceId: string;
   availableSystems?: SystemInfo[];
 }
 
 
 
 export interface InitializePresenterRequest {
-  canvasId: string;
+  workspaceId: string;
 }
 
 
@@ -1320,7 +1204,7 @@ export interface InitializePresenterRequest {
 export interface InitializePresenterResponse {
   success: boolean;
   error: string;
-  canvasId: string;
+  workspaceId: string;
   /** Available systems to choose from */
   availableSystems?: SystemInfo[];
   /** Initial state to render */
@@ -1332,20 +1216,20 @@ export interface InitializePresenterResponse {
 
 
 export interface ClientReadyRequest {
-  canvasId: string;
+  workspaceId: string;
 }
 
 
 
 export interface ClientReadyResponse {
   success: boolean;
-  canvas?: Canvas;
+  workspace?: Workspace;
 }
 
 
 
 export interface FileSelectedRequest {
-  canvasId: string;
+  workspaceId: string;
   filePath: string;
 }
 
@@ -1360,7 +1244,7 @@ export interface FileSelectedResponse {
 
 
 export interface FileSavedRequest {
-  canvasId: string;
+  workspaceId: string;
   filePath: string;
   content: string;
 }
@@ -1375,7 +1259,7 @@ export interface FileSavedResponse {
 
 
 export interface DiagramComponentClickedRequest {
-  canvasId: string;
+  workspaceId: string;
   componentName: string;
   methodName: string;
 }
@@ -1389,7 +1273,7 @@ export interface DiagramComponentClickedResponse {
 
 
 export interface DiagramComponentHoveredRequest {
-  canvasId: string;
+  workspaceId: string;
   componentName: string;
   methodName: string;
 }

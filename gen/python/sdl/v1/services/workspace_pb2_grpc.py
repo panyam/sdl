@@ -2,12 +2,21 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
+from sdl.v1.models import canvas_service_pb2 as sdl_dot_v1_dot_models_dot_canvas__service__pb2
 from sdl.v1.models import workspace_service_pb2 as sdl_dot_v1_dot_models_dot_workspace__service__pb2
 
 
 class WorkspaceServiceStub(object):
-    """WorkspaceService manages workspace projects.
-    Implementations: in-memory (seeded from examples), file-based, DB-backed, IndexedDB (WASM).
+    """WorkspaceService is the unified entry point for workspace operations.
+    Combines CRUD (create/get/list workspaces) with runtime/simulation
+    (load files, manage generators/metrics, evaluate flows).
+
+    Follows the lilbattle GamesService pattern: one service covering
+    both metadata and gameplay operations.
+
+    Implementations:
+    - devenvbe.WorkspaceService — local mode, wraps DevEnv
+    - connectclient.WorkspaceClient — remote mode, wraps gRPC client
     """
 
     def __init__(self, channel):
@@ -51,11 +60,104 @@ class WorkspaceServiceStub(object):
                 request_serializer=sdl_dot_v1_dot_models_dot_workspace__service__pb2.GetAllDesignContentsRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_workspace__service__pb2.GetAllDesignContentsResponse.FromString,
                 _registered_method=True)
+        self.LoadFile = channel.unary_unary(
+                '/sdl.v1.WorkspaceService/LoadFile',
+                request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.LoadFileRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.LoadFileResponse.FromString,
+                _registered_method=True)
+        self.UseSystem = channel.unary_unary(
+                '/sdl.v1.WorkspaceService/UseSystem',
+                request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.UseSystemRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.UseSystemResponse.FromString,
+                _registered_method=True)
+        self.AddGenerator = channel.unary_unary(
+                '/sdl.v1.WorkspaceService/AddGenerator',
+                request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.AddGeneratorRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.AddGeneratorResponse.FromString,
+                _registered_method=True)
+        self.UpdateGenerator = channel.unary_unary(
+                '/sdl.v1.WorkspaceService/UpdateGenerator',
+                request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.UpdateGeneratorRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.UpdateGeneratorResponse.FromString,
+                _registered_method=True)
+        self.DeleteGenerator = channel.unary_unary(
+                '/sdl.v1.WorkspaceService/DeleteGenerator',
+                request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.DeleteGeneratorRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.DeleteGeneratorResponse.FromString,
+                _registered_method=True)
+        self.ListGenerators = channel.unary_unary(
+                '/sdl.v1.WorkspaceService/ListGenerators',
+                request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.ListGeneratorsRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.ListGeneratorsResponse.FromString,
+                _registered_method=True)
+        self.StartGenerator = channel.unary_unary(
+                '/sdl.v1.WorkspaceService/StartGenerator',
+                request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.StartGeneratorRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.StartGeneratorResponse.FromString,
+                _registered_method=True)
+        self.StopGenerator = channel.unary_unary(
+                '/sdl.v1.WorkspaceService/StopGenerator',
+                request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.StopGeneratorRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.StopGeneratorResponse.FromString,
+                _registered_method=True)
+        self.StartAllGenerators = channel.unary_unary(
+                '/sdl.v1.WorkspaceService/StartAllGenerators',
+                request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.StartAllGeneratorsRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.StartAllGeneratorsResponse.FromString,
+                _registered_method=True)
+        self.StopAllGenerators = channel.unary_unary(
+                '/sdl.v1.WorkspaceService/StopAllGenerators',
+                request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.StopAllGeneratorsRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.StopAllGeneratorsResponse.FromString,
+                _registered_method=True)
+        self.AddMetric = channel.unary_unary(
+                '/sdl.v1.WorkspaceService/AddMetric',
+                request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.AddMetricRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.AddMetricResponse.FromString,
+                _registered_method=True)
+        self.DeleteMetric = channel.unary_unary(
+                '/sdl.v1.WorkspaceService/DeleteMetric',
+                request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.DeleteMetricRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.DeleteMetricResponse.FromString,
+                _registered_method=True)
+        self.ListMetrics = channel.unary_unary(
+                '/sdl.v1.WorkspaceService/ListMetrics',
+                request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.ListMetricsRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.ListMetricsResponse.FromString,
+                _registered_method=True)
+        self.SetParameter = channel.unary_unary(
+                '/sdl.v1.WorkspaceService/SetParameter',
+                request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.SetParameterRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.SetParameterResponse.FromString,
+                _registered_method=True)
+        self.GetParameters = channel.unary_unary(
+                '/sdl.v1.WorkspaceService/GetParameters',
+                request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetParametersRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetParametersResponse.FromString,
+                _registered_method=True)
+        self.EvaluateFlows = channel.unary_unary(
+                '/sdl.v1.WorkspaceService/EvaluateFlows',
+                request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.EvaluateFlowsRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.EvaluateFlowsResponse.FromString,
+                _registered_method=True)
+        self.GetSystemDiagram = channel.unary_unary(
+                '/sdl.v1.WorkspaceService/GetSystemDiagram',
+                request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetSystemDiagramRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetSystemDiagramResponse.FromString,
+                _registered_method=True)
 
 
 class WorkspaceServiceServicer(object):
-    """WorkspaceService manages workspace projects.
-    Implementations: in-memory (seeded from examples), file-based, DB-backed, IndexedDB (WASM).
+    """WorkspaceService is the unified entry point for workspace operations.
+    Combines CRUD (create/get/list workspaces) with runtime/simulation
+    (load files, manage generators/metrics, evaluate flows).
+
+    Follows the lilbattle GamesService pattern: one service covering
+    both metadata and gameplay operations.
+
+    Implementations:
+    - devenvbe.WorkspaceService — local mode, wraps DevEnv
+    - connectclient.WorkspaceClient — remote mode, wraps gRPC client
     """
 
     def CreateWorkspace(self, request, context):
@@ -102,6 +204,124 @@ class WorkspaceServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def LoadFile(self, request, context):
+        """=========================================================================
+        Runtime / Simulation Operations
+        =========================================================================
+
+        Load an SDL file into the workspace
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def UseSystem(self, request, context):
+        """Select the active system for simulation
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def AddGenerator(self, request, context):
+        """----- Generator Operations -----
+
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def UpdateGenerator(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DeleteGenerator(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ListGenerators(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def StartGenerator(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def StopGenerator(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def StartAllGenerators(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def StopAllGenerators(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def AddMetric(self, request, context):
+        """----- Metric Operations -----
+
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DeleteMetric(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ListMetrics(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SetParameter(self, request, context):
+        """----- Parameter Operations -----
+
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetParameters(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def EvaluateFlows(self, request, context):
+        """----- Flow Analysis Operations -----
+
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetSystemDiagram(self, request, context):
+        """----- System Diagram -----
+
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_WorkspaceServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -140,6 +360,91 @@ def add_WorkspaceServiceServicer_to_server(servicer, server):
                     request_deserializer=sdl_dot_v1_dot_models_dot_workspace__service__pb2.GetAllDesignContentsRequest.FromString,
                     response_serializer=sdl_dot_v1_dot_models_dot_workspace__service__pb2.GetAllDesignContentsResponse.SerializeToString,
             ),
+            'LoadFile': grpc.unary_unary_rpc_method_handler(
+                    servicer.LoadFile,
+                    request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.LoadFileRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.LoadFileResponse.SerializeToString,
+            ),
+            'UseSystem': grpc.unary_unary_rpc_method_handler(
+                    servicer.UseSystem,
+                    request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.UseSystemRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.UseSystemResponse.SerializeToString,
+            ),
+            'AddGenerator': grpc.unary_unary_rpc_method_handler(
+                    servicer.AddGenerator,
+                    request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.AddGeneratorRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.AddGeneratorResponse.SerializeToString,
+            ),
+            'UpdateGenerator': grpc.unary_unary_rpc_method_handler(
+                    servicer.UpdateGenerator,
+                    request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.UpdateGeneratorRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.UpdateGeneratorResponse.SerializeToString,
+            ),
+            'DeleteGenerator': grpc.unary_unary_rpc_method_handler(
+                    servicer.DeleteGenerator,
+                    request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.DeleteGeneratorRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.DeleteGeneratorResponse.SerializeToString,
+            ),
+            'ListGenerators': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListGenerators,
+                    request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.ListGeneratorsRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.ListGeneratorsResponse.SerializeToString,
+            ),
+            'StartGenerator': grpc.unary_unary_rpc_method_handler(
+                    servicer.StartGenerator,
+                    request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.StartGeneratorRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.StartGeneratorResponse.SerializeToString,
+            ),
+            'StopGenerator': grpc.unary_unary_rpc_method_handler(
+                    servicer.StopGenerator,
+                    request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.StopGeneratorRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.StopGeneratorResponse.SerializeToString,
+            ),
+            'StartAllGenerators': grpc.unary_unary_rpc_method_handler(
+                    servicer.StartAllGenerators,
+                    request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.StartAllGeneratorsRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.StartAllGeneratorsResponse.SerializeToString,
+            ),
+            'StopAllGenerators': grpc.unary_unary_rpc_method_handler(
+                    servicer.StopAllGenerators,
+                    request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.StopAllGeneratorsRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.StopAllGeneratorsResponse.SerializeToString,
+            ),
+            'AddMetric': grpc.unary_unary_rpc_method_handler(
+                    servicer.AddMetric,
+                    request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.AddMetricRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.AddMetricResponse.SerializeToString,
+            ),
+            'DeleteMetric': grpc.unary_unary_rpc_method_handler(
+                    servicer.DeleteMetric,
+                    request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.DeleteMetricRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.DeleteMetricResponse.SerializeToString,
+            ),
+            'ListMetrics': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListMetrics,
+                    request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.ListMetricsRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.ListMetricsResponse.SerializeToString,
+            ),
+            'SetParameter': grpc.unary_unary_rpc_method_handler(
+                    servicer.SetParameter,
+                    request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.SetParameterRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.SetParameterResponse.SerializeToString,
+            ),
+            'GetParameters': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetParameters,
+                    request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetParametersRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetParametersResponse.SerializeToString,
+            ),
+            'EvaluateFlows': grpc.unary_unary_rpc_method_handler(
+                    servicer.EvaluateFlows,
+                    request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.EvaluateFlowsRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.EvaluateFlowsResponse.SerializeToString,
+            ),
+            'GetSystemDiagram': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetSystemDiagram,
+                    request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetSystemDiagramRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetSystemDiagramResponse.SerializeToString,
+            ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
             'sdl.v1.WorkspaceService', rpc_method_handlers)
@@ -149,8 +454,16 @@ def add_WorkspaceServiceServicer_to_server(servicer, server):
 
  # This class is part of an EXPERIMENTAL API.
 class WorkspaceService(object):
-    """WorkspaceService manages workspace projects.
-    Implementations: in-memory (seeded from examples), file-based, DB-backed, IndexedDB (WASM).
+    """WorkspaceService is the unified entry point for workspace operations.
+    Combines CRUD (create/get/list workspaces) with runtime/simulation
+    (load files, manage generators/metrics, evaluate flows).
+
+    Follows the lilbattle GamesService pattern: one service covering
+    both metadata and gameplay operations.
+
+    Implementations:
+    - devenvbe.WorkspaceService — local mode, wraps DevEnv
+    - connectclient.WorkspaceClient — remote mode, wraps gRPC client
     """
 
     @staticmethod
@@ -332,6 +645,465 @@ class WorkspaceService(object):
             '/sdl.v1.WorkspaceService/GetAllDesignContents',
             sdl_dot_v1_dot_models_dot_workspace__service__pb2.GetAllDesignContentsRequest.SerializeToString,
             sdl_dot_v1_dot_models_dot_workspace__service__pb2.GetAllDesignContentsResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def LoadFile(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.WorkspaceService/LoadFile',
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.LoadFileRequest.SerializeToString,
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.LoadFileResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def UseSystem(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.WorkspaceService/UseSystem',
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.UseSystemRequest.SerializeToString,
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.UseSystemResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def AddGenerator(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.WorkspaceService/AddGenerator',
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.AddGeneratorRequest.SerializeToString,
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.AddGeneratorResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def UpdateGenerator(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.WorkspaceService/UpdateGenerator',
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.UpdateGeneratorRequest.SerializeToString,
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.UpdateGeneratorResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DeleteGenerator(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.WorkspaceService/DeleteGenerator',
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.DeleteGeneratorRequest.SerializeToString,
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.DeleteGeneratorResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ListGenerators(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.WorkspaceService/ListGenerators',
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.ListGeneratorsRequest.SerializeToString,
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.ListGeneratorsResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def StartGenerator(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.WorkspaceService/StartGenerator',
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.StartGeneratorRequest.SerializeToString,
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.StartGeneratorResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def StopGenerator(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.WorkspaceService/StopGenerator',
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.StopGeneratorRequest.SerializeToString,
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.StopGeneratorResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def StartAllGenerators(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.WorkspaceService/StartAllGenerators',
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.StartAllGeneratorsRequest.SerializeToString,
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.StartAllGeneratorsResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def StopAllGenerators(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.WorkspaceService/StopAllGenerators',
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.StopAllGeneratorsRequest.SerializeToString,
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.StopAllGeneratorsResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def AddMetric(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.WorkspaceService/AddMetric',
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.AddMetricRequest.SerializeToString,
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.AddMetricResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DeleteMetric(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.WorkspaceService/DeleteMetric',
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.DeleteMetricRequest.SerializeToString,
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.DeleteMetricResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ListMetrics(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.WorkspaceService/ListMetrics',
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.ListMetricsRequest.SerializeToString,
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.ListMetricsResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SetParameter(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.WorkspaceService/SetParameter',
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.SetParameterRequest.SerializeToString,
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.SetParameterResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetParameters(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.WorkspaceService/GetParameters',
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetParametersRequest.SerializeToString,
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetParametersResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def EvaluateFlows(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.WorkspaceService/EvaluateFlows',
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.EvaluateFlowsRequest.SerializeToString,
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.EvaluateFlowsResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetSystemDiagram(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.WorkspaceService/GetSystemDiagram',
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetSystemDiagramRequest.SerializeToString,
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetSystemDiagramResponse.FromString,
             options,
             channel_credentials,
             insecure,

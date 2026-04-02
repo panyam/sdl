@@ -23,8 +23,8 @@ import (
 const _ = connect.IsAtLeastVersion1_13_0
 
 const (
-	// DevEnvPageName is the fully-qualified name of the DevEnvPage service.
-	DevEnvPageName = "sdl.v1.DevEnvPage"
+	// WorkspacePageName is the fully-qualified name of the WorkspacePage service.
+	WorkspacePageName = "sdl.v1.WorkspacePage"
 )
 
 // These constants are the fully-qualified names of the RPCs defined in this package. They're
@@ -35,34 +35,37 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// DevEnvPageOnSystemChangedProcedure is the fully-qualified name of the DevEnvPage's
+	// WorkspacePageOnSystemChangedProcedure is the fully-qualified name of the WorkspacePage's
 	// OnSystemChanged RPC.
-	DevEnvPageOnSystemChangedProcedure = "/sdl.v1.DevEnvPage/OnSystemChanged"
-	// DevEnvPageOnAvailableSystemsChangedProcedure is the fully-qualified name of the DevEnvPage's
-	// OnAvailableSystemsChanged RPC.
-	DevEnvPageOnAvailableSystemsChangedProcedure = "/sdl.v1.DevEnvPage/OnAvailableSystemsChanged"
-	// DevEnvPageUpdateDiagramProcedure is the fully-qualified name of the DevEnvPage's UpdateDiagram
-	// RPC.
-	DevEnvPageUpdateDiagramProcedure = "/sdl.v1.DevEnvPage/UpdateDiagram"
-	// DevEnvPageUpdateGeneratorProcedure is the fully-qualified name of the DevEnvPage's
+	WorkspacePageOnSystemChangedProcedure = "/sdl.v1.WorkspacePage/OnSystemChanged"
+	// WorkspacePageOnAvailableSystemsChangedProcedure is the fully-qualified name of the
+	// WorkspacePage's OnAvailableSystemsChanged RPC.
+	WorkspacePageOnAvailableSystemsChangedProcedure = "/sdl.v1.WorkspacePage/OnAvailableSystemsChanged"
+	// WorkspacePageUpdateDiagramProcedure is the fully-qualified name of the WorkspacePage's
+	// UpdateDiagram RPC.
+	WorkspacePageUpdateDiagramProcedure = "/sdl.v1.WorkspacePage/UpdateDiagram"
+	// WorkspacePageUpdateGeneratorProcedure is the fully-qualified name of the WorkspacePage's
 	// UpdateGenerator RPC.
-	DevEnvPageUpdateGeneratorProcedure = "/sdl.v1.DevEnvPage/UpdateGenerator"
-	// DevEnvPageRemoveGeneratorProcedure is the fully-qualified name of the DevEnvPage's
+	WorkspacePageUpdateGeneratorProcedure = "/sdl.v1.WorkspacePage/UpdateGenerator"
+	// WorkspacePageRemoveGeneratorProcedure is the fully-qualified name of the WorkspacePage's
 	// RemoveGenerator RPC.
-	DevEnvPageRemoveGeneratorProcedure = "/sdl.v1.DevEnvPage/RemoveGenerator"
-	// DevEnvPageUpdateMetricProcedure is the fully-qualified name of the DevEnvPage's UpdateMetric RPC.
-	DevEnvPageUpdateMetricProcedure = "/sdl.v1.DevEnvPage/UpdateMetric"
-	// DevEnvPageRemoveMetricProcedure is the fully-qualified name of the DevEnvPage's RemoveMetric RPC.
-	DevEnvPageRemoveMetricProcedure = "/sdl.v1.DevEnvPage/RemoveMetric"
-	// DevEnvPageUpdateFlowRatesProcedure is the fully-qualified name of the DevEnvPage's
+	WorkspacePageRemoveGeneratorProcedure = "/sdl.v1.WorkspacePage/RemoveGenerator"
+	// WorkspacePageUpdateMetricProcedure is the fully-qualified name of the WorkspacePage's
+	// UpdateMetric RPC.
+	WorkspacePageUpdateMetricProcedure = "/sdl.v1.WorkspacePage/UpdateMetric"
+	// WorkspacePageRemoveMetricProcedure is the fully-qualified name of the WorkspacePage's
+	// RemoveMetric RPC.
+	WorkspacePageRemoveMetricProcedure = "/sdl.v1.WorkspacePage/RemoveMetric"
+	// WorkspacePageUpdateFlowRatesProcedure is the fully-qualified name of the WorkspacePage's
 	// UpdateFlowRates RPC.
-	DevEnvPageUpdateFlowRatesProcedure = "/sdl.v1.DevEnvPage/UpdateFlowRates"
-	// DevEnvPageLogMessageProcedure is the fully-qualified name of the DevEnvPage's LogMessage RPC.
-	DevEnvPageLogMessageProcedure = "/sdl.v1.DevEnvPage/LogMessage"
+	WorkspacePageUpdateFlowRatesProcedure = "/sdl.v1.WorkspacePage/UpdateFlowRates"
+	// WorkspacePageLogMessageProcedure is the fully-qualified name of the WorkspacePage's LogMessage
+	// RPC.
+	WorkspacePageLogMessageProcedure = "/sdl.v1.WorkspacePage/LogMessage"
 )
 
-// DevEnvPageClient is a client for the sdl.v1.DevEnvPage service.
-type DevEnvPageClient interface {
+// WorkspacePageClient is a client for the sdl.v1.WorkspacePage service.
+type WorkspacePageClient interface {
 	// Notify that the active system has changed
 	OnSystemChanged(context.Context, *connect.Request[models.DevEnvSystemChangedRequest]) (*connect.Response[models.DevEnvSystemChangedResponse], error)
 	// Notify that the list of available systems has changed
@@ -83,76 +86,76 @@ type DevEnvPageClient interface {
 	LogMessage(context.Context, *connect.Request[models.LogMessageRequest]) (*connect.Response[models.LogMessageResponse], error)
 }
 
-// NewDevEnvPageClient constructs a client for the sdl.v1.DevEnvPage service. By default, it uses
-// the Connect protocol with the binary Protobuf Codec, asks for gzipped responses, and sends
+// NewWorkspacePageClient constructs a client for the sdl.v1.WorkspacePage service. By default, it
+// uses the Connect protocol with the binary Protobuf Codec, asks for gzipped responses, and sends
 // uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the connect.WithGRPC() or
 // connect.WithGRPCWeb() options.
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewDevEnvPageClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) DevEnvPageClient {
+func NewWorkspacePageClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) WorkspacePageClient {
 	baseURL = strings.TrimRight(baseURL, "/")
-	devEnvPageMethods := services.File_sdl_v1_services_devenvpage_proto.Services().ByName("DevEnvPage").Methods()
-	return &devEnvPageClient{
+	workspacePageMethods := services.File_sdl_v1_services_devenvpage_proto.Services().ByName("WorkspacePage").Methods()
+	return &workspacePageClient{
 		onSystemChanged: connect.NewClient[models.DevEnvSystemChangedRequest, models.DevEnvSystemChangedResponse](
 			httpClient,
-			baseURL+DevEnvPageOnSystemChangedProcedure,
-			connect.WithSchema(devEnvPageMethods.ByName("OnSystemChanged")),
+			baseURL+WorkspacePageOnSystemChangedProcedure,
+			connect.WithSchema(workspacePageMethods.ByName("OnSystemChanged")),
 			connect.WithClientOptions(opts...),
 		),
 		onAvailableSystemsChanged: connect.NewClient[models.DevEnvAvailableSystemsRequest, models.DevEnvAvailableSystemsResponse](
 			httpClient,
-			baseURL+DevEnvPageOnAvailableSystemsChangedProcedure,
-			connect.WithSchema(devEnvPageMethods.ByName("OnAvailableSystemsChanged")),
+			baseURL+WorkspacePageOnAvailableSystemsChangedProcedure,
+			connect.WithSchema(workspacePageMethods.ByName("OnAvailableSystemsChanged")),
 			connect.WithClientOptions(opts...),
 		),
 		updateDiagram: connect.NewClient[models.UpdateDiagramRequest, models.UpdateDiagramResponse](
 			httpClient,
-			baseURL+DevEnvPageUpdateDiagramProcedure,
-			connect.WithSchema(devEnvPageMethods.ByName("UpdateDiagram")),
+			baseURL+WorkspacePageUpdateDiagramProcedure,
+			connect.WithSchema(workspacePageMethods.ByName("UpdateDiagram")),
 			connect.WithClientOptions(opts...),
 		),
 		updateGenerator: connect.NewClient[models.DevEnvUpdateGeneratorRequest, models.DevEnvUpdateGeneratorResponse](
 			httpClient,
-			baseURL+DevEnvPageUpdateGeneratorProcedure,
-			connect.WithSchema(devEnvPageMethods.ByName("UpdateGenerator")),
+			baseURL+WorkspacePageUpdateGeneratorProcedure,
+			connect.WithSchema(workspacePageMethods.ByName("UpdateGenerator")),
 			connect.WithClientOptions(opts...),
 		),
 		removeGenerator: connect.NewClient[models.DevEnvRemoveGeneratorRequest, models.DevEnvRemoveGeneratorResponse](
 			httpClient,
-			baseURL+DevEnvPageRemoveGeneratorProcedure,
-			connect.WithSchema(devEnvPageMethods.ByName("RemoveGenerator")),
+			baseURL+WorkspacePageRemoveGeneratorProcedure,
+			connect.WithSchema(workspacePageMethods.ByName("RemoveGenerator")),
 			connect.WithClientOptions(opts...),
 		),
 		updateMetric: connect.NewClient[models.DevEnvUpdateMetricRequest, models.DevEnvUpdateMetricResponse](
 			httpClient,
-			baseURL+DevEnvPageUpdateMetricProcedure,
-			connect.WithSchema(devEnvPageMethods.ByName("UpdateMetric")),
+			baseURL+WorkspacePageUpdateMetricProcedure,
+			connect.WithSchema(workspacePageMethods.ByName("UpdateMetric")),
 			connect.WithClientOptions(opts...),
 		),
 		removeMetric: connect.NewClient[models.DevEnvRemoveMetricRequest, models.DevEnvRemoveMetricResponse](
 			httpClient,
-			baseURL+DevEnvPageRemoveMetricProcedure,
-			connect.WithSchema(devEnvPageMethods.ByName("RemoveMetric")),
+			baseURL+WorkspacePageRemoveMetricProcedure,
+			connect.WithSchema(workspacePageMethods.ByName("RemoveMetric")),
 			connect.WithClientOptions(opts...),
 		),
 		updateFlowRates: connect.NewClient[models.UpdateFlowRatesRequest, models.UpdateFlowRatesResponse](
 			httpClient,
-			baseURL+DevEnvPageUpdateFlowRatesProcedure,
-			connect.WithSchema(devEnvPageMethods.ByName("UpdateFlowRates")),
+			baseURL+WorkspacePageUpdateFlowRatesProcedure,
+			connect.WithSchema(workspacePageMethods.ByName("UpdateFlowRates")),
 			connect.WithClientOptions(opts...),
 		),
 		logMessage: connect.NewClient[models.LogMessageRequest, models.LogMessageResponse](
 			httpClient,
-			baseURL+DevEnvPageLogMessageProcedure,
-			connect.WithSchema(devEnvPageMethods.ByName("LogMessage")),
+			baseURL+WorkspacePageLogMessageProcedure,
+			connect.WithSchema(workspacePageMethods.ByName("LogMessage")),
 			connect.WithClientOptions(opts...),
 		),
 	}
 }
 
-// devEnvPageClient implements DevEnvPageClient.
-type devEnvPageClient struct {
+// workspacePageClient implements WorkspacePageClient.
+type workspacePageClient struct {
 	onSystemChanged           *connect.Client[models.DevEnvSystemChangedRequest, models.DevEnvSystemChangedResponse]
 	onAvailableSystemsChanged *connect.Client[models.DevEnvAvailableSystemsRequest, models.DevEnvAvailableSystemsResponse]
 	updateDiagram             *connect.Client[models.UpdateDiagramRequest, models.UpdateDiagramResponse]
@@ -164,53 +167,53 @@ type devEnvPageClient struct {
 	logMessage                *connect.Client[models.LogMessageRequest, models.LogMessageResponse]
 }
 
-// OnSystemChanged calls sdl.v1.DevEnvPage.OnSystemChanged.
-func (c *devEnvPageClient) OnSystemChanged(ctx context.Context, req *connect.Request[models.DevEnvSystemChangedRequest]) (*connect.Response[models.DevEnvSystemChangedResponse], error) {
+// OnSystemChanged calls sdl.v1.WorkspacePage.OnSystemChanged.
+func (c *workspacePageClient) OnSystemChanged(ctx context.Context, req *connect.Request[models.DevEnvSystemChangedRequest]) (*connect.Response[models.DevEnvSystemChangedResponse], error) {
 	return c.onSystemChanged.CallUnary(ctx, req)
 }
 
-// OnAvailableSystemsChanged calls sdl.v1.DevEnvPage.OnAvailableSystemsChanged.
-func (c *devEnvPageClient) OnAvailableSystemsChanged(ctx context.Context, req *connect.Request[models.DevEnvAvailableSystemsRequest]) (*connect.Response[models.DevEnvAvailableSystemsResponse], error) {
+// OnAvailableSystemsChanged calls sdl.v1.WorkspacePage.OnAvailableSystemsChanged.
+func (c *workspacePageClient) OnAvailableSystemsChanged(ctx context.Context, req *connect.Request[models.DevEnvAvailableSystemsRequest]) (*connect.Response[models.DevEnvAvailableSystemsResponse], error) {
 	return c.onAvailableSystemsChanged.CallUnary(ctx, req)
 }
 
-// UpdateDiagram calls sdl.v1.DevEnvPage.UpdateDiagram.
-func (c *devEnvPageClient) UpdateDiagram(ctx context.Context, req *connect.Request[models.UpdateDiagramRequest]) (*connect.Response[models.UpdateDiagramResponse], error) {
+// UpdateDiagram calls sdl.v1.WorkspacePage.UpdateDiagram.
+func (c *workspacePageClient) UpdateDiagram(ctx context.Context, req *connect.Request[models.UpdateDiagramRequest]) (*connect.Response[models.UpdateDiagramResponse], error) {
 	return c.updateDiagram.CallUnary(ctx, req)
 }
 
-// UpdateGenerator calls sdl.v1.DevEnvPage.UpdateGenerator.
-func (c *devEnvPageClient) UpdateGenerator(ctx context.Context, req *connect.Request[models.DevEnvUpdateGeneratorRequest]) (*connect.Response[models.DevEnvUpdateGeneratorResponse], error) {
+// UpdateGenerator calls sdl.v1.WorkspacePage.UpdateGenerator.
+func (c *workspacePageClient) UpdateGenerator(ctx context.Context, req *connect.Request[models.DevEnvUpdateGeneratorRequest]) (*connect.Response[models.DevEnvUpdateGeneratorResponse], error) {
 	return c.updateGenerator.CallUnary(ctx, req)
 }
 
-// RemoveGenerator calls sdl.v1.DevEnvPage.RemoveGenerator.
-func (c *devEnvPageClient) RemoveGenerator(ctx context.Context, req *connect.Request[models.DevEnvRemoveGeneratorRequest]) (*connect.Response[models.DevEnvRemoveGeneratorResponse], error) {
+// RemoveGenerator calls sdl.v1.WorkspacePage.RemoveGenerator.
+func (c *workspacePageClient) RemoveGenerator(ctx context.Context, req *connect.Request[models.DevEnvRemoveGeneratorRequest]) (*connect.Response[models.DevEnvRemoveGeneratorResponse], error) {
 	return c.removeGenerator.CallUnary(ctx, req)
 }
 
-// UpdateMetric calls sdl.v1.DevEnvPage.UpdateMetric.
-func (c *devEnvPageClient) UpdateMetric(ctx context.Context, req *connect.Request[models.DevEnvUpdateMetricRequest]) (*connect.Response[models.DevEnvUpdateMetricResponse], error) {
+// UpdateMetric calls sdl.v1.WorkspacePage.UpdateMetric.
+func (c *workspacePageClient) UpdateMetric(ctx context.Context, req *connect.Request[models.DevEnvUpdateMetricRequest]) (*connect.Response[models.DevEnvUpdateMetricResponse], error) {
 	return c.updateMetric.CallUnary(ctx, req)
 }
 
-// RemoveMetric calls sdl.v1.DevEnvPage.RemoveMetric.
-func (c *devEnvPageClient) RemoveMetric(ctx context.Context, req *connect.Request[models.DevEnvRemoveMetricRequest]) (*connect.Response[models.DevEnvRemoveMetricResponse], error) {
+// RemoveMetric calls sdl.v1.WorkspacePage.RemoveMetric.
+func (c *workspacePageClient) RemoveMetric(ctx context.Context, req *connect.Request[models.DevEnvRemoveMetricRequest]) (*connect.Response[models.DevEnvRemoveMetricResponse], error) {
 	return c.removeMetric.CallUnary(ctx, req)
 }
 
-// UpdateFlowRates calls sdl.v1.DevEnvPage.UpdateFlowRates.
-func (c *devEnvPageClient) UpdateFlowRates(ctx context.Context, req *connect.Request[models.UpdateFlowRatesRequest]) (*connect.Response[models.UpdateFlowRatesResponse], error) {
+// UpdateFlowRates calls sdl.v1.WorkspacePage.UpdateFlowRates.
+func (c *workspacePageClient) UpdateFlowRates(ctx context.Context, req *connect.Request[models.UpdateFlowRatesRequest]) (*connect.Response[models.UpdateFlowRatesResponse], error) {
 	return c.updateFlowRates.CallUnary(ctx, req)
 }
 
-// LogMessage calls sdl.v1.DevEnvPage.LogMessage.
-func (c *devEnvPageClient) LogMessage(ctx context.Context, req *connect.Request[models.LogMessageRequest]) (*connect.Response[models.LogMessageResponse], error) {
+// LogMessage calls sdl.v1.WorkspacePage.LogMessage.
+func (c *workspacePageClient) LogMessage(ctx context.Context, req *connect.Request[models.LogMessageRequest]) (*connect.Response[models.LogMessageResponse], error) {
 	return c.logMessage.CallUnary(ctx, req)
 }
 
-// DevEnvPageHandler is an implementation of the sdl.v1.DevEnvPage service.
-type DevEnvPageHandler interface {
+// WorkspacePageHandler is an implementation of the sdl.v1.WorkspacePage service.
+type WorkspacePageHandler interface {
 	// Notify that the active system has changed
 	OnSystemChanged(context.Context, *connect.Request[models.DevEnvSystemChangedRequest]) (*connect.Response[models.DevEnvSystemChangedResponse], error)
 	// Notify that the list of available systems has changed
@@ -231,128 +234,128 @@ type DevEnvPageHandler interface {
 	LogMessage(context.Context, *connect.Request[models.LogMessageRequest]) (*connect.Response[models.LogMessageResponse], error)
 }
 
-// NewDevEnvPageHandler builds an HTTP handler from the service implementation. It returns the path
-// on which to mount the handler and the handler itself.
+// NewWorkspacePageHandler builds an HTTP handler from the service implementation. It returns the
+// path on which to mount the handler and the handler itself.
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewDevEnvPageHandler(svc DevEnvPageHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	devEnvPageMethods := services.File_sdl_v1_services_devenvpage_proto.Services().ByName("DevEnvPage").Methods()
-	devEnvPageOnSystemChangedHandler := connect.NewUnaryHandler(
-		DevEnvPageOnSystemChangedProcedure,
+func NewWorkspacePageHandler(svc WorkspacePageHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	workspacePageMethods := services.File_sdl_v1_services_devenvpage_proto.Services().ByName("WorkspacePage").Methods()
+	workspacePageOnSystemChangedHandler := connect.NewUnaryHandler(
+		WorkspacePageOnSystemChangedProcedure,
 		svc.OnSystemChanged,
-		connect.WithSchema(devEnvPageMethods.ByName("OnSystemChanged")),
+		connect.WithSchema(workspacePageMethods.ByName("OnSystemChanged")),
 		connect.WithHandlerOptions(opts...),
 	)
-	devEnvPageOnAvailableSystemsChangedHandler := connect.NewUnaryHandler(
-		DevEnvPageOnAvailableSystemsChangedProcedure,
+	workspacePageOnAvailableSystemsChangedHandler := connect.NewUnaryHandler(
+		WorkspacePageOnAvailableSystemsChangedProcedure,
 		svc.OnAvailableSystemsChanged,
-		connect.WithSchema(devEnvPageMethods.ByName("OnAvailableSystemsChanged")),
+		connect.WithSchema(workspacePageMethods.ByName("OnAvailableSystemsChanged")),
 		connect.WithHandlerOptions(opts...),
 	)
-	devEnvPageUpdateDiagramHandler := connect.NewUnaryHandler(
-		DevEnvPageUpdateDiagramProcedure,
+	workspacePageUpdateDiagramHandler := connect.NewUnaryHandler(
+		WorkspacePageUpdateDiagramProcedure,
 		svc.UpdateDiagram,
-		connect.WithSchema(devEnvPageMethods.ByName("UpdateDiagram")),
+		connect.WithSchema(workspacePageMethods.ByName("UpdateDiagram")),
 		connect.WithHandlerOptions(opts...),
 	)
-	devEnvPageUpdateGeneratorHandler := connect.NewUnaryHandler(
-		DevEnvPageUpdateGeneratorProcedure,
+	workspacePageUpdateGeneratorHandler := connect.NewUnaryHandler(
+		WorkspacePageUpdateGeneratorProcedure,
 		svc.UpdateGenerator,
-		connect.WithSchema(devEnvPageMethods.ByName("UpdateGenerator")),
+		connect.WithSchema(workspacePageMethods.ByName("UpdateGenerator")),
 		connect.WithHandlerOptions(opts...),
 	)
-	devEnvPageRemoveGeneratorHandler := connect.NewUnaryHandler(
-		DevEnvPageRemoveGeneratorProcedure,
+	workspacePageRemoveGeneratorHandler := connect.NewUnaryHandler(
+		WorkspacePageRemoveGeneratorProcedure,
 		svc.RemoveGenerator,
-		connect.WithSchema(devEnvPageMethods.ByName("RemoveGenerator")),
+		connect.WithSchema(workspacePageMethods.ByName("RemoveGenerator")),
 		connect.WithHandlerOptions(opts...),
 	)
-	devEnvPageUpdateMetricHandler := connect.NewUnaryHandler(
-		DevEnvPageUpdateMetricProcedure,
+	workspacePageUpdateMetricHandler := connect.NewUnaryHandler(
+		WorkspacePageUpdateMetricProcedure,
 		svc.UpdateMetric,
-		connect.WithSchema(devEnvPageMethods.ByName("UpdateMetric")),
+		connect.WithSchema(workspacePageMethods.ByName("UpdateMetric")),
 		connect.WithHandlerOptions(opts...),
 	)
-	devEnvPageRemoveMetricHandler := connect.NewUnaryHandler(
-		DevEnvPageRemoveMetricProcedure,
+	workspacePageRemoveMetricHandler := connect.NewUnaryHandler(
+		WorkspacePageRemoveMetricProcedure,
 		svc.RemoveMetric,
-		connect.WithSchema(devEnvPageMethods.ByName("RemoveMetric")),
+		connect.WithSchema(workspacePageMethods.ByName("RemoveMetric")),
 		connect.WithHandlerOptions(opts...),
 	)
-	devEnvPageUpdateFlowRatesHandler := connect.NewUnaryHandler(
-		DevEnvPageUpdateFlowRatesProcedure,
+	workspacePageUpdateFlowRatesHandler := connect.NewUnaryHandler(
+		WorkspacePageUpdateFlowRatesProcedure,
 		svc.UpdateFlowRates,
-		connect.WithSchema(devEnvPageMethods.ByName("UpdateFlowRates")),
+		connect.WithSchema(workspacePageMethods.ByName("UpdateFlowRates")),
 		connect.WithHandlerOptions(opts...),
 	)
-	devEnvPageLogMessageHandler := connect.NewUnaryHandler(
-		DevEnvPageLogMessageProcedure,
+	workspacePageLogMessageHandler := connect.NewUnaryHandler(
+		WorkspacePageLogMessageProcedure,
 		svc.LogMessage,
-		connect.WithSchema(devEnvPageMethods.ByName("LogMessage")),
+		connect.WithSchema(workspacePageMethods.ByName("LogMessage")),
 		connect.WithHandlerOptions(opts...),
 	)
-	return "/sdl.v1.DevEnvPage/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return "/sdl.v1.WorkspacePage/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case DevEnvPageOnSystemChangedProcedure:
-			devEnvPageOnSystemChangedHandler.ServeHTTP(w, r)
-		case DevEnvPageOnAvailableSystemsChangedProcedure:
-			devEnvPageOnAvailableSystemsChangedHandler.ServeHTTP(w, r)
-		case DevEnvPageUpdateDiagramProcedure:
-			devEnvPageUpdateDiagramHandler.ServeHTTP(w, r)
-		case DevEnvPageUpdateGeneratorProcedure:
-			devEnvPageUpdateGeneratorHandler.ServeHTTP(w, r)
-		case DevEnvPageRemoveGeneratorProcedure:
-			devEnvPageRemoveGeneratorHandler.ServeHTTP(w, r)
-		case DevEnvPageUpdateMetricProcedure:
-			devEnvPageUpdateMetricHandler.ServeHTTP(w, r)
-		case DevEnvPageRemoveMetricProcedure:
-			devEnvPageRemoveMetricHandler.ServeHTTP(w, r)
-		case DevEnvPageUpdateFlowRatesProcedure:
-			devEnvPageUpdateFlowRatesHandler.ServeHTTP(w, r)
-		case DevEnvPageLogMessageProcedure:
-			devEnvPageLogMessageHandler.ServeHTTP(w, r)
+		case WorkspacePageOnSystemChangedProcedure:
+			workspacePageOnSystemChangedHandler.ServeHTTP(w, r)
+		case WorkspacePageOnAvailableSystemsChangedProcedure:
+			workspacePageOnAvailableSystemsChangedHandler.ServeHTTP(w, r)
+		case WorkspacePageUpdateDiagramProcedure:
+			workspacePageUpdateDiagramHandler.ServeHTTP(w, r)
+		case WorkspacePageUpdateGeneratorProcedure:
+			workspacePageUpdateGeneratorHandler.ServeHTTP(w, r)
+		case WorkspacePageRemoveGeneratorProcedure:
+			workspacePageRemoveGeneratorHandler.ServeHTTP(w, r)
+		case WorkspacePageUpdateMetricProcedure:
+			workspacePageUpdateMetricHandler.ServeHTTP(w, r)
+		case WorkspacePageRemoveMetricProcedure:
+			workspacePageRemoveMetricHandler.ServeHTTP(w, r)
+		case WorkspacePageUpdateFlowRatesProcedure:
+			workspacePageUpdateFlowRatesHandler.ServeHTTP(w, r)
+		case WorkspacePageLogMessageProcedure:
+			workspacePageLogMessageHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
 	})
 }
 
-// UnimplementedDevEnvPageHandler returns CodeUnimplemented from all methods.
-type UnimplementedDevEnvPageHandler struct{}
+// UnimplementedWorkspacePageHandler returns CodeUnimplemented from all methods.
+type UnimplementedWorkspacePageHandler struct{}
 
-func (UnimplementedDevEnvPageHandler) OnSystemChanged(context.Context, *connect.Request[models.DevEnvSystemChangedRequest]) (*connect.Response[models.DevEnvSystemChangedResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.DevEnvPage.OnSystemChanged is not implemented"))
+func (UnimplementedWorkspacePageHandler) OnSystemChanged(context.Context, *connect.Request[models.DevEnvSystemChangedRequest]) (*connect.Response[models.DevEnvSystemChangedResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspacePage.OnSystemChanged is not implemented"))
 }
 
-func (UnimplementedDevEnvPageHandler) OnAvailableSystemsChanged(context.Context, *connect.Request[models.DevEnvAvailableSystemsRequest]) (*connect.Response[models.DevEnvAvailableSystemsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.DevEnvPage.OnAvailableSystemsChanged is not implemented"))
+func (UnimplementedWorkspacePageHandler) OnAvailableSystemsChanged(context.Context, *connect.Request[models.DevEnvAvailableSystemsRequest]) (*connect.Response[models.DevEnvAvailableSystemsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspacePage.OnAvailableSystemsChanged is not implemented"))
 }
 
-func (UnimplementedDevEnvPageHandler) UpdateDiagram(context.Context, *connect.Request[models.UpdateDiagramRequest]) (*connect.Response[models.UpdateDiagramResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.DevEnvPage.UpdateDiagram is not implemented"))
+func (UnimplementedWorkspacePageHandler) UpdateDiagram(context.Context, *connect.Request[models.UpdateDiagramRequest]) (*connect.Response[models.UpdateDiagramResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspacePage.UpdateDiagram is not implemented"))
 }
 
-func (UnimplementedDevEnvPageHandler) UpdateGenerator(context.Context, *connect.Request[models.DevEnvUpdateGeneratorRequest]) (*connect.Response[models.DevEnvUpdateGeneratorResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.DevEnvPage.UpdateGenerator is not implemented"))
+func (UnimplementedWorkspacePageHandler) UpdateGenerator(context.Context, *connect.Request[models.DevEnvUpdateGeneratorRequest]) (*connect.Response[models.DevEnvUpdateGeneratorResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspacePage.UpdateGenerator is not implemented"))
 }
 
-func (UnimplementedDevEnvPageHandler) RemoveGenerator(context.Context, *connect.Request[models.DevEnvRemoveGeneratorRequest]) (*connect.Response[models.DevEnvRemoveGeneratorResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.DevEnvPage.RemoveGenerator is not implemented"))
+func (UnimplementedWorkspacePageHandler) RemoveGenerator(context.Context, *connect.Request[models.DevEnvRemoveGeneratorRequest]) (*connect.Response[models.DevEnvRemoveGeneratorResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspacePage.RemoveGenerator is not implemented"))
 }
 
-func (UnimplementedDevEnvPageHandler) UpdateMetric(context.Context, *connect.Request[models.DevEnvUpdateMetricRequest]) (*connect.Response[models.DevEnvUpdateMetricResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.DevEnvPage.UpdateMetric is not implemented"))
+func (UnimplementedWorkspacePageHandler) UpdateMetric(context.Context, *connect.Request[models.DevEnvUpdateMetricRequest]) (*connect.Response[models.DevEnvUpdateMetricResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspacePage.UpdateMetric is not implemented"))
 }
 
-func (UnimplementedDevEnvPageHandler) RemoveMetric(context.Context, *connect.Request[models.DevEnvRemoveMetricRequest]) (*connect.Response[models.DevEnvRemoveMetricResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.DevEnvPage.RemoveMetric is not implemented"))
+func (UnimplementedWorkspacePageHandler) RemoveMetric(context.Context, *connect.Request[models.DevEnvRemoveMetricRequest]) (*connect.Response[models.DevEnvRemoveMetricResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspacePage.RemoveMetric is not implemented"))
 }
 
-func (UnimplementedDevEnvPageHandler) UpdateFlowRates(context.Context, *connect.Request[models.UpdateFlowRatesRequest]) (*connect.Response[models.UpdateFlowRatesResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.DevEnvPage.UpdateFlowRates is not implemented"))
+func (UnimplementedWorkspacePageHandler) UpdateFlowRates(context.Context, *connect.Request[models.UpdateFlowRatesRequest]) (*connect.Response[models.UpdateFlowRatesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspacePage.UpdateFlowRates is not implemented"))
 }
 
-func (UnimplementedDevEnvPageHandler) LogMessage(context.Context, *connect.Request[models.LogMessageRequest]) (*connect.Response[models.LogMessageResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.DevEnvPage.LogMessage is not implemented"))
+func (UnimplementedWorkspacePageHandler) LogMessage(context.Context, *connect.Request[models.LogMessageRequest]) (*connect.Response[models.LogMessageResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspacePage.LogMessage is not implemented"))
 }

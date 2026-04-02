@@ -5,7 +5,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/panyam/sdl/services"
+	"github.com/panyam/sdl/lib/loader"
+	"github.com/panyam/sdl/services/devenvbe"
 	"github.com/panyam/sdl/web/server"
 	"github.com/spf13/cobra"
 )
@@ -45,14 +46,15 @@ Example:
   sdl gen start load1
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		// Create shared CanvasService instance for gRPC server
-		canvasService := services.NewCanvasService()
+		// Create DevEnv-backed WorkspaceService for gRPC server
+		fsResolver := loader.NewDefaultFileResolver()
+		wsSvc := devenvbe.NewWorkspaceService(fsResolver)
 
 		// Create servers
 		log.Println("Grpc, Address: ", grpcAddress)
 		log.Println("gateway, Address: ", gatewayAddress)
 		app := App{Ctx: context.Background()}
-		app.AddServer(&server.Server{Address: grpcAddress, CanvasService: canvasService})
+		app.AddServer(&server.Server{Address: grpcAddress, WorkspaceService: wsSvc})
 		app.AddServer(&server.WebAppServer{
 			WebAppServer: server.NewWebAppServerConfig(gatewayAddress, grpcAddress, true),
 		})
@@ -61,70 +63,7 @@ Example:
 	},
 }
 
-// displayServerStats shows periodic server statistics
-/*
-func displayServerStats(ctx context.Context, canvas *services.Canvas) {
-	ticker := time.NewTicker(statsInterval)
-	defer ticker.Stop()
-
-	lastStats := canvas.GetStats()
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			stats := canvas.GetStats()
-			if showLogs {
-				if lastStats.LoadedFiles != stats.LoadedFiles ||
-					lastStats.ActiveSystems != stats.ActiveSystems ||
-					lastStats.ActiveGenerators != stats.ActiveGenerators ||
-					lastStats.ActiveMeasurements != stats.ActiveMeasurements ||
-					lastStats.TotalRuns != stats.TotalRuns {
-					log.Printf("📊 Stats: Files=%d Systems=%d Generators=%d Measurements=%d Runs=%d",
-						stats.LoadedFiles,
-						stats.ActiveSystems,
-						stats.ActiveGenerators,
-						stats.ActiveMeasurements,
-						stats.TotalRuns)
-				}
-				lastStats = stats
-			}
-		}
-	}
-}
-*/
-
-// loadInitialFiles loads SDL files into the canvas on server startup
-func loadInitialFiles(canvas *services.Canvas, files []string) {
-	// Give the server a moment to fully start
-	time.Sleep(1 * time.Second)
-
-	if showLogs {
-		log.Printf("📂 Loading %d initial file(s)...", len(files))
-	}
-
-	for _, file := range files {
-		if showLogs {
-			log.Printf("📂 Loading file: %s", file)
-		}
-
-		err := canvas.Load(file)
-		if err != nil {
-			if showLogs {
-				log.Printf("❌ Failed to load file %s: %v", file, err)
-			}
-			continue
-		}
-
-		if showLogs {
-			log.Printf("✅ Successfully loaded: %s", file)
-		}
-	}
-
-	if showLogs {
-		log.Printf("📂 Initial file loading completed")
-	}
-}
+// TODO: Add displayServerStats and loadInitialFiles using devenvbe.WorkspaceService
 
 func init() {
 	// Port and host are now handled by persistent flags in root.go

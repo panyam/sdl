@@ -37,7 +37,7 @@ func init() {
 // Uses DevEnv directly instead of the old Canvas/SingletonCanvasService pipeline.
 type SingletonInitializerService struct {
 	DevEnv    *services.DevEnv
-	Presenter *services.DevEnvPresenter
+	Presenter *services.WorkspacePresenter
 }
 
 func (s *SingletonInitializerService) InitializeSingleton(ctx context.Context, req *protos.InitializeSingletonRequest) (*protos.InitializeSingletonResponse, error) {
@@ -80,7 +80,7 @@ func (s *SingletonInitializerService) InitializeSingleton(ctx context.Context, r
 
 	return &protos.InitializeSingletonResponse{
 		Success:          true,
-		CanvasId:         initResp.CanvasId,
+		WorkspaceId:         initResp.WorkspaceId,
 		AvailableSystems: initResp.AvailableSystems,
 	}, nil
 }
@@ -92,13 +92,13 @@ func main() {
 	fsResolver := loader.NewFileSystemResolver(fileSystem)
 	devEnv := services.NewDevEnv(fsResolver)
 
-	// Create browser page forwarder (DevEnvPageHandler -> DevEnvPageClient)
-	devEnvPageClient := wasmservices.NewDevEnvPageClient()
-	browserPage := NewBrowserDevEnvPage(devEnvPageClient)
+	// Create browser page forwarder (WorkspacePage -> WorkspacePageClient)
+	devEnvPageClient := wasmservices.NewWorkspacePageClient()
+	browserPage := NewBrowserWorkspacePage(devEnvPageClient)
 	devEnv.SetPage(browserPage)
 
 	// Create presenter (CanvasViewPresenterServer -> DevEnv)
-	devEnvPresenter := services.NewDevEnvPresenter(devEnv)
+	devEnvPresenter := services.NewWorkspacePresenter(devEnv)
 
 	// Create initializer service
 	initializerService := &SingletonInitializerService{
@@ -108,9 +108,9 @@ func main() {
 
 	// Wire service implementations to generated WASM exports
 	exports := &wasmservices.Sdl_v1ServicesExports{
-		CanvasViewPresenter:         devEnvPresenter,
+		WorkspacePresenter:         devEnvPresenter,
 		SingletonInitializerService: initializerService,
-		DevEnvPage:                  devEnvPageClient,
+		WorkspacePage:                  devEnvPageClient,
 	}
 
 	// Register the JavaScript API using generated exports

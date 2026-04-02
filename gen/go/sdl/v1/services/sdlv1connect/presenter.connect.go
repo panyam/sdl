@@ -26,8 +26,8 @@ const (
 	// SingletonInitializerServiceName is the fully-qualified name of the SingletonInitializerService
 	// service.
 	SingletonInitializerServiceName = "sdl.v1.SingletonInitializerService"
-	// CanvasViewPresenterName is the fully-qualified name of the CanvasViewPresenter service.
-	CanvasViewPresenterName = "sdl.v1.CanvasViewPresenter"
+	// WorkspacePresenterName is the fully-qualified name of the WorkspacePresenter service.
+	WorkspacePresenterName = "sdl.v1.WorkspacePresenter"
 )
 
 // These constants are the fully-qualified names of the RPCs defined in this package. They're
@@ -41,60 +41,60 @@ const (
 	// SingletonInitializerServiceInitializeSingletonProcedure is the fully-qualified name of the
 	// SingletonInitializerService's InitializeSingleton RPC.
 	SingletonInitializerServiceInitializeSingletonProcedure = "/sdl.v1.SingletonInitializerService/InitializeSingleton"
-	// CanvasViewPresenterInitializeProcedure is the fully-qualified name of the CanvasViewPresenter's
+	// WorkspacePresenterInitializeProcedure is the fully-qualified name of the WorkspacePresenter's
 	// Initialize RPC.
-	CanvasViewPresenterInitializeProcedure = "/sdl.v1.CanvasViewPresenter/Initialize"
-	// CanvasViewPresenterClientReadyProcedure is the fully-qualified name of the CanvasViewPresenter's
+	WorkspacePresenterInitializeProcedure = "/sdl.v1.WorkspacePresenter/Initialize"
+	// WorkspacePresenterClientReadyProcedure is the fully-qualified name of the WorkspacePresenter's
 	// ClientReady RPC.
-	CanvasViewPresenterClientReadyProcedure = "/sdl.v1.CanvasViewPresenter/ClientReady"
-	// CanvasViewPresenterFileSelectedProcedure is the fully-qualified name of the CanvasViewPresenter's
+	WorkspacePresenterClientReadyProcedure = "/sdl.v1.WorkspacePresenter/ClientReady"
+	// WorkspacePresenterFileSelectedProcedure is the fully-qualified name of the WorkspacePresenter's
 	// FileSelected RPC.
-	CanvasViewPresenterFileSelectedProcedure = "/sdl.v1.CanvasViewPresenter/FileSelected"
-	// CanvasViewPresenterFileSavedProcedure is the fully-qualified name of the CanvasViewPresenter's
+	WorkspacePresenterFileSelectedProcedure = "/sdl.v1.WorkspacePresenter/FileSelected"
+	// WorkspacePresenterFileSavedProcedure is the fully-qualified name of the WorkspacePresenter's
 	// FileSaved RPC.
-	CanvasViewPresenterFileSavedProcedure = "/sdl.v1.CanvasViewPresenter/FileSaved"
-	// CanvasViewPresenterUseSystemProcedure is the fully-qualified name of the CanvasViewPresenter's
+	WorkspacePresenterFileSavedProcedure = "/sdl.v1.WorkspacePresenter/FileSaved"
+	// WorkspacePresenterUseSystemProcedure is the fully-qualified name of the WorkspacePresenter's
 	// UseSystem RPC.
-	CanvasViewPresenterUseSystemProcedure = "/sdl.v1.CanvasViewPresenter/UseSystem"
-	// CanvasViewPresenterAddGeneratorProcedure is the fully-qualified name of the CanvasViewPresenter's
+	WorkspacePresenterUseSystemProcedure = "/sdl.v1.WorkspacePresenter/UseSystem"
+	// WorkspacePresenterAddGeneratorProcedure is the fully-qualified name of the WorkspacePresenter's
 	// AddGenerator RPC.
-	CanvasViewPresenterAddGeneratorProcedure = "/sdl.v1.CanvasViewPresenter/AddGenerator"
-	// CanvasViewPresenterDeleteGeneratorProcedure is the fully-qualified name of the
-	// CanvasViewPresenter's DeleteGenerator RPC.
-	CanvasViewPresenterDeleteGeneratorProcedure = "/sdl.v1.CanvasViewPresenter/DeleteGenerator"
-	// CanvasViewPresenterUpdateGeneratorProcedure is the fully-qualified name of the
-	// CanvasViewPresenter's UpdateGenerator RPC.
-	CanvasViewPresenterUpdateGeneratorProcedure = "/sdl.v1.CanvasViewPresenter/UpdateGenerator"
-	// CanvasViewPresenterStartGeneratorProcedure is the fully-qualified name of the
-	// CanvasViewPresenter's StartGenerator RPC.
-	CanvasViewPresenterStartGeneratorProcedure = "/sdl.v1.CanvasViewPresenter/StartGenerator"
-	// CanvasViewPresenterStopGeneratorProcedure is the fully-qualified name of the
-	// CanvasViewPresenter's StopGenerator RPC.
-	CanvasViewPresenterStopGeneratorProcedure = "/sdl.v1.CanvasViewPresenter/StopGenerator"
-	// CanvasViewPresenterStartAllGeneratorsProcedure is the fully-qualified name of the
-	// CanvasViewPresenter's StartAllGenerators RPC.
-	CanvasViewPresenterStartAllGeneratorsProcedure = "/sdl.v1.CanvasViewPresenter/StartAllGenerators"
-	// CanvasViewPresenterStopAllGeneratorsProcedure is the fully-qualified name of the
-	// CanvasViewPresenter's StopAllGenerators RPC.
-	CanvasViewPresenterStopAllGeneratorsProcedure = "/sdl.v1.CanvasViewPresenter/StopAllGenerators"
-	// CanvasViewPresenterAddMetricProcedure is the fully-qualified name of the CanvasViewPresenter's
+	WorkspacePresenterAddGeneratorProcedure = "/sdl.v1.WorkspacePresenter/AddGenerator"
+	// WorkspacePresenterDeleteGeneratorProcedure is the fully-qualified name of the
+	// WorkspacePresenter's DeleteGenerator RPC.
+	WorkspacePresenterDeleteGeneratorProcedure = "/sdl.v1.WorkspacePresenter/DeleteGenerator"
+	// WorkspacePresenterUpdateGeneratorProcedure is the fully-qualified name of the
+	// WorkspacePresenter's UpdateGenerator RPC.
+	WorkspacePresenterUpdateGeneratorProcedure = "/sdl.v1.WorkspacePresenter/UpdateGenerator"
+	// WorkspacePresenterStartGeneratorProcedure is the fully-qualified name of the WorkspacePresenter's
+	// StartGenerator RPC.
+	WorkspacePresenterStartGeneratorProcedure = "/sdl.v1.WorkspacePresenter/StartGenerator"
+	// WorkspacePresenterStopGeneratorProcedure is the fully-qualified name of the WorkspacePresenter's
+	// StopGenerator RPC.
+	WorkspacePresenterStopGeneratorProcedure = "/sdl.v1.WorkspacePresenter/StopGenerator"
+	// WorkspacePresenterStartAllGeneratorsProcedure is the fully-qualified name of the
+	// WorkspacePresenter's StartAllGenerators RPC.
+	WorkspacePresenterStartAllGeneratorsProcedure = "/sdl.v1.WorkspacePresenter/StartAllGenerators"
+	// WorkspacePresenterStopAllGeneratorsProcedure is the fully-qualified name of the
+	// WorkspacePresenter's StopAllGenerators RPC.
+	WorkspacePresenterStopAllGeneratorsProcedure = "/sdl.v1.WorkspacePresenter/StopAllGenerators"
+	// WorkspacePresenterAddMetricProcedure is the fully-qualified name of the WorkspacePresenter's
 	// AddMetric RPC.
-	CanvasViewPresenterAddMetricProcedure = "/sdl.v1.CanvasViewPresenter/AddMetric"
-	// CanvasViewPresenterDeleteMetricProcedure is the fully-qualified name of the CanvasViewPresenter's
+	WorkspacePresenterAddMetricProcedure = "/sdl.v1.WorkspacePresenter/AddMetric"
+	// WorkspacePresenterDeleteMetricProcedure is the fully-qualified name of the WorkspacePresenter's
 	// DeleteMetric RPC.
-	CanvasViewPresenterDeleteMetricProcedure = "/sdl.v1.CanvasViewPresenter/DeleteMetric"
-	// CanvasViewPresenterSetParameterProcedure is the fully-qualified name of the CanvasViewPresenter's
+	WorkspacePresenterDeleteMetricProcedure = "/sdl.v1.WorkspacePresenter/DeleteMetric"
+	// WorkspacePresenterSetParameterProcedure is the fully-qualified name of the WorkspacePresenter's
 	// SetParameter RPC.
-	CanvasViewPresenterSetParameterProcedure = "/sdl.v1.CanvasViewPresenter/SetParameter"
-	// CanvasViewPresenterEvaluateFlowsProcedure is the fully-qualified name of the
-	// CanvasViewPresenter's EvaluateFlows RPC.
-	CanvasViewPresenterEvaluateFlowsProcedure = "/sdl.v1.CanvasViewPresenter/EvaluateFlows"
-	// CanvasViewPresenterDiagramComponentClickedProcedure is the fully-qualified name of the
-	// CanvasViewPresenter's DiagramComponentClicked RPC.
-	CanvasViewPresenterDiagramComponentClickedProcedure = "/sdl.v1.CanvasViewPresenter/DiagramComponentClicked"
-	// CanvasViewPresenterDiagramComponentHoveredProcedure is the fully-qualified name of the
-	// CanvasViewPresenter's DiagramComponentHovered RPC.
-	CanvasViewPresenterDiagramComponentHoveredProcedure = "/sdl.v1.CanvasViewPresenter/DiagramComponentHovered"
+	WorkspacePresenterSetParameterProcedure = "/sdl.v1.WorkspacePresenter/SetParameter"
+	// WorkspacePresenterEvaluateFlowsProcedure is the fully-qualified name of the WorkspacePresenter's
+	// EvaluateFlows RPC.
+	WorkspacePresenterEvaluateFlowsProcedure = "/sdl.v1.WorkspacePresenter/EvaluateFlows"
+	// WorkspacePresenterDiagramComponentClickedProcedure is the fully-qualified name of the
+	// WorkspacePresenter's DiagramComponentClicked RPC.
+	WorkspacePresenterDiagramComponentClickedProcedure = "/sdl.v1.WorkspacePresenter/DiagramComponentClicked"
+	// WorkspacePresenterDiagramComponentHoveredProcedure is the fully-qualified name of the
+	// WorkspacePresenter's DiagramComponentHovered RPC.
+	WorkspacePresenterDiagramComponentHoveredProcedure = "/sdl.v1.WorkspacePresenter/DiagramComponentHovered"
 )
 
 // SingletonInitializerServiceClient is a client for the sdl.v1.SingletonInitializerService service.
@@ -168,8 +168,8 @@ func (UnimplementedSingletonInitializerServiceHandler) InitializeSingleton(conte
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.SingletonInitializerService.InitializeSingleton is not implemented"))
 }
 
-// CanvasViewPresenterClient is a client for the sdl.v1.CanvasViewPresenter service.
-type CanvasViewPresenterClient interface {
+// WorkspacePresenterClient is a client for the sdl.v1.WorkspacePresenter service.
+type WorkspacePresenterClient interface {
 	// Called when the dashboard is first loaded
 	Initialize(context.Context, *connect.Request[models.InitializePresenterRequest]) (*connect.Response[models.InitializePresenterResponse], error)
 	// Called by browser after UI is fully ready for updates
@@ -208,130 +208,130 @@ type CanvasViewPresenterClient interface {
 	DiagramComponentHovered(context.Context, *connect.Request[models.DiagramComponentHoveredRequest]) (*connect.Response[models.DiagramComponentHoveredResponse], error)
 }
 
-// NewCanvasViewPresenterClient constructs a client for the sdl.v1.CanvasViewPresenter service. By
+// NewWorkspacePresenterClient constructs a client for the sdl.v1.WorkspacePresenter service. By
 // default, it uses the Connect protocol with the binary Protobuf Codec, asks for gzipped responses,
 // and sends uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the
 // connect.WithGRPC() or connect.WithGRPCWeb() options.
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewCanvasViewPresenterClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) CanvasViewPresenterClient {
+func NewWorkspacePresenterClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) WorkspacePresenterClient {
 	baseURL = strings.TrimRight(baseURL, "/")
-	canvasViewPresenterMethods := services.File_sdl_v1_services_presenter_proto.Services().ByName("CanvasViewPresenter").Methods()
-	return &canvasViewPresenterClient{
+	workspacePresenterMethods := services.File_sdl_v1_services_presenter_proto.Services().ByName("WorkspacePresenter").Methods()
+	return &workspacePresenterClient{
 		initialize: connect.NewClient[models.InitializePresenterRequest, models.InitializePresenterResponse](
 			httpClient,
-			baseURL+CanvasViewPresenterInitializeProcedure,
-			connect.WithSchema(canvasViewPresenterMethods.ByName("Initialize")),
+			baseURL+WorkspacePresenterInitializeProcedure,
+			connect.WithSchema(workspacePresenterMethods.ByName("Initialize")),
 			connect.WithClientOptions(opts...),
 		),
 		clientReady: connect.NewClient[models.ClientReadyRequest, models.ClientReadyResponse](
 			httpClient,
-			baseURL+CanvasViewPresenterClientReadyProcedure,
-			connect.WithSchema(canvasViewPresenterMethods.ByName("ClientReady")),
+			baseURL+WorkspacePresenterClientReadyProcedure,
+			connect.WithSchema(workspacePresenterMethods.ByName("ClientReady")),
 			connect.WithClientOptions(opts...),
 		),
 		fileSelected: connect.NewClient[models.FileSelectedRequest, models.FileSelectedResponse](
 			httpClient,
-			baseURL+CanvasViewPresenterFileSelectedProcedure,
-			connect.WithSchema(canvasViewPresenterMethods.ByName("FileSelected")),
+			baseURL+WorkspacePresenterFileSelectedProcedure,
+			connect.WithSchema(workspacePresenterMethods.ByName("FileSelected")),
 			connect.WithClientOptions(opts...),
 		),
 		fileSaved: connect.NewClient[models.FileSavedRequest, models.FileSavedResponse](
 			httpClient,
-			baseURL+CanvasViewPresenterFileSavedProcedure,
-			connect.WithSchema(canvasViewPresenterMethods.ByName("FileSaved")),
+			baseURL+WorkspacePresenterFileSavedProcedure,
+			connect.WithSchema(workspacePresenterMethods.ByName("FileSaved")),
 			connect.WithClientOptions(opts...),
 		),
 		useSystem: connect.NewClient[models.UseSystemRequest, models.UseSystemResponse](
 			httpClient,
-			baseURL+CanvasViewPresenterUseSystemProcedure,
-			connect.WithSchema(canvasViewPresenterMethods.ByName("UseSystem")),
+			baseURL+WorkspacePresenterUseSystemProcedure,
+			connect.WithSchema(workspacePresenterMethods.ByName("UseSystem")),
 			connect.WithClientOptions(opts...),
 		),
 		addGenerator: connect.NewClient[models.AddGeneratorRequest, models.AddGeneratorResponse](
 			httpClient,
-			baseURL+CanvasViewPresenterAddGeneratorProcedure,
-			connect.WithSchema(canvasViewPresenterMethods.ByName("AddGenerator")),
+			baseURL+WorkspacePresenterAddGeneratorProcedure,
+			connect.WithSchema(workspacePresenterMethods.ByName("AddGenerator")),
 			connect.WithClientOptions(opts...),
 		),
 		deleteGenerator: connect.NewClient[models.DeleteGeneratorRequest, models.DeleteGeneratorResponse](
 			httpClient,
-			baseURL+CanvasViewPresenterDeleteGeneratorProcedure,
-			connect.WithSchema(canvasViewPresenterMethods.ByName("DeleteGenerator")),
+			baseURL+WorkspacePresenterDeleteGeneratorProcedure,
+			connect.WithSchema(workspacePresenterMethods.ByName("DeleteGenerator")),
 			connect.WithClientOptions(opts...),
 		),
 		updateGenerator: connect.NewClient[models.UpdateGeneratorRequest, models.UpdateGeneratorResponse](
 			httpClient,
-			baseURL+CanvasViewPresenterUpdateGeneratorProcedure,
-			connect.WithSchema(canvasViewPresenterMethods.ByName("UpdateGenerator")),
+			baseURL+WorkspacePresenterUpdateGeneratorProcedure,
+			connect.WithSchema(workspacePresenterMethods.ByName("UpdateGenerator")),
 			connect.WithClientOptions(opts...),
 		),
 		startGenerator: connect.NewClient[models.StartGeneratorRequest, models.StartGeneratorResponse](
 			httpClient,
-			baseURL+CanvasViewPresenterStartGeneratorProcedure,
-			connect.WithSchema(canvasViewPresenterMethods.ByName("StartGenerator")),
+			baseURL+WorkspacePresenterStartGeneratorProcedure,
+			connect.WithSchema(workspacePresenterMethods.ByName("StartGenerator")),
 			connect.WithClientOptions(opts...),
 		),
 		stopGenerator: connect.NewClient[models.StopGeneratorRequest, models.StopGeneratorResponse](
 			httpClient,
-			baseURL+CanvasViewPresenterStopGeneratorProcedure,
-			connect.WithSchema(canvasViewPresenterMethods.ByName("StopGenerator")),
+			baseURL+WorkspacePresenterStopGeneratorProcedure,
+			connect.WithSchema(workspacePresenterMethods.ByName("StopGenerator")),
 			connect.WithClientOptions(opts...),
 		),
 		startAllGenerators: connect.NewClient[models.StartAllGeneratorsRequest, models.StartAllGeneratorsResponse](
 			httpClient,
-			baseURL+CanvasViewPresenterStartAllGeneratorsProcedure,
-			connect.WithSchema(canvasViewPresenterMethods.ByName("StartAllGenerators")),
+			baseURL+WorkspacePresenterStartAllGeneratorsProcedure,
+			connect.WithSchema(workspacePresenterMethods.ByName("StartAllGenerators")),
 			connect.WithClientOptions(opts...),
 		),
 		stopAllGenerators: connect.NewClient[models.StopAllGeneratorsRequest, models.StopAllGeneratorsResponse](
 			httpClient,
-			baseURL+CanvasViewPresenterStopAllGeneratorsProcedure,
-			connect.WithSchema(canvasViewPresenterMethods.ByName("StopAllGenerators")),
+			baseURL+WorkspacePresenterStopAllGeneratorsProcedure,
+			connect.WithSchema(workspacePresenterMethods.ByName("StopAllGenerators")),
 			connect.WithClientOptions(opts...),
 		),
 		addMetric: connect.NewClient[models.AddMetricRequest, models.AddMetricResponse](
 			httpClient,
-			baseURL+CanvasViewPresenterAddMetricProcedure,
-			connect.WithSchema(canvasViewPresenterMethods.ByName("AddMetric")),
+			baseURL+WorkspacePresenterAddMetricProcedure,
+			connect.WithSchema(workspacePresenterMethods.ByName("AddMetric")),
 			connect.WithClientOptions(opts...),
 		),
 		deleteMetric: connect.NewClient[models.DeleteMetricRequest, models.DeleteMetricResponse](
 			httpClient,
-			baseURL+CanvasViewPresenterDeleteMetricProcedure,
-			connect.WithSchema(canvasViewPresenterMethods.ByName("DeleteMetric")),
+			baseURL+WorkspacePresenterDeleteMetricProcedure,
+			connect.WithSchema(workspacePresenterMethods.ByName("DeleteMetric")),
 			connect.WithClientOptions(opts...),
 		),
 		setParameter: connect.NewClient[models.SetParameterRequest, models.SetParameterResponse](
 			httpClient,
-			baseURL+CanvasViewPresenterSetParameterProcedure,
-			connect.WithSchema(canvasViewPresenterMethods.ByName("SetParameter")),
+			baseURL+WorkspacePresenterSetParameterProcedure,
+			connect.WithSchema(workspacePresenterMethods.ByName("SetParameter")),
 			connect.WithClientOptions(opts...),
 		),
 		evaluateFlows: connect.NewClient[models.EvaluateFlowsRequest, models.EvaluateFlowsResponse](
 			httpClient,
-			baseURL+CanvasViewPresenterEvaluateFlowsProcedure,
-			connect.WithSchema(canvasViewPresenterMethods.ByName("EvaluateFlows")),
+			baseURL+WorkspacePresenterEvaluateFlowsProcedure,
+			connect.WithSchema(workspacePresenterMethods.ByName("EvaluateFlows")),
 			connect.WithClientOptions(opts...),
 		),
 		diagramComponentClicked: connect.NewClient[models.DiagramComponentClickedRequest, models.DiagramComponentClickedResponse](
 			httpClient,
-			baseURL+CanvasViewPresenterDiagramComponentClickedProcedure,
-			connect.WithSchema(canvasViewPresenterMethods.ByName("DiagramComponentClicked")),
+			baseURL+WorkspacePresenterDiagramComponentClickedProcedure,
+			connect.WithSchema(workspacePresenterMethods.ByName("DiagramComponentClicked")),
 			connect.WithClientOptions(opts...),
 		),
 		diagramComponentHovered: connect.NewClient[models.DiagramComponentHoveredRequest, models.DiagramComponentHoveredResponse](
 			httpClient,
-			baseURL+CanvasViewPresenterDiagramComponentHoveredProcedure,
-			connect.WithSchema(canvasViewPresenterMethods.ByName("DiagramComponentHovered")),
+			baseURL+WorkspacePresenterDiagramComponentHoveredProcedure,
+			connect.WithSchema(workspacePresenterMethods.ByName("DiagramComponentHovered")),
 			connect.WithClientOptions(opts...),
 		),
 	}
 }
 
-// canvasViewPresenterClient implements CanvasViewPresenterClient.
-type canvasViewPresenterClient struct {
+// workspacePresenterClient implements WorkspacePresenterClient.
+type workspacePresenterClient struct {
 	initialize              *connect.Client[models.InitializePresenterRequest, models.InitializePresenterResponse]
 	clientReady             *connect.Client[models.ClientReadyRequest, models.ClientReadyResponse]
 	fileSelected            *connect.Client[models.FileSelectedRequest, models.FileSelectedResponse]
@@ -352,98 +352,98 @@ type canvasViewPresenterClient struct {
 	diagramComponentHovered *connect.Client[models.DiagramComponentHoveredRequest, models.DiagramComponentHoveredResponse]
 }
 
-// Initialize calls sdl.v1.CanvasViewPresenter.Initialize.
-func (c *canvasViewPresenterClient) Initialize(ctx context.Context, req *connect.Request[models.InitializePresenterRequest]) (*connect.Response[models.InitializePresenterResponse], error) {
+// Initialize calls sdl.v1.WorkspacePresenter.Initialize.
+func (c *workspacePresenterClient) Initialize(ctx context.Context, req *connect.Request[models.InitializePresenterRequest]) (*connect.Response[models.InitializePresenterResponse], error) {
 	return c.initialize.CallUnary(ctx, req)
 }
 
-// ClientReady calls sdl.v1.CanvasViewPresenter.ClientReady.
-func (c *canvasViewPresenterClient) ClientReady(ctx context.Context, req *connect.Request[models.ClientReadyRequest]) (*connect.Response[models.ClientReadyResponse], error) {
+// ClientReady calls sdl.v1.WorkspacePresenter.ClientReady.
+func (c *workspacePresenterClient) ClientReady(ctx context.Context, req *connect.Request[models.ClientReadyRequest]) (*connect.Response[models.ClientReadyResponse], error) {
 	return c.clientReady.CallUnary(ctx, req)
 }
 
-// FileSelected calls sdl.v1.CanvasViewPresenter.FileSelected.
-func (c *canvasViewPresenterClient) FileSelected(ctx context.Context, req *connect.Request[models.FileSelectedRequest]) (*connect.Response[models.FileSelectedResponse], error) {
+// FileSelected calls sdl.v1.WorkspacePresenter.FileSelected.
+func (c *workspacePresenterClient) FileSelected(ctx context.Context, req *connect.Request[models.FileSelectedRequest]) (*connect.Response[models.FileSelectedResponse], error) {
 	return c.fileSelected.CallUnary(ctx, req)
 }
 
-// FileSaved calls sdl.v1.CanvasViewPresenter.FileSaved.
-func (c *canvasViewPresenterClient) FileSaved(ctx context.Context, req *connect.Request[models.FileSavedRequest]) (*connect.Response[models.FileSavedResponse], error) {
+// FileSaved calls sdl.v1.WorkspacePresenter.FileSaved.
+func (c *workspacePresenterClient) FileSaved(ctx context.Context, req *connect.Request[models.FileSavedRequest]) (*connect.Response[models.FileSavedResponse], error) {
 	return c.fileSaved.CallUnary(ctx, req)
 }
 
-// UseSystem calls sdl.v1.CanvasViewPresenter.UseSystem.
-func (c *canvasViewPresenterClient) UseSystem(ctx context.Context, req *connect.Request[models.UseSystemRequest]) (*connect.Response[models.UseSystemResponse], error) {
+// UseSystem calls sdl.v1.WorkspacePresenter.UseSystem.
+func (c *workspacePresenterClient) UseSystem(ctx context.Context, req *connect.Request[models.UseSystemRequest]) (*connect.Response[models.UseSystemResponse], error) {
 	return c.useSystem.CallUnary(ctx, req)
 }
 
-// AddGenerator calls sdl.v1.CanvasViewPresenter.AddGenerator.
-func (c *canvasViewPresenterClient) AddGenerator(ctx context.Context, req *connect.Request[models.AddGeneratorRequest]) (*connect.Response[models.AddGeneratorResponse], error) {
+// AddGenerator calls sdl.v1.WorkspacePresenter.AddGenerator.
+func (c *workspacePresenterClient) AddGenerator(ctx context.Context, req *connect.Request[models.AddGeneratorRequest]) (*connect.Response[models.AddGeneratorResponse], error) {
 	return c.addGenerator.CallUnary(ctx, req)
 }
 
-// DeleteGenerator calls sdl.v1.CanvasViewPresenter.DeleteGenerator.
-func (c *canvasViewPresenterClient) DeleteGenerator(ctx context.Context, req *connect.Request[models.DeleteGeneratorRequest]) (*connect.Response[models.DeleteGeneratorResponse], error) {
+// DeleteGenerator calls sdl.v1.WorkspacePresenter.DeleteGenerator.
+func (c *workspacePresenterClient) DeleteGenerator(ctx context.Context, req *connect.Request[models.DeleteGeneratorRequest]) (*connect.Response[models.DeleteGeneratorResponse], error) {
 	return c.deleteGenerator.CallUnary(ctx, req)
 }
 
-// UpdateGenerator calls sdl.v1.CanvasViewPresenter.UpdateGenerator.
-func (c *canvasViewPresenterClient) UpdateGenerator(ctx context.Context, req *connect.Request[models.UpdateGeneratorRequest]) (*connect.Response[models.UpdateGeneratorResponse], error) {
+// UpdateGenerator calls sdl.v1.WorkspacePresenter.UpdateGenerator.
+func (c *workspacePresenterClient) UpdateGenerator(ctx context.Context, req *connect.Request[models.UpdateGeneratorRequest]) (*connect.Response[models.UpdateGeneratorResponse], error) {
 	return c.updateGenerator.CallUnary(ctx, req)
 }
 
-// StartGenerator calls sdl.v1.CanvasViewPresenter.StartGenerator.
-func (c *canvasViewPresenterClient) StartGenerator(ctx context.Context, req *connect.Request[models.StartGeneratorRequest]) (*connect.Response[models.StartGeneratorResponse], error) {
+// StartGenerator calls sdl.v1.WorkspacePresenter.StartGenerator.
+func (c *workspacePresenterClient) StartGenerator(ctx context.Context, req *connect.Request[models.StartGeneratorRequest]) (*connect.Response[models.StartGeneratorResponse], error) {
 	return c.startGenerator.CallUnary(ctx, req)
 }
 
-// StopGenerator calls sdl.v1.CanvasViewPresenter.StopGenerator.
-func (c *canvasViewPresenterClient) StopGenerator(ctx context.Context, req *connect.Request[models.StopGeneratorRequest]) (*connect.Response[models.StopGeneratorResponse], error) {
+// StopGenerator calls sdl.v1.WorkspacePresenter.StopGenerator.
+func (c *workspacePresenterClient) StopGenerator(ctx context.Context, req *connect.Request[models.StopGeneratorRequest]) (*connect.Response[models.StopGeneratorResponse], error) {
 	return c.stopGenerator.CallUnary(ctx, req)
 }
 
-// StartAllGenerators calls sdl.v1.CanvasViewPresenter.StartAllGenerators.
-func (c *canvasViewPresenterClient) StartAllGenerators(ctx context.Context, req *connect.Request[models.StartAllGeneratorsRequest]) (*connect.Response[models.StartAllGeneratorsResponse], error) {
+// StartAllGenerators calls sdl.v1.WorkspacePresenter.StartAllGenerators.
+func (c *workspacePresenterClient) StartAllGenerators(ctx context.Context, req *connect.Request[models.StartAllGeneratorsRequest]) (*connect.Response[models.StartAllGeneratorsResponse], error) {
 	return c.startAllGenerators.CallUnary(ctx, req)
 }
 
-// StopAllGenerators calls sdl.v1.CanvasViewPresenter.StopAllGenerators.
-func (c *canvasViewPresenterClient) StopAllGenerators(ctx context.Context, req *connect.Request[models.StopAllGeneratorsRequest]) (*connect.Response[models.StopAllGeneratorsResponse], error) {
+// StopAllGenerators calls sdl.v1.WorkspacePresenter.StopAllGenerators.
+func (c *workspacePresenterClient) StopAllGenerators(ctx context.Context, req *connect.Request[models.StopAllGeneratorsRequest]) (*connect.Response[models.StopAllGeneratorsResponse], error) {
 	return c.stopAllGenerators.CallUnary(ctx, req)
 }
 
-// AddMetric calls sdl.v1.CanvasViewPresenter.AddMetric.
-func (c *canvasViewPresenterClient) AddMetric(ctx context.Context, req *connect.Request[models.AddMetricRequest]) (*connect.Response[models.AddMetricResponse], error) {
+// AddMetric calls sdl.v1.WorkspacePresenter.AddMetric.
+func (c *workspacePresenterClient) AddMetric(ctx context.Context, req *connect.Request[models.AddMetricRequest]) (*connect.Response[models.AddMetricResponse], error) {
 	return c.addMetric.CallUnary(ctx, req)
 }
 
-// DeleteMetric calls sdl.v1.CanvasViewPresenter.DeleteMetric.
-func (c *canvasViewPresenterClient) DeleteMetric(ctx context.Context, req *connect.Request[models.DeleteMetricRequest]) (*connect.Response[models.DeleteMetricResponse], error) {
+// DeleteMetric calls sdl.v1.WorkspacePresenter.DeleteMetric.
+func (c *workspacePresenterClient) DeleteMetric(ctx context.Context, req *connect.Request[models.DeleteMetricRequest]) (*connect.Response[models.DeleteMetricResponse], error) {
 	return c.deleteMetric.CallUnary(ctx, req)
 }
 
-// SetParameter calls sdl.v1.CanvasViewPresenter.SetParameter.
-func (c *canvasViewPresenterClient) SetParameter(ctx context.Context, req *connect.Request[models.SetParameterRequest]) (*connect.Response[models.SetParameterResponse], error) {
+// SetParameter calls sdl.v1.WorkspacePresenter.SetParameter.
+func (c *workspacePresenterClient) SetParameter(ctx context.Context, req *connect.Request[models.SetParameterRequest]) (*connect.Response[models.SetParameterResponse], error) {
 	return c.setParameter.CallUnary(ctx, req)
 }
 
-// EvaluateFlows calls sdl.v1.CanvasViewPresenter.EvaluateFlows.
-func (c *canvasViewPresenterClient) EvaluateFlows(ctx context.Context, req *connect.Request[models.EvaluateFlowsRequest]) (*connect.Response[models.EvaluateFlowsResponse], error) {
+// EvaluateFlows calls sdl.v1.WorkspacePresenter.EvaluateFlows.
+func (c *workspacePresenterClient) EvaluateFlows(ctx context.Context, req *connect.Request[models.EvaluateFlowsRequest]) (*connect.Response[models.EvaluateFlowsResponse], error) {
 	return c.evaluateFlows.CallUnary(ctx, req)
 }
 
-// DiagramComponentClicked calls sdl.v1.CanvasViewPresenter.DiagramComponentClicked.
-func (c *canvasViewPresenterClient) DiagramComponentClicked(ctx context.Context, req *connect.Request[models.DiagramComponentClickedRequest]) (*connect.Response[models.DiagramComponentClickedResponse], error) {
+// DiagramComponentClicked calls sdl.v1.WorkspacePresenter.DiagramComponentClicked.
+func (c *workspacePresenterClient) DiagramComponentClicked(ctx context.Context, req *connect.Request[models.DiagramComponentClickedRequest]) (*connect.Response[models.DiagramComponentClickedResponse], error) {
 	return c.diagramComponentClicked.CallUnary(ctx, req)
 }
 
-// DiagramComponentHovered calls sdl.v1.CanvasViewPresenter.DiagramComponentHovered.
-func (c *canvasViewPresenterClient) DiagramComponentHovered(ctx context.Context, req *connect.Request[models.DiagramComponentHoveredRequest]) (*connect.Response[models.DiagramComponentHoveredResponse], error) {
+// DiagramComponentHovered calls sdl.v1.WorkspacePresenter.DiagramComponentHovered.
+func (c *workspacePresenterClient) DiagramComponentHovered(ctx context.Context, req *connect.Request[models.DiagramComponentHoveredRequest]) (*connect.Response[models.DiagramComponentHoveredResponse], error) {
 	return c.diagramComponentHovered.CallUnary(ctx, req)
 }
 
-// CanvasViewPresenterHandler is an implementation of the sdl.v1.CanvasViewPresenter service.
-type CanvasViewPresenterHandler interface {
+// WorkspacePresenterHandler is an implementation of the sdl.v1.WorkspacePresenter service.
+type WorkspacePresenterHandler interface {
 	// Called when the dashboard is first loaded
 	Initialize(context.Context, *connect.Request[models.InitializePresenterRequest]) (*connect.Response[models.InitializePresenterResponse], error)
 	// Called by browser after UI is fully ready for updates
@@ -482,236 +482,236 @@ type CanvasViewPresenterHandler interface {
 	DiagramComponentHovered(context.Context, *connect.Request[models.DiagramComponentHoveredRequest]) (*connect.Response[models.DiagramComponentHoveredResponse], error)
 }
 
-// NewCanvasViewPresenterHandler builds an HTTP handler from the service implementation. It returns
+// NewWorkspacePresenterHandler builds an HTTP handler from the service implementation. It returns
 // the path on which to mount the handler and the handler itself.
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewCanvasViewPresenterHandler(svc CanvasViewPresenterHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	canvasViewPresenterMethods := services.File_sdl_v1_services_presenter_proto.Services().ByName("CanvasViewPresenter").Methods()
-	canvasViewPresenterInitializeHandler := connect.NewUnaryHandler(
-		CanvasViewPresenterInitializeProcedure,
+func NewWorkspacePresenterHandler(svc WorkspacePresenterHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	workspacePresenterMethods := services.File_sdl_v1_services_presenter_proto.Services().ByName("WorkspacePresenter").Methods()
+	workspacePresenterInitializeHandler := connect.NewUnaryHandler(
+		WorkspacePresenterInitializeProcedure,
 		svc.Initialize,
-		connect.WithSchema(canvasViewPresenterMethods.ByName("Initialize")),
+		connect.WithSchema(workspacePresenterMethods.ByName("Initialize")),
 		connect.WithHandlerOptions(opts...),
 	)
-	canvasViewPresenterClientReadyHandler := connect.NewUnaryHandler(
-		CanvasViewPresenterClientReadyProcedure,
+	workspacePresenterClientReadyHandler := connect.NewUnaryHandler(
+		WorkspacePresenterClientReadyProcedure,
 		svc.ClientReady,
-		connect.WithSchema(canvasViewPresenterMethods.ByName("ClientReady")),
+		connect.WithSchema(workspacePresenterMethods.ByName("ClientReady")),
 		connect.WithHandlerOptions(opts...),
 	)
-	canvasViewPresenterFileSelectedHandler := connect.NewUnaryHandler(
-		CanvasViewPresenterFileSelectedProcedure,
+	workspacePresenterFileSelectedHandler := connect.NewUnaryHandler(
+		WorkspacePresenterFileSelectedProcedure,
 		svc.FileSelected,
-		connect.WithSchema(canvasViewPresenterMethods.ByName("FileSelected")),
+		connect.WithSchema(workspacePresenterMethods.ByName("FileSelected")),
 		connect.WithHandlerOptions(opts...),
 	)
-	canvasViewPresenterFileSavedHandler := connect.NewUnaryHandler(
-		CanvasViewPresenterFileSavedProcedure,
+	workspacePresenterFileSavedHandler := connect.NewUnaryHandler(
+		WorkspacePresenterFileSavedProcedure,
 		svc.FileSaved,
-		connect.WithSchema(canvasViewPresenterMethods.ByName("FileSaved")),
+		connect.WithSchema(workspacePresenterMethods.ByName("FileSaved")),
 		connect.WithHandlerOptions(opts...),
 	)
-	canvasViewPresenterUseSystemHandler := connect.NewUnaryHandler(
-		CanvasViewPresenterUseSystemProcedure,
+	workspacePresenterUseSystemHandler := connect.NewUnaryHandler(
+		WorkspacePresenterUseSystemProcedure,
 		svc.UseSystem,
-		connect.WithSchema(canvasViewPresenterMethods.ByName("UseSystem")),
+		connect.WithSchema(workspacePresenterMethods.ByName("UseSystem")),
 		connect.WithHandlerOptions(opts...),
 	)
-	canvasViewPresenterAddGeneratorHandler := connect.NewUnaryHandler(
-		CanvasViewPresenterAddGeneratorProcedure,
+	workspacePresenterAddGeneratorHandler := connect.NewUnaryHandler(
+		WorkspacePresenterAddGeneratorProcedure,
 		svc.AddGenerator,
-		connect.WithSchema(canvasViewPresenterMethods.ByName("AddGenerator")),
+		connect.WithSchema(workspacePresenterMethods.ByName("AddGenerator")),
 		connect.WithHandlerOptions(opts...),
 	)
-	canvasViewPresenterDeleteGeneratorHandler := connect.NewUnaryHandler(
-		CanvasViewPresenterDeleteGeneratorProcedure,
+	workspacePresenterDeleteGeneratorHandler := connect.NewUnaryHandler(
+		WorkspacePresenterDeleteGeneratorProcedure,
 		svc.DeleteGenerator,
-		connect.WithSchema(canvasViewPresenterMethods.ByName("DeleteGenerator")),
+		connect.WithSchema(workspacePresenterMethods.ByName("DeleteGenerator")),
 		connect.WithHandlerOptions(opts...),
 	)
-	canvasViewPresenterUpdateGeneratorHandler := connect.NewUnaryHandler(
-		CanvasViewPresenterUpdateGeneratorProcedure,
+	workspacePresenterUpdateGeneratorHandler := connect.NewUnaryHandler(
+		WorkspacePresenterUpdateGeneratorProcedure,
 		svc.UpdateGenerator,
-		connect.WithSchema(canvasViewPresenterMethods.ByName("UpdateGenerator")),
+		connect.WithSchema(workspacePresenterMethods.ByName("UpdateGenerator")),
 		connect.WithHandlerOptions(opts...),
 	)
-	canvasViewPresenterStartGeneratorHandler := connect.NewUnaryHandler(
-		CanvasViewPresenterStartGeneratorProcedure,
+	workspacePresenterStartGeneratorHandler := connect.NewUnaryHandler(
+		WorkspacePresenterStartGeneratorProcedure,
 		svc.StartGenerator,
-		connect.WithSchema(canvasViewPresenterMethods.ByName("StartGenerator")),
+		connect.WithSchema(workspacePresenterMethods.ByName("StartGenerator")),
 		connect.WithHandlerOptions(opts...),
 	)
-	canvasViewPresenterStopGeneratorHandler := connect.NewUnaryHandler(
-		CanvasViewPresenterStopGeneratorProcedure,
+	workspacePresenterStopGeneratorHandler := connect.NewUnaryHandler(
+		WorkspacePresenterStopGeneratorProcedure,
 		svc.StopGenerator,
-		connect.WithSchema(canvasViewPresenterMethods.ByName("StopGenerator")),
+		connect.WithSchema(workspacePresenterMethods.ByName("StopGenerator")),
 		connect.WithHandlerOptions(opts...),
 	)
-	canvasViewPresenterStartAllGeneratorsHandler := connect.NewUnaryHandler(
-		CanvasViewPresenterStartAllGeneratorsProcedure,
+	workspacePresenterStartAllGeneratorsHandler := connect.NewUnaryHandler(
+		WorkspacePresenterStartAllGeneratorsProcedure,
 		svc.StartAllGenerators,
-		connect.WithSchema(canvasViewPresenterMethods.ByName("StartAllGenerators")),
+		connect.WithSchema(workspacePresenterMethods.ByName("StartAllGenerators")),
 		connect.WithHandlerOptions(opts...),
 	)
-	canvasViewPresenterStopAllGeneratorsHandler := connect.NewUnaryHandler(
-		CanvasViewPresenterStopAllGeneratorsProcedure,
+	workspacePresenterStopAllGeneratorsHandler := connect.NewUnaryHandler(
+		WorkspacePresenterStopAllGeneratorsProcedure,
 		svc.StopAllGenerators,
-		connect.WithSchema(canvasViewPresenterMethods.ByName("StopAllGenerators")),
+		connect.WithSchema(workspacePresenterMethods.ByName("StopAllGenerators")),
 		connect.WithHandlerOptions(opts...),
 	)
-	canvasViewPresenterAddMetricHandler := connect.NewUnaryHandler(
-		CanvasViewPresenterAddMetricProcedure,
+	workspacePresenterAddMetricHandler := connect.NewUnaryHandler(
+		WorkspacePresenterAddMetricProcedure,
 		svc.AddMetric,
-		connect.WithSchema(canvasViewPresenterMethods.ByName("AddMetric")),
+		connect.WithSchema(workspacePresenterMethods.ByName("AddMetric")),
 		connect.WithHandlerOptions(opts...),
 	)
-	canvasViewPresenterDeleteMetricHandler := connect.NewUnaryHandler(
-		CanvasViewPresenterDeleteMetricProcedure,
+	workspacePresenterDeleteMetricHandler := connect.NewUnaryHandler(
+		WorkspacePresenterDeleteMetricProcedure,
 		svc.DeleteMetric,
-		connect.WithSchema(canvasViewPresenterMethods.ByName("DeleteMetric")),
+		connect.WithSchema(workspacePresenterMethods.ByName("DeleteMetric")),
 		connect.WithHandlerOptions(opts...),
 	)
-	canvasViewPresenterSetParameterHandler := connect.NewUnaryHandler(
-		CanvasViewPresenterSetParameterProcedure,
+	workspacePresenterSetParameterHandler := connect.NewUnaryHandler(
+		WorkspacePresenterSetParameterProcedure,
 		svc.SetParameter,
-		connect.WithSchema(canvasViewPresenterMethods.ByName("SetParameter")),
+		connect.WithSchema(workspacePresenterMethods.ByName("SetParameter")),
 		connect.WithHandlerOptions(opts...),
 	)
-	canvasViewPresenterEvaluateFlowsHandler := connect.NewUnaryHandler(
-		CanvasViewPresenterEvaluateFlowsProcedure,
+	workspacePresenterEvaluateFlowsHandler := connect.NewUnaryHandler(
+		WorkspacePresenterEvaluateFlowsProcedure,
 		svc.EvaluateFlows,
-		connect.WithSchema(canvasViewPresenterMethods.ByName("EvaluateFlows")),
+		connect.WithSchema(workspacePresenterMethods.ByName("EvaluateFlows")),
 		connect.WithHandlerOptions(opts...),
 	)
-	canvasViewPresenterDiagramComponentClickedHandler := connect.NewUnaryHandler(
-		CanvasViewPresenterDiagramComponentClickedProcedure,
+	workspacePresenterDiagramComponentClickedHandler := connect.NewUnaryHandler(
+		WorkspacePresenterDiagramComponentClickedProcedure,
 		svc.DiagramComponentClicked,
-		connect.WithSchema(canvasViewPresenterMethods.ByName("DiagramComponentClicked")),
+		connect.WithSchema(workspacePresenterMethods.ByName("DiagramComponentClicked")),
 		connect.WithHandlerOptions(opts...),
 	)
-	canvasViewPresenterDiagramComponentHoveredHandler := connect.NewUnaryHandler(
-		CanvasViewPresenterDiagramComponentHoveredProcedure,
+	workspacePresenterDiagramComponentHoveredHandler := connect.NewUnaryHandler(
+		WorkspacePresenterDiagramComponentHoveredProcedure,
 		svc.DiagramComponentHovered,
-		connect.WithSchema(canvasViewPresenterMethods.ByName("DiagramComponentHovered")),
+		connect.WithSchema(workspacePresenterMethods.ByName("DiagramComponentHovered")),
 		connect.WithHandlerOptions(opts...),
 	)
-	return "/sdl.v1.CanvasViewPresenter/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return "/sdl.v1.WorkspacePresenter/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case CanvasViewPresenterInitializeProcedure:
-			canvasViewPresenterInitializeHandler.ServeHTTP(w, r)
-		case CanvasViewPresenterClientReadyProcedure:
-			canvasViewPresenterClientReadyHandler.ServeHTTP(w, r)
-		case CanvasViewPresenterFileSelectedProcedure:
-			canvasViewPresenterFileSelectedHandler.ServeHTTP(w, r)
-		case CanvasViewPresenterFileSavedProcedure:
-			canvasViewPresenterFileSavedHandler.ServeHTTP(w, r)
-		case CanvasViewPresenterUseSystemProcedure:
-			canvasViewPresenterUseSystemHandler.ServeHTTP(w, r)
-		case CanvasViewPresenterAddGeneratorProcedure:
-			canvasViewPresenterAddGeneratorHandler.ServeHTTP(w, r)
-		case CanvasViewPresenterDeleteGeneratorProcedure:
-			canvasViewPresenterDeleteGeneratorHandler.ServeHTTP(w, r)
-		case CanvasViewPresenterUpdateGeneratorProcedure:
-			canvasViewPresenterUpdateGeneratorHandler.ServeHTTP(w, r)
-		case CanvasViewPresenterStartGeneratorProcedure:
-			canvasViewPresenterStartGeneratorHandler.ServeHTTP(w, r)
-		case CanvasViewPresenterStopGeneratorProcedure:
-			canvasViewPresenterStopGeneratorHandler.ServeHTTP(w, r)
-		case CanvasViewPresenterStartAllGeneratorsProcedure:
-			canvasViewPresenterStartAllGeneratorsHandler.ServeHTTP(w, r)
-		case CanvasViewPresenterStopAllGeneratorsProcedure:
-			canvasViewPresenterStopAllGeneratorsHandler.ServeHTTP(w, r)
-		case CanvasViewPresenterAddMetricProcedure:
-			canvasViewPresenterAddMetricHandler.ServeHTTP(w, r)
-		case CanvasViewPresenterDeleteMetricProcedure:
-			canvasViewPresenterDeleteMetricHandler.ServeHTTP(w, r)
-		case CanvasViewPresenterSetParameterProcedure:
-			canvasViewPresenterSetParameterHandler.ServeHTTP(w, r)
-		case CanvasViewPresenterEvaluateFlowsProcedure:
-			canvasViewPresenterEvaluateFlowsHandler.ServeHTTP(w, r)
-		case CanvasViewPresenterDiagramComponentClickedProcedure:
-			canvasViewPresenterDiagramComponentClickedHandler.ServeHTTP(w, r)
-		case CanvasViewPresenterDiagramComponentHoveredProcedure:
-			canvasViewPresenterDiagramComponentHoveredHandler.ServeHTTP(w, r)
+		case WorkspacePresenterInitializeProcedure:
+			workspacePresenterInitializeHandler.ServeHTTP(w, r)
+		case WorkspacePresenterClientReadyProcedure:
+			workspacePresenterClientReadyHandler.ServeHTTP(w, r)
+		case WorkspacePresenterFileSelectedProcedure:
+			workspacePresenterFileSelectedHandler.ServeHTTP(w, r)
+		case WorkspacePresenterFileSavedProcedure:
+			workspacePresenterFileSavedHandler.ServeHTTP(w, r)
+		case WorkspacePresenterUseSystemProcedure:
+			workspacePresenterUseSystemHandler.ServeHTTP(w, r)
+		case WorkspacePresenterAddGeneratorProcedure:
+			workspacePresenterAddGeneratorHandler.ServeHTTP(w, r)
+		case WorkspacePresenterDeleteGeneratorProcedure:
+			workspacePresenterDeleteGeneratorHandler.ServeHTTP(w, r)
+		case WorkspacePresenterUpdateGeneratorProcedure:
+			workspacePresenterUpdateGeneratorHandler.ServeHTTP(w, r)
+		case WorkspacePresenterStartGeneratorProcedure:
+			workspacePresenterStartGeneratorHandler.ServeHTTP(w, r)
+		case WorkspacePresenterStopGeneratorProcedure:
+			workspacePresenterStopGeneratorHandler.ServeHTTP(w, r)
+		case WorkspacePresenterStartAllGeneratorsProcedure:
+			workspacePresenterStartAllGeneratorsHandler.ServeHTTP(w, r)
+		case WorkspacePresenterStopAllGeneratorsProcedure:
+			workspacePresenterStopAllGeneratorsHandler.ServeHTTP(w, r)
+		case WorkspacePresenterAddMetricProcedure:
+			workspacePresenterAddMetricHandler.ServeHTTP(w, r)
+		case WorkspacePresenterDeleteMetricProcedure:
+			workspacePresenterDeleteMetricHandler.ServeHTTP(w, r)
+		case WorkspacePresenterSetParameterProcedure:
+			workspacePresenterSetParameterHandler.ServeHTTP(w, r)
+		case WorkspacePresenterEvaluateFlowsProcedure:
+			workspacePresenterEvaluateFlowsHandler.ServeHTTP(w, r)
+		case WorkspacePresenterDiagramComponentClickedProcedure:
+			workspacePresenterDiagramComponentClickedHandler.ServeHTTP(w, r)
+		case WorkspacePresenterDiagramComponentHoveredProcedure:
+			workspacePresenterDiagramComponentHoveredHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
 	})
 }
 
-// UnimplementedCanvasViewPresenterHandler returns CodeUnimplemented from all methods.
-type UnimplementedCanvasViewPresenterHandler struct{}
+// UnimplementedWorkspacePresenterHandler returns CodeUnimplemented from all methods.
+type UnimplementedWorkspacePresenterHandler struct{}
 
-func (UnimplementedCanvasViewPresenterHandler) Initialize(context.Context, *connect.Request[models.InitializePresenterRequest]) (*connect.Response[models.InitializePresenterResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasViewPresenter.Initialize is not implemented"))
+func (UnimplementedWorkspacePresenterHandler) Initialize(context.Context, *connect.Request[models.InitializePresenterRequest]) (*connect.Response[models.InitializePresenterResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspacePresenter.Initialize is not implemented"))
 }
 
-func (UnimplementedCanvasViewPresenterHandler) ClientReady(context.Context, *connect.Request[models.ClientReadyRequest]) (*connect.Response[models.ClientReadyResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasViewPresenter.ClientReady is not implemented"))
+func (UnimplementedWorkspacePresenterHandler) ClientReady(context.Context, *connect.Request[models.ClientReadyRequest]) (*connect.Response[models.ClientReadyResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspacePresenter.ClientReady is not implemented"))
 }
 
-func (UnimplementedCanvasViewPresenterHandler) FileSelected(context.Context, *connect.Request[models.FileSelectedRequest]) (*connect.Response[models.FileSelectedResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasViewPresenter.FileSelected is not implemented"))
+func (UnimplementedWorkspacePresenterHandler) FileSelected(context.Context, *connect.Request[models.FileSelectedRequest]) (*connect.Response[models.FileSelectedResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspacePresenter.FileSelected is not implemented"))
 }
 
-func (UnimplementedCanvasViewPresenterHandler) FileSaved(context.Context, *connect.Request[models.FileSavedRequest]) (*connect.Response[models.FileSavedResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasViewPresenter.FileSaved is not implemented"))
+func (UnimplementedWorkspacePresenterHandler) FileSaved(context.Context, *connect.Request[models.FileSavedRequest]) (*connect.Response[models.FileSavedResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspacePresenter.FileSaved is not implemented"))
 }
 
-func (UnimplementedCanvasViewPresenterHandler) UseSystem(context.Context, *connect.Request[models.UseSystemRequest]) (*connect.Response[models.UseSystemResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasViewPresenter.UseSystem is not implemented"))
+func (UnimplementedWorkspacePresenterHandler) UseSystem(context.Context, *connect.Request[models.UseSystemRequest]) (*connect.Response[models.UseSystemResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspacePresenter.UseSystem is not implemented"))
 }
 
-func (UnimplementedCanvasViewPresenterHandler) AddGenerator(context.Context, *connect.Request[models.AddGeneratorRequest]) (*connect.Response[models.AddGeneratorResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasViewPresenter.AddGenerator is not implemented"))
+func (UnimplementedWorkspacePresenterHandler) AddGenerator(context.Context, *connect.Request[models.AddGeneratorRequest]) (*connect.Response[models.AddGeneratorResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspacePresenter.AddGenerator is not implemented"))
 }
 
-func (UnimplementedCanvasViewPresenterHandler) DeleteGenerator(context.Context, *connect.Request[models.DeleteGeneratorRequest]) (*connect.Response[models.DeleteGeneratorResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasViewPresenter.DeleteGenerator is not implemented"))
+func (UnimplementedWorkspacePresenterHandler) DeleteGenerator(context.Context, *connect.Request[models.DeleteGeneratorRequest]) (*connect.Response[models.DeleteGeneratorResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspacePresenter.DeleteGenerator is not implemented"))
 }
 
-func (UnimplementedCanvasViewPresenterHandler) UpdateGenerator(context.Context, *connect.Request[models.UpdateGeneratorRequest]) (*connect.Response[models.UpdateGeneratorResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasViewPresenter.UpdateGenerator is not implemented"))
+func (UnimplementedWorkspacePresenterHandler) UpdateGenerator(context.Context, *connect.Request[models.UpdateGeneratorRequest]) (*connect.Response[models.UpdateGeneratorResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspacePresenter.UpdateGenerator is not implemented"))
 }
 
-func (UnimplementedCanvasViewPresenterHandler) StartGenerator(context.Context, *connect.Request[models.StartGeneratorRequest]) (*connect.Response[models.StartGeneratorResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasViewPresenter.StartGenerator is not implemented"))
+func (UnimplementedWorkspacePresenterHandler) StartGenerator(context.Context, *connect.Request[models.StartGeneratorRequest]) (*connect.Response[models.StartGeneratorResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspacePresenter.StartGenerator is not implemented"))
 }
 
-func (UnimplementedCanvasViewPresenterHandler) StopGenerator(context.Context, *connect.Request[models.StopGeneratorRequest]) (*connect.Response[models.StopGeneratorResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasViewPresenter.StopGenerator is not implemented"))
+func (UnimplementedWorkspacePresenterHandler) StopGenerator(context.Context, *connect.Request[models.StopGeneratorRequest]) (*connect.Response[models.StopGeneratorResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspacePresenter.StopGenerator is not implemented"))
 }
 
-func (UnimplementedCanvasViewPresenterHandler) StartAllGenerators(context.Context, *connect.Request[models.StartAllGeneratorsRequest]) (*connect.Response[models.StartAllGeneratorsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasViewPresenter.StartAllGenerators is not implemented"))
+func (UnimplementedWorkspacePresenterHandler) StartAllGenerators(context.Context, *connect.Request[models.StartAllGeneratorsRequest]) (*connect.Response[models.StartAllGeneratorsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspacePresenter.StartAllGenerators is not implemented"))
 }
 
-func (UnimplementedCanvasViewPresenterHandler) StopAllGenerators(context.Context, *connect.Request[models.StopAllGeneratorsRequest]) (*connect.Response[models.StopAllGeneratorsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasViewPresenter.StopAllGenerators is not implemented"))
+func (UnimplementedWorkspacePresenterHandler) StopAllGenerators(context.Context, *connect.Request[models.StopAllGeneratorsRequest]) (*connect.Response[models.StopAllGeneratorsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspacePresenter.StopAllGenerators is not implemented"))
 }
 
-func (UnimplementedCanvasViewPresenterHandler) AddMetric(context.Context, *connect.Request[models.AddMetricRequest]) (*connect.Response[models.AddMetricResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasViewPresenter.AddMetric is not implemented"))
+func (UnimplementedWorkspacePresenterHandler) AddMetric(context.Context, *connect.Request[models.AddMetricRequest]) (*connect.Response[models.AddMetricResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspacePresenter.AddMetric is not implemented"))
 }
 
-func (UnimplementedCanvasViewPresenterHandler) DeleteMetric(context.Context, *connect.Request[models.DeleteMetricRequest]) (*connect.Response[models.DeleteMetricResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasViewPresenter.DeleteMetric is not implemented"))
+func (UnimplementedWorkspacePresenterHandler) DeleteMetric(context.Context, *connect.Request[models.DeleteMetricRequest]) (*connect.Response[models.DeleteMetricResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspacePresenter.DeleteMetric is not implemented"))
 }
 
-func (UnimplementedCanvasViewPresenterHandler) SetParameter(context.Context, *connect.Request[models.SetParameterRequest]) (*connect.Response[models.SetParameterResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasViewPresenter.SetParameter is not implemented"))
+func (UnimplementedWorkspacePresenterHandler) SetParameter(context.Context, *connect.Request[models.SetParameterRequest]) (*connect.Response[models.SetParameterResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspacePresenter.SetParameter is not implemented"))
 }
 
-func (UnimplementedCanvasViewPresenterHandler) EvaluateFlows(context.Context, *connect.Request[models.EvaluateFlowsRequest]) (*connect.Response[models.EvaluateFlowsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasViewPresenter.EvaluateFlows is not implemented"))
+func (UnimplementedWorkspacePresenterHandler) EvaluateFlows(context.Context, *connect.Request[models.EvaluateFlowsRequest]) (*connect.Response[models.EvaluateFlowsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspacePresenter.EvaluateFlows is not implemented"))
 }
 
-func (UnimplementedCanvasViewPresenterHandler) DiagramComponentClicked(context.Context, *connect.Request[models.DiagramComponentClickedRequest]) (*connect.Response[models.DiagramComponentClickedResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasViewPresenter.DiagramComponentClicked is not implemented"))
+func (UnimplementedWorkspacePresenterHandler) DiagramComponentClicked(context.Context, *connect.Request[models.DiagramComponentClickedRequest]) (*connect.Response[models.DiagramComponentClickedResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspacePresenter.DiagramComponentClicked is not implemented"))
 }
 
-func (UnimplementedCanvasViewPresenterHandler) DiagramComponentHovered(context.Context, *connect.Request[models.DiagramComponentHoveredRequest]) (*connect.Response[models.DiagramComponentHoveredResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.CanvasViewPresenter.DiagramComponentHovered is not implemented"))
+func (UnimplementedWorkspacePresenterHandler) DiagramComponentHovered(context.Context, *connect.Request[models.DiagramComponentHoveredRequest]) (*connect.Response[models.DiagramComponentHoveredResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspacePresenter.DiagramComponentHovered is not implemented"))
 }

@@ -4,7 +4,7 @@
 
 import type { GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Canvas, Generator, Metric, SystemDiagram } from "./models_pb";
+import type { Generator, Metric, SystemDiagram, Workspace } from "./models_pb";
 import { file_sdl_v1_models_models } from "./models_pb";
 import type { SystemInfo } from "./systems_pb";
 import { file_sdl_v1_models_systems } from "./systems_pb";
@@ -14,16 +14,16 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file sdl/v1/models/presenter.proto.
  */
 export const file_sdl_v1_models_presenter: GenFile = /*@__PURE__*/
-  fileDesc("Ch1zZGwvdjEvbW9kZWxzL3ByZXNlbnRlci5wcm90bxIGc2RsLnYxIogBChpJbml0aWFsaXplU2luZ2xldG9uUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSEwoLc2RsX2NvbnRlbnQYAiABKAkSEwoLc3lzdGVtX25hbWUYAyABKAkSFwoPZ2VuZXJhdG9yc19kYXRhGAQgASgJEhQKDG1ldHJpY3NfZGF0YRgFIAEoCSJ/ChtJbml0aWFsaXplU2luZ2xldG9uUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBINCgVlcnJvchgCIAEoCRIRCgljYW52YXNfaWQYAyABKAkSLQoRYXZhaWxhYmxlX3N5c3RlbXMYBCADKAsyEi5zZGwudjEuU3lzdGVtSW5mbyIvChpJbml0aWFsaXplUHJlc2VudGVyUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAki7wEKG0luaXRpYWxpemVQcmVzZW50ZXJSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg0KBWVycm9yGAIgASgJEhEKCWNhbnZhc19pZBgDIAEoCRItChFhdmFpbGFibGVfc3lzdGVtcxgEIAMoCzISLnNkbC52MS5TeXN0ZW1JbmZvEiYKB2RpYWdyYW0YBSABKAsyFS5zZGwudjEuU3lzdGVtRGlhZ3JhbRIlCgpnZW5lcmF0b3JzGAYgAygLMhEuc2RsLnYxLkdlbmVyYXRvchIfCgdtZXRyaWNzGAcgAygLMg4uc2RsLnYxLk1ldHJpYyInChJDbGllbnRSZWFkeVJlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJIkYKE0NsaWVudFJlYWR5UmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIeCgZjYW52YXMYAiABKAsyDi5zZGwudjEuQ2FudmFzIjsKE0ZpbGVTZWxlY3RlZFJlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJEhEKCWZpbGVfcGF0aBgCIAEoCSJHChRGaWxlU2VsZWN0ZWRSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg8KB2NvbnRlbnQYAiABKAkSDQoFZXJyb3IYAyABKAkiSQoQRmlsZVNhdmVkUmVxdWVzdBIRCgljYW52YXNfaWQYASABKAkSEQoJZmlsZV9wYXRoGAIgASgJEg8KB2NvbnRlbnQYAyABKAkiMwoRRmlsZVNhdmVkUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBINCgVlcnJvchgCIAEoCSJgCh5EaWFncmFtQ29tcG9uZW50Q2xpY2tlZFJlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJEhYKDmNvbXBvbmVudF9uYW1lGAIgASgJEhMKC21ldGhvZF9uYW1lGAMgASgJIjIKH0RpYWdyYW1Db21wb25lbnRDbGlja2VkUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCCJgCh5EaWFncmFtQ29tcG9uZW50SG92ZXJlZFJlcXVlc3QSEQoJY2FudmFzX2lkGAEgASgJEhYKDmNvbXBvbmVudF9uYW1lGAIgASgJEhMKC21ldGhvZF9uYW1lGAMgASgJIjIKH0RpYWdyYW1Db21wb25lbnRIb3ZlcmVkUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCEKHAQoKY29tLnNkbC52MUIOUHJlc2VudGVyUHJvdG9QAVowZ2l0aHViLmNvbS9wYW55YW0vc2RsL2dlbi9nby9zZGwvdjEvbW9kZWxzO3NkbHYxogIDU1hYqgIGU2RsLlYxygIGU2RsXFYx4gISU2RsXFYxXEdQQk1ldGFkYXRh6gIHU2RsOjpWMWIGcHJvdG8z", [file_sdl_v1_models_models, file_sdl_v1_models_systems]);
+  fileDesc("Ch1zZGwvdjEvbW9kZWxzL3ByZXNlbnRlci5wcm90bxIGc2RsLnYxIosBChpJbml0aWFsaXplU2luZ2xldG9uUmVxdWVzdBIUCgx3b3Jrc3BhY2VfaWQYASABKAkSEwoLc2RsX2NvbnRlbnQYAiABKAkSEwoLc3lzdGVtX25hbWUYAyABKAkSFwoPZ2VuZXJhdG9yc19kYXRhGAQgASgJEhQKDG1ldHJpY3NfZGF0YRgFIAEoCSKCAQobSW5pdGlhbGl6ZVNpbmdsZXRvblJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDQoFZXJyb3IYAiABKAkSFAoMd29ya3NwYWNlX2lkGAMgASgJEi0KEWF2YWlsYWJsZV9zeXN0ZW1zGAQgAygLMhIuc2RsLnYxLlN5c3RlbUluZm8iMgoaSW5pdGlhbGl6ZVByZXNlbnRlclJlcXVlc3QSFAoMd29ya3NwYWNlX2lkGAEgASgJIvIBChtJbml0aWFsaXplUHJlc2VudGVyUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBINCgVlcnJvchgCIAEoCRIUCgx3b3Jrc3BhY2VfaWQYAyABKAkSLQoRYXZhaWxhYmxlX3N5c3RlbXMYBCADKAsyEi5zZGwudjEuU3lzdGVtSW5mbxImCgdkaWFncmFtGAUgASgLMhUuc2RsLnYxLlN5c3RlbURpYWdyYW0SJQoKZ2VuZXJhdG9ycxgGIAMoCzIRLnNkbC52MS5HZW5lcmF0b3ISHwoHbWV0cmljcxgHIAMoCzIOLnNkbC52MS5NZXRyaWMiKgoSQ2xpZW50UmVhZHlSZXF1ZXN0EhQKDHdvcmtzcGFjZV9pZBgBIAEoCSJMChNDbGllbnRSZWFkeVJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSJAoJd29ya3NwYWNlGAIgASgLMhEuc2RsLnYxLldvcmtzcGFjZSI+ChNGaWxlU2VsZWN0ZWRSZXF1ZXN0EhQKDHdvcmtzcGFjZV9pZBgBIAEoCRIRCglmaWxlX3BhdGgYAiABKAkiRwoURmlsZVNlbGVjdGVkUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIPCgdjb250ZW50GAIgASgJEg0KBWVycm9yGAMgASgJIkwKEEZpbGVTYXZlZFJlcXVlc3QSFAoMd29ya3NwYWNlX2lkGAEgASgJEhEKCWZpbGVfcGF0aBgCIAEoCRIPCgdjb250ZW50GAMgASgJIjMKEUZpbGVTYXZlZFJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDQoFZXJyb3IYAiABKAkiYwoeRGlhZ3JhbUNvbXBvbmVudENsaWNrZWRSZXF1ZXN0EhQKDHdvcmtzcGFjZV9pZBgBIAEoCRIWCg5jb21wb25lbnRfbmFtZRgCIAEoCRITCgttZXRob2RfbmFtZRgDIAEoCSIyCh9EaWFncmFtQ29tcG9uZW50Q2xpY2tlZFJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgiYwoeRGlhZ3JhbUNvbXBvbmVudEhvdmVyZWRSZXF1ZXN0EhQKDHdvcmtzcGFjZV9pZBgBIAEoCRIWCg5jb21wb25lbnRfbmFtZRgCIAEoCRITCgttZXRob2RfbmFtZRgDIAEoCSIyCh9EaWFncmFtQ29tcG9uZW50SG92ZXJlZFJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAhChwEKCmNvbS5zZGwudjFCDlByZXNlbnRlclByb3RvUAFaMGdpdGh1Yi5jb20vcGFueWFtL3NkbC9nZW4vZ28vc2RsL3YxL21vZGVscztzZGx2MaICA1NYWKoCBlNkbC5WMcoCBlNkbFxWMeICElNkbFxWMVxHUEJNZXRhZGF0YeoCB1NkbDo6VjFiBnByb3RvMw", [file_sdl_v1_models_models, file_sdl_v1_models_systems]);
 
 /**
  * @generated from message sdl.v1.InitializeSingletonRequest
  */
 export type InitializeSingletonRequest = Message<"sdl.v1.InitializeSingletonRequest"> & {
   /**
-   * @generated from field: string canvas_id = 1;
+   * @generated from field: string workspace_id = 1;
    */
-  canvasId: string;
+  workspaceId: string;
 
   /**
    * SDL content to load initially
@@ -76,9 +76,9 @@ export type InitializeSingletonResponse = Message<"sdl.v1.InitializeSingletonRes
   error: string;
 
   /**
-   * @generated from field: string canvas_id = 3;
+   * @generated from field: string workspace_id = 3;
    */
-  canvasId: string;
+  workspaceId: string;
 
   /**
    * @generated from field: repeated sdl.v1.SystemInfo available_systems = 4;
@@ -98,9 +98,9 @@ export const InitializeSingletonResponseSchema: GenMessage<InitializeSingletonRe
  */
 export type InitializePresenterRequest = Message<"sdl.v1.InitializePresenterRequest"> & {
   /**
-   * @generated from field: string canvas_id = 1;
+   * @generated from field: string workspace_id = 1;
    */
-  canvasId: string;
+  workspaceId: string;
 };
 
 /**
@@ -125,9 +125,9 @@ export type InitializePresenterResponse = Message<"sdl.v1.InitializePresenterRes
   error: string;
 
   /**
-   * @generated from field: string canvas_id = 3;
+   * @generated from field: string workspace_id = 3;
    */
-  canvasId: string;
+  workspaceId: string;
 
   /**
    * Available systems to choose from
@@ -166,9 +166,9 @@ export const InitializePresenterResponseSchema: GenMessage<InitializePresenterRe
  */
 export type ClientReadyRequest = Message<"sdl.v1.ClientReadyRequest"> & {
   /**
-   * @generated from field: string canvas_id = 1;
+   * @generated from field: string workspace_id = 1;
    */
-  canvasId: string;
+  workspaceId: string;
 };
 
 /**
@@ -188,9 +188,9 @@ export type ClientReadyResponse = Message<"sdl.v1.ClientReadyResponse"> & {
   success: boolean;
 
   /**
-   * @generated from field: sdl.v1.Canvas canvas = 2;
+   * @generated from field: sdl.v1.Workspace workspace = 2;
    */
-  canvas?: Canvas;
+  workspace?: Workspace;
 };
 
 /**
@@ -205,9 +205,9 @@ export const ClientReadyResponseSchema: GenMessage<ClientReadyResponse> = /*@__P
  */
 export type FileSelectedRequest = Message<"sdl.v1.FileSelectedRequest"> & {
   /**
-   * @generated from field: string canvas_id = 1;
+   * @generated from field: string workspace_id = 1;
    */
-  canvasId: string;
+  workspaceId: string;
 
   /**
    * @generated from field: string file_path = 2;
@@ -254,9 +254,9 @@ export const FileSelectedResponseSchema: GenMessage<FileSelectedResponse> = /*@_
  */
 export type FileSavedRequest = Message<"sdl.v1.FileSavedRequest"> & {
   /**
-   * @generated from field: string canvas_id = 1;
+   * @generated from field: string workspace_id = 1;
    */
-  canvasId: string;
+  workspaceId: string;
 
   /**
    * @generated from field: string file_path = 2;
@@ -303,9 +303,9 @@ export const FileSavedResponseSchema: GenMessage<FileSavedResponse> = /*@__PURE_
  */
 export type DiagramComponentClickedRequest = Message<"sdl.v1.DiagramComponentClickedRequest"> & {
   /**
-   * @generated from field: string canvas_id = 1;
+   * @generated from field: string workspace_id = 1;
    */
-  canvasId: string;
+  workspaceId: string;
 
   /**
    * @generated from field: string component_name = 2;
@@ -349,9 +349,9 @@ export const DiagramComponentClickedResponseSchema: GenMessage<DiagramComponentC
  */
 export type DiagramComponentHoveredRequest = Message<"sdl.v1.DiagramComponentHoveredRequest"> & {
   /**
-   * @generated from field: string canvas_id = 1;
+   * @generated from field: string workspace_id = 1;
    */
-  canvasId: string;
+  workspaceId: string;
 
   /**
    * @generated from field: string component_name = 2;

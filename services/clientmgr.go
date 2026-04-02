@@ -24,8 +24,8 @@ const APP_ID = "sdl"
 var ErrNoSuchEntity = errors.New("entity not found")
 
 type ClientMgr struct {
-	svcAddr         string
-	canvasSvcClient v1s.CanvasServiceClient
+	svcAddr            string
+	workspaceSvcClient v1s.WorkspaceServiceClient
 }
 
 func NewClientMgr(svc_addr string) *ClientMgr {
@@ -47,15 +47,13 @@ func (c *ClientMgr) ClientContext(ctx context.Context, loggedInUserId string) co
 	return metadata.AppendToOutgoingContext(context.Background(), "LoggedInUserId", loggedInUserId)
 }
 
-func (c *ClientMgr) GetCanvasSvcClient() v1s.CanvasServiceClient {
-	if c.canvasSvcClient == nil {
+func (c *ClientMgr) GetWorkspaceSvcClient() v1s.WorkspaceServiceClient {
+	if c.workspaceSvcClient == nil {
 		conn, err := grpc.NewClient(c.svcAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			panic(fmt.Sprintf("cannot connect with server %v", err))
 		}
-		c.canvasSvcClient = v1s.NewCanvasServiceClient(conn)
+		c.workspaceSvcClient = v1s.NewWorkspaceServiceClient(conn)
 	}
-	return c.canvasSvcClient
+	return c.workspaceSvcClient
 }
-
-// TODO: Add GetWorkspaceSvcClient() when WorkspaceService is exposed via gRPC

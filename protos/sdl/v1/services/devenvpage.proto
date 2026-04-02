@@ -9,10 +9,10 @@ import "sdl/v1/models/devenvpage.proto";
 
 option go_package = "github.com/panyam/sdl/gen/go/sdl/v1/services";
 
-// DevEnvPage is implemented by the browser/frontend for DevEnv-based UIs.
-// The DevEnv pushes typed updates to this service when simulation state changes.
-// Follows the same browser_provided pattern as CanvasDashboardPage.
-service DevEnvPage {
+// WorkspacePage is the page/view interface that receives push updates from the
+// WorkspacePresenter. Implementations: BrowserWorkspacePage (WASM), ConsoleWorkspacePage (CLI).
+// The browser_provided option enables protoc-gen-go-wasmjs to generate browser bindings.
+service WorkspacePage {
   option (wasmjs.v1.browser_provided) = true;
 
   // === System Panel ===

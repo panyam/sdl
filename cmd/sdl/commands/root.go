@@ -23,7 +23,7 @@ var (
 	serverURL      string
 	grpcAddress    string
 	gatewayAddress string
-	canvasID       string
+	workspaceID       string
 )
 
 var rootCmd = &cobra.Command{
@@ -47,12 +47,12 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&dslFilePath, "file", "f", "", "Path to the DSL file (required by many commands)")
 	rootCmd.PersistentFlags().StringVar(&serverURL, "server", "", "SDL server URL (default: CANVAS_SERVER_URL env var or http://localhost:6060)")
 
-	// Canvas ID defaults to SDL_CANVAS_ID env var, then "default"
-	defaultCanvasID := os.Getenv("SDL_CANVAS_ID")
+	// Workspace ID defaults to SDL_WORKSPACE_ID env var, then "default"
+	defaultCanvasID := os.Getenv("SDL_WORKSPACE_ID")
 	if defaultCanvasID == "" {
 		defaultCanvasID = "default"
 	}
-	rootCmd.PersistentFlags().StringVar(&canvasID, "canvas", defaultCanvasID, "Canvas ID to use for operations (default: SDL_CANVAS_ID env var or 'default')")
+	rootCmd.PersistentFlags().StringVar(&workspaceID, "workspace", defaultCanvasID, "Workspace ID to use for operations (default: SDL_WORKSPACE_ID env var or 'default')")
 
 	// Serve command flags
 	rootCmd.PersistentFlags().StringVar(&gatewayAddress, "gwaddr", DefaultGatewayAddress(), "Host/Port of the Gateway Server (default: CANVAS_GATEWAY_SERVER_ADDRESS env var or localhost)")

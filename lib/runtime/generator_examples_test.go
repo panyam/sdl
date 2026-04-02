@@ -14,8 +14,8 @@ func TestBitlyGenerators(t *testing.T) {
 
 	baseline := sys.Generators[0]
 	assert.Equal(t, "baseline", baseline.Name)
-	assert.Equal(t, "arch.app", baseline.ComponentPath)
-	assert.Equal(t, "Shorten", baseline.MethodName)
+	assert.Equal(t, "arch.app", baseline.Component)
+	assert.Equal(t, "Shorten", baseline.Method)
 	assert.Equal(t, 5.0, baseline.RPS())
 	require.NotNil(t, baseline.ResolvedComponent)
 	require.NotNil(t, baseline.ResolvedMethod)
@@ -34,8 +34,8 @@ func TestUberMVPGenerators(t *testing.T) {
 
 	baseline := sys.Generators[0]
 	assert.Equal(t, "baseline", baseline.Name)
-	assert.Equal(t, "arch.webserver", baseline.ComponentPath)
-	assert.Equal(t, "RequestRide", baseline.MethodName)
+	assert.Equal(t, "arch.webserver", baseline.Component)
+	assert.Equal(t, "RequestRide", baseline.Method)
 	assert.Equal(t, 5.0, baseline.RPS())
 	require.NotNil(t, baseline.ResolvedComponent)
 	require.NotNil(t, baseline.ResolvedMethod)

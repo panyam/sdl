@@ -15,20 +15,20 @@ import { file_sdl_v1_models_devenvpage } from "../models/devenvpage_pb";
  * Describes the file sdl/v1/services/devenvpage.proto.
  */
 export const file_sdl_v1_services_devenvpage: GenFile = /*@__PURE__*/
-  fileDesc("CiBzZGwvdjEvc2VydmljZXMvZGV2ZW52cGFnZS5wcm90bxIGc2RsLnYxMq8GCgpEZXZFbnZQYWdlEloKD09uU3lzdGVtQ2hhbmdlZBIiLnNkbC52MS5EZXZFbnZTeXN0ZW1DaGFuZ2VkUmVxdWVzdBojLnNkbC52MS5EZXZFbnZTeXN0ZW1DaGFuZ2VkUmVzcG9uc2USagoZT25BdmFpbGFibGVTeXN0ZW1zQ2hhbmdlZBIlLnNkbC52MS5EZXZFbnZBdmFpbGFibGVTeXN0ZW1zUmVxdWVzdBomLnNkbC52MS5EZXZFbnZBdmFpbGFibGVTeXN0ZW1zUmVzcG9uc2USTAoNVXBkYXRlRGlhZ3JhbRIcLnNkbC52MS5VcGRhdGVEaWFncmFtUmVxdWVzdBodLnNkbC52MS5VcGRhdGVEaWFncmFtUmVzcG9uc2USXgoPVXBkYXRlR2VuZXJhdG9yEiQuc2RsLnYxLkRldkVudlVwZGF0ZUdlbmVyYXRvclJlcXVlc3QaJS5zZGwudjEuRGV2RW52VXBkYXRlR2VuZXJhdG9yUmVzcG9uc2USXgoPUmVtb3ZlR2VuZXJhdG9yEiQuc2RsLnYxLkRldkVudlJlbW92ZUdlbmVyYXRvclJlcXVlc3QaJS5zZGwudjEuRGV2RW52UmVtb3ZlR2VuZXJhdG9yUmVzcG9uc2USVQoMVXBkYXRlTWV0cmljEiEuc2RsLnYxLkRldkVudlVwZGF0ZU1ldHJpY1JlcXVlc3QaIi5zZGwudjEuRGV2RW52VXBkYXRlTWV0cmljUmVzcG9uc2USVQoMUmVtb3ZlTWV0cmljEiEuc2RsLnYxLkRldkVudlJlbW92ZU1ldHJpY1JlcXVlc3QaIi5zZGwudjEuRGV2RW52UmVtb3ZlTWV0cmljUmVzcG9uc2USUgoPVXBkYXRlRmxvd1JhdGVzEh4uc2RsLnYxLlVwZGF0ZUZsb3dSYXRlc1JlcXVlc3QaHy5zZGwudjEuVXBkYXRlRmxvd1JhdGVzUmVzcG9uc2USQwoKTG9nTWVzc2FnZRIZLnNkbC52MS5Mb2dNZXNzYWdlUmVxdWVzdBoaLnNkbC52MS5Mb2dNZXNzYWdlUmVzcG9uc2UaBMC1GAFCigEKCmNvbS5zZGwudjFCD0RldmVudnBhZ2VQcm90b1ABWjJnaXRodWIuY29tL3BhbnlhbS9zZGwvZ2VuL2dvL3NkbC92MS9zZXJ2aWNlcztzZGx2MaICA1NYWKoCBlNkbC5WMcoCBlNkbFxWMeICElNkbFxWMVxHUEJNZXRhZGF0YeoCB1NkbDo6VjFiBnByb3RvMw", [file_wasmjs_v1_annotations, file_sdl_v1_models_models, file_sdl_v1_models_dashboardpage, file_sdl_v1_models_devenvpage]);
+  fileDesc("CiBzZGwvdjEvc2VydmljZXMvZGV2ZW52cGFnZS5wcm90bxIGc2RsLnYxMrIGCg1Xb3Jrc3BhY2VQYWdlEloKD09uU3lzdGVtQ2hhbmdlZBIiLnNkbC52MS5EZXZFbnZTeXN0ZW1DaGFuZ2VkUmVxdWVzdBojLnNkbC52MS5EZXZFbnZTeXN0ZW1DaGFuZ2VkUmVzcG9uc2USagoZT25BdmFpbGFibGVTeXN0ZW1zQ2hhbmdlZBIlLnNkbC52MS5EZXZFbnZBdmFpbGFibGVTeXN0ZW1zUmVxdWVzdBomLnNkbC52MS5EZXZFbnZBdmFpbGFibGVTeXN0ZW1zUmVzcG9uc2USTAoNVXBkYXRlRGlhZ3JhbRIcLnNkbC52MS5VcGRhdGVEaWFncmFtUmVxdWVzdBodLnNkbC52MS5VcGRhdGVEaWFncmFtUmVzcG9uc2USXgoPVXBkYXRlR2VuZXJhdG9yEiQuc2RsLnYxLkRldkVudlVwZGF0ZUdlbmVyYXRvclJlcXVlc3QaJS5zZGwudjEuRGV2RW52VXBkYXRlR2VuZXJhdG9yUmVzcG9uc2USXgoPUmVtb3ZlR2VuZXJhdG9yEiQuc2RsLnYxLkRldkVudlJlbW92ZUdlbmVyYXRvclJlcXVlc3QaJS5zZGwudjEuRGV2RW52UmVtb3ZlR2VuZXJhdG9yUmVzcG9uc2USVQoMVXBkYXRlTWV0cmljEiEuc2RsLnYxLkRldkVudlVwZGF0ZU1ldHJpY1JlcXVlc3QaIi5zZGwudjEuRGV2RW52VXBkYXRlTWV0cmljUmVzcG9uc2USVQoMUmVtb3ZlTWV0cmljEiEuc2RsLnYxLkRldkVudlJlbW92ZU1ldHJpY1JlcXVlc3QaIi5zZGwudjEuRGV2RW52UmVtb3ZlTWV0cmljUmVzcG9uc2USUgoPVXBkYXRlRmxvd1JhdGVzEh4uc2RsLnYxLlVwZGF0ZUZsb3dSYXRlc1JlcXVlc3QaHy5zZGwudjEuVXBkYXRlRmxvd1JhdGVzUmVzcG9uc2USQwoKTG9nTWVzc2FnZRIZLnNkbC52MS5Mb2dNZXNzYWdlUmVxdWVzdBoaLnNkbC52MS5Mb2dNZXNzYWdlUmVzcG9uc2UaBMC1GAFCigEKCmNvbS5zZGwudjFCD0RldmVudnBhZ2VQcm90b1ABWjJnaXRodWIuY29tL3BhbnlhbS9zZGwvZ2VuL2dvL3NkbC92MS9zZXJ2aWNlcztzZGx2MaICA1NYWKoCBlNkbC5WMcoCBlNkbFxWMeICElNkbFxWMVxHUEJNZXRhZGF0YeoCB1NkbDo6VjFiBnByb3RvMw", [file_wasmjs_v1_annotations, file_sdl_v1_models_models, file_sdl_v1_models_dashboardpage, file_sdl_v1_models_devenvpage]);
 
 /**
- * DevEnvPage is implemented by the browser/frontend for DevEnv-based UIs.
- * The DevEnv pushes typed updates to this service when simulation state changes.
- * Follows the same browser_provided pattern as CanvasDashboardPage.
+ * WorkspacePage is the page/view interface that receives push updates from the
+ * WorkspacePresenter. Implementations: BrowserWorkspacePage (WASM), ConsoleWorkspacePage (CLI).
+ * The browser_provided option enables protoc-gen-go-wasmjs to generate browser bindings.
  *
- * @generated from service sdl.v1.DevEnvPage
+ * @generated from service sdl.v1.WorkspacePage
  */
-export const DevEnvPage: GenService<{
+export const WorkspacePage: GenService<{
   /**
    * Notify that the active system has changed
    *
-   * @generated from rpc sdl.v1.DevEnvPage.OnSystemChanged
+   * @generated from rpc sdl.v1.WorkspacePage.OnSystemChanged
    */
   onSystemChanged: {
     methodKind: "unary";
@@ -38,7 +38,7 @@ export const DevEnvPage: GenService<{
   /**
    * Notify that the list of available systems has changed
    *
-   * @generated from rpc sdl.v1.DevEnvPage.OnAvailableSystemsChanged
+   * @generated from rpc sdl.v1.WorkspacePage.OnAvailableSystemsChanged
    */
   onAvailableSystemsChanged: {
     methodKind: "unary";
@@ -48,7 +48,7 @@ export const DevEnvPage: GenService<{
   /**
    * Update the system diagram (reuses existing message)
    *
-   * @generated from rpc sdl.v1.DevEnvPage.UpdateDiagram
+   * @generated from rpc sdl.v1.WorkspacePage.UpdateDiagram
    */
   updateDiagram: {
     methodKind: "unary";
@@ -58,7 +58,7 @@ export const DevEnvPage: GenService<{
   /**
    * Upsert a generator by name
    *
-   * @generated from rpc sdl.v1.DevEnvPage.UpdateGenerator
+   * @generated from rpc sdl.v1.WorkspacePage.UpdateGenerator
    */
   updateGenerator: {
     methodKind: "unary";
@@ -68,7 +68,7 @@ export const DevEnvPage: GenService<{
   /**
    * Remove a generator by name
    *
-   * @generated from rpc sdl.v1.DevEnvPage.RemoveGenerator
+   * @generated from rpc sdl.v1.WorkspacePage.RemoveGenerator
    */
   removeGenerator: {
     methodKind: "unary";
@@ -78,7 +78,7 @@ export const DevEnvPage: GenService<{
   /**
    * Upsert a metric by name
    *
-   * @generated from rpc sdl.v1.DevEnvPage.UpdateMetric
+   * @generated from rpc sdl.v1.WorkspacePage.UpdateMetric
    */
   updateMetric: {
     methodKind: "unary";
@@ -88,7 +88,7 @@ export const DevEnvPage: GenService<{
   /**
    * Remove a metric by name
    *
-   * @generated from rpc sdl.v1.DevEnvPage.RemoveMetric
+   * @generated from rpc sdl.v1.WorkspacePage.RemoveMetric
    */
   removeMetric: {
     methodKind: "unary";
@@ -98,7 +98,7 @@ export const DevEnvPage: GenService<{
   /**
    * Update flow rates display (reuses existing message)
    *
-   * @generated from rpc sdl.v1.DevEnvPage.UpdateFlowRates
+   * @generated from rpc sdl.v1.WorkspacePage.UpdateFlowRates
    */
   updateFlowRates: {
     methodKind: "unary";
@@ -108,7 +108,7 @@ export const DevEnvPage: GenService<{
   /**
    * Log a message to the console (reuses existing message)
    *
-   * @generated from rpc sdl.v1.DevEnvPage.LogMessage
+   * @generated from rpc sdl.v1.WorkspacePage.LogMessage
    */
   logMessage: {
     methodKind: "unary";

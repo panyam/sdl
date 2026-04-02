@@ -15,7 +15,7 @@ import { file_google_api_annotations } from "../../../google/api/annotations_pb"
  * Describes the file sdl/v1/services/presenter.proto.
  */
 export const file_sdl_v1_services_presenter: GenFile = /*@__PURE__*/
-  fileDesc("Ch9zZGwvdjEvc2VydmljZXMvcHJlc2VudGVyLnByb3RvEgZzZGwudjEyfQobU2luZ2xldG9uSW5pdGlhbGl6ZXJTZXJ2aWNlEl4KE0luaXRpYWxpemVTaW5nbGV0b24SIi5zZGwudjEuSW5pdGlhbGl6ZVNpbmdsZXRvblJlcXVlc3QaIy5zZGwudjEuSW5pdGlhbGl6ZVNpbmdsZXRvblJlc3BvbnNlMsoLChNDYW52YXNWaWV3UHJlc2VudGVyElUKCkluaXRpYWxpemUSIi5zZGwudjEuSW5pdGlhbGl6ZVByZXNlbnRlclJlcXVlc3QaIy5zZGwudjEuSW5pdGlhbGl6ZVByZXNlbnRlclJlc3BvbnNlEkYKC0NsaWVudFJlYWR5Ehouc2RsLnYxLkNsaWVudFJlYWR5UmVxdWVzdBobLnNkbC52MS5DbGllbnRSZWFkeVJlc3BvbnNlEkkKDEZpbGVTZWxlY3RlZBIbLnNkbC52MS5GaWxlU2VsZWN0ZWRSZXF1ZXN0Ghwuc2RsLnYxLkZpbGVTZWxlY3RlZFJlc3BvbnNlEkAKCUZpbGVTYXZlZBIYLnNkbC52MS5GaWxlU2F2ZWRSZXF1ZXN0Ghkuc2RsLnYxLkZpbGVTYXZlZFJlc3BvbnNlEkAKCVVzZVN5c3RlbRIYLnNkbC52MS5Vc2VTeXN0ZW1SZXF1ZXN0Ghkuc2RsLnYxLlVzZVN5c3RlbVJlc3BvbnNlEkkKDEFkZEdlbmVyYXRvchIbLnNkbC52MS5BZGRHZW5lcmF0b3JSZXF1ZXN0Ghwuc2RsLnYxLkFkZEdlbmVyYXRvclJlc3BvbnNlElIKD0RlbGV0ZUdlbmVyYXRvchIeLnNkbC52MS5EZWxldGVHZW5lcmF0b3JSZXF1ZXN0Gh8uc2RsLnYxLkRlbGV0ZUdlbmVyYXRvclJlc3BvbnNlElIKD1VwZGF0ZUdlbmVyYXRvchIeLnNkbC52MS5VcGRhdGVHZW5lcmF0b3JSZXF1ZXN0Gh8uc2RsLnYxLlVwZGF0ZUdlbmVyYXRvclJlc3BvbnNlEk8KDlN0YXJ0R2VuZXJhdG9yEh0uc2RsLnYxLlN0YXJ0R2VuZXJhdG9yUmVxdWVzdBoeLnNkbC52MS5TdGFydEdlbmVyYXRvclJlc3BvbnNlEkwKDVN0b3BHZW5lcmF0b3ISHC5zZGwudjEuU3RvcEdlbmVyYXRvclJlcXVlc3QaHS5zZGwudjEuU3RvcEdlbmVyYXRvclJlc3BvbnNlElsKElN0YXJ0QWxsR2VuZXJhdG9ycxIhLnNkbC52MS5TdGFydEFsbEdlbmVyYXRvcnNSZXF1ZXN0GiIuc2RsLnYxLlN0YXJ0QWxsR2VuZXJhdG9yc1Jlc3BvbnNlElgKEVN0b3BBbGxHZW5lcmF0b3JzEiAuc2RsLnYxLlN0b3BBbGxHZW5lcmF0b3JzUmVxdWVzdBohLnNkbC52MS5TdG9wQWxsR2VuZXJhdG9yc1Jlc3BvbnNlEkAKCUFkZE1ldHJpYxIYLnNkbC52MS5BZGRNZXRyaWNSZXF1ZXN0Ghkuc2RsLnYxLkFkZE1ldHJpY1Jlc3BvbnNlEkkKDERlbGV0ZU1ldHJpYxIbLnNkbC52MS5EZWxldGVNZXRyaWNSZXF1ZXN0Ghwuc2RsLnYxLkRlbGV0ZU1ldHJpY1Jlc3BvbnNlEkkKDFNldFBhcmFtZXRlchIbLnNkbC52MS5TZXRQYXJhbWV0ZXJSZXF1ZXN0Ghwuc2RsLnYxLlNldFBhcmFtZXRlclJlc3BvbnNlEkwKDUV2YWx1YXRlRmxvd3MSHC5zZGwudjEuRXZhbHVhdGVGbG93c1JlcXVlc3QaHS5zZGwudjEuRXZhbHVhdGVGbG93c1Jlc3BvbnNlEmoKF0RpYWdyYW1Db21wb25lbnRDbGlja2VkEiYuc2RsLnYxLkRpYWdyYW1Db21wb25lbnRDbGlja2VkUmVxdWVzdBonLnNkbC52MS5EaWFncmFtQ29tcG9uZW50Q2xpY2tlZFJlc3BvbnNlEmoKF0RpYWdyYW1Db21wb25lbnRIb3ZlcmVkEiYuc2RsLnYxLkRpYWdyYW1Db21wb25lbnRIb3ZlcmVkUmVxdWVzdBonLnNkbC52MS5EaWFncmFtQ29tcG9uZW50SG92ZXJlZFJlc3BvbnNlQokBCgpjb20uc2RsLnYxQg5QcmVzZW50ZXJQcm90b1ABWjJnaXRodWIuY29tL3BhbnlhbS9zZGwvZ2VuL2dvL3NkbC92MS9zZXJ2aWNlcztzZGx2MaICA1NYWKoCBlNkbC5WMcoCBlNkbFxWMeICElNkbFxWMVxHUEJNZXRhZGF0YeoCB1NkbDo6VjFiBnByb3RvMw", [file_sdl_v1_models_models, file_sdl_v1_models_presenter, file_sdl_v1_models_canvas_service, file_google_api_annotations]);
+  fileDesc("Ch9zZGwvdjEvc2VydmljZXMvcHJlc2VudGVyLnByb3RvEgZzZGwudjEyfQobU2luZ2xldG9uSW5pdGlhbGl6ZXJTZXJ2aWNlEl4KE0luaXRpYWxpemVTaW5nbGV0b24SIi5zZGwudjEuSW5pdGlhbGl6ZVNpbmdsZXRvblJlcXVlc3QaIy5zZGwudjEuSW5pdGlhbGl6ZVNpbmdsZXRvblJlc3BvbnNlMskLChJXb3Jrc3BhY2VQcmVzZW50ZXISVQoKSW5pdGlhbGl6ZRIiLnNkbC52MS5Jbml0aWFsaXplUHJlc2VudGVyUmVxdWVzdBojLnNkbC52MS5Jbml0aWFsaXplUHJlc2VudGVyUmVzcG9uc2USRgoLQ2xpZW50UmVhZHkSGi5zZGwudjEuQ2xpZW50UmVhZHlSZXF1ZXN0Ghsuc2RsLnYxLkNsaWVudFJlYWR5UmVzcG9uc2USSQoMRmlsZVNlbGVjdGVkEhsuc2RsLnYxLkZpbGVTZWxlY3RlZFJlcXVlc3QaHC5zZGwudjEuRmlsZVNlbGVjdGVkUmVzcG9uc2USQAoJRmlsZVNhdmVkEhguc2RsLnYxLkZpbGVTYXZlZFJlcXVlc3QaGS5zZGwudjEuRmlsZVNhdmVkUmVzcG9uc2USQAoJVXNlU3lzdGVtEhguc2RsLnYxLlVzZVN5c3RlbVJlcXVlc3QaGS5zZGwudjEuVXNlU3lzdGVtUmVzcG9uc2USSQoMQWRkR2VuZXJhdG9yEhsuc2RsLnYxLkFkZEdlbmVyYXRvclJlcXVlc3QaHC5zZGwudjEuQWRkR2VuZXJhdG9yUmVzcG9uc2USUgoPRGVsZXRlR2VuZXJhdG9yEh4uc2RsLnYxLkRlbGV0ZUdlbmVyYXRvclJlcXVlc3QaHy5zZGwudjEuRGVsZXRlR2VuZXJhdG9yUmVzcG9uc2USUgoPVXBkYXRlR2VuZXJhdG9yEh4uc2RsLnYxLlVwZGF0ZUdlbmVyYXRvclJlcXVlc3QaHy5zZGwudjEuVXBkYXRlR2VuZXJhdG9yUmVzcG9uc2USTwoOU3RhcnRHZW5lcmF0b3ISHS5zZGwudjEuU3RhcnRHZW5lcmF0b3JSZXF1ZXN0Gh4uc2RsLnYxLlN0YXJ0R2VuZXJhdG9yUmVzcG9uc2USTAoNU3RvcEdlbmVyYXRvchIcLnNkbC52MS5TdG9wR2VuZXJhdG9yUmVxdWVzdBodLnNkbC52MS5TdG9wR2VuZXJhdG9yUmVzcG9uc2USWwoSU3RhcnRBbGxHZW5lcmF0b3JzEiEuc2RsLnYxLlN0YXJ0QWxsR2VuZXJhdG9yc1JlcXVlc3QaIi5zZGwudjEuU3RhcnRBbGxHZW5lcmF0b3JzUmVzcG9uc2USWAoRU3RvcEFsbEdlbmVyYXRvcnMSIC5zZGwudjEuU3RvcEFsbEdlbmVyYXRvcnNSZXF1ZXN0GiEuc2RsLnYxLlN0b3BBbGxHZW5lcmF0b3JzUmVzcG9uc2USQAoJQWRkTWV0cmljEhguc2RsLnYxLkFkZE1ldHJpY1JlcXVlc3QaGS5zZGwudjEuQWRkTWV0cmljUmVzcG9uc2USSQoMRGVsZXRlTWV0cmljEhsuc2RsLnYxLkRlbGV0ZU1ldHJpY1JlcXVlc3QaHC5zZGwudjEuRGVsZXRlTWV0cmljUmVzcG9uc2USSQoMU2V0UGFyYW1ldGVyEhsuc2RsLnYxLlNldFBhcmFtZXRlclJlcXVlc3QaHC5zZGwudjEuU2V0UGFyYW1ldGVyUmVzcG9uc2USTAoNRXZhbHVhdGVGbG93cxIcLnNkbC52MS5FdmFsdWF0ZUZsb3dzUmVxdWVzdBodLnNkbC52MS5FdmFsdWF0ZUZsb3dzUmVzcG9uc2USagoXRGlhZ3JhbUNvbXBvbmVudENsaWNrZWQSJi5zZGwudjEuRGlhZ3JhbUNvbXBvbmVudENsaWNrZWRSZXF1ZXN0Gicuc2RsLnYxLkRpYWdyYW1Db21wb25lbnRDbGlja2VkUmVzcG9uc2USagoXRGlhZ3JhbUNvbXBvbmVudEhvdmVyZWQSJi5zZGwudjEuRGlhZ3JhbUNvbXBvbmVudEhvdmVyZWRSZXF1ZXN0Gicuc2RsLnYxLkRpYWdyYW1Db21wb25lbnRIb3ZlcmVkUmVzcG9uc2VCiQEKCmNvbS5zZGwudjFCDlByZXNlbnRlclByb3RvUAFaMmdpdGh1Yi5jb20vcGFueWFtL3NkbC9nZW4vZ28vc2RsL3YxL3NlcnZpY2VzO3NkbHYxogIDU1hYqgIGU2RsLlYxygIGU2RsXFYx4gISU2RsXFYxXEdQQk1ldGFkYXRh6gIHU2RsOjpWMWIGcHJvdG8z", [file_sdl_v1_models_models, file_sdl_v1_models_presenter, file_sdl_v1_models_canvas_service, file_google_api_annotations]);
 
 /**
  * SingletonInitializerService initializes the WASM singleton with data
@@ -36,27 +36,27 @@ export const SingletonInitializerService: GenService<{
   serviceDesc(file_sdl_v1_services_presenter, 0);
 
 /**
- * CanvasViewPresenter is the P in Model-View-Presenter.
+ * WorkspacePresenter is the P in Model-View-Presenter.
  *
- * The frontend/views are kept as dumb as possible - they react to commands
- * and state changes but don't handle complex UI logic. They present user
- * interactions to this Presenter which handles the logic between the view
- * and the backend (Canvas/runtime).
+ * The frontend/views (WorkspacePage implementations) are kept as dumb as
+ * possible - they react to commands and state changes but don't handle
+ * complex UI logic. They present user interactions to this Presenter which
+ * handles the logic between the page and the runtime (DevEnv).
  *
  * This also helps with:
  * - Mocking views for testing
- * - Different view implementations (web, CLI, remote)
+ * - Different page implementations (browser, CLI console, remote)
  * - Changing presenters for different looks/feels
  *
  * === Initialization ===
  *
- * @generated from service sdl.v1.CanvasViewPresenter
+ * @generated from service sdl.v1.WorkspacePresenter
  */
-export const CanvasViewPresenter: GenService<{
+export const WorkspacePresenter: GenService<{
   /**
    * Called when the dashboard is first loaded
    *
-   * @generated from rpc sdl.v1.CanvasViewPresenter.Initialize
+   * @generated from rpc sdl.v1.WorkspacePresenter.Initialize
    */
   initialize: {
     methodKind: "unary";
@@ -66,7 +66,7 @@ export const CanvasViewPresenter: GenService<{
   /**
    * Called by browser after UI is fully ready for updates
    *
-   * @generated from rpc sdl.v1.CanvasViewPresenter.ClientReady
+   * @generated from rpc sdl.v1.WorkspacePresenter.ClientReady
    */
   clientReady: {
     methodKind: "unary";
@@ -76,7 +76,7 @@ export const CanvasViewPresenter: GenService<{
   /**
    * Called when user selects a file in the explorer
    *
-   * @generated from rpc sdl.v1.CanvasViewPresenter.FileSelected
+   * @generated from rpc sdl.v1.WorkspacePresenter.FileSelected
    */
   fileSelected: {
     methodKind: "unary";
@@ -86,7 +86,7 @@ export const CanvasViewPresenter: GenService<{
   /**
    * Called when user saves a file
    *
-   * @generated from rpc sdl.v1.CanvasViewPresenter.FileSaved
+   * @generated from rpc sdl.v1.WorkspacePresenter.FileSaved
    */
   fileSaved: {
     methodKind: "unary";
@@ -96,7 +96,7 @@ export const CanvasViewPresenter: GenService<{
   /**
    * Called when user wants to load/use a system
    *
-   * @generated from rpc sdl.v1.CanvasViewPresenter.UseSystem
+   * @generated from rpc sdl.v1.WorkspacePresenter.UseSystem
    */
   useSystem: {
     methodKind: "unary";
@@ -106,7 +106,7 @@ export const CanvasViewPresenter: GenService<{
   /**
    * Called when user adds a generator
    *
-   * @generated from rpc sdl.v1.CanvasViewPresenter.AddGenerator
+   * @generated from rpc sdl.v1.WorkspacePresenter.AddGenerator
    */
   addGenerator: {
     methodKind: "unary";
@@ -116,7 +116,7 @@ export const CanvasViewPresenter: GenService<{
   /**
    * Called when user removes a generator
    *
-   * @generated from rpc sdl.v1.CanvasViewPresenter.DeleteGenerator
+   * @generated from rpc sdl.v1.WorkspacePresenter.DeleteGenerator
    */
   deleteGenerator: {
     methodKind: "unary";
@@ -126,7 +126,7 @@ export const CanvasViewPresenter: GenService<{
   /**
    * Called when user updates generator rate
    *
-   * @generated from rpc sdl.v1.CanvasViewPresenter.UpdateGenerator
+   * @generated from rpc sdl.v1.WorkspacePresenter.UpdateGenerator
    */
   updateGenerator: {
     methodKind: "unary";
@@ -136,7 +136,7 @@ export const CanvasViewPresenter: GenService<{
   /**
    * Called when user starts a generator
    *
-   * @generated from rpc sdl.v1.CanvasViewPresenter.StartGenerator
+   * @generated from rpc sdl.v1.WorkspacePresenter.StartGenerator
    */
   startGenerator: {
     methodKind: "unary";
@@ -146,7 +146,7 @@ export const CanvasViewPresenter: GenService<{
   /**
    * Called when user stops a generator
    *
-   * @generated from rpc sdl.v1.CanvasViewPresenter.StopGenerator
+   * @generated from rpc sdl.v1.WorkspacePresenter.StopGenerator
    */
   stopGenerator: {
     methodKind: "unary";
@@ -156,7 +156,7 @@ export const CanvasViewPresenter: GenService<{
   /**
    * Called when user starts all generators
    *
-   * @generated from rpc sdl.v1.CanvasViewPresenter.StartAllGenerators
+   * @generated from rpc sdl.v1.WorkspacePresenter.StartAllGenerators
    */
   startAllGenerators: {
     methodKind: "unary";
@@ -166,7 +166,7 @@ export const CanvasViewPresenter: GenService<{
   /**
    * Called when user stops all generators
    *
-   * @generated from rpc sdl.v1.CanvasViewPresenter.StopAllGenerators
+   * @generated from rpc sdl.v1.WorkspacePresenter.StopAllGenerators
    */
   stopAllGenerators: {
     methodKind: "unary";
@@ -176,7 +176,7 @@ export const CanvasViewPresenter: GenService<{
   /**
    * Called when user adds a metric to track
    *
-   * @generated from rpc sdl.v1.CanvasViewPresenter.AddMetric
+   * @generated from rpc sdl.v1.WorkspacePresenter.AddMetric
    */
   addMetric: {
     methodKind: "unary";
@@ -186,7 +186,7 @@ export const CanvasViewPresenter: GenService<{
   /**
    * Called when user removes a metric
    *
-   * @generated from rpc sdl.v1.CanvasViewPresenter.DeleteMetric
+   * @generated from rpc sdl.v1.WorkspacePresenter.DeleteMetric
    */
   deleteMetric: {
     methodKind: "unary";
@@ -196,7 +196,7 @@ export const CanvasViewPresenter: GenService<{
   /**
    * Called when user changes a component parameter
    *
-   * @generated from rpc sdl.v1.CanvasViewPresenter.SetParameter
+   * @generated from rpc sdl.v1.WorkspacePresenter.SetParameter
    */
   setParameter: {
     methodKind: "unary";
@@ -206,7 +206,7 @@ export const CanvasViewPresenter: GenService<{
   /**
    * Called when user wants to evaluate flows
    *
-   * @generated from rpc sdl.v1.CanvasViewPresenter.EvaluateFlows
+   * @generated from rpc sdl.v1.WorkspacePresenter.EvaluateFlows
    */
   evaluateFlows: {
     methodKind: "unary";
@@ -216,7 +216,7 @@ export const CanvasViewPresenter: GenService<{
   /**
    * Called when user clicks on a component in the diagram
    *
-   * @generated from rpc sdl.v1.CanvasViewPresenter.DiagramComponentClicked
+   * @generated from rpc sdl.v1.WorkspacePresenter.DiagramComponentClicked
    */
   diagramComponentClicked: {
     methodKind: "unary";
@@ -226,7 +226,7 @@ export const CanvasViewPresenter: GenService<{
   /**
    * Called when user hovers over a component
    *
-   * @generated from rpc sdl.v1.CanvasViewPresenter.DiagramComponentHovered
+   * @generated from rpc sdl.v1.WorkspacePresenter.DiagramComponentHovered
    */
   diagramComponentHovered: {
     methodKind: "unary";

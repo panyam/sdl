@@ -15,18 +15,18 @@ service SingletonInitializerService {
   rpc InitializeSingleton(InitializeSingletonRequest) returns (InitializeSingletonResponse);
 }
 
-// CanvasViewPresenter is the P in Model-View-Presenter.
+// WorkspacePresenter is the P in Model-View-Presenter.
 //
-// The frontend/views are kept as dumb as possible - they react to commands
-// and state changes but don't handle complex UI logic. They present user
-// interactions to this Presenter which handles the logic between the view
-// and the backend (Canvas/runtime).
+// The frontend/views (WorkspacePage implementations) are kept as dumb as
+// possible - they react to commands and state changes but don't handle
+// complex UI logic. They present user interactions to this Presenter which
+// handles the logic between the page and the runtime (DevEnv).
 //
 // This also helps with:
 // - Mocking views for testing
-// - Different view implementations (web, CLI, remote)
+// - Different page implementations (browser, CLI console, remote)
 // - Changing presenters for different looks/feels
-service CanvasViewPresenter {
+service WorkspacePresenter {
   // === Initialization ===
 
   // Called when the dashboard is first loaded

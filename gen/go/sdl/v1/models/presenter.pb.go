@@ -23,8 +23,8 @@ const (
 )
 
 type InitializeSingletonRequest struct {
-	state    protoimpl.MessageState `protogen:"open.v1"`
-	CanvasId string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	WorkspaceId string                 `protobuf:"bytes,1,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	// SDL content to load initially
 	SdlContent string `protobuf:"bytes,2,opt,name=sdl_content,json=sdlContent,proto3" json:"sdl_content,omitempty"`
 	// System name to use after loading
@@ -67,9 +67,9 @@ func (*InitializeSingletonRequest) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_models_presenter_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *InitializeSingletonRequest) GetCanvasId() string {
+func (x *InitializeSingletonRequest) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -106,7 +106,7 @@ type InitializeSingletonResponse struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	Success          bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
 	Error            string                 `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
-	CanvasId         string                 `protobuf:"bytes,3,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	WorkspaceId      string                 `protobuf:"bytes,3,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	AvailableSystems []*SystemInfo          `protobuf:"bytes,4,rep,name=available_systems,json=availableSystems,proto3" json:"available_systems,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
@@ -156,9 +156,9 @@ func (x *InitializeSingletonResponse) GetError() string {
 	return ""
 }
 
-func (x *InitializeSingletonResponse) GetCanvasId() string {
+func (x *InitializeSingletonResponse) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -172,7 +172,7 @@ func (x *InitializeSingletonResponse) GetAvailableSystems() []*SystemInfo {
 
 type InitializePresenterRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	WorkspaceId   string                 `protobuf:"bytes,1,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -207,18 +207,18 @@ func (*InitializePresenterRequest) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_models_presenter_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *InitializePresenterRequest) GetCanvasId() string {
+func (x *InitializePresenterRequest) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
 
 type InitializePresenterResponse struct {
-	state    protoimpl.MessageState `protogen:"open.v1"`
-	Success  bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	Error    string                 `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
-	CanvasId string                 `protobuf:"bytes,3,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Success     bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Error       string                 `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
+	WorkspaceId string                 `protobuf:"bytes,3,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	// Available systems to choose from
 	AvailableSystems []*SystemInfo `protobuf:"bytes,4,rep,name=available_systems,json=availableSystems,proto3" json:"available_systems,omitempty"`
 	// Initial state to render
@@ -273,9 +273,9 @@ func (x *InitializePresenterResponse) GetError() string {
 	return ""
 }
 
-func (x *InitializePresenterResponse) GetCanvasId() string {
+func (x *InitializePresenterResponse) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -310,7 +310,7 @@ func (x *InitializePresenterResponse) GetMetrics() []*Metric {
 
 type ClientReadyRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	WorkspaceId   string                 `protobuf:"bytes,1,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -345,9 +345,9 @@ func (*ClientReadyRequest) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_models_presenter_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *ClientReadyRequest) GetCanvasId() string {
+func (x *ClientReadyRequest) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -355,7 +355,7 @@ func (x *ClientReadyRequest) GetCanvasId() string {
 type ClientReadyResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	Canvas        *Canvas                `protobuf:"bytes,2,opt,name=canvas,proto3" json:"canvas,omitempty"`
+	Workspace     *Workspace             `protobuf:"bytes,2,opt,name=workspace,proto3" json:"workspace,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -397,16 +397,16 @@ func (x *ClientReadyResponse) GetSuccess() bool {
 	return false
 }
 
-func (x *ClientReadyResponse) GetCanvas() *Canvas {
+func (x *ClientReadyResponse) GetWorkspace() *Workspace {
 	if x != nil {
-		return x.Canvas
+		return x.Workspace
 	}
 	return nil
 }
 
 type FileSelectedRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	WorkspaceId   string                 `protobuf:"bytes,1,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	FilePath      string                 `protobuf:"bytes,2,opt,name=file_path,json=filePath,proto3" json:"file_path,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -442,9 +442,9 @@ func (*FileSelectedRequest) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_models_presenter_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *FileSelectedRequest) GetCanvasId() string {
+func (x *FileSelectedRequest) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -518,7 +518,7 @@ func (x *FileSelectedResponse) GetError() string {
 
 type FileSavedRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	WorkspaceId   string                 `protobuf:"bytes,1,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	FilePath      string                 `protobuf:"bytes,2,opt,name=file_path,json=filePath,proto3" json:"file_path,omitempty"`
 	Content       string                 `protobuf:"bytes,3,opt,name=content,proto3" json:"content,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -555,9 +555,9 @@ func (*FileSavedRequest) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_models_presenter_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *FileSavedRequest) GetCanvasId() string {
+func (x *FileSavedRequest) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -630,7 +630,7 @@ func (x *FileSavedResponse) GetError() string {
 
 type DiagramComponentClickedRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	WorkspaceId   string                 `protobuf:"bytes,1,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	ComponentName string                 `protobuf:"bytes,2,opt,name=component_name,json=componentName,proto3" json:"component_name,omitempty"`
 	MethodName    string                 `protobuf:"bytes,3,opt,name=method_name,json=methodName,proto3" json:"method_name,omitempty"` // Optional - if clicking on a specific method
 	unknownFields protoimpl.UnknownFields
@@ -667,9 +667,9 @@ func (*DiagramComponentClickedRequest) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_models_presenter_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *DiagramComponentClickedRequest) GetCanvasId() string {
+func (x *DiagramComponentClickedRequest) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -734,7 +734,7 @@ func (x *DiagramComponentClickedResponse) GetSuccess() bool {
 
 type DiagramComponentHoveredRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	WorkspaceId   string                 `protobuf:"bytes,1,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	ComponentName string                 `protobuf:"bytes,2,opt,name=component_name,json=componentName,proto3" json:"component_name,omitempty"`
 	MethodName    string                 `protobuf:"bytes,3,opt,name=method_name,json=methodName,proto3" json:"method_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -771,9 +771,9 @@ func (*DiagramComponentHoveredRequest) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_models_presenter_proto_rawDescGZIP(), []int{12}
 }
 
-func (x *DiagramComponentHoveredRequest) GetCanvasId() string {
+func (x *DiagramComponentHoveredRequest) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -840,60 +840,60 @@ var File_sdl_v1_models_presenter_proto protoreflect.FileDescriptor
 
 const file_sdl_v1_models_presenter_proto_rawDesc = "" +
 	"\n" +
-	"\x1dsdl/v1/models/presenter.proto\x12\x06sdl.v1\x1a\x1asdl/v1/models/models.proto\x1a\x1bsdl/v1/models/systems.proto\"\xc7\x01\n" +
-	"\x1aInitializeSingletonRequest\x12\x1b\n" +
-	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\x12\x1f\n" +
+	"\x1dsdl/v1/models/presenter.proto\x12\x06sdl.v1\x1a\x1asdl/v1/models/models.proto\x1a\x1bsdl/v1/models/systems.proto\"\xcd\x01\n" +
+	"\x1aInitializeSingletonRequest\x12!\n" +
+	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\x12\x1f\n" +
 	"\vsdl_content\x18\x02 \x01(\tR\n" +
 	"sdlContent\x12\x1f\n" +
 	"\vsystem_name\x18\x03 \x01(\tR\n" +
 	"systemName\x12'\n" +
 	"\x0fgenerators_data\x18\x04 \x01(\tR\x0egeneratorsData\x12!\n" +
-	"\fmetrics_data\x18\x05 \x01(\tR\vmetricsData\"\xab\x01\n" +
+	"\fmetrics_data\x18\x05 \x01(\tR\vmetricsData\"\xb1\x01\n" +
 	"\x1bInitializeSingletonResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x14\n" +
-	"\x05error\x18\x02 \x01(\tR\x05error\x12\x1b\n" +
-	"\tcanvas_id\x18\x03 \x01(\tR\bcanvasId\x12?\n" +
-	"\x11available_systems\x18\x04 \x03(\v2\x12.sdl.v1.SystemInfoR\x10availableSystems\"9\n" +
-	"\x1aInitializePresenterRequest\x12\x1b\n" +
-	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\"\xb9\x02\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error\x12!\n" +
+	"\fworkspace_id\x18\x03 \x01(\tR\vworkspaceId\x12?\n" +
+	"\x11available_systems\x18\x04 \x03(\v2\x12.sdl.v1.SystemInfoR\x10availableSystems\"?\n" +
+	"\x1aInitializePresenterRequest\x12!\n" +
+	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\"\xbf\x02\n" +
 	"\x1bInitializePresenterResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x14\n" +
-	"\x05error\x18\x02 \x01(\tR\x05error\x12\x1b\n" +
-	"\tcanvas_id\x18\x03 \x01(\tR\bcanvasId\x12?\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error\x12!\n" +
+	"\fworkspace_id\x18\x03 \x01(\tR\vworkspaceId\x12?\n" +
 	"\x11available_systems\x18\x04 \x03(\v2\x12.sdl.v1.SystemInfoR\x10availableSystems\x12/\n" +
 	"\adiagram\x18\x05 \x01(\v2\x15.sdl.v1.SystemDiagramR\adiagram\x121\n" +
 	"\n" +
 	"generators\x18\x06 \x03(\v2\x11.sdl.v1.GeneratorR\n" +
 	"generators\x12(\n" +
-	"\ametrics\x18\a \x03(\v2\x0e.sdl.v1.MetricR\ametrics\"1\n" +
-	"\x12ClientReadyRequest\x12\x1b\n" +
-	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\"W\n" +
+	"\ametrics\x18\a \x03(\v2\x0e.sdl.v1.MetricR\ametrics\"7\n" +
+	"\x12ClientReadyRequest\x12!\n" +
+	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\"`\n" +
 	"\x13ClientReadyResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\x12&\n" +
-	"\x06canvas\x18\x02 \x01(\v2\x0e.sdl.v1.CanvasR\x06canvas\"O\n" +
-	"\x13FileSelectedRequest\x12\x1b\n" +
-	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\x12\x1b\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12/\n" +
+	"\tworkspace\x18\x02 \x01(\v2\x11.sdl.v1.WorkspaceR\tworkspace\"U\n" +
+	"\x13FileSelectedRequest\x12!\n" +
+	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\x12\x1b\n" +
 	"\tfile_path\x18\x02 \x01(\tR\bfilePath\"`\n" +
 	"\x14FileSelectedResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
 	"\acontent\x18\x02 \x01(\tR\acontent\x12\x14\n" +
-	"\x05error\x18\x03 \x01(\tR\x05error\"f\n" +
-	"\x10FileSavedRequest\x12\x1b\n" +
-	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\x12\x1b\n" +
+	"\x05error\x18\x03 \x01(\tR\x05error\"l\n" +
+	"\x10FileSavedRequest\x12!\n" +
+	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\x12\x1b\n" +
 	"\tfile_path\x18\x02 \x01(\tR\bfilePath\x12\x18\n" +
 	"\acontent\x18\x03 \x01(\tR\acontent\"C\n" +
 	"\x11FileSavedResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x14\n" +
-	"\x05error\x18\x02 \x01(\tR\x05error\"\x85\x01\n" +
-	"\x1eDiagramComponentClickedRequest\x12\x1b\n" +
-	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\x12%\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error\"\x8b\x01\n" +
+	"\x1eDiagramComponentClickedRequest\x12!\n" +
+	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\x12%\n" +
 	"\x0ecomponent_name\x18\x02 \x01(\tR\rcomponentName\x12\x1f\n" +
 	"\vmethod_name\x18\x03 \x01(\tR\n" +
 	"methodName\";\n" +
 	"\x1fDiagramComponentClickedResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\"\x85\x01\n" +
-	"\x1eDiagramComponentHoveredRequest\x12\x1b\n" +
-	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\x12%\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"\x8b\x01\n" +
+	"\x1eDiagramComponentHoveredRequest\x12!\n" +
+	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\x12%\n" +
 	"\x0ecomponent_name\x18\x02 \x01(\tR\rcomponentName\x12\x1f\n" +
 	"\vmethod_name\x18\x03 \x01(\tR\n" +
 	"methodName\";\n" +
@@ -934,7 +934,7 @@ var file_sdl_v1_models_presenter_proto_goTypes = []any{
 	(*SystemDiagram)(nil),                   // 15: sdl.v1.SystemDiagram
 	(*Generator)(nil),                       // 16: sdl.v1.Generator
 	(*Metric)(nil),                          // 17: sdl.v1.Metric
-	(*Canvas)(nil),                          // 18: sdl.v1.Canvas
+	(*Workspace)(nil),                       // 18: sdl.v1.Workspace
 }
 var file_sdl_v1_models_presenter_proto_depIdxs = []int32{
 	14, // 0: sdl.v1.InitializeSingletonResponse.available_systems:type_name -> sdl.v1.SystemInfo
@@ -942,7 +942,7 @@ var file_sdl_v1_models_presenter_proto_depIdxs = []int32{
 	15, // 2: sdl.v1.InitializePresenterResponse.diagram:type_name -> sdl.v1.SystemDiagram
 	16, // 3: sdl.v1.InitializePresenterResponse.generators:type_name -> sdl.v1.Generator
 	17, // 4: sdl.v1.InitializePresenterResponse.metrics:type_name -> sdl.v1.Metric
-	18, // 5: sdl.v1.ClientReadyResponse.canvas:type_name -> sdl.v1.Canvas
+	18, // 5: sdl.v1.ClientReadyResponse.workspace:type_name -> sdl.v1.Workspace
 	6,  // [6:6] is the sub-list for method output_type
 	6,  // [6:6] is the sub-list for method input_type
 	6,  // [6:6] is the sub-list for extension type_name

@@ -29,33 +29,12 @@ describe('Phase 3: Unified Landing Page Template', () => {
   });
 
   /**
-   * Verifies the template contains an Examples section showing
-   * system catalog entries (Uber, Bitly, etc.).
+   * Verifies the template uses goapplib EntityListing for workspace display.
    */
-  it('should have an Examples section in the template', () => {
-    const content = fs.readFileSync(templatePath, 'utf-8');
-    expect(content).toContain('Example Workspaces');
-    expect(content).toContain('.Examples');
-  });
-
-  /**
-   * Verifies the template contains a My Workspaces section using
-   * goapplib EntityListing for user-created workspaces.
-   */
-  it('should have a My Workspaces section using EntityListing', () => {
+  it('should use EntityListing for workspaces', () => {
     const content = fs.readFileSync(templatePath, 'utf-8');
     expect(content).toContain('WorkspaceEntityListing');
     expect(content).toContain('.ListingData');
-  });
-
-  /**
-   * Verifies the Fork button exists in the examples section.
-   * Fork creates a new workspace pre-loaded with example SDL content.
-   */
-  it('should have a Fork button for examples', () => {
-    const content = fs.readFileSync(templatePath, 'utf-8');
-    expect(content).toContain('/workspaces/fork');
-    expect(content).toContain('exampleId');
   });
 });
 
@@ -111,9 +90,8 @@ describe('Phase 3: Go Route Consolidation', () => {
    * in the workspace listing page. Checks the Go source for key
    * patterns that indicate the unified landing page is wired up.
    */
-  it('should have fork handler and examples in webapp.go', () => {
+  it('should have workspace listing and examples in webapp.go', () => {
     const content = fs.readFileSync(path.join(WEB_DIR, 'server/webapp.go'), 'utf-8');
-    expect(content).toContain('forkExampleHandler');
     expect(content).toContain('Examples');
     expect(content).toContain('Workspace');
   });

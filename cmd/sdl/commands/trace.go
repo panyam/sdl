@@ -1,3 +1,4 @@
+//go:build ignore
 package commands
 
 import (
@@ -40,9 +41,9 @@ Prerequisites:
 		methodName := parts[1]
 
 		// Execute trace via gRPC
-		err := withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
+		err := withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
 			req := &v1.ExecuteTraceRequest{
-				CanvasId:  canvasID,
+				WorkspaceId:  workspaceID,
 				Component: componentName,
 				Method:    methodName,
 			}

@@ -38,9 +38,9 @@ func (s *SystemInstance) ResolveGenerators() {
 	}
 	for _, spec := range s.System.Generators {
 		gen := NewGeneratorFromSpec(spec)
-		gen.ResolvedComponent = s.FindComponent(gen.ComponentPath)
+		gen.ResolvedComponent = s.FindComponent(gen.Component)
 		if gen.ResolvedComponent != nil {
-			gen.ResolvedMethod, _ = gen.ResolvedComponent.ComponentDecl.GetMethod(gen.MethodName)
+			gen.ResolvedMethod, _ = gen.ResolvedComponent.ComponentDecl.GetMethod(gen.Method)
 		}
 		s.Generators = append(s.Generators, gen)
 	}
@@ -54,9 +54,9 @@ func (s *SystemInstance) ResolveMetrics() {
 	}
 	for _, spec := range s.System.Metrics {
 		m := NewMetricFromSpec(spec)
-		m.ResolvedComponent = s.FindComponent(m.ComponentPath)
-		if m.ResolvedComponent != nil && m.MethodName != "" {
-			m.ResolvedMethod, _ = m.ResolvedComponent.ComponentDecl.GetMethod(m.MethodName)
+		m.ResolvedComponent = s.FindComponent(m.Component)
+		if m.ResolvedComponent != nil && len(m.Methods) > 0 && m.Methods[0] != "" {
+			m.ResolvedMethod, _ = m.ResolvedComponent.ComponentDecl.GetMethod(m.Methods[0])
 		}
 		s.Metrics = append(s.Metrics, m)
 	}

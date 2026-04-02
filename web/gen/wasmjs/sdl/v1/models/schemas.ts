@@ -61,88 +61,6 @@ export const PaginationResponseSchema: MessageSchema = {
 
 
 /**
- * Schema for Canvas message
- */
-export const CanvasSchema: MessageSchema = {
-  name: "Canvas",
-  fields: [
-    {
-      name: "createdAt",
-      type: FieldType.MESSAGE,
-      id: 1,
-      messageType: "google.protobuf.Timestamp",
-    },
-    {
-      name: "updatedAt",
-      type: FieldType.MESSAGE,
-      id: 2,
-      messageType: "google.protobuf.Timestamp",
-    },
-    {
-      name: "id",
-      type: FieldType.STRING,
-      id: 3,
-    },
-    {
-      name: "name",
-      type: FieldType.STRING,
-      id: 4,
-    },
-    {
-      name: "description",
-      type: FieldType.STRING,
-      id: 5,
-    },
-    {
-      name: "activeSystem",
-      type: FieldType.STRING,
-      id: 6,
-    },
-    {
-      name: "systemContents",
-      type: FieldType.STRING,
-      id: 7,
-    },
-    {
-      name: "recipes",
-      type: FieldType.STRING,
-      id: 8,
-    },
-    {
-      name: "generators",
-      type: FieldType.MESSAGE,
-      id: 9,
-      messageType: "sdl.v1.Generator",
-      repeated: true,
-    },
-    {
-      name: "metrics",
-      type: FieldType.MESSAGE,
-      id: 10,
-      messageType: "sdl.v1.Metric",
-      repeated: true,
-    },
-    {
-      name: "previewUrl",
-      type: FieldType.STRING,
-      id: 11,
-    },
-    {
-      name: "loadedSystemNames",
-      type: FieldType.REPEATED,
-      id: 12,
-      repeated: true,
-    },
-    {
-      name: "workspaceId",
-      type: FieldType.STRING,
-      id: 13,
-    },
-  ],
-};
-
-
-/**
  * Schema for Workspace message
  */
 export const WorkspaceSchema: MessageSchema = {
@@ -234,7 +152,7 @@ export const WorkspaceDesignSchema: MessageSchema = {
       id: 2,
     },
     {
-      name: "canvasId",
+      name: "workspaceId",
       type: FieldType.STRING,
       id: 3,
     },
@@ -325,28 +243,6 @@ export const GeneratorSchema: MessageSchema = {
   name: "Generator",
   fields: [
     {
-      name: "createdAt",
-      type: FieldType.MESSAGE,
-      id: 1,
-      messageType: "google.protobuf.Timestamp",
-    },
-    {
-      name: "updatedAt",
-      type: FieldType.MESSAGE,
-      id: 2,
-      messageType: "google.protobuf.Timestamp",
-    },
-    {
-      name: "id",
-      type: FieldType.STRING,
-      id: 3,
-    },
-    {
-      name: "canvasId",
-      type: FieldType.STRING,
-      id: 4,
-    },
-    {
       name: "name",
       type: FieldType.STRING,
       id: 5,
@@ -386,28 +282,6 @@ export const GeneratorSchema: MessageSchema = {
 export const MetricSchema: MessageSchema = {
   name: "Metric",
   fields: [
-    {
-      name: "createdAt",
-      type: FieldType.MESSAGE,
-      id: 1,
-      messageType: "google.protobuf.Timestamp",
-    },
-    {
-      name: "updatedAt",
-      type: FieldType.MESSAGE,
-      id: 2,
-      messageType: "google.protobuf.Timestamp",
-    },
-    {
-      name: "id",
-      type: FieldType.STRING,
-      id: 3,
-    },
-    {
-      name: "canvasId",
-      type: FieldType.STRING,
-      id: 4,
-    },
     {
       name: "name",
       type: FieldType.STRING,
@@ -1085,229 +959,13 @@ export const AggregateResultSchema: MessageSchema = {
 
 
 /**
- * Schema for CreateCanvasRequest message
- */
-export const CreateCanvasRequestSchema: MessageSchema = {
-  name: "CreateCanvasRequest",
-  fields: [
-    {
-      name: "canvas",
-      type: FieldType.MESSAGE,
-      id: 1,
-      messageType: "sdl.v1.Canvas",
-    },
-  ],
-};
-
-
-/**
- * Schema for CreateCanvasResponse message
- */
-export const CreateCanvasResponseSchema: MessageSchema = {
-  name: "CreateCanvasResponse",
-  fields: [
-    {
-      name: "canvas",
-      type: FieldType.MESSAGE,
-      id: 1,
-      messageType: "sdl.v1.Canvas",
-    },
-    {
-      name: "fieldErrors",
-      type: FieldType.STRING,
-      id: 2,
-    },
-  ],
-};
-
-
-/**
- * Schema for UpdateCanvasRequest message
- */
-export const UpdateCanvasRequestSchema: MessageSchema = {
-  name: "UpdateCanvasRequest",
-  fields: [
-    {
-      name: "canvas",
-      type: FieldType.MESSAGE,
-      id: 1,
-      messageType: "sdl.v1.Canvas",
-    },
-  ],
-};
-
-
-/**
- * Schema for UpdateCanvasResponse message
- */
-export const UpdateCanvasResponseSchema: MessageSchema = {
-  name: "UpdateCanvasResponse",
-  fields: [
-    {
-      name: "canvas",
-      type: FieldType.MESSAGE,
-      id: 1,
-      messageType: "sdl.v1.Canvas",
-    },
-    {
-      name: "updateMask",
-      type: FieldType.MESSAGE,
-      id: 2,
-      messageType: "google.protobuf.FieldMask",
-    },
-    {
-      name: "deletedFiles",
-      type: FieldType.REPEATED,
-      id: 3,
-      repeated: true,
-    },
-    {
-      name: "updatedFiles",
-      type: FieldType.STRING,
-      id: 4,
-    },
-  ],
-};
-
-
-/**
- * Schema for ListCanvasesRequest message
- */
-export const ListCanvasesRequestSchema: MessageSchema = {
-  name: "ListCanvasesRequest",
-  fields: [
-    {
-      name: "pagination",
-      type: FieldType.MESSAGE,
-      id: 1,
-      messageType: "sdl.v1.Pagination",
-    },
-  ],
-};
-
-
-/**
- * Schema for ListCanvasesResponse message
- */
-export const ListCanvasesResponseSchema: MessageSchema = {
-  name: "ListCanvasesResponse",
-  fields: [
-    {
-      name: "canvases",
-      type: FieldType.MESSAGE,
-      id: 1,
-      messageType: "sdl.v1.Canvas",
-      repeated: true,
-    },
-    {
-      name: "pagination",
-      type: FieldType.MESSAGE,
-      id: 2,
-      messageType: "sdl.v1.PaginationResponse",
-    },
-  ],
-};
-
-
-/**
- * Schema for GetCanvasRequest message
- */
-export const GetCanvasRequestSchema: MessageSchema = {
-  name: "GetCanvasRequest",
-  fields: [
-    {
-      name: "id",
-      type: FieldType.STRING,
-      id: 1,
-    },
-  ],
-};
-
-
-/**
- * Schema for GetCanvasResponse message
- */
-export const GetCanvasResponseSchema: MessageSchema = {
-  name: "GetCanvasResponse",
-  fields: [
-    {
-      name: "canvas",
-      type: FieldType.MESSAGE,
-      id: 1,
-      messageType: "sdl.v1.Canvas",
-    },
-  ],
-};
-
-
-/**
- * Schema for DeleteCanvasRequest message
- */
-export const DeleteCanvasRequestSchema: MessageSchema = {
-  name: "DeleteCanvasRequest",
-  fields: [
-    {
-      name: "id",
-      type: FieldType.STRING,
-      id: 1,
-    },
-  ],
-};
-
-
-/**
- * Schema for DeleteCanvasResponse message
- */
-export const DeleteCanvasResponseSchema: MessageSchema = {
-  name: "DeleteCanvasResponse",
-  fields: [
-  ],
-};
-
-
-/**
- * Schema for ResetCanvasRequest message
- */
-export const ResetCanvasRequestSchema: MessageSchema = {
-  name: "ResetCanvasRequest",
-  fields: [
-    {
-      name: "canvasId",
-      type: FieldType.STRING,
-      id: 1,
-    },
-  ],
-};
-
-
-/**
- * Schema for ResetCanvasResponse message
- */
-export const ResetCanvasResponseSchema: MessageSchema = {
-  name: "ResetCanvasResponse",
-  fields: [
-    {
-      name: "success",
-      type: FieldType.BOOLEAN,
-      id: 1,
-    },
-    {
-      name: "message",
-      type: FieldType.STRING,
-      id: 2,
-    },
-  ],
-};
-
-
-/**
  * Schema for LoadFileRequest message
  */
 export const LoadFileRequestSchema: MessageSchema = {
   name: "LoadFileRequest",
   fields: [
     {
-      name: "canvasId",
+      name: "workspaceId",
       type: FieldType.STRING,
       id: 1,
     },
@@ -1337,7 +995,7 @@ export const UseSystemRequestSchema: MessageSchema = {
   name: "UseSystemRequest",
   fields: [
     {
-      name: "canvasId",
+      name: "workspaceId",
       type: FieldType.STRING,
       id: 1,
     },
@@ -1367,15 +1025,20 @@ export const AddGeneratorRequestSchema: MessageSchema = {
   name: "AddGeneratorRequest",
   fields: [
     {
+      name: "workspaceId",
+      type: FieldType.STRING,
+      id: 1,
+    },
+    {
       name: "generator",
       type: FieldType.MESSAGE,
-      id: 1,
+      id: 2,
       messageType: "sdl.v1.Generator",
     },
     {
       name: "applyFlows",
       type: FieldType.BOOLEAN,
-      id: 2,
+      id: 3,
     },
   ],
 };
@@ -1404,7 +1067,7 @@ export const ListGeneratorsRequestSchema: MessageSchema = {
   name: "ListGeneratorsRequest",
   fields: [
     {
-      name: "canvasId",
+      name: "workspaceId",
       type: FieldType.STRING,
       id: 1,
     },
@@ -1436,12 +1099,12 @@ export const GetGeneratorRequestSchema: MessageSchema = {
   name: "GetGeneratorRequest",
   fields: [
     {
-      name: "canvasId",
+      name: "workspaceId",
       type: FieldType.STRING,
       id: 1,
     },
     {
-      name: "generatorId",
+      name: "generatorName",
       type: FieldType.STRING,
       id: 2,
     },
@@ -1472,16 +1135,15 @@ export const UpdateGeneratorRequestSchema: MessageSchema = {
   name: "UpdateGeneratorRequest",
   fields: [
     {
-      name: "generator",
-      type: FieldType.MESSAGE,
+      name: "workspaceId",
+      type: FieldType.STRING,
       id: 1,
-      messageType: "sdl.v1.Generator",
     },
     {
-      name: "updateMask",
+      name: "generator",
       type: FieldType.MESSAGE,
       id: 2,
-      messageType: "google.protobuf.FieldMask",
+      messageType: "sdl.v1.Generator",
     },
     {
       name: "applyFlows",
@@ -1515,12 +1177,12 @@ export const StartGeneratorRequestSchema: MessageSchema = {
   name: "StartGeneratorRequest",
   fields: [
     {
-      name: "canvasId",
+      name: "workspaceId",
       type: FieldType.STRING,
       id: 1,
     },
     {
-      name: "generatorId",
+      name: "generatorName",
       type: FieldType.STRING,
       id: 2,
     },
@@ -1545,12 +1207,12 @@ export const StopGeneratorRequestSchema: MessageSchema = {
   name: "StopGeneratorRequest",
   fields: [
     {
-      name: "canvasId",
+      name: "workspaceId",
       type: FieldType.STRING,
       id: 1,
     },
     {
-      name: "generatorId",
+      name: "generatorName",
       type: FieldType.STRING,
       id: 2,
     },
@@ -1575,12 +1237,12 @@ export const DeleteGeneratorRequestSchema: MessageSchema = {
   name: "DeleteGeneratorRequest",
   fields: [
     {
-      name: "canvasId",
+      name: "workspaceId",
       type: FieldType.STRING,
       id: 1,
     },
     {
-      name: "generatorId",
+      name: "generatorName",
       type: FieldType.STRING,
       id: 2,
     },
@@ -1610,7 +1272,7 @@ export const StartAllGeneratorsRequestSchema: MessageSchema = {
   name: "StartAllGeneratorsRequest",
   fields: [
     {
-      name: "canvasId",
+      name: "workspaceId",
       type: FieldType.STRING,
       id: 1,
     },
@@ -1661,7 +1323,7 @@ export const StopAllGeneratorsRequestSchema: MessageSchema = {
   name: "StopAllGeneratorsRequest",
   fields: [
     {
-      name: "canvasId",
+      name: "workspaceId",
       type: FieldType.STRING,
       id: 1,
     },
@@ -1712,9 +1374,14 @@ export const AddMetricRequestSchema: MessageSchema = {
   name: "AddMetricRequest",
   fields: [
     {
+      name: "workspaceId",
+      type: FieldType.STRING,
+      id: 1,
+    },
+    {
       name: "metric",
       type: FieldType.MESSAGE,
-      id: 1,
+      id: 2,
       messageType: "sdl.v1.Metric",
     },
   ],
@@ -1744,12 +1411,12 @@ export const DeleteMetricRequestSchema: MessageSchema = {
   name: "DeleteMetricRequest",
   fields: [
     {
-      name: "canvasId",
+      name: "workspaceId",
       type: FieldType.STRING,
       id: 1,
     },
     {
-      name: "metricId",
+      name: "metricName",
       type: FieldType.STRING,
       id: 2,
     },
@@ -1774,7 +1441,7 @@ export const ListMetricsRequestSchema: MessageSchema = {
   name: "ListMetricsRequest",
   fields: [
     {
-      name: "canvasId",
+      name: "workspaceId",
       type: FieldType.STRING,
       id: 1,
     },
@@ -1806,12 +1473,12 @@ export const QueryMetricsRequestSchema: MessageSchema = {
   name: "QueryMetricsRequest",
   fields: [
     {
-      name: "canvasId",
+      name: "workspaceId",
       type: FieldType.STRING,
       id: 1,
     },
     {
-      name: "metricId",
+      name: "metricName",
       type: FieldType.STRING,
       id: 2,
     },
@@ -1858,12 +1525,12 @@ export const AggregateMetricsRequestSchema: MessageSchema = {
   name: "AggregateMetricsRequest",
   fields: [
     {
-      name: "canvasId",
+      name: "workspaceId",
       type: FieldType.STRING,
       id: 1,
     },
     {
-      name: "metricId",
+      name: "metricName",
       type: FieldType.STRING,
       id: 2,
     },
@@ -1915,12 +1582,12 @@ export const StreamMetricsRequestSchema: MessageSchema = {
   name: "StreamMetricsRequest",
   fields: [
     {
-      name: "canvasId",
+      name: "workspaceId",
       type: FieldType.STRING,
       id: 1,
     },
     {
-      name: "metricIds",
+      name: "metricNames",
       type: FieldType.REPEATED,
       id: 2,
       repeated: true,
@@ -1953,7 +1620,7 @@ export const ExecuteTraceRequestSchema: MessageSchema = {
   name: "ExecuteTraceRequest",
   fields: [
     {
-      name: "canvasId",
+      name: "workspaceId",
       type: FieldType.STRING,
       id: 1,
     },
@@ -1994,7 +1661,7 @@ export const TraceAllPathsRequestSchema: MessageSchema = {
   name: "TraceAllPathsRequest",
   fields: [
     {
-      name: "canvasId",
+      name: "workspaceId",
       type: FieldType.STRING,
       id: 1,
     },
@@ -2040,7 +1707,7 @@ export const SetParameterRequestSchema: MessageSchema = {
   name: "SetParameterRequest",
   fields: [
     {
-      name: "canvasId",
+      name: "workspaceId",
       type: FieldType.STRING,
       id: 1,
     },
@@ -2095,7 +1762,7 @@ export const GetParametersRequestSchema: MessageSchema = {
   name: "GetParametersRequest",
   fields: [
     {
-      name: "canvasId",
+      name: "workspaceId",
       type: FieldType.STRING,
       id: 1,
     },
@@ -2130,7 +1797,7 @@ export const BatchSetParametersRequestSchema: MessageSchema = {
   name: "BatchSetParametersRequest",
   fields: [
     {
-      name: "canvasId",
+      name: "workspaceId",
       type: FieldType.STRING,
       id: 1,
     },
@@ -2179,7 +1846,7 @@ export const EvaluateFlowsRequestSchema: MessageSchema = {
   name: "EvaluateFlowsRequest",
   fields: [
     {
-      name: "canvasId",
+      name: "workspaceId",
       type: FieldType.STRING,
       id: 1,
     },
@@ -2242,7 +1909,7 @@ export const GetFlowStateRequestSchema: MessageSchema = {
   name: "GetFlowStateRequest",
   fields: [
     {
-      name: "canvasId",
+      name: "workspaceId",
       type: FieldType.STRING,
       id: 1,
     },
@@ -2273,7 +1940,7 @@ export const GetSystemDiagramRequestSchema: MessageSchema = {
   name: "GetSystemDiagramRequest",
   fields: [
     {
-      name: "canvasId",
+      name: "workspaceId",
       type: FieldType.STRING,
       id: 1,
     },
@@ -2304,7 +1971,7 @@ export const GetUtilizationRequestSchema: MessageSchema = {
   name: "GetUtilizationRequest",
   fields: [
     {
-      name: "canvasId",
+      name: "workspaceId",
       type: FieldType.STRING,
       id: 1,
     },
@@ -3532,7 +3199,7 @@ export const InitializeSingletonRequestSchema: MessageSchema = {
   name: "InitializeSingletonRequest",
   fields: [
     {
-      name: "canvasId",
+      name: "workspaceId",
       type: FieldType.STRING,
       id: 1,
     },
@@ -3577,7 +3244,7 @@ export const InitializeSingletonResponseSchema: MessageSchema = {
       id: 2,
     },
     {
-      name: "canvasId",
+      name: "workspaceId",
       type: FieldType.STRING,
       id: 3,
     },
@@ -3599,7 +3266,7 @@ export const InitializePresenterRequestSchema: MessageSchema = {
   name: "InitializePresenterRequest",
   fields: [
     {
-      name: "canvasId",
+      name: "workspaceId",
       type: FieldType.STRING,
       id: 1,
     },
@@ -3624,7 +3291,7 @@ export const InitializePresenterResponseSchema: MessageSchema = {
       id: 2,
     },
     {
-      name: "canvasId",
+      name: "workspaceId",
       type: FieldType.STRING,
       id: 3,
     },
@@ -3666,7 +3333,7 @@ export const ClientReadyRequestSchema: MessageSchema = {
   name: "ClientReadyRequest",
   fields: [
     {
-      name: "canvasId",
+      name: "workspaceId",
       type: FieldType.STRING,
       id: 1,
     },
@@ -3686,10 +3353,10 @@ export const ClientReadyResponseSchema: MessageSchema = {
       id: 1,
     },
     {
-      name: "canvas",
+      name: "workspace",
       type: FieldType.MESSAGE,
       id: 2,
-      messageType: "sdl.v1.Canvas",
+      messageType: "sdl.v1.Workspace",
     },
   ],
 };
@@ -3702,7 +3369,7 @@ export const FileSelectedRequestSchema: MessageSchema = {
   name: "FileSelectedRequest",
   fields: [
     {
-      name: "canvasId",
+      name: "workspaceId",
       type: FieldType.STRING,
       id: 1,
     },
@@ -3747,7 +3414,7 @@ export const FileSavedRequestSchema: MessageSchema = {
   name: "FileSavedRequest",
   fields: [
     {
-      name: "canvasId",
+      name: "workspaceId",
       type: FieldType.STRING,
       id: 1,
     },
@@ -3792,7 +3459,7 @@ export const DiagramComponentClickedRequestSchema: MessageSchema = {
   name: "DiagramComponentClickedRequest",
   fields: [
     {
-      name: "canvasId",
+      name: "workspaceId",
       type: FieldType.STRING,
       id: 1,
     },
@@ -3832,7 +3499,7 @@ export const DiagramComponentHoveredRequestSchema: MessageSchema = {
   name: "DiagramComponentHoveredRequest",
   fields: [
     {
-      name: "canvasId",
+      name: "workspaceId",
       type: FieldType.STRING,
       id: 1,
     },
@@ -4089,7 +3756,6 @@ export const GetAllDesignContentsResponseSchema: MessageSchema = {
 export const sdl_v1SchemaRegistry: Record<string, MessageSchema> = {
   "sdl.v1.Pagination": PaginationSchema,
   "sdl.v1.PaginationResponse": PaginationResponseSchema,
-  "sdl.v1.Canvas": CanvasSchema,
   "sdl.v1.Workspace": WorkspaceSchema,
   "sdl.v1.WorkspaceDesign": WorkspaceDesignSchema,
   "sdl.v1.ImportSource": ImportSourceSchema,
@@ -4114,18 +3780,6 @@ export const sdl_v1SchemaRegistry: Record<string, MessageSchema> = {
   "sdl.v1.ParameterUpdate": ParameterUpdateSchema,
   "sdl.v1.ParameterUpdateResult": ParameterUpdateResultSchema,
   "sdl.v1.AggregateResult": AggregateResultSchema,
-  "sdl.v1.CreateCanvasRequest": CreateCanvasRequestSchema,
-  "sdl.v1.CreateCanvasResponse": CreateCanvasResponseSchema,
-  "sdl.v1.UpdateCanvasRequest": UpdateCanvasRequestSchema,
-  "sdl.v1.UpdateCanvasResponse": UpdateCanvasResponseSchema,
-  "sdl.v1.ListCanvasesRequest": ListCanvasesRequestSchema,
-  "sdl.v1.ListCanvasesResponse": ListCanvasesResponseSchema,
-  "sdl.v1.GetCanvasRequest": GetCanvasRequestSchema,
-  "sdl.v1.GetCanvasResponse": GetCanvasResponseSchema,
-  "sdl.v1.DeleteCanvasRequest": DeleteCanvasRequestSchema,
-  "sdl.v1.DeleteCanvasResponse": DeleteCanvasResponseSchema,
-  "sdl.v1.ResetCanvasRequest": ResetCanvasRequestSchema,
-  "sdl.v1.ResetCanvasResponse": ResetCanvasResponseSchema,
   "sdl.v1.LoadFileRequest": LoadFileRequestSchema,
   "sdl.v1.LoadFileResponse": LoadFileResponseSchema,
   "sdl.v1.UseSystemRequest": UseSystemRequestSchema,

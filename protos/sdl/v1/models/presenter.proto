@@ -12,7 +12,7 @@ option go_package = "github.com/panyam/sdl/gen/go/sdl/v1/models";
 // ============================================================================
 
 message InitializeSingletonRequest {
-  string canvas_id = 1;
+  string workspace_id = 1;
   // SDL content to load initially
   string sdl_content = 2;
   // System name to use after loading
@@ -26,7 +26,7 @@ message InitializeSingletonRequest {
 message InitializeSingletonResponse {
   bool success = 1;
   string error = 2;
-  string canvas_id = 3;
+  string workspace_id = 3;
   repeated SystemInfo available_systems = 4;
 }
 
@@ -35,13 +35,13 @@ message InitializeSingletonResponse {
 // ============================================================================
 
 message InitializePresenterRequest {
-  string canvas_id = 1;
+  string workspace_id = 1;
 }
 
 message InitializePresenterResponse {
   bool success = 1;
   string error = 2;
-  string canvas_id = 3;
+  string workspace_id = 3;
   // Available systems to choose from
   repeated SystemInfo available_systems = 4;
   // Initial state to render
@@ -51,12 +51,12 @@ message InitializePresenterResponse {
 }
 
 message ClientReadyRequest {
-  string canvas_id = 1;
+  string workspace_id = 1;
 }
 
 message ClientReadyResponse {
   bool success = 1;
-  Canvas canvas = 2;
+  Workspace workspace = 2;
 }
 
 // ============================================================================
@@ -64,7 +64,7 @@ message ClientReadyResponse {
 // ============================================================================
 
 message FileSelectedRequest {
-  string canvas_id = 1;
+  string workspace_id = 1;
   string file_path = 2;
 }
 
@@ -75,7 +75,7 @@ message FileSelectedResponse {
 }
 
 message FileSavedRequest {
-  string canvas_id = 1;
+  string workspace_id = 1;
   string file_path = 2;
   string content = 3;
 }
@@ -90,7 +90,7 @@ message FileSavedResponse {
 // ============================================================================
 
 message DiagramComponentClickedRequest {
-  string canvas_id = 1;
+  string workspace_id = 1;
   string component_name = 2;
   string method_name = 3;  // Optional - if clicking on a specific method
 }
@@ -100,7 +100,7 @@ message DiagramComponentClickedResponse {
 }
 
 message DiagramComponentHoveredRequest {
-  string canvas_id = 1;
+  string workspace_id = 1;
   string component_name = 2;
   string method_name = 3;
 }

@@ -12,7 +12,7 @@ import (
 // This is a standalone function so both Canvas and DevEnv can use it.
 func BuildSystemDiagram(
 	system *runtime.SystemInstance,
-	generators map[string]*GeneratorInfo,
+	generators map[string]*runtime.Generator,
 	flowScope *runtime.FlowScope,
 	currentFlowRates map[string]float64,
 ) (*SystemDiagram, error) {

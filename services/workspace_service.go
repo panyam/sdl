@@ -6,10 +6,11 @@ import (
 	protos "github.com/panyam/sdl/gen/go/sdl/v1/models"
 )
 
-// WorkspaceService defines the interface for workspace CRUD operations.
-// Implementations: in-memory (seeded from examples), file-based, DB-backed,
-// IndexedDB (WASM singleton).
-type WorkspaceService interface {
+// WorkspaceCRUD defines the CRUD subset of WorkspaceService.
+// Used by implementations that only handle metadata (BackendWorkspaceService, inmem).
+// The full WorkspaceService interface is generated from the proto definition
+// at gen/go/sdl/v1/services/workspace_grpc.pb.go (WorkspaceServiceServer).
+type WorkspaceCRUD interface {
 	CreateWorkspace(context.Context, *protos.CreateWorkspaceRequest) (*protos.CreateWorkspaceResponse, error)
 	GetWorkspace(context.Context, *protos.GetWorkspaceRequest) (*protos.GetWorkspaceResponse, error)
 	ListWorkspaces(context.Context, *protos.ListWorkspacesRequest) (*protos.ListWorkspacesResponse, error)

@@ -4,12 +4,21 @@ package sdl.v1;
 
 import "sdl/v1/models/models.proto";
 import "sdl/v1/models/workspace_service.proto";
+import "sdl/v1/models/canvas_service.proto";
 import "google/api/annotations.proto";
 
 option go_package = "github.com/panyam/sdl/gen/go/sdl/v1/services";
 
-// WorkspaceService manages workspace projects.
-// Implementations: in-memory (seeded from examples), file-based, DB-backed, IndexedDB (WASM).
+// WorkspaceService is the unified entry point for workspace operations.
+// Combines CRUD (create/get/list workspaces) with runtime/simulation
+// (load files, manage generators/metrics, evaluate flows).
+//
+// Follows the lilbattle GamesService pattern: one service covering
+// both metadata and gameplay operations.
+//
+// Implementations:
+//   - devenvbe.WorkspaceService — local mode, wraps DevEnv
+//   - connectclient.WorkspaceClient — remote mode, wraps gRPC client
 service WorkspaceService {
   rpc CreateWorkspace(CreateWorkspaceRequest) returns (CreateWorkspaceResponse) {
     option (google.api.http) = {
@@ -54,6 +63,134 @@ service WorkspaceService {
   rpc GetAllDesignContents(GetAllDesignContentsRequest) returns (GetAllDesignContentsResponse) {
     option (google.api.http) = {
       get: "/v1/workspaces/{workspace_id}/designs/contents",
+    };
+  }
+
+  // =========================================================================
+  // Runtime / Simulation Operations
+  // =========================================================================
+
+  // Load an SDL file into the workspace
+  rpc LoadFile(LoadFileRequest) returns (LoadFileResponse) {
+    option (google.api.http) = {
+      post: "/v1/workspaces/{workspace_id}/actions:load"
+      body: "*"
+    };
+  }
+
+  // Select the active system for simulation
+  rpc UseSystem(UseSystemRequest) returns (UseSystemResponse) {
+    option (google.api.http) = {
+      post: "/v1/workspaces/{workspace_id}/actions:use"
+      body: "*"
+    };
+  }
+
+  // ----- Generator Operations -----
+
+  rpc AddGenerator(AddGeneratorRequest) returns (AddGeneratorResponse) {
+    option (google.api.http) = {
+      post: "/v1/workspaces/{workspace_id}/generators"
+      body: "*"
+    };
+  }
+
+  rpc UpdateGenerator(UpdateGeneratorRequest) returns (UpdateGeneratorResponse) {
+    option (google.api.http) = {
+      patch: "/v1/workspaces/{workspace_id}/generators/{generator.name}"
+      body: "*"
+    };
+  }
+
+  rpc DeleteGenerator(DeleteGeneratorRequest) returns (DeleteGeneratorResponse) {
+    option (google.api.http) = {
+      delete: "/v1/workspaces/{workspace_id}/generators/{generator_name}"
+    };
+  }
+
+  rpc ListGenerators(ListGeneratorsRequest) returns (ListGeneratorsResponse) {
+    option (google.api.http) = {
+      get: "/v1/workspaces/{workspace_id}/generators"
+    };
+  }
+
+  rpc StartGenerator(StartGeneratorRequest) returns (StartGeneratorResponse) {
+    option (google.api.http) = {
+      post: "/v1/workspaces/{workspace_id}/generators/{generator_name}/actions:start"
+      body: "*"
+    };
+  }
+
+  rpc StopGenerator(StopGeneratorRequest) returns (StopGeneratorResponse) {
+    option (google.api.http) = {
+      post: "/v1/workspaces/{workspace_id}/generators/{generator_name}/actions:stop"
+      body: "*"
+    };
+  }
+
+  rpc StartAllGenerators(StartAllGeneratorsRequest) returns (StartAllGeneratorsResponse) {
+    option (google.api.http) = {
+      post: "/v1/workspaces/{workspace_id}/generators/actions:startall"
+      body: "*"
+    };
+  }
+
+  rpc StopAllGenerators(StopAllGeneratorsRequest) returns (StopAllGeneratorsResponse) {
+    option (google.api.http) = {
+      post: "/v1/workspaces/{workspace_id}/generators/actions:stopall"
+      body: "*"
+    };
+  }
+
+  // ----- Metric Operations -----
+
+  rpc AddMetric(AddMetricRequest) returns (AddMetricResponse) {
+    option (google.api.http) = {
+      post: "/v1/workspaces/{workspace_id}/metrics"
+      body: "*"
+    };
+  }
+
+  rpc DeleteMetric(DeleteMetricRequest) returns (DeleteMetricResponse) {
+    option (google.api.http) = {
+      delete: "/v1/workspaces/{workspace_id}/metrics/{metric_name}"
+    };
+  }
+
+  rpc ListMetrics(ListMetricsRequest) returns (ListMetricsResponse) {
+    option (google.api.http) = {
+      get: "/v1/workspaces/{workspace_id}/metrics"
+    };
+  }
+
+  // ----- Parameter Operations -----
+
+  rpc SetParameter(SetParameterRequest) returns (SetParameterResponse) {
+    option (google.api.http) = {
+      put: "/v1/workspaces/{workspace_id}/parameters/{path}"
+      body: "*"
+    };
+  }
+
+  rpc GetParameters(GetParametersRequest) returns (GetParametersResponse) {
+    option (google.api.http) = {
+      get: "/v1/workspaces/{workspace_id}/parameters"
+    };
+  }
+
+  // ----- Flow Analysis Operations -----
+
+  rpc EvaluateFlows(EvaluateFlowsRequest) returns (EvaluateFlowsResponse) {
+    option (google.api.http) = {
+      get: "/v1/workspaces/{workspace_id}/flows/{strategy}/eval"
+    };
+  }
+
+  // ----- System Diagram -----
+
+  rpc GetSystemDiagram(GetSystemDiagramRequest) returns (GetSystemDiagramResponse) {
+    option (google.api.http) = {
+      get: "/v1/workspaces/{workspace_id}/diagram"
     };
   }
 }

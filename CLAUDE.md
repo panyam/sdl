@@ -70,7 +70,7 @@ system Twitter(arch TwitterArch) {
 - `cd protos && make buf` - To generate protos (or `make buf` from top level)
 - `make` or `make all` - Build everything (order: parser -> WASM -> dash -> binary -> run)
 - `make dash` - To rebuild the web dashboard
-- `make serve` - To start the server (go run cmd/sdl/main.go serve)
+- `make run` - To start the server (go run cmd/sdl/main.go serve)
 - `make webtest` - Run web unit tests (vitest)
 - `make wasmbin` - Build WASM binaries
 - `templar get` - Fetch vendored template dependencies (run from web/templates/)
@@ -176,23 +176,16 @@ GitHub issues created for stack alignment:
 - Don't hardcode `editor.background` in custom themes — inherit from `vs`/`vs-dark` base
 - Known issue: theme toggle doesn't update Monaco editors (needs investigation)
 
-## Architecture: Workspace vs Canvas vs Design
+## Where to Find Things
 
-- **Workspace** = project/repo (e.g., "Uber") — source files, designs, import sources, manifest (`sdl.json`)
-- **Design** = one system architecture (e.g., "UberMVP") — a `system` block in an SDL file
-- **Canvas** = runtime/VM that executes a design — generators, metrics, flow analysis
-- Analogy: Workspace = git repo, Design = source file, Canvas = running process
-- Proto: `Workspace` (project metadata), `Canvas` (runtime state), `WorkspaceDesign` (design entry)
-- Future: `CompilationUnit` artifact between Workspace and Canvas (see #19)
-
-## WorkspaceService (lilbattle pattern)
-
-- Interface: `services/workspace_service.go` — CRUD for workspaces + design content
-- Backend: `services/backend_workspace_service.go` — wraps `WorkspaceStorageProvider`
-- In-memory storage: `services/inmem/workspace_storage.go` — seeded from examples/
-- Manifest: `services/workspace.go` — `LoadWorkspaceManifest()` parses `sdl.json` via protojson
-- Example manifests: `examples/uber/sdl.json`, `examples/bitly/sdl.json`
-- Services layer works with protos directly — no custom Go types duplicating proto fields
+- Architecture and patterns: SUMMARY.md
+- Roadmap and planning: ROADMAP.md
+- Current work and TODOs: NEXTSTEPS.md
+- Architectural rules: CONSTRAINTS.md
+- Service backends: `services/devenvbe/` (local), `services/connectclient/` (remote), `services/inmem/` (in-memory)
+- WASM browser code: `cmd/wasm/browser.go`
+- Page/presenter: `services/workspace_presenter.go`, `services/panels.go`
+- Workspace manifests: `examples/*/sdl.json`
 
 ## ScriptTagFS (SDL embedding in pages)
 

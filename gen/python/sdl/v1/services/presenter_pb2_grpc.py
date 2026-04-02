@@ -84,17 +84,17 @@ class SingletonInitializerService(object):
             _registered_method=True)
 
 
-class CanvasViewPresenterStub(object):
-    """CanvasViewPresenter is the P in Model-View-Presenter.
+class WorkspacePresenterStub(object):
+    """WorkspacePresenter is the P in Model-View-Presenter.
 
-    The frontend/views are kept as dumb as possible - they react to commands
-    and state changes but don't handle complex UI logic. They present user
-    interactions to this Presenter which handles the logic between the view
-    and the backend (Canvas/runtime).
+    The frontend/views (WorkspacePage implementations) are kept as dumb as
+    possible - they react to commands and state changes but don't handle
+    complex UI logic. They present user interactions to this Presenter which
+    handles the logic between the page and the runtime (DevEnv).
 
     This also helps with:
     - Mocking views for testing
-    - Different view implementations (web, CLI, remote)
+    - Different page implementations (browser, CLI console, remote)
     - Changing presenters for different looks/feels
     === Initialization ===
     """
@@ -106,108 +106,108 @@ class CanvasViewPresenterStub(object):
             channel: A grpc.Channel.
         """
         self.Initialize = channel.unary_unary(
-                '/sdl.v1.CanvasViewPresenter/Initialize',
+                '/sdl.v1.WorkspacePresenter/Initialize',
                 request_serializer=sdl_dot_v1_dot_models_dot_presenter__pb2.InitializePresenterRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_presenter__pb2.InitializePresenterResponse.FromString,
                 _registered_method=True)
         self.ClientReady = channel.unary_unary(
-                '/sdl.v1.CanvasViewPresenter/ClientReady',
+                '/sdl.v1.WorkspacePresenter/ClientReady',
                 request_serializer=sdl_dot_v1_dot_models_dot_presenter__pb2.ClientReadyRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_presenter__pb2.ClientReadyResponse.FromString,
                 _registered_method=True)
         self.FileSelected = channel.unary_unary(
-                '/sdl.v1.CanvasViewPresenter/FileSelected',
+                '/sdl.v1.WorkspacePresenter/FileSelected',
                 request_serializer=sdl_dot_v1_dot_models_dot_presenter__pb2.FileSelectedRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_presenter__pb2.FileSelectedResponse.FromString,
                 _registered_method=True)
         self.FileSaved = channel.unary_unary(
-                '/sdl.v1.CanvasViewPresenter/FileSaved',
+                '/sdl.v1.WorkspacePresenter/FileSaved',
                 request_serializer=sdl_dot_v1_dot_models_dot_presenter__pb2.FileSavedRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_presenter__pb2.FileSavedResponse.FromString,
                 _registered_method=True)
         self.UseSystem = channel.unary_unary(
-                '/sdl.v1.CanvasViewPresenter/UseSystem',
+                '/sdl.v1.WorkspacePresenter/UseSystem',
                 request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.UseSystemRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.UseSystemResponse.FromString,
                 _registered_method=True)
         self.AddGenerator = channel.unary_unary(
-                '/sdl.v1.CanvasViewPresenter/AddGenerator',
+                '/sdl.v1.WorkspacePresenter/AddGenerator',
                 request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.AddGeneratorRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.AddGeneratorResponse.FromString,
                 _registered_method=True)
         self.DeleteGenerator = channel.unary_unary(
-                '/sdl.v1.CanvasViewPresenter/DeleteGenerator',
+                '/sdl.v1.WorkspacePresenter/DeleteGenerator',
                 request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.DeleteGeneratorRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.DeleteGeneratorResponse.FromString,
                 _registered_method=True)
         self.UpdateGenerator = channel.unary_unary(
-                '/sdl.v1.CanvasViewPresenter/UpdateGenerator',
+                '/sdl.v1.WorkspacePresenter/UpdateGenerator',
                 request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.UpdateGeneratorRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.UpdateGeneratorResponse.FromString,
                 _registered_method=True)
         self.StartGenerator = channel.unary_unary(
-                '/sdl.v1.CanvasViewPresenter/StartGenerator',
+                '/sdl.v1.WorkspacePresenter/StartGenerator',
                 request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.StartGeneratorRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.StartGeneratorResponse.FromString,
                 _registered_method=True)
         self.StopGenerator = channel.unary_unary(
-                '/sdl.v1.CanvasViewPresenter/StopGenerator',
+                '/sdl.v1.WorkspacePresenter/StopGenerator',
                 request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.StopGeneratorRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.StopGeneratorResponse.FromString,
                 _registered_method=True)
         self.StartAllGenerators = channel.unary_unary(
-                '/sdl.v1.CanvasViewPresenter/StartAllGenerators',
+                '/sdl.v1.WorkspacePresenter/StartAllGenerators',
                 request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.StartAllGeneratorsRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.StartAllGeneratorsResponse.FromString,
                 _registered_method=True)
         self.StopAllGenerators = channel.unary_unary(
-                '/sdl.v1.CanvasViewPresenter/StopAllGenerators',
+                '/sdl.v1.WorkspacePresenter/StopAllGenerators',
                 request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.StopAllGeneratorsRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.StopAllGeneratorsResponse.FromString,
                 _registered_method=True)
         self.AddMetric = channel.unary_unary(
-                '/sdl.v1.CanvasViewPresenter/AddMetric',
+                '/sdl.v1.WorkspacePresenter/AddMetric',
                 request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.AddMetricRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.AddMetricResponse.FromString,
                 _registered_method=True)
         self.DeleteMetric = channel.unary_unary(
-                '/sdl.v1.CanvasViewPresenter/DeleteMetric',
+                '/sdl.v1.WorkspacePresenter/DeleteMetric',
                 request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.DeleteMetricRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.DeleteMetricResponse.FromString,
                 _registered_method=True)
         self.SetParameter = channel.unary_unary(
-                '/sdl.v1.CanvasViewPresenter/SetParameter',
+                '/sdl.v1.WorkspacePresenter/SetParameter',
                 request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.SetParameterRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.SetParameterResponse.FromString,
                 _registered_method=True)
         self.EvaluateFlows = channel.unary_unary(
-                '/sdl.v1.CanvasViewPresenter/EvaluateFlows',
+                '/sdl.v1.WorkspacePresenter/EvaluateFlows',
                 request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.EvaluateFlowsRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.EvaluateFlowsResponse.FromString,
                 _registered_method=True)
         self.DiagramComponentClicked = channel.unary_unary(
-                '/sdl.v1.CanvasViewPresenter/DiagramComponentClicked',
+                '/sdl.v1.WorkspacePresenter/DiagramComponentClicked',
                 request_serializer=sdl_dot_v1_dot_models_dot_presenter__pb2.DiagramComponentClickedRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_presenter__pb2.DiagramComponentClickedResponse.FromString,
                 _registered_method=True)
         self.DiagramComponentHovered = channel.unary_unary(
-                '/sdl.v1.CanvasViewPresenter/DiagramComponentHovered',
+                '/sdl.v1.WorkspacePresenter/DiagramComponentHovered',
                 request_serializer=sdl_dot_v1_dot_models_dot_presenter__pb2.DiagramComponentHoveredRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_presenter__pb2.DiagramComponentHoveredResponse.FromString,
                 _registered_method=True)
 
 
-class CanvasViewPresenterServicer(object):
-    """CanvasViewPresenter is the P in Model-View-Presenter.
+class WorkspacePresenterServicer(object):
+    """WorkspacePresenter is the P in Model-View-Presenter.
 
-    The frontend/views are kept as dumb as possible - they react to commands
-    and state changes but don't handle complex UI logic. They present user
-    interactions to this Presenter which handles the logic between the view
-    and the backend (Canvas/runtime).
+    The frontend/views (WorkspacePage implementations) are kept as dumb as
+    possible - they react to commands and state changes but don't handle
+    complex UI logic. They present user interactions to this Presenter which
+    handles the logic between the page and the runtime (DevEnv).
 
     This also helps with:
     - Mocking views for testing
-    - Different view implementations (web, CLI, remote)
+    - Different page implementations (browser, CLI console, remote)
     - Changing presenters for different looks/feels
     === Initialization ===
     """
@@ -353,7 +353,7 @@ class CanvasViewPresenterServicer(object):
         raise NotImplementedError('Method not implemented!')
 
 
-def add_CanvasViewPresenterServicer_to_server(servicer, server):
+def add_WorkspacePresenterServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'Initialize': grpc.unary_unary_rpc_method_handler(
                     servicer.Initialize,
@@ -447,23 +447,23 @@ def add_CanvasViewPresenterServicer_to_server(servicer, server):
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'sdl.v1.CanvasViewPresenter', rpc_method_handlers)
+            'sdl.v1.WorkspacePresenter', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
-    server.add_registered_method_handlers('sdl.v1.CanvasViewPresenter', rpc_method_handlers)
+    server.add_registered_method_handlers('sdl.v1.WorkspacePresenter', rpc_method_handlers)
 
 
  # This class is part of an EXPERIMENTAL API.
-class CanvasViewPresenter(object):
-    """CanvasViewPresenter is the P in Model-View-Presenter.
+class WorkspacePresenter(object):
+    """WorkspacePresenter is the P in Model-View-Presenter.
 
-    The frontend/views are kept as dumb as possible - they react to commands
-    and state changes but don't handle complex UI logic. They present user
-    interactions to this Presenter which handles the logic between the view
-    and the backend (Canvas/runtime).
+    The frontend/views (WorkspacePage implementations) are kept as dumb as
+    possible - they react to commands and state changes but don't handle
+    complex UI logic. They present user interactions to this Presenter which
+    handles the logic between the page and the runtime (DevEnv).
 
     This also helps with:
     - Mocking views for testing
-    - Different view implementations (web, CLI, remote)
+    - Different page implementations (browser, CLI console, remote)
     - Changing presenters for different looks/feels
     === Initialization ===
     """
@@ -482,7 +482,7 @@ class CanvasViewPresenter(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/sdl.v1.CanvasViewPresenter/Initialize',
+            '/sdl.v1.WorkspacePresenter/Initialize',
             sdl_dot_v1_dot_models_dot_presenter__pb2.InitializePresenterRequest.SerializeToString,
             sdl_dot_v1_dot_models_dot_presenter__pb2.InitializePresenterResponse.FromString,
             options,
@@ -509,7 +509,7 @@ class CanvasViewPresenter(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/sdl.v1.CanvasViewPresenter/ClientReady',
+            '/sdl.v1.WorkspacePresenter/ClientReady',
             sdl_dot_v1_dot_models_dot_presenter__pb2.ClientReadyRequest.SerializeToString,
             sdl_dot_v1_dot_models_dot_presenter__pb2.ClientReadyResponse.FromString,
             options,
@@ -536,7 +536,7 @@ class CanvasViewPresenter(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/sdl.v1.CanvasViewPresenter/FileSelected',
+            '/sdl.v1.WorkspacePresenter/FileSelected',
             sdl_dot_v1_dot_models_dot_presenter__pb2.FileSelectedRequest.SerializeToString,
             sdl_dot_v1_dot_models_dot_presenter__pb2.FileSelectedResponse.FromString,
             options,
@@ -563,7 +563,7 @@ class CanvasViewPresenter(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/sdl.v1.CanvasViewPresenter/FileSaved',
+            '/sdl.v1.WorkspacePresenter/FileSaved',
             sdl_dot_v1_dot_models_dot_presenter__pb2.FileSavedRequest.SerializeToString,
             sdl_dot_v1_dot_models_dot_presenter__pb2.FileSavedResponse.FromString,
             options,
@@ -590,7 +590,7 @@ class CanvasViewPresenter(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/sdl.v1.CanvasViewPresenter/UseSystem',
+            '/sdl.v1.WorkspacePresenter/UseSystem',
             sdl_dot_v1_dot_models_dot_canvas__service__pb2.UseSystemRequest.SerializeToString,
             sdl_dot_v1_dot_models_dot_canvas__service__pb2.UseSystemResponse.FromString,
             options,
@@ -617,7 +617,7 @@ class CanvasViewPresenter(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/sdl.v1.CanvasViewPresenter/AddGenerator',
+            '/sdl.v1.WorkspacePresenter/AddGenerator',
             sdl_dot_v1_dot_models_dot_canvas__service__pb2.AddGeneratorRequest.SerializeToString,
             sdl_dot_v1_dot_models_dot_canvas__service__pb2.AddGeneratorResponse.FromString,
             options,
@@ -644,7 +644,7 @@ class CanvasViewPresenter(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/sdl.v1.CanvasViewPresenter/DeleteGenerator',
+            '/sdl.v1.WorkspacePresenter/DeleteGenerator',
             sdl_dot_v1_dot_models_dot_canvas__service__pb2.DeleteGeneratorRequest.SerializeToString,
             sdl_dot_v1_dot_models_dot_canvas__service__pb2.DeleteGeneratorResponse.FromString,
             options,
@@ -671,7 +671,7 @@ class CanvasViewPresenter(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/sdl.v1.CanvasViewPresenter/UpdateGenerator',
+            '/sdl.v1.WorkspacePresenter/UpdateGenerator',
             sdl_dot_v1_dot_models_dot_canvas__service__pb2.UpdateGeneratorRequest.SerializeToString,
             sdl_dot_v1_dot_models_dot_canvas__service__pb2.UpdateGeneratorResponse.FromString,
             options,
@@ -698,7 +698,7 @@ class CanvasViewPresenter(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/sdl.v1.CanvasViewPresenter/StartGenerator',
+            '/sdl.v1.WorkspacePresenter/StartGenerator',
             sdl_dot_v1_dot_models_dot_canvas__service__pb2.StartGeneratorRequest.SerializeToString,
             sdl_dot_v1_dot_models_dot_canvas__service__pb2.StartGeneratorResponse.FromString,
             options,
@@ -725,7 +725,7 @@ class CanvasViewPresenter(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/sdl.v1.CanvasViewPresenter/StopGenerator',
+            '/sdl.v1.WorkspacePresenter/StopGenerator',
             sdl_dot_v1_dot_models_dot_canvas__service__pb2.StopGeneratorRequest.SerializeToString,
             sdl_dot_v1_dot_models_dot_canvas__service__pb2.StopGeneratorResponse.FromString,
             options,
@@ -752,7 +752,7 @@ class CanvasViewPresenter(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/sdl.v1.CanvasViewPresenter/StartAllGenerators',
+            '/sdl.v1.WorkspacePresenter/StartAllGenerators',
             sdl_dot_v1_dot_models_dot_canvas__service__pb2.StartAllGeneratorsRequest.SerializeToString,
             sdl_dot_v1_dot_models_dot_canvas__service__pb2.StartAllGeneratorsResponse.FromString,
             options,
@@ -779,7 +779,7 @@ class CanvasViewPresenter(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/sdl.v1.CanvasViewPresenter/StopAllGenerators',
+            '/sdl.v1.WorkspacePresenter/StopAllGenerators',
             sdl_dot_v1_dot_models_dot_canvas__service__pb2.StopAllGeneratorsRequest.SerializeToString,
             sdl_dot_v1_dot_models_dot_canvas__service__pb2.StopAllGeneratorsResponse.FromString,
             options,
@@ -806,7 +806,7 @@ class CanvasViewPresenter(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/sdl.v1.CanvasViewPresenter/AddMetric',
+            '/sdl.v1.WorkspacePresenter/AddMetric',
             sdl_dot_v1_dot_models_dot_canvas__service__pb2.AddMetricRequest.SerializeToString,
             sdl_dot_v1_dot_models_dot_canvas__service__pb2.AddMetricResponse.FromString,
             options,
@@ -833,7 +833,7 @@ class CanvasViewPresenter(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/sdl.v1.CanvasViewPresenter/DeleteMetric',
+            '/sdl.v1.WorkspacePresenter/DeleteMetric',
             sdl_dot_v1_dot_models_dot_canvas__service__pb2.DeleteMetricRequest.SerializeToString,
             sdl_dot_v1_dot_models_dot_canvas__service__pb2.DeleteMetricResponse.FromString,
             options,
@@ -860,7 +860,7 @@ class CanvasViewPresenter(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/sdl.v1.CanvasViewPresenter/SetParameter',
+            '/sdl.v1.WorkspacePresenter/SetParameter',
             sdl_dot_v1_dot_models_dot_canvas__service__pb2.SetParameterRequest.SerializeToString,
             sdl_dot_v1_dot_models_dot_canvas__service__pb2.SetParameterResponse.FromString,
             options,
@@ -887,7 +887,7 @@ class CanvasViewPresenter(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/sdl.v1.CanvasViewPresenter/EvaluateFlows',
+            '/sdl.v1.WorkspacePresenter/EvaluateFlows',
             sdl_dot_v1_dot_models_dot_canvas__service__pb2.EvaluateFlowsRequest.SerializeToString,
             sdl_dot_v1_dot_models_dot_canvas__service__pb2.EvaluateFlowsResponse.FromString,
             options,
@@ -914,7 +914,7 @@ class CanvasViewPresenter(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/sdl.v1.CanvasViewPresenter/DiagramComponentClicked',
+            '/sdl.v1.WorkspacePresenter/DiagramComponentClicked',
             sdl_dot_v1_dot_models_dot_presenter__pb2.DiagramComponentClickedRequest.SerializeToString,
             sdl_dot_v1_dot_models_dot_presenter__pb2.DiagramComponentClickedResponse.FromString,
             options,
@@ -941,7 +941,7 @@ class CanvasViewPresenter(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/sdl.v1.CanvasViewPresenter/DiagramComponentHovered',
+            '/sdl.v1.WorkspacePresenter/DiagramComponentHovered',
             sdl_dot_v1_dot_models_dot_presenter__pb2.DiagramComponentHoveredRequest.SerializeToString,
             sdl_dot_v1_dot_models_dot_presenter__pb2.DiagramComponentHoveredResponse.FromString,
             options,

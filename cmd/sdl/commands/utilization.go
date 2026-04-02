@@ -1,3 +1,4 @@
+//go:build ignore
 package commands
 
 import (
@@ -44,9 +45,9 @@ func init() {
 
 func showUtilization(components []string, jsonOutput bool, threshold float64) {
 
-	err := withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
+	err := withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
 		req := &v1.GetUtilizationRequest{
-			CanvasId:   canvasID,
+			WorkspaceId:   workspaceID,
 			Components: components,
 		}
 
