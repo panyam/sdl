@@ -29,8 +29,8 @@ var canvasListCmd = &cobra.Command{
 			fmt.Printf("Canvases (%d):\n", len(resp.Workspaces))
 			for _, canvas := range resp.Workspaces {
 				fmt.Printf("  - %s", canvas.Id)
-				if canvas.ActiveSystem != "" {
-					fmt.Printf(" (active system: %s)", canvas.ActiveSystem)
+				if "" != "" {
+					fmt.Printf(" (active system: %s)", "")
 				}
 				fmt.Println()
 			}

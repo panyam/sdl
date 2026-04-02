@@ -64,10 +64,10 @@ func (s *RingBufferStore) WritePoint(ctx context.Context, metric *protos.Metric,
 	}
 
 	s.mu.Lock()
-	rb, ok := s.buffers[metric.Id]
+	rb, ok := s.buffers[metric.Name]
 	if !ok {
 		rb = newRingBuffer(s.maxPointsPerMetric)
-		s.buffers[metric.Id] = rb
+		s.buffers[metric.Name] = rb
 	}
 	s.mu.Unlock()
 
@@ -82,10 +82,10 @@ func (s *RingBufferStore) WriteBatch(ctx context.Context, metric *protos.Metric,
 	}
 
 	s.mu.Lock()
-	rb, ok := s.buffers[metric.Id]
+	rb, ok := s.buffers[metric.Name]
 	if !ok {
 		rb = newRingBuffer(s.maxPointsPerMetric)
-		s.buffers[metric.Id] = rb
+		s.buffers[metric.Name] = rb
 	}
 	s.mu.Unlock()
 
@@ -102,7 +102,7 @@ func (s *RingBufferStore) Query(ctx context.Context, metric *protos.Metric, opts
 	}
 
 	s.mu.RLock()
-	rb, ok := s.buffers[metric.Id]
+	rb, ok := s.buffers[metric.Name]
 	s.mu.RUnlock()
 
 	if !ok {
@@ -139,7 +139,7 @@ func (s *RingBufferStore) QueryMultiple(ctx context.Context, metrics []*protos.M
 		if err != nil {
 			return nil, err
 		}
-		results[metric.Id] = result
+		results[metric.Name] = result
 	}
 	return results, nil
 }
@@ -256,7 +256,7 @@ func (s *RingBufferStore) Subscribe(ctx context.Context, metricIDs []string) (<-
 // GetMetricStats returns statistics for a specific metric
 func (s *RingBufferStore) GetMetricStats(metric *protos.Metric) MetricStats {
 	s.mu.RLock()
-	rb, ok := s.buffers[metric.Id]
+	rb, ok := s.buffers[metric.Name]
 	s.mu.RUnlock()
 
 	if !ok || rb == nil {

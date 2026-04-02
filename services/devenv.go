@@ -25,11 +25,11 @@ type DevEnv struct {
 	loadedSystems map[string]*runtime.SystemInstance
 
 	// Generator management
-	generators     map[string]*GeneratorInfo
+	generators     map[string]*runtime.Generator
 	generatorsLock sync.RWMutex
 
 	// Metrics
-	metricTracer *MetricTracer
+	metricTracer *runtime.MetricTracer
 
 	// Flow analysis
 	currentFlowScope    *runtime.FlowScope
@@ -53,7 +53,7 @@ func NewDevEnv(resolver loader.FileResolver) *DevEnv {
 	return &DevEnv{
 		runtime:             rt,
 		loadedSystems:       make(map[string]*runtime.SystemInstance),
-		generators:          make(map[string]*GeneratorInfo),
+		generators:          make(map[string]*runtime.Generator),
 		manualRateOverrides: make(map[string]float64),
 	}
 }
@@ -159,7 +159,7 @@ func (d *DevEnv) Use(systemName string) error {
 	if d.metricTracer != nil {
 		d.metricTracer.Clear()
 	}
-	d.metricTracer = NewMetricTracer(d.activeSystem, d)
+	d.metricTracer = runtime.NewMetricTracer(d.activeSystem, d)
 
 	// Reset simulation time
 	d.simulationStarted = false
@@ -205,28 +205,28 @@ func (d *DevEnv) Use(systemName string) error {
 // Generator management
 
 // AddGenerator adds and starts a new generator.
-func (d *DevEnv) AddGenerator(gen *GeneratorInfo) error {
-	if gen.Id == "" {
+func (d *DevEnv) AddGenerator(gen *runtime.Generator) error {
+	if gen.Name == "" {
 		return fmt.Errorf("generator ID cannot be empty")
 	}
 	if d.activeSystem == nil {
 		return fmt.Errorf("no active system")
 	}
 
-	gen.simCtx = d
+	gen.SimCtx = d
 	gen.System = d.activeSystem
 
 	// Resolve component and method if not already resolved
-	if gen.resolvedComponentInstance == nil && gen.Component != "" {
-		gen.resolvedComponentInstance = d.activeSystem.FindComponent(gen.Component)
+	if gen.ResolvedComponent == nil && gen.Component != "" {
+		gen.ResolvedComponent = d.activeSystem.FindComponent(gen.Component)
 	}
 
 	d.generatorsLock.Lock()
-	if d.generators[gen.Id] != nil {
+	if d.generators[gen.Name] != nil {
 		d.generatorsLock.Unlock()
-		return fmt.Errorf("generator '%s' already exists", gen.Id)
+		return fmt.Errorf("generator '%s' already exists", gen.Name)
 	}
-	d.generators[gen.Id] = gen
+	d.generators[gen.Name] = gen
 	d.generatorsLock.Unlock()
 
 	gen.Start()
@@ -321,7 +321,7 @@ func (d *DevEnv) StopGenerator(name string) error {
 // StartAllGenerators starts all registered generators.
 func (d *DevEnv) StartAllGenerators() error {
 	d.generatorsLock.RLock()
-	gens := make([]*GeneratorInfo, 0, len(d.generators))
+	gens := make([]*runtime.Generator, 0, len(d.generators))
 	for _, gen := range d.generators {
 		gens = append(gens, gen)
 	}
@@ -346,7 +346,7 @@ func (d *DevEnv) StopAllGenerators() error {
 
 func (d *DevEnv) stopAllGeneratorsInternal() {
 	d.generatorsLock.RLock()
-	gens := make([]*GeneratorInfo, 0, len(d.generators))
+	gens := make([]*runtime.Generator, 0, len(d.generators))
 	for _, gen := range d.generators {
 		gens = append(gens, gen)
 	}
@@ -360,11 +360,11 @@ func (d *DevEnv) stopAllGeneratorsInternal() {
 // Metric management
 
 // AddMetric adds a new metric to the tracer and notifies the page.
-func (d *DevEnv) AddMetric(spec *MetricSpec) error {
+func (d *DevEnv) AddMetric(spec *runtime.Metric) error {
 	if d.metricTracer == nil {
 		return fmt.Errorf("no active system")
 	}
-	if err := d.metricTracer.AddMetricSpec(spec); err != nil {
+	if err := d.metricTracer.AddMetric(spec); err != nil {
 		return err
 	}
 	if page := d.getPage(); page != nil {
@@ -379,7 +379,7 @@ func (d *DevEnv) RemoveMetric(id string) error {
 		return fmt.Errorf("no active system")
 	}
 	metric := d.metricTracer.GetMetricByID(id)
-	d.metricTracer.RemoveMetricSpec(id)
+	d.metricTracer.RemoveMetric(id)
 	if page := d.getPage(); page != nil && metric != nil {
 		page.RemoveMetric(metric.Name)
 	}
@@ -449,7 +449,7 @@ func (d *DevEnv) EvaluateFlows(strategy string) (*runtime.FlowAnalysisResult, er
 	for _, gen := range d.generators {
 		if gen.Enabled {
 			generators = append(generators, runtime.GeneratorConfigAPI{
-				ID:        gen.Id,
+				ID:        gen.Name,
 				Component: gen.Component,
 				Method:    gen.Method,
 				Rate:      float64(gen.Rate),
@@ -513,13 +513,12 @@ func (d *DevEnv) createDeclaredGenerators() error {
 
 	// Clear existing generators
 	d.generatorsLock.Lock()
-	d.generators = make(map[string]*GeneratorInfo)
+	d.generators = make(map[string]*runtime.Generator)
 	d.generatorsLock.Unlock()
 
 	for _, gen := range d.activeSystem.Generators {
-		genInfo := &GeneratorInfo{
+		genInfo := &runtime.Generator{
 			Generator: &protos.Generator{
-				Id:        gen.Name,
 				Name:      gen.Name,
 				Component: gen.Component,
 				Method:    gen.Method,
@@ -528,10 +527,10 @@ func (d *DevEnv) createDeclaredGenerators() error {
 				Enabled:   true,
 			},
 		}
-		genInfo.resolvedComponentInstance = gen.ResolvedComponent
-		genInfo.resolvedMethodDecl = gen.ResolvedMethod
+		genInfo.ResolvedComponent = gen.ResolvedComponent
+		genInfo.ResolvedMethod = gen.ResolvedMethod
 		genInfo.System = d.activeSystem
-		genInfo.simCtx = d
+		genInfo.SimCtx = d
 
 		d.generatorsLock.Lock()
 		d.generators[gen.Name] = genInfo
@@ -550,23 +549,19 @@ func (d *DevEnv) createDeclaredMetrics() error {
 		return nil
 	}
 	for _, m := range d.activeSystem.Metrics {
-		methods := []string{}
-		if m.MethodName != "" {
-			methods = []string{m.MethodName}
-		}
-		metricSpec := &MetricSpec{
+		methods := m.Methods
+		metricSpec := &runtime.Metric{
 			Metric: &protos.Metric{
-				Id:                m.Name,
 				Name:              m.Name,
-				Component:         m.ComponentPath,
+				Component:         m.Component,
 				Methods:           methods,
 				MetricType:        m.MetricType,
 				Aggregation:       m.Aggregation,
-				AggregationWindow: m.Window,
+				AggregationWindow: m.AggregationWindow,
 				Enabled:           true,
 			},
 		}
-		if err := d.metricTracer.AddMetricSpec(metricSpec); err != nil {
+		if err := d.metricTracer.AddMetric(metricSpec); err != nil {
 			log.Printf("Warning: failed to create declared metric '%s': %v", m.Name, err)
 		}
 	}
@@ -591,7 +586,7 @@ func (d *DevEnv) recomputeSystemFlows() error {
 	for _, gen := range d.generators {
 		if gen.Enabled {
 			generators = append(generators, runtime.GeneratorConfigAPI{
-				ID:        gen.Id,
+				ID:        gen.Name,
 				Component: gen.Component,
 				Method:    gen.Method,
 				Rate:      float64(gen.Rate),

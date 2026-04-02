@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	protos "github.com/panyam/sdl/gen/go/sdl/v1/models"
+	"github.com/panyam/sdl/lib/runtime"
 )
 
 // WorkspacePresenter is the P in Model-View-Presenter for workspaces.
@@ -47,18 +48,12 @@ func (p *WorkspacePresenter) ClientReady(ctx context.Context, req *protos.Client
 		}
 	}
 
-	// Build Canvas proto for the response (browser expects this format)
-	canvas := &protos.Canvas{
-		Id:                "default",
-		LoadedSystemNames: systems,
-	}
-	if p.DevEnv.ActiveSystem() != nil && p.DevEnv.ActiveSystem().System != nil {
-		canvas.ActiveSystem = p.DevEnv.ActiveSystem().System.Name.Value
-	}
-
 	return &protos.ClientReadyResponse{
-		Success: true,
-		Canvas:  canvas,
+		Success:   true,
+		Workspace: &protos.Workspace{
+			Id:           "default",
+			ActiveDesign: p.DevEnv.GetActiveSystemName(),
+		},
 	}, nil
 }
 
@@ -96,7 +91,7 @@ func (p *WorkspacePresenter) AddGenerator(ctx context.Context, req *protos.AddGe
 		return nil, fmt.Errorf("generator is required")
 	}
 
-	genInfo := &GeneratorInfo{Generator: gen}
+	genInfo := &runtime.Generator{Generator: gen}
 	if err := p.DevEnv.AddGenerator(genInfo); err != nil {
 		return nil, err
 	}
@@ -126,7 +121,7 @@ func (p *WorkspacePresenter) UpdateGenerator(ctx context.Context, req *protos.Up
 }
 
 func (p *WorkspacePresenter) DeleteGenerator(ctx context.Context, req *protos.DeleteGeneratorRequest) (*protos.DeleteGeneratorResponse, error) {
-	if err := p.DevEnv.RemoveGenerator(req.GeneratorId); err != nil {
+	if err := p.DevEnv.RemoveGenerator(req.GeneratorName); err != nil {
 		return nil, err
 	}
 
@@ -138,14 +133,14 @@ func (p *WorkspacePresenter) DeleteGenerator(ctx context.Context, req *protos.De
 }
 
 func (p *WorkspacePresenter) StartGenerator(ctx context.Context, req *protos.StartGeneratorRequest) (*protos.StartGeneratorResponse, error) {
-	if err := p.DevEnv.StartGenerator(req.GeneratorId); err != nil {
+	if err := p.DevEnv.StartGenerator(req.GeneratorName); err != nil {
 		return nil, err
 	}
 	return &protos.StartGeneratorResponse{}, nil
 }
 
 func (p *WorkspacePresenter) StopGenerator(ctx context.Context, req *protos.StopGeneratorRequest) (*protos.StopGeneratorResponse, error) {
-	if err := p.DevEnv.StopGenerator(req.GeneratorId); err != nil {
+	if err := p.DevEnv.StopGenerator(req.GeneratorName); err != nil {
 		return nil, err
 	}
 	return &protos.StopGeneratorResponse{}, nil
@@ -171,7 +166,7 @@ func (p *WorkspacePresenter) AddMetric(ctx context.Context, req *protos.AddMetri
 		return nil, fmt.Errorf("metric is required")
 	}
 
-	spec := &MetricSpec{Metric: m}
+	spec := &runtime.Metric{Metric: m}
 	if err := p.DevEnv.AddMetric(spec); err != nil {
 		return nil, err
 	}
@@ -180,7 +175,7 @@ func (p *WorkspacePresenter) AddMetric(ctx context.Context, req *protos.AddMetri
 }
 
 func (p *WorkspacePresenter) DeleteMetric(ctx context.Context, req *protos.DeleteMetricRequest) (*protos.DeleteMetricResponse, error) {
-	if err := p.DevEnv.RemoveMetric(req.MetricId); err != nil {
+	if err := p.DevEnv.RemoveMetric(req.MetricName); err != nil {
 		return nil, err
 	}
 	return &protos.DeleteMetricResponse{}, nil

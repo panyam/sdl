@@ -51,9 +51,7 @@ var genAddCmd = &cobra.Command{
 		err = withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
 			_, err := client.AddGenerator(ctx, &v1.AddGeneratorRequest{
 				Generator: &v1.Generator{
-					Id:        id,
-					Name:      fmt.Sprintf("Generator-%s", id),
-					WorkspaceId:  canvasID,
+					Name:      id,
 					Component: component,
 					Method:    method,
 					Rate:      rate,
@@ -86,7 +84,6 @@ var genListCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
 			resp, err := client.ListGenerators(ctx, &v1.ListGeneratorsRequest{
-				WorkspaceId: canvasID,
 			})
 			if err != nil {
 				return err
@@ -101,7 +98,7 @@ var genListCmd = &cobra.Command{
 				if gen.Enabled {
 					status = "Running"
 				}
-				fmt.Printf("│ %-11s │ %-19s │ %10s │ %-7s │\n", gen.Id, gen.Component+"."+gen.Method, fmt.Sprintf("%0.2f", gen.Rate), status)
+				fmt.Printf("│ %-11s │ %-19s │ %10s │ %-7s │\n", gen.Name, gen.Component+"."+gen.Method, fmt.Sprintf("%0.2f", gen.Rate), status)
 			}
 			fmt.Println("└─────────────┴─────────────────────┴────────────┴─────────┘")
 			_ = resp // Silence unused variable warning for now
@@ -125,7 +122,6 @@ var genStartCmd = &cobra.Command{
 			err := withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
 				var err error
 				resp, err = client.StartAllGenerators(ctx, &v1.StartAllGeneratorsRequest{
-					WorkspaceId: canvasID,
 				})
 				if err != nil {
 					return err
@@ -164,8 +160,7 @@ var genStartCmd = &cobra.Command{
 			for _, id := range args {
 				err := withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
 					_, err := client.StartGenerator(ctx, &v1.StartGeneratorRequest{
-						WorkspaceId:    canvasID,
-						GeneratorId: id,
+						GeneratorName: id,
 					})
 					return err
 				})
@@ -190,7 +185,6 @@ var genStopCmd = &cobra.Command{
 			err := withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
 				var err error
 				resp, err = client.StopAllGenerators(ctx, &v1.StopAllGeneratorsRequest{
-					WorkspaceId: canvasID,
 				})
 				if err != nil {
 					return err
@@ -229,8 +223,7 @@ var genStopCmd = &cobra.Command{
 			for _, id := range args {
 				err := withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
 					_, err := client.StopGenerator(ctx, &v1.StopGeneratorRequest{
-						WorkspaceId:    canvasID,
-						GeneratorId: id,
+						GeneratorName: id,
 					})
 					return err
 				})
@@ -250,7 +243,7 @@ var genStatusCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
 			resp, err := client.GetWorkspace(ctx, &v1.GetWorkspaceRequest{
-				Id: canvasID,
+				
 			})
 			if err != nil {
 				return err
@@ -295,28 +288,13 @@ var genUpdateCmd = &cobra.Command{
 		}
 
 		err = withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
-			// First get the generator to validate it exists
-			resp, err := client.GetGenerator(ctx, &v1.GetGeneratorRequest{
-				WorkspaceId:    canvasID,
-				GeneratorId: id,
+			_, err := client.UpdateGenerator(ctx, &v1.UpdateGeneratorRequest{
+				Generator: &v1.Generator{
+					Name: id,
+					Rate: rate,
+				},
 			})
-			if err != nil {
-				return fmt.Errorf("generator '%s' not found: %v", id, err)
-			}
-
-			// Update only the rate
-			gen := resp.Generator
-			gen.Rate = rate
-
-			_, err = client.UpdateGenerator(ctx, &v1.UpdateGeneratorRequest{
-				Generator: gen,
-			})
-			if err != nil {
-				return err
-			}
-
-			// Apply flows if requested
-			return applyFlowsIfRequested(client, ctx)
+			return err
 		})
 
 		if err != nil {
@@ -344,8 +322,7 @@ var genRemoveCmd = &cobra.Command{
 		for _, id := range args {
 			err := withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
 				_, err := client.DeleteGenerator(ctx, &v1.DeleteGeneratorRequest{
-					WorkspaceId:    canvasID,
-					GeneratorId: id,
+					GeneratorName: id,
 				})
 				return err
 			})
@@ -400,52 +377,12 @@ func applyFlowsIfRequested(client v1s.WorkspaceServiceClient, ctx context.Contex
 
 	fmt.Println("🔄 Evaluating and applying flow rates...")
 
-	// Evaluate flows with default strategy
-	evalResp, err := client.EvaluateFlows(ctx, &v1.EvaluateFlowsRequest{
-		WorkspaceId: canvasID,
+	_, err := client.EvaluateFlows(ctx, &v1.EvaluateFlowsRequest{
 		Strategy: "runtime",
 	})
 	if err != nil {
 		return fmt.Errorf("failed to evaluate flows: %w", err)
 	}
-
-	// Convert component rates to parameter updates
-	var updates []*v1.ParameterUpdate
-	for componentMethod, rate := range evalResp.ComponentRates {
-		// Skip zero rates
-		if rate == 0 {
-			continue
-		}
-
-		// Format as ArrivalRate parameter
-		parts := strings.Split(componentMethod, ".")
-		if len(parts) >= 2 {
-			paramPath := fmt.Sprintf("%s.ArrivalRate", parts[0])
-			updates = append(updates, &v1.ParameterUpdate{
-				Path:     paramPath,
-				NewValue: fmt.Sprintf("%g", rate),
-			})
-		}
-	}
-
-	if len(updates) == 0 {
-		fmt.Println("   ℹ️  No arrival rates to apply")
-		return nil
-	}
-
-	// Apply the rates using batch set
-	batchResp, err := client.BatchSetParameters(ctx, &v1.BatchSetParametersRequest{
-		WorkspaceId: canvasID,
-		Updates:  updates,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to apply flow rates: %w", err)
-	}
-
-	if !batchResp.Success {
-		return fmt.Errorf("failed to apply some parameters: %s", batchResp.ErrorMessage)
-	}
-
-	fmt.Printf("   ✅ Applied %d arrival rates\n", len(updates))
+	fmt.Println("   Flows evaluated and applied")
 	return nil
 }

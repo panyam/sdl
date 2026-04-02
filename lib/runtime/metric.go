@@ -46,7 +46,7 @@ func NewMetricFromSpec(spec *MetricSpec) *Metric {
 	}
 	return &Metric{
 		Metric: &protos.Metric{
-			Id:                spec.Name,
+			
 			Name:              spec.Name,
 			Component:         spec.ComponentPath,
 			Methods:           methods,

@@ -63,70 +63,7 @@ Example:
 	},
 }
 
-// displayServerStats shows periodic server statistics
-/*
-func displayServerStats(ctx context.Context, canvas *services.Canvas) {
-	ticker := time.NewTicker(statsInterval)
-	defer ticker.Stop()
-
-	lastStats := canvas.GetStats()
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			stats := canvas.GetStats()
-			if showLogs {
-				if lastStats.LoadedFiles != stats.LoadedFiles ||
-					lastStats.ActiveSystems != stats.ActiveSystems ||
-					lastStats.ActiveGenerators != stats.ActiveGenerators ||
-					lastStats.ActiveMeasurements != stats.ActiveMeasurements ||
-					lastStats.TotalRuns != stats.TotalRuns {
-					log.Printf("📊 Stats: Files=%d Systems=%d Generators=%d Measurements=%d Runs=%d",
-						stats.LoadedFiles,
-						stats.ActiveSystems,
-						stats.ActiveGenerators,
-						stats.ActiveMeasurements,
-						stats.TotalRuns)
-				}
-				lastStats = stats
-			}
-		}
-	}
-}
-*/
-
-// loadInitialFiles loads SDL files into the canvas on server startup
-func loadInitialFiles(canvas *services.Canvas, files []string) {
-	// Give the server a moment to fully start
-	time.Sleep(1 * time.Second)
-
-	if showLogs {
-		log.Printf("📂 Loading %d initial file(s)...", len(files))
-	}
-
-	for _, file := range files {
-		if showLogs {
-			log.Printf("📂 Loading file: %s", file)
-		}
-
-		err := canvas.Load(file)
-		if err != nil {
-			if showLogs {
-				log.Printf("❌ Failed to load file %s: %v", file, err)
-			}
-			continue
-		}
-
-		if showLogs {
-			log.Printf("✅ Successfully loaded: %s", file)
-		}
-	}
-
-	if showLogs {
-		log.Printf("📂 Initial file loading completed")
-	}
-}
+// TODO: Add displayServerStats and loadInitialFiles using devenvbe.WorkspaceService
 
 func init() {
 	// Port and host are now handled by persistent flags in root.go

@@ -30,12 +30,12 @@ var canvasCreateCmd = &cobra.Command{
 			}
 
 			// Canvas doesn't exist, create it
-			canvas := &v1.Canvas{
+			canvas := &v1.Workspace{
 				Id: canvasID,
 			}
 
 			_, err = client.CreateWorkspace(ctx, &v1.CreateWorkspaceRequest{
-				Canvas: canvas,
+				Workspace: canvas,
 			})
 
 			if err != nil {

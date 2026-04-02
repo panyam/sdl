@@ -334,15 +334,12 @@ type WorkspacePage struct {
 	Header      Header
 	WorkspaceId string
 	Workspace   *protos.Workspace
-	CanvasId    string // kept for template compatibility
-	Canvas      *protos.Canvas // kept for template compatibility
 	ReadOnly    bool
 	DesignFiles map[string]string
 }
 
 func (p *WorkspacePage) Load(r *http.Request, w http.ResponseWriter, app *goal.App[*SdlApp]) (err error, finished bool) {
 	p.WorkspaceId = r.PathValue("workspaceId")
-	p.CanvasId = p.WorkspaceId
 	p.ActiveTab = "workspaces"
 
 	p.Header.Load(r, w, app)
@@ -366,13 +363,6 @@ func (p *WorkspacePage) Load(r *http.Request, w http.ResponseWriter, app *goal.A
 		return nil, true
 	}
 	p.Workspace = wsResp.Workspace
-
-	// Build a Canvas proto for template compatibility (templates still reference .Canvas)
-	p.Canvas = &protos.Canvas{
-		Id:          p.WorkspaceId,
-		Name:        p.Workspace.Name,
-		Description: p.Workspace.Description,
-	}
 
 	p.PageType = "canvas-dashboard"
 	if p.ReadOnly {

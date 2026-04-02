@@ -8,6 +8,7 @@ import (
 	protos "github.com/panyam/sdl/gen/go/sdl/v1/models"
 	protoservices "github.com/panyam/sdl/gen/go/sdl/v1/services"
 	"github.com/panyam/sdl/lib/loader"
+	"github.com/panyam/sdl/lib/runtime"
 	"github.com/panyam/sdl/services"
 )
 
@@ -49,7 +50,7 @@ func (s *WorkspaceService) AddGenerator(_ context.Context, req *protos.AddGenera
 	if gen == nil {
 		return nil, fmt.Errorf("generator is required")
 	}
-	genInfo := &services.GeneratorInfo{Generator: gen}
+	genInfo := &runtime.Generator{Generator: gen}
 	if err := s.DevEnv.AddGenerator(genInfo); err != nil {
 		return nil, err
 	}
@@ -74,7 +75,7 @@ func (s *WorkspaceService) UpdateGenerator(_ context.Context, req *protos.Update
 }
 
 func (s *WorkspaceService) DeleteGenerator(_ context.Context, req *protos.DeleteGeneratorRequest) (*protos.DeleteGeneratorResponse, error) {
-	if err := s.DevEnv.RemoveGenerator(req.GeneratorId); err != nil {
+	if err := s.DevEnv.RemoveGenerator(req.GeneratorName); err != nil {
 		return nil, err
 	}
 	if req.ApplyFlows {
@@ -88,14 +89,14 @@ func (s *WorkspaceService) ListGenerators(_ context.Context, _ *protos.ListGener
 }
 
 func (s *WorkspaceService) StartGenerator(_ context.Context, req *protos.StartGeneratorRequest) (*protos.StartGeneratorResponse, error) {
-	if err := s.DevEnv.StartGenerator(req.GeneratorId); err != nil {
+	if err := s.DevEnv.StartGenerator(req.GeneratorName); err != nil {
 		return nil, err
 	}
 	return &protos.StartGeneratorResponse{}, nil
 }
 
 func (s *WorkspaceService) StopGenerator(_ context.Context, req *protos.StopGeneratorRequest) (*protos.StopGeneratorResponse, error) {
-	if err := s.DevEnv.StopGenerator(req.GeneratorId); err != nil {
+	if err := s.DevEnv.StopGenerator(req.GeneratorName); err != nil {
 		return nil, err
 	}
 	return &protos.StopGeneratorResponse{}, nil
@@ -122,7 +123,7 @@ func (s *WorkspaceService) AddMetric(_ context.Context, req *protos.AddMetricReq
 	if m == nil {
 		return nil, fmt.Errorf("metric is required")
 	}
-	spec := &services.MetricSpec{Metric: m}
+	spec := &runtime.Metric{Metric: m}
 	if err := s.DevEnv.AddMetric(spec); err != nil {
 		return nil, err
 	}
@@ -130,7 +131,7 @@ func (s *WorkspaceService) AddMetric(_ context.Context, req *protos.AddMetricReq
 }
 
 func (s *WorkspaceService) DeleteMetric(_ context.Context, req *protos.DeleteMetricRequest) (*protos.DeleteMetricResponse, error) {
-	if err := s.DevEnv.RemoveMetric(req.MetricId); err != nil {
+	if err := s.DevEnv.RemoveMetric(req.MetricName); err != nil {
 		return nil, err
 	}
 	return &protos.DeleteMetricResponse{}, nil

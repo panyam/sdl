@@ -167,12 +167,12 @@ var infoCmd = &cobra.Command{
 				return err
 			}
 
-			canvas := resp.Canvas
+			canvas := resp.Workspace
 			fmt.Printf("SDL Canvas State:\n")
 			fmt.Printf("🆔 Canvas ID: %s\n", canvas.Id)
 
-			if canvas.ActiveSystem != "" {
-				fmt.Printf("🎯 Active System: %s\n", canvas.ActiveSystem)
+			if canvas.ActiveDesign != "" {
+				fmt.Printf("🎯 Active System: %s\n", canvas.ActiveDesign)
 			}
 
 			// TODO: When Canvas proto is updated to include generators and metrics

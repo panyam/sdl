@@ -3,6 +3,7 @@ package runtime
 import (
 	"testing"
 
+	protos "github.com/panyam/sdl/gen/go/sdl/v1/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -52,18 +53,18 @@ func TestDeclarativeGeneratorsResolved(t *testing.T) {
 
 func TestGeneratorRPS(t *testing.T) {
 	// rate(100) — 100 per second (default interval)
-	g1 := &Generator{Rate: 100, RateInterval: 1.0}
+	g1 := &Generator{Generator: &protos.Generator{Rate: 100}, RateInterval: 1.0}
 	assert.Equal(t, 100.0, g1.RPS())
 
 	// rate(1, 5s) — 1 per 5 seconds = 0.2 rps
-	g2 := &Generator{Rate: 1, RateInterval: 5.0}
+	g2 := &Generator{Generator: &protos.Generator{Rate: 1}, RateInterval: 5.0}
 	assert.InDelta(t, 0.2, g2.RPS(), 0.001)
 
 	// rate(50, 0.1) — 50 per 100ms = 500 rps
-	g3 := &Generator{Rate: 50, RateInterval: 0.1}
+	g3 := &Generator{Generator: &protos.Generator{Rate: 50}, RateInterval: 0.1}
 	assert.Equal(t, 500.0, g3.RPS())
 
 	// Edge case: zero interval defaults to treating Rate as rps
-	g4 := &Generator{Rate: 42, RateInterval: 0}
+	g4 := &Generator{Generator: &protos.Generator{Rate: 42}, RateInterval: 0}
 	assert.Equal(t, 42.0, g4.RPS())
 }

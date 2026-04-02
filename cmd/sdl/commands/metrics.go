@@ -2,7 +2,6 @@ package commands
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -67,9 +66,7 @@ Examples:
 		err := withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
 			req := &v1.AddMetricRequest{
 				Metric: &v1.Metric{
-					Id:                id,
-					WorkspaceId:          canvasID,
-					Name:              fmt.Sprintf("%s.(%s)", component, strings.Join(methods, ",")),
+					Name:              id,
 					Component:         component,
 					Methods:           methods,
 					MetricType:        metricType,
@@ -101,8 +98,7 @@ var removeMetricCmd = &cobra.Command{
 
 		err := withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
 			req := &v1.DeleteMetricRequest{
-				WorkspaceId: canvasID,
-				MetricId: metricID,
+				MetricName: metricID,
 			}
 
 			_, err := client.DeleteMetric(ctx, req)
@@ -124,7 +120,6 @@ var listMetricsCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
 			req := &v1.ListMetricsRequest{
-				WorkspaceId: canvasID,
 			}
 
 			resp, err := client.ListMetrics(ctx, req)
@@ -162,7 +157,7 @@ var listMetricsCmd = &cobra.Command{
 				}
 
 				fmt.Printf("%-25s %-50s %-8s %-10s %-8s %8d %12s %12s\n",
-					m.Id,
+					m.Name,
 					target,
 					m.MetricType,
 					m.Aggregation,
@@ -188,65 +183,8 @@ var queryMetricsCmd = &cobra.Command{
 	Long:  "Query metric data points. The data is already aggregated according to the metric's configuration.",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		metricID := args[0]
-
-		// Get time range flags
-		duration, _ := cmd.Flags().GetDuration("duration")
-		limit, _ := cmd.Flags().GetInt32("limit")
-		outputJSON, _ := cmd.Flags().GetBool("json")
-
-		endTime := time.Now()
-		startTime := endTime.Add(-duration)
-
-		err := withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
-			req := &v1.QueryMetricsRequest{
-				WorkspaceId:  canvasID,
-				MetricId:  metricID,
-				StartTime: float64(startTime.Unix()),
-				EndTime:   float64(endTime.Unix()),
-				Limit:     limit,
-			}
-
-			resp, err := client.QueryMetrics(ctx, req)
-			if err != nil {
-				return fmt.Errorf("failed to query metrics: %v", err)
-			}
-
-			if outputJSON {
-				// Output as JSON
-				data, err := json.MarshalIndent(resp.Points, "", "  ")
-				if err != nil {
-					return fmt.Errorf("failed to marshal JSON: %v", err)
-				}
-				fmt.Println(string(data))
-			} else {
-				// Human-readable output
-				fmt.Printf("Metric: %s\n", metricID)
-				fmt.Printf("Time Range: %s to %s\n", startTime.Format(time.RFC3339), endTime.Format(time.RFC3339))
-				fmt.Printf("Data Points: %d\n", len(resp.Points))
-
-				// Note about pre-aggregated data
-				fmt.Println("\nNote: Values are pre-aggregated according to the metric's configuration")
-				fmt.Println("(e.g., if metric is configured for p95 with 10s windows, each point is a p95 value)")
-				fmt.Println("")
-
-				if len(resp.Points) > 0 {
-					fmt.Printf("%-30s %15s\n", "Timestamp", "Value")
-					fmt.Println(strings.Repeat("-", 47))
-					for _, p := range resp.Points {
-						ts := time.Unix(int64(p.Timestamp), 0)
-						fmt.Printf("%-30s %15.3f\n", ts.Format(time.RFC3339), p.Value)
-					}
-				}
-			}
-
-			return nil
-		})
-
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-			os.Exit(1)
-		}
+		// TODO: QueryMetrics not yet on WorkspaceService
+		fmt.Println("Metrics query not yet available — will be added when QueryMetrics is on WorkspaceService")
 	},
 }
 

@@ -50,7 +50,7 @@ func (g *Generator) RPS() float64 {
 func NewGeneratorFromSpec(spec *GeneratorSpec) *Generator {
 	return &Generator{
 		Generator: &protos.Generator{
-			Id:       spec.Name,
+			
 			Name:     spec.Name,
 			Component: spec.ComponentPath,
 			Method:   spec.MethodName,
@@ -79,7 +79,7 @@ func (g *Generator) Stop(wait bool) error {
 			g.stopNotifyChan = nil
 		}()
 	}
-	log.Printf("Generator %s: Stopping...", g.Id)
+	log.Printf("Generator %s: Stopping...", g.Name)
 	g.stopped.Store(true)
 	close(g.stopChan)
 	g.Enabled = false
@@ -103,7 +103,7 @@ func (g *Generator) run() {
 	defer func() {
 		g.stopChan = nil
 		g.Enabled = false
-		log.Printf("Generator %s: Stopped", g.Id)
+		log.Printf("Generator %s: Stopped", g.Name)
 		if g.stopNotifyChan != nil {
 			g.stopNotifyChan <- true
 		}
@@ -121,7 +121,7 @@ func (g *Generator) runSimple() {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
-	log.Printf("Generator %s: Starting Simple execution at %v RPS", g.Id, g.Rate)
+	log.Printf("Generator %s: Starting Simple execution at %v RPS", g.Name, g.Rate)
 
 	if g.GenFunc == nil {
 		g.initializeGenFunc()
@@ -130,7 +130,7 @@ func (g *Generator) runSimple() {
 
 	for i := 0; ; i++ {
 		if i%100 == 0 {
-			log.Printf("Low RPS Generator %s: Processed %d iterations, Stopped: %t, Rate: %f, interval: %v", g.Id, i, g.stopped.Load(), g.Rate, interval)
+			log.Printf("Low RPS Generator %s: Processed %d iterations, Stopped: %t, Rate: %f, interval: %v", g.Name, i, g.stopped.Load(), g.Rate, interval)
 		}
 		select {
 		case <-g.stopChan:
@@ -149,13 +149,13 @@ func (g *Generator) runBatched() {
 	eventsPerBatch := float64(g.Rate) * batchInterval.Seconds()
 
 	log.Printf("Generator %s: Starting batched execution at %v RPS (%.2f events per %v batch)",
-		g.Id, g.Rate, eventsPerBatch, batchInterval)
+		g.Name, g.Rate, eventsPerBatch, batchInterval)
 
 	maxConcurrent := goruntime.NumCPU() * 2
 	sem := make(chan struct{}, maxConcurrent)
 	batchCount := 0
 
-	defer func() { log.Printf("Generator %s: Stopped after %d batches", g.Id, batchCount) }()
+	defer func() { log.Printf("Generator %s: Stopped after %d batches", g.Name, batchCount) }()
 
 	for {
 		select {
@@ -169,7 +169,7 @@ func (g *Generator) runBatched() {
 			if batchSize > 0 {
 				batchCount++
 				if batchCount%100 == 0 {
-					log.Printf("Generator %s: Processed %d batches, current batch size: %d, Stopped: %v", g.Id, batchCount, batchSize, g.stopped.Load())
+					log.Printf("Generator %s: Processed %d batches, current batch size: %d, Stopped: %v", g.Name, batchCount, batchSize, g.stopped.Load())
 				}
 			}
 
@@ -227,7 +227,7 @@ func (g *Generator) executeAtVirtualTime(virtualTime core.Duration) {
 
 	result, _ := eval.Eval(callExpr, env, &currTime)
 	if eval.HasErrors() {
-		log.Printf("Generator %s error during eval", g.Id)
+		log.Printf("Generator %s error during eval", g.Name)
 	} else if result.IsNil() {
 		// Normal for void methods
 	}

@@ -70,11 +70,11 @@ func (mt *MetricTracer) AddMetric(spec *Metric) error {
 	mt.seriesLock.Lock()
 	defer mt.seriesLock.Unlock()
 
-	if spec.Id == "" {
+	if spec.Name == "" {
 		return status.Error(codes.InvalidArgument, fmt.Sprintf("measurement ID cannot be empty"))
 	}
 
-	if mt.seriesMap[spec.Id] != nil {
+	if mt.seriesMap[spec.Name] != nil {
 		return status.Error(codes.AlreadyExists, fmt.Sprintf("Metric already exists"))
 	}
 
@@ -111,7 +111,7 @@ func (mt *MetricTracer) AddMetric(spec *Metric) error {
 	spec.ResolvedComponent = resolvedComponent
 	spec.store = mt.store
 	spec.simCtx = mt.simCtx
-	mt.seriesMap[spec.Id] = spec
+	mt.seriesMap[spec.Name] = spec
 	spec.Start()
 	return nil
 }
@@ -144,7 +144,6 @@ func (mt *MetricTracer) ListMetrics() []*protos.Metric {
 		if spec.Metric != nil {
 			// Create a copy of the metric with updated statistics
 			metricCopy := &protos.Metric{
-				Id:                spec.Id,
 				Name:              spec.Name,
 				Component:         spec.Component,
 				Methods:           spec.Methods,
