@@ -145,40 +145,41 @@
 - [ ] Add simulation progress API
 - [ ] Memory usage optimization
 
-## Current: Issue #34 DevEnv Architecture (Phase 1)
+## Completed: Issue #34 DevEnv Architecture
 
-### Completed (Phase 1)
-- [x] SimulationContext interface — decouples GeneratorInfo/MetricSpec from Canvas
-- [x] DevEnvPageHandler Go interface — mirrors DevEnvPage proto service
-- [x] DevEnvPage proto service definition (browser_provided) with per-name CRUD
-- [x] Extracted diagram building logic into reusable standalone functions
-- [x] DevEnv struct with full API (LoadFile, Use, generators, metrics, flows, panels)
-- [x] 13-test verification suite covering lifecycle, panel notifications, system switching
-- [x] Fixed nil map bug in Runtime.AvailableSystems()
-- [x] Added services tests to CI/CD pipeline
-- [x] Canvas continues working unchanged (no breaking changes)
+All phases complete. Canvas fully removed. See SUMMARY.md for architecture details.
 
-### Completed (Phase 2)
-- [x] DevEnvPresenter — implements CanvasViewPresenterServer, delegates to DevEnv
-- [x] DevEnvPageForwarder — implements DevEnvPageHandler, forwards to DevEnvPageClient (in cmd/wasm/browser.go)
-- [x] WASM main.go rewired to DevEnv pipeline (no more SingletonCanvasService)
-- [x] TypeScript DevEnvPage handlers with CRUD-by-name for generators/metrics
-- [x] CanvasViewerPage renamed to WorkspaceViewerPage
-- [x] Old CanvasViewPresenter and SingletonCanvasService moved to attic
-- [x] CONSTRAINTS.md created with panel interface and no-Canvas rules
-- [x] All tests pass: Go (13 DevEnv + existing), WASM build, web tests (32)
+## Current: Issue #40 CLI Migration to WorkspaceService (in progress)
 
-### Completed (Phase 3 — Cleanup)
-- [x] Removed 14 dead CanvasDashboardPage methods from WorkspaceViewerPageBase
-- [x] Removed CanvasDashboardPageMethods interface and CanvasServiceClient imports
-- [x] Removed CanvasDashboardPage client from WASM exports
-- [x] Renamed DevEnvPageForwarder to BrowserDevEnvPage (lilbattle convention)
-- [x] Added 6 cleanup verification tests
-- [x] Issue #34 complete
+### Completed
+- [x] WorkspaceService proto: unified CRUD + simulation RPCs with HTTP bindings
+- [x] devenvbe.WorkspaceService: local backend wrapping DevEnv
+- [x] connectclient.WorkspaceClient: remote backend wrapping gRPC with auth
+- [x] WorkspacePresenter: renamed from DevEnvPresenter (non-WASM)
+- [x] WorkspacePage interface: renamed from DevEnvPageHandler
+- [x] BrowserWorkspacePage: renamed from BrowserDevEnvPage
+- [x] ConsoleWorkspacePage: records state + optional terminal output (replaces mock in tests)
+- [x] Generator/Metric types consolidated into lib/runtime (embed proto, runtime state)
+- [x] SimulationContext, MetricTracer, MetricStore moved to lib/runtime
+- [x] Canvas completely removed: service.go, canvas.go, connect.go to attic
+- [x] Server uses devenvbe.WorkspaceService (no more CanvasService)
+- [x] CLI switched to WorkspaceServiceClient
+- [x] Proto cleanup: removed id/workspace_id/timestamps from Generator/Metric
+- [x] TypeScript: removed canvas-client, recipe-panel, fixed all imports
+
+### Remaining
+- [ ] Profile management (cmd/sdl/context/)
+- [ ] WorkspaceContext resolution chain (GetWorkspaceContext per command)
+- [ ] Profile CLI commands (sdl profile list/use/create/show)
+- [ ] Add missing WorkspaceService methods: ExecuteTrace, TraceAllPaths, QueryMetrics, GetUtilization, GetFlowState, BatchSetParameters
+- [ ] Re-enable stubbed CLI commands (flows, trace, paths, utilization, reset)
+- [ ] Tests for devenvbe backend + context resolution
+- [ ] Documentation update
 
 ### Related future work
-- [ ] CLI commands migrated to DevEnv API (requires server to use DevEnv internally)
-- [ ] CompilationUnit artifact between Workspace and Canvas (#19)
+- [ ] Connect protocol migration (#43)
+- [ ] Generator/Metric consolidation: move active state ownership to SystemInstance
+- [ ] CompilationUnit artifact (#19)
 
 ## Completed Recently
 - ✅ Created FileSystem abstraction in loader package
