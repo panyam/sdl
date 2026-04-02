@@ -90,21 +90,21 @@ service WorkspaceService {
 
   rpc AddGenerator(AddGeneratorRequest) returns (AddGeneratorResponse) {
     option (google.api.http) = {
-      post: "/v1/workspaces/{generator.workspace_id}/generators"
+      post: "/v1/workspaces/{workspace_id}/generators"
       body: "*"
     };
   }
 
   rpc UpdateGenerator(UpdateGeneratorRequest) returns (UpdateGeneratorResponse) {
     option (google.api.http) = {
-      patch: "/v1/workspaces/{generator.workspace_id}/generators/{generator.id}"
+      patch: "/v1/workspaces/{workspace_id}/generators/{generator.name}"
       body: "*"
     };
   }
 
   rpc DeleteGenerator(DeleteGeneratorRequest) returns (DeleteGeneratorResponse) {
     option (google.api.http) = {
-      delete: "/v1/workspaces/{workspace_id}/generators/{generator_id}"
+      delete: "/v1/workspaces/{workspace_id}/generators/{generator_name}"
     };
   }
 
@@ -116,14 +116,14 @@ service WorkspaceService {
 
   rpc StartGenerator(StartGeneratorRequest) returns (StartGeneratorResponse) {
     option (google.api.http) = {
-      post: "/v1/workspaces/{workspace_id}/generators/{generator_id}/actions:start"
+      post: "/v1/workspaces/{workspace_id}/generators/{generator_name}/actions:start"
       body: "*"
     };
   }
 
   rpc StopGenerator(StopGeneratorRequest) returns (StopGeneratorResponse) {
     option (google.api.http) = {
-      post: "/v1/workspaces/{workspace_id}/generators/{generator_id}/actions:stop"
+      post: "/v1/workspaces/{workspace_id}/generators/{generator_name}/actions:stop"
       body: "*"
     };
   }
@@ -146,14 +146,14 @@ service WorkspaceService {
 
   rpc AddMetric(AddMetricRequest) returns (AddMetricResponse) {
     option (google.api.http) = {
-      post: "/v1/workspaces/{metric.workspace_id}/metrics"
+      post: "/v1/workspaces/{workspace_id}/metrics"
       body: "*"
     };
   }
 
   rpc DeleteMetric(DeleteMetricRequest) returns (DeleteMetricResponse) {
     option (google.api.http) = {
-      delete: "/v1/workspaces/{workspace_id}/metrics/{metric_id}"
+      delete: "/v1/workspaces/{workspace_id}/metrics/{metric_name}"
     };
   }
 

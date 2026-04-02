@@ -1,0 +1,2521 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "sdl/v1/models/models.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "CanvasDashboardPage"
+    },
+    {
+      "name": "WorkspacePage"
+    },
+    {
+      "name": "FilesystemService"
+    },
+    {
+      "name": "SingletonInitializerService"
+    },
+    {
+      "name": "WorkspacePresenter"
+    },
+    {
+      "name": "SystemsService"
+    },
+    {
+      "name": "WorkspaceService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/filesystems": {
+      "get": {
+        "summary": "List all available filesystems",
+        "operationId": "FilesystemService_ListFilesystems",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListFilesystemsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "FilesystemService"
+        ]
+      }
+    },
+    "/v1/filesystems/{filesystemId}/content": {
+      "get": {
+        "summary": "Read file content",
+        "operationId": "FilesystemService_ReadFile",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ReadFileResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "filesystemId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "path",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "FilesystemService"
+        ]
+      },
+      "put": {
+        "summary": "Write file content",
+        "operationId": "FilesystemService_WriteFile",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1WriteFileResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "filesystemId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string"
+                },
+                "content": {
+                  "type": "string",
+                  "format": "byte"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "FilesystemService"
+        ]
+      }
+    },
+    "/v1/filesystems/{filesystemId}/directories": {
+      "post": {
+        "summary": "Create a directory",
+        "operationId": "FilesystemService_CreateDirectory",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CreateDirectoryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "filesystemId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "FilesystemService"
+        ]
+      }
+    },
+    "/v1/filesystems/{filesystemId}/files": {
+      "get": {
+        "summary": "List files in a directory",
+        "operationId": "FilesystemService_ListFiles",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListFilesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "filesystemId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "path",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "FilesystemService"
+        ]
+      },
+      "delete": {
+        "summary": "Delete a file",
+        "operationId": "FilesystemService_DeleteFile",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DeleteFileResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "filesystemId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "path",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "FilesystemService"
+        ]
+      }
+    },
+    "/v1/filesystems/{filesystemId}/info": {
+      "get": {
+        "summary": "Get file info",
+        "operationId": "FilesystemService_GetFileInfo",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetFileInfoResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "filesystemId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "path",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "FilesystemService"
+        ]
+      }
+    },
+    "/v1/systems": {
+      "get": {
+        "summary": "ListSystems returns all available systems",
+        "operationId": "SystemsService_ListSystems",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListSystemsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "SystemsService"
+        ]
+      }
+    },
+    "/v1/systems/{id}": {
+      "get": {
+        "summary": "GetSystem returns a specific system with metadata",
+        "operationId": "SystemsService_GetSystem",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetSystemResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "version",
+            "description": "Optional, defaults to default_version",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "SystemsService"
+        ]
+      }
+    },
+    "/v1/systems/{id}/content": {
+      "get": {
+        "summary": "GetSystemContent returns the SDL and recipe content for a system",
+        "operationId": "SystemsService_GetSystemContent",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetSystemContentResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "version",
+            "description": "Optional, defaults to default_version",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "SystemsService"
+        ]
+      }
+    },
+    "/v1/workspaces": {
+      "get": {
+        "operationId": "WorkspaceService_ListWorkspaces",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListWorkspacesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "WorkspaceService"
+        ]
+      },
+      "post": {
+        "operationId": "WorkspaceService_CreateWorkspace",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CreateWorkspaceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateWorkspaceRequest"
+            }
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/v1/workspaces/{id}": {
+      "get": {
+        "operationId": "WorkspaceService_GetWorkspace",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetWorkspaceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      },
+      "delete": {
+        "operationId": "WorkspaceService_DeleteWorkspace",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DeleteWorkspaceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace.id}": {
+      "put": {
+        "operationId": "WorkspaceService_UpdateWorkspace",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateWorkspaceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspace.id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "workspace": {
+                  "type": "object",
+                  "properties": {
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "sources": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "$ref": "#/definitions/v1ImportSource"
+                      },
+                      "title": "Import sources for module resolution (name -\u003e source config)\ne.g., \"stdlib\" -\u003e { builtin: true }, \"patterns\" -\u003e { github: \"panyam/sdl-patterns\" }"
+                    },
+                    "designs": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "$ref": "#/definitions/v1WorkspaceDesign"
+                      },
+                      "title": "Designs within this workspace (each is a system architecture)"
+                    },
+                    "activeDesign": {
+                      "type": "string",
+                      "title": "Currently active design name"
+                    },
+                    "dir": {
+                      "type": "string",
+                      "title": "Directory path (for file-based workspaces)"
+                    },
+                    "tags": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "title": "Workspace-level metadata (for UI display)"
+                    },
+                    "difficulty": {
+                      "type": "string"
+                    },
+                    "category": {
+                      "type": "string"
+                    }
+                  },
+                  "description": "Workspace is a project container holding multiple designs (system architectures).\nEach design is backed by a Canvas for runtime simulation.\nThe workspace also declares import sources for module resolution."
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/actions:load": {
+      "post": {
+        "summary": "Load an SDL file into the workspace",
+        "operationId": "WorkspaceService_LoadFile",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1LoadFileResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "sdlFilePath": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/actions:use": {
+      "post": {
+        "summary": "Select the active system for simulation",
+        "operationId": "WorkspaceService_UseSystem",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UseSystemResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "systemName": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/designs/contents": {
+      "get": {
+        "summary": "Get all design contents for a workspace",
+        "operationId": "WorkspaceService_GetAllDesignContents",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetAllDesignContentsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/designs/{designName}/content": {
+      "get": {
+        "summary": "Get SDL content for a single design",
+        "operationId": "WorkspaceService_GetDesignContent",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetDesignContentResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "designName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/diagram": {
+      "get": {
+        "operationId": "WorkspaceService_GetSystemDiagram",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetSystemDiagramResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/flows/{strategy}/eval": {
+      "get": {
+        "operationId": "WorkspaceService_EvaluateFlows",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1EvaluateFlowsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "strategy",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/generators": {
+      "get": {
+        "operationId": "WorkspaceService_ListGenerators",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListGeneratorsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      },
+      "post": {
+        "operationId": "WorkspaceService_AddGenerator",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1AddGeneratorResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "generator": {
+                  "$ref": "#/definitions/v1Generator"
+                },
+                "applyFlows": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/generators/actions:startall": {
+      "post": {
+        "operationId": "WorkspaceService_StartAllGenerators",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1StartAllGeneratorsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/generators/actions:stopall": {
+      "post": {
+        "operationId": "WorkspaceService_StopAllGenerators",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1StopAllGeneratorsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/generators/{generator.name}": {
+      "patch": {
+        "operationId": "WorkspaceService_UpdateGenerator",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateGeneratorResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "generator.name",
+            "description": "Unique name within a system (e.g., \"baseline\", \"health\")",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "generator": {
+                  "type": "object",
+                  "properties": {
+                    "component": {
+                      "type": "string",
+                      "title": "Target component path (e.g., \"arch.webserver\")"
+                    },
+                    "method": {
+                      "type": "string",
+                      "title": "Target method name (e.g., \"HandleRequest\")"
+                    },
+                    "rate": {
+                      "type": "number",
+                      "format": "double",
+                      "title": "Traffic rate in RPS"
+                    },
+                    "duration": {
+                      "type": "number",
+                      "format": "double",
+                      "title": "Duration in seconds (0 = forever)"
+                    },
+                    "enabled": {
+                      "type": "boolean",
+                      "title": "Whether the generator is active"
+                    }
+                  }
+                },
+                "applyFlows": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/generators/{generatorName}": {
+      "delete": {
+        "operationId": "WorkspaceService_DeleteGenerator",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DeleteGeneratorResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "generatorName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "applyFlows",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/generators/{generatorName}/actions:start": {
+      "post": {
+        "operationId": "WorkspaceService_StartGenerator",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1StartGeneratorResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "generatorName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/generators/{generatorName}/actions:stop": {
+      "post": {
+        "operationId": "WorkspaceService_StopGenerator",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1StopGeneratorResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "generatorName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/metrics": {
+      "get": {
+        "operationId": "WorkspaceService_ListMetrics",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListMetricsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      },
+      "post": {
+        "operationId": "WorkspaceService_AddMetric",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1AddMetricResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "metric": {
+                  "$ref": "#/definitions/v1Metric"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/metrics/{metricName}": {
+      "delete": {
+        "operationId": "WorkspaceService_DeleteMetric",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DeleteMetricResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "metricName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/parameters": {
+      "get": {
+        "operationId": "WorkspaceService_GetParameters",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetParametersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "path",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/parameters/{path}": {
+      "put": {
+        "operationId": "WorkspaceService_SetParameter",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SetParameterResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "newValue": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v1AddGeneratorResponse": {
+      "type": "object",
+      "properties": {
+        "generator": {
+          "$ref": "#/definitions/v1Generator"
+        }
+      }
+    },
+    "v1AddMetricResponse": {
+      "type": "object",
+      "properties": {
+        "metric": {
+          "$ref": "#/definitions/v1Metric"
+        }
+      }
+    },
+    "v1ClearConsoleResponse": {
+      "type": "object"
+    },
+    "v1ClearFlowPathsResponse": {
+      "type": "object"
+    },
+    "v1ClearHighlightsResponse": {
+      "type": "object"
+    },
+    "v1ClearMetricsResponse": {
+      "type": "object"
+    },
+    "v1ClientReadyResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean"
+        },
+        "workspace": {
+          "$ref": "#/definitions/v1Workspace"
+        }
+      }
+    },
+    "v1CreateDirectoryResponse": {
+      "type": "object",
+      "properties": {
+        "directoryInfo": {
+          "$ref": "#/definitions/v1FileInfo"
+        }
+      }
+    },
+    "v1CreateWorkspaceRequest": {
+      "type": "object",
+      "properties": {
+        "workspace": {
+          "$ref": "#/definitions/v1Workspace"
+        }
+      }
+    },
+    "v1CreateWorkspaceResponse": {
+      "type": "object",
+      "properties": {
+        "workspace": {
+          "$ref": "#/definitions/v1Workspace"
+        }
+      }
+    },
+    "v1DeleteFileResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1DeleteGeneratorResponse": {
+      "type": "object"
+    },
+    "v1DeleteMetricResponse": {
+      "type": "object"
+    },
+    "v1DeleteWorkspaceResponse": {
+      "type": "object"
+    },
+    "v1DevEnvAvailableSystemsResponse": {
+      "type": "object"
+    },
+    "v1DevEnvRemoveGeneratorResponse": {
+      "type": "object"
+    },
+    "v1DevEnvRemoveMetricResponse": {
+      "type": "object"
+    },
+    "v1DevEnvSystemChangedResponse": {
+      "type": "object"
+    },
+    "v1DevEnvUpdateGeneratorResponse": {
+      "type": "object"
+    },
+    "v1DevEnvUpdateMetricResponse": {
+      "type": "object"
+    },
+    "v1DiagramComponentClickedResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1DiagramComponentHoveredResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1DiagramEdge": {
+      "type": "object",
+      "properties": {
+        "fromId": {
+          "type": "string"
+        },
+        "toId": {
+          "type": "string"
+        },
+        "fromMethod": {
+          "type": "string",
+          "title": "Source method name (for flow edges)"
+        },
+        "toMethod": {
+          "type": "string",
+          "title": "Target method name (for flow edges)"
+        },
+        "label": {
+          "type": "string"
+        },
+        "order": {
+          "type": "number",
+          "format": "double",
+          "title": "Execution order (supports decimals for conditional paths)"
+        },
+        "condition": {
+          "type": "string",
+          "title": "Condition expression if this is a conditional path"
+        },
+        "probability": {
+          "type": "number",
+          "format": "double",
+          "title": "Probability of this path being taken"
+        },
+        "generatorId": {
+          "type": "string",
+          "title": "ID of the generator that originated this flow"
+        },
+        "color": {
+          "type": "string",
+          "title": "Color for visualization (based on generator)"
+        }
+      },
+      "title": "DiagramEdge represents a connection between nodes"
+    },
+    "v1DiagramNode": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "Unique identifier for the node"
+        },
+        "name": {
+          "type": "string",
+          "title": "Display name"
+        },
+        "type": {
+          "type": "string",
+          "title": "Component type for display"
+        },
+        "methods": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1MethodInfo"
+          },
+          "title": "Methods provided by this component"
+        },
+        "traffic": {
+          "type": "string",
+          "title": "Current traffic flow (e.g., \"0 rps\")"
+        },
+        "fullPath": {
+          "type": "string",
+          "title": "Full path from system root (e.g., \"webserver.db.pool\")"
+        },
+        "icon": {
+          "type": "string",
+          "title": "Icon identifier (e.g., \"database\", \"cache\", \"service\")"
+        }
+      },
+      "title": "DiagramNode represents a component or instance in the system"
+    },
+    "v1EvaluateFlowsResponse": {
+      "type": "object",
+      "properties": {
+        "strategy": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "iterations": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "componentRates": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "flowEdges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1FlowEdge"
+          }
+        }
+      }
+    },
+    "v1FileInfo": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "isDirectory": {
+          "type": "boolean"
+        },
+        "size": {
+          "type": "string",
+          "format": "int64"
+        },
+        "modTime": {
+          "type": "string"
+        },
+        "mimeType": {
+          "type": "string"
+        }
+      },
+      "title": "FileInfo represents information about a file or directory"
+    },
+    "v1FileSavedResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean"
+        },
+        "error": {
+          "type": "string"
+        }
+      }
+    },
+    "v1FileSelectedResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean"
+        },
+        "content": {
+          "type": "string"
+        },
+        "error": {
+          "type": "string"
+        }
+      }
+    },
+    "v1FilesystemInfo": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "prefix": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "readOnly": {
+          "type": "boolean"
+        },
+        "basePath": {
+          "type": "string"
+        },
+        "extensions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "Allowed file extensions"
+        }
+      },
+      "title": "FilesystemInfo represents information about a mounted filesystem"
+    },
+    "v1FlowEdge": {
+      "type": "object",
+      "properties": {
+        "fromComponent": {
+          "type": "string"
+        },
+        "fromMethod": {
+          "type": "string"
+        },
+        "toComponent": {
+          "type": "string"
+        },
+        "toMethod": {
+          "type": "string"
+        },
+        "rate": {
+          "type": "number",
+          "format": "double"
+        },
+        "condition": {
+          "type": "string",
+          "title": "Optional condition expression"
+        }
+      },
+      "title": "Represents a flow edge between components"
+    },
+    "v1FlowPathSegment": {
+      "type": "object",
+      "properties": {
+        "fromComponent": {
+          "type": "string"
+        },
+        "fromMethod": {
+          "type": "string"
+        },
+        "toComponent": {
+          "type": "string"
+        },
+        "toMethod": {
+          "type": "string"
+        },
+        "rate": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "v1Generator": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "title": "Unique name within a system (e.g., \"baseline\", \"health\")"
+        },
+        "component": {
+          "type": "string",
+          "title": "Target component path (e.g., \"arch.webserver\")"
+        },
+        "method": {
+          "type": "string",
+          "title": "Target method name (e.g., \"HandleRequest\")"
+        },
+        "rate": {
+          "type": "number",
+          "format": "double",
+          "title": "Traffic rate in RPS"
+        },
+        "duration": {
+          "type": "number",
+          "format": "double",
+          "title": "Duration in seconds (0 = forever)"
+        },
+        "enabled": {
+          "type": "boolean",
+          "title": "Whether the generator is active"
+        }
+      }
+    },
+    "v1GetAllDesignContentsResponse": {
+      "type": "object",
+      "properties": {
+        "contents": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "design name -\u003e SDL content"
+        }
+      }
+    },
+    "v1GetDesignContentResponse": {
+      "type": "object",
+      "properties": {
+        "sdlContent": {
+          "type": "string"
+        },
+        "designName": {
+          "type": "string"
+        }
+      }
+    },
+    "v1GetFileInfoResponse": {
+      "type": "object",
+      "properties": {
+        "fileInfo": {
+          "$ref": "#/definitions/v1FileInfo"
+        }
+      }
+    },
+    "v1GetParametersResponse": {
+      "type": "object",
+      "properties": {
+        "parameters": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "v1GetSystemContentResponse": {
+      "type": "object",
+      "properties": {
+        "sdlContent": {
+          "type": "string"
+        },
+        "recipeContent": {
+          "type": "string"
+        },
+        "readmeContent": {
+          "type": "string"
+        }
+      }
+    },
+    "v1GetSystemDiagramResponse": {
+      "type": "object",
+      "properties": {
+        "diagram": {
+          "$ref": "#/definitions/v1SystemDiagram"
+        }
+      }
+    },
+    "v1GetSystemResponse": {
+      "type": "object",
+      "properties": {
+        "system": {
+          "$ref": "#/definitions/v1SystemProject"
+        }
+      }
+    },
+    "v1GetWorkspaceResponse": {
+      "type": "object",
+      "properties": {
+        "workspace": {
+          "$ref": "#/definitions/v1Workspace"
+        }
+      }
+    },
+    "v1HighlightComponentsResponse": {
+      "type": "object"
+    },
+    "v1ImportSource": {
+      "type": "object",
+      "properties": {
+        "builtin": {
+          "type": "boolean",
+          "title": "Built-in source (e.g., @stdlib/ — always available)"
+        },
+        "github": {
+          "type": "string",
+          "title": "GitHub repository (e.g., \"panyam/sdl-patterns\")"
+        },
+        "url": {
+          "type": "string",
+          "title": "HTTP(S) URL base"
+        },
+        "path": {
+          "type": "string",
+          "title": "Subdirectory within the source"
+        },
+        "ref": {
+          "type": "string",
+          "title": "Version/branch/tag for pinning"
+        }
+      },
+      "description": "ImportSource declares where to resolve @name/ prefixed imports.\nThe runtime configures the appropriate resolver based on context\n(CLI: disk/HTTP, WASM: memory/fetch, server: bundled/HTTP)."
+    },
+    "v1InitializePresenterResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean"
+        },
+        "error": {
+          "type": "string"
+        },
+        "workspaceId": {
+          "type": "string"
+        },
+        "availableSystems": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1SystemInfo"
+          },
+          "title": "Available systems to choose from"
+        },
+        "diagram": {
+          "$ref": "#/definitions/v1SystemDiagram",
+          "title": "Initial state to render"
+        },
+        "generators": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Generator"
+          }
+        },
+        "metrics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Metric"
+          }
+        }
+      }
+    },
+    "v1InitializeSingletonResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean"
+        },
+        "error": {
+          "type": "string"
+        },
+        "workspaceId": {
+          "type": "string"
+        },
+        "availableSystems": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1SystemInfo"
+          }
+        }
+      }
+    },
+    "v1ListFilesResponse": {
+      "type": "object",
+      "properties": {
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1FileInfo"
+          }
+        }
+      }
+    },
+    "v1ListFilesystemsResponse": {
+      "type": "object",
+      "properties": {
+        "filesystems": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1FilesystemInfo"
+          }
+        }
+      }
+    },
+    "v1ListGeneratorsResponse": {
+      "type": "object",
+      "properties": {
+        "generators": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Generator"
+          }
+        }
+      }
+    },
+    "v1ListMetricsResponse": {
+      "type": "object",
+      "properties": {
+        "metrics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Metric"
+          }
+        }
+      }
+    },
+    "v1ListSystemsResponse": {
+      "type": "object",
+      "properties": {
+        "systems": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1SystemInfo"
+          }
+        }
+      }
+    },
+    "v1ListWorkspacesResponse": {
+      "type": "object",
+      "properties": {
+        "workspaces": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Workspace"
+          }
+        }
+      }
+    },
+    "v1LoadFileResponse": {
+      "type": "object"
+    },
+    "v1LogMessageResponse": {
+      "type": "object"
+    },
+    "v1MethodInfo": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "title": "Method name"
+        },
+        "returnType": {
+          "type": "string",
+          "title": "Return type (e.g., \"Bool\", \"Int\", etc.)"
+        },
+        "traffic": {
+          "type": "number",
+          "format": "double",
+          "title": "Current traffic rate in RPS"
+        }
+      },
+      "title": "MethodInfo represents information about a component method"
+    },
+    "v1Metric": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "title": "Unique name within a system (e.g., \"request_latency\")"
+        },
+        "component": {
+          "type": "string",
+          "title": "Target component path (e.g., \"arch.webserver\")"
+        },
+        "methods": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "Target method names"
+        },
+        "enabled": {
+          "type": "boolean",
+          "title": "Whether the metric is active"
+        },
+        "metricType": {
+          "type": "string",
+          "title": "Type: \"count\", \"latency\", \"utilization\""
+        },
+        "aggregation": {
+          "type": "string",
+          "title": "Aggregation function: \"sum\", \"avg\", \"min\", \"max\", \"p50\", \"p90\", \"p95\", \"p99\""
+        },
+        "aggregationWindow": {
+          "type": "number",
+          "format": "double",
+          "title": "Aggregation window in seconds"
+        },
+        "matchResult": {
+          "type": "string",
+          "title": "Result value to match (optional filter)"
+        },
+        "matchResultType": {
+          "type": "string",
+          "title": "Result type for match parsing"
+        },
+        "oldestTimestamp": {
+          "type": "number",
+          "format": "double",
+          "title": "Statistics (populated by metric store)"
+        },
+        "newestTimestamp": {
+          "type": "number",
+          "format": "double"
+        },
+        "numDataPoints": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "v1MetricPoint": {
+      "type": "object",
+      "properties": {
+        "timestamp": {
+          "type": "number",
+          "format": "double",
+          "title": "Unix timestamp in seconds"
+        },
+        "value": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "v1ReadFileResponse": {
+      "type": "object",
+      "properties": {
+        "content": {
+          "type": "string",
+          "format": "byte"
+        },
+        "fileInfo": {
+          "$ref": "#/definitions/v1FileInfo"
+        }
+      }
+    },
+    "v1SetGeneratorListResponse": {
+      "type": "object"
+    },
+    "v1SetMetricsListResponse": {
+      "type": "object"
+    },
+    "v1SetParameterResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean"
+        },
+        "errorMessage": {
+          "type": "string"
+        },
+        "newValue": {
+          "type": "string"
+        },
+        "oldValue": {
+          "type": "string"
+        }
+      }
+    },
+    "v1ShowFlowPathResponse": {
+      "type": "object"
+    },
+    "v1StartAllGeneratorsResponse": {
+      "type": "object",
+      "properties": {
+        "totalGenerators": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "startedCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "alreadyRunningCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "failedCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "failedIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "v1StartGeneratorResponse": {
+      "type": "object"
+    },
+    "v1StopAllGeneratorsResponse": {
+      "type": "object",
+      "properties": {
+        "totalGenerators": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "stoppedCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "alreadyStoppedCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "failedCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "failedIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "v1StopGeneratorResponse": {
+      "type": "object"
+    },
+    "v1SystemDiagram": {
+      "type": "object",
+      "properties": {
+        "systemName": {
+          "type": "string"
+        },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1DiagramNode"
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1DiagramEdge"
+          }
+        }
+      },
+      "title": "SystemDiagram represents the topology of a system"
+    },
+    "v1SystemInfo": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "difficulty": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "icon": {
+          "type": "string"
+        },
+        "lastUpdated": {
+          "type": "string"
+        }
+      },
+      "title": "SystemInfo represents a system in the catalog"
+    },
+    "v1SystemProject": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "difficulty": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "icon": {
+          "type": "string"
+        },
+        "versions": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/v1SystemVersion"
+          }
+        },
+        "defaultVersion": {
+          "type": "string"
+        },
+        "lastUpdated": {
+          "type": "string"
+        }
+      },
+      "title": "SystemProject represents a full system project"
+    },
+    "v1SystemVersion": {
+      "type": "object",
+      "properties": {
+        "sdl": {
+          "type": "string"
+        },
+        "recipe": {
+          "type": "string"
+        },
+        "readme": {
+          "type": "string"
+        }
+      },
+      "title": "SystemVersion represents a version of a system"
+    },
+    "v1UpdateDiagramResponse": {
+      "type": "object"
+    },
+    "v1UpdateFlowRatesResponse": {
+      "type": "object"
+    },
+    "v1UpdateGeneratorResponse": {
+      "type": "object",
+      "properties": {
+        "generator": {
+          "$ref": "#/definitions/v1Generator"
+        }
+      }
+    },
+    "v1UpdateGeneratorStateResponse": {
+      "type": "object"
+    },
+    "v1UpdateMetricResponse": {
+      "type": "object"
+    },
+    "v1UpdateUtilizationResponse": {
+      "type": "object"
+    },
+    "v1UpdateWorkspaceResponse": {
+      "type": "object",
+      "properties": {
+        "workspace": {
+          "$ref": "#/definitions/v1Workspace"
+        }
+      }
+    },
+    "v1UseSystemResponse": {
+      "type": "object"
+    },
+    "v1UtilizationInfo": {
+      "type": "object",
+      "properties": {
+        "resourceName": {
+          "type": "string",
+          "title": "e.g., \"pool\", \"disk\", \"queue\""
+        },
+        "componentPath": {
+          "type": "string",
+          "title": "e.g., \"database.pool\", \"database.driverTable.disk\""
+        },
+        "utilization": {
+          "type": "number",
+          "format": "double",
+          "title": "0.0 to 1.0"
+        },
+        "capacity": {
+          "type": "number",
+          "format": "double",
+          "title": "Maximum capacity"
+        },
+        "currentLoad": {
+          "type": "number",
+          "format": "double",
+          "title": "Current arrival rate"
+        },
+        "isBottleneck": {
+          "type": "boolean",
+          "title": "Whether this is the bottleneck resource"
+        },
+        "warningThreshold": {
+          "type": "number",
+          "format": "double",
+          "title": "Utilization level for warning (e.g., 0.8)"
+        },
+        "criticalThreshold": {
+          "type": "number",
+          "format": "double",
+          "title": "Utilization level for critical (e.g., 0.95)"
+        }
+      },
+      "title": "Resource utilization information"
+    },
+    "v1Workspace": {
+      "type": "object",
+      "properties": {
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "sources": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/v1ImportSource"
+          },
+          "title": "Import sources for module resolution (name -\u003e source config)\ne.g., \"stdlib\" -\u003e { builtin: true }, \"patterns\" -\u003e { github: \"panyam/sdl-patterns\" }"
+        },
+        "designs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1WorkspaceDesign"
+          },
+          "title": "Designs within this workspace (each is a system architecture)"
+        },
+        "activeDesign": {
+          "type": "string",
+          "title": "Currently active design name"
+        },
+        "dir": {
+          "type": "string",
+          "title": "Directory path (for file-based workspaces)"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "Workspace-level metadata (for UI display)"
+        },
+        "difficulty": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        }
+      },
+      "description": "Workspace is a project container holding multiple designs (system architectures).\nEach design is backed by a Canvas for runtime simulation.\nThe workspace also declares import sources for module resolution."
+    },
+    "v1WorkspaceDesign": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "title": "System name as declared in SDL (e.g., \"UberMVP\")"
+        },
+        "file": {
+          "type": "string",
+          "title": "SDL file path relative to workspace root"
+        },
+        "workspaceId": {
+          "type": "string",
+          "title": "Parent workspace ID"
+        },
+        "description": {
+          "type": "string",
+          "title": "Brief description"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "Per-design metadata (for UI display)"
+        },
+        "difficulty": {
+          "type": "string",
+          "title": "\"beginner\", \"intermediate\", \"advanced\""
+        },
+        "category": {
+          "type": "string"
+        }
+      },
+      "description": "WorkspaceDesign represents one system architecture within a workspace.\nMaps to a `system` block in an SDL file, backed by a Canvas for runtime."
+    },
+    "v1WriteFileResponse": {
+      "type": "object",
+      "properties": {
+        "fileInfo": {
+          "$ref": "#/definitions/v1FileInfo"
+        }
+      }
+    }
+  }
+}

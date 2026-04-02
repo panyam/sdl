@@ -33,8 +33,9 @@ message UseSystemResponse {
 // ============================================================================
 
 message AddGeneratorRequest {
-  Generator generator = 1;
-  bool apply_flows = 2;
+  string workspace_id = 1;
+  Generator generator = 2;
+  bool apply_flows = 3;
 }
 
 message AddGeneratorResponse {
@@ -51,7 +52,7 @@ message ListGeneratorsResponse {
 
 message GetGeneratorRequest {
   string workspace_id = 1;
-  string generator_id = 2;
+  string generator_name = 2;
 }
 
 message GetGeneratorResponse {
@@ -59,8 +60,8 @@ message GetGeneratorResponse {
 }
 
 message UpdateGeneratorRequest {
-  Generator generator = 1;
-  google.protobuf.FieldMask update_mask = 2;
+  string workspace_id = 1;
+  Generator generator = 2;
   bool apply_flows = 3;
 }
 
@@ -70,7 +71,7 @@ message UpdateGeneratorResponse {
 
 message StartGeneratorRequest {
   string workspace_id = 1;
-  string generator_id = 2;
+  string generator_name = 2;
 }
 
 message StartGeneratorResponse {
@@ -78,7 +79,7 @@ message StartGeneratorResponse {
 
 message StopGeneratorRequest {
   string workspace_id = 1;
-  string generator_id = 2;
+  string generator_name = 2;
 }
 
 message StopGeneratorResponse {
@@ -86,7 +87,7 @@ message StopGeneratorResponse {
 
 message DeleteGeneratorRequest {
   string workspace_id = 1;
-  string generator_id = 2;
+  string generator_name = 2;
   bool apply_flows = 3;
 }
 
@@ -122,7 +123,8 @@ message StopAllGeneratorsResponse {
 // ============================================================================
 
 message AddMetricRequest {
-  Metric metric = 1;
+  string workspace_id = 1;
+  Metric metric = 2;
 }
 
 message AddMetricResponse {
@@ -131,7 +133,7 @@ message AddMetricResponse {
 
 message DeleteMetricRequest {
   string workspace_id = 1;
-  string metric_id = 2;
+  string metric_name = 2;
 }
 
 message DeleteMetricResponse {
@@ -147,7 +149,7 @@ message ListMetricsResponse {
 
 message QueryMetricsRequest {
   string workspace_id = 1;
-  string metric_id = 2;
+  string metric_name = 2;
   double start_time = 3;
   double end_time = 4;
   int32 limit = 5;
@@ -159,7 +161,7 @@ message QueryMetricsResponse {
 
 message AggregateMetricsRequest {
   string workspace_id = 1;
-  string metric_id = 2;
+  string metric_name = 2;
   double start_time = 3;
   double end_time = 4;
   string function = 5;
@@ -172,7 +174,7 @@ message AggregateMetricsResponse {
 
 message StreamMetricsRequest {
   string workspace_id = 1;
-  repeated string metric_ids = 2;
+  repeated string metric_names = 2;
 }
 
 message StreamMetricsResponse {

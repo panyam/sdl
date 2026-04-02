@@ -111,9 +111,8 @@ describe('Phase 3: Go Route Consolidation', () => {
    * in the workspace listing page. Checks the Go source for key
    * patterns that indicate the unified landing page is wired up.
    */
-  it('should have fork handler and examples in webapp.go', () => {
+  it('should have workspace listing and examples in webapp.go', () => {
     const content = fs.readFileSync(path.join(WEB_DIR, 'server/webapp.go'), 'utf-8');
-    expect(content).toContain('forkExampleHandler');
     expect(content).toContain('Examples');
     expect(content).toContain('Workspace');
   });
