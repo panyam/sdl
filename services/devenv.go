@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"log/slog"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	protos "github.com/panyam/sdl/gen/go/sdl/v1/models"
+	"github.com/panyam/sdl/lib/core"
 	"github.com/panyam/sdl/lib/decl"
 	"github.com/panyam/sdl/lib/loader"
 	"github.com/panyam/sdl/lib/runtime"
@@ -502,6 +504,104 @@ func (d *DevEnv) Close() error {
 		d.metricTracer = nil
 	}
 	return nil
+}
+
+// GetGenerator returns a generator by name, or nil.
+func (d *DevEnv) GetGenerator(name string) *runtime.Generator {
+	d.generatorsLock.RLock()
+	defer d.generatorsLock.RUnlock()
+	return d.generators[name]
+}
+
+// GetFlowState returns the current flow rates and strategy.
+func (d *DevEnv) GetFlowState() (map[string]float64, string) {
+	return d.getCurrentFlowRates(), d.currentFlowStrategy
+}
+
+// BatchSetParameters sets multiple parameters and re-evaluates flows.
+func (d *DevEnv) BatchSetParameters(updates map[string]any) error {
+	for path, value := range updates {
+		if err := d.SetParameter(path, value); err != nil {
+			return err
+		}
+	}
+	d.recomputeSystemFlows()
+	return nil
+}
+
+// ExecuteTrace runs a single simulated call through a component method
+// and returns the full execution trace.
+func (d *DevEnv) ExecuteTrace(componentName, methodName string) (*runtime.TraceData, error) {
+	if d.activeSystem == nil {
+		return nil, fmt.Errorf("no active system")
+	}
+
+	compInst := d.activeSystem.FindComponent(componentName)
+	if compInst == nil {
+		return nil, fmt.Errorf("component '%s' not found", componentName)
+	}
+
+	methodDecl, err := compInst.ComponentDecl.GetMethod(methodName)
+	if err != nil || methodDecl == nil {
+		return nil, fmt.Errorf("method '%s' not found in component '%s'", methodName, componentName)
+	}
+
+	tracer := runtime.NewExecutionTracer()
+	tracer.SetRuntime(d.runtime)
+
+	eval := runtime.NewSimpleEval(d.activeSystem.File, tracer)
+	env := d.activeSystem.Env.Push()
+	var currTime core.Duration = 0
+
+	callExpr := &decl.CallExpr{
+		Function: &decl.MemberAccessExpr{
+			Receiver: &decl.IdentifierExpr{Value: componentName},
+			Member:   &decl.IdentifierExpr{Value: methodName},
+		},
+	}
+
+	eval.Eval(callExpr, env, &currTime)
+
+	return &runtime.TraceData{
+		System:     d.activeSystem.System.Name.Value,
+		EntryPoint: fmt.Sprintf("%s.%s", componentName, methodName),
+		Events:     tracer.Events,
+	}, nil
+}
+
+// TraceAllPaths performs breadth-first traversal to discover all possible
+// execution paths from a component method.
+func (d *DevEnv) TraceAllPaths(componentName, methodName string, maxDepth int32) (*runtime.AllPathsTraceData, error) {
+	if d.activeSystem == nil {
+		return nil, fmt.Errorf("no active system")
+	}
+
+	compInst := d.activeSystem.FindComponent(componentName)
+	if compInst == nil {
+		return nil, fmt.Errorf("component '%s' not found", componentName)
+	}
+
+	if maxDepth <= 0 {
+		maxDepth = 10
+	}
+
+	return runtime.TraceAllPaths(d.activeSystem, componentName, methodName, int(maxDepth))
+}
+
+// GetUtilization returns utilization info for all components in the active system.
+func (d *DevEnv) GetUtilization() []*runtime.ComponentUtilization {
+	if d.activeSystem == nil {
+		return nil
+	}
+	return runtime.GetSystemUtilization(d.activeSystem)
+}
+
+// QueryMetrics queries metric data points from the tracer's store.
+func (d *DevEnv) QueryMetrics(metricName string, opts runtime.QueryOptions) (runtime.QueryResult, error) {
+	if d.metricTracer == nil {
+		return runtime.QueryResult{}, fmt.Errorf("no metric tracer")
+	}
+	return d.metricTracer.QueryMetrics(context.Background(), metricName, opts)
 }
 
 // Internal helpers

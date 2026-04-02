@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
 	protos "github.com/panyam/sdl/gen/go/sdl/v1/models"
 	protoservices "github.com/panyam/sdl/gen/go/sdl/v1/services"
@@ -183,6 +184,103 @@ func (s *WorkspaceService) EvaluateFlows(_ context.Context, req *protos.Evaluate
 		Status:         "applied",
 		ComponentRates: result.Flows.ComponentRates,
 	}, nil
+}
+
+func (s *WorkspaceService) GetFlowState(_ context.Context, _ *protos.GetFlowStateRequest) (*protos.GetFlowStateResponse, error) {
+	rates, strategy := s.DevEnv.GetFlowState()
+	return &protos.GetFlowStateResponse{
+		State: &protos.FlowState{
+			Strategy: strategy,
+			Rates:    rates,
+		},
+	}, nil
+}
+
+func (s *WorkspaceService) BatchSetParameters(_ context.Context, req *protos.BatchSetParametersRequest) (*protos.BatchSetParametersResponse, error) {
+	updates := make(map[string]any)
+	for _, u := range req.Updates {
+		updates[u.Path] = parseParameterValue(u.NewValue)
+	}
+	if err := s.DevEnv.BatchSetParameters(updates); err != nil {
+		return &protos.BatchSetParametersResponse{Success: false, ErrorMessage: err.Error()}, nil
+	}
+	return &protos.BatchSetParametersResponse{Success: true}, nil
+}
+
+func (s *WorkspaceService) ExecuteTrace(_ context.Context, req *protos.ExecuteTraceRequest) (*protos.ExecuteTraceResponse, error) {
+	traceData, err := s.DevEnv.ExecuteTrace(req.Component, req.Method)
+	if err != nil {
+		return nil, err
+	}
+	td := &protos.TraceData{
+		System:     traceData.System,
+		EntryPoint: traceData.EntryPoint,
+	}
+	for _, evt := range traceData.Events {
+		te := &protos.TraceEvent{
+			Kind:      string(evt.Kind),
+			Timestamp: float64(evt.Timestamp),
+			Duration:  float64(evt.Duration),
+		}
+		if evt.Component != nil {
+			te.Component = evt.Component.ID()
+		}
+		if evt.Method != nil {
+			te.Method = evt.Method.Name.Value
+		}
+		td.Events = append(td.Events, te)
+	}
+	return &protos.ExecuteTraceResponse{TraceData: td}, nil
+}
+
+func (s *WorkspaceService) TraceAllPaths(_ context.Context, req *protos.TraceAllPathsRequest) (*protos.TraceAllPathsResponse, error) {
+	data, err := s.DevEnv.TraceAllPaths(req.Component, req.Method, req.MaxDepth)
+	if err != nil {
+		return nil, err
+	}
+	if data == nil {
+		return &protos.TraceAllPathsResponse{}, nil
+	}
+	// Convert runtime AllPathsTraceData to proto
+	return &protos.TraceAllPathsResponse{
+		TraceData: data.ToProto(),
+	}, nil
+}
+
+func (s *WorkspaceService) GetUtilization(_ context.Context, _ *protos.GetUtilizationRequest) (*protos.GetUtilizationResponse, error) {
+	utils := s.DevEnv.GetUtilization()
+	resp := &protos.GetUtilizationResponse{}
+	for _, u := range utils {
+		for _, info := range u.Infos {
+			resp.Utilizations = append(resp.Utilizations, &protos.UtilizationInfo{
+				ComponentPath: u.Component,
+				Utilization:  info.Utilization,
+				Capacity:     float64(info.Capacity),
+				IsBottleneck: info.IsBottleneck,
+			})
+		}
+	}
+	return resp, nil
+}
+
+func (s *WorkspaceService) QueryMetrics(_ context.Context, req *protos.QueryMetricsRequest) (*protos.QueryMetricsResponse, error) {
+	opts := runtime.QueryOptions{
+		StartTime: time.Unix(int64(req.StartTime), 0),
+		EndTime:   time.Unix(int64(req.EndTime), 0),
+		Limit:     int(req.Limit),
+	}
+	result, err := s.DevEnv.QueryMetrics(req.MetricName, opts)
+	if err != nil {
+		return nil, err
+	}
+	resp := &protos.QueryMetricsResponse{}
+	for _, p := range result.Points {
+		resp.Points = append(resp.Points, &protos.MetricPoint{
+			Timestamp: float64(p.Timestamp.Unix()),
+			Value:     p.Value,
+		})
+	}
+	return resp, nil
 }
 
 // parseParameterValue converts a string value to the most appropriate Go type.

@@ -186,11 +186,56 @@ service WorkspaceService {
     };
   }
 
+  // ----- Batch Parameter Operations -----
+
+  rpc BatchSetParameters(BatchSetParametersRequest) returns (BatchSetParametersResponse) {
+    option (google.api.http) = {
+      put: "/v1/workspaces/{workspace_id}/parameters:batch"
+      body: "*"
+    };
+  }
+
+  rpc GetFlowState(GetFlowStateRequest) returns (GetFlowStateResponse) {
+    option (google.api.http) = {
+      get: "/v1/workspaces/{workspace_id}/flows/current"
+    };
+  }
+
+  // ----- Trace and Analysis -----
+
+  rpc ExecuteTrace(ExecuteTraceRequest) returns (ExecuteTraceResponse) {
+    option (google.api.http) = {
+      get: "/v1/workspaces/{workspace_id}/trace/{component}/{method}"
+    };
+  }
+
+  rpc TraceAllPaths(TraceAllPathsRequest) returns (TraceAllPathsResponse) {
+    option (google.api.http) = {
+      get: "/v1/workspaces/{workspace_id}/paths/{component}/{method}"
+    };
+  }
+
   // ----- System Diagram -----
 
   rpc GetSystemDiagram(GetSystemDiagramRequest) returns (GetSystemDiagramResponse) {
     option (google.api.http) = {
       get: "/v1/workspaces/{workspace_id}/diagram"
+    };
+  }
+
+  // ----- Utilization -----
+
+  rpc GetUtilization(GetUtilizationRequest) returns (GetUtilizationResponse) {
+    option (google.api.http) = {
+      get: "/v1/workspaces/{workspace_id}/utilization"
+    };
+  }
+
+  // ----- Metric Queries -----
+
+  rpc QueryMetrics(QueryMetricsRequest) returns (QueryMetricsResponse) {
+    option (google.api.http) = {
+      get: "/v1/workspaces/{workspace_id}/metrics/{metric_name}/query"
     };
   }
 }

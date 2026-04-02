@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sync"
 
+	protos "github.com/panyam/sdl/gen/go/sdl/v1/models"
 	"github.com/panyam/sdl/lib/decl"
 	"github.com/panyam/sdl/lib/loader"
 )
@@ -54,6 +55,48 @@ type GroupInfo struct {
 	GroupEnd   int32  `json:"group_end"`
 	GroupLabel string `json:"group_label"`
 	GroupType  string `json:"group_type"`
+}
+
+// ToProto converts AllPathsTraceData to proto representation.
+func (d *AllPathsTraceData) ToProto() *protos.AllPathsTraceData {
+	if d == nil {
+		return nil
+	}
+	return &protos.AllPathsTraceData{
+		TraceId: d.TraceID,
+		Root:    d.Root.ToProto(),
+	}
+}
+
+func (n *TraceNode) ToProto() *protos.TraceNode {
+	pn := &protos.TraceNode{
+		StartingTarget: n.StartingTarget,
+	}
+	for _, e := range n.Edges {
+		pn.Edges = append(pn.Edges, e.ToProto())
+	}
+	for _, g := range n.Groups {
+		pn.Groups = append(pn.Groups, &protos.GroupInfo{
+			GroupStart: g.GroupStart,
+			GroupEnd:   g.GroupEnd,
+			GroupLabel: g.GroupLabel,
+			GroupType:  g.GroupType,
+		})
+	}
+	return pn
+}
+
+func (e *Edge) ToProto() *protos.Edge {
+	return &protos.Edge{
+		Id:            e.ID,
+		NextNode:      e.NextNode.ToProto(),
+		Label:         e.Label,
+		IsAsync:       e.IsAsync,
+		IsReverse:     e.IsReverse,
+		Probability:   e.Probability,
+		Condition:     e.Condition,
+		IsConditional: e.IsConditional,
+	}
 }
 
 // NewPathTraversal creates a new path traversal engine
