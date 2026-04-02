@@ -14,8 +14,8 @@ import (
 // resetCmd represents the reset command
 var resetCmd = &cobra.Command{
 	Use:   "reset",
-	Short: "Reset the canvas - clear all state, generators, and metrics",
-	Long: `Reset the canvas to a clean state. This will:
+	Short: "Reset the workspace - clear all state, generators, and metrics",
+	Long: `Reset the workspace to a clean state. This will:
 - Stop all running generators
 - Clear all metrics
 - Remove the active system
@@ -42,7 +42,7 @@ func runReset() error {
 
 		resp, err := client.ResetWorkspace(ctx, req)
 		if err != nil {
-			return fmt.Errorf("failed to reset canvas: %w", err)
+			return fmt.Errorf("failed to reset workspace: %w", err)
 		}
 
 		if !resp.Success {

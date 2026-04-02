@@ -157,7 +157,7 @@ export abstract class WorkspaceViewerPageBase extends BasePage implements LCMCom
      * Phase 3: Activate component when all dependencies are ready
      */
     async activate(): Promise<void> {
-        this.bindCanvasEvents();
+        this.bindWorkspaceEvents();
 
         // Register this page as browser service for WASM callbacks
         this.wasmBundle.registerBrowserService('WorkspacePage', this);
@@ -188,7 +188,7 @@ export abstract class WorkspaceViewerPageBase extends BasePage implements LCMCom
     }
 
     /**
-     * Initialize presenter with canvas data
+     * Initialize presenter with workspace data
      */
     protected async initializePresenter(): Promise<void> {
         const response = await this.workspacePresenterClient.initialize({
@@ -205,7 +205,7 @@ export abstract class WorkspaceViewerPageBase extends BasePage implements LCMCom
     /**
      * Bind DOM events
      */
-    protected bindCanvasEvents(): void {
+    protected bindWorkspaceEvents(): void {
         // File save shortcut (Ctrl+S / Cmd+S)
         document.addEventListener('keydown', (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 's') {

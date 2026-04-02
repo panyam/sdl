@@ -4,12 +4,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var canvasCmd = &cobra.Command{
+var workspaceCmd = &cobra.Command{
 	Use:   "workspace",
-	Short: "Canvas management commands",
-	Long:  `Commands for creating and managing SDL canvases.`,
+	Short: "Workspace management commands",
+	Long:  `Commands for creating and managing SDL workspaces.`,
 }
 
 func init() {
-	rootCmd.AddCommand(canvasCmd)
+	rootCmd.AddCommand(workspaceCmd)
 }

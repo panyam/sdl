@@ -27,9 +27,9 @@
 <script>
     // Set up page data for the frontend
     window.sdlPageData = {
-        pageType: 'canvas-dashboard',
-        canvasId: '{{.WorkspaceId}}',
-        canvasName: '{{.Workspace.Name}}',
+        pageType: 'workspace-dashboard',
+        workspaceId: '{{.WorkspaceId}}',
+        workspaceName: '{{.Workspace.Name}}',
         mode: 'server',
         readonly: {{.ReadOnly}},
         // Collect design names from embedded textarea tags

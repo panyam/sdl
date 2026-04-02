@@ -88,7 +88,7 @@ func checkServerConnection() error {
 		fmt.Printf("Or connect to a different server:\n")
 		fmt.Printf("   export CANVAS_SERVER_URL=http://other-host:8080\n")
 		fmt.Printf("   sdl load examples/contacts/contacts.sdl\n\n")
-		fmt.Printf("💡 The server hosts the Canvas engine and web dashboard.\n")
+		fmt.Printf("💡 The server hosts the workspace engine and web dashboard.\n")
 		return err
 	}
 	return nil

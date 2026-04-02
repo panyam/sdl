@@ -21,12 +21,12 @@ var (
 // Serve command
 var serveCmd = &cobra.Command{
 	Use:   "serve",
-	Short: "Start the SDL Canvas server with web dashboard",
-	Long: `Start the SDL Canvas server that hosts the simulation engine, web dashboard, and API endpoints.
+	Short: "Start the SDL server with web dashboard",
+	Long: `Start the SDL server that hosts the simulation engine, web dashboard, and API endpoints.
 	
 The server provides:
-- Canvas simulation engine for SDL system execution
-- REST API for all Canvas operations 
+- Workspace simulation engine for SDL system execution
+- REST API for all workspace operations 
 - RESTful API for traffic generation and measurement management  
 - WebSocket connection for real-time updates
 - Web dashboard for visualization and control

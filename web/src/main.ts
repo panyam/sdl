@@ -13,9 +13,9 @@ console.log(`[SDL] Page type: ${pageType}`, pageData);
 
 // Initialize based on page type
 switch (pageType) {
-  case 'canvas-dashboard':
+  case 'workspace-dashboard':
     // Workspace IDE — uses LCMComponent lifecycle from tsappkit
-    WorkspaceViewerPageDockView.loadAfterPageLoaded('canvasViewerPage', WorkspaceViewerPageDockView, 'WorkspaceViewerPageDockView');
+    WorkspaceViewerPageDockView.loadAfterPageLoaded('workspaceViewerPage', WorkspaceViewerPageDockView, 'WorkspaceViewerPageDockView');
     break;
 
   case 'workspace-listing':

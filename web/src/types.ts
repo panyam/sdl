@@ -108,7 +108,7 @@ export interface ParameterConfig {
   value: any;
 }
 
-// Canvas API types matching Go backend
+// Workspace API types matching Go backend
 export interface GeneratorConfig {
   id: string;
   name: string;
@@ -136,7 +136,7 @@ export interface MeasurementDataPoint {
   run_id: string;
 }
 
-export interface CanvasState {
+export interface WorkspaceState {
   loadedFiles: string[];
   activeFile: string;
   activeSystem: string;

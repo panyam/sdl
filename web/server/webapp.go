@@ -361,7 +361,7 @@ func (p *WorkspacePage) Load(r *http.Request, w http.ResponseWriter, app *goal.A
 	}
 	p.Workspace = wsResp.Workspace
 
-	p.PageType = "canvas-dashboard"
+	p.PageType = "workspace-dashboard"
 	if p.ReadOnly {
 		p.Title = p.Workspace.Name
 	} else {

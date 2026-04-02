@@ -34,7 +34,7 @@ func init() {
 }
 
 // SingletonInitializerService bootstraps the WASM singleton with initial data.
-// Uses DevEnv directly instead of the old Canvas/SingletonCanvasService pipeline.
+// Uses DevEnv directly instead of the old Canvas (legacy) pipeline.
 type SingletonInitializerService struct {
 	DevEnv    *services.DevEnv
 	Presenter *services.WorkspacePresenter
@@ -97,7 +97,7 @@ func main() {
 	browserPage := NewBrowserWorkspacePage(devEnvPageClient)
 	devEnv.SetPage(browserPage)
 
-	// Create presenter (CanvasViewPresenterServer -> DevEnv)
+	// Create presenter (WorkspacePresenterServer -> DevEnv)
 	devEnvPresenter := services.NewWorkspacePresenter(devEnv)
 
 	// Create initializer service
