@@ -22,7 +22,7 @@ const CMD_WASM_DIR = path.join(WEB_DIR, '..', 'cmd', 'wasm');
 describe('DevEnv Cleanup: No CanvasDashboardPage in active code', () => {
   /**
    * Verifies that WorkspaceViewerPageBase does not import CanvasDashboardPageMethods.
-   * The old interface is replaced by DevEnvPageMethods which uses CRUD-by-name
+   * The old interface is replaced by WorkspacePageMethods which uses CRUD-by-name
    * instead of bulk SetGeneratorList/SetMetricsList.
    */
   it('should not import CanvasDashboardPageMethods in WorkspaceViewerPageBase', () => {
@@ -34,15 +34,15 @@ describe('DevEnv Cleanup: No CanvasDashboardPage in active code', () => {
   });
 
   /**
-   * Verifies that WorkspaceViewerPageBase implements DevEnvPageMethods (not
+   * Verifies that WorkspaceViewerPageBase implements WorkspacePageMethods (not
    * CanvasDashboardPageMethods). This ensures the browser receives push
    * updates through the new typed panel interface.
    */
-  it('should implement DevEnvPageMethods in WorkspaceViewerPageBase', () => {
+  it('should implement WorkspacePageMethods in WorkspaceViewerPageBase', () => {
     const basePath = path.join(SRC_DIR, 'pages/WorkspaceViewerPage/WorkspaceViewerPageBase.ts');
     const content = fs.readFileSync(basePath, 'utf-8');
 
-    expect(content).toContain('DevEnvPageMethods');
+    expect(content).toContain('WorkspacePageMethods');
     expect(content).toContain("registerBrowserService('DevEnvPage'");
   });
 

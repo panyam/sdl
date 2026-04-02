@@ -153,7 +153,7 @@ export class WorkspaceViewerPageDockView extends WorkspaceViewerPageBase {
             : generators.map(g => `
                 <div class="generator-item p-2 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
                     <div>
-                        <span class="font-medium">${g.id || 'Unnamed'}</span>
+                        <span class="font-medium">${g.name || 'Unnamed'}</span>
                         <span class="text-sm text-gray-500 ml-2">${g.rate || 0} req/s</span>
                     </div>
                     <span class="px-2 py-1 text-xs rounded ${g.enabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
@@ -172,7 +172,7 @@ export class WorkspaceViewerPageDockView extends WorkspaceViewerPageBase {
             ? '<div class="p-4 text-gray-500">No metrics configured</div>'
             : metrics.map(m => `
                 <div class="metric-item p-2 border-b border-gray-200 dark:border-gray-700">
-                    <span class="font-medium">${m.id || 'Unnamed'}</span>
+                    <span class="font-medium">${m.name || 'Unnamed'}</span>
                     <span class="text-sm text-gray-500 ml-2">${m.metricType || ''}</span>
                 </div>
             `).join('');
@@ -276,8 +276,8 @@ export class WorkspaceViewerPageDockView extends WorkspaceViewerPageBase {
 
             // Tell presenter to load via /designs/ mount → ScriptTagFS reads the DOM
             try {
-                await this.canvasViewPresenterClient.fileSelected({
-                    canvasId: this.currentCanvasId || 'default',
+                await this.workspacePresenterClient.fileSelected({
+                    workspaceId: this.currentWorkspaceId || 'default',
                     filePath: `/designs/${designName}.sdl`,
                 });
                 loadedDesigns.push(designName);
@@ -308,8 +308,8 @@ export class WorkspaceViewerPageDockView extends WorkspaceViewerPageBase {
 
         // Tell presenter to switch system — pushes diagram + generator updates
         try {
-            await this.canvasViewPresenterClient.useSystem({
-                canvasId: this.currentCanvasId || 'default',
+            await this.workspacePresenterClient.useSystem({
+                workspaceId: this.currentWorkspaceId || 'default',
                 systemName: systemName,
             });
         } catch (err) {

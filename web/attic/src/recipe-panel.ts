@@ -13,7 +13,7 @@ export class RecipePanel {
     
     // Set up event handlers
     this.runner.setStateChangeHandler((state) => this.onStateChange(state));
-    this.runner.setOutputHandler((msg, type) => this.onOutput(msg, type));
+    this.runner.setOutputHandler((msg: string, type: string) => this.onOutput(msg, type));
     
     this.render();
   }
@@ -97,7 +97,7 @@ export class RecipePanel {
         
         <!-- Steps list -->
         <div class="recipe-steps flex-1 overflow-y-auto p-3">
-          ${steps.map((step, index) => this.renderStep(step, index)).join('')}
+          ${steps.map((step: any, index: number) => this.renderStep(step, index)).join('')}
         </div>
       </div>
     `;
@@ -119,7 +119,7 @@ export class RecipePanel {
             <path d="M5 3l8 5-8 5V3z"/>
           </svg>
         </button>
-        <button id="btn-restart" class="btn-control" title="Restart" ${steps.some(s => s.status !== 'pending') ? '' : 'disabled'}>
+        <button id="btn-restart" class="btn-control" title="Restart" ${steps.some((s: any) => s.status !== 'pending') ? '' : 'disabled'}>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
             <path d="M13.451 5.609l-.579-.939-1.068.812-.076.094c-.335.415-.927 1.341-1.124 2.876l-.021.165.033.163c.071.363.224.694.456.97l.087.102c.25.282.554.514.897.683l.123.061c.404.182.852.279 1.312.279.51 0 1.003-.12 1.444-.349l.105-.059c.435-.255.785-.618 1.014-1.051l.063-.119c.185-.38.283-.8.283-1.228 0-.347-.063-.684-.183-1.003l-.056-.147-.098-.245zm-3.177 3.342c-.169 0-.331-.037-.48-.109l-.044-.023c-.122-.061-.227-.145-.313-.249l-.032-.04c-.084-.106-.144-.227-.176-.361l-.012-.056c-.03-.137-.037-.283-.01-.428l.008-.059c.088-.987.373-1.76.603-2.122.183.338.276.735.276 1.142 0 .168-.02.332-.06.491l-.023.079c-.082.268-.225.51-.417.703l-.037.035c-.189.186-.423.325-.689.413l-.064.021c-.14.042-.288.063-.44.063zm1.373-4.326l2.255-1.718 1.017 1.647-2.351 1.79-.921-1.719zm-10.296.577l1.017-1.647 2.255 1.718-.921 1.719-2.351-1.79z"/>
           </svg>

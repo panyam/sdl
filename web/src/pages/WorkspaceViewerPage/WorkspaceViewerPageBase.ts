@@ -1,7 +1,7 @@
 import { BasePage, LCMComponent } from '@panyam/tsappkit';
 import SdlBundle from '../../../gen/wasmjs';
-import { DevEnvPageMethods } from '../../../gen/wasmjs/sdl/v1/services/devEnvPageClient';
-import { CanvasViewPresenterClient } from '../../../gen/wasmjs/sdl/v1/services/canvasViewPresenterClient';
+import { WorkspacePageMethods } from '../../../gen/wasmjs/sdl/v1/services/workspacePageClient';
+import { WorkspacePresenterClient } from '../../../gen/wasmjs/sdl/v1/services/workspacePresenterClient';
 import { SingletonInitializerServiceClient } from '../../../gen/wasmjs/sdl/v1/services/singletonInitializerServiceClient';
 import {
     UpdateDiagramRequest, UpdateDiagramResponse,
@@ -29,18 +29,18 @@ export type PanelId = 'diagram' | 'editor' | 'console' | 'generators' | 'metrics
  * This class contains all the core workspace/SDL logic (WASM, presenter, panels, events)
  * but delegates layout-specific concerns to child classes.
  *
- * Implements DevEnvPageMethods to receive push updates from the DevEnv via
+ * Implements WorkspacePageMethods to receive push updates from the DevEnv via
  * the BrowserDevEnvPage forwarder in cmd/wasm/browser.go.
  */
-export abstract class WorkspaceViewerPageBase extends BasePage implements LCMComponent, DevEnvPageMethods {
+export abstract class WorkspaceViewerPageBase extends BasePage implements LCMComponent, WorkspacePageMethods {
     // =========================================================================
     // Protected Fields - Available to child classes
     // =========================================================================
     protected wasmBundle: SdlBundle;
-    protected canvasViewPresenterClient: CanvasViewPresenterClient;
+    protected workspacePresenterClient: WorkspacePresenterClient;
     protected singletonInitializerClient: SingletonInitializerServiceClient;
     protected readonly: boolean = false;
-    protected currentCanvasId: string | null;
+    protected currentWorkspaceId: string | null;
 
     // Current state
     protected currentDiagram: SystemDiagram | null = null;
@@ -128,10 +128,10 @@ export abstract class WorkspaceViewerPageBase extends BasePage implements LCMCom
      */
     async performLocalInit(): Promise<LCMComponent[]> {
         const pageData = (window as any).sdlPageData || {};
-        this.currentCanvasId = pageData.canvasId || 'default';
+        this.currentWorkspaceId = pageData.workspaceId || 'default';
         this.readonly = pageData.readonly || false;
 
-        console.log(`[WorkspaceViewerPage] Initializing: ${this.currentCanvasId} (readonly: ${this.readonly})`);
+        console.log(`[WorkspaceViewerPage] Initializing: ${this.currentWorkspaceId} (readonly: ${this.readonly})`);
 
         // Initialize layout system (DockView/Grid)
         await this.initializeLayout();
@@ -177,7 +177,7 @@ export abstract class WorkspaceViewerPageBase extends BasePage implements LCMCom
      */
     protected async loadWASM(): Promise<void> {
         this.wasmBundle = new SdlBundle();
-        this.canvasViewPresenterClient = new CanvasViewPresenterClient(this.wasmBundle);
+        this.workspacePresenterClient = new WorkspacePresenterClient(this.wasmBundle);
         this.singletonInitializerClient = new SingletonInitializerServiceClient(this.wasmBundle);
 
         const wasmPath = (document.getElementById("wasmBundlePathField") as HTMLInputElement)?.value || '/wasm/sdl.wasm';
@@ -191,8 +191,8 @@ export abstract class WorkspaceViewerPageBase extends BasePage implements LCMCom
      * Initialize presenter with canvas data
      */
     protected async initializePresenter(): Promise<void> {
-        const response = await this.canvasViewPresenterClient.initialize({
-            canvasId: this.currentCanvasId || 'default',
+        const response = await this.workspacePresenterClient.initialize({
+            workspaceId: this.currentWorkspaceId || 'default',
         });
 
         if (!response.success) {
@@ -218,8 +218,8 @@ export abstract class WorkspaceViewerPageBase extends BasePage implements LCMCom
         const evalFlowsBtn = document.getElementById('evaluate-flows-btn');
         if (evalFlowsBtn) {
             evalFlowsBtn.addEventListener('click', () => {
-                this.canvasViewPresenterClient.evaluateFlows({
-                    canvasId: this.currentCanvasId || '',
+                this.workspacePresenterClient.evaluateFlows({
+                    workspaceId: this.currentWorkspaceId || '',
                     strategy: 'runtime',
                 });
             });
@@ -237,8 +237,8 @@ export abstract class WorkspaceViewerPageBase extends BasePage implements LCMCom
      * Notify presenter that a file was selected
      */
     protected async onFileSelected(filePath: string): Promise<void> {
-        await this.canvasViewPresenterClient.fileSelected({
-            canvasId: this.currentCanvasId || '',
+        await this.workspacePresenterClient.fileSelected({
+            workspaceId: this.currentWorkspaceId || '',
             filePath,
         });
     }
@@ -247,8 +247,8 @@ export abstract class WorkspaceViewerPageBase extends BasePage implements LCMCom
      * Notify presenter that a file was saved
      */
     protected async onFileSaved(filePath: string, content: string): Promise<void> {
-        await this.canvasViewPresenterClient.fileSaved({
-            canvasId: this.currentCanvasId || '',
+        await this.workspacePresenterClient.fileSaved({
+            workspaceId: this.currentWorkspaceId || '',
             filePath,
             content,
         });
@@ -258,15 +258,15 @@ export abstract class WorkspaceViewerPageBase extends BasePage implements LCMCom
      * Notify presenter that a diagram component was clicked
      */
     protected async onDiagramComponentClicked(componentName: string, methodName?: string): Promise<void> {
-        await this.canvasViewPresenterClient.diagramComponentClicked({
-            canvasId: this.currentCanvasId || '',
+        await this.workspacePresenterClient.diagramComponentClicked({
+            workspaceId: this.currentWorkspaceId || '',
             componentName,
             methodName: methodName || '',
         });
     }
 
     // =========================================================================
-    // DevEnvPageMethods Interface - Browser RPC Methods
+    // WorkspacePageMethods Interface - Browser RPC Methods
     // Called by DevEnv (via BrowserDevEnvPage) to push state updates
     // =========================================================================
 
