@@ -11,10 +11,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var canvasDiagramCmd = &cobra.Command{
+var workspaceDiagramCmd = &cobra.Command{
 	Use:   "diagram",
-	Short: "Generate a diagram of the current canvas system",
-	Long: `Generates a visual representation of the active system in the canvas,
+	Short: "Generate a diagram of the current workspace system",
+	Long: `Generates a visual representation of the active system in the workspace,
 showing runtime component instances and their relationships.
 
 This diagram is based on actual runtime instances, properly handling shared components.`,
@@ -23,7 +23,7 @@ This diagram is based on actual runtime instances, properly handling shared comp
 		format, _ := cmd.Flags().GetString("format")
 
 		err := withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
-			// Get the system diagram from the canvas
+			// Get the system diagram from the workspace
 			resp, err := client.GetSystemDiagram(ctx, &v1.GetSystemDiagramRequest{
 				WorkspaceId: workspaceID,
 			})
@@ -87,7 +87,7 @@ This diagram is based on actual runtime instances, properly handling shared comp
 }
 
 func init() {
-	canvasCmd.AddCommand(canvasDiagramCmd)
-	canvasDiagramCmd.Flags().StringP("output", "o", "", "Output file path for the diagram")
-	canvasDiagramCmd.Flags().String("format", "dot", "Output format (dot, mermaid, excalidraw, svg)")
+	workspaceCmd.AddCommand(workspaceDiagramCmd)
+	workspaceDiagramCmd.Flags().StringP("output", "o", "", "Output file path for the diagram")
+	workspaceDiagramCmd.Flags().String("format", "dot", "Output format (dot, mermaid, excalidraw, svg)")
 }

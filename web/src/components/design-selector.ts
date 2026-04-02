@@ -4,7 +4,7 @@
  * dockview panels.
  *
  * Populated after the presenter initializes and returns the list of
- * loaded system names from the Canvas proto.
+ * loaded system names from the Workspace.
  */
 
 export class DesignSelector {

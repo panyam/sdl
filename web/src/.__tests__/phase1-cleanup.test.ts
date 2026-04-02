@@ -169,7 +169,7 @@ describe('Phase 1: Template Integrity', () => {
     const content = fs.readFileSync(templatePath, 'utf-8');
 
     expect(content).toContain('window.sdlPageData');
-    expect(content).toContain('canvas-dashboard');
+    expect(content).toContain('workspace-dashboard');
     expect(content).toContain('PostBodySection');
   });
 
