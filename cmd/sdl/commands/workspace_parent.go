@@ -5,7 +5,7 @@ import (
 )
 
 var canvasCmd = &cobra.Command{
-	Use:   "canvas",
+	Use:   "workspace",
 	Short: "Canvas management commands",
 	Long:  `Commands for creating and managing SDL canvases.`,
 }

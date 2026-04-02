@@ -21,7 +21,7 @@ var loadCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
 			_, err := client.LoadFile(ctx, &v1.LoadFileRequest{
-				WorkspaceId:    canvasID,
+				WorkspaceId:    workspaceID,
 				SdlFilePath: args[0],
 			})
 			return err
@@ -36,7 +36,7 @@ var loadCmd = &cobra.Command{
 			return
 		}
 
-		fmt.Printf("✅ Loaded %s successfully (canvas: %s)\n", args[0], canvasID)
+		fmt.Printf("✅ Loaded %s successfully (canvas: %s)\n", args[0], workspaceID)
 	},
 }
 
@@ -47,7 +47,7 @@ var useCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
 			_, err := client.UseSystem(ctx, &v1.UseSystemRequest{
-				WorkspaceId:   canvasID,
+				WorkspaceId:   workspaceID,
 				SystemName: args[0],
 			})
 			return err
@@ -69,7 +69,7 @@ var setCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
 			resp, err := client.SetParameter(ctx, &v1.SetParameterRequest{
-				WorkspaceId: canvasID,
+				WorkspaceId: workspaceID,
 				Path:     args[0],
 				NewValue: args[1],
 			})
@@ -103,7 +103,7 @@ var getCmd = &cobra.Command{
 			}
 
 			resp, err := client.GetParameters(ctx, &v1.GetParametersRequest{
-				WorkspaceId: canvasID,
+				WorkspaceId: workspaceID,
 				Path:     path,
 			})
 			if err != nil {
@@ -161,7 +161,7 @@ var infoCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
 			resp, err := client.GetWorkspace(ctx, &v1.GetWorkspaceRequest{
-				Id: canvasID,
+				Id: workspaceID,
 			})
 			if err != nil {
 				return err
@@ -169,7 +169,7 @@ var infoCmd = &cobra.Command{
 
 			canvas := resp.Workspace
 			fmt.Printf("SDL Canvas State:\n")
-			fmt.Printf("🆔 Canvas ID: %s\n", canvas.Id)
+			fmt.Printf("🆔 Workspace ID: %s\n", canvas.Id)
 
 			if canvas.ActiveDesign != "" {
 				fmt.Printf("🎯 Active System: %s\n", canvas.ActiveDesign)

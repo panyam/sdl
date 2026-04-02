@@ -37,7 +37,7 @@ func init() {
 func runReset() error {
 	return withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
 		req := &v1.ResetWorkspaceRequest{
-			WorkspaceId: canvasID,
+			WorkspaceId: workspaceID,
 		}
 
 		resp, err := client.ResetWorkspace(ctx, req)

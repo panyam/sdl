@@ -47,7 +47,7 @@ func showUtilization(components []string, jsonOutput bool, threshold float64) {
 
 	err := withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
 		req := &v1.GetUtilizationRequest{
-			WorkspaceId:   canvasID,
+			WorkspaceId:   workspaceID,
 			Components: components,
 		}
 

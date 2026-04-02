@@ -25,7 +25,7 @@ This diagram is based on actual runtime instances, properly handling shared comp
 		err := withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
 			// Get the system diagram from the canvas
 			resp, err := client.GetSystemDiagram(ctx, &v1.GetSystemDiagramRequest{
-				WorkspaceId: canvasID,
+				WorkspaceId: workspaceID,
 			})
 			if err != nil {
 				return fmt.Errorf("failed to get system diagram: %v", err)

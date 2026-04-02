@@ -47,7 +47,7 @@ Prerequisites:
 		// Execute path traversal via gRPC
 		err := withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
 			req := &v1.TraceAllPathsRequest{
-				WorkspaceId:  canvasID,
+				WorkspaceId:  workspaceID,
 				Component: componentName,
 				Method:    methodName,
 				MaxDepth:  maxDepth,
