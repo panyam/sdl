@@ -70,7 +70,7 @@ system Twitter(arch TwitterArch) {
 - `cd protos && make buf` - To generate protos (or `make buf` from top level)
 - `make` or `make all` - Build everything (order: parser -> WASM -> dash -> binary -> run)
 - `make dash` - To rebuild the web dashboard
-- `make serve` - To start the server (go run cmd/sdl/main.go serve)
+- `make run` - To start the server (go run cmd/sdl/main.go serve)
 - `make webtest` - Run web unit tests (vitest)
 - `make wasmbin` - Build WASM binaries
 - `templar get` - Fetch vendored template dependencies (run from web/templates/)
@@ -176,12 +176,16 @@ GitHub issues created for stack alignment:
 - Don't hardcode `editor.background` in custom themes — inherit from `vs`/`vs-dark` base
 - Known issue: theme toggle doesn't update Monaco editors (needs investigation)
 
-## Service Layer Conventions
+## Where to Find Things
 
-- Follow lilbattle naming: backends in `devenvbe/`, `connectclient/`, `inmem/` sub-packages
-- Services use proto request/response types (like lilbattle's GamesService)
-- New code should use DevEnv, not Canvas (see CONSTRAINTS.md)
-- See SUMMARY.md for architecture details
+- Architecture and patterns: SUMMARY.md
+- Roadmap and planning: ROADMAP.md
+- Current work and TODOs: NEXTSTEPS.md
+- Architectural rules: CONSTRAINTS.md
+- Service backends: `services/devenvbe/` (local), `services/connectclient/` (remote), `services/inmem/` (in-memory)
+- WASM browser code: `cmd/wasm/browser.go`
+- Page/presenter: `services/workspace_presenter.go`, `services/panels.go`
+- Workspace manifests: `examples/*/sdl.json`
 
 ## ScriptTagFS (SDL embedding in pages)
 
