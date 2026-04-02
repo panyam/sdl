@@ -33,7 +33,7 @@ func (p *WorkspacePresenter) Initialize(ctx context.Context, req *protos.Initial
 	p.initialized = true
 	return &protos.InitializePresenterResponse{
 		Success:          true,
-		CanvasId:         "default",
+		WorkspaceId:         "default",
 		AvailableSystems: systemNamesToInfos(p.DevEnv.AvailableSystems()),
 	}, nil
 }

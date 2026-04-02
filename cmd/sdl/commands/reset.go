@@ -33,12 +33,12 @@ func init() {
 }
 
 func runReset() error {
-	return withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
-		req := &v1.ResetCanvasRequest{
-			CanvasId: canvasID,
+	return withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
+		req := &v1.ResetWorkspaceRequest{
+			WorkspaceId: canvasID,
 		}
 
-		resp, err := client.ResetCanvas(ctx, req)
+		resp, err := client.ResetWorkspace(ctx, req)
 		if err != nil {
 			return fmt.Errorf("failed to reset canvas: %w", err)
 		}

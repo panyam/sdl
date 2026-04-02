@@ -25,7 +25,7 @@ const (
 
 type LoadFileRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	WorkspaceId   string                 `protobuf:"bytes,1,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	SdlFilePath   string                 `protobuf:"bytes,2,opt,name=sdl_file_path,json=sdlFilePath,proto3" json:"sdl_file_path,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -61,9 +61,9 @@ func (*LoadFileRequest) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_models_canvas_service_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *LoadFileRequest) GetCanvasId() string {
+func (x *LoadFileRequest) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -113,7 +113,7 @@ func (*LoadFileResponse) Descriptor() ([]byte, []int) {
 
 type UseSystemRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	WorkspaceId   string                 `protobuf:"bytes,1,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	SystemName    string                 `protobuf:"bytes,2,opt,name=system_name,json=systemName,proto3" json:"system_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -149,9 +149,9 @@ func (*UseSystemRequest) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_models_canvas_service_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *UseSystemRequest) GetCanvasId() string {
+func (x *UseSystemRequest) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -297,7 +297,7 @@ func (x *AddGeneratorResponse) GetGenerator() *Generator {
 
 type ListGeneratorsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	WorkspaceId   string                 `protobuf:"bytes,1,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -332,9 +332,9 @@ func (*ListGeneratorsRequest) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_models_canvas_service_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *ListGeneratorsRequest) GetCanvasId() string {
+func (x *ListGeneratorsRequest) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -385,7 +385,7 @@ func (x *ListGeneratorsResponse) GetGenerators() []*Generator {
 
 type GetGeneratorRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	WorkspaceId   string                 `protobuf:"bytes,1,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	GeneratorId   string                 `protobuf:"bytes,2,opt,name=generator_id,json=generatorId,proto3" json:"generator_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -421,9 +421,9 @@ func (*GetGeneratorRequest) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_models_canvas_service_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *GetGeneratorRequest) GetCanvasId() string {
+func (x *GetGeneratorRequest) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -585,7 +585,7 @@ func (x *UpdateGeneratorResponse) GetGenerator() *Generator {
 
 type StartGeneratorRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	WorkspaceId   string                 `protobuf:"bytes,1,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	GeneratorId   string                 `protobuf:"bytes,2,opt,name=generator_id,json=generatorId,proto3" json:"generator_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -621,9 +621,9 @@ func (*StartGeneratorRequest) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_models_canvas_service_proto_rawDescGZIP(), []int{12}
 }
 
-func (x *StartGeneratorRequest) GetCanvasId() string {
+func (x *StartGeneratorRequest) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -673,7 +673,7 @@ func (*StartGeneratorResponse) Descriptor() ([]byte, []int) {
 
 type StopGeneratorRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	WorkspaceId   string                 `protobuf:"bytes,1,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	GeneratorId   string                 `protobuf:"bytes,2,opt,name=generator_id,json=generatorId,proto3" json:"generator_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -709,9 +709,9 @@ func (*StopGeneratorRequest) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_models_canvas_service_proto_rawDescGZIP(), []int{14}
 }
 
-func (x *StopGeneratorRequest) GetCanvasId() string {
+func (x *StopGeneratorRequest) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -761,7 +761,7 @@ func (*StopGeneratorResponse) Descriptor() ([]byte, []int) {
 
 type DeleteGeneratorRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	WorkspaceId   string                 `protobuf:"bytes,1,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	GeneratorId   string                 `protobuf:"bytes,2,opt,name=generator_id,json=generatorId,proto3" json:"generator_id,omitempty"`
 	ApplyFlows    bool                   `protobuf:"varint,3,opt,name=apply_flows,json=applyFlows,proto3" json:"apply_flows,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -798,9 +798,9 @@ func (*DeleteGeneratorRequest) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_models_canvas_service_proto_rawDescGZIP(), []int{16}
 }
 
-func (x *DeleteGeneratorRequest) GetCanvasId() string {
+func (x *DeleteGeneratorRequest) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -857,7 +857,7 @@ func (*DeleteGeneratorResponse) Descriptor() ([]byte, []int) {
 
 type StartAllGeneratorsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	WorkspaceId   string                 `protobuf:"bytes,1,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -892,9 +892,9 @@ func (*StartAllGeneratorsRequest) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_models_canvas_service_proto_rawDescGZIP(), []int{18}
 }
 
-func (x *StartAllGeneratorsRequest) GetCanvasId() string {
+func (x *StartAllGeneratorsRequest) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -977,7 +977,7 @@ func (x *StartAllGeneratorsResponse) GetFailedIds() []string {
 
 type StopAllGeneratorsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	WorkspaceId   string                 `protobuf:"bytes,1,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1012,9 +1012,9 @@ func (*StopAllGeneratorsRequest) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_models_canvas_service_proto_rawDescGZIP(), []int{20}
 }
 
-func (x *StopAllGeneratorsRequest) GetCanvasId() string {
+func (x *StopAllGeneratorsRequest) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -1185,7 +1185,7 @@ func (x *AddMetricResponse) GetMetric() *Metric {
 
 type DeleteMetricRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	WorkspaceId   string                 `protobuf:"bytes,1,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	MetricId      string                 `protobuf:"bytes,2,opt,name=metric_id,json=metricId,proto3" json:"metric_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1221,9 +1221,9 @@ func (*DeleteMetricRequest) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_models_canvas_service_proto_rawDescGZIP(), []int{24}
 }
 
-func (x *DeleteMetricRequest) GetCanvasId() string {
+func (x *DeleteMetricRequest) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -1273,7 +1273,7 @@ func (*DeleteMetricResponse) Descriptor() ([]byte, []int) {
 
 type ListMetricsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	WorkspaceId   string                 `protobuf:"bytes,1,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1308,9 +1308,9 @@ func (*ListMetricsRequest) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_models_canvas_service_proto_rawDescGZIP(), []int{26}
 }
 
-func (x *ListMetricsRequest) GetCanvasId() string {
+func (x *ListMetricsRequest) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -1361,7 +1361,7 @@ func (x *ListMetricsResponse) GetMetrics() []*Metric {
 
 type QueryMetricsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	WorkspaceId   string                 `protobuf:"bytes,1,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	MetricId      string                 `protobuf:"bytes,2,opt,name=metric_id,json=metricId,proto3" json:"metric_id,omitempty"`
 	StartTime     float64                `protobuf:"fixed64,3,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
 	EndTime       float64                `protobuf:"fixed64,4,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
@@ -1400,9 +1400,9 @@ func (*QueryMetricsRequest) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_models_canvas_service_proto_rawDescGZIP(), []int{28}
 }
 
-func (x *QueryMetricsRequest) GetCanvasId() string {
+func (x *QueryMetricsRequest) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -1481,7 +1481,7 @@ func (x *QueryMetricsResponse) GetPoints() []*MetricPoint {
 
 type AggregateMetricsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	WorkspaceId   string                 `protobuf:"bytes,1,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	MetricId      string                 `protobuf:"bytes,2,opt,name=metric_id,json=metricId,proto3" json:"metric_id,omitempty"`
 	StartTime     float64                `protobuf:"fixed64,3,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
 	EndTime       float64                `protobuf:"fixed64,4,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
@@ -1521,9 +1521,9 @@ func (*AggregateMetricsRequest) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_models_canvas_service_proto_rawDescGZIP(), []int{30}
 }
 
-func (x *AggregateMetricsRequest) GetCanvasId() string {
+func (x *AggregateMetricsRequest) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -1609,7 +1609,7 @@ func (x *AggregateMetricsResponse) GetResults() []*AggregateResult {
 
 type StreamMetricsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	WorkspaceId   string                 `protobuf:"bytes,1,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	MetricIds     []string               `protobuf:"bytes,2,rep,name=metric_ids,json=metricIds,proto3" json:"metric_ids,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1645,9 +1645,9 @@ func (*StreamMetricsRequest) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_models_canvas_service_proto_rawDescGZIP(), []int{32}
 }
 
-func (x *StreamMetricsRequest) GetCanvasId() string {
+func (x *StreamMetricsRequest) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -1705,7 +1705,7 @@ func (x *StreamMetricsResponse) GetUpdates() []*MetricUpdate {
 
 type ExecuteTraceRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	WorkspaceId   string                 `protobuf:"bytes,1,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	Component     string                 `protobuf:"bytes,2,opt,name=component,proto3" json:"component,omitempty"`
 	Method        string                 `protobuf:"bytes,3,opt,name=method,proto3" json:"method,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1742,9 +1742,9 @@ func (*ExecuteTraceRequest) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_models_canvas_service_proto_rawDescGZIP(), []int{34}
 }
 
-func (x *ExecuteTraceRequest) GetCanvasId() string {
+func (x *ExecuteTraceRequest) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -1809,7 +1809,7 @@ func (x *ExecuteTraceResponse) GetTraceData() *TraceData {
 
 type TraceAllPathsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	WorkspaceId   string                 `protobuf:"bytes,1,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	Component     string                 `protobuf:"bytes,2,opt,name=component,proto3" json:"component,omitempty"`
 	Method        string                 `protobuf:"bytes,3,opt,name=method,proto3" json:"method,omitempty"`
 	MaxDepth      int32                  `protobuf:"varint,4,opt,name=max_depth,json=maxDepth,proto3" json:"max_depth,omitempty"`
@@ -1847,9 +1847,9 @@ func (*TraceAllPathsRequest) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_models_canvas_service_proto_rawDescGZIP(), []int{36}
 }
 
-func (x *TraceAllPathsRequest) GetCanvasId() string {
+func (x *TraceAllPathsRequest) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -1921,7 +1921,7 @@ func (x *TraceAllPathsResponse) GetTraceData() *AllPathsTraceData {
 
 type SetParameterRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	WorkspaceId   string                 `protobuf:"bytes,1,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	Path          string                 `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
 	NewValue      string                 `protobuf:"bytes,3,opt,name=new_value,json=newValue,proto3" json:"new_value,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1958,9 +1958,9 @@ func (*SetParameterRequest) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_models_canvas_service_proto_rawDescGZIP(), []int{38}
 }
 
-func (x *SetParameterRequest) GetCanvasId() string {
+func (x *SetParameterRequest) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -2049,7 +2049,7 @@ func (x *SetParameterResponse) GetOldValue() string {
 
 type GetParametersRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	WorkspaceId   string                 `protobuf:"bytes,1,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	Path          string                 `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -2085,9 +2085,9 @@ func (*GetParametersRequest) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_models_canvas_service_proto_rawDescGZIP(), []int{40}
 }
 
-func (x *GetParametersRequest) GetCanvasId() string {
+func (x *GetParametersRequest) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -2145,7 +2145,7 @@ func (x *GetParametersResponse) GetParameters() map[string]string {
 
 type BatchSetParametersRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	WorkspaceId   string                 `protobuf:"bytes,1,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	Updates       []*ParameterUpdate     `protobuf:"bytes,2,rep,name=updates,proto3" json:"updates,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -2181,9 +2181,9 @@ func (*BatchSetParametersRequest) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_models_canvas_service_proto_rawDescGZIP(), []int{42}
 }
 
-func (x *BatchSetParametersRequest) GetCanvasId() string {
+func (x *BatchSetParametersRequest) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -2257,7 +2257,7 @@ func (x *BatchSetParametersResponse) GetResults() []*ParameterUpdateResult {
 
 type EvaluateFlowsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	WorkspaceId   string                 `protobuf:"bytes,1,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	Strategy      string                 `protobuf:"bytes,2,opt,name=strategy,proto3" json:"strategy,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -2293,9 +2293,9 @@ func (*EvaluateFlowsRequest) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_models_canvas_service_proto_rawDescGZIP(), []int{44}
 }
 
-func (x *EvaluateFlowsRequest) GetCanvasId() string {
+func (x *EvaluateFlowsRequest) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -2393,7 +2393,7 @@ func (x *EvaluateFlowsResponse) GetFlowEdges() []*FlowEdge {
 
 type GetFlowStateRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	WorkspaceId   string                 `protobuf:"bytes,1,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2428,9 +2428,9 @@ func (*GetFlowStateRequest) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_models_canvas_service_proto_rawDescGZIP(), []int{46}
 }
 
-func (x *GetFlowStateRequest) GetCanvasId() string {
+func (x *GetFlowStateRequest) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -2481,7 +2481,7 @@ func (x *GetFlowStateResponse) GetState() *FlowState {
 
 type GetSystemDiagramRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	WorkspaceId   string                 `protobuf:"bytes,1,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2516,9 +2516,9 @@ func (*GetSystemDiagramRequest) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_models_canvas_service_proto_rawDescGZIP(), []int{48}
 }
 
-func (x *GetSystemDiagramRequest) GetCanvasId() string {
+func (x *GetSystemDiagramRequest) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -2569,7 +2569,7 @@ func (x *GetSystemDiagramResponse) GetDiagram() *SystemDiagram {
 
 type GetUtilizationRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CanvasId      string                 `protobuf:"bytes,1,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	WorkspaceId   string                 `protobuf:"bytes,1,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	Components    []string               `protobuf:"bytes,2,rep,name=components,proto3" json:"components,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -2605,9 +2605,9 @@ func (*GetUtilizationRequest) Descriptor() ([]byte, []int) {
 	return file_sdl_v1_models_canvas_service_proto_rawDescGZIP(), []int{50}
 }
 
-func (x *GetUtilizationRequest) GetCanvasId() string {
+func (x *GetUtilizationRequest) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -2667,13 +2667,13 @@ var File_sdl_v1_models_canvas_service_proto protoreflect.FileDescriptor
 
 const file_sdl_v1_models_canvas_service_proto_rawDesc = "" +
 	"\n" +
-	"\"sdl/v1/models/canvas_service.proto\x12\x06sdl.v1\x1a google/protobuf/field_mask.proto\x1a\x1asdl/v1/models/models.proto\"R\n" +
-	"\x0fLoadFileRequest\x12\x1b\n" +
-	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\x12\"\n" +
+	"\"sdl/v1/models/canvas_service.proto\x12\x06sdl.v1\x1a google/protobuf/field_mask.proto\x1a\x1asdl/v1/models/models.proto\"X\n" +
+	"\x0fLoadFileRequest\x12!\n" +
+	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\x12\"\n" +
 	"\rsdl_file_path\x18\x02 \x01(\tR\vsdlFilePath\"\x12\n" +
-	"\x10LoadFileResponse\"P\n" +
-	"\x10UseSystemRequest\x12\x1b\n" +
-	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\x12\x1f\n" +
+	"\x10LoadFileResponse\"V\n" +
+	"\x10UseSystemRequest\x12!\n" +
+	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\x12\x1f\n" +
 	"\vsystem_name\x18\x02 \x01(\tR\n" +
 	"systemName\"\x13\n" +
 	"\x11UseSystemResponse\"g\n" +
@@ -2682,15 +2682,15 @@ const file_sdl_v1_models_canvas_service_proto_rawDesc = "" +
 	"\vapply_flows\x18\x02 \x01(\bR\n" +
 	"applyFlows\"G\n" +
 	"\x14AddGeneratorResponse\x12/\n" +
-	"\tgenerator\x18\x01 \x01(\v2\x11.sdl.v1.GeneratorR\tgenerator\"4\n" +
-	"\x15ListGeneratorsRequest\x12\x1b\n" +
-	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\"K\n" +
+	"\tgenerator\x18\x01 \x01(\v2\x11.sdl.v1.GeneratorR\tgenerator\":\n" +
+	"\x15ListGeneratorsRequest\x12!\n" +
+	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\"K\n" +
 	"\x16ListGeneratorsResponse\x121\n" +
 	"\n" +
 	"generators\x18\x01 \x03(\v2\x11.sdl.v1.GeneratorR\n" +
-	"generators\"U\n" +
-	"\x13GetGeneratorRequest\x12\x1b\n" +
-	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\x12!\n" +
+	"generators\"[\n" +
+	"\x13GetGeneratorRequest\x12!\n" +
+	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\x12!\n" +
 	"\fgenerator_id\x18\x02 \x01(\tR\vgeneratorId\"G\n" +
 	"\x14GetGeneratorResponse\x12/\n" +
 	"\tgenerator\x18\x01 \x01(\v2\x11.sdl.v1.GeneratorR\tgenerator\"\xa7\x01\n" +
@@ -2701,32 +2701,32 @@ const file_sdl_v1_models_canvas_service_proto_rawDesc = "" +
 	"\vapply_flows\x18\x03 \x01(\bR\n" +
 	"applyFlows\"J\n" +
 	"\x17UpdateGeneratorResponse\x12/\n" +
-	"\tgenerator\x18\x01 \x01(\v2\x11.sdl.v1.GeneratorR\tgenerator\"W\n" +
-	"\x15StartGeneratorRequest\x12\x1b\n" +
-	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\x12!\n" +
+	"\tgenerator\x18\x01 \x01(\v2\x11.sdl.v1.GeneratorR\tgenerator\"]\n" +
+	"\x15StartGeneratorRequest\x12!\n" +
+	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\x12!\n" +
 	"\fgenerator_id\x18\x02 \x01(\tR\vgeneratorId\"\x18\n" +
-	"\x16StartGeneratorResponse\"V\n" +
-	"\x14StopGeneratorRequest\x12\x1b\n" +
-	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\x12!\n" +
+	"\x16StartGeneratorResponse\"\\\n" +
+	"\x14StopGeneratorRequest\x12!\n" +
+	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\x12!\n" +
 	"\fgenerator_id\x18\x02 \x01(\tR\vgeneratorId\"\x17\n" +
-	"\x15StopGeneratorResponse\"y\n" +
-	"\x16DeleteGeneratorRequest\x12\x1b\n" +
-	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\x12!\n" +
+	"\x15StopGeneratorResponse\"\x7f\n" +
+	"\x16DeleteGeneratorRequest\x12!\n" +
+	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\x12!\n" +
 	"\fgenerator_id\x18\x02 \x01(\tR\vgeneratorId\x12\x1f\n" +
 	"\vapply_flows\x18\x03 \x01(\bR\n" +
 	"applyFlows\"\x19\n" +
-	"\x17DeleteGeneratorResponse\"8\n" +
-	"\x19StartAllGeneratorsRequest\x12\x1b\n" +
-	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\"\xe2\x01\n" +
+	"\x17DeleteGeneratorResponse\">\n" +
+	"\x19StartAllGeneratorsRequest\x12!\n" +
+	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\"\xe2\x01\n" +
 	"\x1aStartAllGeneratorsResponse\x12)\n" +
 	"\x10total_generators\x18\x01 \x01(\x05R\x0ftotalGenerators\x12#\n" +
 	"\rstarted_count\x18\x02 \x01(\x05R\fstartedCount\x122\n" +
 	"\x15already_running_count\x18\x03 \x01(\x05R\x13alreadyRunningCount\x12!\n" +
 	"\ffailed_count\x18\x04 \x01(\x05R\vfailedCount\x12\x1d\n" +
 	"\n" +
-	"failed_ids\x18\x05 \x03(\tR\tfailedIds\"7\n" +
-	"\x18StopAllGeneratorsRequest\x12\x1b\n" +
-	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\"\xe1\x01\n" +
+	"failed_ids\x18\x05 \x03(\tR\tfailedIds\"=\n" +
+	"\x18StopAllGeneratorsRequest\x12!\n" +
+	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\"\xe1\x01\n" +
 	"\x19StopAllGeneratorsResponse\x12)\n" +
 	"\x10total_generators\x18\x01 \x01(\x05R\x0ftotalGenerators\x12#\n" +
 	"\rstopped_count\x18\x02 \x01(\x05R\fstoppedCount\x122\n" +
@@ -2737,26 +2737,26 @@ const file_sdl_v1_models_canvas_service_proto_rawDesc = "" +
 	"\x10AddMetricRequest\x12&\n" +
 	"\x06metric\x18\x01 \x01(\v2\x0e.sdl.v1.MetricR\x06metric\";\n" +
 	"\x11AddMetricResponse\x12&\n" +
-	"\x06metric\x18\x01 \x01(\v2\x0e.sdl.v1.MetricR\x06metric\"O\n" +
-	"\x13DeleteMetricRequest\x12\x1b\n" +
-	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\x12\x1b\n" +
+	"\x06metric\x18\x01 \x01(\v2\x0e.sdl.v1.MetricR\x06metric\"U\n" +
+	"\x13DeleteMetricRequest\x12!\n" +
+	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\x12\x1b\n" +
 	"\tmetric_id\x18\x02 \x01(\tR\bmetricId\"\x16\n" +
-	"\x14DeleteMetricResponse\"1\n" +
-	"\x12ListMetricsRequest\x12\x1b\n" +
-	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\"?\n" +
+	"\x14DeleteMetricResponse\"7\n" +
+	"\x12ListMetricsRequest\x12!\n" +
+	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\"?\n" +
 	"\x13ListMetricsResponse\x12(\n" +
-	"\ametrics\x18\x01 \x03(\v2\x0e.sdl.v1.MetricR\ametrics\"\x9f\x01\n" +
-	"\x13QueryMetricsRequest\x12\x1b\n" +
-	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\x12\x1b\n" +
+	"\ametrics\x18\x01 \x03(\v2\x0e.sdl.v1.MetricR\ametrics\"\xa5\x01\n" +
+	"\x13QueryMetricsRequest\x12!\n" +
+	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\x12\x1b\n" +
 	"\tmetric_id\x18\x02 \x01(\tR\bmetricId\x12\x1d\n" +
 	"\n" +
 	"start_time\x18\x03 \x01(\x01R\tstartTime\x12\x19\n" +
 	"\bend_time\x18\x04 \x01(\x01R\aendTime\x12\x14\n" +
 	"\x05limit\x18\x05 \x01(\x05R\x05limit\"C\n" +
 	"\x14QueryMetricsResponse\x12+\n" +
-	"\x06points\x18\x01 \x03(\v2\x13.sdl.v1.MetricPointR\x06points\"\xca\x01\n" +
-	"\x17AggregateMetricsRequest\x12\x1b\n" +
-	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\x12\x1b\n" +
+	"\x06points\x18\x01 \x03(\v2\x13.sdl.v1.MetricPointR\x06points\"\xd0\x01\n" +
+	"\x17AggregateMetricsRequest\x12!\n" +
+	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\x12\x1b\n" +
 	"\tmetric_id\x18\x02 \x01(\tR\bmetricId\x12\x1d\n" +
 	"\n" +
 	"start_time\x18\x03 \x01(\x01R\tstartTime\x12\x19\n" +
@@ -2765,39 +2765,39 @@ const file_sdl_v1_models_canvas_service_proto_rawDesc = "" +
 	"\vwindow_size\x18\x06 \x01(\x01R\n" +
 	"windowSize\"M\n" +
 	"\x18AggregateMetricsResponse\x121\n" +
-	"\aresults\x18\x01 \x03(\v2\x17.sdl.v1.AggregateResultR\aresults\"R\n" +
-	"\x14StreamMetricsRequest\x12\x1b\n" +
-	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\x12\x1d\n" +
+	"\aresults\x18\x01 \x03(\v2\x17.sdl.v1.AggregateResultR\aresults\"X\n" +
+	"\x14StreamMetricsRequest\x12!\n" +
+	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\x12\x1d\n" +
 	"\n" +
 	"metric_ids\x18\x02 \x03(\tR\tmetricIds\"G\n" +
 	"\x15StreamMetricsResponse\x12.\n" +
-	"\aupdates\x18\x01 \x03(\v2\x14.sdl.v1.MetricUpdateR\aupdates\"h\n" +
-	"\x13ExecuteTraceRequest\x12\x1b\n" +
-	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\x12\x1c\n" +
+	"\aupdates\x18\x01 \x03(\v2\x14.sdl.v1.MetricUpdateR\aupdates\"n\n" +
+	"\x13ExecuteTraceRequest\x12!\n" +
+	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\x12\x1c\n" +
 	"\tcomponent\x18\x02 \x01(\tR\tcomponent\x12\x16\n" +
 	"\x06method\x18\x03 \x01(\tR\x06method\"H\n" +
 	"\x14ExecuteTraceResponse\x120\n" +
 	"\n" +
-	"trace_data\x18\x01 \x01(\v2\x11.sdl.v1.TraceDataR\ttraceData\"\x86\x01\n" +
-	"\x14TraceAllPathsRequest\x12\x1b\n" +
-	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\x12\x1c\n" +
+	"trace_data\x18\x01 \x01(\v2\x11.sdl.v1.TraceDataR\ttraceData\"\x8c\x01\n" +
+	"\x14TraceAllPathsRequest\x12!\n" +
+	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\x12\x1c\n" +
 	"\tcomponent\x18\x02 \x01(\tR\tcomponent\x12\x16\n" +
 	"\x06method\x18\x03 \x01(\tR\x06method\x12\x1b\n" +
 	"\tmax_depth\x18\x04 \x01(\x05R\bmaxDepth\"Q\n" +
 	"\x15TraceAllPathsResponse\x128\n" +
 	"\n" +
-	"trace_data\x18\x01 \x01(\v2\x19.sdl.v1.AllPathsTraceDataR\ttraceData\"c\n" +
-	"\x13SetParameterRequest\x12\x1b\n" +
-	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\x12\x12\n" +
+	"trace_data\x18\x01 \x01(\v2\x19.sdl.v1.AllPathsTraceDataR\ttraceData\"i\n" +
+	"\x13SetParameterRequest\x12!\n" +
+	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\x1b\n" +
 	"\tnew_value\x18\x03 \x01(\tR\bnewValue\"\x8f\x01\n" +
 	"\x14SetParameterResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12#\n" +
 	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage\x12\x1b\n" +
 	"\tnew_value\x18\x03 \x01(\tR\bnewValue\x12\x1b\n" +
-	"\told_value\x18\x04 \x01(\tR\boldValue\"G\n" +
-	"\x14GetParametersRequest\x12\x1b\n" +
-	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\x12\x12\n" +
+	"\told_value\x18\x04 \x01(\tR\boldValue\"M\n" +
+	"\x14GetParametersRequest\x12!\n" +
+	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\"\xa5\x01\n" +
 	"\x15GetParametersResponse\x12M\n" +
 	"\n" +
@@ -2805,16 +2805,16 @@ const file_sdl_v1_models_canvas_service_proto_rawDesc = "" +
 	"parameters\x1a=\n" +
 	"\x0fParametersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"k\n" +
-	"\x19BatchSetParametersRequest\x12\x1b\n" +
-	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\x121\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"q\n" +
+	"\x19BatchSetParametersRequest\x12!\n" +
+	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\x121\n" +
 	"\aupdates\x18\x02 \x03(\v2\x17.sdl.v1.ParameterUpdateR\aupdates\"\x94\x01\n" +
 	"\x1aBatchSetParametersResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12#\n" +
 	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage\x127\n" +
-	"\aresults\x18\x03 \x03(\v2\x1d.sdl.v1.ParameterUpdateResultR\aresults\"O\n" +
-	"\x14EvaluateFlowsRequest\x12\x1b\n" +
-	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\x12\x1a\n" +
+	"\aresults\x18\x03 \x03(\v2\x1d.sdl.v1.ParameterUpdateResultR\aresults\"U\n" +
+	"\x14EvaluateFlowsRequest\x12!\n" +
+	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\x12\x1a\n" +
 	"\bstrategy\x18\x02 \x01(\tR\bstrategy\"\xd7\x02\n" +
 	"\x15EvaluateFlowsResponse\x12\x1a\n" +
 	"\bstrategy\x18\x01 \x01(\tR\bstrategy\x12\x16\n" +
@@ -2828,17 +2828,17 @@ const file_sdl_v1_models_canvas_service_proto_rawDesc = "" +
 	"flow_edges\x18\x06 \x03(\v2\x10.sdl.v1.FlowEdgeR\tflowEdges\x1aA\n" +
 	"\x13ComponentRatesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\x01R\x05value:\x028\x01\"2\n" +
-	"\x13GetFlowStateRequest\x12\x1b\n" +
-	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\"?\n" +
+	"\x05value\x18\x02 \x01(\x01R\x05value:\x028\x01\"8\n" +
+	"\x13GetFlowStateRequest\x12!\n" +
+	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\"?\n" +
 	"\x14GetFlowStateResponse\x12'\n" +
-	"\x05state\x18\x01 \x01(\v2\x11.sdl.v1.FlowStateR\x05state\"6\n" +
-	"\x17GetSystemDiagramRequest\x12\x1b\n" +
-	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\"K\n" +
+	"\x05state\x18\x01 \x01(\v2\x11.sdl.v1.FlowStateR\x05state\"<\n" +
+	"\x17GetSystemDiagramRequest\x12!\n" +
+	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\"K\n" +
 	"\x18GetSystemDiagramResponse\x12/\n" +
-	"\adiagram\x18\x01 \x01(\v2\x15.sdl.v1.SystemDiagramR\adiagram\"T\n" +
-	"\x15GetUtilizationRequest\x12\x1b\n" +
-	"\tcanvas_id\x18\x01 \x01(\tR\bcanvasId\x12\x1e\n" +
+	"\adiagram\x18\x01 \x01(\v2\x15.sdl.v1.SystemDiagramR\adiagram\"Z\n" +
+	"\x15GetUtilizationRequest\x12!\n" +
+	"\fworkspace_id\x18\x01 \x01(\tR\vworkspaceId\x12\x1e\n" +
 	"\n" +
 	"components\x18\x02 \x03(\tR\n" +
 	"components\"U\n" +

@@ -134,7 +134,7 @@ func NewSdlApp(grpcAddress string) (sdlApp *SdlApp, goalApp *goal.App[*SdlApp], 
 	goalApp = goal.NewApp(sdlApp, templates)
 
 	// Initialize API (canvasService is nil - Connect handler will be skipped)
-	api := NewSDLApi(grpcAddress, nil)
+	api := NewSDLApi(grpcAddress)
 	sdlApp.api = api
 
 	// Initialize WebSocket handler
@@ -228,13 +228,13 @@ func (g *WorkspacesGroup) RegisterRoutes(app *goal.App[*SdlApp]) *http.ServeMux 
 
 	// Custom handlers for POST/DELETE/fork actions
 	mux.HandleFunc("POST /new", g.createWorkspaceHandler)
-	mux.HandleFunc("POST /fork", g.forkExampleHandler)
+	// Fork handler removed — examples are accessed directly as workspaces
 	mux.HandleFunc("/{workspaceId}", g.workspaceActionsHandler)
 
 	return mux
 }
 
-// createWorkspaceHandler handles POST to create a new workspace (backed by Canvas)
+// createWorkspaceHandler handles POST to create a new workspace
 func (g *WorkspacesGroup) createWorkspaceHandler(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "Failed to parse form", http.StatusBadRequest)
@@ -244,66 +244,10 @@ func (g *WorkspacesGroup) createWorkspaceHandler(w http.ResponseWriter, r *http.
 	name := r.FormValue("name")
 	description := r.FormValue("description")
 
-	resp, err := g.sdlApp.ClientMgr.GetCanvasSvcClient().CreateCanvas(r.Context(), &protos.CreateCanvasRequest{
-		Canvas: &protos.Canvas{
+	resp, err := g.sdlApp.WorkspaceSvc.CreateWorkspace(r.Context(), &protos.CreateWorkspaceRequest{
+		Workspace: &protos.Workspace{
 			Name:        name,
 			Description: description,
-		},
-	})
-	if err != nil {
-		http.Error(w, "Failed to create canvas", http.StatusInternalServerError)
-		return
-	}
-
-	http.Redirect(w, r, "/workspaces/"+resp.Canvas.Id+"/edit", http.StatusFound)
-}
-
-// forkExampleHandler opens an example as a workspace, creating one if needed.
-// Uses the example ID as the canvas ID so repeated clicks reuse the same workspace.
-func (g *WorkspacesGroup) forkExampleHandler(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Failed to parse form", http.StatusBadRequest)
-		return
-	}
-
-	exampleId := r.FormValue("exampleId")
-	if exampleId == "" {
-		http.Error(w, "Example ID is required", http.StatusBadRequest)
-		return
-	}
-
-	// Look up the example workspace
-	wsResp, err := g.sdlApp.WorkspaceSvc.GetWorkspace(r.Context(), &protos.GetWorkspaceRequest{Id: exampleId})
-	if err != nil || wsResp.Workspace == nil {
-		http.Error(w, "Example not found", http.StatusNotFound)
-		return
-	}
-	ws := wsResp.Workspace
-
-	// Try to open existing canvas for this example
-	existing, _ := g.sdlApp.ClientMgr.GetCanvasSvcClient().GetCanvas(r.Context(), &protos.GetCanvasRequest{
-		Id: exampleId,
-	})
-	if existing != nil && existing.Canvas != nil {
-		http.Redirect(w, r, "/workspaces/"+exampleId+"/view", http.StatusFound)
-		return
-	}
-
-	// Combine all design SDL files into one system_contents block
-	contentsResp, _ := g.sdlApp.WorkspaceSvc.GetAllDesignContents(r.Context(), &protos.GetAllDesignContentsRequest{WorkspaceId: exampleId})
-	allContents := contentsResp.GetContents()
-	combined := ""
-	for _, content := range allContents {
-		combined += content + "\n\n"
-	}
-
-	// Create a new canvas with all SDL pre-loaded
-	resp, err := g.sdlApp.ClientMgr.GetCanvasSvcClient().CreateCanvas(r.Context(), &protos.CreateCanvasRequest{
-		Canvas: &protos.Canvas{
-			Id:             exampleId,
-			Name:           ws.Name,
-			Description:    ws.Description,
-			SystemContents: combined,
 		},
 	})
 	if err != nil {
@@ -311,7 +255,7 @@ func (g *WorkspacesGroup) forkExampleHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	http.Redirect(w, r, "/workspaces/"+resp.Canvas.Id+"/view", http.StatusFound)
+	http.Redirect(w, r, "/workspaces/"+resp.Workspace.Id+"/edit", http.StatusFound)
 }
 
 // deleteWorkspaceHandler handles DELETE to remove a workspace
@@ -322,7 +266,7 @@ func (g *WorkspacesGroup) deleteWorkspaceHandler(w http.ResponseWriter, r *http.
 		return
 	}
 
-	_, err := g.sdlApp.ClientMgr.GetCanvasSvcClient().DeleteCanvas(r.Context(), &protos.DeleteCanvasRequest{
+	_, err := g.sdlApp.WorkspaceSvc.DeleteWorkspace(r.Context(), &protos.DeleteWorkspaceRequest{
 		Id: workspaceId,
 	})
 	if err != nil {
@@ -356,7 +300,7 @@ type WorkspaceListingPage struct {
 	BasePage
 	Header      Header
 	Examples    []*protos.Workspace
-	ListingData *goal.EntityListingData[*protos.Canvas]
+	ListingData *goal.EntityListingData[*protos.Workspace]
 }
 
 func (p *WorkspaceListingPage) Load(r *http.Request, w http.ResponseWriter, app *goal.App[*SdlApp]) (err error, finished bool) {
@@ -367,7 +311,7 @@ func (p *WorkspaceListingPage) Load(r *http.Request, w http.ResponseWriter, app 
 	// Load header
 	p.Header.Load(r, w, app)
 
-	// Load example workspaces
+	// Load all workspaces
 	if app.Context.WorkspaceSvc != nil {
 		listResp, err := app.Context.WorkspaceSvc.ListWorkspaces(r.Context(), &protos.ListWorkspacesRequest{})
 		if err == nil {
@@ -375,18 +319,11 @@ func (p *WorkspaceListingPage) Load(r *http.Request, w http.ResponseWriter, app 
 		}
 	}
 
-	// Get user workspaces via gRPC (Canvas service)
-	resp, err := app.Context.ClientMgr.GetCanvasSvcClient().ListCanvases(r.Context(), &protos.ListCanvasesRequest{})
-	if err != nil {
-		// Non-fatal — show examples even if workspace service is down
-		resp = &protos.ListCanvasesResponse{}
-	}
-
 	// Build listing data for EntityListing template
-	p.ListingData = goal.NewEntityListingData[*protos.Canvas]("My Workspaces", "/workspaces/%s/view").
+	p.ListingData = goal.NewEntityListingData[*protos.Workspace]("Workspaces", "/workspaces/%s/view").
 		WithCreate("javascript:createNewWorkspace()", "New Workspace").
 		WithDelete("/workspaces/%s")
-	p.ListingData.Items = resp.Canvases
+	p.ListingData.Items = p.Examples
 
 	return nil, false
 }
@@ -396,17 +333,18 @@ type WorkspacePage struct {
 	BasePage
 	Header      Header
 	WorkspaceId string
-	Canvas      *protos.Canvas // proto stays Canvas
+	Workspace   *protos.Workspace
+	CanvasId    string // kept for template compatibility
+	Canvas      *protos.Canvas // kept for template compatibility
 	ReadOnly    bool
-	// SDL file contents for embedding in <script> tags (filename -> content)
 	DesignFiles map[string]string
 }
 
 func (p *WorkspacePage) Load(r *http.Request, w http.ResponseWriter, app *goal.App[*SdlApp]) (err error, finished bool) {
 	p.WorkspaceId = r.PathValue("workspaceId")
+	p.CanvasId = p.WorkspaceId
 	p.ActiveTab = "workspaces"
 
-	// Load header
 	p.Header.Load(r, w, app)
 
 	if p.WorkspaceId == "" {
@@ -414,60 +352,39 @@ func (p *WorkspacePage) Load(r *http.Request, w http.ResponseWriter, app *goal.A
 		return nil, true
 	}
 
-	// Determine readonly mode from URL path
 	p.ReadOnly = len(r.URL.Path) >= 4 && r.URL.Path[len(r.URL.Path)-4:] == "view"
 
-	// Try to get existing canvas for this workspace
-	resp, err := app.Context.ClientMgr.GetCanvasSvcClient().GetCanvas(r.Context(), &protos.GetCanvasRequest{
-		Id: p.WorkspaceId,
-	})
-	if err != nil || resp.Canvas == nil {
-		// Canvas doesn't exist — auto-create from workspace if available
-		if app.Context.WorkspaceSvc != nil {
-			wsResp, wsErr := app.Context.WorkspaceSvc.GetWorkspace(r.Context(), &protos.GetWorkspaceRequest{Id: p.WorkspaceId})
-			if wsErr == nil && wsResp.Workspace != nil {
-				// Combine all design contents for the canvas
-				contentsResp, _ := app.Context.WorkspaceSvc.GetAllDesignContents(r.Context(), &protos.GetAllDesignContentsRequest{WorkspaceId: p.WorkspaceId})
-				combined := ""
-				if contentsResp != nil {
-					for _, content := range contentsResp.Contents {
-						combined += content + "\n\n"
-					}
-				}
-				createResp, createErr := app.Context.ClientMgr.GetCanvasSvcClient().CreateCanvas(r.Context(), &protos.CreateCanvasRequest{
-					Canvas: &protos.Canvas{
-						Id:             p.WorkspaceId,
-						Name:           wsResp.Workspace.Name,
-						Description:    wsResp.Workspace.Description,
-						SystemContents: combined,
-					},
-				})
-				if createErr == nil {
-					resp = &protos.GetCanvasResponse{Canvas: createResp.Canvas}
-				}
-			}
-		}
-		if resp == nil || resp.Canvas == nil {
-			http.Error(w, "Workspace not found", http.StatusNotFound)
-			return nil, true
-		}
+	// Get workspace
+	if app.Context.WorkspaceSvc == nil {
+		http.Error(w, "Workspace service not available", http.StatusInternalServerError)
+		return nil, true
 	}
 
-	p.Canvas = resp.Canvas
+	wsResp, err := app.Context.WorkspaceSvc.GetWorkspace(r.Context(), &protos.GetWorkspaceRequest{Id: p.WorkspaceId})
+	if err != nil || wsResp.Workspace == nil {
+		http.Error(w, "Workspace not found", http.StatusNotFound)
+		return nil, true
+	}
+	p.Workspace = wsResp.Workspace
 
-	p.PageType = "canvas-dashboard" // main.ts handles this page type
+	// Build a Canvas proto for template compatibility (templates still reference .Canvas)
+	p.Canvas = &protos.Canvas{
+		Id:          p.WorkspaceId,
+		Name:        p.Workspace.Name,
+		Description: p.Workspace.Description,
+	}
+
+	p.PageType = "canvas-dashboard"
 	if p.ReadOnly {
-		p.Title = p.Canvas.Name
+		p.Title = p.Workspace.Name
 	} else {
-		p.Title = "Edit: " + p.Canvas.Name
+		p.Title = "Edit: " + p.Workspace.Name
 	}
 
-	// Load design files from workspace service for embedding in script tags
-	if app.Context.WorkspaceSvc != nil {
-		contentsResp, err := app.Context.WorkspaceSvc.GetAllDesignContents(r.Context(), &protos.GetAllDesignContentsRequest{WorkspaceId: p.WorkspaceId})
-		if err == nil {
-			p.DesignFiles = contentsResp.Contents
-		}
+	// Load design files for embedding in script tags
+	contentsResp, err := app.Context.WorkspaceSvc.GetAllDesignContents(r.Context(), &protos.GetAllDesignContentsRequest{WorkspaceId: p.WorkspaceId})
+	if err == nil {
+		p.DesignFiles = contentsResp.Contents
 	}
 
 	return nil, false

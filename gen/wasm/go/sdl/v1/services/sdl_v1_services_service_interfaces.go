@@ -102,7 +102,6 @@ type WorkspaceServiceServer interface {
 	LoadFile(context.Context, *v1models.LoadFileRequest) (*v1models.LoadFileResponse, error)
 	/** Select the active system for simulation */
 	UseSystem(context.Context, *v1models.UseSystemRequest) (*v1models.UseSystemResponse, error)
-	/** Generator management */
 	AddGenerator(context.Context, *v1models.AddGeneratorRequest) (*v1models.AddGeneratorResponse, error)
 	UpdateGenerator(context.Context, *v1models.UpdateGeneratorRequest) (*v1models.UpdateGeneratorResponse, error)
 	DeleteGenerator(context.Context, *v1models.DeleteGeneratorRequest) (*v1models.DeleteGeneratorResponse, error)
@@ -111,16 +110,13 @@ type WorkspaceServiceServer interface {
 	StopGenerator(context.Context, *v1models.StopGeneratorRequest) (*v1models.StopGeneratorResponse, error)
 	StartAllGenerators(context.Context, *v1models.StartAllGeneratorsRequest) (*v1models.StartAllGeneratorsResponse, error)
 	StopAllGenerators(context.Context, *v1models.StopAllGeneratorsRequest) (*v1models.StopAllGeneratorsResponse, error)
-	/** Metric management */
 	AddMetric(context.Context, *v1models.AddMetricRequest) (*v1models.AddMetricResponse, error)
 	DeleteMetric(context.Context, *v1models.DeleteMetricRequest) (*v1models.DeleteMetricResponse, error)
 	ListMetrics(context.Context, *v1models.ListMetricsRequest) (*v1models.ListMetricsResponse, error)
-	/** Parameters */
 	SetParameter(context.Context, *v1models.SetParameterRequest) (*v1models.SetParameterResponse, error)
 	GetParameters(context.Context, *v1models.GetParametersRequest) (*v1models.GetParametersResponse, error)
-	/** Diagram and flow analysis */
-	GetSystemDiagram(context.Context, *v1models.GetSystemDiagramRequest) (*v1models.GetSystemDiagramResponse, error)
 	EvaluateFlows(context.Context, *v1models.EvaluateFlowsRequest) (*v1models.EvaluateFlowsResponse, error)
+	GetSystemDiagram(context.Context, *v1models.GetSystemDiagramRequest) (*v1models.GetSystemDiagramResponse, error)
 }
 
 // Server stream interfaces for streaming methods

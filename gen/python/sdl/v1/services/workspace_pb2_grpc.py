@@ -135,15 +135,15 @@ class WorkspaceServiceStub(object):
                 request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetParametersRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetParametersResponse.FromString,
                 _registered_method=True)
-        self.GetSystemDiagram = channel.unary_unary(
-                '/sdl.v1.WorkspaceService/GetSystemDiagram',
-                request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetSystemDiagramRequest.SerializeToString,
-                response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetSystemDiagramResponse.FromString,
-                _registered_method=True)
         self.EvaluateFlows = channel.unary_unary(
                 '/sdl.v1.WorkspaceService/EvaluateFlows',
                 request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.EvaluateFlowsRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.EvaluateFlowsResponse.FromString,
+                _registered_method=True)
+        self.GetSystemDiagram = channel.unary_unary(
+                '/sdl.v1.WorkspaceService/GetSystemDiagram',
+                request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetSystemDiagramRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetSystemDiagramResponse.FromString,
                 _registered_method=True)
 
 
@@ -223,7 +223,8 @@ class WorkspaceServiceServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def AddGenerator(self, request, context):
-        """Generator management
+        """----- Generator Operations -----
+
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -272,7 +273,8 @@ class WorkspaceServiceServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def AddMetric(self, request, context):
-        """Metric management
+        """----- Metric Operations -----
+
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -291,7 +293,8 @@ class WorkspaceServiceServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def SetParameter(self, request, context):
-        """Parameters
+        """----- Parameter Operations -----
+
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -303,15 +306,18 @@ class WorkspaceServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def GetSystemDiagram(self, request, context):
-        """Diagram and flow analysis
+    def EvaluateFlows(self, request, context):
+        """----- Flow Analysis Operations -----
+
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def EvaluateFlows(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+    def GetSystemDiagram(self, request, context):
+        """----- System Diagram -----
+
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -429,15 +435,15 @@ def add_WorkspaceServiceServicer_to_server(servicer, server):
                     request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetParametersRequest.FromString,
                     response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetParametersResponse.SerializeToString,
             ),
-            'GetSystemDiagram': grpc.unary_unary_rpc_method_handler(
-                    servicer.GetSystemDiagram,
-                    request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetSystemDiagramRequest.FromString,
-                    response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetSystemDiagramResponse.SerializeToString,
-            ),
             'EvaluateFlows': grpc.unary_unary_rpc_method_handler(
                     servicer.EvaluateFlows,
                     request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.EvaluateFlowsRequest.FromString,
                     response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.EvaluateFlowsResponse.SerializeToString,
+            ),
+            'GetSystemDiagram': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetSystemDiagram,
+                    request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetSystemDiagramRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetSystemDiagramResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -1055,33 +1061,6 @@ class WorkspaceService(object):
             _registered_method=True)
 
     @staticmethod
-    def GetSystemDiagram(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/sdl.v1.WorkspaceService/GetSystemDiagram',
-            sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetSystemDiagramRequest.SerializeToString,
-            sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetSystemDiagramResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
     def EvaluateFlows(request,
             target,
             options=(),
@@ -1098,6 +1077,33 @@ class WorkspaceService(object):
             '/sdl.v1.WorkspaceService/EvaluateFlows',
             sdl_dot_v1_dot_models_dot_canvas__service__pb2.EvaluateFlowsRequest.SerializeToString,
             sdl_dot_v1_dot_models_dot_canvas__service__pb2.EvaluateFlowsResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetSystemDiagram(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.WorkspaceService/GetSystemDiagram',
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetSystemDiagramRequest.SerializeToString,
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetSystemDiagramResponse.FromString,
             options,
             channel_credentials,
             insecure,

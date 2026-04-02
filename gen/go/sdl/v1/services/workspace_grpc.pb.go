@@ -43,8 +43,8 @@ const (
 	WorkspaceService_ListMetrics_FullMethodName          = "/sdl.v1.WorkspaceService/ListMetrics"
 	WorkspaceService_SetParameter_FullMethodName         = "/sdl.v1.WorkspaceService/SetParameter"
 	WorkspaceService_GetParameters_FullMethodName        = "/sdl.v1.WorkspaceService/GetParameters"
-	WorkspaceService_GetSystemDiagram_FullMethodName     = "/sdl.v1.WorkspaceService/GetSystemDiagram"
 	WorkspaceService_EvaluateFlows_FullMethodName        = "/sdl.v1.WorkspaceService/EvaluateFlows"
+	WorkspaceService_GetSystemDiagram_FullMethodName     = "/sdl.v1.WorkspaceService/GetSystemDiagram"
 )
 
 // WorkspaceServiceClient is the client API for WorkspaceService service.
@@ -75,7 +75,6 @@ type WorkspaceServiceClient interface {
 	LoadFile(ctx context.Context, in *models.LoadFileRequest, opts ...grpc.CallOption) (*models.LoadFileResponse, error)
 	// Select the active system for simulation
 	UseSystem(ctx context.Context, in *models.UseSystemRequest, opts ...grpc.CallOption) (*models.UseSystemResponse, error)
-	// Generator management
 	AddGenerator(ctx context.Context, in *models.AddGeneratorRequest, opts ...grpc.CallOption) (*models.AddGeneratorResponse, error)
 	UpdateGenerator(ctx context.Context, in *models.UpdateGeneratorRequest, opts ...grpc.CallOption) (*models.UpdateGeneratorResponse, error)
 	DeleteGenerator(ctx context.Context, in *models.DeleteGeneratorRequest, opts ...grpc.CallOption) (*models.DeleteGeneratorResponse, error)
@@ -84,16 +83,13 @@ type WorkspaceServiceClient interface {
 	StopGenerator(ctx context.Context, in *models.StopGeneratorRequest, opts ...grpc.CallOption) (*models.StopGeneratorResponse, error)
 	StartAllGenerators(ctx context.Context, in *models.StartAllGeneratorsRequest, opts ...grpc.CallOption) (*models.StartAllGeneratorsResponse, error)
 	StopAllGenerators(ctx context.Context, in *models.StopAllGeneratorsRequest, opts ...grpc.CallOption) (*models.StopAllGeneratorsResponse, error)
-	// Metric management
 	AddMetric(ctx context.Context, in *models.AddMetricRequest, opts ...grpc.CallOption) (*models.AddMetricResponse, error)
 	DeleteMetric(ctx context.Context, in *models.DeleteMetricRequest, opts ...grpc.CallOption) (*models.DeleteMetricResponse, error)
 	ListMetrics(ctx context.Context, in *models.ListMetricsRequest, opts ...grpc.CallOption) (*models.ListMetricsResponse, error)
-	// Parameters
 	SetParameter(ctx context.Context, in *models.SetParameterRequest, opts ...grpc.CallOption) (*models.SetParameterResponse, error)
 	GetParameters(ctx context.Context, in *models.GetParametersRequest, opts ...grpc.CallOption) (*models.GetParametersResponse, error)
-	// Diagram and flow analysis
-	GetSystemDiagram(ctx context.Context, in *models.GetSystemDiagramRequest, opts ...grpc.CallOption) (*models.GetSystemDiagramResponse, error)
 	EvaluateFlows(ctx context.Context, in *models.EvaluateFlowsRequest, opts ...grpc.CallOption) (*models.EvaluateFlowsResponse, error)
+	GetSystemDiagram(ctx context.Context, in *models.GetSystemDiagramRequest, opts ...grpc.CallOption) (*models.GetSystemDiagramResponse, error)
 }
 
 type workspaceServiceClient struct {
@@ -324,20 +320,20 @@ func (c *workspaceServiceClient) GetParameters(ctx context.Context, in *models.G
 	return out, nil
 }
 
-func (c *workspaceServiceClient) GetSystemDiagram(ctx context.Context, in *models.GetSystemDiagramRequest, opts ...grpc.CallOption) (*models.GetSystemDiagramResponse, error) {
+func (c *workspaceServiceClient) EvaluateFlows(ctx context.Context, in *models.EvaluateFlowsRequest, opts ...grpc.CallOption) (*models.EvaluateFlowsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(models.GetSystemDiagramResponse)
-	err := c.cc.Invoke(ctx, WorkspaceService_GetSystemDiagram_FullMethodName, in, out, cOpts...)
+	out := new(models.EvaluateFlowsResponse)
+	err := c.cc.Invoke(ctx, WorkspaceService_EvaluateFlows_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *workspaceServiceClient) EvaluateFlows(ctx context.Context, in *models.EvaluateFlowsRequest, opts ...grpc.CallOption) (*models.EvaluateFlowsResponse, error) {
+func (c *workspaceServiceClient) GetSystemDiagram(ctx context.Context, in *models.GetSystemDiagramRequest, opts ...grpc.CallOption) (*models.GetSystemDiagramResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(models.EvaluateFlowsResponse)
-	err := c.cc.Invoke(ctx, WorkspaceService_EvaluateFlows_FullMethodName, in, out, cOpts...)
+	out := new(models.GetSystemDiagramResponse)
+	err := c.cc.Invoke(ctx, WorkspaceService_GetSystemDiagram_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -372,7 +368,6 @@ type WorkspaceServiceServer interface {
 	LoadFile(context.Context, *models.LoadFileRequest) (*models.LoadFileResponse, error)
 	// Select the active system for simulation
 	UseSystem(context.Context, *models.UseSystemRequest) (*models.UseSystemResponse, error)
-	// Generator management
 	AddGenerator(context.Context, *models.AddGeneratorRequest) (*models.AddGeneratorResponse, error)
 	UpdateGenerator(context.Context, *models.UpdateGeneratorRequest) (*models.UpdateGeneratorResponse, error)
 	DeleteGenerator(context.Context, *models.DeleteGeneratorRequest) (*models.DeleteGeneratorResponse, error)
@@ -381,16 +376,13 @@ type WorkspaceServiceServer interface {
 	StopGenerator(context.Context, *models.StopGeneratorRequest) (*models.StopGeneratorResponse, error)
 	StartAllGenerators(context.Context, *models.StartAllGeneratorsRequest) (*models.StartAllGeneratorsResponse, error)
 	StopAllGenerators(context.Context, *models.StopAllGeneratorsRequest) (*models.StopAllGeneratorsResponse, error)
-	// Metric management
 	AddMetric(context.Context, *models.AddMetricRequest) (*models.AddMetricResponse, error)
 	DeleteMetric(context.Context, *models.DeleteMetricRequest) (*models.DeleteMetricResponse, error)
 	ListMetrics(context.Context, *models.ListMetricsRequest) (*models.ListMetricsResponse, error)
-	// Parameters
 	SetParameter(context.Context, *models.SetParameterRequest) (*models.SetParameterResponse, error)
 	GetParameters(context.Context, *models.GetParametersRequest) (*models.GetParametersResponse, error)
-	// Diagram and flow analysis
-	GetSystemDiagram(context.Context, *models.GetSystemDiagramRequest) (*models.GetSystemDiagramResponse, error)
 	EvaluateFlows(context.Context, *models.EvaluateFlowsRequest) (*models.EvaluateFlowsResponse, error)
+	GetSystemDiagram(context.Context, *models.GetSystemDiagramRequest) (*models.GetSystemDiagramResponse, error)
 }
 
 // UnimplementedWorkspaceServiceServer should be embedded to have
@@ -466,11 +458,11 @@ func (UnimplementedWorkspaceServiceServer) SetParameter(context.Context, *models
 func (UnimplementedWorkspaceServiceServer) GetParameters(context.Context, *models.GetParametersRequest) (*models.GetParametersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetParameters not implemented")
 }
-func (UnimplementedWorkspaceServiceServer) GetSystemDiagram(context.Context, *models.GetSystemDiagramRequest) (*models.GetSystemDiagramResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetSystemDiagram not implemented")
-}
 func (UnimplementedWorkspaceServiceServer) EvaluateFlows(context.Context, *models.EvaluateFlowsRequest) (*models.EvaluateFlowsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EvaluateFlows not implemented")
+}
+func (UnimplementedWorkspaceServiceServer) GetSystemDiagram(context.Context, *models.GetSystemDiagramRequest) (*models.GetSystemDiagramResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSystemDiagram not implemented")
 }
 func (UnimplementedWorkspaceServiceServer) testEmbeddedByValue() {}
 
@@ -888,24 +880,6 @@ func _WorkspaceService_GetParameters_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
-func _WorkspaceService_GetSystemDiagram_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(models.GetSystemDiagramRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(WorkspaceServiceServer).GetSystemDiagram(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: WorkspaceService_GetSystemDiagram_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WorkspaceServiceServer).GetSystemDiagram(ctx, req.(*models.GetSystemDiagramRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _WorkspaceService_EvaluateFlows_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(models.EvaluateFlowsRequest)
 	if err := dec(in); err != nil {
@@ -920,6 +894,24 @@ func _WorkspaceService_EvaluateFlows_Handler(srv interface{}, ctx context.Contex
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(WorkspaceServiceServer).EvaluateFlows(ctx, req.(*models.EvaluateFlowsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkspaceService_GetSystemDiagram_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(models.GetSystemDiagramRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkspaceServiceServer).GetSystemDiagram(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkspaceService_GetSystemDiagram_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkspaceServiceServer).GetSystemDiagram(ctx, req.(*models.GetSystemDiagramRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1020,12 +1012,12 @@ var WorkspaceService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _WorkspaceService_GetParameters_Handler,
 		},
 		{
-			MethodName: "GetSystemDiagram",
-			Handler:    _WorkspaceService_GetSystemDiagram_Handler,
-		},
-		{
 			MethodName: "EvaluateFlows",
 			Handler:    _WorkspaceService_EvaluateFlows_Handler,
+		},
+		{
+			MethodName: "GetSystemDiagram",
+			Handler:    _WorkspaceService_GetSystemDiagram_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -15,19 +15,19 @@ var canvasListCmd = &cobra.Command{
 	Long:    `List all available canvases in the SDL server.`,
 	Aliases: []string{"ls"},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
-			resp, err := client.ListCanvases(ctx, &v1.ListCanvasesRequest{})
+		return withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
+			resp, err := client.ListWorkspaces(ctx, &v1.ListWorkspacesRequest{})
 			if err != nil {
 				return fmt.Errorf("failed to list canvases: %w", err)
 			}
 
-			if len(resp.Canvases) == 0 {
+			if len(resp.Workspaces) == 0 {
 				fmt.Println("No canvases found")
 				return nil
 			}
 
-			fmt.Printf("Canvases (%d):\n", len(resp.Canvases))
-			for _, canvas := range resp.Canvases {
+			fmt.Printf("Canvases (%d):\n", len(resp.Workspaces))
+			for _, canvas := range resp.Workspaces {
 				fmt.Printf("  - %s", canvas.Id)
 				if canvas.ActiveSystem != "" {
 					fmt.Printf(" (active system: %s)", canvas.ActiveSystem)

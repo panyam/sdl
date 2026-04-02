@@ -5,7 +5,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/panyam/sdl/services"
+	"github.com/panyam/sdl/lib/loader"
+	"github.com/panyam/sdl/services/devenvbe"
 	"github.com/panyam/sdl/web/server"
 	"github.com/spf13/cobra"
 )
@@ -45,14 +46,15 @@ Example:
   sdl gen start load1
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		// Create shared CanvasService instance for gRPC server
-		canvasService := services.NewCanvasService()
+		// Create DevEnv-backed WorkspaceService for gRPC server
+		fsResolver := loader.NewDefaultFileResolver()
+		wsSvc := devenvbe.NewWorkspaceService(fsResolver)
 
 		// Create servers
 		log.Println("Grpc, Address: ", grpcAddress)
 		log.Println("gateway, Address: ", gatewayAddress)
 		app := App{Ctx: context.Background()}
-		app.AddServer(&server.Server{Address: grpcAddress, CanvasService: canvasService})
+		app.AddServer(&server.Server{Address: grpcAddress, WorkspaceService: wsSvc})
 		app.AddServer(&server.WebAppServer{
 			WebAppServer: server.NewWebAppServerConfig(gatewayAddress, grpcAddress, true),
 		})

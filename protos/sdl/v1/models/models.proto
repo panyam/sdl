@@ -111,7 +111,7 @@ message WorkspaceDesign {
   string file = 2;
 
   // Backing Canvas ID for runtime simulation
-  string canvas_id = 3;
+  string workspace_id = 3;
 
   // Brief description
   string description = 4;
@@ -158,7 +158,7 @@ message Generator {
   string id = 3;
 
   // Canvas this generator is sending traffic to
-  string canvas_id = 4;
+  string workspace_id = 4;
 
   // A descriptive label
   string name = 5;
@@ -186,7 +186,7 @@ message Metric {
 
   string id = 3;
 
-  string canvas_id = 4;
+  string workspace_id = 4;
 
   // A descriptive label
   string name = 5;

@@ -22,10 +22,10 @@ This diagram is based on actual runtime instances, properly handling shared comp
 		outputFile, _ := cmd.Flags().GetString("output")
 		format, _ := cmd.Flags().GetString("format")
 
-		err := withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
+		err := withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
 			// Get the system diagram from the canvas
 			resp, err := client.GetSystemDiagram(ctx, &v1.GetSystemDiagramRequest{
-				CanvasId: canvasID,
+				WorkspaceId: canvasID,
 			})
 			if err != nil {
 				return fmt.Errorf("failed to get system diagram: %v", err)

@@ -17,13 +17,13 @@ var canvasCreateCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		canvasID := args[0]
 
-		return withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
+		return withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
 			// First, try to get the canvas to see if it exists
-			getResp, err := client.GetCanvas(ctx, &v1.GetCanvasRequest{
+			getResp, err := client.GetWorkspace(ctx, &v1.GetWorkspaceRequest{
 				Id: canvasID,
 			})
 
-			if err == nil && getResp.Canvas != nil {
+			if err == nil && getResp.Workspace != nil {
 				// Canvas already exists
 				fmt.Printf("Canvas '%s' already exists\n", canvasID)
 				return nil
@@ -34,7 +34,7 @@ var canvasCreateCmd = &cobra.Command{
 				Id: canvasID,
 			}
 
-			_, err = client.CreateCanvas(ctx, &v1.CreateCanvasRequest{
+			_, err = client.CreateWorkspace(ctx, &v1.CreateWorkspaceRequest{
 				Canvas: canvas,
 			})
 

@@ -24,12 +24,12 @@ This is useful for starting fresh without restarting the server.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		canvasID := args[0]
 
-		return withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
-			req := &v1.ResetCanvasRequest{
-				CanvasId: canvasID,
+		return withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
+			req := &v1.ResetWorkspaceRequest{
+				WorkspaceId: canvasID,
 			}
 
-			resp, err := client.ResetCanvas(ctx, req)
+			resp, err := client.ResetWorkspace(ctx, req)
 			if err != nil {
 				return fmt.Errorf("failed to reset canvas '%s': %w", canvasID, err)
 			}

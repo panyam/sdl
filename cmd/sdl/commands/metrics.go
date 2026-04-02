@@ -64,11 +64,11 @@ Examples:
 			os.Exit(1)
 		}
 
-		err := withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
+		err := withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
 			req := &v1.AddMetricRequest{
 				Metric: &v1.Metric{
 					Id:                id,
-					CanvasId:          canvasID,
+					WorkspaceId:          canvasID,
 					Name:              fmt.Sprintf("%s.(%s)", component, strings.Join(methods, ",")),
 					Component:         component,
 					Methods:           methods,
@@ -99,9 +99,9 @@ var removeMetricCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		metricID := args[0]
 
-		err := withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
+		err := withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
 			req := &v1.DeleteMetricRequest{
-				CanvasId: canvasID,
+				WorkspaceId: canvasID,
 				MetricId: metricID,
 			}
 
@@ -122,9 +122,9 @@ var listMetricsCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all available metrics",
 	Run: func(cmd *cobra.Command, args []string) {
-		err := withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
+		err := withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
 			req := &v1.ListMetricsRequest{
-				CanvasId: canvasID,
+				WorkspaceId: canvasID,
 			}
 
 			resp, err := client.ListMetrics(ctx, req)
@@ -198,9 +198,9 @@ var queryMetricsCmd = &cobra.Command{
 		endTime := time.Now()
 		startTime := endTime.Add(-duration)
 
-		err := withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
+		err := withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
 			req := &v1.QueryMetricsRequest{
-				CanvasId:  canvasID,
+				WorkspaceId:  canvasID,
 				MetricId:  metricID,
 				StartTime: float64(startTime.Unix()),
 				EndTime:   float64(endTime.Unix()),

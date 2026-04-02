@@ -80,7 +80,7 @@ func (s *SingletonInitializerService) InitializeSingleton(ctx context.Context, r
 
 	return &protos.InitializeSingletonResponse{
 		Success:          true,
-		CanvasId:         initResp.CanvasId,
+		WorkspaceId:         initResp.WorkspaceId,
 		AvailableSystems: initResp.AvailableSystems,
 	}, nil
 }

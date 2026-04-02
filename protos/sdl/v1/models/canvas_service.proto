@@ -9,70 +9,11 @@ import "sdl/v1/models/models.proto";
 option go_package = "github.com/panyam/sdl/gen/go/sdl/v1/models";
 
 // ============================================================================
-// Canvas CRUD Messages
-// ============================================================================
-
-/*
-message CreateCanvasRequest {
-  Canvas canvas = 1;
-}
-
-message CreateCanvasResponse {
-  Canvas canvas = 1;
-  map<string, string> field_errors = 2;
-}
-
-message UpdateCanvasRequest {
-  Canvas canvas = 1;
-}
-
-message UpdateCanvasResponse {
-  Canvas canvas = 1;
-  google.protobuf.FieldMask update_mask = 2;
-  repeated string deleted_files = 3;
-  map<string, File> updated_files = 4;
-}
-
-message ListCanvasesRequest {
-  Pagination pagination = 1;
-}
-
-message ListCanvasesResponse {
-  repeated Canvas canvases = 1;
-  PaginationResponse pagination = 2;
-}
-
-message GetCanvasRequest {
-  string id = 1;
-}
-
-message GetCanvasResponse {
-  Canvas canvas = 1;
-}
-
-message DeleteCanvasRequest {
-  string id = 1;
-}
-
-message DeleteCanvasResponse {
-}
-
-message ResetCanvasRequest {
-  string canvas_id = 1;
-}
-
-message ResetCanvasResponse {
-  bool success = 1;
-  string message = 2;
-}
-*/
-
-// ============================================================================
 // File Operations
 // ============================================================================
 
 message LoadFileRequest {
-  string canvas_id = 1;
+  string workspace_id = 1;
   string sdl_file_path = 2;
 }
 
@@ -80,7 +21,7 @@ message LoadFileResponse {
 }
 
 message UseSystemRequest {
-  string canvas_id = 1;
+  string workspace_id = 1;
   string system_name = 2;
 }
 
@@ -101,7 +42,7 @@ message AddGeneratorResponse {
 }
 
 message ListGeneratorsRequest {
-  string canvas_id = 1;
+  string workspace_id = 1;
 }
 
 message ListGeneratorsResponse {
@@ -109,7 +50,7 @@ message ListGeneratorsResponse {
 }
 
 message GetGeneratorRequest {
-  string canvas_id = 1;
+  string workspace_id = 1;
   string generator_id = 2;
 }
 
@@ -128,7 +69,7 @@ message UpdateGeneratorResponse {
 }
 
 message StartGeneratorRequest {
-  string canvas_id = 1;
+  string workspace_id = 1;
   string generator_id = 2;
 }
 
@@ -136,7 +77,7 @@ message StartGeneratorResponse {
 }
 
 message StopGeneratorRequest {
-  string canvas_id = 1;
+  string workspace_id = 1;
   string generator_id = 2;
 }
 
@@ -144,7 +85,7 @@ message StopGeneratorResponse {
 }
 
 message DeleteGeneratorRequest {
-  string canvas_id = 1;
+  string workspace_id = 1;
   string generator_id = 2;
   bool apply_flows = 3;
 }
@@ -153,7 +94,7 @@ message DeleteGeneratorResponse {
 }
 
 message StartAllGeneratorsRequest {
-  string canvas_id = 1;
+  string workspace_id = 1;
 }
 
 message StartAllGeneratorsResponse {
@@ -165,7 +106,7 @@ message StartAllGeneratorsResponse {
 }
 
 message StopAllGeneratorsRequest {
-  string canvas_id = 1;
+  string workspace_id = 1;
 }
 
 message StopAllGeneratorsResponse {
@@ -189,7 +130,7 @@ message AddMetricResponse {
 }
 
 message DeleteMetricRequest {
-  string canvas_id = 1;
+  string workspace_id = 1;
   string metric_id = 2;
 }
 
@@ -197,7 +138,7 @@ message DeleteMetricResponse {
 }
 
 message ListMetricsRequest {
-  string canvas_id = 1;
+  string workspace_id = 1;
 }
 
 message ListMetricsResponse {
@@ -205,7 +146,7 @@ message ListMetricsResponse {
 }
 
 message QueryMetricsRequest {
-  string canvas_id = 1;
+  string workspace_id = 1;
   string metric_id = 2;
   double start_time = 3;
   double end_time = 4;
@@ -217,7 +158,7 @@ message QueryMetricsResponse {
 }
 
 message AggregateMetricsRequest {
-  string canvas_id = 1;
+  string workspace_id = 1;
   string metric_id = 2;
   double start_time = 3;
   double end_time = 4;
@@ -230,7 +171,7 @@ message AggregateMetricsResponse {
 }
 
 message StreamMetricsRequest {
-  string canvas_id = 1;
+  string workspace_id = 1;
   repeated string metric_ids = 2;
 }
 
@@ -243,7 +184,7 @@ message StreamMetricsResponse {
 // ============================================================================
 
 message ExecuteTraceRequest {
-  string canvas_id = 1;
+  string workspace_id = 1;
   string component = 2;
   string method = 3;
 }
@@ -253,7 +194,7 @@ message ExecuteTraceResponse {
 }
 
 message TraceAllPathsRequest {
-  string canvas_id = 1;
+  string workspace_id = 1;
   string component = 2;
   string method = 3;
   int32 max_depth = 4;
@@ -268,7 +209,7 @@ message TraceAllPathsResponse {
 // ============================================================================
 
 message SetParameterRequest {
-  string canvas_id = 1;
+  string workspace_id = 1;
   string path = 2;
   string new_value = 3;
 }
@@ -281,7 +222,7 @@ message SetParameterResponse {
 }
 
 message GetParametersRequest {
-  string canvas_id = 1;
+  string workspace_id = 1;
   string path = 2;
 }
 
@@ -290,7 +231,7 @@ message GetParametersResponse {
 }
 
 message BatchSetParametersRequest {
-  string canvas_id = 1;
+  string workspace_id = 1;
   repeated ParameterUpdate updates = 2;
 }
 
@@ -305,7 +246,7 @@ message BatchSetParametersResponse {
 // ============================================================================
 
 message EvaluateFlowsRequest {
-  string canvas_id = 1;
+  string workspace_id = 1;
   string strategy = 2;
 }
 
@@ -319,7 +260,7 @@ message EvaluateFlowsResponse {
 }
 
 message GetFlowStateRequest {
-  string canvas_id = 1;
+  string workspace_id = 1;
 }
 
 message GetFlowStateResponse {
@@ -331,7 +272,7 @@ message GetFlowStateResponse {
 // ============================================================================
 
 message GetSystemDiagramRequest {
-  string canvas_id = 1;
+  string workspace_id = 1;
 }
 
 message GetSystemDiagramResponse {
@@ -343,7 +284,7 @@ message GetSystemDiagramResponse {
 // ============================================================================
 
 message GetUtilizationRequest {
-  string canvas_id = 1;
+  string workspace_id = 1;
   repeated string components = 2;
 }
 

@@ -461,7 +461,7 @@ type WorkspaceDesign struct {
 	// SDL file path relative to workspace root
 	File string `protobuf:"bytes,2,opt,name=file,proto3" json:"file,omitempty"`
 	// Backing Canvas ID for runtime simulation
-	CanvasId string `protobuf:"bytes,3,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	WorkspaceId string `protobuf:"bytes,3,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	// Brief description
 	Description string `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
 	// Per-design metadata (for UI display)
@@ -516,9 +516,9 @@ func (x *WorkspaceDesign) GetFile() string {
 	return ""
 }
 
-func (x *WorkspaceDesign) GetCanvasId() string {
+func (x *WorkspaceDesign) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -696,7 +696,7 @@ type Generator struct {
 	// ID of the generator
 	Id string `protobuf:"bytes,3,opt,name=id,proto3" json:"id,omitempty"`
 	// Canvas this generator is sending traffic to
-	CanvasId string `protobuf:"bytes,4,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	WorkspaceId string `protobuf:"bytes,4,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	// A descriptive label
 	Name string `protobuf:"bytes,5,opt,name=name,proto3" json:"name,omitempty"`
 	// Name of the target component to generate traffic on. This component should be defined in the System,
@@ -765,9 +765,9 @@ func (x *Generator) GetId() string {
 	return ""
 }
 
-func (x *Generator) GetCanvasId() string {
+func (x *Generator) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -815,11 +815,11 @@ func (x *Generator) GetEnabled() bool {
 }
 
 type Metric struct {
-	state     protoimpl.MessageState `protogen:"open.v1"`
-	CreatedAt *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	Id        string                 `protobuf:"bytes,3,opt,name=id,proto3" json:"id,omitempty"`
-	CanvasId  string                 `protobuf:"bytes,4,opt,name=canvas_id,json=canvasId,proto3" json:"canvas_id,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt   *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	Id          string                 `protobuf:"bytes,3,opt,name=id,proto3" json:"id,omitempty"`
+	WorkspaceId string                 `protobuf:"bytes,4,opt,name=workspace_id,json=workspaceId,proto3" json:"workspace_id,omitempty"`
 	// A descriptive label
 	Name string `protobuf:"bytes,5,opt,name=name,proto3" json:"name,omitempty"`
 	// Name of the target component to monitor
@@ -899,9 +899,9 @@ func (x *Metric) GetId() string {
 	return ""
 }
 
-func (x *Metric) GetCanvasId() string {
+func (x *Metric) GetWorkspaceId() string {
 	if x != nil {
-		return x.CanvasId
+		return x.WorkspaceId
 	}
 	return ""
 }
@@ -2393,11 +2393,11 @@ const file_sdl_v1_models_models_proto_rawDesc = "" +
 	"\bcategory\x18\f \x01(\tR\bcategory\x1aP\n" +
 	"\fSourcesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12*\n" +
-	"\x05value\x18\x02 \x01(\v2\x14.sdl.v1.ImportSourceR\x05value:\x028\x01\"\xc8\x01\n" +
+	"\x05value\x18\x02 \x01(\v2\x14.sdl.v1.ImportSourceR\x05value:\x028\x01\"\xce\x01\n" +
 	"\x0fWorkspaceDesign\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
-	"\x04file\x18\x02 \x01(\tR\x04file\x12\x1b\n" +
-	"\tcanvas_id\x18\x03 \x01(\tR\bcanvasId\x12 \n" +
+	"\x04file\x18\x02 \x01(\tR\x04file\x12!\n" +
+	"\fworkspace_id\x18\x03 \x01(\tR\vworkspaceId\x12 \n" +
 	"\vdescription\x18\x04 \x01(\tR\vdescription\x12\x12\n" +
 	"\x04tags\x18\x05 \x03(\tR\x04tags\x12\x1e\n" +
 	"\n" +
@@ -2412,28 +2412,28 @@ const file_sdl_v1_models_models_proto_rawDesc = "" +
 	"\x03ref\x18\x05 \x01(\tR\x03ref\"6\n" +
 	"\x04File\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1a\n" +
-	"\bcontents\x18\x02 \x01(\tR\bcontents\"\xc2\x02\n" +
+	"\bcontents\x18\x02 \x01(\tR\bcontents\"\xc8\x02\n" +
 	"\tGenerator\x129\n" +
 	"\n" +
 	"created_at\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
 	"updated_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12\x0e\n" +
-	"\x02id\x18\x03 \x01(\tR\x02id\x12\x1b\n" +
-	"\tcanvas_id\x18\x04 \x01(\tR\bcanvasId\x12\x12\n" +
+	"\x02id\x18\x03 \x01(\tR\x02id\x12!\n" +
+	"\fworkspace_id\x18\x04 \x01(\tR\vworkspaceId\x12\x12\n" +
 	"\x04name\x18\x05 \x01(\tR\x04name\x12\x1c\n" +
 	"\tcomponent\x18\x06 \x01(\tR\tcomponent\x12\x16\n" +
 	"\x06method\x18\a \x01(\tR\x06method\x12\x12\n" +
 	"\x04rate\x18\b \x01(\x01R\x04rate\x12\x1a\n" +
 	"\bduration\x18\t \x01(\x01R\bduration\x12\x18\n" +
 	"\aenabled\x18\n" +
-	" \x01(\bR\aenabled\"\xd0\x04\n" +
+	" \x01(\bR\aenabled\"\xd6\x04\n" +
 	"\x06Metric\x129\n" +
 	"\n" +
 	"created_at\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
 	"updated_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12\x0e\n" +
-	"\x02id\x18\x03 \x01(\tR\x02id\x12\x1b\n" +
-	"\tcanvas_id\x18\x04 \x01(\tR\bcanvasId\x12\x12\n" +
+	"\x02id\x18\x03 \x01(\tR\x02id\x12!\n" +
+	"\fworkspace_id\x18\x04 \x01(\tR\vworkspaceId\x12\x12\n" +
 	"\x04name\x18\x05 \x01(\tR\x04name\x12\x1c\n" +
 	"\tcomponent\x18\x06 \x01(\tR\tcomponent\x12\x18\n" +
 	"\amethods\x18\a \x03(\tR\amethods\x12\x18\n" +

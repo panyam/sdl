@@ -146,7 +146,7 @@ func (mt *MetricTracer) ListMetrics() []*protos.Metric {
 			// Create a copy of the metric with updated statistics
 			metricCopy := &protos.Metric{
 				Id:                spec.Metric.Id,
-				CanvasId:          spec.Metric.CanvasId,
+				WorkspaceId:          spec.Metric.WorkspaceId,
 				Name:              spec.Metric.Name,
 				Component:         spec.Metric.Component,
 				Methods:           spec.Metric.Methods,

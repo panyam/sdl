@@ -200,11 +200,11 @@ func (exports *Sdl_v1ServicesExports) RegisterAPI() {
 			"getParameters": js.FuncOf(func(this js.Value, args []js.Value) any {
 				return exports.workspaceServiceGetParameters(this, args)
 			}),
-			"getSystemDiagram": js.FuncOf(func(this js.Value, args []js.Value) any {
-				return exports.workspaceServiceGetSystemDiagram(this, args)
-			}),
 			"evaluateFlows": js.FuncOf(func(this js.Value, args []js.Value) any {
 				return exports.workspaceServiceEvaluateFlows(this, args)
+			}),
+			"getSystemDiagram": js.FuncOf(func(this js.Value, args []js.Value) any {
+				return exports.workspaceServiceGetSystemDiagram(this, args)
 			}),
 		},
 	}
@@ -2665,54 +2665,6 @@ func (exports *Sdl_v1ServicesExports) workspaceServiceGetParameters(this js.Valu
 	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
 }
 
-// workspaceServiceGetSystemDiagram handles the GetSystemDiagram method for WorkspaceService
-func (exports *Sdl_v1ServicesExports) workspaceServiceGetSystemDiagram(this js.Value, args []js.Value) any {
-	if exports.WorkspaceService == nil {
-		return wasm.CreateJSResponse(false, "WorkspaceService not initialized", nil)
-	}
-	// Synchronous method
-	if len(args) < 1 {
-		return wasm.CreateJSResponse(false, "Request JSON required", nil)
-	}
-
-	requestJSON := args[0].String()
-	if requestJSON == "" {
-		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
-	}
-
-	// Parse request
-	req := &v1models.GetSystemDiagramRequest{}
-	marshaller := wasm.GetGlobalMarshaller()
-	if err := marshaller.Unmarshal([]byte(requestJSON), req, wasm.UnmarshalOptions{
-		DiscardUnknown: true,
-		AllowPartial:   true, // Allow partial messages for better compatibility
-	}); err != nil {
-		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
-	}
-
-	// Create context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	// Call service method
-	resp, err := exports.WorkspaceService.GetSystemDiagram(ctx, req)
-	if err != nil {
-		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
-	}
-
-	// Marshal response with options for better TypeScript compatibility
-	responseJSON, err := marshaller.Marshal(resp, wasm.MarshalOptions{
-		UseProtoNames:   false, // Use JSON names (camelCase) instead of proto names
-		EmitUnpopulated: true,  // Emit zero values to avoid undefined in JavaScript
-		UseEnumNumbers:  false, // Use enum string values
-	})
-	if err != nil {
-		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
-	}
-
-	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
-}
-
 // workspaceServiceEvaluateFlows handles the EvaluateFlows method for WorkspaceService
 func (exports *Sdl_v1ServicesExports) workspaceServiceEvaluateFlows(this js.Value, args []js.Value) any {
 	if exports.WorkspaceService == nil {
@@ -2744,6 +2696,54 @@ func (exports *Sdl_v1ServicesExports) workspaceServiceEvaluateFlows(this js.Valu
 
 	// Call service method
 	resp, err := exports.WorkspaceService.EvaluateFlows(ctx, req)
+	if err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
+	}
+
+	// Marshal response with options for better TypeScript compatibility
+	responseJSON, err := marshaller.Marshal(resp, wasm.MarshalOptions{
+		UseProtoNames:   false, // Use JSON names (camelCase) instead of proto names
+		EmitUnpopulated: true,  // Emit zero values to avoid undefined in JavaScript
+		UseEnumNumbers:  false, // Use enum string values
+	})
+	if err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to marshal response: %v", err), nil)
+	}
+
+	return wasm.CreateJSResponse(true, "Success", json.RawMessage(responseJSON))
+}
+
+// workspaceServiceGetSystemDiagram handles the GetSystemDiagram method for WorkspaceService
+func (exports *Sdl_v1ServicesExports) workspaceServiceGetSystemDiagram(this js.Value, args []js.Value) any {
+	if exports.WorkspaceService == nil {
+		return wasm.CreateJSResponse(false, "WorkspaceService not initialized", nil)
+	}
+	// Synchronous method
+	if len(args) < 1 {
+		return wasm.CreateJSResponse(false, "Request JSON required", nil)
+	}
+
+	requestJSON := args[0].String()
+	if requestJSON == "" {
+		return wasm.CreateJSResponse(false, "Request JSON is empty", nil)
+	}
+
+	// Parse request
+	req := &v1models.GetSystemDiagramRequest{}
+	marshaller := wasm.GetGlobalMarshaller()
+	if err := marshaller.Unmarshal([]byte(requestJSON), req, wasm.UnmarshalOptions{
+		DiscardUnknown: true,
+		AllowPartial:   true, // Allow partial messages for better compatibility
+	}); err != nil {
+		return wasm.CreateJSResponse(false, fmt.Sprintf("Failed to parse request: %v", err), nil)
+	}
+
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Call service method
+	resp, err := exports.WorkspaceService.GetSystemDiagram(ctx, req)
 	if err != nil {
 		return wasm.CreateJSResponse(false, fmt.Sprintf("Service call failed: %v", err), nil)
 	}

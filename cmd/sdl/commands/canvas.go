@@ -19,9 +19,9 @@ var loadCmd = &cobra.Command{
 	Short: "Load an SDL file into the server",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		err := withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
+		err := withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
 			_, err := client.LoadFile(ctx, &v1.LoadFileRequest{
-				CanvasId:    canvasID,
+				WorkspaceId:    canvasID,
 				SdlFilePath: args[0],
 			})
 			return err
@@ -45,9 +45,9 @@ var useCmd = &cobra.Command{
 	Short: "Select the active system",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		err := withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
+		err := withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
 			_, err := client.UseSystem(ctx, &v1.UseSystemRequest{
-				CanvasId:   canvasID,
+				WorkspaceId:   canvasID,
 				SystemName: args[0],
 			})
 			return err
@@ -67,9 +67,9 @@ var setCmd = &cobra.Command{
 	Short: "Set a parameter value",
 	Args:  cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
-		err := withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
+		err := withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
 			resp, err := client.SetParameter(ctx, &v1.SetParameterRequest{
-				CanvasId: canvasID,
+				WorkspaceId: canvasID,
 				Path:     args[0],
 				NewValue: args[1],
 			})
@@ -96,14 +96,14 @@ var getCmd = &cobra.Command{
 	Short: "View parameter values",
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		err := withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
+		err := withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
 			path := ""
 			if len(args) > 0 {
 				path = args[0]
 			}
 
 			resp, err := client.GetParameters(ctx, &v1.GetParametersRequest{
-				CanvasId: canvasID,
+				WorkspaceId: canvasID,
 				Path:     path,
 			})
 			if err != nil {
@@ -159,8 +159,8 @@ var infoCmd = &cobra.Command{
 	Use:   "info",
 	Short: "Show current canvas state",
 	Run: func(cmd *cobra.Command, args []string) {
-		err := withCanvasClient(func(client v1s.CanvasServiceClient, ctx context.Context) error {
-			resp, err := client.GetCanvas(ctx, &v1.GetCanvasRequest{
+		err := withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
+			resp, err := client.GetWorkspace(ctx, &v1.GetWorkspaceRequest{
 				Id: canvasID,
 			})
 			if err != nil {

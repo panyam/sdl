@@ -101,12 +101,12 @@ const (
 	// WorkspaceServiceGetParametersProcedure is the fully-qualified name of the WorkspaceService's
 	// GetParameters RPC.
 	WorkspaceServiceGetParametersProcedure = "/sdl.v1.WorkspaceService/GetParameters"
-	// WorkspaceServiceGetSystemDiagramProcedure is the fully-qualified name of the WorkspaceService's
-	// GetSystemDiagram RPC.
-	WorkspaceServiceGetSystemDiagramProcedure = "/sdl.v1.WorkspaceService/GetSystemDiagram"
 	// WorkspaceServiceEvaluateFlowsProcedure is the fully-qualified name of the WorkspaceService's
 	// EvaluateFlows RPC.
 	WorkspaceServiceEvaluateFlowsProcedure = "/sdl.v1.WorkspaceService/EvaluateFlows"
+	// WorkspaceServiceGetSystemDiagramProcedure is the fully-qualified name of the WorkspaceService's
+	// GetSystemDiagram RPC.
+	WorkspaceServiceGetSystemDiagramProcedure = "/sdl.v1.WorkspaceService/GetSystemDiagram"
 )
 
 // WorkspaceServiceClient is a client for the sdl.v1.WorkspaceService service.
@@ -124,7 +124,6 @@ type WorkspaceServiceClient interface {
 	LoadFile(context.Context, *connect.Request[models.LoadFileRequest]) (*connect.Response[models.LoadFileResponse], error)
 	// Select the active system for simulation
 	UseSystem(context.Context, *connect.Request[models.UseSystemRequest]) (*connect.Response[models.UseSystemResponse], error)
-	// Generator management
 	AddGenerator(context.Context, *connect.Request[models.AddGeneratorRequest]) (*connect.Response[models.AddGeneratorResponse], error)
 	UpdateGenerator(context.Context, *connect.Request[models.UpdateGeneratorRequest]) (*connect.Response[models.UpdateGeneratorResponse], error)
 	DeleteGenerator(context.Context, *connect.Request[models.DeleteGeneratorRequest]) (*connect.Response[models.DeleteGeneratorResponse], error)
@@ -133,16 +132,13 @@ type WorkspaceServiceClient interface {
 	StopGenerator(context.Context, *connect.Request[models.StopGeneratorRequest]) (*connect.Response[models.StopGeneratorResponse], error)
 	StartAllGenerators(context.Context, *connect.Request[models.StartAllGeneratorsRequest]) (*connect.Response[models.StartAllGeneratorsResponse], error)
 	StopAllGenerators(context.Context, *connect.Request[models.StopAllGeneratorsRequest]) (*connect.Response[models.StopAllGeneratorsResponse], error)
-	// Metric management
 	AddMetric(context.Context, *connect.Request[models.AddMetricRequest]) (*connect.Response[models.AddMetricResponse], error)
 	DeleteMetric(context.Context, *connect.Request[models.DeleteMetricRequest]) (*connect.Response[models.DeleteMetricResponse], error)
 	ListMetrics(context.Context, *connect.Request[models.ListMetricsRequest]) (*connect.Response[models.ListMetricsResponse], error)
-	// Parameters
 	SetParameter(context.Context, *connect.Request[models.SetParameterRequest]) (*connect.Response[models.SetParameterResponse], error)
 	GetParameters(context.Context, *connect.Request[models.GetParametersRequest]) (*connect.Response[models.GetParametersResponse], error)
-	// Diagram and flow analysis
-	GetSystemDiagram(context.Context, *connect.Request[models.GetSystemDiagramRequest]) (*connect.Response[models.GetSystemDiagramResponse], error)
 	EvaluateFlows(context.Context, *connect.Request[models.EvaluateFlowsRequest]) (*connect.Response[models.EvaluateFlowsResponse], error)
+	GetSystemDiagram(context.Context, *connect.Request[models.GetSystemDiagramRequest]) (*connect.Response[models.GetSystemDiagramResponse], error)
 }
 
 // NewWorkspaceServiceClient constructs a client for the sdl.v1.WorkspaceService service. By
@@ -288,16 +284,16 @@ func NewWorkspaceServiceClient(httpClient connect.HTTPClient, baseURL string, op
 			connect.WithSchema(workspaceServiceMethods.ByName("GetParameters")),
 			connect.WithClientOptions(opts...),
 		),
-		getSystemDiagram: connect.NewClient[models.GetSystemDiagramRequest, models.GetSystemDiagramResponse](
-			httpClient,
-			baseURL+WorkspaceServiceGetSystemDiagramProcedure,
-			connect.WithSchema(workspaceServiceMethods.ByName("GetSystemDiagram")),
-			connect.WithClientOptions(opts...),
-		),
 		evaluateFlows: connect.NewClient[models.EvaluateFlowsRequest, models.EvaluateFlowsResponse](
 			httpClient,
 			baseURL+WorkspaceServiceEvaluateFlowsProcedure,
 			connect.WithSchema(workspaceServiceMethods.ByName("EvaluateFlows")),
+			connect.WithClientOptions(opts...),
+		),
+		getSystemDiagram: connect.NewClient[models.GetSystemDiagramRequest, models.GetSystemDiagramResponse](
+			httpClient,
+			baseURL+WorkspaceServiceGetSystemDiagramProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("GetSystemDiagram")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -327,8 +323,8 @@ type workspaceServiceClient struct {
 	listMetrics          *connect.Client[models.ListMetricsRequest, models.ListMetricsResponse]
 	setParameter         *connect.Client[models.SetParameterRequest, models.SetParameterResponse]
 	getParameters        *connect.Client[models.GetParametersRequest, models.GetParametersResponse]
-	getSystemDiagram     *connect.Client[models.GetSystemDiagramRequest, models.GetSystemDiagramResponse]
 	evaluateFlows        *connect.Client[models.EvaluateFlowsRequest, models.EvaluateFlowsResponse]
+	getSystemDiagram     *connect.Client[models.GetSystemDiagramRequest, models.GetSystemDiagramResponse]
 }
 
 // CreateWorkspace calls sdl.v1.WorkspaceService.CreateWorkspace.
@@ -441,14 +437,14 @@ func (c *workspaceServiceClient) GetParameters(ctx context.Context, req *connect
 	return c.getParameters.CallUnary(ctx, req)
 }
 
-// GetSystemDiagram calls sdl.v1.WorkspaceService.GetSystemDiagram.
-func (c *workspaceServiceClient) GetSystemDiagram(ctx context.Context, req *connect.Request[models.GetSystemDiagramRequest]) (*connect.Response[models.GetSystemDiagramResponse], error) {
-	return c.getSystemDiagram.CallUnary(ctx, req)
-}
-
 // EvaluateFlows calls sdl.v1.WorkspaceService.EvaluateFlows.
 func (c *workspaceServiceClient) EvaluateFlows(ctx context.Context, req *connect.Request[models.EvaluateFlowsRequest]) (*connect.Response[models.EvaluateFlowsResponse], error) {
 	return c.evaluateFlows.CallUnary(ctx, req)
+}
+
+// GetSystemDiagram calls sdl.v1.WorkspaceService.GetSystemDiagram.
+func (c *workspaceServiceClient) GetSystemDiagram(ctx context.Context, req *connect.Request[models.GetSystemDiagramRequest]) (*connect.Response[models.GetSystemDiagramResponse], error) {
+	return c.getSystemDiagram.CallUnary(ctx, req)
 }
 
 // WorkspaceServiceHandler is an implementation of the sdl.v1.WorkspaceService service.
@@ -466,7 +462,6 @@ type WorkspaceServiceHandler interface {
 	LoadFile(context.Context, *connect.Request[models.LoadFileRequest]) (*connect.Response[models.LoadFileResponse], error)
 	// Select the active system for simulation
 	UseSystem(context.Context, *connect.Request[models.UseSystemRequest]) (*connect.Response[models.UseSystemResponse], error)
-	// Generator management
 	AddGenerator(context.Context, *connect.Request[models.AddGeneratorRequest]) (*connect.Response[models.AddGeneratorResponse], error)
 	UpdateGenerator(context.Context, *connect.Request[models.UpdateGeneratorRequest]) (*connect.Response[models.UpdateGeneratorResponse], error)
 	DeleteGenerator(context.Context, *connect.Request[models.DeleteGeneratorRequest]) (*connect.Response[models.DeleteGeneratorResponse], error)
@@ -475,16 +470,13 @@ type WorkspaceServiceHandler interface {
 	StopGenerator(context.Context, *connect.Request[models.StopGeneratorRequest]) (*connect.Response[models.StopGeneratorResponse], error)
 	StartAllGenerators(context.Context, *connect.Request[models.StartAllGeneratorsRequest]) (*connect.Response[models.StartAllGeneratorsResponse], error)
 	StopAllGenerators(context.Context, *connect.Request[models.StopAllGeneratorsRequest]) (*connect.Response[models.StopAllGeneratorsResponse], error)
-	// Metric management
 	AddMetric(context.Context, *connect.Request[models.AddMetricRequest]) (*connect.Response[models.AddMetricResponse], error)
 	DeleteMetric(context.Context, *connect.Request[models.DeleteMetricRequest]) (*connect.Response[models.DeleteMetricResponse], error)
 	ListMetrics(context.Context, *connect.Request[models.ListMetricsRequest]) (*connect.Response[models.ListMetricsResponse], error)
-	// Parameters
 	SetParameter(context.Context, *connect.Request[models.SetParameterRequest]) (*connect.Response[models.SetParameterResponse], error)
 	GetParameters(context.Context, *connect.Request[models.GetParametersRequest]) (*connect.Response[models.GetParametersResponse], error)
-	// Diagram and flow analysis
-	GetSystemDiagram(context.Context, *connect.Request[models.GetSystemDiagramRequest]) (*connect.Response[models.GetSystemDiagramResponse], error)
 	EvaluateFlows(context.Context, *connect.Request[models.EvaluateFlowsRequest]) (*connect.Response[models.EvaluateFlowsResponse], error)
+	GetSystemDiagram(context.Context, *connect.Request[models.GetSystemDiagramRequest]) (*connect.Response[models.GetSystemDiagramResponse], error)
 }
 
 // NewWorkspaceServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -626,16 +618,16 @@ func NewWorkspaceServiceHandler(svc WorkspaceServiceHandler, opts ...connect.Han
 		connect.WithSchema(workspaceServiceMethods.ByName("GetParameters")),
 		connect.WithHandlerOptions(opts...),
 	)
-	workspaceServiceGetSystemDiagramHandler := connect.NewUnaryHandler(
-		WorkspaceServiceGetSystemDiagramProcedure,
-		svc.GetSystemDiagram,
-		connect.WithSchema(workspaceServiceMethods.ByName("GetSystemDiagram")),
-		connect.WithHandlerOptions(opts...),
-	)
 	workspaceServiceEvaluateFlowsHandler := connect.NewUnaryHandler(
 		WorkspaceServiceEvaluateFlowsProcedure,
 		svc.EvaluateFlows,
 		connect.WithSchema(workspaceServiceMethods.ByName("EvaluateFlows")),
+		connect.WithHandlerOptions(opts...),
+	)
+	workspaceServiceGetSystemDiagramHandler := connect.NewUnaryHandler(
+		WorkspaceServiceGetSystemDiagramProcedure,
+		svc.GetSystemDiagram,
+		connect.WithSchema(workspaceServiceMethods.ByName("GetSystemDiagram")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/sdl.v1.WorkspaceService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -684,10 +676,10 @@ func NewWorkspaceServiceHandler(svc WorkspaceServiceHandler, opts ...connect.Han
 			workspaceServiceSetParameterHandler.ServeHTTP(w, r)
 		case WorkspaceServiceGetParametersProcedure:
 			workspaceServiceGetParametersHandler.ServeHTTP(w, r)
-		case WorkspaceServiceGetSystemDiagramProcedure:
-			workspaceServiceGetSystemDiagramHandler.ServeHTTP(w, r)
 		case WorkspaceServiceEvaluateFlowsProcedure:
 			workspaceServiceEvaluateFlowsHandler.ServeHTTP(w, r)
+		case WorkspaceServiceGetSystemDiagramProcedure:
+			workspaceServiceGetSystemDiagramHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -785,10 +777,10 @@ func (UnimplementedWorkspaceServiceHandler) GetParameters(context.Context, *conn
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspaceService.GetParameters is not implemented"))
 }
 
-func (UnimplementedWorkspaceServiceHandler) GetSystemDiagram(context.Context, *connect.Request[models.GetSystemDiagramRequest]) (*connect.Response[models.GetSystemDiagramResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspaceService.GetSystemDiagram is not implemented"))
-}
-
 func (UnimplementedWorkspaceServiceHandler) EvaluateFlows(context.Context, *connect.Request[models.EvaluateFlowsRequest]) (*connect.Response[models.EvaluateFlowsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspaceService.EvaluateFlows is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) GetSystemDiagram(context.Context, *connect.Request[models.GetSystemDiagramRequest]) (*connect.Response[models.GetSystemDiagramResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspaceService.GetSystemDiagram is not implemented"))
 }
