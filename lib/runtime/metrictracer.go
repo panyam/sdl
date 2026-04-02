@@ -1,4 +1,4 @@
-package services
+package runtime
 
 import (
 	"context"
@@ -11,7 +11,6 @@ import (
 	protos "github.com/panyam/sdl/gen/go/sdl/v1/models"
 	"github.com/panyam/sdl/lib/core"
 	"github.com/panyam/sdl/lib/decl"
-	"github.com/panyam/sdl/lib/runtime"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -19,13 +18,13 @@ import (
 // The main tracer that processes TraceEvents and generates metrics from them
 type MetricTracer struct {
 	seriesLock sync.RWMutex
-	seriesMap  map[string]*MetricSpec
-	system     *runtime.SystemInstance
+	seriesMap  map[string]*Metric
+	system     *SystemInstance
 	store      MetricStore
 	simCtx SimulationContext // Reference to simulation context for simulation time
 }
 
-func NewMetricTracer(system *runtime.SystemInstance, simCtx SimulationContext) *MetricTracer {
+func NewMetricTracer(system *SystemInstance, simCtx SimulationContext) *MetricTracer {
 	// Create default ring buffer store
 	store, _ := NewRingBufferStore(MetricStoreConfig{
 		Type: "ringbuffer",
@@ -36,7 +35,7 @@ func NewMetricTracer(system *runtime.SystemInstance, simCtx SimulationContext) *
 	})
 
 	return &MetricTracer{
-		seriesMap: map[string]*MetricSpec{},
+		seriesMap: map[string]*Metric{},
 		system:    system,
 		store:     store,
 		simCtx:    simCtx,
@@ -55,19 +54,19 @@ func (mt *MetricTracer) SetMetricStore(store MetricStore) {
 	mt.store = store
 }
 
-func (mt *MetricTracer) ListMetricSpec() []*MetricSpec {
+func (mt *MetricTracer) ListMetric() []*Metric {
 	mt.seriesLock.RLock()
 	defer mt.seriesLock.RUnlock()
 	return slices.Collect(maps.Values(mt.seriesMap))
 }
 
-func (mt *MetricTracer) GetMetricSpec(specId string) (spec *MetricSpec) {
+func (mt *MetricTracer) GetMetric(specId string) (spec *Metric) {
 	mt.seriesLock.RLock()
 	defer mt.seriesLock.RUnlock()
 	return mt.seriesMap[specId]
 }
 
-func (mt *MetricTracer) AddMetricSpec(spec *MetricSpec) error {
+func (mt *MetricTracer) AddMetric(spec *Metric) error {
 	mt.seriesLock.Lock()
 	defer mt.seriesLock.Unlock()
 
@@ -104,12 +103,12 @@ func (mt *MetricTracer) AddMetricSpec(spec *MetricSpec) error {
 		return status.Error(codes.InvalidArgument, fmt.Sprintf("component '%s' not found in system", spec.Component))
 	}
 
-	if spec.Metric.AggregationWindow < 0 {
-		spec.Metric.AggregationWindow = 10
+	if spec.AggregationWindow < 0 {
+		spec.AggregationWindow = 10
 	}
 
 	// Create the measurement
-	spec.resolvedComponentInstance = resolvedComponent
+	spec.ResolvedComponent = resolvedComponent
 	spec.store = mt.store
 	spec.simCtx = mt.simCtx
 	mt.seriesMap[spec.Id] = spec
@@ -123,10 +122,10 @@ func (mt *MetricTracer) Clear() {
 	for _, ms := range mt.seriesMap {
 		ms.Stop()
 	}
-	mt.seriesMap = map[string]*MetricSpec{}
+	mt.seriesMap = map[string]*Metric{}
 }
 
-func (mt *MetricTracer) RemoveMetricSpec(specId string) {
+func (mt *MetricTracer) RemoveMetric(specId string) {
 	mt.seriesLock.Lock()
 	defer mt.seriesLock.Unlock()
 	if spec, ok := mt.seriesMap[specId]; ok && spec != nil {
@@ -145,17 +144,16 @@ func (mt *MetricTracer) ListMetrics() []*protos.Metric {
 		if spec.Metric != nil {
 			// Create a copy of the metric with updated statistics
 			metricCopy := &protos.Metric{
-				Id:                spec.Metric.Id,
-				WorkspaceId:          spec.Metric.WorkspaceId,
-				Name:              spec.Metric.Name,
-				Component:         spec.Metric.Component,
-				Methods:           spec.Metric.Methods,
-				Enabled:           spec.Metric.Enabled,
-				MetricType:        spec.Metric.MetricType,
-				Aggregation:       spec.Metric.Aggregation,
-				AggregationWindow: spec.Metric.AggregationWindow,
-				MatchResult:       spec.Metric.MatchResult,
-				MatchResultType:   spec.Metric.MatchResultType,
+				Id:                spec.Id,
+				Name:              spec.Name,
+				Component:         spec.Component,
+				Methods:           spec.Methods,
+				Enabled:           spec.Enabled,
+				MetricType:        spec.MetricType,
+				Aggregation:       spec.Aggregation,
+				AggregationWindow: spec.AggregationWindow,
+				MatchResult:       spec.MatchResult,
+				MatchResultType:   spec.MatchResultType,
 			}
 
 			// Get statistics from the store
@@ -184,7 +182,7 @@ func (mt *MetricTracer) GetMetricByID(id string) *protos.Metric {
 }
 
 // Main Tracer interface methods
-func (mt *MetricTracer) Exit(ts core.Duration, duration core.Duration, comp *runtime.ComponentInstance, method *decl.MethodDecl, retVal decl.Value, err error) {
+func (mt *MetricTracer) Exit(ts core.Duration, duration core.Duration, comp *ComponentInstance, method *decl.MethodDecl, retVal decl.Value, err error) {
 	// Only care about events on exit
 	mt.seriesLock.RLock()
 	defer mt.seriesLock.RUnlock()
@@ -195,7 +193,7 @@ func (mt *MetricTracer) Exit(ts core.Duration, duration core.Duration, comp *run
 	}
 }
 
-func (mt *MetricTracer) Enter(ts core.Duration, kind runtime.TraceEventKind, comp *runtime.ComponentInstance, method *decl.MethodDecl, args ...string) int64 {
+func (mt *MetricTracer) Enter(ts core.Duration, kind TraceEventKind, comp *ComponentInstance, method *decl.MethodDecl, args ...string) int64 {
 	return 0
 }
 
@@ -249,49 +247,4 @@ func (mt *MetricTracer) AggregateMetrics(ctx context.Context, specId string, opt
 	return store.Aggregate(ctx, spec.Metric, opts)
 }
 
-// ResultMatcher determines if a return value matches the expected result
-type ResultMatcher interface {
-	Matches(returnValue decl.Value) bool
-}
-
-// ExactMatcher matches an exact string value
-type ExactMatcher struct {
-	Value decl.Value
-}
-
-// Matches returns true if the return value exactly matches the expected value
-func (m *ExactMatcher) Matches(returnValue decl.Value) bool {
-	// Special case: "*" matches everything
-	if m.Value == decl.Nil {
-		return true
-	}
-	return returnValue.Equals(&m.Value)
-}
-
-// NotMatcher inverts the match result
-type NotMatcher struct {
-	Inner ResultMatcher
-}
-
-// Matches returns true if the inner matcher returns false
-func (m *NotMatcher) Matches(returnValue decl.Value) bool {
-	return !m.Inner.Matches(returnValue)
-}
-
-// Helper function to create a result matcher from a string specification
-func CreateResultMatcher(spec string) ResultMatcher {
-	// Handle special cases
-	if spec == "*" {
-		return &ExactMatcher{Value: decl.Nil}
-	}
-
-	// Handle "!=" prefix for not-equal
-	if len(spec) > 2 && spec[:2] == "!=" {
-		return &NotMatcher{
-			Inner: &ExactMatcher{Value: decl.StringValue(spec[2:])},
-		}
-	}
-
-	// Default to exact match
-	return &ExactMatcher{Value: decl.StringValue(spec)}
-}
+// ResultMatcher, ExactMatcher, NotMatcher, CreateResultMatcher are in metric.go

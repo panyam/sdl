@@ -56,7 +56,7 @@ message ClientReadyRequest {
 
 message ClientReadyResponse {
   bool success = 1;
-  Canvas canvas = 2;
+  Workspace workspace = 2;
 }
 
 // ============================================================================

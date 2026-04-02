@@ -1,17 +1,12 @@
-package services
+package runtime
 
-import (
-	"time"
-
-	"github.com/panyam/sdl/lib/runtime"
-)
+import "time"
 
 // SimulationContext provides the execution context that generators and metrics
-// need without coupling them to a specific orchestrator (Canvas or DevEnv).
-// Both Canvas and DevEnv implement this interface.
+// need without coupling them to a specific orchestrator (DevEnv, server, etc.).
 type SimulationContext interface {
 	// GetTracer returns the tracer used for metric collection during simulation eval.
-	GetTracer() runtime.Tracer
+	GetTracer() Tracer
 
 	// GetSimulationStartTime returns when the simulation was started.
 	GetSimulationStartTime() time.Time

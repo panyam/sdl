@@ -521,8 +521,8 @@ func (d *DevEnv) createDeclaredGenerators() error {
 			Generator: &protos.Generator{
 				Id:        gen.Name,
 				Name:      gen.Name,
-				Component: gen.ComponentPath,
-				Method:    gen.MethodName,
+				Component: gen.Component,
+				Method:    gen.Method,
 				Rate:      gen.RPS(),
 				Duration:  gen.Duration,
 				Enabled:   true,

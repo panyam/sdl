@@ -17,8 +17,8 @@ func TestDeclarativeGeneratorsParsed(t *testing.T) {
 	// First generator: traffic at 100 rps
 	traffic := sys.Generators[0]
 	assert.Equal(t, "traffic", traffic.Name)
-	assert.Equal(t, "app.server", traffic.ComponentPath)
-	assert.Equal(t, "HandleRequest", traffic.MethodName)
+	assert.Equal(t, "app.server", traffic.Component)
+	assert.Equal(t, "HandleRequest", traffic.Method)
 	assert.Equal(t, 100.0, traffic.RPS())
 	assert.Equal(t, 0.0, traffic.Duration)
 	assert.True(t, traffic.Enabled)
@@ -26,8 +26,8 @@ func TestDeclarativeGeneratorsParsed(t *testing.T) {
 	// Second generator: health at 1 per 5s = 0.2 rps
 	health := sys.Generators[1]
 	assert.Equal(t, "health", health.Name)
-	assert.Equal(t, "app.server", health.ComponentPath)
-	assert.Equal(t, "HealthCheck", health.MethodName)
+	assert.Equal(t, "app.server", health.Component)
+	assert.Equal(t, "HealthCheck", health.Method)
 	assert.InDelta(t, 0.2, health.RPS(), 0.001)
 	assert.Equal(t, 0.0, health.Duration)
 }

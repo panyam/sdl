@@ -20,8 +20,8 @@ func TestDeclarativeMetricsParsed(t *testing.T) {
 	// First metric: request latency with p95 and 5s window
 	reqLatency := sys.Metrics[0]
 	assert.Equal(t, "request_latency", reqLatency.Name)
-	assert.Equal(t, "app.server", reqLatency.ComponentPath)
-	assert.Equal(t, "HandleRequest", reqLatency.MethodName)
+	assert.Equal(t, "app.server", reqLatency.Component)
+	assert.Equal(t, "HandleRequest", reqLatency.Method)
 	assert.Equal(t, "latency", reqLatency.MetricType)
 	assert.Equal(t, "p95", reqLatency.Aggregation)
 	assert.Equal(t, 5.0, reqLatency.Window)
