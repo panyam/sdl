@@ -295,11 +295,10 @@ func (g *WorkspacesGroup) workspaceActionsHandler(w http.ResponseWriter, r *http
 
 // Page structs - implementing goal.View[*SdlApp]
 
-// WorkspaceListingPage displays examples + user workspaces on one page
+// WorkspaceListingPage displays all workspaces on the landing page.
 type WorkspaceListingPage struct {
 	BasePage
 	Header      Header
-	Examples    []*protos.Workspace
 	ListingData *goal.EntityListingData[*protos.Workspace]
 }
 
@@ -308,22 +307,20 @@ func (p *WorkspaceListingPage) Load(r *http.Request, w http.ResponseWriter, app 
 	p.PageType = "workspace-listing"
 	p.ActiveTab = "workspaces"
 
-	// Load header
 	p.Header.Load(r, w, app)
 
-	// Load all workspaces
-	if app.Context.WorkspaceSvc != nil {
-		listResp, err := app.Context.WorkspaceSvc.ListWorkspaces(r.Context(), &protos.ListWorkspacesRequest{})
-		if err == nil {
-			p.Examples = listResp.Workspaces
-		}
-	}
-
-	// Build listing data for EntityListing template
+	// Build listing data
 	p.ListingData = goal.NewEntityListingData[*protos.Workspace]("Workspaces", "/workspaces/%s/view").
 		WithCreate("javascript:createNewWorkspace()", "New Workspace").
 		WithDelete("/workspaces/%s")
-	p.ListingData.Items = p.Examples
+
+	// Load all workspaces (includes seeded examples)
+	if app.Context.WorkspaceSvc != nil {
+		listResp, err := app.Context.WorkspaceSvc.ListWorkspaces(r.Context(), &protos.ListWorkspacesRequest{})
+		if err == nil {
+			p.ListingData.Items = listResp.Workspaces
+		}
+	}
 
 	return nil, false
 }
