@@ -784,6 +784,36 @@
         ]
       }
     },
+    "/v1/workspaces/{workspaceId}/flows/current": {
+      "get": {
+        "operationId": "WorkspaceService_GetFlowState",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetFlowStateResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
     "/v1/workspaces/{workspaceId}/flows/{strategy}/eval": {
       "get": {
         "operationId": "WorkspaceService_EvaluateFlows",
@@ -1284,6 +1314,63 @@
         ]
       }
     },
+    "/v1/workspaces/{workspaceId}/metrics/{metricName}/query": {
+      "get": {
+        "operationId": "WorkspaceService_QueryMetrics",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1QueryMetricsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "metricName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "startTime",
+            "in": "query",
+            "required": false,
+            "type": "number",
+            "format": "double"
+          },
+          {
+            "name": "endTime",
+            "in": "query",
+            "required": false,
+            "type": "number",
+            "format": "double"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
     "/v1/workspaces/{workspaceId}/parameters": {
       "get": {
         "operationId": "WorkspaceService_GetParameters",
@@ -1368,6 +1455,184 @@
           "WorkspaceService"
         ]
       }
+    },
+    "/v1/workspaces/{workspaceId}/parameters:batch": {
+      "put": {
+        "operationId": "WorkspaceService_BatchSetParameters",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1BatchSetParametersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "updates": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "$ref": "#/definitions/v1ParameterUpdate"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/paths/{component}/{method}": {
+      "get": {
+        "operationId": "WorkspaceService_TraceAllPaths",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1TraceAllPathsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "component",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "method",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "maxDepth",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/trace/{component}/{method}": {
+      "get": {
+        "operationId": "WorkspaceService_ExecuteTrace",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ExecuteTraceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "component",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "method",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/utilization": {
+      "get": {
+        "operationId": "WorkspaceService_GetUtilization",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetUtilizationResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "workspaceId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "components",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "WorkspaceService"
+        ]
+      }
     }
   },
   "definitions": {
@@ -1412,6 +1677,37 @@
       "properties": {
         "metric": {
           "$ref": "#/definitions/v1Metric"
+        }
+      }
+    },
+    "v1AllPathsTraceData": {
+      "type": "object",
+      "properties": {
+        "traceId": {
+          "type": "string"
+        },
+        "root": {
+          "$ref": "#/definitions/v1TraceNode",
+          "title": "The root TraceNode always starts from the \u003cComponent\u003e.\u003cMethod\u003e where we are kicking off the trace from"
+        }
+      },
+      "title": "Enhanced TraceData for all-paths traversal - represents the complete execution tree"
+    },
+    "v1BatchSetParametersResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean"
+        },
+        "errorMessage": {
+          "type": "string"
+        },
+        "results": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1ParameterUpdateResult"
+          }
         }
       }
     },
@@ -1596,6 +1892,44 @@
       },
       "title": "DiagramNode represents a component or instance in the system"
     },
+    "v1Edge": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "Unique Edge ID across the entire Trace"
+        },
+        "nextNode": {
+          "$ref": "#/definitions/v1TraceNode",
+          "title": "The next node this edge leads to"
+        },
+        "label": {
+          "type": "string",
+          "title": "Label on the edge (if any)"
+        },
+        "isAsync": {
+          "type": "boolean",
+          "title": "Async edges denote Futures being sent without a return"
+        },
+        "isReverse": {
+          "type": "boolean",
+          "title": "\"Reverse\" edges show a \"wait\" on a future"
+        },
+        "probability": {
+          "type": "string",
+          "description": "This is optional but leaving it here just in case."
+        },
+        "condition": {
+          "type": "string",
+          "title": "Condition information for branching"
+        },
+        "isConditional": {
+          "type": "boolean",
+          "title": "true if this edge represents a conditional branch"
+        }
+      },
+      "title": "Edge represents a transition from one node to another in the execution tree"
+    },
     "v1EvaluateFlowsResponse": {
       "type": "object",
       "properties": {
@@ -1628,6 +1962,14 @@
             "type": "object",
             "$ref": "#/definitions/v1FlowEdge"
           }
+        }
+      }
+    },
+    "v1ExecuteTraceResponse": {
+      "type": "object",
+      "properties": {
+        "traceData": {
+          "$ref": "#/definitions/v1TraceData"
         }
       }
     },
@@ -1756,6 +2098,32 @@
         }
       }
     },
+    "v1FlowState": {
+      "type": "object",
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "title": "Current strategy being used"
+        },
+        "rates": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "format": "double"
+          },
+          "title": "Current component.method rates"
+        },
+        "manualOverrides": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "format": "double"
+          },
+          "title": "Manual rate overrides"
+        }
+      },
+      "title": "Current flow state"
+    },
     "v1Generator": {
       "type": "object",
       "properties": {
@@ -1818,6 +2186,14 @@
         }
       }
     },
+    "v1GetFlowStateResponse": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "$ref": "#/definitions/v1FlowState"
+        }
+      }
+    },
     "v1GetParametersResponse": {
       "type": "object",
       "properties": {
@@ -1859,6 +2235,18 @@
         }
       }
     },
+    "v1GetUtilizationResponse": {
+      "type": "object",
+      "properties": {
+        "utilizations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1UtilizationInfo"
+          }
+        }
+      }
+    },
     "v1GetWorkspaceResponse": {
       "type": "object",
       "properties": {
@@ -1866,6 +2254,30 @@
           "$ref": "#/definitions/v1Workspace"
         }
       }
+    },
+    "v1GroupInfo": {
+      "type": "object",
+      "properties": {
+        "groupStart": {
+          "type": "integer",
+          "format": "int32",
+          "title": "Starting edge index"
+        },
+        "groupEnd": {
+          "type": "integer",
+          "format": "int32",
+          "title": "Ending edge index (inclusive)"
+        },
+        "groupLabel": {
+          "type": "string",
+          "title": "Generic label: \"loop: 3x\", \"if cached\", \"switch: status\""
+        },
+        "groupType": {
+          "type": "string",
+          "title": "Optional hint: \"loop\", \"conditional\", \"switch\" (for tooling)"
+        }
+      },
+      "title": "GroupInfo allows flexible grouping of edges with labels"
     },
     "v1HighlightComponentsResponse": {
       "type": "object"
@@ -2126,6 +2538,56 @@
         }
       }
     },
+    "v1ParameterUpdate": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "title": "dot-separated path like \"server.cache.HitRate\""
+        },
+        "newValue": {
+          "type": "string",
+          "title": "SDL expression string"
+        }
+      },
+      "title": "Single parameter update"
+    },
+    "v1ParameterUpdateResult": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "success": {
+          "type": "boolean"
+        },
+        "errorMessage": {
+          "type": "string",
+          "title": "Set if this specific update failed"
+        },
+        "oldValue": {
+          "type": "string",
+          "title": "Previous value"
+        },
+        "newValue": {
+          "type": "string",
+          "title": "New value that was set"
+        }
+      },
+      "title": "Result for individual parameter update"
+    },
+    "v1QueryMetricsResponse": {
+      "type": "object",
+      "properties": {
+        "points": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1MetricPoint"
+          }
+        }
+      }
+    },
     "v1ReadFileResponse": {
       "type": "object",
       "properties": {
@@ -2336,6 +2798,105 @@
         }
       },
       "title": "SystemVersion represents a version of a system"
+    },
+    "v1TraceAllPathsResponse": {
+      "type": "object",
+      "properties": {
+        "traceData": {
+          "$ref": "#/definitions/v1AllPathsTraceData"
+        }
+      }
+    },
+    "v1TraceData": {
+      "type": "object",
+      "properties": {
+        "system": {
+          "type": "string"
+        },
+        "entryPoint": {
+          "type": "string"
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1TraceEvent"
+          }
+        }
+      },
+      "title": "TraceData matches the runtime.TraceData structure"
+    },
+    "v1TraceEvent": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "title": "\"enter\", \"exit\", \"go\", \"wait\""
+        },
+        "id": {
+          "type": "string",
+          "format": "int64"
+        },
+        "parentId": {
+          "type": "string",
+          "format": "int64"
+        },
+        "timestamp": {
+          "type": "number",
+          "format": "double",
+          "title": "Virtual time in seconds"
+        },
+        "duration": {
+          "type": "number",
+          "format": "double",
+          "title": "Duration in seconds (for exit events)"
+        },
+        "component": {
+          "type": "string"
+        },
+        "method": {
+          "type": "string"
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "returnValue": {
+          "type": "string"
+        },
+        "errorMessage": {
+          "type": "string"
+        }
+      },
+      "title": "TraceEvent matches the runtime.TraceEvent structure"
+    },
+    "v1TraceNode": {
+      "type": "object",
+      "properties": {
+        "startingTarget": {
+          "type": "string",
+          "title": "Name of the component and method in the form \u003cComponent\u003e.\u003cMethod\u003e we are starting the trace from"
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Edge"
+          },
+          "title": "All edges in an ordered fashion"
+        },
+        "groups": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1GroupInfo"
+          },
+          "title": "Multiple groups for flexible labeling of sub-trees (loops, conditionals, etc.)"
+        }
+      },
+      "title": "TraceNode represents a single node in the execution tree"
     },
     "v1UpdateDiagramResponse": {
       "type": "object"

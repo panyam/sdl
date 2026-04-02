@@ -35,3 +35,6 @@ jobs:
 
       - name: Services tests
         run: go test ./services/ -count=1 -timeout 60s
+
+      - name: DevEnvBE backend tests
+        run: go test ./services/devenvbe/ -count=1 -timeout 60s

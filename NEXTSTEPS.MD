@@ -167,14 +167,18 @@ All phases complete. Canvas fully removed. See SUMMARY.md for architecture detai
 - [x] Proto cleanup: removed id/workspace_id/timestamps from Generator/Metric
 - [x] TypeScript: removed canvas-client, recipe-panel, fixed all imports
 
+### Completed (Phase 2 — Methods, CLI, Tests)
+- [x] Add missing WorkspaceService methods: ExecuteTrace, TraceAllPaths, QueryMetrics, GetUtilization, GetFlowState, BatchSetParameters
+- [x] Re-enable CLI commands: flows, trace, paths, utilization
+- [x] 7 devenvbe backend tests
+- [x] DevEnvBE tests added to CI
+- [x] Fix ExecuteTrace for dotted component paths (app.server)
+- [x] Created SDL_FILE convenience ticket (#45)
+
 ### Remaining
 - [ ] Profile management (cmd/sdl/context/)
 - [ ] WorkspaceContext resolution chain (GetWorkspaceContext per command)
 - [ ] Profile CLI commands (sdl profile list/use/create/show)
-- [ ] Add missing WorkspaceService methods: ExecuteTrace, TraceAllPaths, QueryMetrics, GetUtilization, GetFlowState, BatchSetParameters
-- [ ] Re-enable stubbed CLI commands (flows, trace, paths, utilization, reset)
-- [ ] Tests for devenvbe backend + context resolution
-- [ ] Documentation update
 
 ### Related future work
 - [ ] Connect protocol migration (#43)

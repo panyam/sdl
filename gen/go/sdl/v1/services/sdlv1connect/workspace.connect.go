@@ -104,9 +104,27 @@ const (
 	// WorkspaceServiceEvaluateFlowsProcedure is the fully-qualified name of the WorkspaceService's
 	// EvaluateFlows RPC.
 	WorkspaceServiceEvaluateFlowsProcedure = "/sdl.v1.WorkspaceService/EvaluateFlows"
+	// WorkspaceServiceBatchSetParametersProcedure is the fully-qualified name of the WorkspaceService's
+	// BatchSetParameters RPC.
+	WorkspaceServiceBatchSetParametersProcedure = "/sdl.v1.WorkspaceService/BatchSetParameters"
+	// WorkspaceServiceGetFlowStateProcedure is the fully-qualified name of the WorkspaceService's
+	// GetFlowState RPC.
+	WorkspaceServiceGetFlowStateProcedure = "/sdl.v1.WorkspaceService/GetFlowState"
+	// WorkspaceServiceExecuteTraceProcedure is the fully-qualified name of the WorkspaceService's
+	// ExecuteTrace RPC.
+	WorkspaceServiceExecuteTraceProcedure = "/sdl.v1.WorkspaceService/ExecuteTrace"
+	// WorkspaceServiceTraceAllPathsProcedure is the fully-qualified name of the WorkspaceService's
+	// TraceAllPaths RPC.
+	WorkspaceServiceTraceAllPathsProcedure = "/sdl.v1.WorkspaceService/TraceAllPaths"
 	// WorkspaceServiceGetSystemDiagramProcedure is the fully-qualified name of the WorkspaceService's
 	// GetSystemDiagram RPC.
 	WorkspaceServiceGetSystemDiagramProcedure = "/sdl.v1.WorkspaceService/GetSystemDiagram"
+	// WorkspaceServiceGetUtilizationProcedure is the fully-qualified name of the WorkspaceService's
+	// GetUtilization RPC.
+	WorkspaceServiceGetUtilizationProcedure = "/sdl.v1.WorkspaceService/GetUtilization"
+	// WorkspaceServiceQueryMetricsProcedure is the fully-qualified name of the WorkspaceService's
+	// QueryMetrics RPC.
+	WorkspaceServiceQueryMetricsProcedure = "/sdl.v1.WorkspaceService/QueryMetrics"
 )
 
 // WorkspaceServiceClient is a client for the sdl.v1.WorkspaceService service.
@@ -138,7 +156,13 @@ type WorkspaceServiceClient interface {
 	SetParameter(context.Context, *connect.Request[models.SetParameterRequest]) (*connect.Response[models.SetParameterResponse], error)
 	GetParameters(context.Context, *connect.Request[models.GetParametersRequest]) (*connect.Response[models.GetParametersResponse], error)
 	EvaluateFlows(context.Context, *connect.Request[models.EvaluateFlowsRequest]) (*connect.Response[models.EvaluateFlowsResponse], error)
+	BatchSetParameters(context.Context, *connect.Request[models.BatchSetParametersRequest]) (*connect.Response[models.BatchSetParametersResponse], error)
+	GetFlowState(context.Context, *connect.Request[models.GetFlowStateRequest]) (*connect.Response[models.GetFlowStateResponse], error)
+	ExecuteTrace(context.Context, *connect.Request[models.ExecuteTraceRequest]) (*connect.Response[models.ExecuteTraceResponse], error)
+	TraceAllPaths(context.Context, *connect.Request[models.TraceAllPathsRequest]) (*connect.Response[models.TraceAllPathsResponse], error)
 	GetSystemDiagram(context.Context, *connect.Request[models.GetSystemDiagramRequest]) (*connect.Response[models.GetSystemDiagramResponse], error)
+	GetUtilization(context.Context, *connect.Request[models.GetUtilizationRequest]) (*connect.Response[models.GetUtilizationResponse], error)
+	QueryMetrics(context.Context, *connect.Request[models.QueryMetricsRequest]) (*connect.Response[models.QueryMetricsResponse], error)
 }
 
 // NewWorkspaceServiceClient constructs a client for the sdl.v1.WorkspaceService service. By
@@ -290,10 +314,46 @@ func NewWorkspaceServiceClient(httpClient connect.HTTPClient, baseURL string, op
 			connect.WithSchema(workspaceServiceMethods.ByName("EvaluateFlows")),
 			connect.WithClientOptions(opts...),
 		),
+		batchSetParameters: connect.NewClient[models.BatchSetParametersRequest, models.BatchSetParametersResponse](
+			httpClient,
+			baseURL+WorkspaceServiceBatchSetParametersProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("BatchSetParameters")),
+			connect.WithClientOptions(opts...),
+		),
+		getFlowState: connect.NewClient[models.GetFlowStateRequest, models.GetFlowStateResponse](
+			httpClient,
+			baseURL+WorkspaceServiceGetFlowStateProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("GetFlowState")),
+			connect.WithClientOptions(opts...),
+		),
+		executeTrace: connect.NewClient[models.ExecuteTraceRequest, models.ExecuteTraceResponse](
+			httpClient,
+			baseURL+WorkspaceServiceExecuteTraceProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("ExecuteTrace")),
+			connect.WithClientOptions(opts...),
+		),
+		traceAllPaths: connect.NewClient[models.TraceAllPathsRequest, models.TraceAllPathsResponse](
+			httpClient,
+			baseURL+WorkspaceServiceTraceAllPathsProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("TraceAllPaths")),
+			connect.WithClientOptions(opts...),
+		),
 		getSystemDiagram: connect.NewClient[models.GetSystemDiagramRequest, models.GetSystemDiagramResponse](
 			httpClient,
 			baseURL+WorkspaceServiceGetSystemDiagramProcedure,
 			connect.WithSchema(workspaceServiceMethods.ByName("GetSystemDiagram")),
+			connect.WithClientOptions(opts...),
+		),
+		getUtilization: connect.NewClient[models.GetUtilizationRequest, models.GetUtilizationResponse](
+			httpClient,
+			baseURL+WorkspaceServiceGetUtilizationProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("GetUtilization")),
+			connect.WithClientOptions(opts...),
+		),
+		queryMetrics: connect.NewClient[models.QueryMetricsRequest, models.QueryMetricsResponse](
+			httpClient,
+			baseURL+WorkspaceServiceQueryMetricsProcedure,
+			connect.WithSchema(workspaceServiceMethods.ByName("QueryMetrics")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -324,7 +384,13 @@ type workspaceServiceClient struct {
 	setParameter         *connect.Client[models.SetParameterRequest, models.SetParameterResponse]
 	getParameters        *connect.Client[models.GetParametersRequest, models.GetParametersResponse]
 	evaluateFlows        *connect.Client[models.EvaluateFlowsRequest, models.EvaluateFlowsResponse]
+	batchSetParameters   *connect.Client[models.BatchSetParametersRequest, models.BatchSetParametersResponse]
+	getFlowState         *connect.Client[models.GetFlowStateRequest, models.GetFlowStateResponse]
+	executeTrace         *connect.Client[models.ExecuteTraceRequest, models.ExecuteTraceResponse]
+	traceAllPaths        *connect.Client[models.TraceAllPathsRequest, models.TraceAllPathsResponse]
 	getSystemDiagram     *connect.Client[models.GetSystemDiagramRequest, models.GetSystemDiagramResponse]
+	getUtilization       *connect.Client[models.GetUtilizationRequest, models.GetUtilizationResponse]
+	queryMetrics         *connect.Client[models.QueryMetricsRequest, models.QueryMetricsResponse]
 }
 
 // CreateWorkspace calls sdl.v1.WorkspaceService.CreateWorkspace.
@@ -442,9 +508,39 @@ func (c *workspaceServiceClient) EvaluateFlows(ctx context.Context, req *connect
 	return c.evaluateFlows.CallUnary(ctx, req)
 }
 
+// BatchSetParameters calls sdl.v1.WorkspaceService.BatchSetParameters.
+func (c *workspaceServiceClient) BatchSetParameters(ctx context.Context, req *connect.Request[models.BatchSetParametersRequest]) (*connect.Response[models.BatchSetParametersResponse], error) {
+	return c.batchSetParameters.CallUnary(ctx, req)
+}
+
+// GetFlowState calls sdl.v1.WorkspaceService.GetFlowState.
+func (c *workspaceServiceClient) GetFlowState(ctx context.Context, req *connect.Request[models.GetFlowStateRequest]) (*connect.Response[models.GetFlowStateResponse], error) {
+	return c.getFlowState.CallUnary(ctx, req)
+}
+
+// ExecuteTrace calls sdl.v1.WorkspaceService.ExecuteTrace.
+func (c *workspaceServiceClient) ExecuteTrace(ctx context.Context, req *connect.Request[models.ExecuteTraceRequest]) (*connect.Response[models.ExecuteTraceResponse], error) {
+	return c.executeTrace.CallUnary(ctx, req)
+}
+
+// TraceAllPaths calls sdl.v1.WorkspaceService.TraceAllPaths.
+func (c *workspaceServiceClient) TraceAllPaths(ctx context.Context, req *connect.Request[models.TraceAllPathsRequest]) (*connect.Response[models.TraceAllPathsResponse], error) {
+	return c.traceAllPaths.CallUnary(ctx, req)
+}
+
 // GetSystemDiagram calls sdl.v1.WorkspaceService.GetSystemDiagram.
 func (c *workspaceServiceClient) GetSystemDiagram(ctx context.Context, req *connect.Request[models.GetSystemDiagramRequest]) (*connect.Response[models.GetSystemDiagramResponse], error) {
 	return c.getSystemDiagram.CallUnary(ctx, req)
+}
+
+// GetUtilization calls sdl.v1.WorkspaceService.GetUtilization.
+func (c *workspaceServiceClient) GetUtilization(ctx context.Context, req *connect.Request[models.GetUtilizationRequest]) (*connect.Response[models.GetUtilizationResponse], error) {
+	return c.getUtilization.CallUnary(ctx, req)
+}
+
+// QueryMetrics calls sdl.v1.WorkspaceService.QueryMetrics.
+func (c *workspaceServiceClient) QueryMetrics(ctx context.Context, req *connect.Request[models.QueryMetricsRequest]) (*connect.Response[models.QueryMetricsResponse], error) {
+	return c.queryMetrics.CallUnary(ctx, req)
 }
 
 // WorkspaceServiceHandler is an implementation of the sdl.v1.WorkspaceService service.
@@ -476,7 +572,13 @@ type WorkspaceServiceHandler interface {
 	SetParameter(context.Context, *connect.Request[models.SetParameterRequest]) (*connect.Response[models.SetParameterResponse], error)
 	GetParameters(context.Context, *connect.Request[models.GetParametersRequest]) (*connect.Response[models.GetParametersResponse], error)
 	EvaluateFlows(context.Context, *connect.Request[models.EvaluateFlowsRequest]) (*connect.Response[models.EvaluateFlowsResponse], error)
+	BatchSetParameters(context.Context, *connect.Request[models.BatchSetParametersRequest]) (*connect.Response[models.BatchSetParametersResponse], error)
+	GetFlowState(context.Context, *connect.Request[models.GetFlowStateRequest]) (*connect.Response[models.GetFlowStateResponse], error)
+	ExecuteTrace(context.Context, *connect.Request[models.ExecuteTraceRequest]) (*connect.Response[models.ExecuteTraceResponse], error)
+	TraceAllPaths(context.Context, *connect.Request[models.TraceAllPathsRequest]) (*connect.Response[models.TraceAllPathsResponse], error)
 	GetSystemDiagram(context.Context, *connect.Request[models.GetSystemDiagramRequest]) (*connect.Response[models.GetSystemDiagramResponse], error)
+	GetUtilization(context.Context, *connect.Request[models.GetUtilizationRequest]) (*connect.Response[models.GetUtilizationResponse], error)
+	QueryMetrics(context.Context, *connect.Request[models.QueryMetricsRequest]) (*connect.Response[models.QueryMetricsResponse], error)
 }
 
 // NewWorkspaceServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -624,10 +726,46 @@ func NewWorkspaceServiceHandler(svc WorkspaceServiceHandler, opts ...connect.Han
 		connect.WithSchema(workspaceServiceMethods.ByName("EvaluateFlows")),
 		connect.WithHandlerOptions(opts...),
 	)
+	workspaceServiceBatchSetParametersHandler := connect.NewUnaryHandler(
+		WorkspaceServiceBatchSetParametersProcedure,
+		svc.BatchSetParameters,
+		connect.WithSchema(workspaceServiceMethods.ByName("BatchSetParameters")),
+		connect.WithHandlerOptions(opts...),
+	)
+	workspaceServiceGetFlowStateHandler := connect.NewUnaryHandler(
+		WorkspaceServiceGetFlowStateProcedure,
+		svc.GetFlowState,
+		connect.WithSchema(workspaceServiceMethods.ByName("GetFlowState")),
+		connect.WithHandlerOptions(opts...),
+	)
+	workspaceServiceExecuteTraceHandler := connect.NewUnaryHandler(
+		WorkspaceServiceExecuteTraceProcedure,
+		svc.ExecuteTrace,
+		connect.WithSchema(workspaceServiceMethods.ByName("ExecuteTrace")),
+		connect.WithHandlerOptions(opts...),
+	)
+	workspaceServiceTraceAllPathsHandler := connect.NewUnaryHandler(
+		WorkspaceServiceTraceAllPathsProcedure,
+		svc.TraceAllPaths,
+		connect.WithSchema(workspaceServiceMethods.ByName("TraceAllPaths")),
+		connect.WithHandlerOptions(opts...),
+	)
 	workspaceServiceGetSystemDiagramHandler := connect.NewUnaryHandler(
 		WorkspaceServiceGetSystemDiagramProcedure,
 		svc.GetSystemDiagram,
 		connect.WithSchema(workspaceServiceMethods.ByName("GetSystemDiagram")),
+		connect.WithHandlerOptions(opts...),
+	)
+	workspaceServiceGetUtilizationHandler := connect.NewUnaryHandler(
+		WorkspaceServiceGetUtilizationProcedure,
+		svc.GetUtilization,
+		connect.WithSchema(workspaceServiceMethods.ByName("GetUtilization")),
+		connect.WithHandlerOptions(opts...),
+	)
+	workspaceServiceQueryMetricsHandler := connect.NewUnaryHandler(
+		WorkspaceServiceQueryMetricsProcedure,
+		svc.QueryMetrics,
+		connect.WithSchema(workspaceServiceMethods.ByName("QueryMetrics")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/sdl.v1.WorkspaceService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -678,8 +816,20 @@ func NewWorkspaceServiceHandler(svc WorkspaceServiceHandler, opts ...connect.Han
 			workspaceServiceGetParametersHandler.ServeHTTP(w, r)
 		case WorkspaceServiceEvaluateFlowsProcedure:
 			workspaceServiceEvaluateFlowsHandler.ServeHTTP(w, r)
+		case WorkspaceServiceBatchSetParametersProcedure:
+			workspaceServiceBatchSetParametersHandler.ServeHTTP(w, r)
+		case WorkspaceServiceGetFlowStateProcedure:
+			workspaceServiceGetFlowStateHandler.ServeHTTP(w, r)
+		case WorkspaceServiceExecuteTraceProcedure:
+			workspaceServiceExecuteTraceHandler.ServeHTTP(w, r)
+		case WorkspaceServiceTraceAllPathsProcedure:
+			workspaceServiceTraceAllPathsHandler.ServeHTTP(w, r)
 		case WorkspaceServiceGetSystemDiagramProcedure:
 			workspaceServiceGetSystemDiagramHandler.ServeHTTP(w, r)
+		case WorkspaceServiceGetUtilizationProcedure:
+			workspaceServiceGetUtilizationHandler.ServeHTTP(w, r)
+		case WorkspaceServiceQueryMetricsProcedure:
+			workspaceServiceQueryMetricsHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -781,6 +931,30 @@ func (UnimplementedWorkspaceServiceHandler) EvaluateFlows(context.Context, *conn
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspaceService.EvaluateFlows is not implemented"))
 }
 
+func (UnimplementedWorkspaceServiceHandler) BatchSetParameters(context.Context, *connect.Request[models.BatchSetParametersRequest]) (*connect.Response[models.BatchSetParametersResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspaceService.BatchSetParameters is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) GetFlowState(context.Context, *connect.Request[models.GetFlowStateRequest]) (*connect.Response[models.GetFlowStateResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspaceService.GetFlowState is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) ExecuteTrace(context.Context, *connect.Request[models.ExecuteTraceRequest]) (*connect.Response[models.ExecuteTraceResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspaceService.ExecuteTrace is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) TraceAllPaths(context.Context, *connect.Request[models.TraceAllPathsRequest]) (*connect.Response[models.TraceAllPathsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspaceService.TraceAllPaths is not implemented"))
+}
+
 func (UnimplementedWorkspaceServiceHandler) GetSystemDiagram(context.Context, *connect.Request[models.GetSystemDiagramRequest]) (*connect.Response[models.GetSystemDiagramResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspaceService.GetSystemDiagram is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) GetUtilization(context.Context, *connect.Request[models.GetUtilizationRequest]) (*connect.Response[models.GetUtilizationResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspaceService.GetUtilization is not implemented"))
+}
+
+func (UnimplementedWorkspaceServiceHandler) QueryMetrics(context.Context, *connect.Request[models.QueryMetricsRequest]) (*connect.Response[models.QueryMetricsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("sdl.v1.WorkspaceService.QueryMetrics is not implemented"))
 }

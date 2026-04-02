@@ -44,7 +44,13 @@ const (
 	WorkspaceService_SetParameter_FullMethodName         = "/sdl.v1.WorkspaceService/SetParameter"
 	WorkspaceService_GetParameters_FullMethodName        = "/sdl.v1.WorkspaceService/GetParameters"
 	WorkspaceService_EvaluateFlows_FullMethodName        = "/sdl.v1.WorkspaceService/EvaluateFlows"
+	WorkspaceService_BatchSetParameters_FullMethodName   = "/sdl.v1.WorkspaceService/BatchSetParameters"
+	WorkspaceService_GetFlowState_FullMethodName         = "/sdl.v1.WorkspaceService/GetFlowState"
+	WorkspaceService_ExecuteTrace_FullMethodName         = "/sdl.v1.WorkspaceService/ExecuteTrace"
+	WorkspaceService_TraceAllPaths_FullMethodName        = "/sdl.v1.WorkspaceService/TraceAllPaths"
 	WorkspaceService_GetSystemDiagram_FullMethodName     = "/sdl.v1.WorkspaceService/GetSystemDiagram"
+	WorkspaceService_GetUtilization_FullMethodName       = "/sdl.v1.WorkspaceService/GetUtilization"
+	WorkspaceService_QueryMetrics_FullMethodName         = "/sdl.v1.WorkspaceService/QueryMetrics"
 )
 
 // WorkspaceServiceClient is the client API for WorkspaceService service.
@@ -89,7 +95,13 @@ type WorkspaceServiceClient interface {
 	SetParameter(ctx context.Context, in *models.SetParameterRequest, opts ...grpc.CallOption) (*models.SetParameterResponse, error)
 	GetParameters(ctx context.Context, in *models.GetParametersRequest, opts ...grpc.CallOption) (*models.GetParametersResponse, error)
 	EvaluateFlows(ctx context.Context, in *models.EvaluateFlowsRequest, opts ...grpc.CallOption) (*models.EvaluateFlowsResponse, error)
+	BatchSetParameters(ctx context.Context, in *models.BatchSetParametersRequest, opts ...grpc.CallOption) (*models.BatchSetParametersResponse, error)
+	GetFlowState(ctx context.Context, in *models.GetFlowStateRequest, opts ...grpc.CallOption) (*models.GetFlowStateResponse, error)
+	ExecuteTrace(ctx context.Context, in *models.ExecuteTraceRequest, opts ...grpc.CallOption) (*models.ExecuteTraceResponse, error)
+	TraceAllPaths(ctx context.Context, in *models.TraceAllPathsRequest, opts ...grpc.CallOption) (*models.TraceAllPathsResponse, error)
 	GetSystemDiagram(ctx context.Context, in *models.GetSystemDiagramRequest, opts ...grpc.CallOption) (*models.GetSystemDiagramResponse, error)
+	GetUtilization(ctx context.Context, in *models.GetUtilizationRequest, opts ...grpc.CallOption) (*models.GetUtilizationResponse, error)
+	QueryMetrics(ctx context.Context, in *models.QueryMetricsRequest, opts ...grpc.CallOption) (*models.QueryMetricsResponse, error)
 }
 
 type workspaceServiceClient struct {
@@ -330,10 +342,70 @@ func (c *workspaceServiceClient) EvaluateFlows(ctx context.Context, in *models.E
 	return out, nil
 }
 
+func (c *workspaceServiceClient) BatchSetParameters(ctx context.Context, in *models.BatchSetParametersRequest, opts ...grpc.CallOption) (*models.BatchSetParametersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(models.BatchSetParametersResponse)
+	err := c.cc.Invoke(ctx, WorkspaceService_BatchSetParameters_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workspaceServiceClient) GetFlowState(ctx context.Context, in *models.GetFlowStateRequest, opts ...grpc.CallOption) (*models.GetFlowStateResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(models.GetFlowStateResponse)
+	err := c.cc.Invoke(ctx, WorkspaceService_GetFlowState_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workspaceServiceClient) ExecuteTrace(ctx context.Context, in *models.ExecuteTraceRequest, opts ...grpc.CallOption) (*models.ExecuteTraceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(models.ExecuteTraceResponse)
+	err := c.cc.Invoke(ctx, WorkspaceService_ExecuteTrace_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workspaceServiceClient) TraceAllPaths(ctx context.Context, in *models.TraceAllPathsRequest, opts ...grpc.CallOption) (*models.TraceAllPathsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(models.TraceAllPathsResponse)
+	err := c.cc.Invoke(ctx, WorkspaceService_TraceAllPaths_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *workspaceServiceClient) GetSystemDiagram(ctx context.Context, in *models.GetSystemDiagramRequest, opts ...grpc.CallOption) (*models.GetSystemDiagramResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(models.GetSystemDiagramResponse)
 	err := c.cc.Invoke(ctx, WorkspaceService_GetSystemDiagram_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workspaceServiceClient) GetUtilization(ctx context.Context, in *models.GetUtilizationRequest, opts ...grpc.CallOption) (*models.GetUtilizationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(models.GetUtilizationResponse)
+	err := c.cc.Invoke(ctx, WorkspaceService_GetUtilization_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *workspaceServiceClient) QueryMetrics(ctx context.Context, in *models.QueryMetricsRequest, opts ...grpc.CallOption) (*models.QueryMetricsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(models.QueryMetricsResponse)
+	err := c.cc.Invoke(ctx, WorkspaceService_QueryMetrics_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -382,7 +454,13 @@ type WorkspaceServiceServer interface {
 	SetParameter(context.Context, *models.SetParameterRequest) (*models.SetParameterResponse, error)
 	GetParameters(context.Context, *models.GetParametersRequest) (*models.GetParametersResponse, error)
 	EvaluateFlows(context.Context, *models.EvaluateFlowsRequest) (*models.EvaluateFlowsResponse, error)
+	BatchSetParameters(context.Context, *models.BatchSetParametersRequest) (*models.BatchSetParametersResponse, error)
+	GetFlowState(context.Context, *models.GetFlowStateRequest) (*models.GetFlowStateResponse, error)
+	ExecuteTrace(context.Context, *models.ExecuteTraceRequest) (*models.ExecuteTraceResponse, error)
+	TraceAllPaths(context.Context, *models.TraceAllPathsRequest) (*models.TraceAllPathsResponse, error)
 	GetSystemDiagram(context.Context, *models.GetSystemDiagramRequest) (*models.GetSystemDiagramResponse, error)
+	GetUtilization(context.Context, *models.GetUtilizationRequest) (*models.GetUtilizationResponse, error)
+	QueryMetrics(context.Context, *models.QueryMetricsRequest) (*models.QueryMetricsResponse, error)
 }
 
 // UnimplementedWorkspaceServiceServer should be embedded to have
@@ -461,8 +539,26 @@ func (UnimplementedWorkspaceServiceServer) GetParameters(context.Context, *model
 func (UnimplementedWorkspaceServiceServer) EvaluateFlows(context.Context, *models.EvaluateFlowsRequest) (*models.EvaluateFlowsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EvaluateFlows not implemented")
 }
+func (UnimplementedWorkspaceServiceServer) BatchSetParameters(context.Context, *models.BatchSetParametersRequest) (*models.BatchSetParametersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BatchSetParameters not implemented")
+}
+func (UnimplementedWorkspaceServiceServer) GetFlowState(context.Context, *models.GetFlowStateRequest) (*models.GetFlowStateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFlowState not implemented")
+}
+func (UnimplementedWorkspaceServiceServer) ExecuteTrace(context.Context, *models.ExecuteTraceRequest) (*models.ExecuteTraceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ExecuteTrace not implemented")
+}
+func (UnimplementedWorkspaceServiceServer) TraceAllPaths(context.Context, *models.TraceAllPathsRequest) (*models.TraceAllPathsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TraceAllPaths not implemented")
+}
 func (UnimplementedWorkspaceServiceServer) GetSystemDiagram(context.Context, *models.GetSystemDiagramRequest) (*models.GetSystemDiagramResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSystemDiagram not implemented")
+}
+func (UnimplementedWorkspaceServiceServer) GetUtilization(context.Context, *models.GetUtilizationRequest) (*models.GetUtilizationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUtilization not implemented")
+}
+func (UnimplementedWorkspaceServiceServer) QueryMetrics(context.Context, *models.QueryMetricsRequest) (*models.QueryMetricsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QueryMetrics not implemented")
 }
 func (UnimplementedWorkspaceServiceServer) testEmbeddedByValue() {}
 
@@ -898,6 +994,78 @@ func _WorkspaceService_EvaluateFlows_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WorkspaceService_BatchSetParameters_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(models.BatchSetParametersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkspaceServiceServer).BatchSetParameters(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkspaceService_BatchSetParameters_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkspaceServiceServer).BatchSetParameters(ctx, req.(*models.BatchSetParametersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkspaceService_GetFlowState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(models.GetFlowStateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkspaceServiceServer).GetFlowState(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkspaceService_GetFlowState_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkspaceServiceServer).GetFlowState(ctx, req.(*models.GetFlowStateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkspaceService_ExecuteTrace_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(models.ExecuteTraceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkspaceServiceServer).ExecuteTrace(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkspaceService_ExecuteTrace_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkspaceServiceServer).ExecuteTrace(ctx, req.(*models.ExecuteTraceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkspaceService_TraceAllPaths_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(models.TraceAllPathsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkspaceServiceServer).TraceAllPaths(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkspaceService_TraceAllPaths_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkspaceServiceServer).TraceAllPaths(ctx, req.(*models.TraceAllPathsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _WorkspaceService_GetSystemDiagram_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(models.GetSystemDiagramRequest)
 	if err := dec(in); err != nil {
@@ -912,6 +1080,42 @@ func _WorkspaceService_GetSystemDiagram_Handler(srv interface{}, ctx context.Con
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(WorkspaceServiceServer).GetSystemDiagram(ctx, req.(*models.GetSystemDiagramRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkspaceService_GetUtilization_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(models.GetUtilizationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkspaceServiceServer).GetUtilization(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkspaceService_GetUtilization_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkspaceServiceServer).GetUtilization(ctx, req.(*models.GetUtilizationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WorkspaceService_QueryMetrics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(models.QueryMetricsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WorkspaceServiceServer).QueryMetrics(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WorkspaceService_QueryMetrics_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WorkspaceServiceServer).QueryMetrics(ctx, req.(*models.QueryMetricsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1016,8 +1220,32 @@ var WorkspaceService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _WorkspaceService_EvaluateFlows_Handler,
 		},
 		{
+			MethodName: "BatchSetParameters",
+			Handler:    _WorkspaceService_BatchSetParameters_Handler,
+		},
+		{
+			MethodName: "GetFlowState",
+			Handler:    _WorkspaceService_GetFlowState_Handler,
+		},
+		{
+			MethodName: "ExecuteTrace",
+			Handler:    _WorkspaceService_ExecuteTrace_Handler,
+		},
+		{
+			MethodName: "TraceAllPaths",
+			Handler:    _WorkspaceService_TraceAllPaths_Handler,
+		},
+		{
 			MethodName: "GetSystemDiagram",
 			Handler:    _WorkspaceService_GetSystemDiagram_Handler,
+		},
+		{
+			MethodName: "GetUtilization",
+			Handler:    _WorkspaceService_GetUtilization_Handler,
+		},
+		{
+			MethodName: "QueryMetrics",
+			Handler:    _WorkspaceService_QueryMetrics_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

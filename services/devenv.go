@@ -553,9 +553,18 @@ func (d *DevEnv) ExecuteTrace(componentName, methodName string) (*runtime.TraceD
 	env := d.activeSystem.Env.Push()
 	var currTime core.Duration = 0
 
+	// Build expression for dotted component paths like "app.server.HandleRequest"
+	parts := strings.Split(componentName, ".")
+	var receiver decl.Expr = &decl.IdentifierExpr{Value: parts[0]}
+	for _, part := range parts[1:] {
+		receiver = &decl.MemberAccessExpr{
+			Receiver: receiver,
+			Member:   &decl.IdentifierExpr{Value: part},
+		}
+	}
 	callExpr := &decl.CallExpr{
 		Function: &decl.MemberAccessExpr{
-			Receiver: &decl.IdentifierExpr{Value: componentName},
+			Receiver: receiver,
 			Member:   &decl.IdentifierExpr{Value: methodName},
 		},
 	}

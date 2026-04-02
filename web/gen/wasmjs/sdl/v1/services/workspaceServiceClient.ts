@@ -9,6 +9,8 @@ import {
     AddGeneratorResponse,
     AddMetricRequest,
     AddMetricResponse,
+    BatchSetParametersRequest,
+    BatchSetParametersResponse,
     CreateWorkspaceRequest,
     CreateWorkspaceResponse,
     DeleteGeneratorRequest,
@@ -19,14 +21,20 @@ import {
     DeleteWorkspaceResponse,
     EvaluateFlowsRequest,
     EvaluateFlowsResponse,
+    ExecuteTraceRequest,
+    ExecuteTraceResponse,
     GetAllDesignContentsRequest,
     GetAllDesignContentsResponse,
     GetDesignContentRequest,
     GetDesignContentResponse,
+    GetFlowStateRequest,
+    GetFlowStateResponse,
     GetParametersRequest,
     GetParametersResponse,
     GetSystemDiagramRequest,
     GetSystemDiagramResponse,
+    GetUtilizationRequest,
+    GetUtilizationResponse,
     GetWorkspaceRequest,
     GetWorkspaceResponse,
     ListGeneratorsRequest,
@@ -37,6 +45,8 @@ import {
     ListWorkspacesResponse,
     LoadFileRequest,
     LoadFileResponse,
+    QueryMetricsRequest,
+    QueryMetricsResponse,
     SetParameterRequest,
     SetParameterResponse,
     StartAllGeneratorsRequest,
@@ -47,6 +57,8 @@ import {
     StopAllGeneratorsResponse,
     StopGeneratorRequest,
     StopGeneratorResponse,
+    TraceAllPathsRequest,
+    TraceAllPathsResponse,
     UpdateGeneratorRequest,
     UpdateGeneratorResponse,
     UpdateWorkspaceRequest,
@@ -82,7 +94,13 @@ export interface WorkspaceServiceMethods {
     setParameter(request: SetParameterRequest): SetParameterResponse;
     getParameters(request: GetParametersRequest): GetParametersResponse;
     evaluateFlows(request: EvaluateFlowsRequest): EvaluateFlowsResponse;
+    batchSetParameters(request: BatchSetParametersRequest): BatchSetParametersResponse;
+    getFlowState(request: GetFlowStateRequest): GetFlowStateResponse;
+    executeTrace(request: ExecuteTraceRequest): ExecuteTraceResponse;
+    traceAllPaths(request: TraceAllPathsRequest): TraceAllPathsResponse;
     getSystemDiagram(request: GetSystemDiagramRequest): GetSystemDiagramResponse;
+    getUtilization(request: GetUtilizationRequest): GetUtilizationResponse;
+    queryMetrics(request: QueryMetricsRequest): QueryMetricsResponse;
 }
 /**
  * WorkspaceService service client implementation
@@ -158,7 +176,25 @@ export class WorkspaceServiceClient extends ServiceClient implements WorkspaceSe
         evaluateFlows(request: EvaluateFlowsRequest): EvaluateFlowsResponse {
             return this.callMethodSync('workspaceService.evaluateFlows', request);
         }
+        batchSetParameters(request: BatchSetParametersRequest): BatchSetParametersResponse {
+            return this.callMethodSync('workspaceService.batchSetParameters', request);
+        }
+        getFlowState(request: GetFlowStateRequest): GetFlowStateResponse {
+            return this.callMethodSync('workspaceService.getFlowState', request);
+        }
+        executeTrace(request: ExecuteTraceRequest): ExecuteTraceResponse {
+            return this.callMethodSync('workspaceService.executeTrace', request);
+        }
+        traceAllPaths(request: TraceAllPathsRequest): TraceAllPathsResponse {
+            return this.callMethodSync('workspaceService.traceAllPaths', request);
+        }
         getSystemDiagram(request: GetSystemDiagramRequest): GetSystemDiagramResponse {
             return this.callMethodSync('workspaceService.getSystemDiagram', request);
+        }
+        getUtilization(request: GetUtilizationRequest): GetUtilizationResponse {
+            return this.callMethodSync('workspaceService.getUtilization', request);
+        }
+        queryMetrics(request: QueryMetricsRequest): QueryMetricsResponse {
+            return this.callMethodSync('workspaceService.queryMetrics', request);
         }
 }

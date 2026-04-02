@@ -116,7 +116,13 @@ type WorkspaceServiceServer interface {
 	SetParameter(context.Context, *v1models.SetParameterRequest) (*v1models.SetParameterResponse, error)
 	GetParameters(context.Context, *v1models.GetParametersRequest) (*v1models.GetParametersResponse, error)
 	EvaluateFlows(context.Context, *v1models.EvaluateFlowsRequest) (*v1models.EvaluateFlowsResponse, error)
+	BatchSetParameters(context.Context, *v1models.BatchSetParametersRequest) (*v1models.BatchSetParametersResponse, error)
+	GetFlowState(context.Context, *v1models.GetFlowStateRequest) (*v1models.GetFlowStateResponse, error)
+	ExecuteTrace(context.Context, *v1models.ExecuteTraceRequest) (*v1models.ExecuteTraceResponse, error)
+	TraceAllPaths(context.Context, *v1models.TraceAllPathsRequest) (*v1models.TraceAllPathsResponse, error)
 	GetSystemDiagram(context.Context, *v1models.GetSystemDiagramRequest) (*v1models.GetSystemDiagramResponse, error)
+	GetUtilization(context.Context, *v1models.GetUtilizationRequest) (*v1models.GetUtilizationResponse, error)
+	QueryMetrics(context.Context, *v1models.QueryMetricsRequest) (*v1models.QueryMetricsResponse, error)
 }
 
 // Server stream interfaces for streaming methods

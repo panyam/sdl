@@ -140,10 +140,40 @@ class WorkspaceServiceStub(object):
                 request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.EvaluateFlowsRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.EvaluateFlowsResponse.FromString,
                 _registered_method=True)
+        self.BatchSetParameters = channel.unary_unary(
+                '/sdl.v1.WorkspaceService/BatchSetParameters',
+                request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.BatchSetParametersRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.BatchSetParametersResponse.FromString,
+                _registered_method=True)
+        self.GetFlowState = channel.unary_unary(
+                '/sdl.v1.WorkspaceService/GetFlowState',
+                request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetFlowStateRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetFlowStateResponse.FromString,
+                _registered_method=True)
+        self.ExecuteTrace = channel.unary_unary(
+                '/sdl.v1.WorkspaceService/ExecuteTrace',
+                request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.ExecuteTraceRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.ExecuteTraceResponse.FromString,
+                _registered_method=True)
+        self.TraceAllPaths = channel.unary_unary(
+                '/sdl.v1.WorkspaceService/TraceAllPaths',
+                request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.TraceAllPathsRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.TraceAllPathsResponse.FromString,
+                _registered_method=True)
         self.GetSystemDiagram = channel.unary_unary(
                 '/sdl.v1.WorkspaceService/GetSystemDiagram',
                 request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetSystemDiagramRequest.SerializeToString,
                 response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetSystemDiagramResponse.FromString,
+                _registered_method=True)
+        self.GetUtilization = channel.unary_unary(
+                '/sdl.v1.WorkspaceService/GetUtilization',
+                request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetUtilizationRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetUtilizationResponse.FromString,
+                _registered_method=True)
+        self.QueryMetrics = channel.unary_unary(
+                '/sdl.v1.WorkspaceService/QueryMetrics',
+                request_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.QueryMetricsRequest.SerializeToString,
+                response_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.QueryMetricsResponse.FromString,
                 _registered_method=True)
 
 
@@ -314,8 +344,52 @@ class WorkspaceServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def BatchSetParameters(self, request, context):
+        """----- Batch Parameter Operations -----
+
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetFlowState(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ExecuteTrace(self, request, context):
+        """----- Trace and Analysis -----
+
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def TraceAllPaths(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def GetSystemDiagram(self, request, context):
         """----- System Diagram -----
+
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetUtilization(self, request, context):
+        """----- Utilization -----
+
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def QueryMetrics(self, request, context):
+        """----- Metric Queries -----
 
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -440,10 +514,40 @@ def add_WorkspaceServiceServicer_to_server(servicer, server):
                     request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.EvaluateFlowsRequest.FromString,
                     response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.EvaluateFlowsResponse.SerializeToString,
             ),
+            'BatchSetParameters': grpc.unary_unary_rpc_method_handler(
+                    servicer.BatchSetParameters,
+                    request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.BatchSetParametersRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.BatchSetParametersResponse.SerializeToString,
+            ),
+            'GetFlowState': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetFlowState,
+                    request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetFlowStateRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetFlowStateResponse.SerializeToString,
+            ),
+            'ExecuteTrace': grpc.unary_unary_rpc_method_handler(
+                    servicer.ExecuteTrace,
+                    request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.ExecuteTraceRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.ExecuteTraceResponse.SerializeToString,
+            ),
+            'TraceAllPaths': grpc.unary_unary_rpc_method_handler(
+                    servicer.TraceAllPaths,
+                    request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.TraceAllPathsRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.TraceAllPathsResponse.SerializeToString,
+            ),
             'GetSystemDiagram': grpc.unary_unary_rpc_method_handler(
                     servicer.GetSystemDiagram,
                     request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetSystemDiagramRequest.FromString,
                     response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetSystemDiagramResponse.SerializeToString,
+            ),
+            'GetUtilization': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetUtilization,
+                    request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetUtilizationRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetUtilizationResponse.SerializeToString,
+            ),
+            'QueryMetrics': grpc.unary_unary_rpc_method_handler(
+                    servicer.QueryMetrics,
+                    request_deserializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.QueryMetricsRequest.FromString,
+                    response_serializer=sdl_dot_v1_dot_models_dot_canvas__service__pb2.QueryMetricsResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -1088,6 +1192,114 @@ class WorkspaceService(object):
             _registered_method=True)
 
     @staticmethod
+    def BatchSetParameters(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.WorkspaceService/BatchSetParameters',
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.BatchSetParametersRequest.SerializeToString,
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.BatchSetParametersResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetFlowState(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.WorkspaceService/GetFlowState',
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetFlowStateRequest.SerializeToString,
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetFlowStateResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ExecuteTrace(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.WorkspaceService/ExecuteTrace',
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.ExecuteTraceRequest.SerializeToString,
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.ExecuteTraceResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def TraceAllPaths(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.WorkspaceService/TraceAllPaths',
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.TraceAllPathsRequest.SerializeToString,
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.TraceAllPathsResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
     def GetSystemDiagram(request,
             target,
             options=(),
@@ -1104,6 +1316,60 @@ class WorkspaceService(object):
             '/sdl.v1.WorkspaceService/GetSystemDiagram',
             sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetSystemDiagramRequest.SerializeToString,
             sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetSystemDiagramResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetUtilization(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.WorkspaceService/GetUtilization',
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetUtilizationRequest.SerializeToString,
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.GetUtilizationResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def QueryMetrics(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sdl.v1.WorkspaceService/QueryMetrics',
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.QueryMetricsRequest.SerializeToString,
+            sdl_dot_v1_dot_models_dot_canvas__service__pb2.QueryMetricsResponse.FromString,
             options,
             channel_credentials,
             insecure,
