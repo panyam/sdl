@@ -160,7 +160,7 @@ export abstract class WorkspaceViewerPageBase extends BasePage implements LCMCom
         this.bindCanvasEvents();
 
         // Register this page as browser service for WASM callbacks
-        this.wasmBundle.registerBrowserService('DevEnvPage', this);
+        this.wasmBundle.registerBrowserService('WorkspacePage', this);
 
         // Initialize the presenter
         await this.initializePresenter();

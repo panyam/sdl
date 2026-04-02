@@ -43,7 +43,7 @@ describe('DevEnv Cleanup: No CanvasDashboardPage in active code', () => {
     const content = fs.readFileSync(basePath, 'utf-8');
 
     expect(content).toContain('WorkspacePageMethods');
-    expect(content).toContain("registerBrowserService('DevEnvPage'");
+    expect(content).toContain("registerBrowserService('WorkspacePage'");
   });
 
   /**
