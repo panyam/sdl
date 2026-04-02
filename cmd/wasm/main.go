@@ -92,8 +92,8 @@ func main() {
 	fsResolver := loader.NewFileSystemResolver(fileSystem)
 	devEnv := services.NewDevEnv(fsResolver)
 
-	// Create browser page forwarder (WorkspacePage -> DevEnvPageClient)
-	devEnvPageClient := wasmservices.NewDevEnvPageClient()
+	// Create browser page forwarder (WorkspacePage -> WorkspacePageClient)
+	devEnvPageClient := wasmservices.NewWorkspacePageClient()
 	browserPage := NewBrowserWorkspacePage(devEnvPageClient)
 	devEnv.SetPage(browserPage)
 
@@ -108,9 +108,9 @@ func main() {
 
 	// Wire service implementations to generated WASM exports
 	exports := &wasmservices.Sdl_v1ServicesExports{
-		CanvasViewPresenter:         devEnvPresenter,
+		WorkspacePresenter:         devEnvPresenter,
 		SingletonInitializerService: initializerService,
-		DevEnvPage:                  devEnvPageClient,
+		WorkspacePage:                  devEnvPageClient,
 	}
 
 	// Register the JavaScript API using generated exports

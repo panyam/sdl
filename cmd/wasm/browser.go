@@ -13,14 +13,14 @@ import (
 )
 
 // BrowserWorkspacePage implements WorkspacePage by forwarding calls to the
-// generated DevEnvPageClient (WASM browser channel). Follows the lilbattle
+// generated WorkspacePageClient (WASM browser channel). Follows the lilbattle
 // Browser*Panel convention where browser-specific WASM types live in
 // cmd/wasm/browser.go and service-layer code uses Go interfaces.
 type BrowserWorkspacePage struct {
-	DevEnvPage *wasmservices.DevEnvPageClient
+	DevEnvPage *wasmservices.WorkspacePageClient
 }
 
-func NewBrowserWorkspacePage(devEnvPage *wasmservices.DevEnvPageClient) *BrowserWorkspacePage {
+func NewBrowserWorkspacePage(devEnvPage *wasmservices.WorkspacePageClient) *BrowserWorkspacePage {
 	return &BrowserWorkspacePage{DevEnvPage: devEnvPage}
 }
 
