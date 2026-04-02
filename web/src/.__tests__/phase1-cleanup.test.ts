@@ -165,7 +165,7 @@ describe('Phase 1: Template Integrity', () => {
    * the page type and initialize the correct JavaScript component.
    */
   it('should set window.sdlPageData in WorkspaceViewerPage template', () => {
-    const templatePath = path.join(WEB_DIR, 'templates/canvases/WorkspaceViewerPage.html');
+    const templatePath = path.join(WEB_DIR, 'templates/workspaces/WorkspacePage.html');
     const content = fs.readFileSync(templatePath, 'utf-8');
 
     expect(content).toContain('window.sdlPageData');
