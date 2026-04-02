@@ -12,7 +12,8 @@ import (
 
 // getGRPCConnection returns a gRPC connection to the server
 func getGRPCConnection() (*grpc.ClientConn, error) {
-	serverAddr := "localhost:9090"
+	// Use the configured gRPC address (default :7070 from root.go)
+	serverAddr := "localhost" + grpcAddress
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

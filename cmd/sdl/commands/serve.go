@@ -3,6 +3,8 @@ package commands
 import (
 	"context"
 	"log"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/panyam/sdl/lib/loader"
@@ -46,8 +48,15 @@ Example:
   sdl gen start load1
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		// Create DevEnv-backed WorkspaceService for gRPC server
-		fsResolver := loader.NewDefaultFileResolver()
+		// Create filesystem with @stdlib/ mounted
+		cfs := loader.NewCompositeFS()
+		cfs.Mount("/", loader.NewLocalFS(""))
+		stdlibPath := findStdlibPath()
+		if stdlibPath != "" {
+			cfs.Mount("@stdlib/", loader.NewLocalFS(stdlibPath))
+			log.Printf("Mounted @stdlib/ from %s", stdlibPath)
+		}
+		fsResolver := loader.NewFileSystemResolver(cfs)
 		wsSvc := devenvbe.NewWorkspaceService(fsResolver)
 
 		// Create servers
@@ -63,7 +72,21 @@ Example:
 	},
 }
 
-// TODO: Add displayServerStats and loadInitialFiles using devenvbe.WorkspaceService
+// findStdlibPath looks for the stdlib directory in common locations.
+func findStdlibPath() string {
+	candidates := []string{
+		"cmd/wasm/stdlib",    // running from project root
+		"../cmd/wasm/stdlib", // running from cmd/sdl
+		"stdlib",             // running from cmd/wasm
+	}
+	for _, path := range candidates {
+		if info, err := os.Stat(path); err == nil && info.IsDir() {
+			abs, _ := filepath.Abs(path)
+			return abs
+		}
+	}
+	return ""
+}
 
 func init() {
 	// Port and host are now handled by persistent flags in root.go
