@@ -8,7 +8,7 @@ require (
 	github.com/panyam/goapplib v0.0.34
 	github.com/panyam/goutils v0.1.13
 	github.com/panyam/protoc-gen-go-wasmjs v0.0.33
-	github.com/panyam/servicekit v0.0.6
+	github.com/panyam/servicekit v0.0.11
 	github.com/panyam/templar v0.0.32
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
@@ -23,7 +23,7 @@ require (
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/panyam/gocurrent v0.0.11 // indirect
+	github.com/panyam/gocurrent v0.0.13 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
