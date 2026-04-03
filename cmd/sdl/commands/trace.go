@@ -30,14 +30,14 @@ Prerequisites:
 
 		outputFile, _ := cmd.Flags().GetString("out")
 
-		// Parse the method call string
-		parts := strings.Split(methodCallString, ".")
-		if len(parts) != 2 {
+		// Parse the method call string — last segment is method, rest is component path
+		lastDot := strings.LastIndex(methodCallString, ".")
+		if lastDot <= 0 {
 			fmt.Fprintf(os.Stderr, "Error: Invalid method call format. Expected 'component.method', got '%s'\n", methodCallString)
 			os.Exit(1)
 		}
-		componentName := parts[0]
-		methodName := parts[1]
+		componentName := methodCallString[:lastDot]
+		methodName := methodCallString[lastDot+1:]
 
 		// Execute trace via gRPC
 		err := withWorkspaceClient(func(client v1s.WorkspaceServiceClient, ctx context.Context) error {
